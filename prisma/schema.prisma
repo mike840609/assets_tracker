@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Setting {
+  id           String   @id @default("app_settings")
+  baseCurrency String   @default("USD")
+  updatedAt    DateTime @updatedAt
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+}
+
+enum AccountCategory {
+  BANK
+  BROKERAGE
+  CRYPTO_WALLET
+  PROPERTY
+  VEHICLE
+  CREDIT_CARD
+  LOAN
+  MORTGAGE
+  OTHER
+}
+
+model Account {
+  id          String          @id @default(cuid())
+  name        String
+  type        AccountType
+  category    AccountCategory
+  currency    String          @default("USD")
+  cashBalance Decimal         @default(0) @db.Decimal(18, 8)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  holdings    Holding[]
+}
+
+enum HoldingAssetType {
+  STOCK
+  ETF
+  CRYPTO
+  MUTUAL_FUND
+  BOND
+  OTHER
+}
+
+model Holding {
+  id        String           @id @default(cuid())
+  accountId String
+  account   Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  symbol    String
+  name      String
+  quantity  Decimal          @db.Decimal(18, 8)
+  assetType HoldingAssetType
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([accountId, symbol])
+}
+
+model PriceCache {
+  symbol    String   @id
+  price     Decimal  @db.Decimal(18, 8)
+  currency  String   @default("USD")
+  updatedAt DateTime @updatedAt
+}
+
+model ExchangeRate {
+  id           String   @id
+  fromCurrency String
+  toCurrency   String
+  rate         Decimal  @db.Decimal(18, 8)
+  updatedAt    DateTime @updatedAt
+
+  @@unique([fromCurrency, toCurrency])
+}
+
+model NetWorthSnapshot {
+  id               String   @id @default(cuid())
+  date             DateTime @db.Date
+  totalAssets      Decimal  @db.Decimal(18, 2)
+  totalLiabilities Decimal  @db.Decimal(18, 2)
+  netWorth         Decimal  @db.Decimal(18, 2)
+  baseCurrency     String
+  breakdown        Json?
+  createdAt        DateTime @default(now())
+
+  @@unique([date, baseCurrency])
+}
