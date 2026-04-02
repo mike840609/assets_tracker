@@ -1,16 +1,29 @@
-import type { Account, Holding, PriceCache } from "@/generated/prisma";
-import { Decimal } from "@/generated/prisma/runtime/library";
+import type { Account, Holding } from "@/generated/prisma/client";
 
-export type AccountWithHoldings = Account & {
-  holdings: Holding[];
+// Serialized types where Prisma Decimal fields are converted to number
+// These are safe to pass from Server Components to Client Components
+export type SerializedAccount = Omit<Account, "cashBalance" | "createdAt" | "updatedAt"> & {
+  cashBalance: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
-export type HoldingWithPrice = Holding & {
+export type SerializedHolding = Omit<Holding, "quantity" | "createdAt" | "updatedAt"> & {
+  quantity: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SerializedAccountWithHoldings = SerializedAccount & {
+  holdings: SerializedHolding[];
+};
+
+export type HoldingWithPrice = SerializedHolding & {
   currentPrice: number | null;
   marketValue: number | null;
 };
 
-export type AccountWithValue = Account & {
+export type AccountWithValue = SerializedAccount & {
   holdings: HoldingWithPrice[];
   totalValue: number;
   totalValueInBaseCurrency: number;
@@ -31,7 +44,40 @@ export type AllocationItem = {
   color: string;
 };
 
-export function decimalToNumber(d: Decimal | null | undefined): number {
-  if (d == null) return 0;
-  return Number(d);
+// Serialization helpers — explicitly construct plain objects
+// (spreading Prisma model instances doesn't strip Decimal/Date properly)
+export function serializeAccount(account: Account): SerializedAccount {
+  return {
+    id: account.id,
+    name: account.name,
+    type: account.type,
+    category: account.category,
+    currency: account.currency,
+    cashBalance: Number(account.cashBalance),
+    isActive: account.isActive,
+    createdAt: account.createdAt.toISOString(),
+    updatedAt: account.updatedAt.toISOString(),
+  };
+}
+
+export function serializeHolding(holding: Holding): SerializedHolding {
+  return {
+    id: holding.id,
+    accountId: holding.accountId,
+    symbol: holding.symbol,
+    name: holding.name,
+    quantity: Number(holding.quantity),
+    assetType: holding.assetType,
+    createdAt: holding.createdAt.toISOString(),
+    updatedAt: holding.updatedAt.toISOString(),
+  };
+}
+
+export function serializeAccountWithHoldings(
+  account: Account & { holdings: Holding[] }
+): SerializedAccountWithHoldings {
+  return {
+    ...serializeAccount(account),
+    holdings: account.holdings.map(serializeHolding),
+  };
 }
