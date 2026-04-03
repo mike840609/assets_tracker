@@ -55,8 +55,19 @@ export default async function AccountsPage() {
 
   const serialized = accounts.map(serializeAccountWithHoldings);
 
+  // Fetch base currency from settings
+  const settings = await prisma.setting.findUnique({ where: { id: "app_settings" } });
+  const baseCurrency = settings?.baseCurrency ?? "USD";
+
   const ratesMap: Record<string, number> = {};
   for (const account of serialized) {
+    // Rate from account currency to base currency (for category totals)
+    if (account.currency !== baseCurrency) {
+      const key = `${account.currency}_${baseCurrency}`;
+      if (ratesMap[key] === undefined) {
+        ratesMap[key] = await getExchangeRate(account.currency, baseCurrency);
+      }
+    }
     for (const holding of account.holdings) {
       const hc = holding.currency || "USD";
       if (hc !== account.currency) {
@@ -71,7 +82,7 @@ export default async function AccountsPage() {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold tracking-tight">Accounts</h2>
-      <AccountsList accounts={serialized} priceMap={priceMap} ratesMap={ratesMap} />
+      <AccountsList accounts={serialized} priceMap={priceMap} ratesMap={ratesMap} baseCurrency={baseCurrency} />
     </div>
   );
 }
