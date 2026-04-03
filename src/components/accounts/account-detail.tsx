@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -25,6 +24,7 @@ import { formatCurrency, formatNumber } from "@/lib/currencies";
 import { HoldingForm } from "./holding-form";
 import { EditHoldingDialog } from "./edit-holding-dialog";
 import { TransactionHistory } from "./transaction-history";
+import { InlineBalanceEditor } from "./inline-balance-editor";
 import { toast } from "sonner";
 import type { SerializedAccountWithHoldings, SerializedHolding } from "@/lib/types";
 
@@ -50,9 +50,6 @@ export function AccountDetail({
   ratesMap?: Record<string, number>;
 }) {
   const router = useRouter();
-  const [editingBalance, setEditingBalance] = useState(false);
-  const [balance, setBalance] = useState("");
-  const [balanceNote, setBalanceNote] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showHoldingForm, setShowHoldingForm] = useState(false);
   const [editingHolding, setEditingHolding] = useState<SerializedHolding | null>(null);
@@ -73,31 +70,15 @@ export function AccountDetail({
   const isBrokerage = account.category === "BROKERAGE" || account.category === "CRYPTO_WALLET";
   const totalValue = account.cashBalance + totalHoldingsValue;
 
-  async function saveBalance() {
-    if (balance.trim() === "") {
-      setEditingBalance(false);
-      setBalanceNote("");
-      return;
-    }
-
-    try {
-      await fetch(`/api/accounts/${account.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          cashBalance: parseFloat(balance) || 0,
-          note: balanceNote || undefined,
-        }),
-      });
-      setEditingBalance(false);
-      setBalance("");
-      setBalanceNote("");
-      setRefreshTrigger((prev) => prev + 1);
-      toast.success("Balance updated");
-      router.refresh();
-    } catch {
-      toast.error("Failed to update balance");
-    }
+  async function saveBalance(newBalance: number, note?: string) {
+    await fetch(`/api/accounts/${account.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cashBalance: newBalance, note }),
+    });
+    setRefreshTrigger((prev) => prev + 1);
+    toast.success("Balance updated");
+    router.refresh();
   }
 
   async function deleteAccount() {
@@ -183,47 +164,12 @@ export function AccountDetail({
           <Card>
             <CardContent className="pt-6">
               <p className="text-sm text-muted-foreground">Cash Balance</p>
-              {editingBalance ? (
-                <div className="flex flex-col gap-2 mt-1">
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder={formatNumber(account.cashBalance, 0)}
-                      value={balance}
-                      onChange={(e) => setBalance(e.target.value)}
-                      className="h-8"
-                      autoFocus
-                    />
-                    <Button size="sm" onClick={saveBalance}>
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingBalance(false);
-                        setBalanceNote("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                  <Input
-                    placeholder="Note (e.g. Deposit, Salary...)"
-                    value={balanceNote}
-                    onChange={(e) => setBalanceNote(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                </div>
-              ) : (
-                <p
-                  className="text-2xl font-bold mt-1 cursor-pointer hover:text-primary"
-                  onClick={() => setEditingBalance(true)}
-                >
-                  {formatCurrency(account.cashBalance, account.currency)}
-                </p>
-              )}
+              <InlineBalanceEditor
+                currentBalance={account.cashBalance}
+                currency={account.currency}
+                notePlaceholder="Note (e.g. Deposit, Salary...)"
+                onSave={saveBalance}
+              />
             </CardContent>
           </Card>
         </div>
@@ -232,47 +178,12 @@ export function AccountDetail({
           <Card>
             <CardContent className="pt-6">
               <p className="text-sm text-muted-foreground">Cash Balance</p>
-              {editingBalance ? (
-                <div className="flex flex-col gap-2 mt-1">
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder={formatNumber(account.cashBalance, 0)}
-                      value={balance}
-                      onChange={(e) => setBalance(e.target.value)}
-                      className="h-8"
-                      autoFocus
-                    />
-                    <Button size="sm" onClick={saveBalance}>
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingBalance(false);
-                        setBalanceNote("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                  <Input
-                    placeholder="Note (e.g. Salary, Rent...)"
-                    value={balanceNote}
-                    onChange={(e) => setBalanceNote(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                </div>
-              ) : (
-                <p
-                  className="text-2xl font-bold mt-1 cursor-pointer hover:text-primary"
-                  onClick={() => setEditingBalance(true)}
-                >
-                  {formatCurrency(account.cashBalance, account.currency)}
-                </p>
-              )}
+              <InlineBalanceEditor
+                currentBalance={account.cashBalance}
+                currency={account.currency}
+                notePlaceholder="Note (e.g. Salary, Rent...)"
+                onSave={saveBalance}
+              />
             </CardContent>
           </Card>
         </div>
@@ -289,47 +200,12 @@ export function AccountDetail({
           <Card>
             <CardContent className="pt-6">
               <p className="text-sm text-muted-foreground">Cash Balance</p>
-              {editingBalance ? (
-                <div className="flex flex-col gap-2 mt-1">
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder={formatNumber(account.cashBalance, 0)}
-                      value={balance}
-                      onChange={(e) => setBalance(e.target.value)}
-                      className="h-8"
-                      autoFocus
-                    />
-                    <Button size="sm" onClick={saveBalance}>
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingBalance(false);
-                        setBalanceNote("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                  <Input
-                    placeholder="Note (e.g. Salary, Rent...)"
-                    value={balanceNote}
-                    onChange={(e) => setBalanceNote(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                </div>
-              ) : (
-                <p
-                  className="text-2xl font-bold mt-1 cursor-pointer hover:text-primary"
-                  onClick={() => setEditingBalance(true)}
-                >
-                  {formatCurrency(account.cashBalance, account.currency)}
-                </p>
-              )}
+              <InlineBalanceEditor
+                currentBalance={account.cashBalance}
+                currency={account.currency}
+                notePlaceholder="Note (e.g. Salary, Rent...)"
+                onSave={saveBalance}
+              />
             </CardContent>
           </Card>
           <Card>

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Copy, LayoutDashboard, Settings } from "lucide-react";
 import { motion } from "framer-motion";
+import { ThemeToggle } from "./theme-toggle";
 
 const navItems = [
   {
@@ -69,7 +70,10 @@ export function Sidebar() {
         })}
       </nav>
       <div className="p-4 border-t border-border/50 bg-background/30 backdrop-blur-md">
-        <div className="text-xs text-muted-foreground text-center">Version 0.1.0</div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">v0.1.0</span>
+          <ThemeToggle />
+        </div>
       </div>
     </aside>
   );
