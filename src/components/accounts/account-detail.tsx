@@ -51,7 +51,9 @@ export function AccountDetail({
 }) {
   const router = useRouter();
   const [editingBalance, setEditingBalance] = useState(false);
-  const [balance, setBalance] = useState(String(account.cashBalance));
+  const [balance, setBalance] = useState("");
+  const [balanceNote, setBalanceNote] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showHoldingForm, setShowHoldingForm] = useState(false);
   const [editingHolding, setEditingHolding] = useState<SerializedHolding | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -69,16 +71,28 @@ export function AccountDetail({
     0
   );
   const isBrokerage = account.category === "BROKERAGE" || account.category === "CRYPTO_WALLET";
-  const totalValue = isBrokerage ? totalHoldingsValue : account.cashBalance + totalHoldingsValue;
+  const totalValue = account.cashBalance + totalHoldingsValue;
 
   async function saveBalance() {
+    if (balance.trim() === "") {
+      setEditingBalance(false);
+      setBalanceNote("");
+      return;
+    }
+
     try {
       await fetch(`/api/accounts/${account.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cashBalance: parseFloat(balance) || 0 }),
+        body: JSON.stringify({ 
+          cashBalance: parseFloat(balance) || 0,
+          note: balanceNote || undefined,
+        }),
       });
       setEditingBalance(false);
+      setBalance("");
+      setBalanceNote("");
+      setRefreshTrigger((prev) => prev + 1);
       toast.success("Balance updated");
       router.refresh();
     } catch {
@@ -107,11 +121,14 @@ export function AccountDetail({
         body: JSON.stringify({ id: holdingId }),
       });
       toast.success("Holding removed");
+      setRefreshTrigger((prev) => prev + 1);
       router.refresh();
     } catch {
       toast.error("Failed to delete holding");
     }
   }
+
+  const isBank = account.category === "BANK";
 
   return (
     <>
@@ -146,7 +163,7 @@ export function AccountDetail({
       </div>
 
       {isBrokerage ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6">
               <p className="text-sm text-muted-foreground">Market Value</p>
@@ -161,6 +178,101 @@ export function AccountDetail({
               <p className="text-2xl font-bold mt-1">
                 {holdingsWithValue.length}
               </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">Cash Balance</p>
+              {editingBalance ? (
+                <div className="flex flex-col gap-2 mt-1">
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder={formatNumber(account.cashBalance, 0)}
+                      value={balance}
+                      onChange={(e) => setBalance(e.target.value)}
+                      className="h-8"
+                      autoFocus
+                    />
+                    <Button size="sm" onClick={saveBalance}>
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingBalance(false);
+                        setBalanceNote("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                  <Input
+                    placeholder="Note (e.g. Deposit, Salary...)"
+                    value={balanceNote}
+                    onChange={(e) => setBalanceNote(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              ) : (
+                <p
+                  className="text-2xl font-bold mt-1 cursor-pointer hover:text-primary"
+                  onClick={() => setEditingBalance(true)}
+                >
+                  {formatCurrency(account.cashBalance, account.currency)}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      ) : isBank ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">Cash Balance</p>
+              {editingBalance ? (
+                <div className="flex flex-col gap-2 mt-1">
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder={formatNumber(account.cashBalance, 0)}
+                      value={balance}
+                      onChange={(e) => setBalance(e.target.value)}
+                      className="h-8"
+                      autoFocus
+                    />
+                    <Button size="sm" onClick={saveBalance}>
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingBalance(false);
+                        setBalanceNote("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                  <Input
+                    placeholder="Note (e.g. Salary, Rent...)"
+                    value={balanceNote}
+                    onChange={(e) => setBalanceNote(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              ) : (
+                <p
+                  className="text-2xl font-bold mt-1 cursor-pointer hover:text-primary"
+                  onClick={() => setEditingBalance(true)}
+                >
+                  {formatCurrency(account.cashBalance, account.currency)}
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -178,25 +290,37 @@ export function AccountDetail({
             <CardContent className="pt-6">
               <p className="text-sm text-muted-foreground">Cash Balance</p>
               {editingBalance ? (
-                <div className="flex gap-2 mt-1">
+                <div className="flex flex-col gap-2 mt-1">
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder={formatNumber(account.cashBalance, 0)}
+                      value={balance}
+                      onChange={(e) => setBalance(e.target.value)}
+                      className="h-8"
+                      autoFocus
+                    />
+                    <Button size="sm" onClick={saveBalance}>
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingBalance(false);
+                        setBalanceNote("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                   <Input
-                    type="number"
-                    step="0.01"
-                    value={balance}
-                    onChange={(e) => setBalance(e.target.value)}
-                    className="h-8"
-                    autoFocus
+                    placeholder="Note (e.g. Salary, Rent...)"
+                    value={balanceNote}
+                    onChange={(e) => setBalanceNote(e.target.value)}
+                    className="h-8 text-sm"
                   />
-                  <Button size="sm" onClick={saveBalance}>
-                    Save
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setEditingBalance(false)}
-                  >
-                    Cancel
-                  </Button>
                 </div>
               ) : (
                 <p
@@ -219,98 +343,101 @@ export function AccountDetail({
         </div>
       )}
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base font-medium">Holdings</CardTitle>
-          <Button size="sm" onClick={() => setShowHoldingForm(true)}>
-            Add Holding
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {holdingsWithValue.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No holdings yet. Add stocks, ETFs, or crypto.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Symbol</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Ccy</TableHead>
-                  <TableHead className="text-right">Qty</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">Value</TableHead>
-                  <TableHead className="text-right">%</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {holdingsWithValue.map((h) => (
-                  <TableRow key={h.id}>
-                    <TableCell className="font-mono font-medium">
-                      {h.symbol}
-                    </TableCell>
-                    <TableCell>{h.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{h.assetType}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{h.currency || "USD"}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatNumber(h.quantity, h.assetType === "CRYPTO" ? 7 : 2)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {h.currentPrice !== null
-                        ? formatCurrency(h.currentPrice, h.currency || "USD")
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {h.marketValue !== null
-                        ? formatCurrency(h.marketValue, account.currency)
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {h.marketValue !== null && totalHoldingsValue > 0
-                        ? `${((h.marketValue / totalHoldingsValue) * 100).toFixed(1)}%`
-                        : "—"}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 hover:bg-accent hover:text-accent-foreground">
-                          ...
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => setEditingHolding(h)}
-                          >
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => deleteHolding(h.id)}
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+      {!isBank && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-medium">Holdings</CardTitle>
+            <Button size="sm" onClick={() => setShowHoldingForm(true)}>
+              Add Holding
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {holdingsWithValue.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                No holdings yet. Add stocks, ETFs, or crypto.
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Symbol</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Ccy</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead className="text-right">Value</TableHead>
+                    <TableHead className="text-right">%</TableHead>
+                    <TableHead />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {holdingsWithValue.map((h) => (
+                    <TableRow key={h.id}>
+                      <TableCell className="font-mono font-medium">
+                        {h.symbol}
+                      </TableCell>
+                      <TableCell>{h.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{h.assetType}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{h.currency || "USD"}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatNumber(h.quantity, h.assetType === "CRYPTO" ? 7 : 2)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {h.currentPrice !== null
+                          ? formatCurrency(h.currentPrice, h.currency || "USD")
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {h.marketValue !== null
+                          ? formatCurrency(h.marketValue, account.currency)
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {h.marketValue !== null && totalHoldingsValue > 0
+                          ? `${((h.marketValue / totalHoldingsValue) * 100).toFixed(1)}%`
+                          : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 hover:bg-accent hover:text-accent-foreground">
+                            ...
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => setEditingHolding(h)}
+                            >
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => deleteHolding(h.id)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
-      <TransactionHistory accountId={account.id} />
+      <TransactionHistory accountId={account.id} isBank={isBank} refreshTrigger={refreshTrigger} />
 
       <HoldingForm
         open={showHoldingForm}
         onClose={() => setShowHoldingForm(false)}
         accountId={account.id}
+        onSuccess={() => setRefreshTrigger((prev) => prev + 1)}
       />
 
       {editingHolding && (
@@ -319,6 +446,7 @@ export function AccountDetail({
           onClose={() => setEditingHolding(null)}
           holding={editingHolding}
           accountId={account.id}
+          onSuccess={() => setRefreshTrigger((prev) => prev + 1)}
         />
       )}
     </>

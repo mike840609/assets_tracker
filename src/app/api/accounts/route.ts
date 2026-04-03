@@ -4,7 +4,7 @@ import { createAccountSchema } from "@/lib/validators";
 
 export async function GET() {
   const accounts = await prisma.account.findMany({
-    include: { holdings: true },
+    include: { holdings: { where: { quantity: { gt: 0 } } } },
     orderBy: { createdAt: "desc" },
   });
   return NextResponse.json(accounts);

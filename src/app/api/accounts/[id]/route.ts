@@ -9,7 +9,7 @@ export async function GET(
   const { id } = await params;
   const account = await prisma.account.findUnique({
     where: { id },
-    include: { holdings: true },
+    include: { holdings: { where: { quantity: { gt: 0 } } } },
   });
   if (!account) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -26,6 +26,27 @@ export async function PATCH(
   const parsed = updateAccountSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const existingAccount = await prisma.account.findUnique({ where: { id } });
+  if (!existingAccount) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // If cashBalance is being updated to a new value, log it as an EDIT transaction
+  if (
+    parsed.data.cashBalance !== undefined &&
+    parsed.data.cashBalance !== Number(existingAccount.cashBalance)
+  ) {
+    const diff = parsed.data.cashBalance - Number(existingAccount.cashBalance);
+    await prisma.cashTransaction.create({
+      data: {
+        accountId: id,
+        type: "EDIT",
+        amount: diff,
+        note: body.note || `Manual balance update (${diff > 0 ? "+" : ""}${diff})`,
+      },
+    });
   }
 
   const account = await prisma.account.update({

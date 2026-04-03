@@ -40,7 +40,8 @@ model Account {
   isActive    Boolean         @default(true)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-  holdings    Holding[]
+  holdings          Holding[]
+  cashTransactions  CashTransaction[]
 }
 
 enum HoldingAssetType {
@@ -82,6 +83,22 @@ model HoldingTransaction {
   quantity  Decimal         @db.Decimal(18, 8)
   note      String?
   createdAt DateTime        @default(now())
+}
+
+enum CashTransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  EDIT
+}
+
+model CashTransaction {
+  id        String              @id @default(cuid())
+  accountId String
+  account   Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  type      CashTransactionType
+  amount    Decimal             @db.Decimal(18, 8)
+  note      String?
+  createdAt DateTime            @default(now())
 }
 
 model PriceCache {

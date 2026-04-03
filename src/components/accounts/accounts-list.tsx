@@ -67,8 +67,6 @@ function getAccountValue(
   priceMap: Record<string, number>,
   ratesMap: Record<string, number>
 ): number {
-  const isBrokerage =
-    account.category === "BROKERAGE" || account.category === "CRYPTO_WALLET";
   const holdingsValue = account.holdings.reduce((sum, h) => {
     const price = (priceMap || {})[h.symbol] ?? 0;
     const hc = h.currency || "USD";
@@ -78,7 +76,7 @@ function getAccountValue(
         : ratesMap[`${hc}_${account.currency}`] ?? 1;
     return sum + price * h.quantity * rate;
   }, 0);
-  return isBrokerage ? holdingsValue : account.cashBalance;
+  return account.cashBalance + holdingsValue;
 }
 
 export function AccountsList({
@@ -374,7 +372,7 @@ function CategorySection({
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {accounts.length} account{accounts.length !== 1 ? "s" : ""}
-              {totalHoldings > 0 && (
+              {totalHoldings > 0 && category !== "BANK" && (
                 <span>
                   {" · "}
                   {totalHoldings} holding{totalHoldings !== 1 ? "s" : ""}
@@ -513,7 +511,7 @@ function AccountCardWithHoldings({
             </div>
 
             {/* Holdings list */}
-            {holdingsWithValue.length > 0 && (
+            {account.category !== "BANK" && holdingsWithValue.length > 0 && (
               <div
                 className={`mt-3 ${
                   isSelecting

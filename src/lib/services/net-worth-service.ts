@@ -11,7 +11,7 @@ export async function getNetWorthSummary(
 ): Promise<NetWorthSummary> {
   const accounts = await prisma.account.findMany({
     where: { isActive: true },
-    include: { holdings: true },
+    include: { holdings: { where: { quantity: { gt: 0 } } } },
   });
 
   const prices = await prisma.priceCache.findMany();

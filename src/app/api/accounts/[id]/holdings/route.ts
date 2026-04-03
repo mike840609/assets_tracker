@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const { id } = await params;
   const holdings = await prisma.holding.findMany({
-    where: { accountId: id },
+    where: { accountId: id, quantity: { gt: 0 } },
     orderBy: { symbol: "asc" },
   });
   return NextResponse.json(holdings);

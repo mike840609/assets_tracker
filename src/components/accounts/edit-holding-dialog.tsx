@@ -29,11 +29,13 @@ export function EditHoldingDialog({
   onClose,
   holding,
   accountId,
+  onSuccess,
 }: {
   open: boolean;
   onClose: () => void;
   holding: SerializedHolding;
   accountId: string;
+  onSuccess?: () => void;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -92,6 +94,7 @@ export function EditHoldingDialog({
 
       toast.success("Holding updated");
       onClose();
+      if (onSuccess) onSuccess();
       router.refresh();
     } catch (error) {
       toast.error(
