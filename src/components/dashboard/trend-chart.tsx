@@ -29,7 +29,7 @@ const ranges = [
   { label: "All", days: Infinity },
 ];
 
-export function TrendChart({ snapshots }: { snapshots: SnapshotData[] }) {
+export function TrendChart({ snapshots, baseCurrency = "USD" }: { snapshots: SnapshotData[]; baseCurrency?: string }) {
   const [range, setRange] = useState("All");
 
   const selectedRange = ranges.find((r) => r.label === range)!;
@@ -92,7 +92,7 @@ export function TrendChart({ snapshots }: { snapshots: SnapshotData[] }) {
                 formatter={(value) =>
                   new Intl.NumberFormat("en-US", {
                     style: "currency",
-                    currency: "USD",
+                    currency: baseCurrency,
                   }).format(Number(value))
                 }
               />
