@@ -26,14 +26,38 @@ export async function POST(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const holding = await prisma.holding.create({
+  // Check if holding already exists in this account
+  const existing = await prisma.holding.findUnique({
+    where: { accountId_symbol: { accountId: id, symbol: parsed.data.symbol } },
+  });
+
+  let holding;
+  if (existing) {
+    // Add to existing holding quantity
+    const newQuantity = Number(existing.quantity) + parsed.data.quantity;
+    holding = await prisma.holding.update({
+      where: { id: existing.id },
+      data: { quantity: newQuantity },
+    });
+  } else {
+    holding = await prisma.holding.create({
+      data: {
+        accountId: id,
+        ...parsed.data,
+      },
+    });
+  }
+
+  // Log the transaction
+  await prisma.holdingTransaction.create({
     data: {
-      accountId: id,
-      ...parsed.data,
+      holdingId: holding.id,
+      type: "BUY",
+      quantity: parsed.data.quantity,
     },
   });
 
-  // Auto-fetch the market price for the newly added holding
+  // Auto-fetch the market price for the holding
   try {
     const isCrypto = parsed.data.assetType === "CRYPTO";
     const priceResults = isCrypto
@@ -68,6 +92,25 @@ export async function PATCH(
   }
 
   const { id, ...data } = parsed.data;
+
+  // Log quantity change as EDIT transaction
+  if (data.quantity !== undefined) {
+    const existing = await prisma.holding.findUnique({ where: { id } });
+    if (existing) {
+      const diff = data.quantity - Number(existing.quantity);
+      if (diff !== 0) {
+        await prisma.holdingTransaction.create({
+          data: {
+            holdingId: id,
+            type: "EDIT",
+            quantity: diff,
+            note: `Quantity changed from ${Number(existing.quantity)} to ${data.quantity}`,
+          },
+        });
+      }
+    }
+  }
+
   const holding = await prisma.holding.update({
     where: { id },
     data,

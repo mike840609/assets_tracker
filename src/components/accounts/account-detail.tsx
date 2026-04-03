@@ -24,6 +24,7 @@ import {
 import { formatCurrency, formatNumber } from "@/lib/currencies";
 import { HoldingForm } from "./holding-form";
 import { EditHoldingDialog } from "./edit-holding-dialog";
+import { TransactionHistory } from "./transaction-history";
 import { toast } from "sonner";
 import type { SerializedAccountWithHoldings, SerializedHolding } from "@/lib/types";
 
@@ -303,6 +304,8 @@ export function AccountDetail({
           )}
         </CardContent>
       </Card>
+
+      <TransactionHistory accountId={account.id} />
 
       <HoldingForm
         open={showHoldingForm}

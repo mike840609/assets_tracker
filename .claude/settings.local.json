@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm)"
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm)",
+      "Bash(kill 87750)",
+      "Bash(npx prisma:*)",
+      "Bash(ls /Users/chuntsai/Projects/asset_tracker/src/app/api/accounts/[id]/)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }

@@ -53,18 +53,35 @@ enum HoldingAssetType {
 }
 
 model Holding {
-  id        String           @id @default(cuid())
-  accountId String
-  account   Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  symbol    String
-  name      String
-  quantity  Decimal          @db.Decimal(18, 8)
-  currency  String           @default("USD")
-  assetType HoldingAssetType
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id           String               @id @default(cuid())
+  accountId    String
+  account      Account              @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  symbol       String
+  name         String
+  quantity     Decimal              @db.Decimal(18, 8)
+  currency     String               @default("USD")
+  assetType    HoldingAssetType
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  transactions HoldingTransaction[]
 
   @@unique([accountId, symbol])
+}
+
+enum TransactionType {
+  BUY
+  SELL
+  EDIT
+}
+
+model HoldingTransaction {
+  id        String          @id @default(cuid())
+  holdingId String
+  holding   Holding         @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  type      TransactionType
+  quantity  Decimal         @db.Decimal(18, 8)
+  note      String?
+  createdAt DateTime        @default(now())
 }
 
 model PriceCache {
