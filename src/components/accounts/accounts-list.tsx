@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/lib/currencies";
 import { AccountForm } from "./account-form";
+import { QuickAddHolding } from "./quick-add-holding";
 import { toast } from "sonner";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
 
@@ -35,6 +36,7 @@ export function AccountsList({
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
 
@@ -120,6 +122,7 @@ export function AccountsList({
                 : `Delete (${selected.size})`}
             </Button>
           )}
+          <Button variant="outline" onClick={() => setShowQuickAdd(true)}>Add Item</Button>
           <Button onClick={() => setShowForm(true)}>Add Account</Button>
         </div>
       </div>
@@ -169,6 +172,7 @@ export function AccountsList({
       )}
 
       <AccountForm open={showForm} onClose={() => setShowForm(false)} />
+      <QuickAddHolding open={showQuickAdd} onClose={() => setShowQuickAdd(false)} accounts={accounts} />
     </div>
   );
 }

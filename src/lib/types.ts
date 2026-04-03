@@ -1,4 +1,4 @@
-import type { Account, Holding } from "@/generated/prisma/client";
+import type { Account, Holding, HoldingTransaction } from "@/generated/prisma/client";
 
 // Serialized types where Prisma Decimal fields are converted to number
 // These are safe to pass from Server Components to Client Components
@@ -43,6 +43,17 @@ export type AllocationItem = {
   value: number;
   percentage: number;
   color: string;
+};
+
+export type SerializedTransaction = Omit<HoldingTransaction, "quantity" | "createdAt"> & {
+  quantity: number;
+  createdAt: string;
+  holding?: {
+    symbol: string;
+    name: string;
+    currency: string;
+    assetType: string;
+  };
 };
 
 // Serialization helpers — explicitly construct plain objects
