@@ -79,7 +79,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const yahooFinance = (await import("yahoo-finance2")).default;
+    const YahooFinance = (await import("yahoo-finance2")).default;
+    const yahooFinance = new YahooFinance();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: any = await yahooFinance.search(query, {
       quotesCount: 10,

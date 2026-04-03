@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
 import { serializeAccountWithHoldings } from "@/lib/types";
+import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
 
 export const dynamic = "force-dynamic";
 
@@ -18,15 +19,44 @@ export default async function AccountDetailPage({
 
   if (!account) notFound();
 
-  const prices = await prisma.priceCache.findMany({
+  // Get cached prices
+  const cachedPrices = await prisma.priceCache.findMany({
     where: {
       symbol: { in: account.holdings.map((h) => h.symbol) },
     },
   });
 
   const priceMap = Object.fromEntries(
-    prices.map((p) => [p.symbol, Number(p.price)])
+    cachedPrices.map((p) => [p.symbol, Number(p.price)])
   );
+
+  // Find holdings with missing prices and fetch them live
+  const missingSymbols = account.holdings.filter((h) => !(h.symbol in priceMap));
+  if (missingSymbols.length > 0) {
+    const stockSymbols = missingSymbols
+      .filter((h) => ["STOCK", "ETF", "MUTUAL_FUND", "BOND"].includes(h.assetType))
+      .map((h) => h.symbol);
+    const cryptoSymbols = missingSymbols
+      .filter((h) => h.assetType === "CRYPTO")
+      .map((h) => h.symbol);
+
+    const [stockPrices, cryptoPrices] = await Promise.all([
+      fetchStockPrices(stockSymbols),
+      fetchCryptoPrices(cryptoSymbols),
+    ]);
+
+    const allFetched = new Map([...stockPrices, ...cryptoPrices]);
+
+    for (const [symbol, { price, currency }] of allFetched) {
+      priceMap[symbol] = price;
+      // Cache for future use
+      await prisma.priceCache.upsert({
+        where: { symbol },
+        update: { price, currency, updatedAt: new Date() },
+        create: { symbol, price, currency },
+      });
+    }
+  }
 
   const serialized = serializeAccountWithHoldings(account);
 
@@ -36,3 +66,4 @@ export default async function AccountDetailPage({
     </div>
   );
 }
+

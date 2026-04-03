@@ -133,7 +133,7 @@ export function AccountForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {category === "BROKERAGE" || category === "CRYPTO_WALLET" ? (
             <div className="space-y-2">
               <Label>Currency</Label>
               <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
@@ -149,17 +149,35 @@ export function AccountForm({
                 </SelectContent>
               </Select>
             </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Currency</Label>
+                <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.code} ({c.symbol})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label>Cash Balance</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={cashBalance}
-                onChange={(e) => setCashBalance(e.target.value)}
-              />
+              <div className="space-y-2">
+                <Label>Cash Balance</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={cashBalance}
+                  onChange={(e) => setCashBalance(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>

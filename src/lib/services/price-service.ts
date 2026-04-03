@@ -30,7 +30,8 @@ export async function fetchStockPrices(
   if (symbols.length === 0) return results;
 
   try {
-    const yahooFinance = (await import("yahoo-finance2")).default;
+    const YahooFinance = (await import("yahoo-finance2")).default;
+    const yahooFinance = new YahooFinance();
     for (const symbol of symbols) {
       try {
         const quote = await yahooFinance.quote(symbol);
