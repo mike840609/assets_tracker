@@ -27,9 +27,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 export function AccountsList({
   accounts,
   priceMap,
+  ratesMap = {},
 }: {
   accounts: SerializedAccountWithHoldings[];
   priceMap: Record<string, number>;
+  ratesMap?: Record<string, number>;
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
@@ -137,6 +139,7 @@ export function AccountsList({
                 key={account.id}
                 account={account}
                 priceMap={priceMap}
+                ratesMap={ratesMap}
                 isSelected={selected.has(account.id)}
                 onToggle={() => toggleSelect(account.id)}
                 isSelecting={isSelecting}
@@ -155,6 +158,7 @@ export function AccountsList({
                 key={account.id}
                 account={account}
                 priceMap={priceMap}
+                ratesMap={ratesMap}
                 isSelected={selected.has(account.id)}
                 onToggle={() => toggleSelect(account.id)}
                 isSelecting={isSelecting}
@@ -172,12 +176,14 @@ export function AccountsList({
 function AccountCard({
   account,
   priceMap,
+  ratesMap,
   isSelected,
   onToggle,
   isSelecting,
 }: {
   account: SerializedAccountWithHoldings;
   priceMap: Record<string, number>;
+  ratesMap: Record<string, number>;
   isSelected: boolean;
   onToggle: () => void;
   isSelecting: boolean;
@@ -185,7 +191,9 @@ function AccountCard({
   const isBrokerage = account.category === "BROKERAGE" || account.category === "CRYPTO_WALLET";
   const holdingsValue = account.holdings.reduce((sum, h) => {
     const price = (priceMap || {})[h.symbol] ?? 0;
-    return sum + price * h.quantity;
+    const hc = h.currency || "USD";
+    const rate = hc === account.currency ? 1 : ratesMap[`${hc}_${account.currency}`] ?? 1;
+    return sum + price * h.quantity * rate;
   }, 0);
   const displayValue = isBrokerage ? holdingsValue : account.cashBalance;
   const displayCurrency = account.currency;

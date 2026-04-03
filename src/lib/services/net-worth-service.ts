@@ -41,28 +41,29 @@ export async function getNetWorthSummary(
     });
 
     // Convert each holding's market value from its native currency to base currency
+    // AND to the account's local currency
     let holdingsInBase = 0;
+    let holdingsInAccountCurrency = 0;
     for (const h of holdingsWithPrice) {
       if (h.marketValue !== null) {
         // Use the holding's currency, fall back to PriceCache currency, then USD
         const holdingCurrency = h.currency || priceMap[h.symbol]?.currency || "USD";
-        const holdingRate = await getExchangeRate(holdingCurrency, baseCurrency);
-        holdingsInBase += h.marketValue * holdingRate;
+        
+        const holdingRateToBase = await getExchangeRate(holdingCurrency, baseCurrency);
+        holdingsInBase += h.marketValue * holdingRateToBase;
+        
+        const holdingRateToAccount = await getExchangeRate(holdingCurrency, account.currency);
+        holdingsInAccountCurrency += h.marketValue * holdingRateToAccount;
       }
     }
 
     const cashInBase = cashBalance * rate;
     const totalValue = cashInBase + holdingsInBase;
 
-    const holdingsValue = holdingsWithPrice.reduce(
-      (sum, h) => sum + (h.marketValue ?? 0),
-      0
-    );
-
     accountsWithValue.push({
       ...serializeAccount(account),
       holdings: holdingsWithPrice,
-      totalValue: cashBalance + holdingsValue,
+      totalValue: cashBalance + holdingsInAccountCurrency,
       totalValueInBaseCurrency: totalValue,
     });
 

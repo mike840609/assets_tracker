@@ -41,9 +41,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 export function AccountDetail({
   account,
   priceMap,
+  ratesMap = {},
 }: {
   account: SerializedAccountWithHoldings;
   priceMap: Record<string, number>;
+  ratesMap?: Record<string, number>;
 }) {
   const router = useRouter();
   const [editingBalance, setEditingBalance] = useState(false);
@@ -53,7 +55,9 @@ export function AccountDetail({
 
   const holdingsWithValue = account.holdings.map((h) => {
     const price = priceMap[h.symbol] ?? null;
-    const marketValue = price !== null ? price * h.quantity : null;
+    const hc = h.currency || "USD";
+    const rate = hc === account.currency ? 1 : ratesMap[`${hc}_${account.currency}`] ?? 1;
+    const marketValue = price !== null ? price * h.quantity * rate : null;
     return { ...h, currentPrice: price, marketValue };
   });
 
@@ -262,7 +266,7 @@ export function AccountDetail({
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {h.marketValue !== null
-                        ? formatCurrency(h.marketValue, h.currency || "USD")
+                        ? formatCurrency(h.marketValue, account.currency)
                         : "—"}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
