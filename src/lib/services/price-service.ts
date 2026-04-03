@@ -54,33 +54,68 @@ export async function fetchStockPrices(
   return results;
 }
 
+// Strip currency suffix from crypto symbol (e.g. "BTC-USD" -> "BTC")
+function stripCurrencySuffix(symbol: string): string {
+  return symbol.replace(/-[A-Z]{3,4}$/, "");
+}
+
 export async function fetchCryptoPrices(
   symbols: string[]
 ): Promise<Map<string, { price: number; currency: string }>> {
   const results = new Map<string, { price: number; currency: string }>();
   if (symbols.length === 0) return results;
 
-  const ids = symbols
-    .map((s) => COINGECKO_IDS[s] || s.toLowerCase())
-    .filter(Boolean);
-
-  if (ids.length === 0) return results;
-
+  // Primary: Use Yahoo Finance (crypto symbols like BTC-USD are valid Yahoo symbols)
   try {
-    const res = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=usd`,
-      { next: { revalidate: 0 } }
-    );
-    const data = await res.json();
-
+    const YahooFinance = (await import("yahoo-finance2")).default;
+    const yahooFinance = new YahooFinance();
     for (const symbol of symbols) {
-      const geckoId = COINGECKO_IDS[symbol] || symbol.toLowerCase();
-      if (data[geckoId]?.usd) {
-        results.set(symbol, { price: data[geckoId].usd, currency: "USD" });
+      try {
+        const quote = await yahooFinance.quote(symbol);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const q = quote as any;
+        if (q.regularMarketPrice) {
+          results.set(symbol, {
+            price: q.regularMarketPrice,
+            currency: q.currency || "USD",
+          });
+        }
+      } catch {
+        console.error(`Yahoo Finance: failed to fetch crypto price for ${symbol}`);
       }
     }
   } catch (error) {
-    console.error("Failed to fetch crypto prices:", error);
+    console.error("Yahoo Finance crypto fetch failed:", error);
+  }
+
+  // Fallback: Use CoinGecko for any symbols not found via Yahoo Finance
+  const missing = symbols.filter((s) => !results.has(s));
+  if (missing.length > 0) {
+    const symbolMap = missing.map((s) => {
+      const base = stripCurrencySuffix(s);
+      const geckoId = COINGECKO_IDS[base] || base.toLowerCase();
+      return { original: s, base, geckoId };
+    });
+
+    const ids = symbolMap.map((s) => s.geckoId).filter(Boolean);
+    if (ids.length > 0) {
+      try {
+        const res = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=usd`,
+          { cache: "no-store" }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          for (const { original, geckoId } of symbolMap) {
+            if (data[geckoId]?.usd) {
+              results.set(original, { price: data[geckoId].usd, currency: "USD" });
+            }
+          }
+        }
+      } catch (error) {
+        console.error("CoinGecko fallback failed:", error);
+      }
+    }
   }
 
   return results;
