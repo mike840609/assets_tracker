@@ -50,3 +50,11 @@ export const updateHoldingSchema = z.object({
 export const updateSettingsSchema = z.object({
   baseCurrency: z.string().length(3),
 });
+
+export const updateTransactionSchema = z.object({
+  id: z.string(),
+  quantity: z.number().optional(),
+  type: z.enum(["BUY", "SELL", "EDIT"]).optional(),
+  note: z.string().optional().nullable(),
+  createdAt: z.string().optional(), // Using string for ISO dates
+});
