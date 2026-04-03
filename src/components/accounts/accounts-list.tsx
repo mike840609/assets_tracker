@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,23 +25,125 @@ const CATEGORY_LABELS: Record<string, string> = {
   OTHER: "Other",
 };
 
+const CATEGORY_ICONS: Record<string, string> = {
+  BANK: "🏦",
+  BROKERAGE: "📈",
+  CRYPTO_WALLET: "🪙",
+  PROPERTY: "🏠",
+  VEHICLE: "🚗",
+  CREDIT_CARD: "💳",
+  LOAN: "📋",
+  MORTGAGE: "🏡",
+  OTHER: "📁",
+};
+
+const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  BANK: { bg: "bg-blue-50 dark:bg-blue-950/30", border: "border-blue-200 dark:border-blue-800", text: "text-blue-700 dark:text-blue-300" },
+  BROKERAGE: { bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800", text: "text-emerald-700 dark:text-emerald-300" },
+  CRYPTO_WALLET: { bg: "bg-amber-50 dark:bg-amber-950/30", border: "border-amber-200 dark:border-amber-800", text: "text-amber-700 dark:text-amber-300" },
+  PROPERTY: { bg: "bg-violet-50 dark:bg-violet-950/30", border: "border-violet-200 dark:border-violet-800", text: "text-violet-700 dark:text-violet-300" },
+  VEHICLE: { bg: "bg-slate-50 dark:bg-slate-950/30", border: "border-slate-200 dark:border-slate-800", text: "text-slate-700 dark:text-slate-300" },
+  CREDIT_CARD: { bg: "bg-red-50 dark:bg-red-950/30", border: "border-red-200 dark:border-red-800", text: "text-red-700 dark:text-red-300" },
+  LOAN: { bg: "bg-orange-50 dark:bg-orange-950/30", border: "border-orange-200 dark:border-orange-800", text: "text-orange-700 dark:text-orange-300" },
+  MORTGAGE: { bg: "bg-pink-50 dark:bg-pink-950/30", border: "border-pink-200 dark:border-pink-800", text: "text-pink-700 dark:text-pink-300" },
+  OTHER: { bg: "bg-gray-50 dark:bg-gray-950/30", border: "border-gray-200 dark:border-gray-800", text: "text-gray-700 dark:text-gray-300" },
+};
+
+// Preferred display order
+const CATEGORY_ORDER = [
+  "BANK",
+  "BROKERAGE",
+  "CRYPTO_WALLET",
+  "PROPERTY",
+  "VEHICLE",
+  "CREDIT_CARD",
+  "LOAN",
+  "MORTGAGE",
+  "OTHER",
+];
+
+function getAccountValue(
+  account: SerializedAccountWithHoldings,
+  priceMap: Record<string, number>,
+  ratesMap: Record<string, number>
+): number {
+  const isBrokerage =
+    account.category === "BROKERAGE" || account.category === "CRYPTO_WALLET";
+  const holdingsValue = account.holdings.reduce((sum, h) => {
+    const price = (priceMap || {})[h.symbol] ?? 0;
+    const hc = h.currency || "USD";
+    const rate =
+      hc === account.currency
+        ? 1
+        : ratesMap[`${hc}_${account.currency}`] ?? 1;
+    return sum + price * h.quantity * rate;
+  }, 0);
+  return isBrokerage ? holdingsValue : account.cashBalance;
+}
+
 export function AccountsList({
   accounts,
   priceMap,
   ratesMap = {},
+  baseCurrency = "USD",
 }: {
   accounts: SerializedAccountWithHoldings[];
   priceMap: Record<string, number>;
   ratesMap?: Record<string, number>;
+  baseCurrency?: string;
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    () => {
+      // Start with all categories expanded
+      const all = new Set<string>();
+      for (const a of accounts) {
+        all.add(`${a.type}_${a.category}`);
+      }
+      return all;
+    }
+  );
 
   const assets = accounts.filter((a) => a.type === "ASSET");
   const liabilities = accounts.filter((a) => a.type === "LIABILITY");
+
+  // Group accounts by category
+  const assetsByCategory = useMemo(() => {
+    const grouped: Record<string, SerializedAccountWithHoldings[]> = {};
+    for (const account of assets) {
+      const cat = account.category;
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(account);
+    }
+    // Sort by preferred order
+    const sorted = CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0);
+    return sorted.map((cat) => ({ category: cat, accounts: grouped[cat] }));
+  }, [assets]);
+
+  const liabilitiesByCategory = useMemo(() => {
+    const grouped: Record<string, SerializedAccountWithHoldings[]> = {};
+    for (const account of liabilities) {
+      const cat = account.category;
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(account);
+    }
+    const sorted = CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0);
+    return sorted.map((cat) => ({ category: cat, accounts: grouped[cat] }));
+  }, [liabilities]);
+
+  function toggleCategory(type: string, category: string) {
+    const key = `${type}_${category}`;
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -77,7 +179,9 @@ export function AccountsList({
         body: JSON.stringify({ ids: Array.from(selected) }),
       });
       if (!res.ok) throw new Error();
-      toast.success(`Deleted ${selected.size} account${selected.size !== 1 ? "s" : ""}`);
+      toast.success(
+        `Deleted ${selected.size} account${selected.size !== 1 ? "s" : ""}`
+      );
       setSelected(new Set());
       router.refresh();
     } catch {
@@ -122,7 +226,9 @@ export function AccountsList({
                 : `Delete (${selected.size})`}
             </Button>
           )}
-          <Button variant="outline" onClick={() => setShowQuickAdd(true)}>Add Item</Button>
+          <Button variant="outline" onClick={() => setShowQuickAdd(true)}>
+            Add Item
+          </Button>
           <Button onClick={() => setShowForm(true)}>Add Account</Button>
         </div>
       </div>
@@ -133,18 +239,25 @@ export function AccountsList({
         </p>
       )}
 
-      {assets.length > 0 && (
+      {assetsByCategory.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-green-700">Assets</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {assets.map((account) => (
-              <AccountCard
-                key={account.id}
-                account={account}
+          <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">
+            Assets
+          </h3>
+          <div className="space-y-3">
+            {assetsByCategory.map(({ category, accounts: catAccounts }) => (
+              <CategorySection
+                key={`asset_${category}`}
+                type="ASSET"
+                category={category}
+                accounts={catAccounts}
                 priceMap={priceMap}
                 ratesMap={ratesMap}
-                isSelected={selected.has(account.id)}
-                onToggle={() => toggleSelect(account.id)}
+                baseCurrency={baseCurrency}
+                isExpanded={expandedCategories.has(`ASSET_${category}`)}
+                onToggleExpand={() => toggleCategory("ASSET", category)}
+                selected={selected}
+                onToggleSelect={toggleSelect}
                 isSelecting={isSelecting}
               />
             ))}
@@ -152,32 +265,174 @@ export function AccountsList({
         </div>
       )}
 
-      {liabilities.length > 0 && (
+      {liabilitiesByCategory.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-red-700">Liabilities</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {liabilities.map((account) => (
-              <AccountCard
-                key={account.id}
-                account={account}
-                priceMap={priceMap}
-                ratesMap={ratesMap}
-                isSelected={selected.has(account.id)}
-                onToggle={() => toggleSelect(account.id)}
-                isSelecting={isSelecting}
-              />
-            ))}
+          <h3 className="text-lg font-semibold text-red-700 dark:text-red-400">
+            Liabilities
+          </h3>
+          <div className="space-y-3">
+            {liabilitiesByCategory.map(
+              ({ category, accounts: catAccounts }) => (
+                <CategorySection
+                  key={`liability_${category}`}
+                  type="LIABILITY"
+                  category={category}
+                  accounts={catAccounts}
+                  priceMap={priceMap}
+                  ratesMap={ratesMap}
+                  baseCurrency={baseCurrency}
+                  isExpanded={expandedCategories.has(
+                    `LIABILITY_${category}`
+                  )}
+                  onToggleExpand={() =>
+                    toggleCategory("LIABILITY", category)
+                  }
+                  selected={selected}
+                  onToggleSelect={toggleSelect}
+                  isSelecting={isSelecting}
+                />
+              )
+            )}
           </div>
         </div>
       )}
 
       <AccountForm open={showForm} onClose={() => setShowForm(false)} />
-      <QuickAddHolding open={showQuickAdd} onClose={() => setShowQuickAdd(false)} accounts={accounts} />
+      <QuickAddHolding
+        open={showQuickAdd}
+        onClose={() => setShowQuickAdd(false)}
+        accounts={accounts}
+      />
     </div>
   );
 }
 
-function AccountCard({
+function CategorySection({
+  type,
+  category,
+  accounts,
+  priceMap,
+  ratesMap,
+  baseCurrency,
+  isExpanded,
+  onToggleExpand,
+  selected,
+  onToggleSelect,
+  isSelecting,
+}: {
+  type: string;
+  category: string;
+  accounts: SerializedAccountWithHoldings[];
+  priceMap: Record<string, number>;
+  ratesMap: Record<string, number>;
+  baseCurrency: string;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  selected: Set<string>;
+  onToggleSelect: (id: string) => void;
+  isSelecting: boolean;
+}) {
+  const colors = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.OTHER;
+  const icon = CATEGORY_ICONS[category] ?? "📁";
+  const label = CATEGORY_LABELS[category] ?? category;
+
+  // Calculate total in base currency for this category
+  const totalInBaseCurrency = useMemo(() => {
+    let total = 0;
+    for (const account of accounts) {
+      const value = getAccountValue(account, priceMap, ratesMap);
+      const rate =
+        account.currency === baseCurrency
+          ? 1
+          : ratesMap[`${account.currency}_${baseCurrency}`] ?? 1;
+      total += value * rate;
+    }
+    return total;
+  }, [accounts, priceMap, ratesMap, baseCurrency]);
+
+  const totalHoldings = accounts.reduce(
+    (sum, a) => sum + a.holdings.length,
+    0
+  );
+
+  return (
+    <div
+      className={`rounded-xl border overflow-hidden transition-all duration-300 ${colors.border} ${
+        isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"
+      }`}
+    >
+      {/* Category Header — always visible */}
+      <button
+        onClick={onToggleExpand}
+        className={`w-full text-left px-5 py-4 flex items-center justify-between transition-colors ${colors.bg} hover:brightness-95 dark:hover:brightness-110`}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-2xl flex-shrink-0">{icon}</span>
+          <div className="min-w-0">
+            <p className={`font-semibold text-base ${colors.text}`}>
+              {label}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {accounts.length} account{accounts.length !== 1 ? "s" : ""}
+              {totalHoldings > 0 && (
+                <span>
+                  {" · "}
+                  {totalHoldings} holding{totalHoldings !== 1 ? "s" : ""}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="text-right">
+            <p className="text-sm font-bold tabular-nums">
+              {formatCurrency(totalInBaseCurrency, baseCurrency)}
+            </p>
+          </div>
+          <svg
+            className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${
+              isExpanded ? "rotate-180" : ""
+            }`}
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="m19.5 8.25-7.5 7.5-7.5-7.5"
+            />
+          </svg>
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      <div
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="px-4 py-4 space-y-3 bg-background/50">
+          {/* Individual account cards with holdings */}
+          {accounts.map((account) => (
+            <AccountCardWithHoldings
+              key={account.id}
+              account={account}
+              priceMap={priceMap}
+              ratesMap={ratesMap}
+              isSelected={selected.has(account.id)}
+              onToggle={() => onToggleSelect(account.id)}
+              isSelecting={isSelecting}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AccountCardWithHoldings({
   account,
   priceMap,
   ratesMap,
@@ -192,15 +447,19 @@ function AccountCard({
   onToggle: () => void;
   isSelecting: boolean;
 }) {
-  const isBrokerage = account.category === "BROKERAGE" || account.category === "CRYPTO_WALLET";
-  const holdingsValue = account.holdings.reduce((sum, h) => {
-    const price = (priceMap || {})[h.symbol] ?? 0;
-    const hc = h.currency || "USD";
-    const rate = hc === account.currency ? 1 : ratesMap[`${hc}_${account.currency}`] ?? 1;
-    return sum + price * h.quantity * rate;
-  }, 0);
-  const displayValue = isBrokerage ? holdingsValue : account.cashBalance;
+  const displayValue = getAccountValue(account, priceMap, ratesMap);
   const displayCurrency = account.currency;
+
+  const holdingsWithValue = account.holdings.map((h) => {
+    const price = priceMap[h.symbol] ?? null;
+    const hc = h.currency || "USD";
+    const rate =
+      hc === account.currency
+        ? 1
+        : ratesMap[`${hc}_${account.currency}`] ?? 1;
+    const marketValue = price !== null ? price * h.quantity * rate : null;
+    return { ...h, currentPrice: price, marketValue };
+  });
 
   return (
     <div className="relative group">
@@ -210,10 +469,7 @@ function AccountCard({
         }`}
         onClick={(e) => e.preventDefault()}
       >
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={onToggle}
-        />
+        <Checkbox checked={isSelected} onCheckedChange={onToggle} />
       </div>
       <Link href={`/accounts/${account.id}`}>
         <Card
@@ -221,27 +477,67 @@ function AccountCard({
             isSelected ? "ring-2 ring-primary" : ""
           }`}
         >
-          <CardContent className="pt-6">
+          <CardContent className="pt-5 pb-4">
+            {/* Account header */}
             <div className="flex items-start justify-between">
-              <div className={isSelecting ? "pl-6" : "group-hover:pl-6 transition-all"}>
+              <div
+                className={
+                  isSelecting
+                    ? "pl-6"
+                    : "group-hover:pl-6 transition-all"
+                }
+              >
                 <p className="font-semibold">{account.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {CATEGORY_LABELS[account.category] ?? account.category}
-                </p>
               </div>
-              <Badge variant="secondary">{displayCurrency}</Badge>
-            </div>
-            <div className={`mt-4 ${isSelecting ? "pl-6" : "group-hover:pl-6 transition-all"}`}>
-              <p className="text-xl font-bold">
-                {formatCurrency(displayValue, displayCurrency)}
-              </p>
-              {account.holdings.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {account.holdings.length} holding
-                  {account.holdings.length !== 1 ? "s" : ""}
+              <div className="flex items-center gap-2">
+                <p className="text-lg font-bold tabular-nums">
+                  {formatCurrency(displayValue, displayCurrency)}
                 </p>
-              )}
+                <Badge variant="secondary">{displayCurrency}</Badge>
+              </div>
             </div>
+
+            {/* Holdings list */}
+            {holdingsWithValue.length > 0 && (
+              <div
+                className={`mt-3 ${
+                  isSelecting
+                    ? "pl-6"
+                    : "group-hover:pl-6 transition-all"
+                }`}
+              >
+                <div className="space-y-1.5">
+                  {holdingsWithValue.map((h) => (
+                    <div
+                      key={h.id}
+                      className="flex items-center justify-between py-1.5 border-t border-border/40 first:border-t-0"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xs font-mono font-medium text-muted-foreground w-16 flex-shrink-0 truncate">
+                          {h.symbol}
+                        </span>
+                        <span className="text-sm truncate">{h.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0 text-right">
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {h.assetType === "CRYPTO"
+                            ? h.quantity.toFixed(4)
+                            : h.quantity.toFixed(2)}
+                        </span>
+                        <span className="text-sm font-medium tabular-nums w-20 text-right">
+                          {h.marketValue !== null
+                            ? formatCurrency(
+                                h.marketValue,
+                                account.currency
+                              )
+                            : "—"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </Link>
