@@ -421,6 +421,7 @@ function CategorySection({
               account={account}
               priceMap={priceMap}
               ratesMap={ratesMap}
+              baseCurrency={baseCurrency}
               isSelected={selected.has(account.id)}
               onToggle={() => onToggleSelect(account.id)}
               isSelecting={isSelecting}
@@ -436,6 +437,7 @@ function AccountCardWithHoldings({
   account,
   priceMap,
   ratesMap,
+  baseCurrency,
   isSelected,
   onToggle,
   isSelecting,
@@ -443,12 +445,15 @@ function AccountCardWithHoldings({
   account: SerializedAccountWithHoldings;
   priceMap: Record<string, number>;
   ratesMap: Record<string, number>;
+  baseCurrency: string;
   isSelected: boolean;
   onToggle: () => void;
   isSelecting: boolean;
 }) {
   const displayValue = getAccountValue(account, priceMap, ratesMap);
   const displayCurrency = account.currency;
+  const rate = displayCurrency === baseCurrency ? 1 : (ratesMap[`${displayCurrency}_${baseCurrency}`] ?? 1);
+  const convertedValue = displayValue * rate;
 
   const holdingsWithValue = account.holdings.map((h) => {
     const price = priceMap[h.symbol] ?? null;
@@ -489,11 +494,21 @@ function AccountCardWithHoldings({
               >
                 <p className="font-semibold">{account.name}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <p className="text-lg font-bold tabular-nums">
-                  {formatCurrency(displayValue, displayCurrency)}
-                </p>
-                <Badge variant="secondary">{displayCurrency}</Badge>
+              <div className="flex flex-col items-end">
+                <div className="flex items-center gap-2">
+                  <p className="text-lg font-bold tabular-nums text-foreground">
+                    {formatCurrency(convertedValue, baseCurrency)}
+                  </p>
+                  <Badge variant="secondary" className="bg-foreground text-background hover:bg-foreground/90">{baseCurrency}</Badge>
+                </div>
+                {displayCurrency !== baseCurrency && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-sm font-medium text-muted-foreground tabular-nums">
+                      {formatCurrency(displayValue, displayCurrency)}
+                    </p>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">{displayCurrency}</span>
+                  </div>
+                )}
               </div>
             </div>
 
