@@ -17,21 +17,36 @@ export default async function DashboardPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-      <NetWorthCard summary={summary} />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TrendChart
-          snapshots={snapshots.map((s) => ({
-            date: s.date.toISOString().split("T")[0],
-            netWorth: Number(s.netWorth),
-            totalAssets: Number(s.totalAssets),
-            totalLiabilities: Number(s.totalLiabilities),
-          }))}
-        />
-        <AllocationChart summary={summary} />
+    <div className="space-y-8 animate-fade-in">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent animate-slide-in-bottom">
+          Dashboard
+        </h2>
       </div>
-      <AccountsSummary summary={summary} />
+      
+      <div className="animate-slide-in-bottom delay-100">
+        <NetWorthCard summary={summary} />
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-in-bottom delay-200 duration-500">
+        <div className="glass rounded-xl p-1 card-gradient transition-all hover:shadow-lg">
+          <TrendChart
+            snapshots={snapshots.map((s) => ({
+              date: s.date.toISOString().split("T")[0],
+              netWorth: Number(s.netWorth),
+              totalAssets: Number(s.totalAssets),
+              totalLiabilities: Number(s.totalLiabilities),
+            }))}
+          />
+        </div>
+        <div className="glass rounded-xl p-1 card-gradient transition-all hover:shadow-lg">
+          <AllocationChart summary={summary} />
+        </div>
+      </div>
+      
+      <div className="animate-slide-in-bottom delay-300 duration-500 glass rounded-xl p-1 card-gradient transition-all hover:shadow-lg">
+        <AccountsSummary summary={summary} />
+      </div>
     </div>
   );
 }

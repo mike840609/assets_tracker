@@ -3,28 +3,24 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Copy, LayoutDashboard, Settings } from "lucide-react";
+import { motion } from "framer-motion";
 
 const navItems = [
   {
     label: "Dashboard",
     href: "/",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-    ),
+    icon: LayoutDashboard,
   },
   {
     label: "Accounts",
     href: "/accounts",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
-    ),
+    icon: Copy,
   },
   {
     label: "Settings",
     href: "/settings",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-    ),
+    icon: Settings,
   },
 ];
 
@@ -32,34 +28,49 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
+    <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar/50 backdrop-blur-xl text-sidebar-foreground glass z-10 shrink-0">
       <div className="p-6">
-        <h1 className="text-xl font-bold tracking-tight">Asset Tracker</h1>
-        <p className="text-sm text-muted-foreground mt-1">Net Worth Dashboard</p>
+        <h1 className="text-xl font-bold tracking-tight bg-gradient-to-br from-primary to-chart-3 bg-clip-text text-transparent">Asset Tracker</h1>
+        <p className="text-sm text-muted-foreground mt-1 font-medium">Net Worth Dashboard</p>
       </div>
-      <nav className="flex-1 px-3 space-y-1">
+      <nav className="flex-1 px-3 space-y-2 mt-4">
         {navItems.map((item) => {
           const isActive =
             item.href === "/"
               ? pathname === "/"
               : pathname.startsWith(item.href);
+          const Icon = item.icon;
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300",
                 isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                  ? "text-primary shadow-sm"
+                  : "text-sidebar-foreground/70 hover:text-foreground"
               )}
             >
-              {item.icon}
-              {item.label}
+              {isActive && (
+                <motion.div
+                  layoutId="sidebar-active"
+                  className="absolute inset-0 rounded-lg bg-primary/10 border border-primary/20"
+                  transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                />
+              )}
+              {/* Subtle hover effect for non-active items */}
+              {!isActive && (
+                <div className="absolute inset-0 rounded-lg bg-sidebar-accent/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
+              )}
+              <Icon className={cn("z-10 h-5 w-5 transition-transform duration-300", isActive ? "scale-110" : "group-hover:scale-110")} />
+              <span className="z-10">{item.label}</span>
             </Link>
           );
         })}
       </nav>
+      <div className="p-4 border-t border-border/50 bg-background/30 backdrop-blur-md">
+        <div className="text-xs text-muted-foreground text-center">Version 0.1.0</div>
+      </div>
     </aside>
   );
 }
@@ -68,25 +79,32 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-background flex justify-around py-2">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/50 flex justify-around py-3 pb-safe">
       {navItems.map((item) => {
         const isActive =
           item.href === "/"
             ? pathname === "/"
             : pathname.startsWith(item.href);
+        const Icon = item.icon;
         return (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-col items-center gap-1 px-3 py-1 text-xs transition-colors",
+              "relative flex flex-col items-center gap-1.5 px-3 py-1 text-xs transition-colors group",
               isActive
-                ? "text-primary"
-                : "text-muted-foreground hover:text-primary"
+                ? "text-primary font-medium"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
-            {item.icon}
-            {item.label}
+            {isActive && (
+              <motion.div
+                layoutId="mobile-active"
+                className="absolute inset-x-2 -top-3 h-0.5 bg-primary rounded-b-full shadow-[0_2px_8px_rgba(0,0,0,0.5)] shadow-primary/50"
+              />
+            )}
+            <Icon className={cn("h-5 w-5 transition-transform duration-300", isActive ? "scale-110" : "group-hover:scale-110")} />
+            <span>{item.label}</span>
           </Link>
         );
       })}
