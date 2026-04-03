@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { AccountsList } from "@/components/accounts/accounts-list";
 import { serializeAccountWithHoldings } from "@/lib/types";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
+import { getExchangeRate } from "@/lib/services/exchange-rate-service";
 
 export const dynamic = "force-dynamic";
 
@@ -54,10 +55,23 @@ export default async function AccountsPage() {
 
   const serialized = accounts.map(serializeAccountWithHoldings);
 
+  const ratesMap: Record<string, number> = {};
+  for (const account of serialized) {
+    for (const holding of account.holdings) {
+      const hc = holding.currency || "USD";
+      if (hc !== account.currency) {
+        const key = `${hc}_${account.currency}`;
+        if (ratesMap[key] === undefined) {
+          ratesMap[key] = await getExchangeRate(hc, account.currency);
+        }
+      }
+    }
+  }
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold tracking-tight">Accounts</h2>
-      <AccountsList accounts={serialized} priceMap={priceMap} />
+      <AccountsList accounts={serialized} priceMap={priceMap} ratesMap={ratesMap} />
     </div>
   );
 }

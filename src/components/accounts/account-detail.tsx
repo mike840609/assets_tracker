@@ -23,8 +23,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatNumber } from "@/lib/currencies";
 import { HoldingForm } from "./holding-form";
+import { EditHoldingDialog } from "./edit-holding-dialog";
 import { toast } from "sonner";
-import type { SerializedAccountWithHoldings } from "@/lib/types";
+import type { SerializedAccountWithHoldings, SerializedHolding } from "@/lib/types";
 
 const CATEGORY_LABELS: Record<string, string> = {
   BANK: "Bank",
@@ -41,19 +42,24 @@ const CATEGORY_LABELS: Record<string, string> = {
 export function AccountDetail({
   account,
   priceMap,
+  ratesMap = {},
 }: {
   account: SerializedAccountWithHoldings;
   priceMap: Record<string, number>;
+  ratesMap?: Record<string, number>;
 }) {
   const router = useRouter();
   const [editingBalance, setEditingBalance] = useState(false);
   const [balance, setBalance] = useState(String(account.cashBalance));
   const [showHoldingForm, setShowHoldingForm] = useState(false);
+  const [editingHolding, setEditingHolding] = useState<SerializedHolding | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const holdingsWithValue = account.holdings.map((h) => {
     const price = priceMap[h.symbol] ?? null;
-    const marketValue = price !== null ? price * h.quantity : null;
+    const hc = h.currency || "USD";
+    const rate = hc === account.currency ? 1 : ratesMap[`${hc}_${account.currency}`] ?? 1;
+    const marketValue = price !== null ? price * h.quantity * rate : null;
     return { ...h, currentPrice: price, marketValue };
   });
 
@@ -253,7 +259,7 @@ export function AccountDetail({
                       <Badge variant="outline">{h.currency || "USD"}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatNumber(h.quantity, h.assetType === "CRYPTO" ? 6 : 2)}
+                      {formatNumber(h.quantity, h.assetType === "CRYPTO" ? 7 : 2)}
                     </TableCell>
                     <TableCell className="text-right">
                       {h.currentPrice !== null
@@ -262,7 +268,7 @@ export function AccountDetail({
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {h.marketValue !== null
-                        ? formatCurrency(h.marketValue, h.currency || "USD")
+                        ? formatCurrency(h.marketValue, account.currency)
                         : "—"}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
@@ -276,6 +282,11 @@ export function AccountDetail({
                           ...
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => setEditingHolding(h)}
+                          >
+                            Edit
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={() => deleteHolding(h.id)}
@@ -298,6 +309,15 @@ export function AccountDetail({
         onClose={() => setShowHoldingForm(false)}
         accountId={account.id}
       />
+
+      {editingHolding && (
+        <EditHoldingDialog
+          open={!!editingHolding}
+          onClose={() => setEditingHolding(null)}
+          holding={editingHolding}
+          accountId={account.id}
+        />
+      )}
     </>
   );
 }

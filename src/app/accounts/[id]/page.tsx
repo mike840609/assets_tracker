@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
 import { serializeAccountWithHoldings } from "@/lib/types";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
+import { getExchangeRate } from "@/lib/services/exchange-rate-service";
 
 export const dynamic = "force-dynamic";
 
@@ -60,9 +61,20 @@ export default async function AccountDetailPage({
 
   const serialized = serializeAccountWithHoldings(account);
 
+  const ratesMap: Record<string, number> = {};
+  for (const holding of serialized.holdings) {
+    const hc = holding.currency || "USD";
+    if (hc !== serialized.currency) {
+      const key = `${hc}_${serialized.currency}`;
+      if (ratesMap[key] === undefined) {
+        ratesMap[key] = await getExchangeRate(hc, serialized.currency);
+      }
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <AccountDetail account={serialized} priceMap={priceMap} />
+      <AccountDetail account={serialized} priceMap={priceMap} ratesMap={ratesMap} />
     </div>
   );
 }
