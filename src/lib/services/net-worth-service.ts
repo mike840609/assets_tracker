@@ -16,7 +16,7 @@ export async function getNetWorthSummary(
 
   const prices = await prisma.priceCache.findMany();
   const priceMap = Object.fromEntries(
-    prices.map((p) => [p.symbol, Number(p.price)])
+    prices.map((p) => [p.symbol, { price: Number(p.price), currency: p.currency }])
   );
 
   let totalAssets = 0;
@@ -28,7 +28,8 @@ export async function getNetWorthSummary(
     const cashBalance = Number(account.cashBalance);
 
     const holdingsWithPrice: HoldingWithPrice[] = account.holdings.map((h) => {
-      const currentPrice = priceMap[h.symbol] ?? null;
+      const cached = priceMap[h.symbol];
+      const currentPrice = cached?.price ?? null;
       const quantity = Number(h.quantity);
       const marketValue =
         currentPrice !== null ? currentPrice * quantity : null;
@@ -39,19 +40,24 @@ export async function getNetWorthSummary(
       };
     });
 
+    // Convert each holding's market value from its native currency to base currency
+    let holdingsInBase = 0;
+    for (const h of holdingsWithPrice) {
+      if (h.marketValue !== null) {
+        // Use the holding's currency, fall back to PriceCache currency, then USD
+        const holdingCurrency = h.currency || priceMap[h.symbol]?.currency || "USD";
+        const holdingRate = await getExchangeRate(holdingCurrency, baseCurrency);
+        holdingsInBase += h.marketValue * holdingRate;
+      }
+    }
+
+    const cashInBase = cashBalance * rate;
+    const totalValue = cashInBase + holdingsInBase;
+
     const holdingsValue = holdingsWithPrice.reduce(
       (sum, h) => sum + (h.marketValue ?? 0),
       0
     );
-
-    // Cash balance is in account's currency, holdings value is in USD (from price feeds)
-    const cashInBase = cashBalance * rate;
-    const holdingsInBase =
-      account.currency === "USD"
-        ? holdingsValue * rate
-        : holdingsValue * (await getExchangeRate("USD", baseCurrency));
-
-    const totalValue = cashInBase + holdingsInBase;
 
     accountsWithValue.push({
       ...serializeAccount(account),
@@ -75,3 +81,4 @@ export async function getNetWorthSummary(
     accounts: accountsWithValue,
   };
 }
+

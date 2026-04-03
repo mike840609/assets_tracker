@@ -25,8 +25,8 @@ const COINGECKO_IDS: Record<string, string> = {
 
 export async function fetchStockPrices(
   symbols: string[]
-): Promise<Map<string, number>> {
-  const results = new Map<string, number>();
+): Promise<Map<string, { price: number; currency: string }>> {
+  const results = new Map<string, { price: number; currency: string }>();
   if (symbols.length === 0) return results;
 
   try {
@@ -37,7 +37,10 @@ export async function fetchStockPrices(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const q = quote as any;
         if (q.regularMarketPrice && q.symbol) {
-          results.set(q.symbol, q.regularMarketPrice);
+          results.set(q.symbol, {
+            price: q.regularMarketPrice,
+            currency: q.currency || "USD",
+          });
         }
       } catch {
         console.error(`Failed to fetch price for ${symbol}`);
@@ -52,8 +55,8 @@ export async function fetchStockPrices(
 
 export async function fetchCryptoPrices(
   symbols: string[]
-): Promise<Map<string, number>> {
-  const results = new Map<string, number>();
+): Promise<Map<string, { price: number; currency: string }>> {
+  const results = new Map<string, { price: number; currency: string }>();
   if (symbols.length === 0) return results;
 
   const ids = symbols
@@ -72,7 +75,7 @@ export async function fetchCryptoPrices(
     for (const symbol of symbols) {
       const geckoId = COINGECKO_IDS[symbol] || symbol.toLowerCase();
       if (data[geckoId]?.usd) {
-        results.set(symbol, data[geckoId].usd);
+        results.set(symbol, { price: data[geckoId].usd, currency: "USD" });
       }
     }
   } catch (error) {
@@ -109,12 +112,12 @@ export async function refreshAllPrices(): Promise<{
 
   const allPrices = new Map([...stockPrices, ...cryptoPrices]);
 
-  for (const [symbol, price] of allPrices) {
+  for (const [symbol, { price, currency }] of allPrices) {
     try {
       await prisma.priceCache.upsert({
         where: { symbol },
-        update: { price, updatedAt: new Date() },
-        create: { symbol, price, currency: "USD" },
+        update: { price, currency, updatedAt: new Date() },
+        create: { symbol, price, currency },
       });
       updated++;
     } catch (error) {
@@ -124,3 +127,4 @@ export async function refreshAllPrices(): Promise<{
 
   return { updated, errors };
 }
+

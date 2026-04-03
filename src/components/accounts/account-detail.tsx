@@ -184,7 +184,7 @@ export function AccountDetail({
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">Holdings Value</p>
             <p className="text-2xl font-bold mt-1">
-              {formatCurrency(totalHoldingsValue, "USD")}
+              {formatCurrency(totalHoldingsValue, account.currency)}
             </p>
           </CardContent>
         </Card>
@@ -209,6 +209,7 @@ export function AccountDetail({
                   <TableHead>Symbol</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Ccy</TableHead>
                   <TableHead className="text-right">Qty</TableHead>
                   <TableHead className="text-right">Price</TableHead>
                   <TableHead className="text-right">Value</TableHead>
@@ -226,17 +227,20 @@ export function AccountDetail({
                     <TableCell>
                       <Badge variant="secondary">{h.assetType}</Badge>
                     </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{h.currency || "USD"}</Badge>
+                    </TableCell>
                     <TableCell className="text-right">
                       {formatNumber(h.quantity, h.assetType === "CRYPTO" ? 6 : 2)}
                     </TableCell>
                     <TableCell className="text-right">
                       {h.currentPrice !== null
-                        ? formatCurrency(h.currentPrice, "USD")
+                        ? formatCurrency(h.currentPrice, h.currency || "USD")
                         : "—"}
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {h.marketValue !== null
-                        ? formatCurrency(h.marketValue, "USD")
+                        ? formatCurrency(h.marketValue, h.currency || "USD")
                         : "—"}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">

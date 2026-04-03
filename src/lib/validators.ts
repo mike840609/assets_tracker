@@ -28,6 +28,7 @@ export const createHoldingSchema = z.object({
     .transform((s) => s.toUpperCase()),
   name: z.string().min(1, "Name is required").max(100),
   quantity: z.number().positive("Quantity must be positive"),
+  currency: z.string().length(3).default("USD"),
   assetType: z.enum(["STOCK", "ETF", "CRYPTO", "MUTUAL_FUND", "BOND", "OTHER"]),
 });
 
