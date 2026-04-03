@@ -61,7 +61,8 @@ export function AccountDetail({
     (sum, h) => sum + (h.marketValue ?? 0),
     0
   );
-  const totalValue = account.cashBalance + totalHoldingsValue;
+  const isBrokerage = account.category === "BROKERAGE" || account.category === "CRYPTO_WALLET";
+  const totalValue = isBrokerage ? totalHoldingsValue : account.cashBalance + totalHoldingsValue;
 
   async function saveBalance() {
     try {
@@ -137,58 +138,79 @@ export function AccountDetail({
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Total Value</p>
-            <p className="text-2xl font-bold mt-1">
-              {formatCurrency(totalValue, account.currency)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Cash Balance</p>
-            {editingBalance ? (
-              <div className="flex gap-2 mt-1">
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={balance}
-                  onChange={(e) => setBalance(e.target.value)}
-                  className="h-8"
-                  autoFocus
-                />
-                <Button size="sm" onClick={saveBalance}>
-                  Save
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setEditingBalance(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            ) : (
-              <p
-                className="text-2xl font-bold mt-1 cursor-pointer hover:text-primary"
-                onClick={() => setEditingBalance(true)}
-              >
-                {formatCurrency(account.cashBalance, account.currency)}
+      {isBrokerage ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">Market Value</p>
+              <p className="text-2xl font-bold mt-1">
+                {formatCurrency(totalHoldingsValue, account.currency)}
               </p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Holdings Value</p>
-            <p className="text-2xl font-bold mt-1">
-              {formatCurrency(totalHoldingsValue, "USD")}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">Holdings</p>
+              <p className="text-2xl font-bold mt-1">
+                {holdingsWithValue.length}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">Total Value</p>
+              <p className="text-2xl font-bold mt-1">
+                {formatCurrency(totalValue, account.currency)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">Cash Balance</p>
+              {editingBalance ? (
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={balance}
+                    onChange={(e) => setBalance(e.target.value)}
+                    className="h-8"
+                    autoFocus
+                  />
+                  <Button size="sm" onClick={saveBalance}>
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setEditingBalance(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <p
+                  className="text-2xl font-bold mt-1 cursor-pointer hover:text-primary"
+                  onClick={() => setEditingBalance(true)}
+                >
+                  {formatCurrency(account.cashBalance, account.currency)}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">Holdings Value</p>
+              <p className="text-2xl font-bold mt-1">
+                {formatCurrency(totalHoldingsValue, account.currency)}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -209,6 +231,7 @@ export function AccountDetail({
                   <TableHead>Symbol</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Ccy</TableHead>
                   <TableHead className="text-right">Qty</TableHead>
                   <TableHead className="text-right">Price</TableHead>
                   <TableHead className="text-right">Value</TableHead>
@@ -226,17 +249,20 @@ export function AccountDetail({
                     <TableCell>
                       <Badge variant="secondary">{h.assetType}</Badge>
                     </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{h.currency || "USD"}</Badge>
+                    </TableCell>
                     <TableCell className="text-right">
                       {formatNumber(h.quantity, h.assetType === "CRYPTO" ? 6 : 2)}
                     </TableCell>
                     <TableCell className="text-right">
                       {h.currentPrice !== null
-                        ? formatCurrency(h.currentPrice, "USD")
+                        ? formatCurrency(h.currentPrice, h.currency || "USD")
                         : "—"}
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {h.marketValue !== null
-                        ? formatCurrency(h.marketValue, "USD")
+                        ? formatCurrency(h.marketValue, h.currency || "USD")
                         : "—"}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">

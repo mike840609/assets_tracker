@@ -38,12 +38,12 @@ export function formatCurrency(
       style: "currency",
       currency: currencyCode,
       notation: compact && Math.abs(amount) >= 10000 ? "compact" : "standard",
-      minimumFractionDigits: currencyCode === "JPY" || currencyCode === "KRW" ? 0 : 2,
-      maximumFractionDigits: currencyCode === "JPY" || currencyCode === "KRW" ? 0 : 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     });
     return formatter.format(amount);
   } catch {
-    return `${currencyCode} ${amount.toFixed(2)}`;
+    return `${currencyCode} ${Math.round(amount)}`;
   }
 }
 

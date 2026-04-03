@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createHoldingSchema, updateHoldingSchema } from "@/lib/validators";
+import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
 
 export async function GET(
   _request: Request,
@@ -31,6 +32,27 @@ export async function POST(
       ...parsed.data,
     },
   });
+
+  // Auto-fetch the market price for the newly added holding
+  try {
+    const isCrypto = parsed.data.assetType === "CRYPTO";
+    const priceResults = isCrypto
+      ? await fetchCryptoPrices([holding.symbol])
+      : await fetchStockPrices([holding.symbol]);
+
+    const result = priceResults.get(holding.symbol);
+    if (result) {
+      await prisma.priceCache.upsert({
+        where: { symbol: holding.symbol },
+        update: { price: result.price, currency: result.currency, updatedAt: new Date() },
+        create: { symbol: holding.symbol, price: result.price, currency: result.currency },
+      });
+    }
+  } catch (error) {
+    // Non-blocking: if price fetch fails, holding is still created
+    console.error(`Failed to fetch price for ${holding.symbol}:`, error);
+  }
+
   return NextResponse.json(holding, { status: 201 });
 }
 

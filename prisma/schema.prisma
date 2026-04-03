@@ -59,6 +59,7 @@ model Holding {
   symbol    String
   name      String
   quantity  Decimal          @db.Decimal(18, 8)
+  currency  String           @default("USD")
   assetType HoldingAssetType
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt

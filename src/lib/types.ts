@@ -10,6 +10,7 @@ export type SerializedAccount = Omit<Account, "cashBalance" | "createdAt" | "upd
 
 export type SerializedHolding = Omit<Holding, "quantity" | "createdAt" | "updatedAt"> & {
   quantity: number;
+  currency: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -67,6 +68,7 @@ export function serializeHolding(holding: Holding): SerializedHolding {
     symbol: holding.symbol,
     name: holding.name,
     quantity: Number(holding.quantity),
+    currency: holding.currency,
     assetType: holding.assetType,
     createdAt: holding.createdAt.toISOString(),
     updatedAt: holding.updatedAt.toISOString(),

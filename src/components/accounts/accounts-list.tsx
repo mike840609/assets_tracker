@@ -26,8 +26,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export function AccountsList({
   accounts,
+  priceMap,
 }: {
   accounts: SerializedAccountWithHoldings[];
+  priceMap: Record<string, number>;
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
@@ -134,6 +136,7 @@ export function AccountsList({
               <AccountCard
                 key={account.id}
                 account={account}
+                priceMap={priceMap}
                 isSelected={selected.has(account.id)}
                 onToggle={() => toggleSelect(account.id)}
                 isSelecting={isSelecting}
@@ -151,6 +154,7 @@ export function AccountsList({
               <AccountCard
                 key={account.id}
                 account={account}
+                priceMap={priceMap}
                 isSelected={selected.has(account.id)}
                 onToggle={() => toggleSelect(account.id)}
                 isSelecting={isSelecting}
@@ -167,15 +171,25 @@ export function AccountsList({
 
 function AccountCard({
   account,
+  priceMap,
   isSelected,
   onToggle,
   isSelecting,
 }: {
   account: SerializedAccountWithHoldings;
+  priceMap: Record<string, number>;
   isSelected: boolean;
   onToggle: () => void;
   isSelecting: boolean;
 }) {
+  const isBrokerage = account.category === "BROKERAGE" || account.category === "CRYPTO_WALLET";
+  const holdingsValue = account.holdings.reduce((sum, h) => {
+    const price = (priceMap || {})[h.symbol] ?? 0;
+    return sum + price * h.quantity;
+  }, 0);
+  const displayValue = isBrokerage ? holdingsValue : account.cashBalance;
+  const displayCurrency = account.currency;
+
   return (
     <div className="relative group">
       <div
@@ -203,15 +217,15 @@ function AccountCard({
                   {CATEGORY_LABELS[account.category] ?? account.category}
                 </p>
               </div>
-              <Badge variant="secondary">{account.currency}</Badge>
+              <Badge variant="secondary">{displayCurrency}</Badge>
             </div>
             <div className={`mt-4 ${isSelecting ? "pl-6" : "group-hover:pl-6 transition-all"}`}>
               <p className="text-xl font-bold">
-                {formatCurrency(account.cashBalance, account.currency)}
+                {formatCurrency(displayValue, displayCurrency)}
               </p>
               {account.holdings.length > 0 && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  + {account.holdings.length} holding
+                  {account.holdings.length} holding
                   {account.holdings.length !== 1 ? "s" : ""}
                 </p>
               )}
