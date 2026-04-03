@@ -43,10 +43,12 @@ import { toast } from "sonner";
 const TYPE_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
   BUY: { label: "Buy", variant: "default" },
   SELL: { label: "Sell", variant: "destructive" },
+  DEPOSIT: { label: "Deposit", variant: "default" },
+  WITHDRAWAL: { label: "Withdrawal", variant: "destructive" },
   EDIT: { label: "Edit", variant: "secondary" },
 };
 
-export function TransactionHistory({ accountId }: { accountId: string }) {
+export function TransactionHistory({ accountId, isBank, refreshTrigger }: { accountId: string; isBank?: boolean; refreshTrigger?: number }) {
   const router = useRouter();
   const [transactions, setTransactions] = useState<SerializedTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +81,7 @@ export function TransactionHistory({ accountId }: { accountId: string }) {
 
   useEffect(() => {
     fetchTransactions();
-  }, [fetchTransactions]);
+  }, [fetchTransactions, refreshTrigger]);
 
   const handleEditClick = (t: SerializedTransaction) => {
     setEditingTx(t);
@@ -160,7 +162,7 @@ export function TransactionHistory({ accountId }: { accountId: string }) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-base font-medium">Transaction History</CardTitle>
       </CardHeader>
       <CardContent>
@@ -173,9 +175,9 @@ export function TransactionHistory({ accountId }: { accountId: string }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Symbol</TableHead>
+                <TableHead>{isBank ? "" : "Symbol"}</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
+                <TableHead className="text-right">{isBank ? "Amount" : "Quantity"}</TableHead>
                 <TableHead>Note</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
@@ -196,7 +198,7 @@ export function TransactionHistory({ accountId }: { accountId: string }) {
                       })}
                     </TableCell>
                     <TableCell className="font-mono font-medium">
-                      {t.holding?.symbol ?? "—"}
+                      {(t as any).isCash ? "" : (t.holding?.symbol ?? "—")}
                     </TableCell>
                     <TableCell>
                       <Badge variant={typeInfo.variant}>{typeInfo.label}</Badge>
@@ -250,9 +252,19 @@ export function TransactionHistory({ accountId }: { accountId: string }) {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="BUY">Buy</SelectItem>
-                    <SelectItem value="SELL">Sell</SelectItem>
-                    <SelectItem value="EDIT">Edit</SelectItem>
+                    {(editingTx as any)?.isCash ? (
+                      <>
+                        <SelectItem value="DEPOSIT">Deposit</SelectItem>
+                        <SelectItem value="WITHDRAWAL">Withdrawal</SelectItem>
+                        <SelectItem value="EDIT">Edit</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value="BUY">Buy</SelectItem>
+                        <SelectItem value="SELL">Sell</SelectItem>
+                        <SelectItem value="EDIT">Edit</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -303,8 +315,10 @@ export function TransactionHistory({ accountId }: { accountId: string }) {
             <DialogTitle>Delete Transaction</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>Are you sure you want to delete this transaction for <strong>{deletingTx?.holding?.symbol}</strong>?</p>
-            <p className="text-sm text-muted-foreground mt-2">This will also affect your total holding quantity for this asset.</p>
+            <p>Are you sure you want to delete this transaction{(deletingTx as any)?.isCash ? "?" : ` for ${deletingTx?.holding?.symbol}?`}</p>
+            {!(deletingTx as any)?.isCash && (
+              <p className="text-sm text-muted-foreground mt-2">This will also affect your total holding quantity for this asset.</p>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeletingTx(null)}>Cancel</Button>

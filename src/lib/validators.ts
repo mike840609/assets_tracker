@@ -58,3 +58,17 @@ export const updateTransactionSchema = z.object({
   note: z.string().optional().nullable(),
   createdAt: z.string().optional(), // Using string for ISO dates
 });
+
+export const createCashTransactionSchema = z.object({
+  type: z.enum(["DEPOSIT", "WITHDRAWAL", "EDIT"]),
+  amount: z.number(),
+  note: z.string().optional().nullable(),
+});
+
+export const updateCashTransactionSchema = z.object({
+  id: z.string(),
+  type: z.enum(["DEPOSIT", "WITHDRAWAL", "EDIT"]).optional(),
+  amount: z.number().optional(),
+  note: z.string().optional().nullable(),
+  createdAt: z.string().optional(),
+});

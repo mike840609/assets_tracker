@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AccountsPage() {
   const accounts = await prisma.account.findMany({
-    include: { holdings: true },
+    include: { holdings: { where: { quantity: { gt: 0 } } } },
     orderBy: { createdAt: "desc" },
   });
 

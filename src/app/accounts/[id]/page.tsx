@@ -15,7 +15,7 @@ export default async function AccountDetailPage({
   const { id } = await params;
   const account = await prisma.account.findUnique({
     where: { id },
-    include: { holdings: true },
+    include: { holdings: { where: { quantity: { gt: 0 } } } },
   });
 
   if (!account) notFound();

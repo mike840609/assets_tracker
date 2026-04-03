@@ -7,7 +7,7 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const transactions = await prisma.holdingTransaction.findMany({
+  const holdingTx = await prisma.holdingTransaction.findMany({
     where: {
       holding: { accountId: id },
     },
@@ -19,5 +19,17 @@ export async function GET(
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(transactions);
+  const cashTx = await prisma.cashTransaction.findMany({
+    where: {
+      accountId: id,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const merged = [
+    ...holdingTx.map(t => ({ ...t, isCash: false })),
+    ...cashTx.map(t => ({ ...t, isCash: true, quantity: t.amount })), // Map amount to quantity for unified UI handling
+  ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+  return NextResponse.json(merged);
 }

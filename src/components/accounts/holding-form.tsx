@@ -35,10 +35,12 @@ export function HoldingForm({
   open,
   onClose,
   accountId,
+  onSuccess,
 }: {
   open: boolean;
   onClose: () => void;
   accountId: string;
+  onSuccess?: () => void;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -146,6 +148,7 @@ export function HoldingForm({
 
       toast.success(`Added ${symbol}`);
       handleClose();
+      if (onSuccess) onSuccess();
       router.refresh();
     } catch (error) {
       toast.error(
