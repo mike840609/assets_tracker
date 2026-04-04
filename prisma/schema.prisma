@@ -8,7 +8,9 @@ datasource db {
 }
 
 model Setting {
-  id           String   @id @default("app_settings")
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   baseCurrency String   @default("USD")
   updatedAt    DateTime @updatedAt
 }
@@ -31,17 +33,19 @@ enum AccountCategory {
 }
 
 model Account {
-  id          String          @id @default(cuid())
-  name        String
-  type        AccountType
-  category    AccountCategory
-  currency    String          @default("USD")
-  cashBalance Decimal         @default(0) @db.Decimal(18, 8)
-  isActive    Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  holdings          Holding[]
-  cashTransactions  CashTransaction[]
+  id               String            @id @default(cuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  type             AccountType
+  category         AccountCategory
+  currency         String            @default("USD")
+  cashBalance      Decimal           @default(0) @db.Decimal(18, 8)
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  holdings         Holding[]
+  cashTransactions CashTransaction[]
 }
 
 enum HoldingAssetType {
@@ -120,6 +124,8 @@ model ExchangeRate {
 
 model NetWorthSnapshot {
   id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date             DateTime @db.Date
   totalAssets      Decimal  @db.Decimal(18, 2)
   totalLiabilities Decimal  @db.Decimal(18, 2)
@@ -128,5 +134,55 @@ model NetWorthSnapshot {
   breakdown        Json?
   createdAt        DateTime @default(now())
 
-  @@unique([date, baseCurrency])
+  @@unique([userId, date, baseCurrency])
+}
+
+model User {
+  id            String        @id @default(cuid())
+  name          String?
+  email         String?       @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      AuthAccount[]
+  sessions      Session[]
+
+  appSettings Setting?
+  appAccounts Account[]
+  snapshots   NetWorthSnapshot[]
+}
+
+model AuthAccount {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("auth_accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }

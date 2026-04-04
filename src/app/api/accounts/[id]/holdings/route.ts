@@ -2,12 +2,19 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createHoldingSchema, updateHoldingSchema } from "@/lib/validators";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
+import { auth } from "@/auth";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
+  const account = await prisma.account.findUnique({ where: { id, userId: session.user.id } });
+  if (!account) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   const holdings = await prisma.holding.findMany({
     where: { accountId: id, quantity: { gt: 0 } },
     orderBy: { symbol: "asc" },

@@ -5,7 +5,12 @@
       "Bash(kill 87750)",
       "Bash(npx prisma:*)",
       "Bash(ls /Users/chuntsai/Projects/asset_tracker/src/app/api/accounts/[id]/)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create --title 'Dark mode refinement, performance, mobile nav auto-hide, and chart fixes' --body ':*)"
     ]
   }
 }

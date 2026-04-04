@@ -7,10 +7,11 @@ import {
 import type { AccountWithValue, NetWorthSummary, HoldingWithPrice } from "@/lib/types";
 
 export async function getNetWorthSummary(
+  userId: string,
   baseCurrency: string
 ): Promise<NetWorthSummary> {
   const accounts = await prisma.account.findMany({
-    where: { isActive: true },
+    where: { userId, isActive: true },
     include: { holdings: { where: { quantity: { gt: 0 } } } },
   });
 

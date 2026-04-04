@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AccountsList } from "@/components/accounts/accounts-list";
 import { serializeAccountWithHoldings } from "@/lib/types";
@@ -7,7 +8,12 @@ import { getExchangeRate } from "@/lib/services/exchange-rate-service";
 export const dynamic = "force-dynamic";
 
 export default async function AccountsPage() {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const userId = session.user.id;
+
   const accounts = await prisma.account.findMany({
+    where: { userId },
     include: { holdings: { where: { quantity: { gt: 0 } } } },
     orderBy: { createdAt: "desc" },
   });
@@ -56,7 +62,7 @@ export default async function AccountsPage() {
   const serialized = accounts.map(serializeAccountWithHoldings);
 
   // Fetch base currency from settings
-  const settings = await prisma.setting.findUnique({ where: { id: "app_settings" } });
+  const settings = await prisma.setting.findUnique({ where: { userId } });
   const baseCurrency = settings?.baseCurrency ?? "USD";
 
   const ratesMap: Record<string, number> = {};

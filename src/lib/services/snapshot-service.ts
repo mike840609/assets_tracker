@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getNetWorthSummary } from "./net-worth-service";
 
-export async function createSnapshot(baseCurrency: string) {
-  const summary = await getNetWorthSummary(baseCurrency);
+export async function createSnapshot(userId: string, baseCurrency: string) {
+  const summary = await getNetWorthSummary(userId, baseCurrency);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -12,7 +12,8 @@ export async function createSnapshot(baseCurrency: string) {
 
   const snapshot = await prisma.netWorthSnapshot.upsert({
     where: {
-      date_baseCurrency: {
+      userId_date_baseCurrency: {
+        userId,
         date: today,
         baseCurrency,
       },
@@ -24,6 +25,7 @@ export async function createSnapshot(baseCurrency: string) {
       breakdown,
     },
     create: {
+      userId,
       date: today,
       totalAssets: summary.totalAssets,
       totalLiabilities: summary.totalLiabilities,
