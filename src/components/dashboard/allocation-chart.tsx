@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import type { NetWorthSummary } from "@/lib/types";
@@ -22,6 +23,9 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const assetAccounts = summary.accounts.filter((a) => a.type === "ASSET");
 
   const categoryMap = new Map<string, number>();
@@ -51,6 +55,8 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
           <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
             No assets to display.
           </div>
+        ) : !mounted ? (
+          <div className="h-[250px]" />
         ) : (
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>

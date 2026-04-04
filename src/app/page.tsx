@@ -47,7 +47,7 @@ export default async function DashboardPage() {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-in-bottom delay-200 duration-500">
-        <div className="glass rounded-xl p-1 card-gradient transition-all hover:shadow-lg">
+        <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
           <TrendChart
             baseCurrency={baseCurrency}
             snapshots={snapshots.map((s) => ({
@@ -58,12 +58,12 @@ export default async function DashboardPage() {
             }))}
           />
         </div>
-        <div className="glass rounded-xl p-1 card-gradient transition-all hover:shadow-lg">
+        <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
           <AllocationChart summary={summary} />
         </div>
       </div>
-      
-      <div className="animate-slide-in-bottom delay-300 duration-500 glass rounded-xl p-1 card-gradient transition-all hover:shadow-lg">
+
+      <div className="animate-slide-in-bottom delay-300 duration-500 bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
         <AccountsSummary summary={summary} />
       </div>
     </div>
