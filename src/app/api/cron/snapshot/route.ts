@@ -14,17 +14,23 @@ export async function GET(request: Request) {
     console.log("Cron: Refreshing prices...");
     await refreshAllPrices();
 
-    // 2. Get the current base currency from settings
-    const settings = await prisma.setting.findFirst();
-    const baseCurrency = settings?.baseCurrency ?? "USD";
+    // 2. Get all users and their settings
+    const users = await prisma.user.findMany({
+      include: { appSettings: true },
+    });
 
-    // 3. Create the snapshot
-    console.log(`Cron: Creating snapshot for ${baseCurrency}...`);
-    const snapshot = await createSnapshot(baseCurrency);
+    // 3. Create snapshots for each user
+    const results = [];
+    for (const user of users) {
+      const baseCurrency = user.appSettings?.baseCurrency ?? "USD";
+      console.log(`Cron: Creating snapshot for user ${user.id} (${baseCurrency})...`);
+      const snapshot = await createSnapshot(user.id, baseCurrency);
+      results.push(snapshot.id);
+    }
 
     return NextResponse.json({
       success: true,
-      snapshotId: snapshot.id,
+      snapshotIds: results,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

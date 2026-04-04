@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updateAccountSchema } from "@/lib/validators";
+import { auth } from "@/auth";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const account = await prisma.account.findUnique({
-    where: { id },
+    where: { id, userId: session.user.id },
     include: { holdings: { where: { quantity: { gt: 0 } } } },
   });
   if (!account) {
@@ -21,6 +25,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const body = await request.json();
   const parsed = updateAccountSchema.safeParse(body);
@@ -28,7 +35,7 @@ export async function PATCH(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const existingAccount = await prisma.account.findUnique({ where: { id } });
+  const existingAccount = await prisma.account.findUnique({ where: { id, userId: session.user.id } });
   if (!existingAccount) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -50,7 +57,7 @@ export async function PATCH(
   }
 
   const account = await prisma.account.update({
-    where: { id },
+    where: { id, userId: session.user.id },
     data: parsed.data,
   });
   return NextResponse.json(account);
@@ -60,7 +67,10 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
-  await prisma.account.delete({ where: { id } });
+  await prisma.account.delete({ where: { id, userId: session.user.id } });
   return NextResponse.json({ ok: true });
 }

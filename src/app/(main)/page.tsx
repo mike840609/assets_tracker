@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NetWorthCard } from "@/components/dashboard/net-worth-card";
 import { TrendChart } from "@/components/dashboard/trend-chart";
@@ -9,11 +10,18 @@ import { getNetWorthSummary } from "@/lib/services/net-worth-service";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const settings = await prisma.setting.findFirst();
-  const baseCurrency = settings?.baseCurrency ?? "USD";
-  const summary = await getNetWorthSummary(baseCurrency);
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const userId = session.user.id;
+
+  let settings = await prisma.setting.findUnique({ where: { userId } });
+  if (!settings) {
+    settings = await prisma.setting.create({ data: { userId, baseCurrency: "USD" } });
+  }
+  const baseCurrency = settings.baseCurrency;
+  const summary = await getNetWorthSummary(userId, baseCurrency);
   const snapshots = await prisma.netWorthSnapshot.findMany({
-    where: { baseCurrency },
+    where: { userId, baseCurrency },
     orderBy: { date: "asc" },
   });
 

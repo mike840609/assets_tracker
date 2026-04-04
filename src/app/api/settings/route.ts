@@ -1,17 +1,26 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updateSettingsSchema } from "@/lib/validators";
+import { auth } from "@/auth";
 
 export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
+
   const settings = await prisma.setting.upsert({
-    where: { id: "app_settings" },
+    where: { userId },
     update: {},
-    create: { id: "app_settings", baseCurrency: "USD" },
+    create: { userId, baseCurrency: "USD" },
   });
   return NextResponse.json(settings);
 }
 
 export async function PATCH(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
+
   const body = await request.json();
   const parsed = updateSettingsSchema.safeParse(body);
   if (!parsed.success) {
@@ -19,9 +28,9 @@ export async function PATCH(request: Request) {
   }
 
   const settings = await prisma.setting.upsert({
-    where: { id: "app_settings" },
+    where: { userId },
     update: { baseCurrency: parsed.data.baseCurrency },
-    create: { id: "app_settings", baseCurrency: parsed.data.baseCurrency },
+    create: { userId, baseCurrency: parsed.data.baseCurrency },
   });
   return NextResponse.json(settings);
 }

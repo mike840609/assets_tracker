@@ -61,6 +61,7 @@ export type SerializedTransaction = Omit<HoldingTransaction, "quantity" | "creat
 export function serializeAccount(account: Account): SerializedAccount {
   return {
     id: account.id,
+    userId: account.userId,
     name: account.name,
     type: account.type,
     category: account.category,
