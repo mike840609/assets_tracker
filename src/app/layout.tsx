@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -47,6 +48,7 @@ export default function RootLayout({
         >
           {children}
           <Toaster />
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>
