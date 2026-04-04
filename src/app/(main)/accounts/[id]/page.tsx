@@ -3,9 +3,7 @@ import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
 import { serializeAccountWithHoldings } from "@/lib/types";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
-import { getAllExchangeRates, resolveRate, getExchangeRate } from "@/lib/services/exchange-rate-service";
-
-export const revalidate = 60;
+import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
 
 export default async function AccountDetailPage({
   params,
@@ -89,16 +87,8 @@ export default async function AccountDetailPage({
     }
   }
 
-  // Fetch any truly missing rates in parallel
-  if (missingPairs.length > 0) {
-    const uniquePairs = [...new Set(missingPairs.map(([f, t]) => `${f}_${t}`))];
-    await Promise.all(
-      uniquePairs.map(async (key) => {
-        const [from, to] = key.split("_");
-        ratesMap[key] = await getExchangeRate(from, to);
-      })
-    );
-  }
+  // Resolve missing pairs with timeout (defaults to 1 if APIs are slow)
+  await resolveMissingRates(missingPairs, ratesMap);
 
   return (
     <div className="space-y-6">

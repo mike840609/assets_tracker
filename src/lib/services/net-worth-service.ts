@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getAllExchangeRates, resolveRate, getExchangeRate } from "./exchange-rate-service";
+import { getAllExchangeRates, resolveRate, resolveMissingRates } from "./exchange-rate-service";
 import {
   serializeAccount,
   serializeHolding,
@@ -75,15 +75,17 @@ export async function getNetWorthSummary(
     } as AccountWithValue & { _cashBalance: number; _currency: string });
   }
 
-  // Fetch any truly missing rates in parallel (should be rare after initial setup)
+  // Fetch any truly missing rates with timeout (defaults to 1 if APIs are slow)
   if (missingPairs.size > 0) {
-    await Promise.all(
-      [...missingPairs].map(async (key) => {
-        const [from, to] = key.split("_");
-        const rate = await getExchangeRate(from, to);
-        allRatesMap.set(key, rate);
-      })
-    );
+    const pairs: Array<[string, string]> = [...missingPairs].map((key) => {
+      const [from, to] = key.split("_");
+      return [from, to];
+    });
+    const resolvedMap: Record<string, number> = {};
+    await resolveMissingRates(pairs, resolvedMap);
+    for (const [key, rate] of Object.entries(resolvedMap)) {
+      allRatesMap.set(key, rate);
+    }
   }
 
   // Helper using the now-complete map

@@ -1,20 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "@/components/settings/settings-form";
-import { auth, signOut } from "@/auth";
+import { signOut } from "@/auth";
+import { getSession } from "@/lib/auth-session";
 import { Button } from "@/components/ui/button";
 
-export const revalidate = 60;
-
 export default async function SettingsPage() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
 
-  const settings = await prisma.setting.upsert({
-    where: { userId },
-    update: {},
-    create: { userId, baseCurrency: "USD" },
-  });
+  // Use findUnique (read-only, no write lock) instead of upsert
+  let settings = await prisma.setting.findUnique({ where: { userId } });
+  if (!settings) {
+    settings = await prisma.setting.create({ data: { userId, baseCurrency: "USD" } });
+  }
 
   return (
     <div className="space-y-6">
