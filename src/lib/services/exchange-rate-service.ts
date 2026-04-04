@@ -1,6 +1,9 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 
+/** How long to wait (ms) before giving up on external rate APIs */
+const RATE_FETCH_TIMEOUT_MS = 2000;
+
 /**
  * Load ALL cached exchange rates from the database in a single query.
  * Returns a lookup map keyed by "FROM_TO" (e.g. "USD_TWD").
@@ -32,110 +35,174 @@ export function resolveRate(
   return undefined;
 }
 
+/**
+ * Race a promise against a timeout. Returns fallback if the promise
+ * doesn't resolve within `ms` milliseconds.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
+/**
+ * Fetch exchange rates from external APIs with a timeout guard.
+ * Returns {} if all sources fail or timeout.
+ */
 export async function fetchExchangeRates(
   base: string
 ): Promise<Record<string, number>> {
-  // Try frankfurter.app first (ECB data, reliable but limited currencies)
-  try {
-    const res = await fetch(
-      `https://api.frankfurter.app/latest?from=${base}`,
-      { next: { revalidate: 0 } }
-    );
-    if (res.ok) {
-      const data = await res.json();
-      if (data.rates && Object.keys(data.rates).length > 0) {
-        return data.rates;
+  const doFetch = async (): Promise<Record<string, number>> => {
+    // Try frankfurter.app first (ECB data, reliable but limited currencies)
+    try {
+      const res = await fetch(
+        `https://api.frankfurter.app/latest?from=${base}`,
+        { next: { revalidate: 0 } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.rates && Object.keys(data.rates).length > 0) {
+          return data.rates;
+        }
       }
+    } catch {
+      // Fall through to backup
     }
-  } catch {
-    // Fall through to backup
-  }
 
-  // Fallback: open.er-api.com (supports 150+ currencies including TWD)
-  try {
-    const res = await fetch(
-      `https://open.er-api.com/v6/latest/${base}`,
-      { next: { revalidate: 0 } }
-    );
-    const data = await res.json();
-    if (data.result === "success" && data.rates) {
-      const { [base]: _, ...rates } = data.rates;
-      return rates;
+    // Fallback: open.er-api.com (supports 150+ currencies including TWD)
+    try {
+      const res = await fetch(
+        `https://open.er-api.com/v6/latest/${base}`,
+        { next: { revalidate: 0 } }
+      );
+      const data = await res.json();
+      if (data.result === "success" && data.rates) {
+        const { [base]: _, ...rates } = data.rates;
+        return rates;
+      }
+    } catch (error) {
+      console.error("Failed to fetch exchange rates:", error);
     }
-  } catch (error) {
-    console.error("Failed to fetch exchange rates:", error);
-  }
 
-  return {};
+    return {};
+  };
+
+  return withTimeout(doFetch(), RATE_FETCH_TIMEOUT_MS, {});
 }
 
+/**
+ * Refresh all exchange rates for a base currency and persist to DB.
+ * Uses batched concurrent upserts instead of sequential writes.
+ */
 export async function refreshExchangeRates(baseCurrency: string): Promise<number> {
-  // fetchExchangeRates already tries frankfurter.app then open.er-api.com
   const rates = await fetchExchangeRates(baseCurrency);
-  let updated = 0;
+  const entries = Object.entries(rates);
 
-  for (const [toCurrency, rate] of Object.entries(rates)) {
-    const id = `${baseCurrency}_${toCurrency}`;
-    await prisma.exchangeRate.upsert({
-      where: { id },
-      update: { rate, updatedAt: new Date() },
-      create: {
-        id,
-        fromCurrency: baseCurrency,
-        toCurrency,
-        rate,
-      },
-    });
-    updated++;
-  }
+  if (entries.length === 0) return 0;
 
-  return updated;
+  // Batch upserts concurrently (instead of sequential loop)
+  await Promise.all(
+    entries.map(([toCurrency, rate]) => {
+      const id = `${baseCurrency}_${toCurrency}`;
+      return prisma.exchangeRate.upsert({
+        where: { id },
+        update: { rate, updatedAt: new Date() },
+        create: { id, fromCurrency: baseCurrency, toCurrency, rate },
+      });
+    })
+  );
+
+  return entries.length;
 }
 
+/**
+ * Get a single exchange rate, checking the DB first then fetching live
+ * as a last resort. Wrapped with a timeout so external API failures
+ * don't block page rendering — falls back to 1 if timed out.
+ * Memoised per server render via React cache().
+ */
 export const getExchangeRate = cache(async function getExchangeRate(
   from: string,
   to: string
 ): Promise<number> {
   if (from === to) return 1;
 
+  // Fast path: check DB (no timeout needed for DB queries)
   const cached = await prisma.exchangeRate.findFirst({
     where: { fromCurrency: from, toCurrency: to },
   });
-
   if (cached) return Number(cached.rate);
 
-  // Try inverse
   const inverse = await prisma.exchangeRate.findFirst({
     where: { fromCurrency: to, toCurrency: from },
   });
-
   if (inverse) return 1 / Number(inverse.rate);
 
-  // Fetch live
-  const rates = await fetchExchangeRates(from);
-  if (rates[to]) {
-    const id = `${from}_${to}`;
-    await prisma.exchangeRate.upsert({
-      where: { id },
-      update: { rate: rates[to], updatedAt: new Date() },
-      create: { id, fromCurrency: from, toCurrency: to, rate: rates[to] },
-    });
-    return rates[to];
-  }
+  // Slow path: fetch from external APIs (with timeout)
+  const fetchAndStore = async (): Promise<number> => {
+    const rates = await fetchExchangeRates(from);
+    if (rates[to]) {
+      const id = `${from}_${to}`;
+      // Fire-and-forget: don't block on persisting
+      prisma.exchangeRate.upsert({
+        where: { id },
+        update: { rate: rates[to], updatedAt: new Date() },
+        create: { id, fromCurrency: from, toCurrency: to, rate: rates[to] },
+      }).catch(() => {});
+      return rates[to];
+    }
 
-  // Try fetching the reverse direction
-  const reverseRates = await fetchExchangeRates(to);
-  if (reverseRates[from]) {
-    const rate = 1 / reverseRates[from];
-    const id = `${from}_${to}`;
-    await prisma.exchangeRate.upsert({
-      where: { id },
-      update: { rate, updatedAt: new Date() },
-      create: { id, fromCurrency: from, toCurrency: to, rate },
-    });
-    return rate;
-  }
+    const reverseRates = await fetchExchangeRates(to);
+    if (reverseRates[from]) {
+      const rate = 1 / reverseRates[from];
+      const id = `${from}_${to}`;
+      prisma.exchangeRate.upsert({
+        where: { id },
+        update: { rate, updatedAt: new Date() },
+        create: { id, fromCurrency: from, toCurrency: to, rate },
+      }).catch(() => {});
+      return rate;
+    }
 
-  console.warn(`No exchange rate found for ${from} -> ${to}, defaulting to 1`);
-  return 1;
+    return 1; // No rate found
+  };
+
+  const rate = await withTimeout(fetchAndStore(), RATE_FETCH_TIMEOUT_MS, 1);
+  if (rate === 1 && from !== to) {
+    console.warn(`Exchange rate ${from} → ${to} timed out or unavailable, defaulting to 1`);
+  }
+  return rate;
 });
+
+/**
+ * Resolve missing exchange rate pairs with a global timeout.
+ * If resolution takes too long, unresolved pairs default to 1.
+ * Use this in page components instead of calling getExchangeRate directly.
+ */
+export async function resolveMissingRates(
+  missingPairs: Array<[string, string]>,
+  ratesMap: Record<string, number>,
+  timeoutMs: number = RATE_FETCH_TIMEOUT_MS
+): Promise<void> {
+  if (missingPairs.length === 0) return;
+
+  const uniquePairs = [...new Set(missingPairs.map(([f, t]) => `${f}_${t}`))];
+
+  const resolveAll = Promise.all(
+    uniquePairs.map(async (key) => {
+      const [from, to] = key.split("_");
+      ratesMap[key] = await getExchangeRate(from, to);
+    })
+  );
+
+  await withTimeout(resolveAll, timeoutMs, undefined);
+
+  // Fill any still-unresolved pairs with 1
+  for (const key of uniquePairs) {
+    if (ratesMap[key] === undefined) {
+      ratesMap[key] = 1;
+      console.warn(`Exchange rate ${key} unresolved after timeout, defaulting to 1`);
+    }
+  }
+}

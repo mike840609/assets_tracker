@@ -8,11 +8,10 @@ export async function GET() {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const userId = session.user.id;
 
-  const settings = await prisma.setting.upsert({
-    where: { userId },
-    update: {},
-    create: { userId, baseCurrency: "USD" },
-  });
+  let settings = await prisma.setting.findUnique({ where: { userId } });
+  if (!settings) {
+    settings = await prisma.setting.create({ data: { userId, baseCurrency: "USD" } });
+  }
   return NextResponse.json(settings);
 }
 

@@ -1,14 +1,12 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { AccountsList } from "@/components/accounts/accounts-list";
 import { serializeAccountWithHoldings } from "@/lib/types";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
-import { getAllExchangeRates, resolveRate, getExchangeRate } from "@/lib/services/exchange-rate-service";
-
-export const revalidate = 60; // Cache page for 60s instead of force-dynamic
+import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
 
 export default async function AccountsPage() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
 
@@ -103,16 +101,8 @@ export default async function AccountsPage() {
     }
   }
 
-  // Only hit the network for truly missing pairs (should be rare)
-  if (missingPairs.length > 0) {
-    const uniquePairs = [...new Set(missingPairs.map(([f, t]) => `${f}_${t}`))];
-    await Promise.all(
-      uniquePairs.map(async (key) => {
-        const [from, to] = key.split("_");
-        ratesMap[key] = await getExchangeRate(from, to);
-      })
-    );
-  }
+  // Resolve missing pairs with timeout (defaults to 1 if APIs are slow)
+  await resolveMissingRates(missingPairs, ratesMap);
 
   return (
     <div className="space-y-6">

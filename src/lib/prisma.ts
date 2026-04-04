@@ -1,18 +1,19 @@
 import { PrismaClient } from "@/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaNeon } from "@prisma/adapter-neon";
+import { neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
+
+// Enable WebSocket connections for non-edge environments (Node.js)
+neonConfig.webSocketConstructor = ws;
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 function createPrismaClient() {
-  // Replace weaker SSL modes with verify-full to silence the pg v8 deprecation
-  // warning and stay forward-compatible with pg v9.
-  const url = process.env.DATABASE_URL!.replace(
-    /sslmode=(prefer|require|verify-ca)/,
-    "sslmode=verify-full"
-  );
-  const adapter = new PrismaPg(url);
+  const connectionString = process.env.DATABASE_URL!;
+  // PrismaNeon takes a PoolConfig and manages the pool internally
+  const adapter = new PrismaNeon({ connectionString });
   return new PrismaClient({ adapter });
 }
 
