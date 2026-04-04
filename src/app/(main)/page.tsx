@@ -14,6 +14,14 @@ export default async function DashboardPage() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
 
+  const dbUser = await prisma.user.findUnique({ where: { id: userId } });
+  if (!dbUser) {
+    // If the JWT session exists but the database user was deleted (e.g., local database wipe)
+    // we want to gracefully redirect them to sign out so the orphaned cookie is cleared.
+    const { redirect } = await import("next/navigation");
+    redirect("/api/auth/signout");
+  }
+
   let settings = await prisma.setting.findUnique({ where: { userId } });
   if (!settings) {
     settings = await prisma.setting.create({ data: { userId, baseCurrency: "USD" } });
