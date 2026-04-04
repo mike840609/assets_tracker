@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Copy, LayoutDashboard, Settings } from "lucide-react";
 import { motion } from "framer-motion";
@@ -29,7 +30,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar/50 backdrop-blur-xl text-sidebar-foreground glass z-10 shrink-0">
+    <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar/80 backdrop-blur-md text-sidebar-foreground glass z-10 shrink-0">
       <div className="p-6">
         <h1 className="text-xl font-bold tracking-tight bg-gradient-to-br from-primary to-chart-3 bg-clip-text text-transparent">Asset Tracker</h1>
         <p className="text-sm text-muted-foreground mt-1 font-medium">Net Worth Dashboard</p>
@@ -81,9 +82,51 @@ export function Sidebar() {
 
 export function MobileNav() {
   const pathname = usePathname();
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    const main = document.querySelector("main");
+    let lastY = 0;
+    let touchStartY = 0;
+
+    // Read scroll position from whichever container is actually scrolling.
+    // On most browsers main scrolls; on iOS Safari the viewport may scroll instead.
+    const getScrollY = () => Math.max(main?.scrollTop ?? 0, window.scrollY);
+
+    const onScroll = () => {
+      const y = getScrollY();
+      if (y > lastY && y > 64) setHidden(true);
+      else if (y < lastY) setHidden(false);
+      lastY = y;
+    };
+
+    // Touch direction — fallback for browsers that throttle scroll events
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      const delta = touchStartY - e.touches[0].clientY;
+      if (delta > 10) setHidden(true);
+      else if (delta < -10) setHidden(false);
+    };
+
+    main?.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    return () => {
+      main?.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+    };
+  }, []);
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/50 flex justify-around py-3 pb-safe">
+    <nav className={cn(
+      "md:hidden fixed bottom-0 left-0 right-0 z-50 glass backdrop-blur-md border-t border-border/50 flex justify-around py-3 pb-safe transition-transform duration-300 ease-in-out",
+      hidden && "translate-y-full"
+    )}>
       {navItems.map((item) => {
         const isActive =
           item.href === "/"

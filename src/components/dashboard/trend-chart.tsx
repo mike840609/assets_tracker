@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   LineChart,
@@ -31,6 +31,8 @@ const ranges = [
 
 export function TrendChart({ snapshots, baseCurrency = "USD" }: { snapshots: SnapshotData[]; baseCurrency?: string }) {
   const [range, setRange] = useState("All");
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const selectedRange = ranges.find((r) => r.label === range)!;
   const cutoff = new Date();
@@ -66,6 +68,8 @@ export function TrendChart({ snapshots, baseCurrency = "USD" }: { snapshots: Sna
           <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
             No snapshot data yet. Add accounts and take a snapshot.
           </div>
+        ) : !mounted ? (
+          <div className="h-[250px]" />
         ) : (
           <ResponsiveContainer width="100%" height={250}>
             <AreaChart data={filtered}>
@@ -99,8 +103,8 @@ export function TrendChart({ snapshots, baseCurrency = "USD" }: { snapshots: Sna
               <Area
                 type="monotone"
                 dataKey="netWorth"
-                stroke="hsl(var(--primary))"
-                fill="hsl(var(--primary))"
+                stroke="var(--primary)"
+                fill="var(--primary)"
                 fillOpacity={0.1}
                 strokeWidth={2}
                 name="Net Worth"
