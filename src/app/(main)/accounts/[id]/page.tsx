@@ -4,8 +4,6 @@ import { AccountDetail } from "@/components/accounts/account-detail";
 import { serializeAccountWithHoldings } from "@/lib/types";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
-import { Suspense } from "react";
-import { AccountDetailSkeleton } from "@/components/accounts/account-detail-skeleton";
 
 export default async function AccountDetailPage({
   params,
@@ -14,32 +12,16 @@ export default async function AccountDetailPage({
 }) {
   const { id } = await params;
 
-  // We fetch the basic account info first to check if it exists
-  const account = await prisma.account.findUnique({
-    where: { id },
-    include: { holdings: { where: { quantity: { gt: 0 } } } },
-  });
+  // Parallel: load account + all exchange rates at once
+  const [account, allRatesMap] = await Promise.all([
+    prisma.account.findUnique({
+      where: { id },
+      include: { holdings: { where: { quantity: { gt: 0 } } } },
+    }),
+    getAllExchangeRates(),
+  ]);
 
   if (!account) notFound();
-
-  const serialized = serializeAccountWithHoldings(account);
-
-  return (
-    <Suspense fallback={<AccountDetailSkeleton />}>
-      <AccountDetailDataLoader account={serialized} id={id} />
-    </Suspense>
-  );
-}
-
-async function AccountDetailDataLoader({ 
-  account, 
-  id 
-}: { 
-  account: ReturnType<typeof serializeAccountWithHoldings>;
-  id: string;
-}) {
-  // Parallel: all exchange rates
-  const allRatesMap = await getAllExchangeRates();
 
   // Get cached prices
   const cachedPrices = await prisma.priceCache.findMany({
@@ -48,7 +30,7 @@ async function AccountDetailDataLoader({
     },
   });
 
-  const priceMap: Record<string, number> = Object.fromEntries(
+  const priceMap = Object.fromEntries(
     cachedPrices.map((p) => [p.symbol, Number(p.price)])
   );
 
@@ -84,20 +66,22 @@ async function AccountDetailDataLoader({
     await Promise.all(upsertPromises);
   }
 
+  const serialized = serializeAccountWithHoldings(account);
+
   // Build rates map from bulk-loaded data
   const ratesMap: Record<string, number> = {};
   const missingPairs: Array<[string, string]> = [];
 
-  for (const holding of account.holdings) {
+  for (const holding of serialized.holdings) {
     const hc = holding.currency || "USD";
-    if (hc !== account.currency) {
-      const key = `${hc}_${account.currency}`;
+    if (hc !== serialized.currency) {
+      const key = `${hc}_${serialized.currency}`;
       if (ratesMap[key] === undefined) {
-        const rate = resolveRate(allRatesMap, hc, account.currency);
+        const rate = resolveRate(allRatesMap, hc, serialized.currency);
         if (rate !== undefined) {
           ratesMap[key] = rate;
         } else {
-          missingPairs.push([hc, account.currency]);
+          missingPairs.push([hc, serialized.currency]);
         }
       }
     }
@@ -108,7 +92,7 @@ async function AccountDetailDataLoader({
 
   return (
     <div className="space-y-6">
-      <AccountDetail account={account} priceMap={priceMap} ratesMap={ratesMap} />
+      <AccountDetail account={serialized} priceMap={priceMap} ratesMap={ratesMap} />
     </div>
   );
 }
