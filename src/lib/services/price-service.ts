@@ -32,19 +32,21 @@ export async function fetchStockPrices(
   try {
     const YahooFinance = (await import("yahoo-finance2")).default;
     const yahooFinance = new YahooFinance();
-    for (const symbol of symbols) {
-      try {
-        const quote = await yahooFinance.quote(symbol);
+    const quotes = await Promise.allSettled(
+      symbols.map((symbol) => yahooFinance.quote(symbol))
+    );
+    for (const result of quotes) {
+      if (result.status === "fulfilled") {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const q = quote as any;
+        const q = result.value as any;
         if (q.regularMarketPrice && q.symbol) {
           results.set(q.symbol, {
             price: q.regularMarketPrice,
             currency: q.currency || "USD",
           });
         }
-      } catch {
-        console.error(`Failed to fetch price for ${symbol}`);
+      } else {
+        console.error(`Failed to fetch price: ${result.reason}`);
       }
     }
   } catch (error) {
@@ -69,9 +71,13 @@ export async function fetchCryptoPrices(
   try {
     const YahooFinance = (await import("yahoo-finance2")).default;
     const yahooFinance = new YahooFinance();
-    for (const symbol of symbols) {
-      try {
-        const quote = await yahooFinance.quote(symbol);
+    const quotes = await Promise.allSettled(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      symbols.map((symbol) => yahooFinance.quote(symbol).then((quote: any) => ({ symbol, quote })))
+    );
+    for (const result of quotes) {
+      if (result.status === "fulfilled") {
+        const { symbol, quote } = result.value;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const q = quote as any;
         if (q.regularMarketPrice) {
@@ -80,8 +86,8 @@ export async function fetchCryptoPrices(
             currency: q.currency || "USD",
           });
         }
-      } catch {
-        console.error(`Yahoo Finance: failed to fetch crypto price for ${symbol}`);
+      } else {
+        console.error(`Yahoo Finance: failed to fetch crypto price: ${result.reason}`);
       }
     }
   } catch (error) {
@@ -148,16 +154,23 @@ export async function refreshAllPrices(): Promise<{
 
   const allPrices = new Map([...stockPrices, ...cryptoPrices]);
 
-  for (const [symbol, { price, currency }] of allPrices) {
-    try {
-      await prisma.priceCache.upsert({
+  const upsertResults = await Promise.allSettled(
+    [...allPrices].map(([symbol, { price, currency }]) =>
+      prisma.priceCache.upsert({
         where: { symbol },
         update: { price, currency, updatedAt: new Date() },
         create: { symbol, price, currency },
-      });
+      })
+    )
+  );
+
+  for (let i = 0; i < upsertResults.length; i++) {
+    const result = upsertResults[i];
+    if (result.status === "fulfilled") {
       updated++;
-    } catch (error) {
-      errors.push(`Failed to update ${symbol}: ${error}`);
+    } else {
+      const symbol = [...allPrices.keys()][i];
+      errors.push(`Failed to update ${symbol}: ${result.reason}`);
     }
   }
 

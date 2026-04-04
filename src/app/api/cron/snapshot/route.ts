@@ -19,14 +19,15 @@ export async function GET(request: Request) {
       include: { appSettings: true },
     });
 
-    // 3. Create snapshots for each user
-    const results = [];
-    for (const user of users) {
-      const baseCurrency = user.appSettings?.baseCurrency ?? "USD";
-      console.log(`Cron: Creating snapshot for user ${user.id} (${baseCurrency})...`);
-      const snapshot = await createSnapshot(user.id, baseCurrency);
-      results.push(snapshot.id);
-    }
+    // 3. Create snapshots for each user (in parallel)
+    const snapshots = await Promise.all(
+      users.map((user) => {
+        const baseCurrency = user.appSettings?.baseCurrency ?? "USD";
+        console.log(`Cron: Creating snapshot for user ${user.id} (${baseCurrency})...`);
+        return createSnapshot(user.id, baseCurrency);
+      })
+    );
+    const results = snapshots.map((s) => s.id);
 
     return NextResponse.json({
       success: true,
