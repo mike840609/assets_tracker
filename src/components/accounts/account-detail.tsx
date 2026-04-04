@@ -20,6 +20,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { formatCurrency, formatNumber } from "@/lib/currencies";
 import { HoldingForm } from "./holding-form";
 import { EditHoldingDialog } from "./edit-holding-dialog";
@@ -219,95 +225,106 @@ export function AccountDetail({
         </div>
       )}
 
-      {!isBank && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base font-medium">Holdings</CardTitle>
-            <Button size="sm" onClick={() => setShowHoldingForm(true)}>
-              Add Holding
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {holdingsWithValue.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                No holdings yet. Add stocks, ETFs, or crypto.
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Symbol</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Ccy</TableHead>
-                    <TableHead className="text-right">Qty</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                    <TableHead className="text-right">Value</TableHead>
-                    <TableHead className="text-right">%</TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {holdingsWithValue.map((h) => (
-                    <TableRow key={h.id}>
-                      <TableCell className="font-mono font-medium">
-                        {h.symbol}
-                      </TableCell>
-                      <TableCell>{h.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{h.assetType}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{h.currency || "USD"}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatNumber(h.quantity, h.assetType === "CRYPTO" ? 7 : 2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {h.currentPrice !== null
-                          ? formatCurrency(h.currentPrice, h.currency || "USD")
-                          : "—"}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {h.marketValue !== null
-                          ? formatCurrency(h.marketValue, account.currency)
-                          : "—"}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        {h.marketValue !== null && totalHoldingsValue > 0
-                          ? `${((h.marketValue / totalHoldingsValue) * 100).toFixed(1)}%`
-                          : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 hover:bg-accent hover:text-accent-foreground">
-                            ...
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => setEditingHolding(h)}
-                            >
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => deleteHolding(h.id)}
-                            >
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      <Tabs defaultValue={isBank ? "transactions" : "holdings"} className="w-full">
+        <TabsList className="mb-4">
+          {!isBank && <TabsTrigger value="holdings">Holdings</TabsTrigger>}
+          <TabsTrigger value="transactions">Transactions</TabsTrigger>
+        </TabsList>
 
-      <TransactionHistory accountId={account.id} isBank={isBank} refreshTrigger={refreshTrigger} />
+        {!isBank && (
+          <TabsContent value="holdings" className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-base font-medium">Holdings</CardTitle>
+                <Button size="sm" onClick={() => setShowHoldingForm(true)}>
+                  Add Holding
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {holdingsWithValue.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    No holdings yet. Add stocks, ETFs, or crypto.
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Symbol</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Ccy</TableHead>
+                        <TableHead className="text-right">Qty</TableHead>
+                        <TableHead className="text-right">Price</TableHead>
+                        <TableHead className="text-right">Value</TableHead>
+                        <TableHead className="text-right">%</TableHead>
+                        <TableHead />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {holdingsWithValue.map((h) => (
+                        <TableRow key={h.id}>
+                          <TableCell className="font-mono font-medium">
+                            {h.symbol}
+                          </TableCell>
+                          <TableCell>{h.name}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{h.assetType}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{h.currency || "USD"}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatNumber(h.quantity, h.assetType === "CRYPTO" ? 7 : 2)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {h.currentPrice !== null
+                              ? formatCurrency(h.currentPrice, h.currency || "USD")
+                              : "—"}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {h.marketValue !== null
+                              ? formatCurrency(h.marketValue, account.currency)
+                              : "—"}
+                          </TableCell>
+                          <TableCell className="text-right text-muted-foreground">
+                            {h.marketValue !== null && totalHoldingsValue > 0
+                              ? `${((h.marketValue / totalHoldingsValue) * 100).toFixed(1)}%`
+                              : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 hover:bg-accent hover:text-accent-foreground">
+                                ...
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => setEditingHolding(h)}
+                                >
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => deleteHolding(h.id)}
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+
+        <TabsContent value="transactions">
+          <TransactionHistory accountId={account.id} isBank={isBank} refreshTrigger={refreshTrigger} />
+        </TabsContent>
+      </Tabs>
 
       <HoldingForm
         open={showHoldingForm}

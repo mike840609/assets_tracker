@@ -38,6 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 const TYPE_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
@@ -147,26 +148,19 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
     }
   };
 
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium">Transaction History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-8">Loading...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-base font-medium">Transaction History</CardTitle>
       </CardHeader>
       <CardContent>
-        {transactions.length === 0 ? (
+        {loading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        ) : transactions.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">
             No transactions yet.
           </p>
