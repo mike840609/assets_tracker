@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
 import { serializeAccountWithHoldings } from "@/lib/types";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
-import { getExchangeRate } from "@/lib/services/exchange-rate-service";
+import { getAllExchangeRates, resolveRate, getExchangeRate } from "@/lib/services/exchange-rate-service";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function AccountDetailPage({
   params,
@@ -13,10 +13,15 @@ export default async function AccountDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const account = await prisma.account.findUnique({
-    where: { id },
-    include: { holdings: { where: { quantity: { gt: 0 } } } },
-  });
+
+  // Parallel: load account + all exchange rates at once
+  const [account, allRatesMap] = await Promise.all([
+    prisma.account.findUnique({
+      where: { id },
+      include: { holdings: { where: { quantity: { gt: 0 } } } },
+    }),
+    getAllExchangeRates(),
+  ]);
 
   if (!account) notFound();
 
@@ -48,28 +53,51 @@ export default async function AccountDetailPage({
 
     const allFetched = new Map([...stockPrices, ...cryptoPrices]);
 
+    // Batch upsert concurrently
+    const upsertPromises = [];
     for (const [symbol, { price, currency }] of allFetched) {
       priceMap[symbol] = price;
-      // Cache for future use
-      await prisma.priceCache.upsert({
-        where: { symbol },
-        update: { price, currency, updatedAt: new Date() },
-        create: { symbol, price, currency },
-      });
+      upsertPromises.push(
+        prisma.priceCache.upsert({
+          where: { symbol },
+          update: { price, currency, updatedAt: new Date() },
+          create: { symbol, price, currency },
+        })
+      );
     }
+    await Promise.all(upsertPromises);
   }
 
   const serialized = serializeAccountWithHoldings(account);
 
+  // Build rates map from bulk-loaded data
   const ratesMap: Record<string, number> = {};
+  const missingPairs: Array<[string, string]> = [];
+
   for (const holding of serialized.holdings) {
     const hc = holding.currency || "USD";
     if (hc !== serialized.currency) {
       const key = `${hc}_${serialized.currency}`;
       if (ratesMap[key] === undefined) {
-        ratesMap[key] = await getExchangeRate(hc, serialized.currency);
+        const rate = resolveRate(allRatesMap, hc, serialized.currency);
+        if (rate !== undefined) {
+          ratesMap[key] = rate;
+        } else {
+          missingPairs.push([hc, serialized.currency]);
+        }
       }
     }
+  }
+
+  // Fetch any truly missing rates in parallel
+  if (missingPairs.length > 0) {
+    const uniquePairs = [...new Set(missingPairs.map(([f, t]) => `${f}_${t}`))];
+    await Promise.all(
+      uniquePairs.map(async (key) => {
+        const [from, to] = key.split("_");
+        ratesMap[key] = await getExchangeRate(from, to);
+      })
+    );
   }
 
   return (
@@ -78,4 +106,3 @@ export default async function AccountDetailPage({
     </div>
   );
 }
-

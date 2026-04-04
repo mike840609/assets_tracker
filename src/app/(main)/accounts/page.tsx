@@ -3,23 +3,30 @@ import { prisma } from "@/lib/prisma";
 import { AccountsList } from "@/components/accounts/accounts-list";
 import { serializeAccountWithHoldings } from "@/lib/types";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
-import { getExchangeRate } from "@/lib/services/exchange-rate-service";
+import { getAllExchangeRates, resolveRate, getExchangeRate } from "@/lib/services/exchange-rate-service";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60; // Cache page for 60s instead of force-dynamic
 
 export default async function AccountsPage() {
   const session = await auth();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
 
-  const accounts = await prisma.account.findMany({
-    where: { userId },
-    include: { holdings: { where: { quantity: { gt: 0 } } } },
-    orderBy: { createdAt: "desc" },
-  });
+  // Parallel: fetch accounts + settings + all exchange rates at once
+  const [accountsRaw, settings, allRatesMap] = await Promise.all([
+    prisma.account.findMany({
+      where: { userId },
+      include: { holdings: { where: { quantity: { gt: 0 } } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.setting.findUnique({ where: { userId } }),
+    getAllExchangeRates(),
+  ]);
+
+  const baseCurrency = settings?.baseCurrency ?? "USD";
 
   // Get all unique symbols from holdings
-  const allHoldings = accounts.flatMap((a) => a.holdings);
+  const allHoldings = accountsRaw.flatMap((a) => a.holdings);
   const allSymbols = [...new Set(allHoldings.map((h) => h.symbol))];
 
   // Fetch cached prices
@@ -49,29 +56,35 @@ export default async function AccountsPage() {
     ]);
 
     const allFetched = new Map([...stockPrices, ...cryptoPrices]);
+    // Batch upsert — run concurrently
+    const upsertPromises = [];
     for (const [symbol, { price, currency }] of allFetched) {
       priceMap[symbol] = price;
-      await prisma.priceCache.upsert({
-        where: { symbol },
-        update: { price, currency, updatedAt: new Date() },
-        create: { symbol, price, currency },
-      });
+      upsertPromises.push(
+        prisma.priceCache.upsert({
+          where: { symbol },
+          update: { price, currency, updatedAt: new Date() },
+          create: { symbol, price, currency },
+        })
+      );
     }
+    await Promise.all(upsertPromises);
   }
 
-  const serialized = accounts.map(serializeAccountWithHoldings);
+  const serialized = accountsRaw.map(serializeAccountWithHoldings);
 
-  // Fetch base currency from settings
-  const settings = await prisma.setting.findUnique({ where: { userId } });
-  const baseCurrency = settings?.baseCurrency ?? "USD";
-
+  // Build rates map from the bulk-loaded rates (no sequential DB calls!)
   const ratesMap: Record<string, number> = {};
+  const missingPairs: Array<[string, string]> = [];
+
   for (const account of serialized) {
-    // Rate from account currency to base currency (for category totals)
     if (account.currency !== baseCurrency) {
       const key = `${account.currency}_${baseCurrency}`;
-      if (ratesMap[key] === undefined) {
-        ratesMap[key] = await getExchangeRate(account.currency, baseCurrency);
+      const rate = resolveRate(allRatesMap, account.currency, baseCurrency);
+      if (rate !== undefined) {
+        ratesMap[key] = rate;
+      } else {
+        missingPairs.push([account.currency, baseCurrency]);
       }
     }
     for (const holding of account.holdings) {
@@ -79,10 +92,26 @@ export default async function AccountsPage() {
       if (hc !== account.currency) {
         const key = `${hc}_${account.currency}`;
         if (ratesMap[key] === undefined) {
-          ratesMap[key] = await getExchangeRate(hc, account.currency);
+          const rate = resolveRate(allRatesMap, hc, account.currency);
+          if (rate !== undefined) {
+            ratesMap[key] = rate;
+          } else {
+            missingPairs.push([hc, account.currency]);
+          }
         }
       }
     }
+  }
+
+  // Only hit the network for truly missing pairs (should be rare)
+  if (missingPairs.length > 0) {
+    const uniquePairs = [...new Set(missingPairs.map(([f, t]) => `${f}_${t}`))];
+    await Promise.all(
+      uniquePairs.map(async (key) => {
+        const [from, to] = key.split("_");
+        ratesMap[key] = await getExchangeRate(from, to);
+      })
+    );
   }
 
   return (
@@ -92,4 +121,3 @@ export default async function AccountsPage() {
     </div>
   );
 }
-

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getExchangeRate } from "./exchange-rate-service";
+import { getAllExchangeRates, resolveRate, getExchangeRate } from "./exchange-rate-service";
 import {
   serializeAccount,
   serializeHolding,
@@ -10,12 +10,16 @@ export async function getNetWorthSummary(
   userId: string,
   baseCurrency: string
 ): Promise<NetWorthSummary> {
-  const accounts = await prisma.account.findMany({
-    where: { userId, isActive: true },
-    include: { holdings: { where: { quantity: { gt: 0 } } } },
-  });
+  // Parallel: load accounts, prices, and all exchange rates in one go
+  const [accounts, prices, allRatesMap] = await Promise.all([
+    prisma.account.findMany({
+      where: { userId, isActive: true },
+      include: { holdings: { where: { quantity: { gt: 0 } } } },
+    }),
+    prisma.priceCache.findMany(),
+    getAllExchangeRates(),
+  ]);
 
-  const prices = await prisma.priceCache.findMany();
   const priceMap = Object.fromEntries(
     prices.map((p) => [p.symbol, { price: Number(p.price), currency: p.currency }])
   );
@@ -24,8 +28,16 @@ export async function getNetWorthSummary(
   let totalLiabilities = 0;
   const accountsWithValue: AccountWithValue[] = [];
 
+  // Collect missing rate pairs for batch-fetching
+  const missingPairs = new Set<string>();
+
   for (const account of accounts) {
-    const rate = await getExchangeRate(account.currency, baseCurrency);
+    // Try to resolve rate from bulk map first
+    let rate = resolveRate(allRatesMap, account.currency, baseCurrency);
+    if (rate === undefined) {
+      missingPairs.add(`${account.currency}_${baseCurrency}`);
+    }
+
     const cashBalance = Number(account.cashBalance);
 
     const holdingsWithPrice: HoldingWithPrice[] = account.holdings.map((h) => {
@@ -41,19 +53,59 @@ export async function getNetWorthSummary(
       };
     });
 
-    // Convert each holding's market value from its native currency to base currency
-    // AND to the account's local currency
-    let holdingsInBase = 0;
-    let holdingsInAccountCurrency = 0;
     for (const h of holdingsWithPrice) {
       if (h.marketValue !== null) {
-        // Use the holding's currency, fall back to PriceCache currency, then USD
         const holdingCurrency = h.currency || priceMap[h.symbol]?.currency || "USD";
-        
-        const holdingRateToBase = await getExchangeRate(holdingCurrency, baseCurrency);
+        if (resolveRate(allRatesMap, holdingCurrency, baseCurrency) === undefined) {
+          missingPairs.add(`${holdingCurrency}_${baseCurrency}`);
+        }
+        if (resolveRate(allRatesMap, holdingCurrency, account.currency) === undefined) {
+          missingPairs.add(`${holdingCurrency}_${account.currency}`);
+        }
+      }
+    }
+
+    accountsWithValue.push({
+      ...serializeAccount(account),
+      holdings: holdingsWithPrice,
+      totalValue: 0, // will be filled after missing rates are resolved
+      totalValueInBaseCurrency: 0,
+      _cashBalance: cashBalance,
+      _currency: account.currency,
+    } as AccountWithValue & { _cashBalance: number; _currency: string });
+  }
+
+  // Fetch any truly missing rates in parallel (should be rare after initial setup)
+  if (missingPairs.size > 0) {
+    await Promise.all(
+      [...missingPairs].map(async (key) => {
+        const [from, to] = key.split("_");
+        const rate = await getExchangeRate(from, to);
+        allRatesMap.set(key, rate);
+      })
+    );
+  }
+
+  // Helper using the now-complete map
+  function getRate(from: string, to: string): number {
+    return resolveRate(allRatesMap, from, to) ?? 1;
+  }
+
+  // Second pass: compute values using the complete rate map
+  for (let i = 0; i < accounts.length; i++) {
+    const account = accounts[i];
+    const awv = accountsWithValue[i] as AccountWithValue & { _cashBalance: number; _currency: string };
+    const rate = getRate(account.currency, baseCurrency);
+    const cashBalance = awv._cashBalance;
+
+    let holdingsInBase = 0;
+    let holdingsInAccountCurrency = 0;
+    for (const h of awv.holdings) {
+      if (h.marketValue !== null) {
+        const holdingCurrency = h.currency || priceMap[h.symbol]?.currency || "USD";
+        const holdingRateToBase = getRate(holdingCurrency, baseCurrency);
         holdingsInBase += h.marketValue * holdingRateToBase;
-        
-        const holdingRateToAccount = await getExchangeRate(holdingCurrency, account.currency);
+        const holdingRateToAccount = getRate(holdingCurrency, account.currency);
         holdingsInAccountCurrency += h.marketValue * holdingRateToAccount;
       }
     }
@@ -61,12 +113,12 @@ export async function getNetWorthSummary(
     const cashInBase = cashBalance * rate;
     const totalValue = cashInBase + holdingsInBase;
 
-    accountsWithValue.push({
-      ...serializeAccount(account),
-      holdings: holdingsWithPrice,
-      totalValue: cashBalance + holdingsInAccountCurrency,
-      totalValueInBaseCurrency: totalValue,
-    });
+    awv.totalValue = cashBalance + holdingsInAccountCurrency;
+    awv.totalValueInBaseCurrency = totalValue;
+
+    // Clean up temporary fields
+    delete (awv as any)._cashBalance;
+    delete (awv as any)._currency;
 
     if (account.type === "ASSET") {
       totalAssets += totalValue;
@@ -83,4 +135,3 @@ export async function getNetWorthSummary(
     accounts: accountsWithValue,
   };
 }
-

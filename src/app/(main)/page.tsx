@@ -7,37 +7,44 @@ import { AccountsSummary } from "@/components/dashboard/accounts-summary";
 import { DashboardActions } from "@/components/dashboard/dashboard-actions";
 import { getNetWorthSummary } from "@/lib/services/net-worth-service";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60; // Cache page for 60s instead of force-dynamic
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
 
-  const dbUser = await prisma.user.findUnique({ where: { id: userId } });
+  // Parallel: check user exists + load settings at the same time
+  const [dbUser, settings] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.setting.findUnique({ where: { userId } }),
+  ]);
+
   if (!dbUser) {
-    // If the JWT session exists but the database user was deleted (e.g., local database wipe)
-    // we want to gracefully redirect them to sign out so the orphaned cookie is cleared.
     const { redirect } = await import("next/navigation");
     redirect("/api/auth/signout");
   }
 
-  let settings = await prisma.setting.findUnique({ where: { userId } });
-  if (!settings) {
-    settings = await prisma.setting.create({ data: { userId, baseCurrency: "USD" } });
-  }
-  const baseCurrency = settings.baseCurrency;
-  const summary = await getNetWorthSummary(userId, baseCurrency);
-  const snapshots = await prisma.netWorthSnapshot.findMany({
-    where: { userId, baseCurrency },
-    orderBy: { date: "asc" },
-  });
+  const baseCurrency = settings?.baseCurrency ?? "USD";
 
-  // Get latest price update timestamp
-  const latestPrice = await prisma.priceCache.findFirst({
-    orderBy: { updatedAt: "desc" },
-    select: { updatedAt: true },
-  });
+  // If settings doesn't exist yet, create it (non-blocking for the main flow)
+  if (!settings) {
+    // Fire and forget — don't block the render
+    prisma.setting.create({ data: { userId, baseCurrency: "USD" } }).catch(() => {});
+  }
+
+  // Parallel: fetch all heavy data at once
+  const [summary, snapshots, latestPrice] = await Promise.all([
+    getNetWorthSummary(userId, baseCurrency),
+    prisma.netWorthSnapshot.findMany({
+      where: { userId, baseCurrency },
+      orderBy: { date: "asc" },
+    }),
+    prisma.priceCache.findFirst({
+      orderBy: { updatedAt: "desc" },
+      select: { updatedAt: true },
+    }),
+  ]);
 
   // Get latest snapshot date
   const latestSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
