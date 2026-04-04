@@ -1,20 +1,16 @@
+import { Suspense } from "react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { NetWorthCard } from "@/components/dashboard/net-worth-card";
-import { TrendChart } from "@/components/dashboard/trend-chart";
-import { AllocationChart } from "@/components/dashboard/allocation-chart";
-import { AccountsSummary } from "@/components/dashboard/accounts-summary";
-import { DashboardActions } from "@/components/dashboard/dashboard-actions";
-import { getNetWorthSummary } from "@/lib/services/net-worth-service";
+import { DashboardContent } from "@/components/dashboard/dashboard-content";
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 
-export const revalidate = 60; // Cache page for 60s instead of force-dynamic
+export const revalidate = 60;
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
 
-  // Parallel: check user exists + load settings at the same time
   const [dbUser, settings] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
     prisma.setting.findUnique({ where: { userId } }),
@@ -27,68 +23,21 @@ export default async function DashboardPage() {
 
   const baseCurrency = settings?.baseCurrency ?? "USD";
 
-  // If settings doesn't exist yet, create it (non-blocking for the main flow)
   if (!settings) {
-    // Fire and forget — don't block the render
     prisma.setting.create({ data: { userId, baseCurrency: "USD" } }).catch(() => {});
   }
 
-  // Parallel: fetch all heavy data at once
-  const [summary, snapshots, latestPrice] = await Promise.all([
-    getNetWorthSummary(userId, baseCurrency),
-    prisma.netWorthSnapshot.findMany({
-      where: { userId, baseCurrency },
-      orderBy: { date: "asc" },
-    }),
-    prisma.priceCache.findFirst({
-      orderBy: { updatedAt: "desc" },
-      select: { updatedAt: true },
-    }),
-  ]);
-
-  // Get latest snapshot date
-  const latestSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
-
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent animate-slide-in-bottom">
+        <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
           Dashboard
         </h2>
       </div>
 
-      <div className="animate-slide-in-bottom delay-50">
-        <DashboardActions
-          baseCurrency={baseCurrency}
-          lastPriceUpdate={latestPrice?.updatedAt?.toISOString() ?? null}
-          lastSnapshotDate={latestSnapshot?.date?.toISOString() ?? null}
-        />
-      </div>
-      
-      <div className="animate-slide-in-bottom delay-100">
-        <NetWorthCard summary={summary} />
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-in-bottom delay-200 duration-500">
-        <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
-          <TrendChart
-            baseCurrency={baseCurrency}
-            snapshots={snapshots.map((s) => ({
-              date: s.date.toISOString().split("T")[0],
-              netWorth: Number(s.netWorth),
-              totalAssets: Number(s.totalAssets),
-              totalLiabilities: Number(s.totalLiabilities),
-            }))}
-          />
-        </div>
-        <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
-          <AllocationChart summary={summary} />
-        </div>
-      </div>
-
-      <div className="animate-slide-in-bottom delay-300 duration-500 bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
-        <AccountsSummary summary={summary} />
-      </div>
+      <Suspense fallback={<DashboardSkeleton />}>
+        <DashboardContent userId={userId} baseCurrency={baseCurrency} />
+      </Suspense>
     </div>
   );
 }
