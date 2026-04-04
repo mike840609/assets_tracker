@@ -6,7 +6,13 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const adapter = new PrismaPg(process.env.DATABASE_URL!);
+  // Replace weaker SSL modes with verify-full to silence the pg v8 deprecation
+  // warning and stay forward-compatible with pg v9.
+  const url = process.env.DATABASE_URL!.replace(
+    /sslmode=(prefer|require|verify-ca)/,
+    "sslmode=verify-full"
+  );
+  const adapter = new PrismaPg(url);
   return new PrismaClient({ adapter });
 }
 

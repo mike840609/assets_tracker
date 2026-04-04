@@ -3,7 +3,7 @@ import { SettingsForm } from "@/components/settings/settings-form";
 import { auth, signOut } from "@/auth";
 import { Button } from "@/components/ui/button";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function SettingsPage() {
   const session = await auth();

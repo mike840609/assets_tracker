@@ -1,4 +1,36 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+
+/**
+ * Load ALL cached exchange rates from the database in a single query.
+ * Returns a lookup map keyed by "FROM_TO" (e.g. "USD_TWD").
+ * Memoised per server render via React cache().
+ */
+export const getAllExchangeRates = cache(async (): Promise<Map<string, number>> => {
+  const rates = await prisma.exchangeRate.findMany();
+  const map = new Map<string, number>();
+  for (const r of rates) {
+    map.set(`${r.fromCurrency}_${r.toCurrency}`, Number(r.rate));
+  }
+  return map;
+});
+
+/**
+ * Resolve a rate from a pre-loaded map, falling back to inverse.
+ * Use this instead of getExchangeRate when you already have the map.
+ */
+export function resolveRate(
+  rateMap: Map<string, number>,
+  from: string,
+  to: string
+): number | undefined {
+  if (from === to) return 1;
+  const direct = rateMap.get(`${from}_${to}`);
+  if (direct !== undefined) return direct;
+  const inverse = rateMap.get(`${to}_${from}`);
+  if (inverse !== undefined) return 1 / inverse;
+  return undefined;
+}
 
 export async function fetchExchangeRates(
   base: string
@@ -60,7 +92,7 @@ export async function refreshExchangeRates(baseCurrency: string): Promise<number
   return updated;
 }
 
-export async function getExchangeRate(
+export const getExchangeRate = cache(async function getExchangeRate(
   from: string,
   to: string
 ): Promise<number> {
@@ -106,4 +138,4 @@ export async function getExchangeRate(
 
   console.warn(`No exchange rate found for ${from} -> ${to}, defaulting to 1`);
   return 1;
-}
+});
