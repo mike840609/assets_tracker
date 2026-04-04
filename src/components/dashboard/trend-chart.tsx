@@ -66,7 +66,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD" }: { snapshots: Sna
       <CardContent>
         {filtered.length === 0 ? (
           <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
-            No snapshot data yet. Add accounts and take a snapshot.
+            No data to display yet. Add accounts and your net worth will be tracked automatically at midnight (UTC+8).
           </div>
         ) : !mounted ? (
           <div className="h-[250px]" />

@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Copy, LayoutDashboard, Settings } from "lucide-react";
-import { motion } from "framer-motion";
 import { ThemeToggle } from "./theme-toggle";
 
 const navItems = [
@@ -47,24 +46,19 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300",
+                "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 isActive
                   ? "text-primary shadow-sm"
                   : "text-sidebar-foreground/70 hover:text-foreground"
               )}
             >
               {isActive && (
-                <motion.div
-                  layoutId="sidebar-active"
-                  className="absolute inset-0 rounded-lg bg-primary/10 border border-primary/20"
-                  transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                />
+                <div className="absolute inset-0 rounded-lg bg-primary/10 border border-primary/20 transition-all duration-200" />
               )}
-              {/* Subtle hover effect for non-active items */}
               {!isActive && (
-                <div className="absolute inset-0 rounded-lg bg-sidebar-accent/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
+                <div className="absolute inset-0 rounded-lg bg-sidebar-accent/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 -z-10" />
               )}
-              <Icon className={cn("z-10 h-5 w-5 transition-transform duration-300", isActive ? "scale-110" : "group-hover:scale-110")} />
+              <Icon className={cn("z-10 h-5 w-5 transition-transform duration-200", isActive ? "scale-110" : "group-hover:scale-110")} />
               <span className="z-10">{item.label}</span>
             </Link>
           );
@@ -89,8 +83,6 @@ export function MobileNav() {
     let lastY = 0;
     let touchStartY = 0;
 
-    // Read scroll position from whichever container is actually scrolling.
-    // On most browsers main scrolls; on iOS Safari the viewport may scroll instead.
     const getScrollY = () => Math.max(main?.scrollTop ?? 0, window.scrollY);
 
     const onScroll = () => {
@@ -100,7 +92,6 @@ export function MobileNav() {
       lastY = y;
     };
 
-    // Touch direction — fallback for browsers that throttle scroll events
     const onTouchStart = (e: TouchEvent) => {
       touchStartY = e.touches[0].clientY;
     };
@@ -145,12 +136,9 @@ export function MobileNav() {
             )}
           >
             {isActive && (
-              <motion.div
-                layoutId="mobile-active"
-                className="absolute inset-x-2 -top-3 h-0.5 bg-primary rounded-b-full shadow-[0_2px_8px_rgba(0,0,0,0.5)] shadow-primary/50"
-              />
+              <div className="absolute inset-x-2 -top-3 h-0.5 bg-primary rounded-b-full shadow-[0_2px_8px_rgba(0,0,0,0.5)] shadow-primary/50 transition-all duration-200" />
             )}
-            <Icon className={cn("h-5 w-5 transition-transform duration-300", isActive ? "scale-110" : "group-hover:scale-110")} />
+            <Icon className={cn("h-5 w-5 transition-transform duration-200", isActive ? "scale-110" : "group-hover:scale-110")} />
             <span>{item.label}</span>
           </Link>
         );
