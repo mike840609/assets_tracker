@@ -6,9 +6,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const adapter = new PrismaPg(
-    "postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
-  );
+  const adapter = new PrismaPg(process.env.DATABASE_URL!);
   return new PrismaClient({ adapter });
 }
 
