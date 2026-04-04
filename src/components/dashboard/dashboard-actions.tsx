@@ -20,7 +20,6 @@ export function DashboardActions({
 }: DashboardActionsProps) {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
-  const [snapshotting, setSnapshotting] = useState(false);
 
   async function handleRefreshPrices() {
     setRefreshing(true);
@@ -37,23 +36,6 @@ export function DashboardActions({
       toast.error("Failed to refresh prices");
     } finally {
       setRefreshing(false);
-    }
-  }
-
-  async function handleSnapshot() {
-    setSnapshotting(true);
-    try {
-      await fetch("/api/snapshots", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ baseCurrency }),
-      });
-      toast.success("Snapshot saved");
-      router.refresh();
-    } catch {
-      toast.error("Failed to take snapshot");
-    } finally {
-      setSnapshotting(false);
     }
   }
 
@@ -100,16 +82,6 @@ export function DashboardActions({
         >
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
           {refreshing ? "Refreshing..." : "Refresh Prices"}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleSnapshot}
-          disabled={snapshotting}
-          className="gap-1.5"
-        >
-          <Camera className={`h-3.5 w-3.5 ${snapshotting ? "animate-pulse" : ""}`} />
-          {snapshotting ? "Saving..." : "Snapshot"}
         </Button>
       </div>
     </div>

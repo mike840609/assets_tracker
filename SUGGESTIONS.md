@@ -7,9 +7,10 @@
 | 1 | Fix hardcoded USD in trend chart tooltip | Bug Fix | 🔴 High | 10 min | ✅ Done |
 | 2 | Deduplicate balance editor into `<InlineBalanceEditor>` | Code Quality | 🟡 Medium | 30 min | ✅ Done |
 | 3 | Remove test-rate API route | Cleanup | 🟢 Low | 5 min | ✅ Done |
-| 4 | Dashboard "Refresh Prices" & "Take Snapshot" buttons | Feature | 🔴 High | 1-2 hrs | ✅ Done |
+| 4 | Dashboard "Refresh Prices" button (Snapshot moved to Settings) | Feature | 🔴 High | 1-2 hrs | ✅ Done |
 | 5 | "Last Updated" timestamp for prices on dashboard | Feature | 🔴 High | 1-2 hrs | ✅ Done |
 | 6 | Dark/Light/System theme toggle | Feature | 🟡 Medium | 1-2 hrs | ✅ Done |
+| 18 | Automated Daily Snapshots (Cron) | Feature | 🔴 High | 1-2 hrs | ✅ Done |
 | 7 | Cost basis & gain/loss tracking | Feature | 🔴 High | 4-6 hrs | ❌ Not Done |
 | 8 | Authentication & multi-user support | Feature | 🔴 High | 6-10 hrs | ❌ Not Done |
 | 9 | Data import/export | Feature | 🔴 High | 4-6 hrs | ❌ Not Done |
@@ -24,7 +25,7 @@
 
 ---
 
-## Details
+## Details (Pending Tasks)
 
 ### 7. Cost Basis & Gain/Loss Tracking
 BUY/SELL transactions exist but have no `price` field. Without cost basis, users can't see profit/loss per holding.

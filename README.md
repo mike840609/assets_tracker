@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 💰 Asset Tracker
 
-## Getting Started
+A modern, high-performance, and visually stunning net worth and investment tracker. Built with **Next.js 16**, **Prisma**, and **Tailwind CSS**.
 
-First, run the development server:
+![Dashboard Mockup](https://images.unsplash.com/photo-1611974714013-3c8c0d088bd3?auto=format&fit=crop&q=80&w=1200&h=400)
+
+## ✨ Features
+
+- **🚀 Real-time Tracking**: Automatically fetch latest prices for Stocks, ETFs, and Cryptocurrencies (via Yahoo Finance).
+- **🌍 Multi-Currency Support**: Track assets in USD, TWD, EUR, and more. All values are automatically converted to your selected **Base Currency**.
+- **📈 Trend Visualization**: Interactive charts showing your net worth, assets, and liabilities over time.
+- **🤖 Automated Snapshots**: Built-in Vercel Cron integration to automatically record your net worth daily.
+- **🌗 Cyber-Glassmorphism UI**: Beautiful, premium design with full support for Light, Dark, and System modes.
+- **💼 Unified Portfolio**: Combine bank accounts, brokerages, and crypto wallets into one single dashboard.
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Database**: PostgreSQL (via Prisma ORM)
+- **Styling**: Tailwind CSS 4
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **Charts**: Recharts
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+
+- Node.js 18+
+- A PostgreSQL database (e.g., Neon, Supabase, or Prisma Postgres)
+
+### 2. Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+DATABASE_URL="your_postgresql_connection_string"
+CRON_SECRET="your_secure_random_string"
+```
+
+> [!TIP]
+> You can generate a random `CRON_SECRET` using `openssl rand -base64 32`.
+
+### 3. Installation
+
+```bash
+npm install
+npx prisma generate
+npx prisma db push
+```
+
+### 4. Running Locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see your dashboard!
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🤖 Automated Snapshots (Cron Jobs)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project is optimized for **Vercel** and includes native Cron Job support via `vercel.json`.
 
-## Learn More
+- **Endpoint**: `/api/cron/snapshot`
+- **Schedule**: Every day at 00:00 UTC.
+- **Security**: Protected via `CRON_SECRET` header verification.
 
-To learn more about Next.js, take a look at the following resources:
+To enable automation, deploy to Vercel and ensure the `CRON_SECRET` environment variable is set in your project settings.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📝 Roadmap
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Check the [SUGGESTIONS.md](./SUGGESTIONS.md) file for our prioritized feature roadmap, including cost basis tracking, performance reports, and data migration.
 
-## Deploy on Vercel
+## 📄 License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
