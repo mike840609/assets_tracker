@@ -4,23 +4,23 @@ import { TrendingUp } from "lucide-react"
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen w-full items-center justify-center relative overflow-hidden bg-background">
+    <div className="flex min-h-screen w-full items-center justify-center relative overflow-hidden bg-slate-50">
       {/* Dynamic Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 dark:bg-primary/5 blur-3xl pointer-events-none -z-10 animate-pulse-slow" />
-      <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-chart-4/10 dark:bg-chart-4/5 blur-3xl pointer-events-none -z-10 animate-pulse-slow" style={{ animationDelay: "2s" }} />
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-3xl pointer-events-none -z-10 animate-pulse-slow" />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-chart-4/10 blur-3xl pointer-events-none -z-10 animate-pulse-slow" style={{ animationDelay: "2s" }} />
 
       {/* Glassmorphism Card */}
-      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col justify-center space-y-8 p-10 bg-card/60 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.5)] rounded-3xl animate-slide-in-bottom">
+      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col justify-center space-y-8 p-10 bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.1)] rounded-3xl animate-slide-in-bottom">
         
         <div className="flex flex-col space-y-3 text-center">
           <div className="w-16 h-16 mx-auto bg-primary/5 border border-primary/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-inner mb-4 relative group">
             <div className="absolute inset-0 rounded-2xl bg-primary/20 animate-ping opacity-20 duration-[3000ms]"></div>
             <TrendingUp className="w-7 h-7 text-primary relative z-10 transform transition-transform group-hover:scale-110" strokeWidth={2} />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
             Asset Tracker
           </h1>
-          <p className="text-sm text-muted-foreground font-medium">
+          <p className="text-sm text-slate-500 font-medium">
             Securely access your financial portfolio
           </p>
         </div>
@@ -33,7 +33,7 @@ export default function LoginPage() {
           className="pt-4"
         >
           <Button 
-            className="w-full h-12 text-[15px] font-medium tracking-wide bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm hover:shadow-md dark:bg-[#1a1a1a] dark:text-gray-200 dark:border-zinc-800 dark:hover:bg-[#252525] transition-all hover:-translate-y-0.5 rounded-xl flex items-center justify-center gap-3" 
+            className="w-full h-12 text-[15px] font-medium tracking-wide bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 rounded-xl flex items-center justify-center gap-3" 
             type="submit"
           >
             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -46,7 +46,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <div className="text-center text-xs text-muted-foreground pt-4 mb-[-1rem]">
+        <div className="text-center text-xs text-slate-400 pt-4 mb-[-1rem]">
           By continuing, you agree to secure your data privately.
         </div>
       </div>
