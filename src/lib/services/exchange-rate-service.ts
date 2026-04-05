@@ -58,7 +58,7 @@ export async function fetchExchangeRates(
     try {
       const res = await fetch(
         `https://api.frankfurter.app/latest?from=${base}`,
-        { next: { revalidate: 0 } }
+        { next: { revalidate: 3600 } }
       );
       if (res.ok) {
         const data = await res.json();
@@ -74,7 +74,7 @@ export async function fetchExchangeRates(
     try {
       const res = await fetch(
         `https://open.er-api.com/v6/latest/${base}`,
-        { next: { revalidate: 0 } }
+        { next: { revalidate: 3600 } }
       );
       const data = await res.json();
       if (data.result === "success" && data.rates) {

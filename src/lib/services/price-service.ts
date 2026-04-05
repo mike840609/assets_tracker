@@ -32,21 +32,17 @@ export async function fetchStockPrices(
   try {
     const YahooFinance = (await import("yahoo-finance2")).default;
     const yahooFinance = new YahooFinance();
-    const quotes = await Promise.allSettled(
-      symbols.map((symbol) => yahooFinance.quote(symbol))
-    );
-    for (const result of quotes) {
-      if (result.status === "fulfilled") {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const q = result.value as any;
-        if (q.regularMarketPrice && q.symbol) {
-          results.set(q.symbol, {
-            price: q.regularMarketPrice,
-            currency: q.currency || "USD",
-          });
-        }
-      } else {
-        console.error(`Failed to fetch price: ${result.reason}`);
+    
+    // Use batching for multiple symbols in one request
+    const quotes = await yahooFinance.quote(symbols);
+    const quoteArray = Array.isArray(quotes) ? quotes : [quotes];
+    
+    for (const q of quoteArray) {
+      if (q && q.regularMarketPrice && q.symbol) {
+        results.set(q.symbol, {
+          price: q.regularMarketPrice,
+          currency: q.currency || "USD",
+        });
       }
     }
   } catch (error) {
@@ -71,23 +67,17 @@ export async function fetchCryptoPrices(
   try {
     const YahooFinance = (await import("yahoo-finance2")).default;
     const yahooFinance = new YahooFinance();
-    const quotes = await Promise.allSettled(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      symbols.map((symbol) => yahooFinance.quote(symbol).then((quote: any) => ({ symbol, quote })))
-    );
-    for (const result of quotes) {
-      if (result.status === "fulfilled") {
-        const { symbol, quote } = result.value;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const q = quote as any;
-        if (q.regularMarketPrice) {
-          results.set(symbol, {
-            price: q.regularMarketPrice,
-            currency: q.currency || "USD",
-          });
-        }
-      } else {
-        console.error(`Yahoo Finance: failed to fetch crypto price: ${result.reason}`);
+    
+    // Batch fetch crypto quotes (Yahoo handles crypto pairs like BTC-USD)
+    const quotes = await yahooFinance.quote(symbols);
+    const quoteArray = Array.isArray(quotes) ? quotes : [quotes];
+    
+    for (const q of quoteArray) {
+      if (q && q.regularMarketPrice && q.symbol) {
+        results.set(q.symbol, {
+          price: q.regularMarketPrice,
+          currency: q.currency || "USD",
+        });
       }
     }
   } catch (error) {

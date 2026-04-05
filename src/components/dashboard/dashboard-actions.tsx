@@ -29,10 +29,12 @@ export function DashboardActions({
   async function handleRefreshPrices() {
     setRefreshing(true);
     try {
-      const res = await fetch("/api/prices/refresh", { method: "POST" });
-      const data = await res.json();
-      await fetch("/api/exchange-rates/refresh", { method: "POST" });
-      toast.success(t("refreshSuccess", { count: data.updated }));
+      const [priceRes, rateRes] = await Promise.all([
+        fetch("/api/prices/refresh", { method: "POST" }),
+        fetch("/api/exchange-rates/refresh", { method: "POST" }),
+      ]);
+      const priceData = await priceRes.json();
+      toast.success(t("refreshSuccess", { count: priceData.updated }));
       router.refresh();
     } catch {
       toast.error(t("refreshFailed"));

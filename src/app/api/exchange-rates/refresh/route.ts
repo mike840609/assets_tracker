@@ -6,10 +6,7 @@ export async function POST() {
   const settings = await prisma.setting.findFirst();
   const baseCurrency = settings?.baseCurrency ?? "USD";
 
-  // Refresh rates from base currency
-  let updated = await refreshExchangeRates(baseCurrency);
-
-  // Also refresh rates for all account currencies that differ from base
+  // Refresh rates for base currency and all account currencies in parallel
   const accounts = await prisma.account.findMany({
     select: { currency: true },
     distinct: ["currency"],
@@ -18,9 +15,12 @@ export async function POST() {
     .map((a) => a.currency)
     .filter((c) => c !== baseCurrency);
 
-  for (const currency of otherCurrencies) {
-    updated += await refreshExchangeRates(currency);
-  }
-
-  return NextResponse.json({ updated, baseCurrency });
+  // Refresh rates for all account currencies in parallel
+  const results = await Promise.all([
+    refreshExchangeRates(baseCurrency),
+    ...otherCurrencies.map((currency) => refreshExchangeRates(currency)),
+  ]);
+  const totalUpdated = results.reduce((a, b) => a + b, 0);
+  
+  return NextResponse.json({ updated: totalUpdated, baseCurrency });
 }
