@@ -88,20 +88,20 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
 
   const colGroup = (
     <colgroup>
-      <col className="w-[38%]" />
-      <col className="w-[27%]" />
-      <col className="w-[10%]" />
-      <col className="w-[25%]" />
+      <col className="w-[32%]" />
+      <col className="w-[23%]" />
+      <col className="w-[15%]" />
+      <col className="w-[30%]" />
     </colgroup>
   );
 
   const tableHeader = (
     <TableHeader>
       <TableRow>
-        <TableHead onClick={() => handleSort("name")} className="cursor-pointer select-none hover:bg-muted/50">
+        <TableHead onClick={() => handleSort("name")} className="whitespace-normal cursor-pointer select-none hover:bg-muted/50">
           <div className="flex items-center">{t("accountsSummary.colAccount")} <SortIcon field="name" /></div>
         </TableHead>
-        <TableHead onClick={() => handleSort("category")} className="cursor-pointer select-none hover:bg-muted/50">
+        <TableHead onClick={() => handleSort("category")} className="whitespace-normal cursor-pointer select-none hover:bg-muted/50">
           <div className="flex items-center">{t("accountsSummary.colCategory")} <SortIcon field="category" /></div>
         </TableHead>
         <TableHead onClick={() => handleSort("percentage")} className="cursor-pointer select-none hover:bg-muted/50 text-right">
@@ -117,12 +117,12 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   const renderRows = (accounts: typeof summary.accounts) =>
     accounts.map((account) => (
       <TableRow key={account.id}>
-        <TableCell>
+        <TableCell className="whitespace-normal break-words">
           <Link href={`/accounts/${account.id}`} className="font-medium hover:underline">
             {account.name}
           </Link>
         </TableCell>
-        <TableCell className="text-muted-foreground">
+        <TableCell className="whitespace-normal text-muted-foreground">
           {t(`categories.${account.category}`, { defaultValue: account.category })}
         </TableCell>
         <TableCell className="text-right text-muted-foreground tabular-nums">
@@ -146,17 +146,17 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
               {t("common.asset")}
             </p>
             <div className="overflow-x-auto">
-              <Table className="table-fixed">
+              <Table className="table-fixed [&_th]:px-1 sm:[&_th]:px-2 [&_td]:px-1 sm:[&_td]:px-2">
                 {colGroup}
                 {tableHeader}
                 <TableBody>{renderRows(assets)}</TableBody>
                 <tfoot>
                   <tr className="border-t border-border font-semibold">
-                    <td colSpan={2} className="px-4 py-2 text-sm text-muted-foreground">
+                    <td colSpan={2} className="px-1 sm:px-4 py-2 text-sm text-muted-foreground">
                       {t("accountsSummary.total")}
                     </td>
                     <td />
-                    <td className="px-4 py-2 text-right text-sm tabular-nums">
+                    <td className="px-1 sm:px-4 py-2 text-right text-sm tabular-nums">
                       {formatCurrency(summary.totalAssets, summary.baseCurrency)}
                     </td>
                   </tr>
@@ -172,17 +172,17 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
               {t("common.liability")}
             </p>
             <div className="overflow-x-auto">
-              <Table className="table-fixed">
+              <Table className="table-fixed [&_th]:px-1 sm:[&_th]:px-2 [&_td]:px-1 sm:[&_td]:px-2">
                 {colGroup}
                 {tableHeader}
                 <TableBody>{renderRows(liabilities)}</TableBody>
                 <tfoot>
                   <tr className="border-t border-border font-semibold">
-                    <td colSpan={2} className="px-4 py-2 text-sm text-muted-foreground">
+                    <td colSpan={2} className="px-1 sm:px-4 py-2 text-sm text-muted-foreground">
                       {t("accountsSummary.total")}
                     </td>
                     <td />
-                    <td className="px-4 py-2 text-right text-sm tabular-nums">
+                    <td className="px-1 sm:px-4 py-2 text-right text-sm tabular-nums">
                       {formatCurrency(summary.totalLiabilities, summary.baseCurrency)}
                     </td>
                   </tr>
