@@ -1,0 +1,44 @@
+{
+  "app": {
+    "name": "資產追蹤器",
+    "subtitle": "淨資產儀表板",
+    "subtitleMobile": "淨資產"
+  },
+  "nav": {
+    "dashboard": "儀表板",
+    "accounts": "帳戶",
+    "settings": "設定"
+  },
+  "settings": {
+    "title": "設定",
+    "baseCurrency": "基礎貨幣",
+    "language": "語言",
+    "languageDescription": "選擇您偏好的顯示語言",
+    "dataActions": "資料操作",
+    "save": "儲存",
+    "saving": "儲存中...",
+    "refreshPrices": "更新所有價格",
+    "refreshing": "更新中...",
+    "refreshExchangeRates": "更新匯率",
+    "takeSnapshot": "建立淨資產快照",
+    "creating": "建立中...",
+    "signOut": "登出",
+    "dangerZone": "危險區域"
+  },
+  "languages": {
+    "en-US": "English",
+    "zh-TW": "繁體中文"
+  },
+  "toast": {
+    "currencyUpdated": "基礎貨幣已更新",
+    "currencyFailed": "更新貨幣失敗",
+    "pricesUpdated": "已更新 {count} 個價格",
+    "pricesFailed": "更新價格失敗",
+    "snapshotCreated": "快照已建立",
+    "snapshotFailed": "建立快照失敗",
+    "exchangeRatesRefreshed": "匯率已更新",
+    "failed": "失敗",
+    "languageUpdated": "語言已更新",
+    "languageFailed": "更新語言失敗"
+  }
+}

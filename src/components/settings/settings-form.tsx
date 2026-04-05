@@ -13,11 +13,22 @@ import {
 } from "@/components/ui/select";
 import { CURRENCIES } from "@/lib/currencies";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+import { SUPPORTED_LOCALES, type Locale } from "@/i18n/request";
 
-export function SettingsForm({ currentCurrency }: { currentCurrency: string }) {
+export function SettingsForm({
+  currentCurrency,
+  currentLocale,
+}: {
+  currentCurrency: string;
+  currentLocale: string;
+}) {
   const router = useRouter();
+  const t = useTranslations();
   const [currency, setCurrency] = useState(currentCurrency);
+  const [locale, setLocale] = useState<Locale>(currentLocale as Locale);
   const [saving, setSaving] = useState(false);
+  const [savingLocale, setSavingLocale] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [snapshotting, setSnapshotting] = useState(false);
 
@@ -29,12 +40,30 @@ export function SettingsForm({ currentCurrency }: { currentCurrency: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ baseCurrency: currency }),
       });
-      toast.success("Base currency updated");
+      toast.success(t("toast.currencyUpdated"));
       router.refresh();
     } catch {
-      toast.error("Failed to update currency");
+      toast.error(t("toast.currencyFailed"));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function saveLocale() {
+    setSavingLocale(true);
+    try {
+      await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale }),
+      });
+      toast.success(t("toast.languageUpdated"));
+      // Full reload so the new locale cookie is read by next-intl
+      window.location.reload();
+    } catch {
+      toast.error(t("toast.languageFailed"));
+    } finally {
+      setSavingLocale(false);
     }
   }
 
@@ -43,10 +72,10 @@ export function SettingsForm({ currentCurrency }: { currentCurrency: string }) {
     try {
       const res = await fetch("/api/prices/refresh", { method: "POST" });
       const data = await res.json();
-      toast.success(`Updated ${data.updated} prices`);
+      toast.success(t("toast.pricesUpdated", { count: data.updated }));
       router.refresh();
     } catch {
-      toast.error("Failed to refresh prices");
+      toast.error(t("toast.pricesFailed"));
     } finally {
       setRefreshing(false);
     }
@@ -60,10 +89,10 @@ export function SettingsForm({ currentCurrency }: { currentCurrency: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ baseCurrency: currency }),
       });
-      toast.success("Snapshot created");
+      toast.success(t("toast.snapshotCreated"));
       router.refresh();
     } catch {
-      toast.error("Failed to create snapshot");
+      toast.error(t("toast.snapshotFailed"));
     } finally {
       setSnapshotting(false);
     }
@@ -73,7 +102,7 @@ export function SettingsForm({ currentCurrency }: { currentCurrency: string }) {
     <div className="space-y-6 max-w-lg">
       <Card>
         <CardHeader>
-          <CardTitle>Base Currency</CardTitle>
+          <CardTitle>{t("settings.baseCurrency")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
@@ -89,14 +118,37 @@ export function SettingsForm({ currentCurrency }: { currentCurrency: string }) {
             </SelectContent>
           </Select>
           <Button onClick={saveCurrency} disabled={saving || currency === currentCurrency}>
-            {saving ? "Saving..." : "Save"}
+            {saving ? t("settings.saving") : t("settings.save")}
           </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Data Actions</CardTitle>
+          <CardTitle>{t("settings.language")}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SUPPORTED_LOCALES.map((l) => (
+                <SelectItem key={l} value={l}>
+                  {t(`languages.${l}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={saveLocale} disabled={savingLocale || locale === currentLocale}>
+            {savingLocale ? t("settings.saving") : t("settings.save")}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.dataActions")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Button
@@ -105,18 +157,18 @@ export function SettingsForm({ currentCurrency }: { currentCurrency: string }) {
             onClick={refreshPrices}
             disabled={refreshing}
           >
-            {refreshing ? "Refreshing..." : "Refresh All Prices"}
+            {refreshing ? t("settings.refreshing") : t("settings.refreshPrices")}
           </Button>
           <Button
             variant="outline"
             className="w-full justify-start"
             onClick={() =>
               fetch("/api/exchange-rates/refresh", { method: "POST" })
-                .then(() => toast.success("Exchange rates refreshed"))
-                .catch(() => toast.error("Failed"))
+                .then(() => toast.success(t("toast.exchangeRatesRefreshed")))
+                .catch(() => toast.error(t("toast.failed")))
             }
           >
-            Refresh Exchange Rates
+            {t("settings.refreshExchangeRates")}
           </Button>
           <Button
             variant="outline"
@@ -124,7 +176,7 @@ export function SettingsForm({ currentCurrency }: { currentCurrency: string }) {
             onClick={takeSnapshot}
             disabled={snapshotting}
           >
-            {snapshotting ? "Creating..." : "Take Net Worth Snapshot"}
+            {snapshotting ? t("settings.creating") : t("settings.takeSnapshot")}
           </Button>
         </CardContent>
       </Card>

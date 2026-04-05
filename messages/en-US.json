@@ -1,0 +1,44 @@
+{
+  "app": {
+    "name": "Asset Tracker",
+    "subtitle": "Net Worth Dashboard",
+    "subtitleMobile": "Net Worth"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "accounts": "Accounts",
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "Settings",
+    "baseCurrency": "Base Currency",
+    "language": "Language",
+    "languageDescription": "Choose your preferred display language",
+    "dataActions": "Data Actions",
+    "save": "Save",
+    "saving": "Saving...",
+    "refreshPrices": "Refresh All Prices",
+    "refreshing": "Refreshing...",
+    "refreshExchangeRates": "Refresh Exchange Rates",
+    "takeSnapshot": "Take Net Worth Snapshot",
+    "creating": "Creating...",
+    "signOut": "Sign Out",
+    "dangerZone": "Danger Zone"
+  },
+  "languages": {
+    "en-US": "English",
+    "zh-TW": "繁體中文"
+  },
+  "toast": {
+    "currencyUpdated": "Base currency updated",
+    "currencyFailed": "Failed to update currency",
+    "pricesUpdated": "Updated {count} prices",
+    "pricesFailed": "Failed to refresh prices",
+    "snapshotCreated": "Snapshot created",
+    "snapshotFailed": "Failed to create snapshot",
+    "exchangeRatesRefreshed": "Exchange rates refreshed",
+    "failed": "Failed",
+    "languageUpdated": "Language updated",
+    "languageFailed": "Failed to update language"
+  }
+}

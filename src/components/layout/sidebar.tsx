@@ -2,45 +2,37 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Copy, LayoutDashboard, Settings } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
-
-const navItems = [
-  {
-    label: "Dashboard",
-    href: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Accounts",
-    href: "/accounts",
-    icon: Copy,
-  },
-  {
-    label: "Settings",
-    href: "/settings",
-    icon: Settings,
-  },
-];
+import { useTranslations } from "next-intl";
+import { useState } from "react";
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations();
+
+  const navItems = [
+    { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
+    { label: t("nav.accounts"), href: "/accounts", icon: Copy },
+    { label: t("nav.settings"), href: "/settings", icon: Settings },
+  ];
 
   // Prefetch all routes on mount for instant tab switching
   useEffect(() => {
     navItems.forEach((item) => {
       router.prefetch(item.href);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   return (
     <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar/80 backdrop-blur-md text-sidebar-foreground glass z-10 shrink-0">
       <div className="p-6">
-        <h1 className="text-xl font-bold tracking-tight bg-gradient-to-br from-primary to-chart-3 bg-clip-text text-transparent">Asset Tracker</h1>
-        <p className="text-sm text-muted-foreground mt-1 font-medium">Net Worth Dashboard</p>
+        <h1 className="text-xl font-bold tracking-tight bg-gradient-to-br from-primary to-chart-3 bg-clip-text text-transparent">{t("app.name")}</h1>
+        <p className="text-sm text-muted-foreground mt-1 font-medium">{t("app.subtitle")}</p>
       </div>
       <nav className="flex-1 px-3 space-y-2 mt-4">
         {navItems.map((item) => {
@@ -84,7 +76,14 @@ export function Sidebar() {
 
 export function MobileNav() {
   const pathname = usePathname();
+  const t = useTranslations();
   const [hidden, setHidden] = useState(false);
+
+  const navItems = [
+    { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
+    { label: t("nav.accounts"), href: "/accounts", icon: Copy },
+    { label: t("nav.settings"), href: "/settings", icon: Settings },
+  ];
 
   useEffect(() => {
     const main = document.querySelector("main");

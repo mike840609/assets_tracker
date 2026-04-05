@@ -12,6 +12,7 @@ model Setting {
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   baseCurrency String   @default("USD")
+  locale       String   @default("en-US")
   updatedAt    DateTime @updatedAt
 }
 

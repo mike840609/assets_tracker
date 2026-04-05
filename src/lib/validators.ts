@@ -48,7 +48,8 @@ export const updateHoldingSchema = z.object({
 });
 
 export const updateSettingsSchema = z.object({
-  baseCurrency: z.string().length(3),
+  baseCurrency: z.string().length(3).optional(),
+  locale: z.enum(["en-US", "zh-TW"]).optional(),
 });
 
 export const updateTransactionSchema = z.object({
