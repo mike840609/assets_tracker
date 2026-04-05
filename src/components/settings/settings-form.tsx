@@ -14,7 +14,7 @@ import {
 import { CURRENCIES } from "@/lib/currencies";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { SUPPORTED_LOCALES, type Locale } from "@/i18n/request";
+import { SUPPORTED_LOCALES, type Locale } from "@/i18n/config";
 
 export function SettingsForm({
   currentCurrency,
