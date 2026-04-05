@@ -17,7 +17,7 @@ import { formatCurrency } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
 import type { NetWorthSummary } from "@/lib/types";
 
-type SortField = "name" | "category" | "type" | "value" | "percentage";
+type SortField = "name" | "category" | "value" | "percentage";
 type SortOrder = "asc" | "desc";
 
 export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
@@ -42,8 +42,8 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
     }
   };
 
-  const sortedAccounts = useMemo(() => {
-    return [...summary.accounts].sort((a, b) => {
+  const sortAccounts = (accounts: typeof summary.accounts) => {
+    return [...accounts].sort((a, b) => {
       let comparison = 0;
       if (sortField === "name") {
         comparison = a.name.localeCompare(b.name);
@@ -51,8 +51,6 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
         const catA = t(`categories.${a.category}`, { defaultValue: a.category });
         const catB = t(`categories.${b.category}`, { defaultValue: b.category });
         comparison = catA.localeCompare(catB);
-      } else if (sortField === "type") {
-        comparison = a.type.localeCompare(b.type);
       } else if (sortField === "value") {
         comparison = a.totalValueInBaseCurrency - b.totalValueInBaseCurrency;
       } else if (sortField === "percentage") {
@@ -60,6 +58,12 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
       }
       return sortDirection === "asc" ? comparison : -comparison;
     });
+  };
+
+  const { assets, liabilities } = useMemo(() => {
+    const assets = sortAccounts(summary.accounts.filter((a) => a.type === "ASSET"));
+    const liabilities = sortAccounts(summary.accounts.filter((a) => a.type === "LIABILITY"));
+    return { assets, liabilities };
   }, [summary.accounts, sortField, sortDirection, summary.totalAssets, summary.totalLiabilities]);
 
   const SortIcon = ({ field }: { field: SortField }) => {
@@ -82,60 +86,111 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
     );
   }
 
+  const colGroup = (
+    <colgroup>
+      <col className="w-[38%]" />
+      <col className="w-[27%]" />
+      <col className="w-[10%]" />
+      <col className="w-[25%]" />
+    </colgroup>
+  );
+
+  const tableHeader = (
+    <TableHeader>
+      <TableRow>
+        <TableHead onClick={() => handleSort("name")} className="cursor-pointer select-none hover:bg-muted/50">
+          <div className="flex items-center">{t("accountsSummary.colAccount")} <SortIcon field="name" /></div>
+        </TableHead>
+        <TableHead onClick={() => handleSort("category")} className="cursor-pointer select-none hover:bg-muted/50">
+          <div className="flex items-center">{t("accountsSummary.colCategory")} <SortIcon field="category" /></div>
+        </TableHead>
+        <TableHead onClick={() => handleSort("percentage")} className="cursor-pointer select-none hover:bg-muted/50 text-right">
+          <div className="flex items-center justify-end">{t("accountsSummary.colPercentage")} <SortIcon field="percentage" /></div>
+        </TableHead>
+        <TableHead onClick={() => handleSort("value")} className="cursor-pointer select-none hover:bg-muted/50 text-right">
+          <div className="flex items-center justify-end">{t("accountsSummary.colValue", { currency: summary.baseCurrency })} <SortIcon field="value" /></div>
+        </TableHead>
+      </TableRow>
+    </TableHeader>
+  );
+
+  const renderRows = (accounts: typeof summary.accounts) =>
+    accounts.map((account) => (
+      <TableRow key={account.id}>
+        <TableCell>
+          <Link href={`/accounts/${account.id}`} className="font-medium hover:underline">
+            {account.name}
+          </Link>
+        </TableCell>
+        <TableCell className="text-muted-foreground">
+          {t(`categories.${account.category}`, { defaultValue: account.category })}
+        </TableCell>
+        <TableCell className="text-right text-muted-foreground tabular-nums">
+          {getPercentage(account).toFixed(1)}%
+        </TableCell>
+        <TableCell className="text-right font-medium tabular-nums">
+          {formatCurrency(account.totalValueInBaseCurrency, summary.baseCurrency)}
+        </TableCell>
+      </TableRow>
+    ));
+
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">{t("accountsSummary.title")}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead onClick={() => handleSort("name")} className="cursor-pointer select-none hover:bg-muted/50">
-                  <div className="flex items-center">{t("accountsSummary.colAccount")} <SortIcon field="name" /></div>
-                </TableHead>
-                <TableHead onClick={() => handleSort("category")} className="cursor-pointer select-none hover:bg-muted/50">
-                  <div className="flex items-center">{t("accountsSummary.colCategory")} <SortIcon field="category" /></div>
-                </TableHead>
-                <TableHead onClick={() => handleSort("type")} className="cursor-pointer select-none hover:bg-muted/50">
-                  <div className="flex items-center">{t("accountsSummary.colType")} <SortIcon field="type" /></div>
-                </TableHead>
-                <TableHead onClick={() => handleSort("value")} className="cursor-pointer select-none hover:bg-muted/50 text-right">
-                  <div className="flex items-center justify-end">{t("accountsSummary.colValue", { currency: summary.baseCurrency })} <SortIcon field="value" /></div>
-                </TableHead>
-                <TableHead onClick={() => handleSort("percentage")} className="cursor-pointer select-none hover:bg-muted/50 text-right">
-                  <div className="flex items-center justify-end">{t("accountsSummary.colPercentage")} <SortIcon field="percentage" /></div>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedAccounts.map((account) => (
-                <TableRow key={account.id}>
-                  <TableCell>
-                    <Link href={`/accounts/${account.id}`} className="font-medium hover:underline">
-                      {account.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {t(`categories.${account.category}`, { defaultValue: account.category })}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={account.type === "ASSET" ? "default" : "destructive"}>
-                      {t(`common.${account.type.toLowerCase()}`, { defaultValue: account.type })}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">
-                    {formatCurrency(account.totalValueInBaseCurrency, summary.baseCurrency)}
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground tabular-nums">
-                    {getPercentage(account).toFixed(1)}%
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+      <CardContent className="space-y-4">
+        {assets.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-1 px-1">
+              {t("common.asset")}
+            </p>
+            <div className="overflow-x-auto">
+              <Table className="table-fixed">
+                {colGroup}
+                {tableHeader}
+                <TableBody>{renderRows(assets)}</TableBody>
+                <tfoot>
+                  <tr className="border-t border-border font-semibold">
+                    <td colSpan={2} className="px-4 py-2 text-sm text-muted-foreground">
+                      {t("accountsSummary.total")}
+                    </td>
+                    <td />
+                    <td className="px-4 py-2 text-right text-sm tabular-nums">
+                      {formatCurrency(summary.totalAssets, summary.baseCurrency)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </Table>
+            </div>
+          </div>
+        )}
+
+        {liabilities.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-red-500 dark:text-red-400 uppercase tracking-wide mb-1 px-1">
+              {t("common.liability")}
+            </p>
+            <div className="overflow-x-auto">
+              <Table className="table-fixed">
+                {colGroup}
+                {tableHeader}
+                <TableBody>{renderRows(liabilities)}</TableBody>
+                <tfoot>
+                  <tr className="border-t border-border font-semibold">
+                    <td colSpan={2} className="px-4 py-2 text-sm text-muted-foreground">
+                      {t("accountsSummary.total")}
+                    </td>
+                    <td />
+                    <td className="px-4 py-2 text-right text-sm tabular-nums">
+                      {formatCurrency(summary.totalLiabilities, summary.baseCurrency)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </Table>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
