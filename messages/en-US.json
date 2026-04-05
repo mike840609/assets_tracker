@@ -101,6 +101,22 @@
     "colValue": "Value ({currency})",
     "colPercentage": "%"
   },
+  "accountsList": {
+    "selectAll": "Select all",
+    "selected": "{count} selected",
+    "addItem": "Add Item",
+    "addAccount": "Add Account",
+    "noAccounts": "No accounts yet. Add your first account to get started.",
+    "assets": "Assets",
+    "liabilities": "Liabilities",
+    "nAccounts": "{count, plural, one {# account} other {# accounts}}",
+    "nHoldings": "{count, plural, one {# holding} other {# holdings}}",
+    "deleting": "Deleting...",
+    "deleteButton": "Delete ({count})",
+    "deleteConfirm": "{count, plural, one {Delete # account?} other {Delete # accounts?}} This cannot be undone.",
+    "deleteSuccess": "{count, plural, one {Deleted # account} other {Deleted # accounts}}",
+    "deleteFailed": "Failed to delete accounts"
+  },
   "accountDetail": {
     "breadcrumb": "Accounts",
     "deleteAccount": "Delete Account",

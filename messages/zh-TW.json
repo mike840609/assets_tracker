@@ -101,6 +101,22 @@
     "colValue": "價值（{currency}）",
     "colPercentage": "%"
   },
+  "accountsList": {
+    "selectAll": "全選",
+    "selected": "已選 {count} 項",
+    "addItem": "新增項目",
+    "addAccount": "新增帳戶",
+    "noAccounts": "尚無帳戶。新增您的第一個帳戶以開始使用。",
+    "assets": "資產",
+    "liabilities": "負債",
+    "nAccounts": "{count} 個帳戶",
+    "nHoldings": "{count} 個持倉",
+    "deleting": "刪除中...",
+    "deleteButton": "刪除（{count}）",
+    "deleteConfirm": "確定要刪除 {count} 個帳戶？此操作無法復原。",
+    "deleteSuccess": "已刪除 {count} 個帳戶",
+    "deleteFailed": "刪除帳戶失敗"
+  },
   "accountDetail": {
     "breadcrumb": "帳戶",
     "deleteAccount": "刪除帳戶",
