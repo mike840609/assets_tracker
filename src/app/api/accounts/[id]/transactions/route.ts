@@ -7,24 +7,25 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const holdingTx = await prisma.holdingTransaction.findMany({
-    where: {
-      holding: { accountId: id },
-    },
-    include: {
-      holding: {
-        select: { symbol: true, name: true, currency: true, assetType: true },
+  const [holdingTx, cashTx] = await Promise.all([
+    prisma.holdingTransaction.findMany({
+      where: {
+        holding: { accountId: id },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const cashTx = await prisma.cashTransaction.findMany({
-    where: {
-      accountId: id,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      include: {
+        holding: {
+          select: { symbol: true, name: true, currency: true, assetType: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.cashTransaction.findMany({
+      where: {
+        accountId: id,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
   const merged = [
     ...holdingTx.map(t => ({ ...t, isCash: false })),

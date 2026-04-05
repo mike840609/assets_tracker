@@ -46,6 +46,9 @@ model Account {
   updatedAt        DateTime          @updatedAt
   holdings         Holding[]
   cashTransactions CashTransaction[]
+
+  @@index([userId])
+  @@index([userId, isActive])
 }
 
 enum HoldingAssetType {
@@ -87,6 +90,8 @@ model HoldingTransaction {
   quantity  Decimal         @db.Decimal(18, 8)
   note      String?
   createdAt DateTime        @default(now())
+
+  @@index([holdingId, createdAt])
 }
 
 enum CashTransactionType {
@@ -103,6 +108,8 @@ model CashTransaction {
   amount    Decimal             @db.Decimal(18, 8)
   note      String?
   createdAt DateTime            @default(now())
+
+  @@index([accountId, createdAt])
 }
 
 model PriceCache {
@@ -135,6 +142,7 @@ model NetWorthSnapshot {
   createdAt        DateTime @default(now())
 
   @@unique([userId, date, baseCurrency])
+  @@index([userId])
 }
 
 model User {
