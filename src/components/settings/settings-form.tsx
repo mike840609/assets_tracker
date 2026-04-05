@@ -111,7 +111,9 @@ export function SettingsForm({
         <CardContent className="space-y-4">
           <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue>
+                {(() => { const c = CURRENCIES.find((c) => c.code === currency); return c ? `${c.code} — ${c.name} (${c.symbol})` : currency; })()}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {CURRENCIES.map((c) => (
@@ -134,7 +136,7 @@ export function SettingsForm({
         <CardContent className="space-y-4">
           <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue>{t(`languages.${locale}`)}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {SUPPORTED_LOCALES.map((l) => (

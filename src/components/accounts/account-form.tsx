@@ -20,18 +20,19 @@ import {
 } from "@/components/ui/select";
 import { CURRENCIES } from "@/lib/currencies";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
-const CATEGORIES = [
-  { value: "BANK", label: "Bank Account" },
-  { value: "BROKERAGE", label: "Brokerage" },
-  { value: "CRYPTO_WALLET", label: "Crypto Wallet" },
-  { value: "PROPERTY", label: "Property" },
-  { value: "VEHICLE", label: "Vehicle" },
-  { value: "CREDIT_CARD", label: "Credit Card" },
-  { value: "LOAN", label: "Loan" },
-  { value: "MORTGAGE", label: "Mortgage" },
-  { value: "OTHER", label: "Other" },
-];
+const CATEGORY_KEYS = [
+  "BANK",
+  "BROKERAGE",
+  "CRYPTO_WALLET",
+  "PROPERTY",
+  "VEHICLE",
+  "CREDIT_CARD",
+  "LOAN",
+  "MORTGAGE",
+  "OTHER",
+] as const;
 
 export function AccountForm({
   open,
@@ -41,6 +42,7 @@ export function AccountForm({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const t = useTranslations();
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState<"ASSET" | "LIABILITY">("ASSET");
@@ -67,16 +69,16 @@ export function AccountForm({
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error?.fieldErrors?.name?.[0] || "Failed to create account");
+        throw new Error(err.error?.fieldErrors?.name?.[0] || t("accountForm.createFailed"));
       }
 
-      toast.success("Account created");
+      toast.success(t("accountForm.created"));
       setName("");
       setCashBalance("0");
       onClose();
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create account");
+      toast.error(error instanceof Error ? error.message : t("accountForm.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -86,46 +88,48 @@ export function AccountForm({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add Account</DialogTitle>
+          <DialogTitle>{t("accountForm.title")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label>Name</Label>
+            <Label>{t("accountForm.labelName")}</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Chase Checking"
+              placeholder={t("accountForm.placeholderName")}
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Type</Label>
+              <Label>{t("accountForm.labelType")}</Label>
               <Select
                 value={type}
                 onValueChange={(v) => v && setType(v as "ASSET" | "LIABILITY")}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue>
+                    {type === "ASSET" ? t("accountForm.optionAsset") : t("accountForm.optionLiability")}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ASSET">Asset</SelectItem>
-                  <SelectItem value="LIABILITY">Liability</SelectItem>
+                  <SelectItem value="ASSET">{t("accountForm.optionAsset")}</SelectItem>
+                  <SelectItem value="LIABILITY">{t("accountForm.optionLiability")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label>{t("accountForm.labelCategory")}</Label>
               <Select value={category} onValueChange={(v) => v && setCategory(v)}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue>{t(`categories.${category}`)}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.label}
+                  {CATEGORY_KEYS.map((key) => (
+                    <SelectItem key={key} value={key}>
+                      {t(`categories.${key}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -135,10 +139,12 @@ export function AccountForm({
 
           {category === "BROKERAGE" || category === "CRYPTO_WALLET" ? (
             <div className="space-y-2">
-              <Label>Currency</Label>
+              <Label>{t("accountForm.labelCurrency")}</Label>
               <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue>
+                    {(() => { const c = CURRENCIES.find((c) => c.code === currency); return c ? `${c.code} (${c.symbol})` : currency; })()}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {CURRENCIES.map((c) => (
@@ -152,7 +158,7 @@ export function AccountForm({
           ) : (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Currency</Label>
+                <Label>{t("accountForm.labelCurrency")}</Label>
                 <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -168,7 +174,7 @@ export function AccountForm({
               </div>
 
               <div className="space-y-2">
-                <Label>Cash Balance</Label>
+                <Label>{t("accountForm.labelCashBalance")}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -181,10 +187,10 @@ export function AccountForm({
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              {t("accountForm.cancel")}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create Account"}
+              {loading ? t("accountForm.creating") : t("accountForm.create")}
             </Button>
           </div>
         </form>
