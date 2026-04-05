@@ -99,7 +99,8 @@
     "colCategory": "類別",
     "colType": "類型",
     "colValue": "價值（{currency}）",
-    "colPercentage": "%"
+    "colPercentage": "%",
+    "total": "小計"
   },
   "accountsList": {
     "selectAll": "全選",

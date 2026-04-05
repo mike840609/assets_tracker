@@ -99,7 +99,8 @@
     "colCategory": "Category",
     "colType": "Type",
     "colValue": "Value ({currency})",
-    "colPercentage": "%"
+    "colPercentage": "%",
+    "total": "Total"
   },
   "accountsList": {
     "selectAll": "Select all",
