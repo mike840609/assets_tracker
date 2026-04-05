@@ -39,7 +39,7 @@ npm run start        # Start production server
 npm run lint         # Run ESLint
 
 # Database
-npx prisma generate  # Regenerate Prisma client
+npx prisma generate  # Regenerate Prisma client after schema changes
 npx prisma db push   # Push schema to database (dev)
 npx prisma studio    # Open Prisma Studio GUI
 ```
@@ -54,12 +54,16 @@ src/app/
 ├── login/page.tsx          # Public login page
 ├── (main)/                 # Auth-gated route group
 │   ├── layout.tsx          # Sidebar + mobile header shell
-│   ├── page.tsx            # Dashboard (revalidate: 60s)
+│   ├── page.tsx            # Dashboard
+│   ├── accounts/page.tsx   # Accounts list
 │   ├── accounts/[id]/      # Account detail page
 │   └── settings/           # User settings
 └── api/
     ├── auth/[...nextauth]/ # NextAuth handlers
-    ├── accounts/           # CRUD for accounts + holdings + transactions
+    ├── accounts/           # CRUD for accounts
+    ├── accounts/[id]/holdings/          # Holdings CRUD
+    ├── accounts/[id]/transactions/      # HoldingTransaction CRUD
+    ├── accounts/[id]/cash-transactions/ # CashTransaction CRUD
     ├── exchange-rates/     # Fetch + refresh exchange rates
     ├── prices/refresh/     # Manual price refresh trigger
     ├── snapshots/          # Net worth snapshot history
@@ -67,6 +71,11 @@ src/app/
     ├── settings/           # User settings API
     └── cron/snapshot/      # Daily cron job (requires CRON_SECRET bearer token)
 ```
+
+### Next.js 16 Breaking Changes
+
+- **`params` is a `Promise`** — page components receive `params: Promise<{ id: string }>` and must `await params` before accessing fields.
+- Read `node_modules/next/dist/docs/` for any Next.js APIs before using them — many APIs changed from earlier versions.
 
 ### Auth Architecture (Split Config Pattern)
 
@@ -77,6 +86,8 @@ NextAuth v5 requires two files to avoid loading Node.js-only modules in Edge mid
 - `src/middleware.ts` — Uses `auth.config.ts` to protect all routes except `/login` and `/api/auth/*`
 
 The `session.user.id` is populated from `token.sub` in the JWT callback.
+
+In RSC/pages, always get the session via `getSession()` from `src/lib/auth-session.ts` — it wraps `auth()` in React `cache()` to deduplicate the JWT decode per render.
 
 ### RSC → Client Component Serialization
 
@@ -89,6 +100,27 @@ Prisma models contain `Decimal` and `Date` objects which cannot be passed direct
 **Do not spread Prisma model instances** — Decimal/Date fields won't strip properly. Use the explicit serializers which reconstruct plain objects field-by-field.
 
 In-app calculation types build on these: `HoldingWithPrice`, `AccountWithValue`, `NetWorthSummary`.
+
+### Database (Neon Serverless)
+
+`src/lib/prisma.ts` uses `PrismaNeon` adapter (`@prisma/adapter-neon`) with WebSocket support via the `ws` package. The `DATABASE_URL` must be a Neon PostgreSQL connection string. The client is singleton-cached in `globalThis` for dev hot-reload safety.
+
+### i18n (next-intl)
+
+Supported locales: `en-US` (default), `zh-TW`. Message files live in `messages/`. Locale is resolved from:
+1. `NEXT_LOCALE` cookie (set by settings UI)
+2. `Accept-Language` request header
+
+In RSC/pages: `const t = await getTranslations("namespace")` from `next-intl/server`.  
+Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `createNextIntlPlugin`).
+
+### Currency Utilities (`src/lib/currencies.ts`)
+
+- `CURRENCIES` — static list of supported currencies with code/name/symbol
+- `formatCurrency(amount, currencyCode, compact?)` — Intl-formatted currency string
+- `formatNumber(amount, decimals?)` — Intl-formatted number
+- `getCurrencySymbol(code)` — symbol lookup
+- `getLocaleDefaultCurrency(locale)` — returns `"TWD"` for `zh-TW`, otherwise `"USD"`
 
 ### Price & Exchange Rate Pipeline
 
@@ -111,6 +143,17 @@ In-app calculation types build on these: `HoldingWithPrice`, `AccountWithValue`,
 
 `GET /api/cron/snapshot` — requires `Authorization: Bearer <CRON_SECRET>` header. Refreshes all prices, then creates `NetWorthSnapshot` records for every user. Intended to be called by a scheduler (e.g., Vercel Cron).
 
+### Component Organization
+
+```
+src/components/
+├── ui/           # shadcn/ui primitives (button, dialog, table, etc.)
+├── accounts/     # Account detail, holding form, transaction history, inline editors
+├── dashboard/    # Net worth card, allocation chart, trend chart, accounts summary
+├── layout/       # Sidebar, mobile header, theme provider/toggle
+└── settings/     # Settings form
+```
+
 ### Key Conventions
 
 - Use `@/*` path alias for all imports from `src/`
@@ -120,6 +163,7 @@ In-app calculation types build on these: `HoldingWithPrice`, `AccountWithValue`,
 - Add shadcn/ui components via `npx shadcn@latest add <component>`
 - Zod 4 schemas live in `@/lib/validators.ts`
 - Prisma schema: `prisma/schema.prisma`; generated client: `src/generated/prisma/` (gitignored)
+- i18n strings go in `messages/en-US.json` and `messages/zh-TW.json`
 
 ### Required Environment Variables
 

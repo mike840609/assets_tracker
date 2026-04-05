@@ -3,6 +3,11 @@ import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
 import { serializeAccountWithHoldings } from "@/lib/types";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
+import { getMessages } from "next-intl/server";
+import { NextIntlClientProvider } from "next-intl";
+import { pickMessages } from "@/lib/i18n-utils";
+
+const CLIENT_NAMESPACES = ["accountDetail", "common", "categories"];
 
 export default async function AccountDetailPage({
   params,
@@ -11,14 +16,15 @@ export default async function AccountDetailPage({
 }) {
   const { id } = await params;
 
-  // Parallel: load account, cached prices, and exchange rates at once
-  const [account, allRatesMap, cachedPrices] = await Promise.all([
+  // Parallel: load account, cached prices, exchange rates, and messages at once
+  const [account, allRatesMap, cachedPrices, messages] = await Promise.all([
     prisma.account.findUnique({
       where: { id },
       include: { holdings: { where: { quantity: { gt: 0 } } } },
     }),
     getAllExchangeRates(),
     prisma.priceCache.findMany(),
+    getMessages(),
   ]);
 
   if (!account) notFound();
@@ -52,8 +58,10 @@ export default async function AccountDetailPage({
   await resolveMissingRates(missingPairs, ratesMap);
 
   return (
-    <div className="space-y-6">
-      <AccountDetail account={serialized} priceMap={priceMap} ratesMap={ratesMap} />
-    </div>
+    <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
+      <div className="space-y-6">
+        <AccountDetail account={serialized} priceMap={priceMap} ratesMap={ratesMap} />
+      </div>
+    </NextIntlClientProvider>
   );
 }

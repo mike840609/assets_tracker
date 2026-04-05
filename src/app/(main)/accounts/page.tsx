@@ -1,16 +1,28 @@
 import { getSession } from "@/lib/auth-session";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getMessages } from "next-intl/server";
+import { NextIntlClientProvider } from "next-intl";
+import { pickMessages } from "@/lib/i18n-utils";
 import { prisma } from "@/lib/prisma";
 import { AccountsList } from "@/components/accounts/accounts-list";
 import { serializeAccountWithHoldings } from "@/lib/types";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
 
+const CLIENT_NAMESPACES = [
+  "accountsList",
+  "accountForm",
+  "quickAddHolding",
+  "categories",
+];
+
 export default async function AccountsPage() {
   const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
-  const t = await getTranslations("accounts");
+  const [t, messages] = await Promise.all([
+    getTranslations("accounts"),
+    getMessages(),
+  ]);
 
   // Parallel: fetch accounts + settings + all exchange rates at once
   const [accountsRaw, settings, allRatesMap] = await Promise.all([
@@ -107,9 +119,11 @@ export default async function AccountsPage() {
   await resolveMissingRates(missingPairs, ratesMap);
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight">{t("title")}</h2>
-      <AccountsList accounts={serialized} priceMap={priceMap} ratesMap={ratesMap} baseCurrency={baseCurrency} />
-    </div>
+    <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold tracking-tight">{t("title")}</h2>
+        <AccountsList accounts={serialized} priceMap={priceMap} ratesMap={ratesMap} baseCurrency={baseCurrency} />
+      </div>
+    </NextIntlClientProvider>
   );
 }
