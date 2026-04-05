@@ -2,25 +2,42 @@ import { Suspense } from "react";
 import { getSession } from "@/lib/auth-session";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getMessages } from "next-intl/server";
+import { NextIntlClientProvider } from "next-intl";
+import { pickMessages } from "@/lib/i18n-utils";
+
+const CLIENT_NAMESPACES = [
+  "netWorthCard",
+  "dashboardActions",
+  "trendChart",
+  "allocationChart",
+  "accountsSummary",
+  "categories",
+  "common",
+];
 
 export default async function DashboardPage() {
   const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
-  const t = await getTranslations("dashboard");
+  const [t, messages] = await Promise.all([
+    getTranslations("dashboard"),
+    getMessages(),
+  ]);
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-          {t("title")}
-        </h2>
-      </div>
+    <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
+      <div className="space-y-8">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            {t("title")}
+          </h2>
+        </div>
 
-      <Suspense fallback={<DashboardSkeleton />}>
-        <DashboardContent userId={userId} />
-      </Suspense>
-    </div>
+        <Suspense fallback={<DashboardSkeleton />}>
+          <DashboardContent userId={userId} />
+        </Suspense>
+      </div>
+    </NextIntlClientProvider>
   );
 }

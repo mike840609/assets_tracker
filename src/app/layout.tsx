@@ -6,6 +6,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { pickMessages } from "@/lib/i18n-utils";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -46,7 +47,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="h-full flex flex-col md:flex-row overflow-hidden bg-background text-foreground">
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider messages={pickMessages(messages, ["app", "nav"])}>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
