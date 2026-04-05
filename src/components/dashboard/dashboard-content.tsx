@@ -4,14 +4,22 @@ import { LazyTrendChart, LazyAllocationChart } from "@/components/dashboard/lazy
 import { AccountsSummary } from "@/components/dashboard/accounts-summary";
 import { DashboardActions } from "@/components/dashboard/dashboard-actions";
 import { getNetWorthSummary } from "@/lib/services/net-worth-service";
+import { redirect } from "next/navigation";
 
-export async function DashboardContent({
-  userId,
-  baseCurrency,
-}: {
-  userId: string;
-  baseCurrency: string;
-}) {
+export async function DashboardContent({ userId }: { userId: string }) {
+  const [dbUser, settings] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.setting.findUnique({ where: { userId } }),
+  ]);
+
+  if (!dbUser) redirect("/api/auth/signout");
+
+  const baseCurrency = settings?.baseCurrency ?? "USD";
+
+  if (!settings) {
+    prisma.setting.create({ data: { userId, baseCurrency: "USD" } }).catch(() => {});
+  }
+
   const [summary, snapshots, latestPrice] = await Promise.all([
     getNetWorthSummary(userId, baseCurrency),
     prisma.netWorthSnapshot.findMany({
