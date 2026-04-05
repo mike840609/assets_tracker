@@ -37,11 +37,12 @@ export function SettingsForm({
   async function saveCurrency() {
     setSaving(true);
     try {
-      await fetch("/api/settings", {
+      const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ baseCurrency: currency }),
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       toast.success(t("toast.currencyUpdated"));
       router.refresh();
     } catch {
@@ -54,14 +55,15 @@ export function SettingsForm({
   async function saveLocale() {
     setSavingLocale(true);
     try {
-      await fetch("/api/settings", {
+      const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ locale }),
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       toast.success(t("toast.languageUpdated"));
-      // Full reload so the new locale cookie is read by next-intl
-      window.location.reload();
+      // Delay so the toast is visible before the full reload
+      setTimeout(() => window.location.reload(), 800);
     } catch {
       toast.error(t("toast.languageFailed"));
     } finally {
