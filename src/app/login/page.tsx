@@ -16,9 +16,9 @@ export default async function LoginPage() {
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-col justify-center space-y-8 p-10 bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.1)] rounded-3xl animate-slide-in-bottom">
         
         <div className="flex flex-col space-y-3 text-center">
-          <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 relative group shadow-lg" style={{ background: "linear-gradient(135deg, #34d399 0%, #065f46 100%)" }}>
-            <div className="absolute inset-0 rounded-full animate-ping opacity-20 duration-[3000ms]" style={{ background: "linear-gradient(135deg, #34d399 0%, #065f46 100%)" }}></div>
-            <TrendingUp className="w-7 h-7 text-white relative z-10 transform transition-transform group-hover:scale-110" strokeWidth={2} />
+          <div className="w-16 h-16 mx-auto rounded-xl flex items-center justify-center mb-4 relative group shadow-lg" style={{ background: "linear-gradient(135deg, #34d399 0%, #065f46 100%)" }}>
+            <div className="absolute inset-0 rounded-xl blur-md bg-emerald-500/50 opacity-40 group-hover:opacity-70 transition-opacity duration-500 animate-pulse" style={{ background: "linear-gradient(135deg, #34d399 0%, #065f46 100%)" }}></div>
+            <TrendingUp className="w-7 h-7 text-white relative z-10 transform transition-all group-hover:scale-110 group-hover:-rotate-12 duration-300" strokeWidth={2} />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
             {t("title")}
