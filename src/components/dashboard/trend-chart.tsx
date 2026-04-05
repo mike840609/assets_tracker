@@ -28,7 +28,7 @@ const ranges = [
   { label: "All", days: Infinity },
 ];
 
-export function TrendChart({ snapshots, baseCurrency = "USD" }: { snapshots: SnapshotData[]; baseCurrency?: string }) {
+export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = false }: { snapshots: SnapshotData[]; baseCurrency?: string; hideRangeFilter?: boolean }) {
   const [range, setRange] = useState("All");
   const [mounted, setMounted] = useState(false);
   const t = useTranslations("trendChart");
@@ -39,7 +39,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD" }: { snapshots: Sna
   cutoff.setDate(cutoff.getDate() - selectedRange.days);
 
   const filtered =
-    selectedRange.days === Infinity
+    hideRangeFilter || selectedRange.days === Infinity
       ? snapshots
       : snapshots.filter((s) => new Date(s.date) >= cutoff);
 
@@ -47,21 +47,23 @@ export function TrendChart({ snapshots, baseCurrency = "USD" }: { snapshots: Sna
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-medium">{t("title")}</CardTitle>
-        <div className="flex gap-1">
-          {ranges.map((r) => (
-            <button
-              key={r.label}
-              onClick={() => setRange(r.label)}
-              className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                range === r.label
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
+        {!hideRangeFilter && (
+          <div className="flex gap-1">
+            {ranges.map((r) => (
+              <button
+                key={r.label}
+                onClick={() => setRange(r.label)}
+                className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                  range === r.label
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         {filtered.length === 0 ? (

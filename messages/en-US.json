@@ -7,6 +7,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "accounts": "Accounts",
+    "history": "History",
     "settings": "Settings"
   },
   "common": {
@@ -67,6 +68,16 @@
   },
   "accounts": {
     "title": "Accounts"
+  },
+  "history": {
+    "title": "Net Worth History",
+    "colDate": "Date",
+    "colNetWorth": "Net Worth",
+    "colAssets": "Assets",
+    "colLiabilities": "Liabilities",
+    "colChange": "Change",
+    "noData": "No snapshots yet. Take a snapshot from the dashboard to start tracking.",
+    "noDataForRange": "No data for this range."
   },
   "netWorthCard": {
     "netWorth": "Net Worth",
