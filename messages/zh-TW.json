@@ -7,6 +7,7 @@
   "nav": {
     "dashboard": "儀表板",
     "accounts": "帳戶",
+    "history": "歷史紀錄",
     "settings": "設定"
   },
   "common": {
@@ -67,6 +68,16 @@
   },
   "accounts": {
     "title": "帳戶"
+  },
+  "history": {
+    "title": "淨資產歷史",
+    "colDate": "日期",
+    "colNetWorth": "淨資產",
+    "colAssets": "總資產",
+    "colLiabilities": "總負債",
+    "colChange": "變化",
+    "noData": "尚無快照。請從儀表板建立快照以開始追蹤歷史。",
+    "noDataForRange": "此範圍內無資料。"
   },
   "netWorthCard": {
     "netWorth": "淨資產",
