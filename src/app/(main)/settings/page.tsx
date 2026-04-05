@@ -3,25 +3,26 @@ import { SettingsForm } from "@/components/settings/settings-form";
 import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
 import { Button } from "@/components/ui/button";
+import { getTranslations } from "next-intl/server";
 
 export default async function SettingsPage() {
   const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
+  const t = await getTranslations("settings");
 
-  // Use findUnique (read-only, no write lock) instead of upsert
   let settings = await prisma.setting.findUnique({ where: { userId } });
   if (!settings) {
-    settings = await prisma.setting.create({ data: { userId, baseCurrency: "USD" } });
+    settings = await prisma.setting.create({ data: { userId, baseCurrency: "USD", locale: "en-US" } });
   }
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-      <SettingsForm currentCurrency={settings.baseCurrency} />
-      
+      <h2 className="text-2xl font-bold tracking-tight">{t("title")}</h2>
+      <SettingsForm currentCurrency={settings.baseCurrency} currentLocale={settings.locale} />
+
       <div className="mt-8 border-t pt-8">
-        <h3 className="text-lg font-medium text-red-500 mb-4">Danger Zone</h3>
+        <h3 className="text-lg font-medium text-red-500 mb-4">{t("dangerZone")}</h3>
         <form
           action={async () => {
             "use server";
@@ -29,7 +30,7 @@ export default async function SettingsPage() {
           }}
         >
           <Button variant="destructive" type="submit">
-            Sign Out
+            {t("signOut")}
           </Button>
         </form>
       </div>

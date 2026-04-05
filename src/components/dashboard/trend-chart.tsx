@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -13,6 +11,7 @@ import {
   Area,
   AreaChart,
 } from "recharts";
+import { useTranslations } from "next-intl";
 
 type SnapshotData = {
   date: string;
@@ -32,6 +31,7 @@ const ranges = [
 export function TrendChart({ snapshots, baseCurrency = "USD" }: { snapshots: SnapshotData[]; baseCurrency?: string }) {
   const [range, setRange] = useState("All");
   const [mounted, setMounted] = useState(false);
+  const t = useTranslations("trendChart");
   useEffect(() => setMounted(true), []);
 
   const selectedRange = ranges.find((r) => r.label === range)!;
@@ -46,7 +46,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD" }: { snapshots: Sna
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-base font-medium">Net Worth Trend</CardTitle>
+        <CardTitle className="text-base font-medium">{t("title")}</CardTitle>
         <div className="flex gap-1">
           {ranges.map((r) => (
             <button
@@ -66,7 +66,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD" }: { snapshots: Sna
       <CardContent>
         {filtered.length === 0 ? (
           <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
-            No data to display yet. Add accounts and your net worth will be tracked automatically at midnight (UTC+8).
+            {t("noData")}
           </div>
         ) : !mounted ? (
           <div className="h-[250px]" />
@@ -107,7 +107,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD" }: { snapshots: Sna
                 fill="var(--primary)"
                 fillOpacity={0.1}
                 strokeWidth={2}
-                name="Net Worth"
+                name={t("seriesName")}
               />
             </AreaChart>
           </ResponsiveContainer>

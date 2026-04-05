@@ -11,19 +11,8 @@ import { formatCurrency } from "@/lib/currencies";
 import { AccountForm } from "./account-form";
 import { QuickAddHolding } from "./quick-add-holding";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
-
-const CATEGORY_LABELS: Record<string, string> = {
-  BANK: "Bank",
-  BROKERAGE: "Brokerage",
-  CRYPTO_WALLET: "Crypto Wallet",
-  PROPERTY: "Property",
-  VEHICLE: "Vehicle",
-  CREDIT_CARD: "Credit Card",
-  LOAN: "Loan",
-  MORTGAGE: "Mortgage",
-  OTHER: "Other",
-};
 
 const CATEGORY_ICONS: Record<string, string> = {
   BANK: "🏦",
@@ -49,17 +38,9 @@ const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string
   OTHER: { bg: "bg-gray-50 dark:bg-gray-950/30", border: "border-gray-200 dark:border-gray-800", text: "text-gray-700 dark:text-gray-300" },
 };
 
-// Preferred display order
 const CATEGORY_ORDER = [
-  "BANK",
-  "BROKERAGE",
-  "CRYPTO_WALLET",
-  "PROPERTY",
-  "VEHICLE",
-  "CREDIT_CARD",
-  "LOAN",
-  "MORTGAGE",
-  "OTHER",
+  "BANK", "BROKERAGE", "CRYPTO_WALLET", "PROPERTY", "VEHICLE",
+  "CREDIT_CARD", "LOAN", "MORTGAGE", "OTHER",
 ];
 
 function getAccountValue(
@@ -70,10 +51,7 @@ function getAccountValue(
   const holdingsValue = account.holdings.reduce((sum, h) => {
     const price = (priceMap || {})[h.symbol] ?? 0;
     const hc = h.currency || "USD";
-    const rate =
-      hc === account.currency
-        ? 1
-        : ratesMap[`${hc}_${account.currency}`] ?? 1;
+    const rate = hc === account.currency ? 1 : ratesMap[`${hc}_${account.currency}`] ?? 1;
     return sum + price * h.quantity * rate;
   }, 0);
   return account.cashBalance + holdingsValue;
@@ -91,46 +69,38 @@ export function AccountsList({
   baseCurrency?: string;
 }) {
   const router = useRouter();
+  const t = useTranslations();
   const [showForm, setShowForm] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    () => {
-      // Start with all categories expanded
-      const all = new Set<string>();
-      for (const a of accounts) {
-        all.add(`${a.type}_${a.category}`);
-      }
-      return all;
-    }
-  );
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => {
+    const all = new Set<string>();
+    for (const a of accounts) all.add(`${a.type}_${a.category}`);
+    return all;
+  });
 
   const assets = accounts.filter((a) => a.type === "ASSET");
   const liabilities = accounts.filter((a) => a.type === "LIABILITY");
 
-  // Group accounts by category
   const assetsByCategory = useMemo(() => {
     const grouped: Record<string, SerializedAccountWithHoldings[]> = {};
     for (const account of assets) {
-      const cat = account.category;
-      if (!grouped[cat]) grouped[cat] = [];
-      grouped[cat].push(account);
+      if (!grouped[account.category]) grouped[account.category] = [];
+      grouped[account.category].push(account);
     }
-    // Sort by preferred order
-    const sorted = CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0);
-    return sorted.map((cat) => ({ category: cat, accounts: grouped[cat] }));
+    return CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0)
+      .map((cat) => ({ category: cat, accounts: grouped[cat] }));
   }, [assets]);
 
   const liabilitiesByCategory = useMemo(() => {
     const grouped: Record<string, SerializedAccountWithHoldings[]> = {};
     for (const account of liabilities) {
-      const cat = account.category;
-      if (!grouped[cat]) grouped[cat] = [];
-      grouped[cat].push(account);
+      if (!grouped[account.category]) grouped[account.category] = [];
+      grouped[account.category].push(account);
     }
-    const sorted = CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0);
-    return sorted.map((cat) => ({ category: cat, accounts: grouped[cat] }));
+    return CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0)
+      .map((cat) => ({ category: cat, accounts: grouped[cat] }));
   }, [liabilities]);
 
   function toggleCategory(type: string, category: string) {
@@ -162,12 +132,7 @@ export function AccountsList({
 
   async function deleteSelected() {
     if (selected.size === 0) return;
-    if (
-      !confirm(
-        `Delete ${selected.size} account${selected.size !== 1 ? "s" : ""}? This cannot be undone.`
-      )
-    )
-      return;
+    if (!confirm(t("accountsList.deleteConfirm", { count: selected.size }))) return;
 
     setDeleting(true);
     try {
@@ -177,13 +142,11 @@ export function AccountsList({
         body: JSON.stringify({ ids: Array.from(selected) }),
       });
       if (!res.ok) throw new Error();
-      toast.success(
-        `Deleted ${selected.size} account${selected.size !== 1 ? "s" : ""}`
-      );
+      toast.success(t("accountsList.deleteSuccess", { count: selected.size }));
       setSelected(new Set());
       router.refresh();
     } catch {
-      toast.error("Failed to delete accounts");
+      toast.error(t("accountsList.deleteFailed"));
     } finally {
       setDeleting(false);
     }
@@ -198,49 +161,40 @@ export function AccountsList({
           {accounts.length > 0 && (
             <>
               <Checkbox
-                checked={
-                  selected.size === accounts.length && accounts.length > 0
-                }
+                checked={selected.size === accounts.length && accounts.length > 0}
                 onCheckedChange={toggleAll}
               />
               <span className="text-sm text-muted-foreground">
                 {isSelecting
-                  ? `${selected.size} selected`
-                  : "Select all"}
+                  ? t("accountsList.selected", { count: selected.size })
+                  : t("accountsList.selectAll")}
               </span>
             </>
           )}
         </div>
         <div className="flex items-center gap-2">
           {isSelecting && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={deleteSelected}
-              disabled={deleting}
-            >
-              {deleting
-                ? "Deleting..."
-                : `Delete (${selected.size})`}
+            <Button variant="destructive" size="sm" onClick={deleteSelected} disabled={deleting}>
+              {deleting ? t("accountsList.deleting") : t("accountsList.deleteButton", { count: selected.size })}
             </Button>
           )}
           <Button variant="outline" onClick={() => setShowQuickAdd(true)}>
-            Add Item
+            {t("accountsList.addItem")}
           </Button>
-          <Button onClick={() => setShowForm(true)}>Add Account</Button>
+          <Button onClick={() => setShowForm(true)}>{t("accountsList.addAccount")}</Button>
         </div>
       </div>
 
       {accounts.length === 0 && (
         <p className="text-center text-muted-foreground py-12">
-          No accounts yet. Add your first account to get started.
+          {t("accountsList.noAccounts")}
         </p>
       )}
 
       {assetsByCategory.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">
-            Assets
+            {t("accountsList.assets")}
           </h3>
           <div className="space-y-3">
             {assetsByCategory.map(({ category, accounts: catAccounts }) => (
@@ -266,41 +220,31 @@ export function AccountsList({
       {liabilitiesByCategory.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-red-700 dark:text-red-400">
-            Liabilities
+            {t("accountsList.liabilities")}
           </h3>
           <div className="space-y-3">
-            {liabilitiesByCategory.map(
-              ({ category, accounts: catAccounts }) => (
-                <CategorySection
-                  key={`liability_${category}`}
-                  type="LIABILITY"
-                  category={category}
-                  accounts={catAccounts}
-                  priceMap={priceMap}
-                  ratesMap={ratesMap}
-                  baseCurrency={baseCurrency}
-                  isExpanded={expandedCategories.has(
-                    `LIABILITY_${category}`
-                  )}
-                  onToggleExpand={() =>
-                    toggleCategory("LIABILITY", category)
-                  }
-                  selected={selected}
-                  onToggleSelect={toggleSelect}
-                  isSelecting={isSelecting}
-                />
-              )
-            )}
+            {liabilitiesByCategory.map(({ category, accounts: catAccounts }) => (
+              <CategorySection
+                key={`liability_${category}`}
+                type="LIABILITY"
+                category={category}
+                accounts={catAccounts}
+                priceMap={priceMap}
+                ratesMap={ratesMap}
+                baseCurrency={baseCurrency}
+                isExpanded={expandedCategories.has(`LIABILITY_${category}`)}
+                onToggleExpand={() => toggleCategory("LIABILITY", category)}
+                selected={selected}
+                onToggleSelect={toggleSelect}
+                isSelecting={isSelecting}
+              />
+            ))}
           </div>
         </div>
       )}
 
       <AccountForm open={showForm} onClose={() => setShowForm(false)} />
-      <QuickAddHolding
-        open={showQuickAdd}
-        onClose={() => setShowQuickAdd(false)}
-        accounts={accounts}
-      />
+      <QuickAddHolding open={showQuickAdd} onClose={() => setShowQuickAdd(false)} accounts={accounts} />
     </div>
   );
 }
@@ -330,36 +274,25 @@ function CategorySection({
   onToggleSelect: (id: string) => void;
   isSelecting: boolean;
 }) {
+  const t = useTranslations();
   const colors = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.OTHER;
   const icon = CATEGORY_ICONS[category] ?? "📁";
-  const label = CATEGORY_LABELS[category] ?? category;
+  const label = t(`categories.${category}`, { defaultValue: category });
 
-  // Calculate total in base currency for this category
   const totalInBaseCurrency = useMemo(() => {
     let total = 0;
     for (const account of accounts) {
       const value = getAccountValue(account, priceMap, ratesMap);
-      const rate =
-        account.currency === baseCurrency
-          ? 1
-          : ratesMap[`${account.currency}_${baseCurrency}`] ?? 1;
+      const rate = account.currency === baseCurrency ? 1 : ratesMap[`${account.currency}_${baseCurrency}`] ?? 1;
       total += value * rate;
     }
     return total;
   }, [accounts, priceMap, ratesMap, baseCurrency]);
 
-  const totalHoldings = accounts.reduce(
-    (sum, a) => sum + a.holdings.length,
-    0
-  );
+  const totalHoldings = accounts.reduce((sum, a) => sum + a.holdings.length, 0);
 
   return (
-    <div
-      className={`rounded-xl border overflow-hidden transition-all duration-300 ${colors.border} ${
-        isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"
-      }`}
-    >
-      {/* Category Header — always visible */}
+    <div className={`rounded-xl border overflow-hidden transition-all duration-300 ${colors.border} ${isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"}`}>
       <button
         onClick={onToggleExpand}
         className={`w-full text-left px-5 py-4 flex items-center justify-between transition-colors ${colors.bg} hover:brightness-95 dark:hover:brightness-110`}
@@ -367,16 +300,11 @@ function CategorySection({
         <div className="flex items-center gap-3 min-w-0">
           <span className="text-2xl flex-shrink-0">{icon}</span>
           <div className="min-w-0">
-            <p className={`font-semibold text-base ${colors.text}`}>
-              {label}
-            </p>
+            <p className={`font-semibold text-base ${colors.text}`}>{label}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {accounts.length} account{accounts.length !== 1 ? "s" : ""}
+              {t("accountsList.nAccounts", { count: accounts.length })}
               {totalHoldings > 0 && category !== "BANK" && (
-                <span>
-                  {" · "}
-                  {totalHoldings} holding{totalHoldings !== 1 ? "s" : ""}
-                </span>
+                <span>{" · "}{t("accountsList.nHoldings", { count: totalHoldings })}</span>
               )}
             </p>
           </div>
@@ -388,31 +316,19 @@ function CategorySection({
             </p>
           </div>
           <svg
-            className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${
-              isExpanded ? "rotate-180" : ""
-            }`}
+            className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={2}
             stroke="currentColor"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="m19.5 8.25-7.5 7.5-7.5-7.5"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
           </svg>
         </div>
       </button>
 
-      {/* Expanded content */}
-      <div
-        className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
+      <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"}`}>
         <div className="px-4 py-4 space-y-3 bg-background/50">
-          {/* Individual account cards with holdings */}
           {accounts.map((account) => (
             <AccountCardWithHoldings
               key={account.id}
@@ -456,10 +372,7 @@ function AccountCardWithHoldings({
   const holdingsWithValue = account.holdings.map((h) => {
     const price = priceMap[h.symbol] ?? null;
     const hc = h.currency || "USD";
-    const rate =
-      hc === account.currency
-        ? 1
-        : ratesMap[`${hc}_${account.currency}`] ?? 1;
+    const rate = hc === account.currency ? 1 : ratesMap[`${hc}_${account.currency}`] ?? 1;
     const marketValue = price !== null ? price * h.quantity * rate : null;
     return { ...h, currentPrice: price, marketValue };
   });
@@ -467,29 +380,16 @@ function AccountCardWithHoldings({
   return (
     <div className="relative group">
       <div
-        className={`absolute top-3 left-3 z-10 transition-opacity ${
-          isSelecting ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-        }`}
+        className={`absolute top-3 left-3 z-10 transition-opacity ${isSelecting ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
         onClick={(e) => e.preventDefault()}
       >
         <Checkbox checked={isSelected} onCheckedChange={onToggle} />
       </div>
       <Link href={`/accounts/${account.id}`}>
-        <Card
-          className={`hover:shadow-md transition-all cursor-pointer ${
-            isSelected ? "ring-2 ring-primary" : ""
-          }`}
-        >
+        <Card className={`hover:shadow-md transition-all cursor-pointer ${isSelected ? "ring-2 ring-primary" : ""}`}>
           <CardContent className="pt-5 pb-4">
-            {/* Account header */}
             <div className="flex items-start justify-between">
-              <div
-                className={
-                  isSelecting
-                    ? "pl-6"
-                    : "group-hover:pl-6 transition-all"
-                }
-              >
+              <div className={isSelecting ? "pl-6" : "group-hover:pl-6 transition-all"}>
                 <p className="font-semibold">{account.name}</p>
               </div>
               <div className="flex flex-col items-end">
@@ -510,40 +410,21 @@ function AccountCardWithHoldings({
               </div>
             </div>
 
-            {/* Holdings list */}
             {account.category !== "BANK" && holdingsWithValue.length > 0 && (
-              <div
-                className={`mt-3 ${
-                  isSelecting
-                    ? "pl-6"
-                    : "group-hover:pl-6 transition-all"
-                }`}
-              >
+              <div className={`mt-3 ${isSelecting ? "pl-6" : "group-hover:pl-6 transition-all"}`}>
                 <div className="space-y-1.5">
                   {holdingsWithValue.map((h) => (
-                    <div
-                      key={h.id}
-                      className="flex items-center justify-between py-1.5 border-t border-border/40 first:border-t-0"
-                    >
+                    <div key={h.id} className="flex items-center justify-between py-1.5 border-t border-border/40 first:border-t-0">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs font-mono font-medium text-muted-foreground w-16 flex-shrink-0 truncate">
-                          {h.symbol}
-                        </span>
+                        <span className="text-xs font-mono font-medium text-muted-foreground w-16 flex-shrink-0 truncate">{h.symbol}</span>
                         <span className="text-sm truncate">{h.name}</span>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 text-right">
                         <span className="text-xs text-muted-foreground tabular-nums">
-                          {h.assetType === "CRYPTO"
-                            ? h.quantity.toFixed(4)
-                            : h.quantity.toFixed(2)}
+                          {h.assetType === "CRYPTO" ? h.quantity.toFixed(4) : h.quantity.toFixed(2)}
                         </span>
                         <span className="text-sm font-medium tabular-nums w-20 text-right">
-                          {h.marketValue !== null
-                            ? formatCurrency(
-                                h.marketValue,
-                                account.currency
-                              )
-                            : "—"}
+                          {h.marketValue !== null ? formatCurrency(h.marketValue, account.currency) : "—"}
                         </span>
                       </div>
                     </div>

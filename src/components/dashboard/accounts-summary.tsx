@@ -14,19 +14,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/currencies";
+import { useTranslations } from "next-intl";
 import type { NetWorthSummary } from "@/lib/types";
-
-const CATEGORY_LABELS: Record<string, string> = {
-  BANK: "Bank",
-  BROKERAGE: "Brokerage",
-  CRYPTO_WALLET: "Crypto",
-  PROPERTY: "Property",
-  VEHICLE: "Vehicle",
-  CREDIT_CARD: "Credit Card",
-  LOAN: "Loan",
-  MORTGAGE: "Mortgage",
-  OTHER: "Other",
-};
 
 type SortField = "name" | "category" | "type" | "value" | "percentage";
 type SortOrder = "asc" | "desc";
@@ -34,6 +23,7 @@ type SortOrder = "asc" | "desc";
 export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   const [sortField, setSortField] = useState<SortField>("value");
   const [sortDirection, setSortDirection] = useState<SortOrder>("desc");
+  const t = useTranslations();
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -55,12 +45,11 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   const sortedAccounts = useMemo(() => {
     return [...summary.accounts].sort((a, b) => {
       let comparison = 0;
-      
       if (sortField === "name") {
         comparison = a.name.localeCompare(b.name);
       } else if (sortField === "category") {
-        const catA = CATEGORY_LABELS[a.category] ?? a.category;
-        const catB = CATEGORY_LABELS[b.category] ?? b.category;
+        const catA = t(`categories.${a.category}`, { defaultValue: a.category });
+        const catB = t(`categories.${b.category}`, { defaultValue: b.category });
         comparison = catA.localeCompare(catB);
       } else if (sortField === "type") {
         comparison = a.type.localeCompare(b.type);
@@ -69,7 +58,6 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
       } else if (sortField === "percentage") {
         comparison = getPercentage(a) - getPercentage(b);
       }
-
       return sortDirection === "asc" ? comparison : -comparison;
     });
   }, [summary.accounts, sortField, sortDirection, summary.totalAssets, summary.totalLiabilities]);
@@ -84,9 +72,9 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
       <Card>
         <CardContent className="pt-6">
           <p className="text-muted-foreground text-center py-8">
-            No accounts yet.{" "}
+            {t("accountsSummary.noAccounts")}{" "}
             <Link href="/accounts" className="text-primary underline">
-              Add your first account
+              {t("accountsSummary.addFirstAccount")}
             </Link>
           </p>
         </CardContent>
@@ -97,27 +85,27 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium">All Accounts</CardTitle>
+        <CardTitle className="text-base font-medium">{t("accountsSummary.title")}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead onClick={() => handleSort('name')} className="cursor-pointer select-none hover:bg-muted/50">
-                  <div className="flex items-center">Account <SortIcon field="name" /></div>
+                <TableHead onClick={() => handleSort("name")} className="cursor-pointer select-none hover:bg-muted/50">
+                  <div className="flex items-center">{t("accountsSummary.colAccount")} <SortIcon field="name" /></div>
                 </TableHead>
-                <TableHead onClick={() => handleSort('category')} className="cursor-pointer select-none hover:bg-muted/50">
-                  <div className="flex items-center">Category <SortIcon field="category" /></div>
+                <TableHead onClick={() => handleSort("category")} className="cursor-pointer select-none hover:bg-muted/50">
+                  <div className="flex items-center">{t("accountsSummary.colCategory")} <SortIcon field="category" /></div>
                 </TableHead>
-                <TableHead onClick={() => handleSort('type')} className="cursor-pointer select-none hover:bg-muted/50">
-                  <div className="flex items-center">Type <SortIcon field="type" /></div>
+                <TableHead onClick={() => handleSort("type")} className="cursor-pointer select-none hover:bg-muted/50">
+                  <div className="flex items-center">{t("accountsSummary.colType")} <SortIcon field="type" /></div>
                 </TableHead>
-                <TableHead onClick={() => handleSort('value')} className="cursor-pointer select-none hover:bg-muted/50 text-right">
-                  <div className="flex items-center justify-end">Value ({summary.baseCurrency}) <SortIcon field="value" /></div>
+                <TableHead onClick={() => handleSort("value")} className="cursor-pointer select-none hover:bg-muted/50 text-right">
+                  <div className="flex items-center justify-end">{t("accountsSummary.colValue", { currency: summary.baseCurrency })} <SortIcon field="value" /></div>
                 </TableHead>
-                <TableHead onClick={() => handleSort('percentage')} className="cursor-pointer select-none hover:bg-muted/50 text-right">
-                  <div className="flex items-center justify-end">% <SortIcon field="percentage" /></div>
+                <TableHead onClick={() => handleSort("percentage")} className="cursor-pointer select-none hover:bg-muted/50 text-right">
+                  <div className="flex items-center justify-end">{t("accountsSummary.colPercentage")} <SortIcon field="percentage" /></div>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -125,30 +113,20 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
               {sortedAccounts.map((account) => (
                 <TableRow key={account.id}>
                   <TableCell>
-                    <Link
-                      href={`/accounts/${account.id}`}
-                      className="font-medium hover:underline"
-                    >
+                    <Link href={`/accounts/${account.id}`} className="font-medium hover:underline">
                       {account.name}
                     </Link>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {CATEGORY_LABELS[account.category] ?? account.category}
+                    {t(`categories.${account.category}`, { defaultValue: account.category })}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={
-                        account.type === "ASSET" ? "default" : "destructive"
-                      }
-                    >
-                      {account.type}
+                    <Badge variant={account.type === "ASSET" ? "default" : "destructive"}>
+                      {t(`common.${account.type.toLowerCase()}`, { defaultValue: account.type })}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-medium tabular-nums">
-                    {formatCurrency(
-                      account.totalValueInBaseCurrency,
-                      summary.baseCurrency
-                    )}
+                    {formatCurrency(account.totalValueInBaseCurrency, summary.baseCurrency)}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground tabular-nums">
                     {getPercentage(account).toFixed(1)}%

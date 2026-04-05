@@ -1,4 +1,5 @@
 import { getSession } from "@/lib/auth-session";
+import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { AccountsList } from "@/components/accounts/accounts-list";
 import { serializeAccountWithHoldings } from "@/lib/types";
@@ -9,6 +10,7 @@ export default async function AccountsPage() {
   const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
+  const t = await getTranslations("accounts");
 
   // Parallel: fetch accounts + settings + all exchange rates at once
   const [accountsRaw, settings, allRatesMap] = await Promise.all([
@@ -106,7 +108,7 @@ export default async function AccountsPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight">Accounts</h2>
+      <h2 className="text-2xl font-bold tracking-tight">{t("title")}</h2>
       <AccountsList accounts={serialized} priceMap={priceMap} ratesMap={ratesMap} baseCurrency={baseCurrency} />
     </div>
   );
