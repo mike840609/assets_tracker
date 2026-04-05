@@ -14,7 +14,7 @@ import {
 import { CURRENCIES } from "@/lib/currencies";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { SUPPORTED_LOCALES, type Locale } from "@/i18n/config";
+import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 
 export function SettingsForm({
   currentCurrency,
@@ -26,7 +26,9 @@ export function SettingsForm({
   const router = useRouter();
   const t = useTranslations();
   const [currency, setCurrency] = useState(currentCurrency);
-  const [locale, setLocale] = useState<Locale>(currentLocale as Locale);
+  const [locale, setLocale] = useState<Locale>(
+    SUPPORTED_LOCALES.includes(currentLocale as Locale) ? (currentLocale as Locale) : DEFAULT_LOCALE
+  );
   const [saving, setSaving] = useState(false);
   const [savingLocale, setSavingLocale] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
