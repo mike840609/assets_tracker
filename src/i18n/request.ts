@@ -1,9 +1,8 @@
 import { getRequestConfig } from "next-intl/server";
 import { cookies, headers } from "next/headers";
+import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "./config";
 
-export const SUPPORTED_LOCALES = ["en-US", "zh-TW"] as const;
-export type Locale = (typeof SUPPORTED_LOCALES)[number];
-export const DEFAULT_LOCALE: Locale = "en-US";
+export { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale };
 
 function detectLocaleFromAcceptLanguage(acceptLanguage: string): Locale {
   const lower = acceptLanguage.toLowerCase();
