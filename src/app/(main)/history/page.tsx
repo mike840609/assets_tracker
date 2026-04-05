@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { getTranslations, getMessages } from "next-intl/server";
@@ -6,6 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LazyTrendChart } from "@/components/dashboard/lazy-charts";
 import { HistoryTable } from "@/components/history/history-table";
+import { getNormalizedHistory } from "@/lib/services/history-service";
 
 const CLIENT_NAMESPACES = ["trendChart", "history"];
 
@@ -20,18 +20,7 @@ export default async function HistoryPage() {
     getOrCreateSettings(userId),
   ]);
 
-  const snapshotsRaw = await prisma.netWorthSnapshot.findMany({
-    where: { userId, baseCurrency: settings.baseCurrency },
-    orderBy: { date: "asc" },
-  });
-
-  const snapshots = snapshotsRaw.map((s) => ({
-    id: s.id,
-    date: s.date.toISOString().split("T")[0],
-    netWorth: Number(s.netWorth),
-    totalAssets: Number(s.totalAssets),
-    totalLiabilities: Number(s.totalLiabilities),
-  }));
+  const snapshots = await getNormalizedHistory(userId, settings.baseCurrency);
 
   return (
     <NextIntlClientProvider messages={pickMessages(allMessages, CLIENT_NAMESPACES)}>
