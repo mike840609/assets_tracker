@@ -51,7 +51,7 @@ export function InlineBalanceEditor({
             placeholder={formatNumber(currentBalance, 0)}
             value={balance}
             onChange={(e) => setBalance(e.target.value)}
-            className="h-8"
+            className="h-8 flex-1"
             autoFocus
           />
           <Button size="sm" onClick={handleSave} disabled={saving}>

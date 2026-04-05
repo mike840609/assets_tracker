@@ -201,7 +201,12 @@
     "deleteFailed": "刪除失敗",
     "holdingDeleteFailed": "刪除持倉失敗",
     "notePlaceholderDeposit": "備註（例如：存款、薪資...）",
-    "notePlaceholderSalary": "備註（例如：薪資、租金...）"
+    "notePlaceholderSalary": "備註（例如：薪資、租金...）",
+    "editAccount": "編輯帳戶",
+    "accountUpdated": "帳戶已更新",
+    "updateFailed": "更新帳戶失敗",
+    "labelAccountName": "帳戶名稱",
+    "placeholderAccountName": "例如：玉山銀行"
   },
   "login": {
     "title": "資產追蹤",
