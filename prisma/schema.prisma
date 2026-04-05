@@ -91,7 +91,7 @@ model HoldingTransaction {
   note      String?
   createdAt DateTime        @default(now())
 
-  @@index([createdAt])
+  @@index([holdingId, createdAt])
 }
 
 enum CashTransactionType {
