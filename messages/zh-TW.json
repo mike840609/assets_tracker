@@ -202,5 +202,11 @@
     "holdingDeleteFailed": "刪除持倉失敗",
     "notePlaceholderDeposit": "備註（例如：存款、薪資...）",
     "notePlaceholderSalary": "備註（例如：薪資、租金...）"
+  },
+  "login": {
+    "title": "資產追蹤",
+    "subtitle": "安全地訪問您的財務投資組合",
+    "googleButton": "使用 Google 帳號繼續",
+    "footer": "繼續操作即表示您同意私密地保護您的數據。"
   }
 }

@@ -53,3 +53,8 @@ export function formatNumber(amount: number, decimals = 2): string {
     maximumFractionDigits: decimals,
   }).format(amount);
 }
+
+export function getLocaleDefaultCurrency(locale: string): string {
+  if (locale.includes("zh-TW")) return "TWD";
+  return "USD";
+}

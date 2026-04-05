@@ -2,16 +2,14 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updateSettingsSchema } from "@/lib/validators";
 import { auth } from "@/auth";
+import { getOrCreateSettings } from "@/lib/services/settings-service";
 
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const userId = session.user.id;
 
-  let settings = await prisma.setting.findUnique({ where: { userId } });
-  if (!settings) {
-    settings = await prisma.setting.create({ data: { userId, baseCurrency: "USD", locale: "en-US" } });
-  }
+  const settings = await getOrCreateSettings(userId);
   return NextResponse.json(settings);
 }
 

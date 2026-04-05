@@ -202,5 +202,11 @@
     "holdingDeleteFailed": "Failed to delete holding",
     "notePlaceholderDeposit": "Note (e.g. Deposit, Salary...)",
     "notePlaceholderSalary": "Note (e.g. Salary, Rent...)"
+  },
+  "login": {
+    "title": "Asset Tracker",
+    "subtitle": "Securely access your financial portfolio",
+    "googleButton": "Continue with Google",
+    "footer": "By continuing, you agree to secure your data privately."
   }
 }

@@ -243,8 +243,8 @@ export function AccountsList({
         </div>
       )}
 
-      <AccountForm open={showForm} onClose={() => setShowForm(false)} />
-      <QuickAddHolding open={showQuickAdd} onClose={() => setShowQuickAdd(false)} accounts={accounts} />
+      <AccountForm open={showForm} onClose={() => setShowForm(false)} defaultCurrency={baseCurrency} />
+      <QuickAddHolding open={showQuickAdd} onClose={() => setShowQuickAdd(false)} accounts={accounts} defaultCurrency={baseCurrency} />
     </div>
   );
 }
