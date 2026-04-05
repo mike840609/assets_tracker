@@ -12,7 +12,10 @@
       "Bash(git push:*)",
       "Bash(gh pr create --title 'Dark mode refinement, performance, mobile nav auto-hide, and chart fixes' --body ':*)",
       "Bash(gh pr:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(git commit -m 'fix: always initialize locale Select with a valid fallback value:*)",
+      "Bash(git commit -m 'fix: detect API errors and delay reload so language save works correctly:*)",
+      "Bash(git commit -m 'feat\\(i18n\\): translate all page titles, section headings, and dashboard components:*)"
     ]
   }
 }

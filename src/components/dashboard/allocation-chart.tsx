@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { useTranslations } from "next-intl";
 import type { NetWorthSummary } from "@/lib/types";
 
 const COLORS = [
@@ -10,20 +11,9 @@ const COLORS = [
   "#06b6d4", "#ec4899", "#84cc16", "#f97316",
 ];
 
-const CATEGORY_LABELS: Record<string, string> = {
-  BANK: "Bank",
-  BROKERAGE: "Brokerage",
-  CRYPTO_WALLET: "Crypto",
-  PROPERTY: "Property",
-  VEHICLE: "Vehicle",
-  CREDIT_CARD: "Credit Card",
-  LOAN: "Loan",
-  MORTGAGE: "Mortgage",
-  OTHER: "Other",
-};
-
 export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
   const [mounted, setMounted] = useState(false);
+  const t = useTranslations();
   useEffect(() => setMounted(true), []);
 
   const assetAccounts = summary.accounts.filter((a) => a.type === "ASSET");
@@ -38,7 +28,7 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
   const total = Array.from(categoryMap.values()).reduce((a, b) => a + b, 0);
   const data = Array.from(categoryMap.entries())
     .map(([category, value]) => ({
-      name: CATEGORY_LABELS[category] ?? category,
+      name: t(`categories.${category}`, { defaultValue: category }),
       value: Math.round(value * 100) / 100,
       percentage: total > 0 ? ((value / total) * 100).toFixed(1) : "0",
     }))
@@ -48,12 +38,12 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium">Asset Allocation</CardTitle>
+        <CardTitle className="text-base font-medium">{t("allocationChart.title")}</CardTitle>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
           <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
-            No assets to display.
+            {t("allocationChart.noAssets")}
           </div>
         ) : !mounted ? (
           <div className="h-[250px]" />
@@ -86,7 +76,7 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                   return [`${formattedValue} (${percentage}%)`, name];
                 }}
               />
-              <Legend 
+              <Legend
                 formatter={(value, entry: any) => {
                   const percentage = entry?.payload?.percentage;
                   return (

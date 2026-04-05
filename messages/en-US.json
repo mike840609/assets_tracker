@@ -9,6 +9,27 @@
     "accounts": "Accounts",
     "settings": "Settings"
   },
+  "common": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "deleting": "Deleting...",
+    "asset": "Asset",
+    "liability": "Liability"
+  },
+  "categories": {
+    "BANK": "Bank",
+    "BROKERAGE": "Brokerage",
+    "CRYPTO_WALLET": "Crypto",
+    "PROPERTY": "Property",
+    "VEHICLE": "Vehicle",
+    "CREDIT_CARD": "Credit Card",
+    "LOAN": "Loan",
+    "MORTGAGE": "Mortgage",
+    "OTHER": "Other"
+  },
   "settings": {
     "title": "Settings",
     "baseCurrency": "Base Currency",
@@ -40,5 +61,72 @@
     "failed": "Failed",
     "languageUpdated": "Language updated",
     "languageFailed": "Failed to update language"
+  },
+  "dashboard": {
+    "title": "Dashboard"
+  },
+  "accounts": {
+    "title": "Accounts"
+  },
+  "netWorthCard": {
+    "netWorth": "Net Worth",
+    "totalAssets": "Total Assets",
+    "totalLiabilities": "Total Liabilities"
+  },
+  "dashboardActions": {
+    "pricesUpdated": "Prices updated {age}",
+    "snapshot": "Snapshot {age}",
+    "noPriceData": "No price data yet",
+    "refreshPrices": "Refresh Prices",
+    "refreshing": "Refreshing...",
+    "refreshSuccess": "Updated {count} prices & exchange rates",
+    "refreshFailed": "Failed to refresh prices"
+  },
+  "trendChart": {
+    "title": "Net Worth Trend",
+    "noData": "No data to display yet. Add accounts and your net worth will be tracked automatically at midnight (UTC+8).",
+    "seriesName": "Net Worth"
+  },
+  "allocationChart": {
+    "title": "Asset Allocation",
+    "noAssets": "No assets to display."
+  },
+  "accountsSummary": {
+    "title": "All Accounts",
+    "noAccounts": "No accounts yet.",
+    "addFirstAccount": "Add your first account",
+    "colAccount": "Account",
+    "colCategory": "Category",
+    "colType": "Type",
+    "colValue": "Value ({currency})",
+    "colPercentage": "%"
+  },
+  "accountDetail": {
+    "breadcrumb": "Accounts",
+    "deleteAccount": "Delete Account",
+    "deleting": "Deleting...",
+    "marketValue": "Market Value",
+    "holdingsCount": "Holdings",
+    "cashBalance": "Cash Balance",
+    "totalValue": "Total Value",
+    "holdingsValue": "Holdings Value",
+    "addHolding": "Add Holding",
+    "noHoldings": "No holdings yet. Add stocks, ETFs, or crypto.",
+    "colSymbol": "Symbol",
+    "colName": "Name",
+    "colType": "Type",
+    "colCurrency": "Ccy",
+    "colQty": "Qty",
+    "colPrice": "Price",
+    "colValue": "Value",
+    "colPercentage": "%",
+    "deleteConfirm": "Delete this account? This cannot be undone.",
+    "balanceUpdated": "Balance updated",
+    "accountDeleted": "Account deleted",
+    "holdingRemoved": "Holding removed",
+    "deleteFailed": "Failed to delete",
+    "holdingDeleteFailed": "Failed to delete holding",
+    "notePlaceholderDeposit": "Note (e.g. Deposit, Salary...)",
+    "notePlaceholderSalary": "Note (e.g. Salary, Rent...)"
   }
 }

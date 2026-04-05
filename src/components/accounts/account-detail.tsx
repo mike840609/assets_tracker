@@ -26,19 +26,8 @@ import { EditHoldingDialog } from "./edit-holding-dialog";
 import { TransactionHistory } from "./transaction-history";
 import { InlineBalanceEditor } from "./inline-balance-editor";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { SerializedAccountWithHoldings, SerializedHolding } from "@/lib/types";
-
-const CATEGORY_LABELS: Record<string, string> = {
-  BANK: "Bank",
-  BROKERAGE: "Brokerage",
-  CRYPTO_WALLET: "Crypto Wallet",
-  PROPERTY: "Property",
-  VEHICLE: "Vehicle",
-  CREDIT_CARD: "Credit Card",
-  LOAN: "Loan",
-  MORTGAGE: "Mortgage",
-  OTHER: "Other",
-};
 
 export function AccountDetail({
   account,
@@ -50,6 +39,7 @@ export function AccountDetail({
   ratesMap?: Record<string, number>;
 }) {
   const router = useRouter();
+  const t = useTranslations();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showHoldingForm, setShowHoldingForm] = useState(false);
   const [editingHolding, setEditingHolding] = useState<SerializedHolding | null>(null);
@@ -77,19 +67,19 @@ export function AccountDetail({
       body: JSON.stringify({ cashBalance: newBalance, note }),
     });
     setRefreshTrigger((prev) => prev + 1);
-    toast.success("Balance updated");
+    toast.success(t("accountDetail.balanceUpdated"));
     router.refresh();
   }
 
   async function deleteAccount() {
-    if (!confirm("Delete this account? This cannot be undone.")) return;
+    if (!confirm(t("accountDetail.deleteConfirm"))) return;
     setDeleting(true);
     try {
       await fetch(`/api/accounts/${account.id}`, { method: "DELETE" });
-      toast.success("Account deleted");
+      toast.success(t("accountDetail.accountDeleted"));
       router.push("/accounts");
     } catch {
-      toast.error("Failed to delete");
+      toast.error(t("accountDetail.deleteFailed"));
       setDeleting(false);
     }
   }
@@ -101,11 +91,11 @@ export function AccountDetail({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: holdingId }),
       });
-      toast.success("Holding removed");
+      toast.success(t("accountDetail.holdingRemoved"));
       setRefreshTrigger((prev) => prev + 1);
       router.refresh();
     } catch {
-      toast.error("Failed to delete holding");
+      toast.error(t("accountDetail.holdingDeleteFailed"));
     }
   }
 
@@ -115,7 +105,7 @@ export function AccountDetail({
     <>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link href="/accounts" className="hover:text-foreground">
-          Accounts
+          {t("accountDetail.breadcrumb")}
         </Link>
         <span>/</span>
         <span>{account.name}</span>
@@ -126,20 +116,15 @@ export function AccountDetail({
           <h2 className="text-2xl font-bold tracking-tight">{account.name}</h2>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant={account.type === "ASSET" ? "default" : "destructive"}>
-              {account.type}
+              {t(`common.${account.type.toLowerCase()}`, { defaultValue: account.type })}
             </Badge>
             <span className="text-muted-foreground">
-              {CATEGORY_LABELS[account.category]} · {account.currency}
+              {t(`categories.${account.category}`, { defaultValue: account.category })} · {account.currency}
             </span>
           </div>
         </div>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={deleteAccount}
-          disabled={deleting}
-        >
-          {deleting ? "Deleting..." : "Delete Account"}
+        <Button variant="destructive" size="sm" onClick={deleteAccount} disabled={deleting}>
+          {deleting ? t("accountDetail.deleting") : t("accountDetail.deleteAccount")}
         </Button>
       </div>
 
@@ -147,7 +132,7 @@ export function AccountDetail({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Market Value</p>
+              <p className="text-sm text-muted-foreground">{t("accountDetail.marketValue")}</p>
               <p className="text-2xl font-bold mt-1">
                 {formatCurrency(totalHoldingsValue, account.currency)}
               </p>
@@ -155,19 +140,17 @@ export function AccountDetail({
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Holdings</p>
-              <p className="text-2xl font-bold mt-1">
-                {holdingsWithValue.length}
-              </p>
+              <p className="text-sm text-muted-foreground">{t("accountDetail.holdingsCount")}</p>
+              <p className="text-2xl font-bold mt-1">{holdingsWithValue.length}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Cash Balance</p>
+              <p className="text-sm text-muted-foreground">{t("accountDetail.cashBalance")}</p>
               <InlineBalanceEditor
                 currentBalance={account.cashBalance}
                 currency={account.currency}
-                notePlaceholder="Note (e.g. Deposit, Salary...)"
+                notePlaceholder={t("accountDetail.notePlaceholderDeposit")}
                 onSave={saveBalance}
               />
             </CardContent>
@@ -177,11 +160,11 @@ export function AccountDetail({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Cash Balance</p>
+              <p className="text-sm text-muted-foreground">{t("accountDetail.cashBalance")}</p>
               <InlineBalanceEditor
                 currentBalance={account.cashBalance}
                 currency={account.currency}
-                notePlaceholder="Note (e.g. Salary, Rent...)"
+                notePlaceholder={t("accountDetail.notePlaceholderSalary")}
                 onSave={saveBalance}
               />
             </CardContent>
@@ -191,7 +174,7 @@ export function AccountDetail({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Total Value</p>
+              <p className="text-sm text-muted-foreground">{t("accountDetail.totalValue")}</p>
               <p className="text-2xl font-bold mt-1">
                 {formatCurrency(totalValue, account.currency)}
               </p>
@@ -199,18 +182,18 @@ export function AccountDetail({
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Cash Balance</p>
+              <p className="text-sm text-muted-foreground">{t("accountDetail.cashBalance")}</p>
               <InlineBalanceEditor
                 currentBalance={account.cashBalance}
                 currency={account.currency}
-                notePlaceholder="Note (e.g. Salary, Rent...)"
+                notePlaceholder={t("accountDetail.notePlaceholderSalary")}
                 onSave={saveBalance}
               />
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Holdings Value</p>
+              <p className="text-sm text-muted-foreground">{t("accountDetail.holdingsValue")}</p>
               <p className="text-2xl font-bold mt-1">
                 {formatCurrency(totalHoldingsValue, account.currency)}
               </p>
@@ -222,37 +205,35 @@ export function AccountDetail({
       {!isBank && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base font-medium">Holdings</CardTitle>
+            <CardTitle className="text-base font-medium">{t("accountDetail.holdingsCount")}</CardTitle>
             <Button size="sm" onClick={() => setShowHoldingForm(true)}>
-              Add Holding
+              {t("accountDetail.addHolding")}
             </Button>
           </CardHeader>
           <CardContent>
             {holdingsWithValue.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
-                No holdings yet. Add stocks, ETFs, or crypto.
+                {t("accountDetail.noHoldings")}
               </p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Symbol</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Ccy</TableHead>
-                    <TableHead className="text-right">Qty</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                    <TableHead className="text-right">Value</TableHead>
-                    <TableHead className="text-right">%</TableHead>
+                    <TableHead>{t("accountDetail.colSymbol")}</TableHead>
+                    <TableHead>{t("accountDetail.colName")}</TableHead>
+                    <TableHead>{t("accountDetail.colType")}</TableHead>
+                    <TableHead>{t("accountDetail.colCurrency")}</TableHead>
+                    <TableHead className="text-right">{t("accountDetail.colQty")}</TableHead>
+                    <TableHead className="text-right">{t("accountDetail.colPrice")}</TableHead>
+                    <TableHead className="text-right">{t("accountDetail.colValue")}</TableHead>
+                    <TableHead className="text-right">{t("accountDetail.colPercentage")}</TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {holdingsWithValue.map((h) => (
                     <TableRow key={h.id}>
-                      <TableCell className="font-mono font-medium">
-                        {h.symbol}
-                      </TableCell>
+                      <TableCell className="font-mono font-medium">{h.symbol}</TableCell>
                       <TableCell>{h.name}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">{h.assetType}</Badge>
@@ -284,16 +265,14 @@ export function AccountDetail({
                             ...
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => setEditingHolding(h)}
-                            >
-                              Edit
+                            <DropdownMenuItem onClick={() => setEditingHolding(h)}>
+                              {t("common.edit")}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
                               onClick={() => deleteHolding(h.id)}
                             >
-                              Delete
+                              {t("common.delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

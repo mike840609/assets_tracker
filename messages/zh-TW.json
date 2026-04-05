@@ -9,6 +9,27 @@
     "accounts": "帳戶",
     "settings": "設定"
   },
+  "common": {
+    "edit": "編輯",
+    "delete": "刪除",
+    "cancel": "取消",
+    "save": "儲存",
+    "saving": "儲存中...",
+    "deleting": "刪除中...",
+    "asset": "資產",
+    "liability": "負債"
+  },
+  "categories": {
+    "BANK": "銀行",
+    "BROKERAGE": "券商",
+    "CRYPTO_WALLET": "加密錢包",
+    "PROPERTY": "不動產",
+    "VEHICLE": "車輛",
+    "CREDIT_CARD": "信用卡",
+    "LOAN": "貸款",
+    "MORTGAGE": "房貸",
+    "OTHER": "其他"
+  },
   "settings": {
     "title": "設定",
     "baseCurrency": "基礎貨幣",
@@ -40,5 +61,72 @@
     "failed": "失敗",
     "languageUpdated": "語言已更新",
     "languageFailed": "更新語言失敗"
+  },
+  "dashboard": {
+    "title": "儀表板"
+  },
+  "accounts": {
+    "title": "帳戶"
+  },
+  "netWorthCard": {
+    "netWorth": "淨資產",
+    "totalAssets": "總資產",
+    "totalLiabilities": "總負債"
+  },
+  "dashboardActions": {
+    "pricesUpdated": "價格更新於 {age}",
+    "snapshot": "快照於 {age}",
+    "noPriceData": "尚無價格資料",
+    "refreshPrices": "更新價格",
+    "refreshing": "更新中...",
+    "refreshSuccess": "已更新 {count} 個價格和匯率",
+    "refreshFailed": "更新價格失敗"
+  },
+  "trendChart": {
+    "title": "淨資產趨勢",
+    "noData": "尚無資料。新增帳戶後，淨資產將於每日午夜（UTC+8）自動記錄。",
+    "seriesName": "淨資產"
+  },
+  "allocationChart": {
+    "title": "資產配置",
+    "noAssets": "尚無資產。"
+  },
+  "accountsSummary": {
+    "title": "所有帳戶",
+    "noAccounts": "尚無帳戶。",
+    "addFirstAccount": "新增您的第一個帳戶",
+    "colAccount": "帳戶",
+    "colCategory": "類別",
+    "colType": "類型",
+    "colValue": "價值（{currency}）",
+    "colPercentage": "%"
+  },
+  "accountDetail": {
+    "breadcrumb": "帳戶",
+    "deleteAccount": "刪除帳戶",
+    "deleting": "刪除中...",
+    "marketValue": "市值",
+    "holdingsCount": "持倉數",
+    "cashBalance": "現金餘額",
+    "totalValue": "總價值",
+    "holdingsValue": "持倉價值",
+    "addHolding": "新增持倉",
+    "noHoldings": "尚無持倉。新增股票、ETF 或加密貨幣。",
+    "colSymbol": "代號",
+    "colName": "名稱",
+    "colType": "類型",
+    "colCurrency": "幣別",
+    "colQty": "數量",
+    "colPrice": "價格",
+    "colValue": "價值",
+    "colPercentage": "%",
+    "deleteConfirm": "確定要刪除此帳戶？此操作無法復原。",
+    "balanceUpdated": "餘額已更新",
+    "accountDeleted": "帳戶已刪除",
+    "holdingRemoved": "持倉已移除",
+    "deleteFailed": "刪除失敗",
+    "holdingDeleteFailed": "刪除持倉失敗",
+    "notePlaceholderDeposit": "備註（例如：存款、薪資...）",
+    "notePlaceholderSalary": "備註（例如：薪資、租金...）"
   }
 }
