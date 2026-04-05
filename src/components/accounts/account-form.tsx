@@ -37,9 +37,11 @@ const CATEGORY_KEYS = [
 export function AccountForm({
   open,
   onClose,
+  defaultCurrency = "USD",
 }: {
   open: boolean;
   onClose: () => void;
+  defaultCurrency?: string;
 }) {
   const router = useRouter();
   const t = useTranslations();
@@ -47,7 +49,7 @@ export function AccountForm({
   const [name, setName] = useState("");
   const [type, setType] = useState<"ASSET" | "LIABILITY">("ASSET");
   const [category, setCategory] = useState("BANK");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState(defaultCurrency);
   const [cashBalance, setCashBalance] = useState("0");
 
   async function handleSubmit(e: React.FormEvent) {

@@ -46,10 +46,12 @@ export function QuickAddHolding({
   open,
   onClose,
   accounts,
+  defaultCurrency = "USD",
 }: {
   open: boolean;
   onClose: () => void;
   accounts: SerializedAccountWithHoldings[];
+  defaultCurrency?: string;
 }) {
   const router = useRouter();
   const t = useTranslations();
@@ -69,7 +71,7 @@ export function QuickAddHolding({
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [assetType, setAssetType] = useState("STOCK");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState(defaultCurrency);
 
   // Account selection state
   const [selectedAccountId, setSelectedAccountId] = useState("");
@@ -126,10 +128,10 @@ export function QuickAddHolding({
     setName("");
     setQuantity("");
     setAssetType("STOCK");
-    setCurrency("USD");
+    setCurrency(defaultCurrency);
     setShowResults(false);
     setSelectedAccountId("");
-  }
+}
 
   function handleClose() {
     resetForm();
@@ -171,7 +173,7 @@ export function QuickAddHolding({
             name: defaultName,
             type: "ASSET",
             category: targetCategory,
-            currency: "USD",
+            currency: defaultCurrency,
             cashBalance: 0,
           }),
         });
