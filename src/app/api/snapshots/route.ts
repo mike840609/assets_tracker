@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createSnapshot } from "@/lib/services/snapshot-service";
+import { getNormalizedHistory } from "@/lib/services/history-service";
 import { auth } from "@/auth";
 
 export async function GET(request: Request) {
@@ -12,14 +13,11 @@ export async function GET(request: Request) {
   const to = searchParams.get("to");
   const baseCurrency = searchParams.get("currency") ?? "USD";
 
-  const where: Record<string, unknown> = { userId: session.user.id, baseCurrency };
-  if (from) where.date = { ...(where.date as object || {}), gte: new Date(from) };
-  if (to) where.date = { ...(where.date as object || {}), lte: new Date(to) };
+  const options: { from?: Date; to?: Date } = {};
+  if (from) options.from = new Date(from);
+  if (to) options.to = new Date(to);
 
-  const snapshots = await prisma.netWorthSnapshot.findMany({
-    where,
-    orderBy: { date: "asc" },
-  });
+  const snapshots = await getNormalizedHistory(session.user.id, baseCurrency, options);
   return NextResponse.json(snapshots);
 }
 

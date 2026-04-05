@@ -16,7 +16,9 @@
       "Bash(git commit -m 'fix: always initialize locale Select with a valid fallback value:*)",
       "Bash(git commit -m 'fix: detect API errors and delay reload so language save works correctly:*)",
       "Bash(git commit -m 'feat\\(i18n\\): translate all page titles, section headings, and dashboard components:*)",
-      "Bash(git commit -m 'feat\\(i18n\\): translate accounts list — select all, add item/account, assets/liabilities, category labels, plural counts:*)"
+      "Bash(git commit -m 'feat\\(i18n\\): translate accounts list — select all, add item/account, assets/liabilities, category labels, plural counts:*)",
+      "Bash(npm run:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

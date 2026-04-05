@@ -10,10 +10,12 @@ A modern, high-performance net worth and investment tracker. Built with **Next.j
 - **🚀 Real-time Tracking**: Automatically fetch latest prices for Stocks, ETFs, and Cryptocurrencies (via Yahoo Finance + CoinGecko fallback).
 - **🌍 Multi-Currency Support**: Track assets in USD, TWD, EUR, and more. All values are automatically converted to your selected **Base Currency**.
 - **📈 Trend Visualization**: Interactive charts showing your net worth, assets, and liabilities over time.
+- **🔄 Lossless History**: Snapshots store original account balances and currencies, allowing perfectly accurate history normalization even if you change your base currency later.
 - **🤖 Automated Snapshots**: Built-in Vercel Cron integration to automatically record your net worth daily.
 - **🌗 Light / Dark / System Theme**: Full theme support with smooth toggle.
 - **💼 Unified Portfolio**: Combine bank accounts, brokerages, and crypto wallets into one dashboard.
 - **🌐 Internationalization**: English (en-US) and Traditional Chinese (zh-TW), auto-detected from browser.
+- **📊 Lossless Data Integrity**: Detailed breakdown of historical snapshots ensuring currency conversion accuracy over time.
 
 ## 🛠️ Tech Stack
 
@@ -74,6 +76,24 @@ This project is optimized for **Vercel** and includes native Cron Job support vi
 - **Security**: Protected via `CRON_SECRET` header verification.
 
 To enable automation, deploy to Vercel and set all environment variables in your project settings.
+
+## 💹 Net Worth History & Currency Normalization
+
+Tracking net worth across multiple currencies and time periods is complex. This project uses a **Lossless Snapshot** architecture to ensure your history remains accurate even if you change your base currency.
+
+### 1. Snapshot Creation (`snapshot-service.ts`)
+When a snapshot is taken (manually or via Cron), the system:
+- Calculates your current net worth in your current **Base Currency**.
+- Stores a **Lossless Breakdown** in a JSON field, recording every account's **original balance** and **original currency**.
+
+### 2. History Normalization (`history-service.ts`)
+When you view your history chart or table, the system:
+- Fetches all historical snapshots for your user ID.
+- Identifies your current preferred **Base Currency** from settings.
+- **On-the-fly Conversion**: For each snapshot, it converts every account balance from its original currency to your current base currency using the **latest available exchange rates**.
+- **Legacy Support**: If a snapshot was taken before the lossless system was implemented, it converts the snapshot's total value from its original base currency to your current one.
+
+This approach ensures that your trend lines always remain continuous and comparable, regardless of currency fluctuations or setting changes.
 
 ## 📝 Roadmap
 
