@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -43,7 +44,10 @@ export function AccountDetail({
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showHoldingForm, setShowHoldingForm] = useState(false);
   const [editingHolding, setEditingHolding] = useState<SerializedHolding | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(account.name);
   const [deleting, setDeleting] = useState(false);
+  const [savingName, setSavingName] = useState(false);
 
   const holdingsWithValue = account.holdings.map((h) => {
     const price = priceMap[h.symbol] ?? null;
@@ -69,6 +73,40 @@ export function AccountDetail({
     setRefreshTrigger((prev) => prev + 1);
     toast.success(t("accountDetail.balanceUpdated"));
     router.refresh();
+  }
+
+  async function handleNameSave() {
+    if (tempName.trim() === "" || tempName === account.name) {
+      setIsEditingName(false);
+      setTempName(account.name);
+      return;
+    }
+
+    setSavingName(true);
+    try {
+      const res = await fetch(`/api/accounts/${account.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: tempName }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || t("accountDetail.updateFailed"));
+      }
+
+      toast.success(t("accountDetail.accountUpdated"));
+      setIsEditingName(false);
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t("accountDetail.updateFailed")
+      );
+      setTempName(account.name);
+      setIsEditingName(false);
+    } finally {
+      setSavingName(false);
+    }
   }
 
   async function deleteAccount() {
@@ -112,8 +150,33 @@ export function AccountDetail({
       </div>
 
       <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">{account.name}</h2>
+        <div className="flex-1 mr-4">
+          {isEditingName ? (
+            <div className="flex items-center gap-2 max-w-md">
+              <Input
+                value={tempName}
+                onChange={(e) => setTempName(e.target.value)}
+                onBlur={handleNameSave}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleNameSave();
+                  if (e.key === "Escape") {
+                    setIsEditingName(false);
+                    setTempName(account.name);
+                  }
+                }}
+                disabled={savingName}
+                className="text-2xl font-bold h-10 px-2"
+                autoFocus
+              />
+            </div>
+          ) : (
+            <h2
+              className="text-2xl font-bold tracking-tight cursor-pointer hover:text-primary hover:bg-accent/50 rounded px-1 -mx-1 transition-colors"
+              onClick={() => setIsEditingName(true)}
+            >
+              {account.name}
+            </h2>
+          )}
           <div className="flex items-center gap-2 mt-1">
             <Badge variant={account.type === "ASSET" ? "default" : "destructive"}>
               {t(`common.${account.type.toLowerCase()}`, { defaultValue: account.type })}
