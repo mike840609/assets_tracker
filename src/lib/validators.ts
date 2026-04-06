@@ -73,3 +73,56 @@ export const updateCashTransactionSchema = z.object({
   note: z.string().optional().nullable(),
   createdAt: z.string().optional(),
 });
+
+const decimalSchema = z.union([z.number(), z.string(), z.any()]);
+
+export const dataImportSchema = z.object({
+  version: z.string(),
+  settings: z.object({
+    baseCurrency: z.string().length(3),
+    locale: z.string(),
+  }).optional().nullable(),
+  accounts: z.array(z.object({
+    name: z.string().min(1),
+    type: z.enum(["ASSET", "LIABILITY"]),
+    category: z.enum([
+      "BANK", "BROKERAGE", "CRYPTO_WALLET", "PROPERTY", "VEHICLE", 
+      "CREDIT_CARD", "LOAN", "MORTGAGE", "OTHER"
+    ]),
+    currency: z.string().length(3),
+    cashBalance: decimalSchema,
+    isActive: z.boolean().default(true),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+    holdings: z.array(z.object({
+      symbol: z.string().min(1),
+      name: z.string().min(1),
+      quantity: decimalSchema,
+      currency: z.string().length(3),
+      assetType: z.enum(["STOCK", "ETF", "CRYPTO", "MUTUAL_FUND", "BOND", "OTHER"]),
+      createdAt: z.string().optional(),
+      updatedAt: z.string().optional(),
+      transactions: z.array(z.object({
+        type: z.enum(["BUY", "SELL", "EDIT"]),
+        quantity: decimalSchema,
+        note: z.string().optional().nullable(),
+        createdAt: z.string().optional(),
+      })).optional(),
+    })).optional(),
+    cashTransactions: z.array(z.object({
+      type: z.enum(["DEPOSIT", "WITHDRAWAL", "EDIT"]),
+      amount: decimalSchema,
+      note: z.string().optional().nullable(),
+      createdAt: z.string().optional(),
+    })).optional(),
+  })),
+  snapshots: z.array(z.object({
+    date: z.string(),
+    totalAssets: decimalSchema,
+    totalLiabilities: decimalSchema,
+    netWorth: decimalSchema,
+    baseCurrency: z.string().length(3),
+    breakdown: z.any().optional().nullable(),
+    createdAt: z.string().optional(),
+  })).optional(),
+});

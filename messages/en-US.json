@@ -220,6 +220,26 @@
     "labelAccountName": "Account Name",
     "placeholderAccountName": "e.g. Chase Checking"
   },
+  "dataManagement": {
+    "title": "Data Management",
+    "export": "Export Data",
+    "exportDescription": "Download all your accounts, holdings, and transaction history as a JSON file.",
+    "import": "Import Data",
+    "importDescription": "Upload a previously exported JSON file to restore your data. Warning: This will overwrite your current data.",
+    "importButton": "Select File & Import",
+    "importing": "Importing...",
+    "importSuccess": "Data imported successfully",
+    "importFailed": "Failed to import data",
+    "exportFailed": "Failed to export data",
+    "confirmImport": "Are you sure you want to import data? This will REPLACE ALL your current accounts and transactions. This cannot be undone.",
+    "invalidFile": "Invalid file format. Please upload a JSON file exported from this app.",
+    "cancel": "Cancel",
+    "importErrorTitle": "Import Failed",
+    "close": "Close",
+    "parseError": "JSON Syntax Error: The file you uploaded is not a valid JSON. Please check the file content.",
+    "importSuccessTitle": "Import Successful",
+    "importSuccessMessage": "Your data has been restored successfully. Please refresh the page to see the changes."
+  },
   "login": {
     "title": "Asset Tracker",
     "subtitle": "Securely access your financial portfolio",

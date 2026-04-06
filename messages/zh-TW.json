@@ -220,6 +220,26 @@
     "labelAccountName": "帳戶名稱",
     "placeholderAccountName": "例如：玉山銀行"
   },
+  "dataManagement": {
+    "title": "資料管理",
+    "export": "匯出資料",
+    "exportDescription": "將您的所有帳戶、持倉和交易紀錄下載為 JSON 檔案。",
+    "import": "匯入資料",
+    "importDescription": "上傳先前匯出的 JSON 檔案以還原資料。警告：這將覆蓋您目前的所有資料。",
+    "importButton": "選擇檔案並匯入",
+    "importing": "匯入中...",
+    "importSuccess": "資料匯入成功",
+    "importFailed": "匯入資料失敗",
+    "exportFailed": "匯出資料失敗",
+    "confirmImport": "您確定要匯入資料嗎？這將「替換」您目前所有的帳戶和交易資料。此操作無法復原。",
+    "invalidFile": "檔案格式錯誤。請上傳從本應用程式匯出的 JSON 檔案。",
+    "cancel": "取消",
+    "importErrorTitle": "匯入失敗",
+    "close": "關閉",
+    "parseError": "JSON 語法錯誤：您上傳的檔案並非有效的 JSON 格式。請檢查檔案內容。",
+    "importSuccessTitle": "匯入成功",
+    "importSuccessMessage": "您的資料已成功還原。請重新整理頁面以查看變更。"
+  },
   "login": {
     "title": "資產追蹤",
     "subtitle": "安全地訪問您的財務投資組合",

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "@/components/settings/settings-form";
+import { DataManagement } from "@/components/settings/data-management";
 import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 
-const CLIENT_NAMESPACES = ["settings", "toast", "languages"];
+const CLIENT_NAMESPACES = ["settings", "toast", "languages", "dataManagement"];
 
 export default async function SettingsPage() {
   const session = await getSession();
@@ -28,8 +29,9 @@ export default async function SettingsPage() {
       <div className="space-y-6">
         <h2 className="text-2xl font-bold tracking-tight">{t("title")}</h2>
         <SettingsForm currentCurrency={settings.baseCurrency} currentLocale={settings.locale} />
+        <DataManagement />
 
-        <div className="mt-8 border-t pt-8">
+        <div className="mt-8 border-t pt-8 max-w-lg">
           <h3 className="text-lg font-medium text-red-500 mb-4">{t("dangerZone")}</h3>
           <form
             action={async () => {

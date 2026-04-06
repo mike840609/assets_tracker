@@ -19,9 +19,9 @@
 | 20 | Inline account name editing | UX | 🟡 Medium | 1-2 hrs | ✅ Done |
 | 21 | Holding & cash transaction history | Feature | 🔴 High | 3-4 hrs | ✅ Done |
 | 7 | Cost basis & gain/loss tracking | Feature | 🔴 High | 4-6 hrs | ❌ Not Done |
-| 9 | Data import/export | Feature | 🔴 High | 4-6 hrs | ❌ Not Done |
+| 9 | Data import/export | Feature | 🔴 High | 4-6 hrs | ✅ Done |
 | 13 | Account reordering & archiving | UX | 🟡 Medium | 3-4 hrs | ❌ Not Done |
-| 14 | Mobile-responsive holdings table | UX | 🟡 Medium | 2-3 hrs | ❌ Not Done |
+| 14 | Mobile-responsive holdings table | UX | 🟡 Medium | 2-3 hrs | ✅ Done |
 | 15 | Monthly/yearly performance reports | Analytics | 🟡 Medium | 4-5 hrs | ❌ Not Done |
 | 16 | Currency exposure chart | Analytics | 🟢 Low | 2-3 hrs | ❌ Not Done |
 | 17 | Dividend / income tracking | Analytics | 🟡 Medium | 4-6 hrs | ❌ Not Done |
