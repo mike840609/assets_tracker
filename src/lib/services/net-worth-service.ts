@@ -94,6 +94,8 @@ export async function getNetWorthSummary(
   }
 
   // Second pass: compute values using the complete rate map
+  const exposureMap: Record<string, number> = {};
+
   for (let i = 0; i < accounts.length; i++) {
     const account = accounts[i];
     const awv = accountsWithValue[i] as AccountWithValue & { _cashBalance: number; _currency: string };
@@ -106,14 +108,23 @@ export async function getNetWorthSummary(
       if (h.marketValue !== null) {
         const holdingCurrency = h.currency || priceMap[h.symbol]?.currency || "USD";
         const holdingRateToBase = getRate(holdingCurrency, baseCurrency);
-        holdingsInBase += h.marketValue * holdingRateToBase;
+        const valueInBase = h.marketValue * holdingRateToBase;
+        holdingsInBase += valueInBase;
         const holdingRateToAccount = getRate(holdingCurrency, account.currency);
         holdingsInAccountCurrency += h.marketValue * holdingRateToAccount;
+
+        if (account.type === "ASSET") {
+          exposureMap[holdingCurrency] = (exposureMap[holdingCurrency] || 0) + valueInBase;
+        }
       }
     }
 
     const cashInBase = cashBalance * rate;
     const totalValue = cashInBase + holdingsInBase;
+
+    if (account.type === "ASSET" && cashBalance > 0) {
+      exposureMap[account.currency] = (exposureMap[account.currency] || 0) + cashInBase;
+    }
 
     awv.totalValue = cashBalance + holdingsInAccountCurrency;
     awv.totalValueInBaseCurrency = totalValue;
@@ -129,11 +140,16 @@ export async function getNetWorthSummary(
     }
   }
 
+  const currencyExposure = Object.entries(exposureMap)
+    .map(([currency, value]) => ({ currency, value }))
+    .sort((a, b) => b.value - a.value);
+
   return {
     totalAssets,
     totalLiabilities,
     netWorth: totalAssets - totalLiabilities,
     baseCurrency,
+    currencyExposure,
     accounts: accountsWithValue,
   };
 }

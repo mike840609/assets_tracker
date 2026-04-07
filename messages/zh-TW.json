@@ -102,6 +102,10 @@
     "title": "資產配置",
     "noAssets": "尚無資產。"
   },
+  "currencyExposure": {
+    "title": "貨幣曝險",
+    "noExposure": "找不到用於計算曝險的資產。"
+  },
   "accountsSummary": {
     "title": "所有帳戶",
     "noAccounts": "尚無帳戶。",

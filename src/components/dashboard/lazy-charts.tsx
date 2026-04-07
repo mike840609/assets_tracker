@@ -25,3 +25,8 @@ export const LazyAllocationChart = dynamic(
   () => import("./allocation-chart").then((m) => m.AllocationChart),
   { ssr: false, loading: () => <ChartSkeleton /> }
 );
+
+export const LazyCurrencyExposureChart = dynamic(
+  () => import("./currency-exposure-chart").then((m) => m.CurrencyExposureChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);

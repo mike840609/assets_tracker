@@ -102,6 +102,10 @@
     "title": "Asset Allocation",
     "noAssets": "No assets to display."
   },
+  "currencyExposure": {
+    "title": "Currency Exposure",
+    "noExposure": "No assets found to compute exposure."
+  },
   "accountsSummary": {
     "title": "All Accounts",
     "noAccounts": "No accounts yet.",
