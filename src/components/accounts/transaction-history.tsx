@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import useSWRInfinite from "swr/infinite";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -50,8 +51,6 @@ const TYPE_LABELS: Record<string, { label: string; variant: "default" | "seconda
 
 export function TransactionHistory({ accountId, isBank, refreshTrigger }: { accountId: string; isBank?: boolean; refreshTrigger?: number }) {
   const router = useRouter();
-  const [transactions, setTransactions] = useState<SerializedTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Dialog state
   const [editingTx, setEditingTx] = useState<SerializedTransaction | null>(null);
@@ -64,24 +63,32 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
   const [editDate, setEditDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchTransactions = useCallback(() => {
-    fetch(`/api/accounts/${accountId}/transactions`)
-      .then((r) => r.json())
-      .then((data) => {
-        setTransactions(
-          data.map((t: Record<string, unknown>) => ({
-            ...t,
-            quantity: Number(t.quantity),
-          }))
-        );
-      })
-      .catch(() => setTransactions([]))
-      .finally(() => setLoading(false));
-  }, [accountId]);
+  const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+  const getKey = (pageIndex: number, previousPageData: SerializedTransaction[]) => {
+    if (previousPageData && !previousPageData.length) return null; // reached the end
+    return `/api/accounts/${accountId}/transactions?page=${pageIndex + 1}&limit=20`;
+  };
+
+  const { data, size, setSize, isValidating, mutate } = useSWRInfinite(getKey, fetcher);
+
+  const transactions = data
+    ? data.flat().map((t: any) => ({
+        ...t,
+        quantity: Number(t.quantity),
+      })) as SerializedTransaction[]
+    : [];
+
+  const isLoadingInitialData = !data && isValidating;
+  const isLoadingMore = isLoadingInitialData || (size > 0 && data && typeof data[size - 1] === "undefined");
+  const isEmpty = data?.[0]?.length === 0;
+  const isReachingEnd = isEmpty || (data && data[data.length - 1]?.length < 20);
 
   useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions, refreshTrigger]);
+    if (refreshTrigger) {
+      mutate();
+    }
+  }, [refreshTrigger, mutate]);
 
   const handleEditClick = (t: SerializedTransaction) => {
     setEditingTx(t);
@@ -117,7 +124,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
 
       toast.success("Transaction updated");
       setEditingTx(null);
-      fetchTransactions();
+      mutate();
       router.refresh(); // Refresh holdings on parent page
     } catch (e) {
       toast.error("Failed to update transaction");
@@ -138,7 +145,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
 
       toast.success("Transaction deleted");
       setDeletingTx(null);
-      fetchTransactions();
+      mutate();
       router.refresh(); // Refresh holdings on parent page
     } catch (e) {
       toast.error("Failed to delete transaction");
@@ -147,7 +154,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
     }
   };
 
-  if (loading) {
+  if (isLoadingInitialData) {
     return (
       <Card>
         <CardHeader>
@@ -235,6 +242,17 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
               })}
             </TableBody>
           </Table>
+        )}
+        {!isEmpty && !isReachingEnd && (
+          <div className="flex justify-center mt-6">
+            <Button
+              variant="secondary"
+              onClick={() => setSize(size + 1)}
+              disabled={isLoadingMore}
+            >
+              {isLoadingMore ? "Loading..." : "Load More"}
+            </Button>
+          </div>
         )}
       </CardContent>
 
