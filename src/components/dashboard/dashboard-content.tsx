@@ -7,6 +7,7 @@ import { getNetWorthSummary } from "@/lib/services/net-worth-service";
 import { redirect } from "next/navigation";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { getNormalizedHistory } from "@/lib/services/history-service";
+import { LazyCurrencyExposureChart } from "@/components/dashboard/lazy-charts";
 
 export async function DashboardContent({ userId }: { userId: string }) {
   const [dbUser, settings] = await Promise.all([
@@ -39,8 +40,8 @@ export async function DashboardContent({ userId }: { userId: string }) {
 
       <NetWorthCard summary={summary} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg lg:col-span-2 xl:col-span-1">
           <LazyTrendChart
             baseCurrency={baseCurrency}
             snapshots={snapshots}
@@ -48,6 +49,9 @@ export async function DashboardContent({ userId }: { userId: string }) {
         </div>
         <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
           <LazyAllocationChart summary={summary} />
+        </div>
+        <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
+          <LazyCurrencyExposureChart summary={summary} />
         </div>
       </div>
 

@@ -11,6 +11,7 @@ const CLIENT_NAMESPACES = [
   "dashboardActions",
   "trendChart",
   "allocationChart",
+  "currencyExposure",
   "accountsSummary",
   "categories",
   "common",

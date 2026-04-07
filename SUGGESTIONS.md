@@ -23,9 +23,12 @@
 | 13 | Account reordering & archiving | UX | 🟡 Medium | 3-4 hrs | ❌ Not Done |
 | 14 | Mobile-responsive holdings table | UX | 🟡 Medium | 2-3 hrs | ✅ Done |
 | 15 | Monthly/yearly performance reports | Analytics | 🟡 Medium | 4-5 hrs | ❌ Not Done |
-| 16 | Currency exposure chart | Analytics | 🟢 Low | 2-3 hrs | ❌ Not Done |
+| 16 | Currency exposure chart | Analytics | 🟢 Low | 2-3 hrs | ✅ Done |
 | 17 | Dividend / income tracking | Analytics | 🟡 Medium | 4-6 hrs | ❌ Not Done |
-
+| 22 | Pagination / Infinite Scroll for Transactions | Performance | 🟡 Medium | 2-3 hrs | ❌ Not Done |
+| 23 | Two-Factor Authentication (2FA) | Security | 🔴 High | 4-6 hrs | ❌ Not Done |
+| 24 | Plaid / Brokerage API Sync | Feature | 🔴 High | 10+ hrs | ❌ Not Done |
+| 25 | Customizable Dashboard Widgets | UX | 🟢 Low | 3-5 hrs | ❌ Not Done |
 ---
 
 ## Details (Pending Tasks)
@@ -37,12 +40,6 @@ BUY/SELL transactions exist and are recorded, but have no `price` field — so c
 - Compute **average cost basis**, **unrealized P&L**, and **total return %** per holding
 - Display gain/loss with green/red coloring on the account detail page
 
-### 9. Data Import/Export
-No way to back up data or migrate between environments.
-
-- **Export:** "Download as CSV/JSON" button on accounts and holdings pages
-- **Import:** CSV import for bulk-adding holdings (e.g. from brokerage statements)
-- Full database backup/restore via JSON dump
 
 ### 13. Account Reordering & Archiving
 `isActive` exists on the `Account` model but there is no UI to archive/unarchive. No way to reorder accounts.
@@ -51,12 +48,6 @@ No way to back up data or migrate between environments.
 - Show archived accounts in a collapsed section
 - Add `sortOrder` field for manual drag-to-reorder
 
-### 14. Mobile-Responsive Holdings Table
-The holdings table has many columns — cramped on mobile.
-
-- Switch to card-based layout on mobile
-- Or make the table horizontally scrollable with a sticky first column
-- Consider collapsible rows for transaction history
 
 ### 15. Monthly/Yearly Performance Reports
 The trend chart shows raw net worth values but doesn't compute period-over-period growth.
@@ -65,11 +56,6 @@ The trend chart shows raw net worth values but doesn't compute period-over-perio
 - Bar chart showing month-over-month changes
 - Summary stats: best month, worst month, average growth
 
-### 16. Currency Exposure Chart
-Multi-currency holdings are supported, but the allocation chart only groups by asset category, not currency.
-
-- Add a "Currency Exposure" pie/donut chart to the dashboard
-- Shows what % of net worth is held in each currency
 
 ### 17. Dividend / Income Tracking
 Many stock/ETF holders care about dividend income, not just price appreciation.
@@ -77,3 +63,31 @@ Many stock/ETF holders care about dividend income, not just price appreciation.
 - Add a `DIVIDEND` transaction type to `HoldingTransaction`
 - Track dividend income per holding and aggregate monthly/yearly
 - Display as a separate income chart on the dashboard
+
+### 22. Pagination / Infinite Scroll for Transactions
+As the number of cash and holding transactions grows over time, loading all of them at once will cause significant performance bottlenecks and increase database load.
+
+- Implement cursor-based pagination for the transactions API
+- Add "Load More" button or infinite scrolling to the transaction history UI
+- Use React Query or SWR for efficient fetching and caching of paginated data
+
+### 23. Two-Factor Authentication (2FA)
+Financial applications require high security. Relying solely on a password leaves user data vulnerable to credential stuffing or simple password breaches.
+
+- Add Time-based One-Time Password (TOTP) support using authenticator apps
+- Store encrypted 2FA secrets in the database and require the 6-digit code on login
+- Provide backup recovery codes
+
+### 24. Plaid / Brokerage API Sync
+Currently, users must manually enter transactions or import via CSV, which is time-consuming and error-prone.
+
+- Integrate with Plaid or similar aggregators to automatically sync bank account balances
+- Use brokerage APIs (or aggregators like SnapTrade) to automatically import historical trades and live holdings
+- Add a periodic sync job to update balances automatically
+
+### 25. Customizable Dashboard Widgets
+The current dashboard is static. Users may prioritize different information (e.g., currency exposure vs. recent transactions vs. net worth trend).
+
+- Break down the dashboard into discrete, draggable components (widgets)
+- Allow users to reorder widgets, hide ones they don't care about, and save their layout preference to the database
+- Provide a "Widget Library" to add new visual modules easily

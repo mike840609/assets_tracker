@@ -35,6 +35,7 @@ export type NetWorthSummary = {
   totalLiabilities: number;
   netWorth: number;
   baseCurrency: string;
+  currencyExposure: { currency: string; value: number }[];
   accounts: AccountWithValue[];
 };
 
