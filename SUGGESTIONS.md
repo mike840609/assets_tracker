@@ -25,7 +25,7 @@
 | 15 | Monthly/yearly performance reports | Analytics | 🟡 Medium | 4-5 hrs | ❌ Not Done |
 | 16 | Currency exposure chart | Analytics | 🟢 Low | 2-3 hrs | ✅ Done |
 | 17 | Dividend / income tracking | Analytics | 🟡 Medium | 4-6 hrs | ❌ Not Done |
-| 22 | Pagination / Infinite Scroll for Transactions | Performance | 🟡 Medium | 2-3 hrs | ❌ Not Done |
+| 22 | Pagination / Infinite Scroll for Transactions | Performance | 🟡 Medium | 2-3 hrs | ✅ Done |
 | 23 | Two-Factor Authentication (2FA) | Security | 🔴 High | 4-6 hrs | ❌ Not Done |
 | 24 | Plaid / Brokerage API Sync | Feature | 🔴 High | 10+ hrs | ❌ Not Done |
 | 25 | Customizable Dashboard Widgets | UX | 🟢 Low | 3-5 hrs | ❌ Not Done |
@@ -64,12 +64,6 @@ Many stock/ETF holders care about dividend income, not just price appreciation.
 - Track dividend income per holding and aggregate monthly/yearly
 - Display as a separate income chart on the dashboard
 
-### 22. Pagination / Infinite Scroll for Transactions
-As the number of cash and holding transactions grows over time, loading all of them at once will cause significant performance bottlenecks and increase database load.
-
-- Implement cursor-based pagination for the transactions API
-- Add "Load More" button or infinite scrolling to the transaction history UI
-- Use React Query or SWR for efficient fetching and caching of paginated data
 
 ### 23. Two-Factor Authentication (2FA)
 Financial applications require high security. Relying solely on a password leaves user data vulnerable to credential stuffing or simple password breaches.
