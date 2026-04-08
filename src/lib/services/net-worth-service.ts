@@ -8,20 +8,23 @@ import type { AccountWithValue, NetWorthSummary, HoldingWithPrice } from "@/lib/
 
 export async function getNetWorthSummary(
   userId: string,
-  baseCurrency: string
+  baseCurrency: string,
+  injectedPriceMap?: Map<string, { price: number; currency: string }>,
+  injectedRatesMap?: Map<string, number>
 ): Promise<NetWorthSummary> {
   // Parallel: load accounts, prices, and all exchange rates in one go
+  // Use injected prices/rates if provided to avoid redundant DB fetches in batch jobs
   const [accounts, prices, allRatesMap] = await Promise.all([
     prisma.account.findMany({
       where: { userId, isActive: true },
       include: { holdings: { where: { quantity: { gt: 0 } } } },
     }),
-    prisma.priceCache.findMany(),
-    getAllExchangeRates(),
+    injectedPriceMap ? Promise.resolve([]) : prisma.priceCache.findMany(),
+    injectedRatesMap ? Promise.resolve(injectedRatesMap) : getAllExchangeRates(),
   ]);
 
-  const priceMap = Object.fromEntries(
-    prices.map((p) => [p.symbol, { price: Number(p.price), currency: p.currency }])
+  const priceMap = injectedPriceMap || Object.fromEntries(
+    prices.map((p: any) => [p.symbol, { price: Number(p.price), currency: p.currency }])
   );
 
   let totalAssets = 0;

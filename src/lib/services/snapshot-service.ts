@@ -1,8 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { getNetWorthSummary } from "./net-worth-service";
 
-export async function createSnapshot(userId: string, baseCurrency: string) {
-  const summary = await getNetWorthSummary(userId, baseCurrency);
+export async function createSnapshot(
+  userId: string,
+  baseCurrency: string,
+  injectedPriceMap?: Map<string, { price: number; currency: string }>,
+  injectedRatesMap?: Map<string, number>
+) {
+  const summary = await getNetWorthSummary(userId, baseCurrency, injectedPriceMap, injectedRatesMap);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
