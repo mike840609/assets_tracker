@@ -1,5 +1,6 @@
 "use client";
 
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
@@ -22,17 +23,23 @@ export function NetWorthCard({ summary }: { summary: NetWorthSummary }) {
       <Card>
         <CardContent className="pt-6">
           <p className="text-sm font-medium text-muted-foreground">{t("totalAssets")}</p>
-          <p className="text-2xl font-semibold text-green-600 mt-1">
-            {formatCurrency(totalAssets, baseCurrency)}
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <TrendingUp className="h-5 w-5 text-green-600 shrink-0" aria-hidden="true" />
+            <p className="text-2xl font-semibold text-green-600">
+              {formatCurrency(totalAssets, baseCurrency)}
+            </p>
+          </div>
         </CardContent>
       </Card>
       <Card>
         <CardContent className="pt-6">
           <p className="text-sm font-medium text-muted-foreground">{t("totalLiabilities")}</p>
-          <p className="text-2xl font-semibold text-red-600 mt-1">
-            {formatCurrency(totalLiabilities, baseCurrency)}
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <TrendingDown className="h-5 w-5 text-red-600 shrink-0" aria-hidden="true" />
+            <p className="text-2xl font-semibold text-red-600">
+              {formatCurrency(totalLiabilities, baseCurrency)}
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

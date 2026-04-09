@@ -47,7 +47,7 @@
 | 41 | Reduce client bundle size (date-fns) | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
 | 42 | Add `select` to reduce over-fetching in API routes | Performance | 🟢 Low | 1 hr | ❌ Not Done |
 | 43 | Add aria-labels to icon-only buttons | Accessibility | 🔴 High | 1 hr | ❌ Not Done |
-| 44 | Fix color-only differentiation for assets/liabilities | Accessibility | 🔴 High | 1 hr | ❌ Not Done |
+| 44 | Fix color-only differentiation for assets/liabilities | Accessibility | 🔴 High | 1 hr | ✅ Done |
 | 45 | Add inline form validation errors | UX | 🟡 Medium | 2-3 hrs | ❌ Not Done |
 | 46 | Improve empty states with clear CTAs | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
 | 47 | Add account search/filter | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
