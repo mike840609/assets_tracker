@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,9 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { SerializedAccountWithHoldings, SerializedHolding } from "@/lib/types";
 
+type HoldingSortField = "symbol" | "name" | "assetType" | "currency" | "quantity" | "currentPrice" | "marketValue" | "percentage";
+type SortOrder = "asc" | "desc";
+
 export function AccountDetail({
   account,
   priceMap,
@@ -48,6 +52,17 @@ export function AccountDetail({
   const [tempName, setTempName] = useState(account.name);
   const [deleting, setDeleting] = useState(false);
   const [savingName, setSavingName] = useState(false);
+  const [sortField, setSortField] = useState<HoldingSortField>("marketValue");
+  const [sortDirection, setSortDirection] = useState<SortOrder>("desc");
+
+  const handleSort = (field: HoldingSortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection(field === "name" || field === "symbol" || field === "assetType" || field === "currency" ? "asc" : "desc");
+    }
+  };
 
   const holdingsWithValue = account.holdings.map((h) => {
     const price = priceMap[h.symbol] ?? null;
@@ -61,6 +76,42 @@ export function AccountDetail({
     (sum, h) => sum + (h.marketValue ?? 0),
     0
   );
+
+  const sortedHoldings = useMemo(() => {
+    return [...holdingsWithValue].sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case "symbol":
+          comparison = a.symbol.localeCompare(b.symbol);
+          break;
+        case "name":
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case "assetType":
+          comparison = a.assetType.localeCompare(b.assetType);
+          break;
+        case "currency":
+          comparison = (a.currency || "USD").localeCompare(b.currency || "USD");
+          break;
+        case "quantity":
+          comparison = a.quantity - b.quantity;
+          break;
+        case "currentPrice":
+          comparison = (a.currentPrice ?? 0) - (b.currentPrice ?? 0);
+          break;
+        case "marketValue":
+        case "percentage":
+          comparison = (a.marketValue ?? 0) - (b.marketValue ?? 0);
+          break;
+      }
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+  }, [holdingsWithValue, sortField, sortDirection]);
+
+  const SortIcon = ({ field }: { field: HoldingSortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-muted-foreground opacity-50" />;
+    return sortDirection === "asc" ? <ArrowUp className="ml-1 h-3.5 w-3.5" /> : <ArrowDown className="ml-1 h-3.5 w-3.5" />;
+  };
   const isBrokerage = account.category === "BROKERAGE" || account.category === "CRYPTO_WALLET";
   const totalValue = account.cashBalance + totalHoldingsValue;
 
@@ -282,19 +333,59 @@ export function AccountDetail({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t("accountDetail.colSymbol")}</TableHead>
-                    <TableHead>{t("accountDetail.colName")}</TableHead>
-                    <TableHead>{t("accountDetail.colType")}</TableHead>
-                    <TableHead>{t("accountDetail.colCurrency")}</TableHead>
-                    <TableHead className="text-right">{t("accountDetail.colQty")}</TableHead>
-                    <TableHead className="text-right">{t("accountDetail.colPrice")}</TableHead>
-                    <TableHead className="text-right">{t("accountDetail.colValue")}</TableHead>
-                    <TableHead className="text-right">{t("accountDetail.colPercentage")}</TableHead>
+                    <TableHead 
+                      className="cursor-pointer select-none hover:bg-accent/50"
+                      onClick={() => handleSort("symbol")}
+                    >
+                      <div className="flex items-center">{t("accountDetail.colSymbol")} <SortIcon field="symbol" /></div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer select-none hover:bg-accent/50"
+                      onClick={() => handleSort("name")}
+                    >
+                      <div className="flex items-center">{t("accountDetail.colName")} <SortIcon field="name" /></div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer select-none hover:bg-accent/50"
+                      onClick={() => handleSort("assetType")}
+                    >
+                      <div className="flex items-center">{t("accountDetail.colType")} <SortIcon field="assetType" /></div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer select-none hover:bg-accent/50"
+                      onClick={() => handleSort("currency")}
+                    >
+                      <div className="flex items-center">{t("accountDetail.colCurrency")} <SortIcon field="currency" /></div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer select-none hover:bg-accent/50"
+                      onClick={() => handleSort("quantity")}
+                    >
+                      <div className="flex items-center justify-end">{t("accountDetail.colQty")} <SortIcon field="quantity" /></div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer select-none hover:bg-accent/50"
+                      onClick={() => handleSort("currentPrice")}
+                    >
+                      <div className="flex items-center justify-end">{t("accountDetail.colPrice")} <SortIcon field="currentPrice" /></div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer select-none hover:bg-accent/50"
+                      onClick={() => handleSort("marketValue")}
+                    >
+                      <div className="flex items-center justify-end">{t("accountDetail.colValue")} <SortIcon field="marketValue" /></div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer select-none hover:bg-accent/50"
+                      onClick={() => handleSort("percentage")}
+                    >
+                      <div className="flex items-center justify-end">{t("accountDetail.colPercentage")} <SortIcon field="percentage" /></div>
+                    </TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {holdingsWithValue.map((h) => (
+                  {sortedHoldings.map((h) => (
                     <TableRow key={h.id}>
                       <TableCell className="font-mono font-medium">{h.symbol}</TableCell>
                       <TableCell>{h.name}</TableCell>
