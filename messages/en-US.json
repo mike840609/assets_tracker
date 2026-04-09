@@ -249,5 +249,23 @@
     "subtitle": "Securely access your financial portfolio",
     "googleButton": "Continue with Google",
     "footer": "By continuing, you agree to secure your data privately."
+  },
+  "feedback": {
+    "trigger": "Feedback",
+    "title": "Send Feedback",
+    "description": "Have a bug report, feature request, or suggestion? We'd love to hear from you.",
+    "labelType": "Type",
+    "placeholderType": "Select a type",
+    "labelMessage": "Message",
+    "placeholderMessage": "Describe your feedback in detail (at least 10 characters)...",
+    "typeBug": "Bug Report",
+    "typeFeatureRequest": "Feature Request",
+    "typeSuggestion": "Suggestion",
+    "typeOther": "Other",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "submitSuccess": "Feedback submitted. Thank you!",
+    "submitFailed": "Failed to submit feedback. Please try again."
   }
 }

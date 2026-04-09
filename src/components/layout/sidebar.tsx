@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Copy, History, LayoutDashboard, Settings } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
+import { FeedbackDialog } from "./feedback-dialog";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -67,7 +68,10 @@ export function Sidebar() {
       </nav>
       <div className="p-4 border-t border-border/50 bg-background/30 backdrop-blur-md">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">v0.1.0</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">v0.1.0</span>
+            <FeedbackDialog />
+          </div>
           <ThemeToggle />
         </div>
       </div>

@@ -249,5 +249,23 @@
     "subtitle": "安全地訪問您的財務投資組合",
     "googleButton": "使用 Google 帳號繼續",
     "footer": "繼續操作即表示您同意私密地保護您的數據。"
+  },
+  "feedback": {
+    "trigger": "回饋",
+    "title": "傳送回饋",
+    "description": "有錯誤回報、功能需求或建議嗎？歡迎告訴我們。",
+    "labelType": "類型",
+    "placeholderType": "選擇類型",
+    "labelMessage": "訊息",
+    "placeholderMessage": "請詳細描述您的回饋（至少 10 個字）...",
+    "typeBug": "錯誤回報",
+    "typeFeatureRequest": "功能需求",
+    "typeSuggestion": "建議",
+    "typeOther": "其他",
+    "cancel": "取消",
+    "submit": "傳送",
+    "submitting": "傳送中...",
+    "submitSuccess": "回饋已傳送，感謝您！",
+    "submitFailed": "傳送回饋失敗，請再試一次。"
   }
 }

@@ -126,3 +126,8 @@ export const dataImportSchema = z.object({
     createdAt: z.string().optional(),
   })).optional(),
 });
+
+export const createFeedbackSchema = z.object({
+  type: z.enum(["BUG", "FEATURE_REQUEST", "SUGGESTION", "OTHER"]),
+  message: z.string().min(10).max(1000),
+});

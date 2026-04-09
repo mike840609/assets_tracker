@@ -101,6 +101,13 @@ enum CashTransactionType {
   EDIT
 }
 
+enum FeedbackType {
+  BUG
+  FEATURE_REQUEST
+  SUGGESTION
+  OTHER
+}
+
 model CashTransaction {
   id        String              @id @default(cuid())
   accountId String
@@ -111,6 +118,18 @@ model CashTransaction {
   createdAt DateTime            @default(now())
 
   @@index([accountId, createdAt])
+}
+
+model Feedback {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      FeedbackType
+  message   String       @db.Text
+  createdAt DateTime     @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model PriceCache {
@@ -159,6 +178,7 @@ model User {
   appSettings Setting?
   appAccounts Account[]
   snapshots   NetWorthSnapshot[]
+  feedbacks   Feedback[]
 }
 
 model AuthAccount {

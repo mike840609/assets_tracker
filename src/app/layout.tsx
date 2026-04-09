@@ -47,7 +47,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="h-full flex flex-col md:flex-row overflow-hidden bg-background text-foreground">
-        <NextIntlClientProvider messages={pickMessages(messages, ["app", "nav"])}>
+        <NextIntlClientProvider messages={pickMessages(messages, ["app", "nav", "feedback"])}>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
