@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -89,19 +88,10 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                             : "text-red-500 dark:text-red-400"
                       )}
                     >
-                      <span className="inline-flex items-center justify-end gap-1">
-                        {row.change === null || row.change === 0 ? (
-                          <Minus className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        ) : row.change > 0 ? (
-                          <TrendingUp className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        ) : (
-                          <TrendingDown className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        )}
-                        {row.change === null
-                          ? "—"
-                          : (row.change >= 0 ? "+" : "") +
-                            formatCurrency(row.change, baseCurrency)}
-                      </span>
+                      {row.change === null
+                        ? "—"
+                        : (row.change >= 0 ? "+" : "") +
+                          formatCurrency(row.change, baseCurrency)}
                     </TableCell>
                   </TableRow>
                 ))}
