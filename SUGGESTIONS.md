@@ -46,6 +46,13 @@
 | 40 | Fix O(n²) symbol lookup in accounts page | Performance | 🟡 Medium | 30 min | ❌ Not Done |
 | 41 | Reduce client bundle size (date-fns) | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
 | 42 | Add `select` to reduce over-fetching in API routes | Performance | 🟢 Low | 1 hr | ❌ Not Done |
+| 43 | Add aria-labels to icon-only buttons | Accessibility | 🔴 High | 1 hr | ❌ Not Done |
+| 44 | Fix color-only differentiation for assets/liabilities | Accessibility | 🔴 High | 1 hr | ❌ Not Done |
+| 45 | Add inline form validation errors | UX | 🟡 Medium | 2-3 hrs | ❌ Not Done |
+| 46 | Improve empty states with clear CTAs | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
+| 47 | Add account search/filter | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
+| 48 | Add table accessibility attributes | Accessibility | 🟡 Medium | 1 hr | ❌ Not Done |
+| 49 | Use native `confirm()` → proper confirmation dialogs | UX | 🟢 Low | 2 hrs | ❌ Not Done |
 ---
 
 ## Details (Pending Tasks)
@@ -287,3 +294,94 @@ Examples:
 - Replace `include` with `select` specifying only the needed columns
 - Reduces data transfer from the database and memory usage
 - **Affected files**: `src/app/api/accounts/[id]/transactions/[transactionId]/route.ts`, `src/app/api/accounts/[id]/holdings/route.ts`
+
+
+### 43. Add aria-labels to Icon-Only Buttons
+Multiple interactive elements across the app use icons without text and lack `aria-label` attributes, making them invisible to screen readers.
+
+Affected locations:
+- `src/components/layout/theme-toggle.tsx` lines 32-46: Theme toggle buttons use only `title` (not ARIA) — screen readers won't announce purpose
+- `src/components/dashboard/dashboard-actions.tsx` line 85: RefreshCw icon button lacks `aria-label`
+- `src/components/accounts/transaction-history.tsx` line 222: MoreHorizontal "..." menu button has no accessible name
+- `src/components/accounts/accounts-list.tsx` line 318: Chevron expand/collapse SVG icon lacks label
+- `src/components/accounts/account-detail.tsx` line 327: Dropdown trigger icon button lacks label
+
+- Add `aria-label="Toggle theme"`, `aria-label="Refresh prices"`, `aria-label="More actions"`, etc. to each icon-only interactive element
+- For expand/collapse, also add `aria-expanded={isExpanded}` to communicate state
+- **Affected files**: `src/components/layout/theme-toggle.tsx`, `src/components/dashboard/dashboard-actions.tsx`, `src/components/accounts/transaction-history.tsx`, `src/components/accounts/accounts-list.tsx`, `src/components/accounts/account-detail.tsx`
+
+
+### 44. Fix Color-Only Differentiation for Assets/Liabilities
+Several components use **green for assets and red for liabilities** as the sole visual differentiator. Users with color vision deficiency (affects ~8% of males) cannot distinguish them.
+
+Affected locations:
+- `src/components/dashboard/net-worth-card.tsx` lines 25, 33: Assets (text-green-600) and liabilities (text-red-600) with no text label
+- `src/components/dashboard/accounts-summary.tsx` lines 145, 171: Badge color is the only indicator of ASSET vs LIABILITY type
+- `src/components/history/history-table.tsx` lines 87-88: Positive/negative changes shown only with green/red text
+
+- Add explicit text labels (e.g., "Assets: $X" / "Liabilities: $X") alongside the color
+- For the history table, add a `+` or `-` prefix before percentage changes so the sign is visible without color
+- Consider adding icons (e.g., TrendingUp/TrendingDown) as a secondary non-color cue
+- **Affected files**: `src/components/dashboard/net-worth-card.tsx`, `src/components/dashboard/accounts-summary.tsx`, `src/components/history/history-table.tsx`
+
+
+### 45. Add Inline Form Validation Errors
+All forms display validation errors only via toast notifications. Users don't see **which field** failed validation — they must dismiss the toast, re-read the form, and guess.
+
+Affected forms:
+- `src/components/accounts/account-form.tsx` lines 72-75: Create/edit account form shows errors via `toast.error()`
+- `src/components/accounts/holding-form.tsx` lines 127-159: Add holding form shows errors via toast
+- `src/components/accounts/edit-holding-dialog.tsx` lines 63-68: Edit holding dialog shows errors via toast
+
+- Parse the Zod validation error response and display messages below each invalid field
+- Add `aria-invalid={true}` and `aria-describedby="field-error"` to inputs with errors
+- Keep the toast as a fallback for unexpected server errors, but field-level errors should be inline
+- **Affected files**: `src/components/accounts/account-form.tsx`, `src/components/accounts/holding-form.tsx`, `src/components/accounts/edit-holding-dialog.tsx`
+
+
+### 46. Improve Empty States with Clear CTAs
+Several views show minimal "no data" messages without guiding the user on what to do next.
+
+Affected locations:
+- `src/components/accounts/accounts-list.tsx` lines 188-191: "No accounts yet" text but **no button** to create one (the "Add Account" button is in the page header, not in the empty state)
+- `src/components/history/history-table.tsx` lines 46-49: "No data" message with no explanation of when data will appear (e.g., "Snapshots are created daily — check back tomorrow")
+- `src/components/accounts/transaction-history.tsx` lines 176-179: "No transactions yet" with no CTA to add a holding or cash transaction
+
+- Replace bare text with an illustrated empty state (icon + message + primary action button)
+- Example for accounts: "No accounts yet. Track your assets and liabilities by adding your first account." + [Add Account] button
+- Example for history: "No snapshots yet. Your net worth history will appear here after the first daily snapshot." 
+- **Affected files**: `src/components/accounts/accounts-list.tsx`, `src/components/history/history-table.tsx`, `src/components/accounts/transaction-history.tsx`
+
+
+### 47. Add Account Search/Filter
+The accounts list page has no search or filter functionality. Users with many accounts must scroll through the entire list organized by category to find a specific account.
+
+- Add a search input at the top of `AccountsList` that filters accounts by name (client-side, since all accounts are already loaded)
+- Optionally add type filter buttons (All / Assets / Liabilities) for quick filtering
+- Use `useMemo` to derive filtered results from the search query and selected type
+- **Affected files**: `src/components/accounts/accounts-list.tsx`
+
+
+### 48. Add Table Accessibility Attributes
+Tables across the app are missing semantic attributes that help screen readers navigate data.
+
+Affected locations:
+- `src/components/accounts/account-detail.tsx` lines 283-293: Holdings table headers lack `scope="col"` attribute
+- `src/components/dashboard/accounts-summary.tsx` lines 101-112: Clickable sortable headers lack `role="button"`, `tabIndex={0}`, and keyboard event handlers (Enter/Space to trigger sort)
+
+- Add `scope="col"` to all `<TableHead>` elements
+- For sortable columns, add `role="button"`, `tabIndex={0}`, `aria-sort="ascending|descending|none"`, and `onKeyDown` handler for Enter/Space
+- **Affected files**: `src/components/accounts/account-detail.tsx`, `src/components/dashboard/accounts-summary.tsx`
+
+
+### 49. Replace Native `confirm()` with Proper Confirmation Dialogs
+Destructive actions (delete account, bulk delete) use the browser's native `window.confirm()` dialog, which is unstyled, cannot be themed, blocks the main thread, and provides a jarring experience inconsistent with the rest of the UI.
+
+Affected locations:
+- `src/components/accounts/accounts-list.tsx` line 135: Bulk delete uses `confirm()`
+- `src/components/accounts/account-detail.tsx` line 113: Delete account uses `confirm()`
+
+- Replace with a styled `AlertDialog` component from shadcn/ui (already available in the project's ui primitives)
+- Include the account name in the dialog body so users know exactly what they're deleting
+- Use a red "Delete" button and a neutral "Cancel" button
+- **Affected files**: `src/components/accounts/accounts-list.tsx`, `src/components/accounts/account-detail.tsx`
