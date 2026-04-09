@@ -41,6 +41,11 @@
 | 35 | Utilize snapshot breakdown data in history service | Feature | 🟡 Medium | 2-3 hrs | ❌ Not Done |
 | 36 | Non-destructive data import (merge strategy) | Reliability | 🟡 Medium | 3-4 hrs | ❌ Not Done |
 | 37 | Expand supported currency list | Feature | 🟢 Low | 1 hr | ❌ Not Done |
+| 38 | Fix transaction pagination (fetches N*page rows) | Performance | 🔴 High | 1 hr | ❌ Not Done |
+| 39 | Filter PriceCache query on account detail page | Performance | 🔴 High | 15 min | ❌ Not Done |
+| 40 | Fix O(n²) symbol lookup in accounts page | Performance | 🟡 Medium | 30 min | ❌ Not Done |
+| 41 | Reduce client bundle size (date-fns) | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
+| 42 | Add `select` to reduce over-fetching in API routes | Performance | 🟢 Low | 1 hr | ❌ Not Done |
 ---
 
 ## Details (Pending Tasks)
@@ -206,3 +211,79 @@ The data import endpoint (`POST /api/settings/data`) **deletes all existing user
 - Expand the static list to cover at least the top 40-50 world currencies
 - Alternatively, fetch the currency list from the exchange rate API and cache it
 - **Affected files**: `src/lib/currencies.ts`
+
+
+### 38. Fix Transaction Pagination (Fetches N*page Rows)
+The merged transaction endpoint at `src/app/api/accounts/[id]/transactions/route.ts` uses `take: limit * page` (line 14) instead of proper `skip`/`take` pagination. For page 10 with limit 20, it fetches **200 rows from each table**, merges and sorts them in JavaScript, then slices to 20 results. This gets linearly worse with every page.
+
+```ts
+// Current (line 14): fetches ALL rows up to current page
+const take = limit * page;
+
+// Fix: fetch only the rows needed for the current page from each table
+// Note: because two tables are merged, you need to fetch `limit` from each
+// and merge, or use a SQL UNION approach for truly optimal pagination.
+```
+
+- The root cause is that two separate tables (`HoldingTransaction` and `CashTransaction`) are merged by date, making DB-level pagination non-trivial
+- **Quick fix**: Fetch `skip + limit` rows from each table (instead of `limit * page`), merge, sort, and slice — still over-fetches but bounded
+- **Better fix**: Use a raw SQL `UNION ALL` query with `ORDER BY` and `LIMIT/OFFSET` to paginate at the database level
+- **Affected files**: `src/app/api/accounts/[id]/transactions/route.ts`
+
+
+### 39. Filter PriceCache Query on Account Detail Page
+`src/app/(main)/accounts/[id]/page.tsx` line 26 fetches **every row from PriceCache** with an unfiltered `prisma.priceCache.findMany()`. For a user with 5 holdings, this still loads thousands of cached price rows for all symbols in the system.
+
+```ts
+// Current (line 26): fetches ALL price cache rows
+cachedPrices: prisma.priceCache.findMany(),
+
+// Fix: filter to only the symbols this account needs
+// (requires fetching account first, or a two-step approach)
+```
+
+- The accounts list page (`src/app/(main)/accounts/page.tsx` line 45-47) already does this correctly with `where: { symbol: { in: allSymbols } }`
+- Restructure to fetch the account first, then fetch prices filtered by `account.holdings.map(h => h.symbol)`
+- **Affected files**: `src/app/(main)/accounts/[id]/page.tsx`
+
+
+### 40. Fix O(n²) Symbol Lookup in Accounts Page
+`src/app/(main)/accounts/page.tsx` lines 56-63 use `.find()` inside a `.filter()` loop to classify symbols as stock vs. crypto. For each uncached symbol, it scans the entire `allHoldings` array — O(n²) complexity.
+
+```ts
+// Current (lines 56-58): O(n) lookup per symbol
+const stockSymbols = uncachedSymbols.filter((s) => {
+  const h = allHoldings.find((h) => h.symbol === s); // O(n) scan
+  return h && ["STOCK", "ETF", "MUTUAL_FUND", "BOND"].includes(h.assetType);
+});
+
+// Fix: build a Map once, then look up in O(1)
+const holdingBySymbol = new Map(allHoldings.map(h => [h.symbol, h]));
+const stockSymbols = uncachedSymbols.filter(s => {
+  const h = holdingBySymbol.get(s);
+  return h && ["STOCK", "ETF", "MUTUAL_FUND", "BOND"].includes(h.assetType);
+});
+```
+
+- With many holdings this adds up; the fix is trivial and O(n) total
+- **Affected files**: `src/app/(main)/accounts/page.tsx`
+
+
+### 41. Reduce Client Bundle Size (date-fns)
+`src/components/dashboard/dashboard-actions.tsx` (line 8-9) imports `formatDistanceToNow` from `date-fns` plus two locale objects (`zhTW`, `enUS`) in a `"use client"` component. date-fns is tree-shakeable but the locale modules are large (~15-20KB each).
+
+- Consider using the native `Intl.RelativeTimeFormat` API instead, which has zero bundle cost
+- Alternatively, compute the "time ago" string on the server and pass it as a prop, eliminating the client-side dependency entirely
+- **Affected files**: `src/components/dashboard/dashboard-actions.tsx`
+
+
+### 42. Add `select` to Reduce Over-Fetching in API Routes
+Several API route handlers use `include: { holding: true }` or `include: { account: true }` which fetches **all columns** from related models when only a few fields are needed.
+
+Examples:
+- `src/app/api/accounts/[id]/transactions/[transactionId]/route.ts` line 15: `include: { holding: true }` — only needs `id`, `quantity`, `accountId`
+- Same file line 54: `include: { account: true }` — only needs `id` for ownership check
+
+- Replace `include` with `select` specifying only the needed columns
+- Reduces data transfer from the database and memory usage
+- **Affected files**: `src/app/api/accounts/[id]/transactions/[transactionId]/route.ts`, `src/app/api/accounts/[id]/holdings/route.ts`
