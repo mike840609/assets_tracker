@@ -41,7 +41,7 @@
 | 35 | Utilize snapshot breakdown data in history service | Feature | 🟡 Medium | 2-3 hrs | ❌ Not Done |
 | 36 | Non-destructive data import (merge strategy) | Reliability | 🟡 Medium | 3-4 hrs | ❌ Not Done |
 | 37 | Expand supported currency list | Feature | 🟢 Low | 1 hr | ❌ Not Done |
-| 38 | Fix transaction pagination (fetches N*page rows) | Performance | 🔴 High | 1 hr | ❌ Not Done |
+| 38 | Fix transaction pagination (fetches N*page rows) | Performance | 🔴 High | 1 hr | ✅ Done |
 | 39 | Filter PriceCache query on account detail page | Performance | 🔴 High | 15 min | ✅ Done |
 | 40 | Fix O(n²) symbol lookup in accounts page | Performance | 🟡 Medium | 30 min | ❌ Not Done |
 | 41 | Reduce client bundle size (date-fns) | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
