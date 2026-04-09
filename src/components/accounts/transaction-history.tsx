@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import useSWRInfinite from "swr/infinite";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -41,16 +42,18 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
-const TYPE_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
-  BUY: { label: "Buy", variant: "default" },
-  SELL: { label: "Sell", variant: "destructive" },
-  DEPOSIT: { label: "Deposit", variant: "default" },
-  WITHDRAWAL: { label: "Withdrawal", variant: "destructive" },
-  EDIT: { label: "Edit", variant: "secondary" },
+const TYPE_VARIANTS: Record<string, "default" | "secondary" | "destructive"> = {
+  BUY: "default",
+  SELL: "destructive",
+  DEPOSIT: "default",
+  WITHDRAWAL: "destructive",
+  EDIT: "secondary",
 };
 
 export function TransactionHistory({ accountId, isBank, refreshTrigger }: { accountId: string; isBank?: boolean; refreshTrigger?: number }) {
   const router = useRouter();
+  const t = useTranslations("transactionHistory");
+  const tCommon = useTranslations("common");
 
   // Dialog state
   const [editingTx, setEditingTx] = useState<SerializedTransaction | null>(null);
@@ -122,12 +125,12 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
 
       if (!res.ok) throw new Error("Failed to update transaction");
 
-      toast.success("Transaction updated");
+      toast.success(t("updateSuccess"));
       setEditingTx(null);
       mutate();
       router.refresh(); // Refresh holdings on parent page
     } catch (e) {
-      toast.error("Failed to update transaction");
+      toast.error(t("updateFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -143,12 +146,12 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
 
       if (!res.ok) throw new Error("Failed to delete transaction");
 
-      toast.success("Transaction deleted");
+      toast.success(t("deleteSuccess"));
       setDeletingTx(null);
       mutate();
       router.refresh(); // Refresh holdings on parent page
     } catch (e) {
-      toast.error("Failed to delete transaction");
+      toast.error(t("deleteFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -158,10 +161,10 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base font-medium">Transaction History</CardTitle>
+          <CardTitle className="text-base font-medium">{t("title")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-center py-8">Loading...</p>
+          <p className="text-muted-foreground text-center py-8">{t("loading")}</p>
         </CardContent>
       </Card>
     );
@@ -170,33 +173,35 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base font-medium">Transaction History</CardTitle>
+        <CardTitle className="text-base font-medium">{t("title")}</CardTitle>
       </CardHeader>
       <CardContent>
         {transactions.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">
-            No transactions yet.
+            {t("empty")}
           </p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>{isBank ? "" : "Symbol"}</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">{isBank ? "Amount" : "Quantity"}</TableHead>
-                <TableHead>Note</TableHead>
+                <TableHead>{t("colDate")}</TableHead>
+                <TableHead>{isBank ? "" : t("colSymbol")}</TableHead>
+                <TableHead>{t("colType")}</TableHead>
+                <TableHead className="text-right">{isBank ? t("colAmount") : t("colQuantity")}</TableHead>
+                <TableHead>{t("colNote")}</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((t) => {
-                const typeInfo = TYPE_LABELS[t.type] ?? { label: t.type, variant: "secondary" as const };
-                const isCrypto = t.holding?.assetType === "CRYPTO";
+              {transactions.map((tx) => {
+                const typeVariant = TYPE_VARIANTS[tx.type] ?? "secondary";
+                const typeKey = `type${tx.type.charAt(0) + tx.type.slice(1).toLowerCase()}` as Parameters<typeof t>[0];
+                const typeLabel = t.has(typeKey) ? t(typeKey) : tx.type;
+                const isCrypto = tx.holding?.assetType === "CRYPTO";
                 return (
-                  <TableRow key={t.id}>
+                  <TableRow key={tx.id}>
                     <TableCell className="text-muted-foreground">
-                      {new Date(t.createdAt).toLocaleDateString(undefined, {
+                      {new Date(tx.createdAt).toLocaleDateString(undefined, {
                         year: "numeric",
                         month: "short",
                         day: "numeric",
@@ -205,17 +210,17 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
                       })}
                     </TableCell>
                     <TableCell className="font-mono font-medium">
-                      {(t as any).isCash ? "" : (t.holding?.symbol ?? "—")}
+                      {(tx as any).isCash ? "" : (tx.holding?.symbol ?? "—")}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={typeInfo.variant}>{typeInfo.label}</Badge>
+                      <Badge variant={typeVariant}>{typeLabel}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      {t.quantity > 0 ? "+" : ""}
-                      {formatNumber(t.quantity, isCrypto ? 7 : 2)}
+                      {tx.quantity > 0 ? "+" : ""}
+                      {formatNumber(tx.quantity, isCrypto ? 7 : 2)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {t.note || "—"}
+                      {tx.note || "—"}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -223,16 +228,16 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
                           <MoreHorizontal className="h-4 w-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditClick(t)}>
+                          <DropdownMenuItem onClick={() => handleEditClick(tx)}>
                             <Pencil className="mr-2 h-4 w-4" />
-                            Edit
+                            {tCommon("edit")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive"
-                            onClick={() => setDeletingTx(t)}
+                            onClick={() => setDeletingTx(tx)}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
+                            {tCommon("delete")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -250,7 +255,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
               onClick={() => setSize(size + 1)}
               disabled={isLoadingMore}
             >
-              {isLoadingMore ? "Loading..." : "Load More"}
+              {isLoadingMore ? t("loading") : t("loadMore")}
             </Button>
           </div>
         )}
@@ -259,28 +264,28 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
       <Dialog open={!!editingTx} onOpenChange={(open) => !open && setEditingTx(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Transaction</DialogTitle>
+            <DialogTitle>{t("editTitle")}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="type" className="text-right">Type</Label>
+              <Label htmlFor="type" className="text-right">{t("labelType")}</Label>
               <div className="col-span-3">
                 <Select value={editType} onValueChange={(v) => v && setEditType(v)}>
                   <SelectTrigger id="type">
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue placeholder={t("labelType")} />
                   </SelectTrigger>
                   <SelectContent>
                     {(editingTx as any)?.isCash ? (
                       <>
-                        <SelectItem value="DEPOSIT">Deposit</SelectItem>
-                        <SelectItem value="WITHDRAWAL">Withdrawal</SelectItem>
-                        <SelectItem value="EDIT">Edit</SelectItem>
+                        <SelectItem value="DEPOSIT">{t("typeDeposit")}</SelectItem>
+                        <SelectItem value="WITHDRAWAL">{t("typeWithdrawal")}</SelectItem>
+                        <SelectItem value="EDIT">{t("typeEdit")}</SelectItem>
                       </>
                     ) : (
                       <>
-                        <SelectItem value="BUY">Buy</SelectItem>
-                        <SelectItem value="SELL">Sell</SelectItem>
-                        <SelectItem value="EDIT">Edit</SelectItem>
+                        <SelectItem value="BUY">{t("typeBuy")}</SelectItem>
+                        <SelectItem value="SELL">{t("typeSell")}</SelectItem>
+                        <SelectItem value="EDIT">{t("typeEdit")}</SelectItem>
                       </>
                     )}
                   </SelectContent>
@@ -288,7 +293,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="quantity" className="text-right">Quantity</Label>
+              <Label htmlFor="quantity" className="text-right">{t("labelQuantity")}</Label>
               <Input
                 id="quantity"
                 type="number"
@@ -299,7 +304,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="date" className="text-right">Date</Label>
+              <Label htmlFor="date" className="text-right">{t("labelDate")}</Label>
               <Input
                 id="date"
                 type="datetime-local"
@@ -309,7 +314,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="note" className="text-right">Note</Label>
+              <Label htmlFor="note" className="text-right">{t("labelNote")}</Label>
               <Input
                 id="note"
                 value={editNote}
@@ -319,9 +324,9 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingTx(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setEditingTx(null)}>{tCommon("cancel")}</Button>
             <Button onClick={handleEditSave} disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save"}
+              {isSubmitting ? tCommon("saving") : tCommon("save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -330,18 +335,22 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
       <Dialog open={!!deletingTx} onOpenChange={(open) => !open && setDeletingTx(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Transaction</DialogTitle>
+            <DialogTitle>{t("deleteTitle")}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>Are you sure you want to delete this transaction{(deletingTx as any)?.isCash ? "?" : ` for ${deletingTx?.holding?.symbol}?`}</p>
+            <p>
+              {(deletingTx as any)?.isCash
+                ? t("deleteConfirm")
+                : t("deleteConfirmSymbol", { symbol: deletingTx?.holding?.symbol ?? "" })}
+            </p>
             {!(deletingTx as any)?.isCash && (
-              <p className="text-sm text-muted-foreground mt-2">This will also affect your total holding quantity for this asset.</p>
+              <p className="text-sm text-muted-foreground mt-2">{t("deleteWarning")}</p>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletingTx(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeletingTx(null)}>{tCommon("cancel")}</Button>
             <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isSubmitting}>
-              {isSubmitting ? "Deleting..." : "Delete"}
+              {isSubmitting ? tCommon("deleting") : tCommon("delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

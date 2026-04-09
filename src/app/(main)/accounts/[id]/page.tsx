@@ -7,7 +7,7 @@ import { getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 
-const CLIENT_NAMESPACES = ["accountDetail", "common", "categories"];
+const CLIENT_NAMESPACES = ["accountDetail", "common", "categories", "transactionHistory"];
 
 export default async function AccountDetailPage({
   params,
