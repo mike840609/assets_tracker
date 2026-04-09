@@ -42,12 +42,12 @@
 | 36 | Non-destructive data import (merge strategy) | Reliability | 🟡 Medium | 3-4 hrs | ❌ Not Done |
 | 37 | Expand supported currency list | Feature | 🟢 Low | 1 hr | ❌ Not Done |
 | 38 | Fix transaction pagination (fetches N*page rows) | Performance | 🔴 High | 1 hr | ❌ Not Done |
-| 39 | Filter PriceCache query on account detail page | Performance | 🔴 High | 15 min | ❌ Not Done |
+| 39 | Filter PriceCache query on account detail page | Performance | 🔴 High | 15 min | ✅ Done |
 | 40 | Fix O(n²) symbol lookup in accounts page | Performance | 🟡 Medium | 30 min | ❌ Not Done |
 | 41 | Reduce client bundle size (date-fns) | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
 | 42 | Add `select` to reduce over-fetching in API routes | Performance | 🟢 Low | 1 hr | ❌ Not Done |
 | 43 | Add aria-labels to icon-only buttons | Accessibility | 🔴 High | 1 hr | ❌ Not Done |
-| 44 | Fix color-only differentiation for assets/liabilities | Accessibility | 🔴 High | 1 hr | ✅ Done |
+| 44 | Fix color-only differentiation for assets/liabilities | Accessibility | 🔴 High | 1 hr | ❌ Not Done |
 | 45 | Add inline form validation errors | UX | 🟡 Medium | 2-3 hrs | ❌ Not Done |
 | 46 | Improve empty states with clear CTAs | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
 | 47 | Add account search/filter | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |

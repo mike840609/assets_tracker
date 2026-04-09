@@ -16,18 +16,22 @@ export default async function AccountDetailPage({
 }) {
   const { id } = await params;
 
-  // Parallel: load account, cached prices, exchange rates, and messages at once
-  const [account, allRatesMap, cachedPrices, messages] = await Promise.all([
-    prisma.account.findUnique({
-      where: { id },
-      include: { holdings: { where: { quantity: { gt: 0 } } } },
-    }),
-    getAllExchangeRates(),
-    prisma.priceCache.findMany(),
-    getMessages(),
-  ]);
+  // Fetch account first to know which symbols to filter prices by
+  const account = await prisma.account.findUnique({
+    where: { id },
+    include: { holdings: { where: { quantity: { gt: 0 } } } },
+  });
 
   if (!account) notFound();
+
+  const symbols = account.holdings.map((h) => h.symbol);
+
+  // Parallel: load filtered prices, exchange rates, and messages
+  const [allRatesMap, cachedPrices, messages] = await Promise.all([
+    getAllExchangeRates(),
+    prisma.priceCache.findMany({ where: { symbol: { in: symbols } } }),
+    getMessages(),
+  ]);
 
   const priceMap = Object.fromEntries(
     cachedPrices.map((p) => [p.symbol, Number(p.price)])
