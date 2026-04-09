@@ -5,9 +5,20 @@ import { useRouter } from "next/navigation";
 import { RefreshCw, Camera, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
-import { zhTW, enUS } from "date-fns/locale";
 import { useTranslations, useLocale } from "next-intl";
+
+function getRelativeTime(dateString: string, locale: string) {
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  const diffInSeconds = Math.round((new Date(dateString).getTime() - Date.now()) / 1000);
+  const absDiff = Math.abs(diffInSeconds);
+  
+  if (absDiff < 60) return rtf.format(Math.sign(diffInSeconds) * absDiff, "second");
+  if (absDiff < 3600) return rtf.format(Math.round(diffInSeconds / 60), "minute");
+  if (absDiff < 86400) return rtf.format(Math.round(diffInSeconds / 3600), "hour");
+  if (absDiff < 2592000) return rtf.format(Math.round(diffInSeconds / 86400), "day");
+  if (absDiff < 31536000) return rtf.format(Math.round(diffInSeconds / 2592000), "month");
+  return rtf.format(Math.round(diffInSeconds / 31536000), "year");
+}
 
 interface DashboardActionsProps {
   baseCurrency: string;
@@ -23,7 +34,6 @@ export function DashboardActions({
   const router = useRouter();
   const t = useTranslations("dashboardActions");
   const locale = useLocale();
-  const dateLocale = locale === "zh-TW" ? zhTW : enUS;
   const [refreshing, setRefreshing] = useState(false);
 
   async function handleRefreshPrices() {
@@ -44,11 +54,11 @@ export function DashboardActions({
   }
 
   const priceAge = lastPriceUpdate
-    ? formatDistanceToNow(new Date(lastPriceUpdate), { addSuffix: true, locale: dateLocale })
+    ? getRelativeTime(lastPriceUpdate, locale)
     : null;
 
   const snapshotAge = lastSnapshotDate
-    ? formatDistanceToNow(new Date(lastSnapshotDate), { addSuffix: true, locale: dateLocale })
+    ? getRelativeTime(lastSnapshotDate, locale)
     : null;
 
   return (

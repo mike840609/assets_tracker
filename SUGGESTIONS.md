@@ -43,8 +43,8 @@
 | 37 | Expand supported currency list | Feature | 🟢 Low | 1 hr | ❌ Not Done |
 | 38 | Fix transaction pagination (fetches N*page rows) | Performance | 🔴 High | 1 hr | ✅ Done |
 | 39 | Filter PriceCache query on account detail page | Performance | 🔴 High | 15 min | ✅ Done |
-| 40 | Fix O(n²) symbol lookup in accounts page | Performance | 🟡 Medium | 30 min | ❌ Not Done |
-| 41 | Reduce client bundle size (date-fns) | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
+| 40 | Fix O(n²) symbol lookup in accounts page | Performance | 🟡 Medium | 30 min | ✅ Done |
+| 41 | Reduce client bundle size (date-fns) | Performance | 🟡 Medium | 1 hr | ✅ Done |
 | 42 | Add `select` to reduce over-fetching in API routes | Performance | 🟢 Low | 1 hr | ❌ Not Done |
 | 43 | Add aria-labels to icon-only buttons | Accessibility | 🔴 High | 1 hr | ❌ Not Done |
 | 44 | Fix color-only differentiation for assets/liabilities | Accessibility | 🔴 High | 1 hr | ❌ Not Done |

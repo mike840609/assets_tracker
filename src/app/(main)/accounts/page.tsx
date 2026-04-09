@@ -53,12 +53,13 @@ export default async function AccountsPage() {
   const uncachedHoldings = allHoldings.filter((h) => !(h.symbol in priceMap));
   if (uncachedHoldings.length > 0) {
     const uncachedSymbols = [...new Set(uncachedHoldings.map((h) => h.symbol))];
+    const holdingBySymbol = new Map(allHoldings.map((h) => [h.symbol, h]));
     const stockSymbols = uncachedSymbols.filter((s) => {
-      const h = allHoldings.find((h) => h.symbol === s);
+      const h = holdingBySymbol.get(s);
       return h && ["STOCK", "ETF", "MUTUAL_FUND", "BOND"].includes(h.assetType);
     });
     const cryptoSymbols = uncachedSymbols.filter((s) => {
-      const h = allHoldings.find((h) => h.symbol === s);
+      const h = holdingBySymbol.get(s);
       return h?.assetType === "CRYPTO";
     });
 
