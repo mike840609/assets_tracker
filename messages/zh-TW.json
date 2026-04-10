@@ -8,6 +8,7 @@
     "dashboard": "儀表板",
     "accounts": "帳戶",
     "history": "歷史紀錄",
+    "performance": "績效報告",
     "settings": "設定"
   },
   "common": {
@@ -249,6 +250,23 @@
     "subtitle": "安全地訪問您的財務投資組合",
     "googleButton": "使用 Google 帳號繼續",
     "footer": "繼續操作即表示您同意私密地保護您的數據。"
+  },
+  "performance": {
+    "title": "績效報告",
+    "monthly": "月度",
+    "yearly": "年度",
+    "chartTitle": "期間漲跌幅",
+    "summaryTitle": "摘要",
+    "bestPeriod": "最佳期間",
+    "worstPeriod": "最差期間",
+    "averageGrowth": "平均成長率",
+    "periodsAnalyzed": "分析期數",
+    "changePercent": "漲跌幅",
+    "netWorth": "淨資產",
+    "change": "變化",
+    "start": "期初",
+    "end": "期末",
+    "noData": "尚無快照資料。每日自動建立快照，請在第一次快照後回來查看。"
   },
   "transactionHistory": {
     "title": "交易紀錄",

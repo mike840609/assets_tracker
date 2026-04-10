@@ -8,6 +8,7 @@
     "dashboard": "Dashboard",
     "accounts": "Accounts",
     "history": "History",
+    "performance": "Performance",
     "settings": "Settings"
   },
   "common": {
@@ -249,6 +250,23 @@
     "subtitle": "Securely access your financial portfolio",
     "googleButton": "Continue with Google",
     "footer": "By continuing, you agree to secure your data privately."
+  },
+  "performance": {
+    "title": "Performance",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "chartTitle": "Period-over-Period Change",
+    "summaryTitle": "Summary",
+    "bestPeriod": "Best Period",
+    "worstPeriod": "Worst Period",
+    "averageGrowth": "Avg Growth / Period",
+    "periodsAnalyzed": "Periods Analyzed",
+    "changePercent": "Change %",
+    "netWorth": "Net Worth",
+    "change": "Change",
+    "start": "Start",
+    "end": "End",
+    "noData": "No snapshot data yet. Snapshots are created daily — check back after the first snapshot."
   },
   "transactionHistory": {
     "title": "Transaction History",
