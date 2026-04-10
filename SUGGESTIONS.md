@@ -61,9 +61,26 @@
 | 55 | Replace console logs with structured logging | Observability | 🟡 Medium | 2-4 hrs | ❌ Not Done |
 | 56 | Add baseline automated tests (unit/API/E2E smoke) | Testing | 🔴 High | 1-2 days | ❌ Not Done |
 | 57 | Improve accessibility semantics on controls/tables | Accessibility | 🟡 Medium | 2-3 hrs | ❌ Not Done |
+| 58 | Optimize dashboard critical-path data loading for FCP/LCP | Performance | 🔴 High | 3-5 hrs | ❌ Not Done |
+| 59 | Replace eager multi-route prefetch with selective/idle prefetch | Performance | 🟡 Medium | 30-60 min | ❌ Not Done |
+| 60 | Reduce over-fetching in net-worth aggregation queries | Performance | 🔴 High | 2-4 hrs | ❌ Not Done |
+| 61 | Add route-level server timing instrumentation for Core Web Vitals triage | Observability | 🟡 Medium | 1-2 hrs | ❌ Not Done |
+| 62 | Defer non-critical dashboard widgets below the fold | Performance | 🟡 Medium | 2-3 hrs | ❌ Not Done |
 ---
 
 
+
+## 2026-04-10 Performance Suggestions (FCP/LCP)
+
+> Captures actionable items from the latest performance review focused on low FCP and LCP in Speed Insights.
+
+58. **Optimize dashboard critical-path data loading** (`src/components/dashboard/dashboard-content.tsx`): split above-the-fold summary rendering from heavier history/table/chart data so first meaningful paint is not blocked by full dashboard aggregation.
+59. **Replace eager route prefetch-on-mount** in sidebar (`src/components/layout/sidebar.tsx`) with selective/idle prefetch to avoid competing with initial render bandwidth and main-thread work.
+60. **Reduce over-fetching in net-worth aggregation** (`src/lib/services/net-worth-service.ts`) by limiting price/rate lookups to symbols/currencies actually present for the current user.
+61. **Add server timing instrumentation** around dashboard data calls (`getNetWorthSummary`, `getNormalizedHistory`, auth/session) to identify whether low LCP is DB/API latency vs client rendering.
+62. **Defer non-critical dashboard widgets** (charts/tables) behind nested Suspense boundaries or below-the-fold loading so the LCP element can render earlier.
+
+---
 ## 2026-04-10 Targeted Suggestions (Latest Review)
 
 > Added from the latest code review so active items are tracked in this canonical file (`SUGGESTIONS.md`).

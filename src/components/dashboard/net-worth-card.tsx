@@ -3,9 +3,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
-import type { NetWorthSummary } from "@/lib/types";
+import type { NetWorthTotals } from "@/lib/services/net-worth-service";
 
-export function NetWorthCard({ summary }: { summary: NetWorthSummary }) {
+export function NetWorthCard({ summary }: { summary: NetWorthTotals }) {
   const { totalAssets, totalLiabilities, netWorth, baseCurrency } = summary;
   const t = useTranslations("netWorthCard");
 
