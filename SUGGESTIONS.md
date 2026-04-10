@@ -53,8 +53,31 @@
 | 47 | Add account search/filter | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
 | 48 | Add table accessibility attributes | Accessibility | 🟡 Medium | 1 hr | ❌ Not Done |
 | 49 | Use native `confirm()` → proper confirmation dialogs | UX | 🟢 Low | 2 hrs | ❌ Not Done |
+| 50 | Add auth/ownership checks to holding mutation routes | Security | 🔴 High | 1-2 hrs | ❌ Not Done |
+| 51 | Validate snapshots query parameters with Zod | Reliability | 🔴 High | 30-60 min | ❌ Not Done |
+| 52 | Add timeout guards to external pricing calls | Reliability | 🔴 High | 30-60 min | ❌ Not Done |
+| 53 | Make data import merge-first (non-destructive) by default | Reliability | 🔴 High | 3-4 hrs | ❌ Not Done |
+| 54 | Add startup environment validation module (`env.ts`) | DX / Reliability | 🔴 High | 1 hr | ❌ Not Done |
+| 55 | Replace console logs with structured logging | Observability | 🟡 Medium | 2-4 hrs | ❌ Not Done |
+| 56 | Add baseline automated tests (unit/API/E2E smoke) | Testing | 🔴 High | 1-2 days | ❌ Not Done |
+| 57 | Improve accessibility semantics on controls/tables | Accessibility | 🟡 Medium | 2-3 hrs | ❌ Not Done |
 ---
 
+
+## 2026-04-10 Targeted Suggestions (Latest Review)
+
+> Added from the latest code review so active items are tracked in this canonical file (`SUGGESTIONS.md`).
+
+50. **Add auth/ownership checks on holding mutations** (`POST/PATCH/DELETE /api/accounts/[id]/holdings`) to enforce defense-in-depth and prevent cross-account writes if middleware changes.
+51. **Validate `/api/snapshots` query params with Zod** (`from`, `to`, `currency`) and return `400` for invalid values.
+52. **Add timeout guards in `price-service.ts`** for Yahoo and CoinGecko calls to avoid long-hanging refresh operations.
+53. **Change import default to merge/upsert strategy** in `POST /api/settings/data`; keep destructive replace as explicit opt-in.
+54. **Add startup env validation** via `src/lib/env.ts` instead of direct non-null assertions on `process.env`.
+55. **Adopt structured logging** (e.g., Pino) to replace scattered `console.*` for production debugging/monitoring.
+56. **Establish baseline automated tests** (unit + API integration + one E2E smoke path).
+57. **Improve accessibility semantics** on icon-only controls and sortable tables (`aria-label`, `aria-expanded`, `aria-sort`, keyboard handlers).
+
+---
 ## Details (Pending Tasks)
 
 ### 7. Cost Basis & Gain/Loss Tracking
