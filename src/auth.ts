@@ -12,6 +12,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.sub
       }
       return session
-    }
+    },
+    redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`
+      }
+
+      try {
+        const targetUrl = new URL(url)
+        const currentBaseUrl = new URL(baseUrl)
+
+        if (targetUrl.origin === currentBaseUrl.origin) {
+          return url
+        }
+
+        const isVercelPreviewRedirect =
+          targetUrl.hostname.endsWith(".vercel.app") &&
+          currentBaseUrl.hostname.endsWith(".vercel.app")
+
+        if (isVercelPreviewRedirect) {
+          return url
+        }
+      } catch {
+        return baseUrl
+      }
+
+      return baseUrl
+    },
   }
 })

@@ -1,6 +1,7 @@
 import { signIn } from "@/auth"
 import { Button } from "@/components/ui/button"
 import { TrendingUp } from "lucide-react"
+import { headers } from "next/headers"
 import { getTranslations } from "next-intl/server"
 
 export default async function LoginPage() {
@@ -31,7 +32,12 @@ export default async function LoginPage() {
         <form
           action={async () => {
             "use server"
-            await signIn("google", { redirectTo: "/" })
+            const headerStore = await headers()
+            const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host")
+            const protocol = headerStore.get("x-forwarded-proto") ?? "https"
+            const redirectTo = host ? `${protocol}://${host}/` : "/"
+
+            await signIn("google", { redirectTo })
           }}
           className="pt-4"
         >
