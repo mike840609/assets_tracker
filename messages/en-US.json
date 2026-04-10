@@ -131,7 +131,18 @@
     "deleteButton": "Delete ({count})",
     "deleteConfirm": "{count, plural, one {Delete # account?} other {Delete # accounts?}} This cannot be undone.",
     "deleteSuccess": "{count, plural, one {Deleted # account} other {Deleted # accounts}}",
-    "deleteFailed": "Failed to delete accounts"
+    "deleteFailed": "Failed to delete accounts",
+    "netPosition": "Net Position",
+    "searchPlaceholder": "Search accounts, categories, holdings, or symbols",
+    "resultsCount": "{count, plural, one {# account shown} other {# accounts shown}}",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "noMatches": "No matching accounts found. Try another search or filter.",
+    "filters": {
+      "all": "All",
+      "asset": "Assets",
+      "liability": "Liabilities"
+    }
   },
   "accountForm": {
     "title": "Add Account",

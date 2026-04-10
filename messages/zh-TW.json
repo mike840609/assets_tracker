@@ -131,7 +131,18 @@
     "deleteButton": "刪除（{count}）",
     "deleteConfirm": "確定要刪除 {count} 個帳戶？此操作無法復原。",
     "deleteSuccess": "已刪除 {count} 個帳戶",
-    "deleteFailed": "刪除帳戶失敗"
+    "deleteFailed": "刪除帳戶失敗",
+    "netPosition": "淨部位",
+    "searchPlaceholder": "搜尋帳戶、分類、持倉或代號",
+    "resultsCount": "{count, plural, one {顯示 # 個帳戶} other {顯示 # 個帳戶}}",
+    "expandAll": "全部展開",
+    "collapseAll": "全部收合",
+    "noMatches": "找不到符合條件的帳戶，請嘗試其他搜尋或篩選。",
+    "filters": {
+      "all": "全部",
+      "asset": "資產",
+      "liability": "負債"
+    }
   },
   "accountForm": {
     "title": "新增帳戶",

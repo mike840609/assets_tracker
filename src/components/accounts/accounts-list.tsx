@@ -7,11 +7,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/currencies";
 import { AccountForm } from "./account-form";
 import { QuickAddHolding } from "./quick-add-holding";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { Search, Wallet2, Landmark, ChevronDown, ChevronUp } from "lucide-react";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -74,14 +76,54 @@ export function AccountsList({
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"ALL" | "ASSET" | "LIABILITY">("ALL");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => {
     const all = new Set<string>();
     for (const a of accounts) all.add(`${a.type}_${a.category}`);
     return all;
   });
 
-  const assets = accounts.filter((a) => a.type === "ASSET");
-  const liabilities = accounts.filter((a) => a.type === "LIABILITY");
+  const filteredAccounts = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return accounts.filter((account) => {
+      if (typeFilter !== "ALL" && account.type !== typeFilter) return false;
+      if (!normalizedQuery) return true;
+
+      const matchesAccount =
+        account.name.toLowerCase().includes(normalizedQuery) ||
+        account.category.toLowerCase().includes(normalizedQuery) ||
+        account.currency.toLowerCase().includes(normalizedQuery);
+      if (matchesAccount) return true;
+
+      return account.holdings.some((holding) =>
+        `${holding.symbol} ${holding.name}`.toLowerCase().includes(normalizedQuery)
+      );
+    });
+  }, [accounts, query, typeFilter]);
+
+  const assets = filteredAccounts.filter((a) => a.type === "ASSET");
+  const liabilities = filteredAccounts.filter((a) => a.type === "LIABILITY");
+
+  const totalAssets = useMemo(
+    () =>
+      assets.reduce((sum, account) => {
+        const value = getAccountValue(account, priceMap, ratesMap);
+        const rate = account.currency === baseCurrency ? 1 : ratesMap[`${account.currency}_${baseCurrency}`] ?? 1;
+        return sum + value * rate;
+      }, 0),
+    [assets, priceMap, ratesMap, baseCurrency]
+  );
+
+  const totalLiabilities = useMemo(
+    () =>
+      liabilities.reduce((sum, account) => {
+        const value = getAccountValue(account, priceMap, ratesMap);
+        const rate = account.currency === baseCurrency ? 1 : ratesMap[`${account.currency}_${baseCurrency}`] ?? 1;
+        return sum + value * rate;
+      }, 0),
+    [liabilities, priceMap, ratesMap, baseCurrency]
+  );
 
   const assetsByCategory = useMemo(() => {
     const grouped: Record<string, SerializedAccountWithHoldings[]> = {};
@@ -123,10 +165,12 @@ export function AccountsList({
   }
 
   function toggleAll() {
-    if (selected.size === accounts.length) {
+    const visibleIds = filteredAccounts.map((a) => a.id);
+    const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.has(id));
+    if (allVisibleSelected) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(accounts.map((a) => a.id)));
+      setSelected(new Set(visibleIds));
     }
   }
 
@@ -153,15 +197,103 @@ export function AccountsList({
   }
 
   const isSelecting = selected.size > 0;
+  const allCategoriesExpanded =
+    [...assetsByCategory.map(({ category }) => `ASSET_${category}`), ...liabilitiesByCategory.map(({ category }) => `LIABILITY_${category}`)]
+      .every((key) => expandedCategories.has(key));
+
+  function expandOrCollapseAll(expand: boolean) {
+    if (!expand) {
+      setExpandedCategories(new Set());
+      return;
+    }
+    setExpandedCategories(
+      new Set([
+        ...assetsByCategory.map(({ category }) => `ASSET_${category}`),
+        ...liabilitiesByCategory.map(({ category }) => `LIABILITY_${category}`),
+      ])
+    );
+  }
 
   return (
     <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <Card className="card-gradient border-border/60">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t("accountsList.assets")}</span>
+              <Wallet2 className="h-4 w-4 text-emerald-500" />
+            </div>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">{formatCurrency(totalAssets, baseCurrency)}</p>
+          </CardContent>
+        </Card>
+        <Card className="card-gradient border-border/60">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t("accountsList.liabilities")}</span>
+              <Landmark className="h-4 w-4 text-rose-500" />
+            </div>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">{formatCurrency(totalLiabilities, baseCurrency)}</p>
+          </CardContent>
+        </Card>
+        <Card className="card-gradient border-border/60">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t("accountsList.netPosition")}</span>
+              <span className="text-xs font-medium text-muted-foreground">{baseCurrency}</span>
+            </div>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">{formatCurrency(totalAssets - totalLiabilities, baseCurrency)}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-border/60">
+        <CardContent className="pt-5 pb-5 space-y-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("accountsList.searchPlaceholder")}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              {(["ALL", "ASSET", "LIABILITY"] as const).map((filter) => (
+                <Button
+                  key={filter}
+                  variant={typeFilter === filter ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTypeFilter(filter)}
+                >
+                  {t(`accountsList.filters.${filter.toLowerCase()}`)}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground">
+              {t("accountsList.resultsCount", { count: filteredAccounts.length })}
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8"
+              onClick={() => expandOrCollapseAll(!allCategoriesExpanded)}
+            >
+              {allCategoriesExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {allCategoriesExpanded ? t("accountsList.collapseAll") : t("accountsList.expandAll")}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {accounts.length > 0 && (
+          {filteredAccounts.length > 0 && (
             <>
               <Checkbox
-                checked={selected.size === accounts.length && accounts.length > 0}
+                checked={filteredAccounts.length > 0 && filteredAccounts.every((account) => selected.has(account.id))}
                 onCheckedChange={toggleAll}
               />
               <span className="text-sm text-muted-foreground">
@@ -188,6 +320,12 @@ export function AccountsList({
       {accounts.length === 0 && (
         <p className="text-center text-muted-foreground py-12">
           {t("accountsList.noAccounts")}
+        </p>
+      )}
+
+      {accounts.length > 0 && filteredAccounts.length === 0 && (
+        <p className="text-center text-muted-foreground py-12">
+          {t("accountsList.noMatches")}
         </p>
       )}
 
