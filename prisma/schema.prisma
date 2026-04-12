@@ -92,7 +92,7 @@ model HoldingTransaction {
   note      String?
   createdAt DateTime        @default(now())
 
-  @@index([holdingId, createdAt])
+  @@index([holdingId, createdAt(sort: Desc)])
 }
 
 enum CashTransactionType {
@@ -110,7 +110,7 @@ model CashTransaction {
   note      String?
   createdAt DateTime            @default(now())
 
-  @@index([accountId, createdAt])
+  @@index([accountId, createdAt(sort: Desc)])
 }
 
 model PriceCache {
@@ -118,6 +118,8 @@ model PriceCache {
   price     Decimal  @db.Decimal(18, 8)
   currency  String   @default("USD")
   updatedAt DateTime @updatedAt
+
+  @@index([updatedAt])
 }
 
 model ExchangeRate {
@@ -144,7 +146,7 @@ model NetWorthSnapshot {
 
   @@unique([userId, date, baseCurrency])
   @@index([userId])
-  @@index([userId, date])
+  @@index([userId, date(sort: Desc)])
 }
 
 model User {
