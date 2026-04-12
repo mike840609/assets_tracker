@@ -441,8 +441,8 @@ Several API endpoints repeatedly filter/order by the same fields (especially acc
 |---|-----------|----------|--------|--------|--------|
 | 59 | Filter `PriceCache` query in `getNetWorthSummary` | Performance | 🔴 High | 15 min | ✅ Done |
 | 60 | Remove live price fetches from accounts page SSR | Performance | 🔴 High | 30 min | ✅ Done |
-| 61 | Remove dead code in `getNormalizedHistory` | Code Quality | 🟢 Low | 15 min | ❌ Not Done |
-| 62 | Fix collapse animation (`max-h-[2000px]` → grid collapse) | Performance / UX | 🟡 Medium | 1 hr | ❌ Not Done |
+| 61 | Remove dead code in `getNormalizedHistory` | Code Quality | 🟢 Low | 15 min | ✅ Done |
+| 62 | Fix collapse animation (`max-h-[2000px]` → grid collapse) | Performance / UX | 🟡 Medium | 1 hr | ✅ Done |
 | 63 | Fix DashboardSkeleton to match 3-chart layout (CLS) | UX | 🔴 High | 15 min | ✅ Done |
 | 64 | Replace `window.confirm()` with `AlertDialog` | UX | 🟡 Medium | 1 hr | ❌ Not Done |
 | 65 | Show net worth change delta in `NetWorthCard` | UX | 🔴 High | 1 hr | ❌ Not Done |
@@ -661,3 +661,196 @@ Emoji without `aria-hidden="true"` are announced by screen readers using their U
 ```tsx
 <span className="text-2xl flex-shrink-0" aria-hidden="true">{icon}</span>
 ```
+
+---
+
+## 2026-04-12 Loading Speed Improvements
+
+> Targeted findings focused on reducing time-to-first-content on the dashboard and reducing redundant work across page loads.
+
+| # | Suggestion | Category | Impact | Effort | Status |
+|---|-----------|----------|--------|--------|--------|
+| 71 | Wrap `getOrCreateSettings` in `React.cache()` | Performance | 🟡 Medium | 15 min | ❌ Not Done |
+| 72 | Eliminate Phase 1→Phase 2 waterfall in `DashboardContent` | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
+| 73 | Cache `getNetWorthSummary` with Next.js `unstable_cache` | Performance | 🔴 High | 1-2 hrs | ❌ Not Done |
+| 74 | Add granular Suspense boundaries inside `DashboardContent` | Performance | 🔴 High | 2-3 hrs | ❌ Not Done |
+| 75 | Add `Cache-Control` headers to `GET /api/exchange-rates` | Performance | 🟢 Low | 15 min | ❌ Not Done |
+
+---
+
+### 71. Wrap `getOrCreateSettings` in `React.cache()`
+
+**File:** `src/lib/services/settings-service.ts`
+
+`getOrCreateSettings` makes a `prisma.setting.findUnique()` call each time it is invoked. It is not currently memoized, so if multiple React Server Components in the same render tree call it (e.g. after splitting `DashboardContent` into streaming sections per #74), each issues a separate database round-trip.
+
+`getAllExchangeRates()` in `exchange-rate-service.ts` already uses this pattern correctly.
+
+**Fix:**
+
+```ts
+import { cache } from "react";
+
+export const getOrCreateSettings = cache(async (userId: string) => {
+  let settings = await prisma.setting.findUnique({ where: { userId } });
+  // ... existing creation logic
+  return settings;
+});
+```
+
+- **Affected files:** `src/lib/services/settings-service.ts`
+
+
+### 72. Eliminate Phase 1 → Phase 2 Waterfall in `DashboardContent`
+
+**File:** `src/components/dashboard/dashboard-content.tsx`
+
+`DashboardContent` runs two sequential `Promise.all` phases:
+
+```ts
+// Phase 1 — must complete before Phase 2 can start
+const [dbUser, settings] = await Promise.all([
+  prisma.user.findUnique(...),
+  getOrCreateSettings(userId),
+]);
+
+// Phase 2 — blocked until Phase 1 finishes
+const [summary, snapshots, latestPrice] = await Promise.all([
+  getNetWorthSummary(userId, baseCurrency),   // internally: accounts + rates + prices
+  getNormalizedHistory(userId, baseCurrency),  // internally: snapshots + rates
+  prisma.priceCache.findFirst(...),
+]);
+```
+
+Phase 2 is blocked because `baseCurrency` (from settings) is needed before calling the service functions. However, the database queries *inside* those services — `prisma.account.findMany`, `getAllExchangeRates`, `prisma.netWorthSnapshot.findMany` — do not need `baseCurrency`. Only the final in-memory computation does.
+
+**Fix:** Kick off the DB-independent queries in parallel with settings, then perform the computation once all data is available:
+
+```ts
+// All DB queries start immediately — no sequential dependency
+const [dbUser, settings, accounts, allRatesMap, snapshotsRaw, latestPrice] =
+  await Promise.all([
+    prisma.user.findUnique({ where: { id: userId } }),
+    getOrCreateSettings(userId),
+    prisma.account.findMany({ where: { userId, isActive: true }, include: { holdings: { where: { quantity: { gt: 0 } } } } }),
+    getAllExchangeRates(),
+    prisma.netWorthSnapshot.findMany({ where: { userId }, orderBy: { date: "asc" } }),
+    prisma.priceCache.findFirst({ orderBy: { updatedAt: "desc" }, select: { updatedAt: true } }),
+  ]);
+
+const baseCurrency = settings.baseCurrency;
+const userSymbols = accounts.flatMap(a => a.holdings.map(h => h.symbol));
+
+// Only this second phase is actually sequential (needs symbols from accounts)
+const cachedPrices = userSymbols.length > 0
+  ? await prisma.priceCache.findMany({ where: { symbol: { in: userSymbols } } })
+  : [];
+
+// Then compute net worth and normalize history in-memory using the pre-fetched data
+```
+
+This eliminates one full DB round-trip from the critical path. Requires refactoring `getNetWorthSummary` and `getNormalizedHistory` to accept pre-fetched data as parameters (or extracting their computation logic into pure functions).
+
+- **Affected files:** `src/components/dashboard/dashboard-content.tsx`, `src/lib/services/net-worth-service.ts`, `src/lib/services/history-service.ts`
+
+
+### 73. Cache `getNetWorthSummary` with Next.js `unstable_cache`
+
+**File:** `src/lib/services/net-worth-service.ts`
+
+`getNetWorthSummary` runs 2–3 database queries plus a potential external API call for missing exchange rates on **every dashboard page load**. For users who visit the dashboard frequently (or after a fast page reload), this recalculates identically unless prices or account data changed.
+
+**Fix:** Wrap the function with Next.js `unstable_cache`, keyed by `[userId, baseCurrency]`, with a short TTL. Invalidate explicitly when prices are refreshed.
+
+```ts
+import { unstable_cache } from "next/cache";
+
+export const getNetWorthSummary = unstable_cache(
+  async (userId: string, baseCurrency: string): Promise<NetWorthSummary> => {
+    // ... existing implementation unchanged
+  },
+  ["net-worth-summary"],
+  {
+    revalidate: 60,           // recompute at most once per minute on cache miss
+    tags: ["net-worth"],      // invalidated explicitly on price refresh
+  }
+);
+```
+
+Then in the price-refresh route, add cache invalidation:
+
+```ts
+// src/app/api/prices/refresh/route.ts
+import { revalidateTag } from "next/cache";
+
+// After refreshing prices:
+revalidateTag("net-worth");
+```
+
+Repeat dashboard visits within the 60-second window return the cached result instantly. The first load after the TTL or after a price refresh recomputes. Note: `unstable_cache` serializes return values, so `Decimal` fields must already be plain numbers (they are, via the serializers in `types.ts`).
+
+- **Affected files:** `src/lib/services/net-worth-service.ts`, `src/app/api/prices/refresh/route.ts`
+
+
+### 74. Add Granular Suspense Boundaries Inside `DashboardContent`
+
+**File:** `src/components/dashboard/dashboard-content.tsx`
+
+`DashboardContent` is a single async Server Component. The browser displays the `<DashboardSkeleton>` until **all** data — net worth, snapshot history, price timestamp — is fully resolved. If `getNetWorthSummary` resolves in 80ms but `getNormalizedHistory` takes 200ms, the net worth card is invisible for an extra 120ms with no reason.
+
+**Fix:** Split `DashboardContent` into independent async RSC sections, each fetching only what it needs, each wrapped in its own `<Suspense>`:
+
+```tsx
+// dashboard-content.tsx (thin orchestrator)
+export async function DashboardContent({ userId }: { userId: string }) {
+  const settings = await getOrCreateSettings(userId); // cached (see #71)
+  const { baseCurrency } = settings;
+
+  return (
+    <>
+      <Suspense fallback={<ActionsBarSkeleton />}>
+        <ActionsSection baseCurrency={baseCurrency} />
+      </Suspense>
+
+      <Suspense fallback={<NetWorthSkeleton />}>
+        <NetWorthSection userId={userId} baseCurrency={baseCurrency} />
+      </Suspense>
+
+      <Suspense fallback={<ChartsSkeleton />}>
+        <ChartsSection userId={userId} baseCurrency={baseCurrency} />
+      </Suspense>
+
+      <Suspense fallback={<AccountsTableSkeleton />}>
+        <AccountsSection userId={userId} baseCurrency={baseCurrency} />
+      </Suspense>
+    </>
+  );
+}
+```
+
+Each `*Section` is an async RSC that fetches only the data it needs. `NetWorthSection` calls `getNetWorthSummary`; `ChartsSection` calls `getNormalizedHistory`; both share cached calls to `getOrCreateSettings` and `getAllExchangeRates` (deduplicated via `React.cache()`). The user sees the net worth card as soon as the faster query resolves, without waiting for chart history.
+
+Requires #71 (`getOrCreateSettings` cached) to prevent duplicate settings queries across sections.
+
+- **Affected files:** `src/components/dashboard/dashboard-content.tsx`, new section components under `src/components/dashboard/`
+
+
+### 75. Add `Cache-Control` Headers to `GET /api/exchange-rates`
+
+**File:** `src/app/api/exchange-rates/route.ts`
+
+The `GET /api/exchange-rates` endpoint returns all stored exchange rates with no caching headers. Exchange rates are refreshed at most once per hour by user action, yet every client-side page navigation that needs rates re-fetches this endpoint without any cache benefit.
+
+**Fix:** Add a `Cache-Control` response header:
+
+```ts
+return NextResponse.json(rates, {
+  headers: {
+    "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+  },
+});
+```
+
+This allows CDN edges and the browser to serve the cached response for up to 1 hour, and serve a stale response for up to 24 hours while revalidating in the background. The exchange-rate refresh endpoint (`POST /api/exchange-rates/refresh`) already bypasses caching since it's a mutation.
+
+- **Affected files:** `src/app/api/exchange-rates/route.ts`
