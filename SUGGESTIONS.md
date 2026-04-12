@@ -439,16 +439,16 @@ Several API endpoints repeatedly filter/order by the same fields (especially acc
 
 | # | Suggestion | Category | Impact | Effort | Status |
 |---|-----------|----------|--------|--------|--------|
-| 59 | Filter `PriceCache` query in `getNetWorthSummary` | Performance | 🔴 High | 15 min | ❌ Not Done |
-| 60 | Remove live price fetches from accounts page SSR | Performance | 🔴 High | 30 min | ❌ Not Done |
+| 59 | Filter `PriceCache` query in `getNetWorthSummary` | Performance | 🔴 High | 15 min | ✅ Done |
+| 60 | Remove live price fetches from accounts page SSR | Performance | 🔴 High | 30 min | ✅ Done |
 | 61 | Remove dead code in `getNormalizedHistory` | Code Quality | 🟢 Low | 15 min | ❌ Not Done |
 | 62 | Fix collapse animation (`max-h-[2000px]` → grid collapse) | Performance / UX | 🟡 Medium | 1 hr | ❌ Not Done |
-| 63 | Fix DashboardSkeleton to match 3-chart layout (CLS) | UX | 🔴 High | 15 min | ❌ Not Done |
+| 63 | Fix DashboardSkeleton to match 3-chart layout (CLS) | UX | 🔴 High | 15 min | ✅ Done |
 | 64 | Replace `window.confirm()` with `AlertDialog` | UX | 🟡 Medium | 1 hr | ❌ Not Done |
 | 65 | Show net worth change delta in `NetWorthCard` | UX | 🔴 High | 1 hr | ❌ Not Done |
 | 66 | Add assets/liabilities series to `TrendChart` | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
 | 67 | Show full date in trend chart tooltip | UX | 🟢 Low | 15 min | ❌ Not Done |
-| 68 | Unified onboarding empty state for new users | UX | 🔴 High | 2-3 hrs | ❌ Not Done |
+| 68 | Unified onboarding empty state for new users | UX | 🔴 High | 2-3 hrs | ✅ Done |
 | 69 | Clarify "%" column in holdings (% of holdings vs. account) | UX | 🟡 Medium | 15 min | ❌ Not Done |
 | 70 | Add `aria-hidden` to decorative emoji icons | Accessibility | 🟡 Medium | 15 min | ❌ Not Done |
 

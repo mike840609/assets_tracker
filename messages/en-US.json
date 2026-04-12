@@ -64,7 +64,10 @@
     "languageFailed": "Failed to update language"
   },
   "dashboard": {
-    "title": "Dashboard"
+    "title": "Dashboard",
+    "emptyTitle": "Welcome to Asset Tracker",
+    "emptyDescription": "Start by adding your first account — a bank account, brokerage, crypto wallet, or anything else you want to track.",
+    "emptyAction": "Add your first account"
   },
   "accounts": {
     "title": "Accounts"
