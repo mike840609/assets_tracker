@@ -15,6 +15,8 @@ const CLIENT_NAMESPACES = [
   "categories",
 ];
 
+export const experimental_ppr = true;
+
 export default async function AccountsPage() {
   const session = await getSession();
   if (!session?.user?.id) return null;

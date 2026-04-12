@@ -174,14 +174,14 @@ async function computeNetWorthSummary(
 }
 
 /**
- * Cached version of net worth summary (60-second TTL, invalidated by "net-worth" tag).
+ * Cached version of net worth summary (5-minute TTL, invalidated by "net-worth" tag).
  * Used by the dashboard and accounts pages for fast repeated loads.
  * Invalidate explicitly via `revalidateTag("net-worth")` after price or data changes.
  */
 export const getCachedNetWorthSummary = unstable_cache(
   computeNetWorthSummary,
   ["net-worth-summary"],
-  { revalidate: 60, tags: ["net-worth"] }
+  { revalidate: 300, tags: ["net-worth"] }
 );
 
 /**

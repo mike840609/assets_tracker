@@ -10,18 +10,80 @@ import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-export async function DashboardContent({ userId }: { userId: string }) {
-  // Warm the React per-render cache so getCachedNetWorthSummary can reuse
-  // these queries on a cold unstable_cache miss.
-  void fetchUserAccountsWithHoldings(userId);
-  void getAllExchangeRates();
+const CARD_CLASS =
+  "bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg";
 
-  // Phase 1: fetch settings (needed for baseCurrency) in parallel with
-  // secondary data. The user existence check is unnecessary — the session
-  // middleware already guarantees the user exists.
-  const [settings, recentSnapshots, latestPrice] = await Promise.all([
-    getOrCreateSettings(userId),
+/* ---------- Section skeleton helpers ---------- */
+
+function NetWorthSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {[...Array(3)].map((_, i) => (
+        <Card key={i}>
+          <CardContent className="pt-6">
+            <div className="h-4 w-24 bg-muted animate-pulse rounded mb-2" />
+            <div className="h-8 w-36 bg-muted animate-pulse rounded" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function ChartsSkeleton() {
+  return (
+    <>
+      {[...Array(2)].map((_, i) => (
+        <div key={i} className={CARD_CLASS}>
+          <Card className="border-0 shadow-none">
+            <CardHeader className="pb-2">
+              <div className="h-5 w-32 bg-muted animate-pulse rounded" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-[250px] bg-muted animate-pulse rounded" />
+            </CardContent>
+          </Card>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function AccountsSummarySkeleton() {
+  return (
+    <div className={CARD_CLASS}>
+      <Card className="border-0 shadow-none">
+        <CardHeader>
+          <div className="h-5 w-40 bg-muted animate-pulse rounded" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-10 bg-muted animate-pulse rounded" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* ---------- Streaming section components ---------- */
+
+/**
+ * Actions bar — fetches lightweight metadata (latest price + snapshots).
+ * Streams independently from the heavier net-worth computation.
+ */
+async function DashboardActionsSection({
+  userId,
+  baseCurrency,
+}: {
+  userId: string;
+  baseCurrency: string;
+}) {
+  const [recentSnapshots, latestPrice] = await Promise.all([
     prisma.netWorthSnapshot.findMany({
       where: { userId },
       orderBy: { date: "desc" },
@@ -34,14 +96,113 @@ export async function DashboardContent({ userId }: { userId: string }) {
     }),
   ]);
 
+  const latestSnapshotDate =
+    recentSnapshots[0]?.date?.toISOString().split("T")[0] ?? null;
+
+  return (
+    <DashboardActions
+      baseCurrency={baseCurrency}
+      lastPriceUpdate={latestPrice?.updatedAt?.toISOString() ?? null}
+      lastSnapshotDate={latestSnapshotDate}
+    />
+  );
+}
+
+/**
+ * Net worth cards — the LCP element on the dashboard.
+ * Fetches the cached summary and recent snapshots for the delta display.
+ */
+async function NetWorthSection({
+  userId,
+  baseCurrency,
+}: {
+  userId: string;
+  baseCurrency: string;
+}) {
+  const [summary, recentSnapshots] = await Promise.all([
+    getCachedNetWorthSummary(userId, baseCurrency),
+    prisma.netWorthSnapshot.findMany({
+      where: { userId },
+      orderBy: { date: "desc" },
+      take: 2,
+      select: { date: true, netWorth: true, baseCurrency: true },
+    }),
+  ]);
+
+  if (summary.accounts.length === 0) return null;
+
+  const previousNetWorth =
+    recentSnapshots.length >= 2 && recentSnapshots[1].baseCurrency === baseCurrency
+      ? Number(recentSnapshots[1].netWorth)
+      : undefined;
+
+  return <NetWorthCard summary={summary} previousNetWorth={previousNetWorth} />;
+}
+
+/**
+ * Allocation + currency exposure charts.
+ * Shares the same cached summary as NetWorthSection (data-cache dedup).
+ */
+async function ChartsSection({
+  userId,
+  baseCurrency,
+}: {
+  userId: string;
+  baseCurrency: string;
+}) {
+  const summary = await getCachedNetWorthSummary(userId, baseCurrency);
+  if (summary.accounts.length === 0) return null;
+
+  return (
+    <>
+      <div className={CARD_CLASS}>
+        <LazyAllocationChart summary={summary} />
+      </div>
+      <div className={CARD_CLASS}>
+        <LazyCurrencyExposureChart summary={summary} />
+      </div>
+    </>
+  );
+}
+
+/**
+ * Accounts summary table.
+ * Shares the same cached summary (data-cache dedup).
+ */
+async function AccountsSummarySection({
+  userId,
+  baseCurrency,
+}: {
+  userId: string;
+  baseCurrency: string;
+}) {
+  const summary = await getCachedNetWorthSummary(userId, baseCurrency);
+  if (summary.accounts.length === 0) return null;
+
+  return (
+    <div className={CARD_CLASS}>
+      <AccountsSummary summary={summary} />
+    </div>
+  );
+}
+
+/* ---------- Orchestrator ---------- */
+
+export async function DashboardContent({ userId }: { userId: string }) {
+  // Settings are data-cached (30s TTL) — resolves near-instantly on cache hit
+  const settings = await getOrCreateSettings(userId);
   const baseCurrency = settings.baseCurrency;
 
-  // On a cache hit this is instant; on a cache miss the accounts and exchange-rate
-  // queries inside it resolve from the React cache populated above.
-  const summary = await getCachedNetWorthSummary(userId, baseCurrency);
+  // Pre-warm React caches for the inner sections
+  void fetchUserAccountsWithHoldings(userId);
+  void getAllExchangeRates();
 
-  // Empty state for new users with no accounts yet
-  if (summary.accounts.length === 0) {
+  // Fast check: does this user have any active accounts?
+  const accountCount = await prisma.account.count({
+    where: { userId, isActive: true },
+  });
+
+  if (accountCount === 0) {
     const t = await getTranslations("dashboard");
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-6 text-center">
@@ -75,33 +236,25 @@ export async function DashboardContent({ userId }: { userId: string }) {
     );
   }
 
-  const latestSnapshotDate =
-    recentSnapshots[0]?.date?.toISOString().split("T")[0] ?? null;
-
-  // Only use the previous value when it shares the same base currency to avoid
-  // showing a delta computed in a different currency unit.
-  const previousNetWorth =
-    recentSnapshots.length >= 2 && recentSnapshots[1].baseCurrency === baseCurrency
-      ? Number(recentSnapshots[1].netWorth)
-      : undefined;
-
-  const cardClass =
-    "bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg";
-
   return (
     <>
-      <DashboardActions
-        baseCurrency={baseCurrency}
-        lastPriceUpdate={latestPrice?.updatedAt?.toISOString() ?? null}
-        lastSnapshotDate={latestSnapshotDate}
-      />
+      {/* Actions stream first — lightweight metadata, no summary needed */}
+      <Suspense
+        fallback={
+          <div className="h-10 w-full bg-muted animate-pulse rounded-lg" />
+        }
+      >
+        <DashboardActionsSection userId={userId} baseCurrency={baseCurrency} />
+      </Suspense>
 
-      <NetWorthCard summary={summary} previousNetWorth={previousNetWorth} />
+      {/* Net worth card — the LCP element, streams as soon as summary resolves */}
+      <Suspense fallback={<NetWorthSkeleton />}>
+        <NetWorthSection userId={userId} baseCurrency={baseCurrency} />
+      </Suspense>
 
+      {/* Charts grid — trend chart + allocation + currency exposure */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* Trend chart streams in independently — it fetches full snapshot history
-            which is slower than the cached summary used by the sections above. */}
-        <div className={`${cardClass} lg:col-span-2 xl:col-span-1`}>
+        <div className={`${CARD_CLASS} lg:col-span-2 xl:col-span-1`}>
           <Suspense
             fallback={
               <div className="h-[350px] animate-pulse bg-muted rounded-lg" />
@@ -110,17 +263,15 @@ export async function DashboardContent({ userId }: { userId: string }) {
             <TrendChartSection userId={userId} baseCurrency={baseCurrency} />
           </Suspense>
         </div>
-        <div className={cardClass}>
-          <LazyAllocationChart summary={summary} />
-        </div>
-        <div className={cardClass}>
-          <LazyCurrencyExposureChart summary={summary} />
-        </div>
+        <Suspense fallback={<ChartsSkeleton />}>
+          <ChartsSection userId={userId} baseCurrency={baseCurrency} />
+        </Suspense>
       </div>
 
-      <div className={cardClass}>
-        <AccountsSummary summary={summary} />
-      </div>
+      {/* Accounts summary table */}
+      <Suspense fallback={<AccountsSummarySkeleton />}>
+        <AccountsSummarySection userId={userId} baseCurrency={baseCurrency} />
+      </Suspense>
     </>
   );
 }

@@ -7,7 +7,6 @@ import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 
 const CLIENT_NAMESPACES = [
-  "netWorthCard",
   "dashboardActions",
   "trendChart",
   "allocationChart",
@@ -16,6 +15,8 @@ const CLIENT_NAMESPACES = [
   "categories",
   "common",
 ];
+
+export const experimental_ppr = true;
 
 export default async function DashboardPage() {
   const session = await getSession();

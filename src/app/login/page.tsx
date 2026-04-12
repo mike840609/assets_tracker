@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button"
 import { TrendingUp } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 
+export const experimental_ppr = true;
+
 export default async function LoginPage() {
   const t = await getTranslations("login")
   const isPreview = process.env.VERCEL_ENV === "preview"

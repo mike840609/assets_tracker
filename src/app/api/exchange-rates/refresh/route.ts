@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 
@@ -22,5 +23,6 @@ export async function POST() {
   ]);
   const totalUpdated = results.reduce((a, b) => a + b, 0);
   
+  revalidateTag("exchange-rates", "max");
   return NextResponse.json({ updated: totalUpdated, baseCurrency });
 }

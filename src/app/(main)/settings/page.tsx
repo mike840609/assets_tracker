@@ -10,6 +10,8 @@ import { pickMessages } from "@/lib/i18n-utils";
 
 const CLIENT_NAMESPACES = ["settings", "toast", "languages", "dataManagement"];
 
+export const experimental_ppr = true;
+
 export default async function SettingsPage() {
   const session = await getSession();
   if (!session?.user?.id) return null;
