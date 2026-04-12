@@ -2,7 +2,7 @@ import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 
 /** How long to wait (ms) before giving up on external rate APIs */
-const RATE_FETCH_TIMEOUT_MS = 2000;
+const RATE_FETCH_TIMEOUT_MS = 1200;
 
 /**
  * Load ALL cached exchange rates from the database in a single query.
@@ -177,8 +177,9 @@ export const getExchangeRate = cache(async function getExchangeRate(
 
 /**
  * Resolve missing exchange rate pairs with a global timeout.
+ * Groups pairs by source currency to minimise external API calls
+ * (one fetchExchangeRates per unique source instead of per pair).
  * If resolution takes too long, unresolved pairs default to 1.
- * Use this in page components instead of calling getExchangeRate directly.
  */
 export async function resolveMissingRates(
   missingPairs: Array<[string, string]>,
@@ -189,10 +190,34 @@ export async function resolveMissingRates(
 
   const uniquePairs = [...new Set(missingPairs.map(([f, t]) => `${f}_${t}`))];
 
+  // Group by source currency to batch external API calls
+  const bySource = new Map<string, string[]>();
+  for (const key of uniquePairs) {
+    const [from, to] = key.split("_");
+    let targets = bySource.get(from);
+    if (!targets) {
+      targets = [];
+      bySource.set(from, targets);
+    }
+    targets.push(to);
+  }
+
   const resolveAll = Promise.all(
-    uniquePairs.map(async (key) => {
-      const [from, to] = key.split("_");
-      ratesMap[key] = await getExchangeRate(from, to);
+    [...bySource.entries()].map(async ([from, targets]) => {
+      const rates = await fetchExchangeRates(from);
+      for (const to of targets) {
+        const key = `${from}_${to}`;
+        if (rates[to] !== undefined) {
+          ratesMap[key] = rates[to];
+          // Fire-and-forget persist
+          const id = key;
+          prisma.exchangeRate.upsert({
+            where: { id },
+            update: { rate: rates[to], updatedAt: new Date() },
+            create: { id, fromCurrency: from, toCurrency: to, rate: rates[to] },
+          }).catch(() => {});
+        }
+      }
     })
   );
 

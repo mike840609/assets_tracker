@@ -5,8 +5,26 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   experimental: {
-    optimizePackageImports: ["recharts", "lucide-react", "date-fns"],
+    optimizePackageImports: [
+      "recharts",
+      "lucide-react",
+      "date-fns",
+      "next-intl",
+      "@prisma/client",
+    ],
   },
+  serverExternalPackages: ["ws", "@neondatabase/serverless"],
+  headers: async () => [
+    {
+      source: "/:path*",
+      headers: [
+        {
+          key: "X-DNS-Prefetch-Control",
+          value: "on",
+        },
+      ],
+    },
+  ],
 };
 
 export default withNextIntl(nextConfig);

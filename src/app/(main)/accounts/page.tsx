@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { AccountsList } from "@/components/accounts/accounts-list";
 import { serializeAccountWithHoldings } from "@/lib/types";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
+import { getOrCreateSettings } from "@/lib/services/settings-service";
 
 const CLIENT_NAMESPACES = [
   "accountsList",
@@ -18,23 +19,21 @@ export default async function AccountsPage() {
   const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
-  const [t, messages] = await Promise.all([
+
+  // Run all independent queries in parallel (translations + data)
+  const [t, messages, accountsRaw, settings, allRatesMap] = await Promise.all([
     getTranslations("accounts"),
     getMessages(),
-  ]);
-
-  // Parallel: fetch accounts + settings + all exchange rates at once
-  const [accountsRaw, settings, allRatesMap] = await Promise.all([
     prisma.account.findMany({
       where: { userId },
       include: { holdings: { where: { quantity: { gt: 0 } } } },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.setting.findUnique({ where: { userId } }),
+    getOrCreateSettings(userId),
     getAllExchangeRates(),
   ]);
 
-  const baseCurrency = settings?.baseCurrency ?? "USD";
+  const baseCurrency = settings.baseCurrency;
 
   // Fetch cached prices for this user's holding symbols only
   const allSymbols = [...new Set(accountsRaw.flatMap((a) => a.holdings.map((h) => h.symbol)))];

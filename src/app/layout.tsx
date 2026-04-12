@@ -12,11 +12,13 @@ import "./globals.css";
 const outfit = Outfit({
   variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -46,6 +48,10 @@ export default async function RootLayout({
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
+      <head>
+        <link rel="dns-prefetch" href="https://api.frankfurter.app" />
+        <link rel="dns-prefetch" href="https://open.er-api.com" />
+      </head>
       <body className="h-full flex flex-col md:flex-row overflow-hidden bg-background text-foreground">
         <NextIntlClientProvider messages={pickMessages(messages, ["app", "nav"])}>
           <ThemeProvider

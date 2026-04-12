@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { createSnapshot } from "@/lib/services/snapshot-service";
-import { getNormalizedHistory } from "@/lib/services/history-service";
+import { getFullNormalizedHistory } from "@/lib/services/history-service";
 import { auth } from "@/auth";
 
 export async function GET(request: Request) {
@@ -17,7 +16,7 @@ export async function GET(request: Request) {
   if (from) options.from = new Date(from);
   if (to) options.to = new Date(to);
 
-  const snapshots = await getNormalizedHistory(session.user.id, baseCurrency, options);
+  const snapshots = await getFullNormalizedHistory(session.user.id, baseCurrency, options);
   return NextResponse.json(snapshots);
 }
 

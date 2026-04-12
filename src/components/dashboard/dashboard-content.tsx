@@ -6,26 +6,21 @@ import { AccountsSummary } from "@/components/dashboard/accounts-summary";
 import { DashboardActions } from "@/components/dashboard/dashboard-actions";
 import { getCachedNetWorthSummary, fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
 import { getAllExchangeRates } from "@/lib/services/exchange-rate-service";
-import { redirect } from "next/navigation";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 export async function DashboardContent({ userId }: { userId: string }) {
-  // Fire DB-independent queries immediately so the React per-render cache is
-  // warm when getCachedNetWorthSummary reaches them on a cold start.
-  // These do not need baseCurrency; only the final computation does.
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  fetchUserAccountsWithHoldings(userId);
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  getAllExchangeRates();
+  // Warm the React per-render cache so getCachedNetWorthSummary can reuse
+  // these queries on a cold unstable_cache miss.
+  void fetchUserAccountsWithHoldings(userId);
+  void getAllExchangeRates();
 
-  // All remaining Phase-1 queries run in parallel with the pre-fetches above.
-  // recentSnapshots and latestPrice are moved here from Phase 2 since they
-  // also don't require baseCurrency.
-  const [dbUser, settings, recentSnapshots, latestPrice] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId } }),
+  // Phase 1: fetch settings (needed for baseCurrency) in parallel with
+  // secondary data. The user existence check is unnecessary — the session
+  // middleware already guarantees the user exists.
+  const [settings, recentSnapshots, latestPrice] = await Promise.all([
     getOrCreateSettings(userId),
     prisma.netWorthSnapshot.findMany({
       where: { userId },
@@ -38,8 +33,6 @@ export async function DashboardContent({ userId }: { userId: string }) {
       select: { updatedAt: true },
     }),
   ]);
-
-  if (!dbUser) redirect("/api/auth/signout");
 
   const baseCurrency = settings.baseCurrency;
 
