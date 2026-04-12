@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -52,9 +52,9 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
               <CalendarClock className="h-6 w-6 text-muted-foreground" />
             </div>
             <p className="text-sm text-muted-foreground">{t("noData")}</p>
-            <Button asChild variant="outline" className="mt-4">
-              <Link href="/">{t("goDashboard")}</Link>
-            </Button>
+            <Link href="/" className={cn(buttonVariants({ variant: "outline" }), "mt-4")}>
+              {t("goDashboard")}
+            </Link>
           </div>
         ) : (
           <div className="max-h-[480px] overflow-y-auto">
