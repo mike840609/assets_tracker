@@ -10,15 +10,20 @@ export async function getNetWorthSummary(
   userId: string,
   baseCurrency: string
 ): Promise<NetWorthSummary> {
-  // Parallel: load accounts, prices, and all exchange rates in one go
-  const [accounts, prices, allRatesMap] = await Promise.all([
+  // Phase 1: load accounts and exchange rates in parallel
+  const [accounts, allRatesMap] = await Promise.all([
     prisma.account.findMany({
       where: { userId, isActive: true },
       include: { holdings: { where: { quantity: { gt: 0 } } } },
     }),
-    prisma.priceCache.findMany(),
     getAllExchangeRates(),
   ]);
+
+  // Phase 2: fetch only the prices needed for this user's holdings
+  const userSymbols = accounts.flatMap((a) => a.holdings.map((h) => h.symbol));
+  const prices = await prisma.priceCache.findMany({
+    where: userSymbols.length > 0 ? { symbol: { in: userSymbols } } : undefined,
+  });
 
   const priceMap = Object.fromEntries(
     prices.map((p) => [p.symbol, { price: Number(p.price), currency: p.currency }])

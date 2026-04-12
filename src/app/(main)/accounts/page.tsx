@@ -5,7 +5,6 @@ import { pickMessages } from "@/lib/i18n-utils";
 import { prisma } from "@/lib/prisma";
 import { AccountsList } from "@/components/accounts/accounts-list";
 import { serializeAccountWithHoldings } from "@/lib/types";
-import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
 
 const CLIENT_NAMESPACES = [
@@ -37,52 +36,14 @@ export default async function AccountsPage() {
 
   const baseCurrency = settings?.baseCurrency ?? "USD";
 
-  // Get all unique symbols from holdings
-  const allHoldings = accountsRaw.flatMap((a) => a.holdings);
-  const allSymbols = [...new Set(allHoldings.map((h) => h.symbol))];
-
-  // Fetch cached prices
-  const cachedPrices = await prisma.priceCache.findMany({
-    where: { symbol: { in: allSymbols } },
-  });
+  // Fetch cached prices for this user's holding symbols only
+  const allSymbols = [...new Set(accountsRaw.flatMap((a) => a.holdings.map((h) => h.symbol)))];
+  const cachedPrices = allSymbols.length > 0
+    ? await prisma.priceCache.findMany({ where: { symbol: { in: allSymbols } } })
+    : [];
   const priceMap: Record<string, number> = Object.fromEntries(
     cachedPrices.map((p) => [p.symbol, Number(p.price)])
   );
-
-  // Fetch live prices for any uncached symbols
-  const uncachedHoldings = allHoldings.filter((h) => !(h.symbol in priceMap));
-  if (uncachedHoldings.length > 0) {
-    const uncachedSymbols = [...new Set(uncachedHoldings.map((h) => h.symbol))];
-    const holdingBySymbol = new Map(allHoldings.map((h) => [h.symbol, h]));
-    const stockSymbols = uncachedSymbols.filter((s) => {
-      const h = holdingBySymbol.get(s);
-      return h && ["STOCK", "ETF", "MUTUAL_FUND", "BOND"].includes(h.assetType);
-    });
-    const cryptoSymbols = uncachedSymbols.filter((s) => {
-      const h = holdingBySymbol.get(s);
-      return h?.assetType === "CRYPTO";
-    });
-
-    const [stockPrices, cryptoPrices] = await Promise.all([
-      fetchStockPrices(stockSymbols),
-      fetchCryptoPrices(cryptoSymbols),
-    ]);
-
-    const allFetched = new Map([...stockPrices, ...cryptoPrices]);
-    // Batch upsert — run concurrently
-    const upsertPromises = [];
-    for (const [symbol, { price, currency }] of allFetched) {
-      priceMap[symbol] = price;
-      upsertPromises.push(
-        prisma.priceCache.upsert({
-          where: { symbol },
-          update: { price, currency, updatedAt: new Date() },
-          create: { symbol, price, currency },
-        })
-      );
-    }
-    await Promise.all(upsertPromises);
-  }
 
   const serialized = accountsRaw.map(serializeAccountWithHoldings);
 

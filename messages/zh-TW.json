@@ -64,7 +64,10 @@
     "languageFailed": "更新語言失敗"
   },
   "dashboard": {
-    "title": "儀表板"
+    "title": "儀表板",
+    "emptyTitle": "歡迎使用資產追蹤器",
+    "emptyDescription": "從新增第一個帳戶開始——銀行帳戶、券商、加密貨幣錢包，或任何您想追蹤的項目。",
+    "emptyAction": "新增第一個帳戶"
   },
   "accounts": {
     "title": "帳戶"
