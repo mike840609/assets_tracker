@@ -61,6 +61,7 @@
 | 55 | Replace console logs with structured logging | Observability | 🟡 Medium | 2-4 hrs | ❌ Not Done |
 | 56 | Add baseline automated tests (unit/API/E2E smoke) | Testing | 🔴 High | 1-2 days | ❌ Not Done |
 | 57 | Improve accessibility semantics on controls/tables | Accessibility | 🟡 Medium | 2-3 hrs | ❌ Not Done |
+| 58 | Add composite database indexes for hot query paths | Performance | 🔴 High | 1-2 hrs | ❌ Not Done |
 ---
 
 
@@ -408,3 +409,16 @@ Affected locations:
 - Include the account name in the dialog body so users know exactly what they're deleting
 - Use a red "Delete" button and a neutral "Cancel" button
 - **Affected files**: `src/components/accounts/accounts-list.tsx`, `src/components/accounts/account-detail.tsx`
+
+
+### 58. Add Composite Database Indexes for Hot Query Paths
+Several API endpoints repeatedly filter/order by the same fields (especially account-scoped transaction history and snapshot date ranges), but the schema currently relies mostly on default single-column indexes. As row counts grow, these scans become slower and can dominate response times.
+
+- Add composite indexes in `prisma/schema.prisma` for common access patterns, for example:
+  - `HoldingTransaction(accountId, date desc)` for account transaction history
+  - `CashTransaction(accountId, date desc)` for merged cash/history queries
+  - `NetWorthSnapshot(userId, date)` for range queries in `/api/snapshots` and history chart loading
+  - `PriceCache(symbol, updatedAt)` to speed stale-price checks and targeted refresh logic
+- Run `EXPLAIN ANALYZE` on the slowest queries before/after to verify index usage and measure improvements
+- Document expected query plans in a short note so future migrations preserve these performance characteristics
+- **Affected files**: `prisma/schema.prisma`, new migration under `prisma/migrations/*`
