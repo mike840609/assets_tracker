@@ -670,10 +670,10 @@ Emoji without `aria-hidden="true"` are announced by screen readers using their U
 
 | # | Suggestion | Category | Impact | Effort | Status |
 |---|-----------|----------|--------|--------|--------|
-| 71 | Wrap `getOrCreateSettings` in `React.cache()` | Performance | 🟡 Medium | 15 min | ❌ Not Done |
+| 71 | Wrap `getOrCreateSettings` in `React.cache()` | Performance | 🟡 Medium | 15 min | ✅ Done |
 | 72 | Eliminate Phase 1→Phase 2 waterfall in `DashboardContent` | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
-| 73 | Cache `getNetWorthSummary` with Next.js `unstable_cache` | Performance | 🔴 High | 1-2 hrs | ❌ Not Done |
-| 74 | Add granular Suspense boundaries inside `DashboardContent` | Performance | 🔴 High | 2-3 hrs | ❌ Not Done |
+| 73 | Cache `getNetWorthSummary` with Next.js `unstable_cache` | Performance | 🔴 High | 1-2 hrs | ✅ Done |
+| 74 | Add granular Suspense boundaries inside `DashboardContent` | Performance | 🔴 High | 2-3 hrs | ✅ Done |
 | 75 | Add `Cache-Control` headers to `GET /api/exchange-rates` | Performance | 🟢 Low | 15 min | ❌ Not Done |
 
 ---
@@ -699,6 +699,8 @@ export const getOrCreateSettings = cache(async (userId: string) => {
 ```
 
 - **Affected files:** `src/lib/services/settings-service.ts`
+
+**Implementation (2026-04-12):** Wrapped `getOrCreateSettings` with React's `cache()` function. The function is now memoized per `userId` within each server request, preventing duplicate `prisma.setting.findUnique()` calls across streaming RSC sections.
 
 
 ### 72. Eliminate Phase 1 → Phase 2 Waterfall in `DashboardContent`
@@ -791,6 +793,12 @@ Repeat dashboard visits within the 60-second window return the cached result ins
 
 - **Affected files:** `src/lib/services/net-worth-service.ts`, `src/app/api/prices/refresh/route.ts`
 
+**Implementation (2026-04-12):**
+- Renamed the existing function body to `computeNetWorthSummary` (private).
+- Exported `getCachedNetWorthSummary = unstable_cache(computeNetWorthSummary, ["net-worth-summary"], { revalidate: 60, tags: ["net-worth"] })`.
+- Kept `getNetWorthSummary` as an alias to `getCachedNetWorthSummary` for backward-compatibility (snapshot-service.ts unchanged).
+- Added `revalidateTag("net-worth")` after `refreshAllPrices()` in both `POST /api/prices/refresh` and `GET /api/cron/snapshot` so the cache is invalidated before user-triggered reloads and before snapshot creation.
+
 
 ### 74. Add Granular Suspense Boundaries Inside `DashboardContent`
 
@@ -833,6 +841,11 @@ Each `*Section` is an async RSC that fetches only the data it needs. `NetWorthSe
 Requires #71 (`getOrCreateSettings` cached) to prevent duplicate settings queries across sections.
 
 - **Affected files:** `src/components/dashboard/dashboard-content.tsx`, new section components under `src/components/dashboard/`
+
+**Implementation (2026-04-12):**
+- Created `src/components/dashboard/trend-chart-section.tsx` — a new async RSC that calls `getNormalizedHistory` and renders `LazyTrendChart`.
+- Rewrote `DashboardContent` to: (a) call `getCachedNetWorthSummary` in the main data phase, (b) fetch only the 2 most recent snapshots (instead of full history) to derive `previousNetWorth` and `lastSnapshotDate`, and (c) wrap `TrendChartSection` in a `<Suspense>` inside the chart grid so it streams in independently once history resolves.
+- Net worth card, allocation chart, currency exposure chart, and accounts summary all appear as soon as the cached summary resolves (~5ms on warm cache), while the trend chart loads the full snapshot history separately (~30–80ms).
 
 
 ### 75. Add `Cache-Control` Headers to `GET /api/exchange-rates`

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createSnapshot } from "@/lib/services/snapshot-service";
 import { refreshAllPrices } from "@/lib/services/price-service";
@@ -13,6 +14,8 @@ export async function GET(request: Request) {
     // 1. Refresh all prices first to ensure the snapshot is accurate
     console.log("Cron: Refreshing prices...");
     await refreshAllPrices();
+    // Invalidate cached net worth summaries so snapshots use fresh prices
+    revalidateTag("net-worth");
 
     // 2. Get all users and their settings
     const users = await prisma.user.findMany({

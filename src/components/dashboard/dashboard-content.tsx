@@ -1,13 +1,13 @@
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { NetWorthCard } from "@/components/dashboard/net-worth-card";
-import { LazyTrendChart, LazyAllocationChart } from "@/components/dashboard/lazy-charts";
+import { LazyAllocationChart, LazyCurrencyExposureChart } from "@/components/dashboard/lazy-charts";
 import { AccountsSummary } from "@/components/dashboard/accounts-summary";
 import { DashboardActions } from "@/components/dashboard/dashboard-actions";
-import { getNetWorthSummary } from "@/lib/services/net-worth-service";
+import { getCachedNetWorthSummary } from "@/lib/services/net-worth-service";
 import { redirect } from "next/navigation";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
-import { getNormalizedHistory } from "@/lib/services/history-service";
-import { LazyCurrencyExposureChart } from "@/components/dashboard/lazy-charts";
+import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
@@ -21,9 +21,17 @@ export async function DashboardContent({ userId }: { userId: string }) {
 
   const baseCurrency = settings.baseCurrency;
 
-  const [summary, snapshots, latestPrice] = await Promise.all([
-    getNetWorthSummary(userId, baseCurrency),
-    getNormalizedHistory(userId, baseCurrency),
+  // Fetch summary (cached, fast on repeat loads) and meta queries in parallel.
+  // The 2 most recent snapshots give us the previous-period delta and last-snapshot
+  // date without loading the full history — that is deferred to TrendChartSection.
+  const [summary, recentSnapshots, latestPrice] = await Promise.all([
+    getCachedNetWorthSummary(userId, baseCurrency),
+    prisma.netWorthSnapshot.findMany({
+      where: { userId },
+      orderBy: { date: "desc" },
+      take: 2,
+      select: { date: true, netWorth: true, baseCurrency: true },
+    }),
     prisma.priceCache.findFirst({
       orderBy: { updatedAt: "desc" },
       select: { updatedAt: true },
@@ -65,36 +73,50 @@ export async function DashboardContent({ userId }: { userId: string }) {
     );
   }
 
-  const latestSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
+  const latestSnapshotDate =
+    recentSnapshots[0]?.date?.toISOString().split("T")[0] ?? null;
+
+  // Only use the previous value when it shares the same base currency to avoid
+  // showing a delta computed in a different currency unit.
   const previousNetWorth =
-    snapshots.length >= 2 ? snapshots[snapshots.length - 2].netWorth : undefined;
+    recentSnapshots.length >= 2 && recentSnapshots[1].baseCurrency === baseCurrency
+      ? Number(recentSnapshots[1].netWorth)
+      : undefined;
+
+  const cardClass =
+    "bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg";
 
   return (
     <>
       <DashboardActions
         baseCurrency={baseCurrency}
         lastPriceUpdate={latestPrice?.updatedAt?.toISOString() ?? null}
-        lastSnapshotDate={latestSnapshot?.date ?? null}
+        lastSnapshotDate={latestSnapshotDate}
       />
 
       <NetWorthCard summary={summary} previousNetWorth={previousNetWorth} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg lg:col-span-2 xl:col-span-1">
-          <LazyTrendChart
-            baseCurrency={baseCurrency}
-            snapshots={snapshots}
-          />
+        {/* Trend chart streams in independently — it fetches full snapshot history
+            which is slower than the cached summary used by the sections above. */}
+        <div className={`${cardClass} lg:col-span-2 xl:col-span-1`}>
+          <Suspense
+            fallback={
+              <div className="h-[350px] animate-pulse bg-muted rounded-lg" />
+            }
+          >
+            <TrendChartSection userId={userId} baseCurrency={baseCurrency} />
+          </Suspense>
         </div>
-        <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
+        <div className={cardClass}>
           <LazyAllocationChart summary={summary} />
         </div>
-        <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
+        <div className={cardClass}>
           <LazyCurrencyExposureChart summary={summary} />
         </div>
       </div>
 
-      <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
+      <div className={cardClass}>
         <AccountsSummary summary={summary} />
       </div>
     </>

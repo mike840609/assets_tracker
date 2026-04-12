@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "./exchange-rate-service";
 import {
@@ -6,7 +7,7 @@ import {
 } from "@/lib/types";
 import type { AccountWithValue, NetWorthSummary, HoldingWithPrice } from "@/lib/types";
 
-export async function getNetWorthSummary(
+async function computeNetWorthSummary(
   userId: string,
   baseCurrency: string
 ): Promise<NetWorthSummary> {
@@ -158,3 +159,21 @@ export async function getNetWorthSummary(
     accounts: accountsWithValue,
   };
 }
+
+/**
+ * Cached version of net worth summary (60-second TTL, invalidated by "net-worth" tag).
+ * Used by the dashboard and accounts pages for fast repeated loads.
+ * Invalidate explicitly via `revalidateTag("net-worth")` after price or data changes.
+ */
+export const getCachedNetWorthSummary = unstable_cache(
+  computeNetWorthSummary,
+  ["net-worth-summary"],
+  { revalidate: 60, tags: ["net-worth"] }
+);
+
+/**
+ * Alias kept for backward-compatibility with snapshot-service and other callers.
+ * Routes that mutate data should call `revalidateTag("net-worth")` afterward so
+ * the next dashboard load receives a fresh computation.
+ */
+export const getNetWorthSummary = getCachedNetWorthSummary;
