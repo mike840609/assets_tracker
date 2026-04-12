@@ -9,8 +9,6 @@ import { getNormalizedHistory } from "@/lib/services/history-service";
 
 const CLIENT_NAMESPACES = ["trendChart", "history"];
 
-export const experimental_ppr = true;
-
 export default async function HistoryPage() {
   const session = await getSession();
   if (!session?.user?.id) return null;
