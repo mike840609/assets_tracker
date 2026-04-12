@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server"
 
 export default async function LoginPage() {
   const t = await getTranslations("login")
+  const isPreview = process.env.VERCEL_ENV === "preview"
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center relative overflow-hidden bg-slate-50">
@@ -14,7 +15,7 @@ export default async function LoginPage() {
 
       {/* Glassmorphism Card */}
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-col justify-center space-y-8 p-10 bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.1)] rounded-3xl animate-slide-in-bottom">
-        
+
         <div className="flex flex-col space-y-3 text-center">
           <div className="w-16 h-16 mx-auto rounded-xl flex items-center justify-center mb-4 relative group shadow-lg" style={{ background: "linear-gradient(135deg, #34d399 0%, #065f46 100%)" }}>
             <div className="absolute inset-0 rounded-xl blur-md bg-emerald-500/50 opacity-40 group-hover:opacity-70 transition-opacity duration-500 animate-pulse" style={{ background: "linear-gradient(135deg, #34d399 0%, #065f46 100%)" }}></div>
@@ -35,8 +36,8 @@ export default async function LoginPage() {
           }}
           className="pt-4"
         >
-          <Button 
-            className="w-full h-12 text-[15px] font-medium tracking-wide bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 rounded-xl flex items-center justify-center gap-3" 
+          <Button
+            className="w-full h-12 text-[15px] font-medium tracking-wide bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 rounded-xl flex items-center justify-center gap-3"
             type="submit"
           >
             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -48,6 +49,42 @@ export default async function LoginPage() {
             {t("googleButton")}
           </Button>
         </form>
+
+        {isPreview && (
+          <>
+            <div className="flex items-center gap-3 pt-2">
+              <div className="flex-1 h-px bg-slate-200" />
+              <span className="text-xs text-slate-400 font-medium">Preview Mode</span>
+              <div className="flex-1 h-px bg-slate-200" />
+            </div>
+
+            <form
+              action={async (formData: FormData) => {
+                "use server"
+                await signIn("credentials", {
+                  password: formData.get("password") as string,
+                  redirectTo: "/",
+                })
+              }}
+            >
+              <div className="flex flex-col gap-3">
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="Preview password"
+                  required
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
+                />
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-[15px] font-medium tracking-wide bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 rounded-xl"
+                >
+                  Preview Login
+                </Button>
+              </div>
+            </form>
+          </>
+        )}
 
         <div className="text-center text-xs text-slate-400 pt-4 mb-[-1rem]">
           {t("footer")}
