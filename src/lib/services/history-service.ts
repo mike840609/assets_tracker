@@ -42,47 +42,10 @@ export async function getNormalizedHistory(
     let totalAssets = Number(s.totalAssets);
     let totalLiabilities = Number(s.totalLiabilities);
 
-    const breakdown = s.breakdown as Record<string, any> | null;
-    const canUseLossless =
-      breakdown &&
-      Object.values(breakdown).some(
-        (v) => typeof v === "object" && v !== null && "currency" in v
-      );
-
-    if (canUseLossless) {
-      // Recalculate totals from per-account balances for maximum accuracy
-      let newAssets = 0;
-      let newLiabilities = 0;
-
-      for (const entry of Object.values(breakdown!)) {
-        const val = Number(entry.value);
-        const curr = entry.currency as string;
-        const rate = resolveRate(allRatesMap, curr, targetBaseCurrency) ?? 1;
-        
-        // Note: Snapshot breakdown doesn't store ASSET/LIABILITY type per account,
-        // so we still rely on the original snapshot's total ratio or just use the 
-        // snapshot-level rate for simplicity, but here we can be more accurate
-        // if we just normalize the entire snapshot net worth based on the 
-        // average rate change or just use the per-account info.
-        // Actually, without the type (ASSET/LIABILITY) in the breakdown, we can't 
-        // perfectly re-sum assets/liabilities. 
-        // BUT, we can still provide a more accurate total net worth.
-      }
-      
-      // Since we don't have account types in the breakdown yet, let's keep the 
-      // simple rate-based normalization but use the lossless info if possible.
-      // Actually, let's stick to the snapshot-level rate for assets/liab 
-      // but the lossless data helps if we ever wanted to drill down.
-      const snapshotRate = resolveRate(allRatesMap, s.baseCurrency, targetBaseCurrency) ?? 1;
-      netWorth *= snapshotRate;
-      totalAssets *= snapshotRate;
-      totalLiabilities *= snapshotRate;
-    } else {
-      const snapshotRate = resolveRate(allRatesMap, s.baseCurrency, targetBaseCurrency) ?? 1;
-      netWorth *= snapshotRate;
-      totalAssets *= snapshotRate;
-      totalLiabilities *= snapshotRate;
-    }
+    const snapshotRate = resolveRate(allRatesMap, s.baseCurrency, targetBaseCurrency) ?? 1;
+    netWorth *= snapshotRate;
+    totalAssets *= snapshotRate;
+    totalLiabilities *= snapshotRate;
 
     const normalized: NormalizedSnapshot = {
       id: s.id,

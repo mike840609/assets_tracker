@@ -327,20 +327,22 @@ function CategorySection({
         </div>
       </button>
 
-      <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"}`}>
-        <div className="px-4 py-4 space-y-3 bg-background/50">
-          {accounts.map((account) => (
-            <AccountCardWithHoldings
-              key={account.id}
-              account={account}
-              priceMap={priceMap}
-              ratesMap={ratesMap}
-              baseCurrency={baseCurrency}
-              isSelected={selected.has(account.id)}
-              onToggle={() => onToggleSelect(account.id)}
-              isSelecting={isSelecting}
-            />
-          ))}
+      <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+        <div className="overflow-hidden">
+          <div className="px-4 py-4 space-y-3 bg-background/50">
+            {accounts.map((account) => (
+              <AccountCardWithHoldings
+                key={account.id}
+                account={account}
+                priceMap={priceMap}
+                ratesMap={ratesMap}
+                baseCurrency={baseCurrency}
+                isSelected={selected.has(account.id)}
+                onToggle={() => onToggleSelect(account.id)}
+                isSelecting={isSelecting}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

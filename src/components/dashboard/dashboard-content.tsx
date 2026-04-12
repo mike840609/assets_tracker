@@ -66,6 +66,8 @@ export async function DashboardContent({ userId }: { userId: string }) {
   }
 
   const latestSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
+  const previousNetWorth =
+    snapshots.length >= 2 ? snapshots[snapshots.length - 2].netWorth : undefined;
 
   return (
     <>
@@ -75,7 +77,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
         lastSnapshotDate={latestSnapshot?.date ?? null}
       />
 
-      <NetWorthCard summary={summary} />
+      <NetWorthCard summary={summary} previousNetWorth={previousNetWorth} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg lg:col-span-2 xl:col-span-1">

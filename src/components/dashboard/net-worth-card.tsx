@@ -5,9 +5,25 @@ import { formatCurrency } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
 import type { NetWorthSummary } from "@/lib/types";
 
-export function NetWorthCard({ summary }: { summary: NetWorthSummary }) {
+export function NetWorthCard({
+  summary,
+  previousNetWorth,
+}: {
+  summary: NetWorthSummary;
+  previousNetWorth?: number;
+}) {
   const { totalAssets, totalLiabilities, netWorth, baseCurrency } = summary;
   const t = useTranslations("netWorthCard");
+
+  const delta = previousNetWorth !== undefined ? netWorth - previousNetWorth : null;
+  const pct =
+    delta !== null && previousNetWorth !== undefined && previousNetWorth !== 0
+      ? (delta / Math.abs(previousNetWorth)) * 100
+      : null;
+
+  const isPositive = delta !== null && delta >= 0;
+  const deltaColor = delta === null ? "" : isPositive ? "text-green-600" : "text-red-600";
+  const deltaSign = delta !== null && delta > 0 ? "+" : "";
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -17,6 +33,12 @@ export function NetWorthCard({ summary }: { summary: NetWorthSummary }) {
           <p className="text-3xl font-bold tracking-tight mt-1">
             {formatCurrency(netWorth, baseCurrency)}
           </p>
+          {delta !== null && pct !== null && (
+            <p className={`text-sm font-medium mt-1 ${deltaColor}`}>
+              {deltaSign}{formatCurrency(delta, baseCurrency)}{" "}
+              ({deltaSign}{pct.toFixed(2)}%)
+            </p>
+          )}
         </CardContent>
       </Card>
       <Card>
