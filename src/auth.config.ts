@@ -3,6 +3,7 @@ import type { NextAuthConfig } from "next-auth"
 
 export default {
   trustHost: true,
+  redirectProxyUrl: process.env.AUTH_REDIRECT_PROXY_URL,
   providers: [
     GoogleProvider({
       clientId: process.env.AUTH_GOOGLE_ID!,
