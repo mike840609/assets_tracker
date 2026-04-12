@@ -430,3 +430,234 @@ Several API endpoints repeatedly filter/order by the same fields (especially acc
   - `NetWorthSnapshot(userId, date DESC)`
 - Added `PriceCache(updatedAt)` index to speed stale-price scans.
 - Added SQL migration: `prisma/migrations/202604120001_add_hot_path_indexes/migration.sql`.
+
+---
+
+## 2026-04-12 Performance & UI/UX Audit
+
+> New findings from a full read of the codebase. Items are numbered starting at 59 to continue the running sequence.
+
+| # | Suggestion | Category | Impact | Effort | Status |
+|---|-----------|----------|--------|--------|--------|
+| 59 | Filter `PriceCache` query in `getNetWorthSummary` | Performance | 🔴 High | 15 min | ❌ Not Done |
+| 60 | Remove live price fetches from accounts page SSR | Performance | 🔴 High | 30 min | ❌ Not Done |
+| 61 | Remove dead code in `getNormalizedHistory` | Code Quality | 🟢 Low | 15 min | ❌ Not Done |
+| 62 | Fix collapse animation (`max-h-[2000px]` → grid collapse) | Performance / UX | 🟡 Medium | 1 hr | ❌ Not Done |
+| 63 | Fix DashboardSkeleton to match 3-chart layout (CLS) | UX | 🔴 High | 15 min | ❌ Not Done |
+| 64 | Replace `window.confirm()` with `AlertDialog` | UX | 🟡 Medium | 1 hr | ❌ Not Done |
+| 65 | Show net worth change delta in `NetWorthCard` | UX | 🔴 High | 1 hr | ❌ Not Done |
+| 66 | Add assets/liabilities series to `TrendChart` | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
+| 67 | Show full date in trend chart tooltip | UX | 🟢 Low | 15 min | ❌ Not Done |
+| 68 | Unified onboarding empty state for new users | UX | 🔴 High | 2-3 hrs | ❌ Not Done |
+| 69 | Clarify "%" column in holdings (% of holdings vs. account) | UX | 🟡 Medium | 15 min | ❌ Not Done |
+| 70 | Add `aria-hidden` to decorative emoji icons | Accessibility | 🟡 Medium | 15 min | ❌ Not Done |
+
+---
+
+### 59. Filter `PriceCache` Query in `getNetWorthSummary`
+
+**File:** `src/lib/services/net-worth-service.ts:19`
+
+`prisma.priceCache.findMany()` fetches every symbol ever cached — not just the ones relevant to this user's holdings. As the table grows (more users, more symbols), this query grows with it and bloats every dashboard render.
+
+```ts
+// Current — loads every cached price in the table
+const prices = await prisma.priceCache.findMany();
+
+// Fix — filter to only the symbols this user's holdings need
+const userSymbols = accounts.flatMap(a => a.holdings.map(h => h.symbol));
+const prices = await prisma.priceCache.findMany({
+  where: { symbol: { in: userSymbols } },
+});
+```
+
+Note: `accounts` is fetched in the same `Promise.all`, so `userSymbols` can be derived right after it resolves. The three parallel queries can still run together; the filtering happens in the mapping step.
+
+
+### 60. Remove Live Price Fetches from Accounts Page SSR
+
+**File:** `src/app/(main)/accounts/page.tsx:52–85`
+
+When any holding symbol is absent from `PriceCache`, the accounts page fires live Yahoo Finance and CoinGecko HTTP requests at SSR time, blocking page delivery. The dashboard already has an explicit **Refresh Prices** button; the accounts page does not.
+
+**Fix:** Remove the live-fetch block. Serve whatever is in `PriceCache` (filtering by the user's symbols as in #59) and show `—` for any missing price. This aligns with the existing pattern on the dashboard and gives users clear control over when external APIs are called.
+
+
+### 61. Remove Dead Code in `getNormalizedHistory`
+
+**File:** `src/lib/services/history-service.ts:48–85`
+
+The `canUseLossless` branch loops through snapshot breakdown data and accumulates `newAssets` / `newLiabilities` — but never assigns or returns those values. Both the `if` and `else` branches execute the identical snapshot-level rate multiplication. The condition is dead.
+
+```ts
+// Lines 53–79: this block computes newAssets/newLiabilities but discards them
+// Both branches end with the same three lines:
+const snapshotRate = resolveRate(allRatesMap, s.baseCurrency, targetBaseCurrency) ?? 1;
+netWorth *= snapshotRate;
+totalAssets *= snapshotRate;
+totalLiabilities *= snapshotRate;
+```
+
+**Fix:** Remove the `canUseLossless` block entirely. If per-account currency breakdown is needed later, the snapshot `breakdown` JSON must also store each account's `type` (`ASSET`/`LIABILITY`) before the logic can work correctly.
+
+
+### 62. Fix Collapse Animation (`max-h-[2000px]` → CSS Grid Collapse)
+
+**File:** `src/components/accounts/accounts-list.tsx:330`
+
+```tsx
+className={`... ${isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"}`}
+```
+
+CSS `max-height` transitions interpolate over the full declared range. With a ceiling of 2000px, even a 100px panel animates over 2000px of transition time — slow and robotic on expand, instant-feeling on collapse (since closing interpolates from 0).
+
+**Fix:** Use the CSS grid collapse pattern — zero JavaScript, no layout measurement:
+
+```tsx
+<div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+  <div className="overflow-hidden">
+    {/* content */}
+  </div>
+</div>
+```
+
+`grid-template-rows` animating `0fr → 1fr` collapses to exact content height with correct easing in both directions.
+
+
+### 63. Fix DashboardSkeleton to Match 3-Chart Layout
+
+**File:** `src/components/dashboard/dashboard-skeleton.tsx:26–38`
+
+The skeleton renders **2** chart placeholders in a `grid-cols-2` layout. The real dashboard renders **3** charts (`TrendChart`, `AllocationChart`, `CurrencyExposureChart`) inside a `lg:grid-cols-2 xl:grid-cols-3` grid. The mismatch causes a visible layout shift (CLS) when the skeleton is replaced by content on every dashboard load.
+
+**Fix:**
+
+```tsx
+<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+  {[...Array(3)].map((_, i) => (
+    <Card key={i}>
+      <CardHeader className="pb-2">
+        <div className="h-5 w-32 bg-muted animate-pulse rounded" />
+      </CardHeader>
+      <CardContent>
+        <div className="h-[250px] bg-muted animate-pulse rounded" />
+      </CardContent>
+    </Card>
+  ))}
+</div>
+```
+
+
+### 64. Replace `window.confirm()` with `AlertDialog`
+
+**Files:**
+- `src/components/accounts/account-detail.tsx:163` — delete account
+- `src/components/accounts/accounts-list.tsx:135` — bulk delete
+
+Native browser confirmation dialogs are unstyled, can't be themed, block the main thread, and are suppressed in some embedded/webview contexts. The project already has a `Dialog` component from shadcn/ui.
+
+**Fix:** Add the `AlertDialog` component (`npx shadcn@latest add alert-dialog`) and replace both `confirm()` calls. Include the account name in the dialog body so users know exactly what they're deleting.
+
+
+### 65. Show Net Worth Change Delta in `NetWorthCard`
+
+**File:** `src/components/dashboard/net-worth-card.tsx`
+
+Users have no at-a-glance answer to "am I up or down?" without navigating to History. The snapshot data is already fetched in `DashboardContent`; the previous snapshot's `netWorth` is one array index away.
+
+**Fix:** Pass `previousNetWorth` into `NetWorthCard` and render a change badge inline:
+
+```tsx
+// In DashboardContent: snapshots[snapshots.length - 2]?.netWorth
+const delta = netWorth - previousNetWorth;
+const pct = previousNetWorth > 0 ? (delta / previousNetWorth) * 100 : 0;
+// Render: "+$1,234 (+2.1%)" in green or "-$500 (-0.8%)" in red
+```
+
+
+### 66. Add Assets/Liabilities Series to `TrendChart`
+
+**File:** `src/components/dashboard/trend-chart.tsx:105–113`
+
+`totalAssets` and `totalLiabilities` are already present in every data point (`SnapshotData`), but only `netWorth` is rendered. Users can't tell from the chart whether a net worth drop was caused by falling assets or rising liabilities.
+
+**Fix:** Add two more `<Area>` series. Toggle buttons (mirroring the existing range selector) can control visibility to keep the chart readable:
+
+```tsx
+<Area dataKey="totalAssets" stroke="var(--color-emerald-500)" fillOpacity={0.05} ... name="Assets" />
+<Area dataKey="totalLiabilities" stroke="var(--color-red-500)" fillOpacity={0.05} ... name="Liabilities" />
+```
+
+
+### 67. Show Full Date in Trend Chart Tooltip
+
+**File:** `src/components/dashboard/trend-chart.tsx:80–86`
+
+The X-axis tick formatter renders `M/D` only. With multi-year history, users cannot tell which year a data point belongs to from either the axis label or the tooltip.
+
+**Fix:** Add a `labelFormatter` to the existing `<Tooltip>`:
+
+```tsx
+<Tooltip
+  labelFormatter={(label) =>
+    new Date(label).toLocaleDateString(undefined, {
+      year: "numeric", month: "short", day: "numeric",
+    })
+  }
+  ...
+/>
+```
+
+
+### 68. Unified Onboarding Empty State for New Users
+
+**Files:** `src/components/dashboard/dashboard-content.tsx`, `src/components/dashboard/accounts-summary.tsx`, `src/components/dashboard/trend-chart.tsx`
+
+A brand-new user hits the dashboard and sees three separate "No data" / empty messages scattered across cards with no clear path forward.
+
+**Fix:** In `DashboardContent`, check `summary.accounts.length === 0` before rendering charts and short-circuit to a single onboarding card:
+
+```tsx
+if (summary.accounts.length === 0) {
+  return (
+    <OnboardingCard>
+      Welcome! Add your first account to start tracking your net worth.
+      <Button asChild><Link href="/accounts">Add Account</Link></Button>
+    </OnboardingCard>
+  );
+}
+```
+
+This avoids rendering all chart components unnecessarily and gives the user a single, clear call to action.
+
+
+### 69. Clarify "%" Column in Holdings Table
+
+**File:** `src/components/accounts/account-detail.tsx:411–414`
+
+```ts
+((h.marketValue / totalHoldingsValue) * 100).toFixed(1) + "%"
+```
+
+The percentage is share of *investment holdings only*, not the total account value (holdings + cash). For an account with $50k in holdings and $50k cash, holdings show 100% even though they represent only 50% of the account. The column header gives no hint.
+
+**Fix (choose one):**
+- Rename the column header from "%" to "% of holdings" to set correct expectations, or  
+- Change the denominator to `totalValue` (`account.cashBalance + totalHoldingsValue`) to reflect share of the full account.
+
+
+### 70. Add `aria-hidden` to Decorative Emoji Icons
+
+**File:** `src/components/accounts/accounts-list.tsx` — `CATEGORY_ICONS` map (line 17), rendered around line 301
+
+```tsx
+<span className="text-2xl flex-shrink-0">{icon}</span>
+```
+
+Emoji without `aria-hidden="true"` are announced by screen readers using their Unicode description ("bank building", "chart increasing"), which is redundant and disruptive when followed immediately by the category label.
+
+**Fix:**
+
+```tsx
+<span className="text-2xl flex-shrink-0" aria-hidden="true">{icon}</span>
+```
