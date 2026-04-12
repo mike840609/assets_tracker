@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "./exchange-rate-service";
@@ -7,16 +8,28 @@ import {
 } from "@/lib/types";
 import type { AccountWithValue, NetWorthSummary, HoldingWithPrice } from "@/lib/types";
 
+/**
+ * React-cached account + holdings fetcher.
+ * Memoised per server render so concurrent calls with the same userId
+ * (e.g. an early pre-fetch in DashboardContent and the later call inside
+ * computeNetWorthSummary) share a single database round-trip.
+ */
+export const fetchUserAccountsWithHoldings = cache((userId: string) =>
+  prisma.account.findMany({
+    where: { userId, isActive: true },
+    include: { holdings: { where: { quantity: { gt: 0 } } } },
+  })
+);
+
 async function computeNetWorthSummary(
   userId: string,
   baseCurrency: string
 ): Promise<NetWorthSummary> {
-  // Phase 1: load accounts and exchange rates in parallel
+  // Load accounts and exchange rates in parallel.
+  // Both are React-cached, so if DashboardContent already fired these
+  // calls without awaiting, we get the memoised results here for free.
   const [accounts, allRatesMap] = await Promise.all([
-    prisma.account.findMany({
-      where: { userId, isActive: true },
-      include: { holdings: { where: { quantity: { gt: 0 } } } },
-    }),
+    fetchUserAccountsWithHoldings(userId),
     getAllExchangeRates(),
   ]);
 

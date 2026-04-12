@@ -671,7 +671,7 @@ Emoji without `aria-hidden="true"` are announced by screen readers using their U
 | # | Suggestion | Category | Impact | Effort | Status |
 |---|-----------|----------|--------|--------|--------|
 | 71 | Wrap `getOrCreateSettings` in `React.cache()` | Performance | 🟡 Medium | 15 min | ✅ Done |
-| 72 | Eliminate Phase 1→Phase 2 waterfall in `DashboardContent` | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
+| 72 | Eliminate Phase 1→Phase 2 waterfall in `DashboardContent` | Performance | 🟡 Medium | 1 hr | ✅ Done |
 | 73 | Cache `getNetWorthSummary` with Next.js `unstable_cache` | Performance | 🔴 High | 1-2 hrs | ✅ Done |
 | 74 | Add granular Suspense boundaries inside `DashboardContent` | Performance | 🔴 High | 2-3 hrs | ✅ Done |
 | 75 | Add `Cache-Control` headers to `GET /api/exchange-rates` | Performance | 🟢 Low | 15 min | ❌ Not Done |
@@ -754,6 +754,11 @@ const cachedPrices = userSymbols.length > 0
 This eliminates one full DB round-trip from the critical path. Requires refactoring `getNetWorthSummary` and `getNormalizedHistory` to accept pre-fetched data as parameters (or extracting their computation logic into pure functions).
 
 - **Affected files:** `src/components/dashboard/dashboard-content.tsx`, `src/lib/services/net-worth-service.ts`, `src/lib/services/history-service.ts`
+
+**Implementation (2026-04-12):**
+- Extracted `fetchUserAccountsWithHoldings(userId)` as a React `cache()`-memoised function in `net-worth-service.ts`; `computeNetWorthSummary` now calls it internally, giving the React per-request deduplication needed for the warm-up pattern.
+- Updated `DashboardContent` to fire `fetchUserAccountsWithHoldings(userId)` and `getAllExchangeRates()` immediately (without awaiting) so their DB queries run in parallel with the Phase 1 `Promise.all`. Because `getCachedNetWorthSummary` on a cache-miss calls the same React-cached functions, it receives already-resolved results, eliminating the hidden waterfall.
+- Moved `recentSnapshots` and `latestPrice` fetches into the Phase 1 `Promise.all` — they don't depend on `baseCurrency` and no longer need to wait for Phase 1 to complete before starting.
 
 
 ### 73. Cache `getNetWorthSummary` with Next.js `unstable_cache`
