@@ -4,7 +4,8 @@ import { NetWorthCard } from "@/components/dashboard/net-worth-card";
 import { LazyAllocationChart, LazyCurrencyExposureChart } from "@/components/dashboard/lazy-charts";
 import { AccountsSummary } from "@/components/dashboard/accounts-summary";
 import { DashboardActions } from "@/components/dashboard/dashboard-actions";
-import { getCachedNetWorthSummary } from "@/lib/services/net-worth-service";
+import { getCachedNetWorthSummary, fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
+import { getAllExchangeRates } from "@/lib/services/exchange-rate-service";
 import { redirect } from "next/navigation";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
@@ -12,20 +13,20 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 export async function DashboardContent({ userId }: { userId: string }) {
-  const [dbUser, settings] = await Promise.all([
+  // Fire DB-independent queries immediately so the React per-render cache is
+  // warm when getCachedNetWorthSummary reaches them on a cold start.
+  // These do not need baseCurrency; only the final computation does.
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  fetchUserAccountsWithHoldings(userId);
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  getAllExchangeRates();
+
+  // All remaining Phase-1 queries run in parallel with the pre-fetches above.
+  // recentSnapshots and latestPrice are moved here from Phase 2 since they
+  // also don't require baseCurrency.
+  const [dbUser, settings, recentSnapshots, latestPrice] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
     getOrCreateSettings(userId),
-  ]);
-
-  if (!dbUser) redirect("/api/auth/signout");
-
-  const baseCurrency = settings.baseCurrency;
-
-  // Fetch summary (cached, fast on repeat loads) and meta queries in parallel.
-  // The 2 most recent snapshots give us the previous-period delta and last-snapshot
-  // date without loading the full history — that is deferred to TrendChartSection.
-  const [summary, recentSnapshots, latestPrice] = await Promise.all([
-    getCachedNetWorthSummary(userId, baseCurrency),
     prisma.netWorthSnapshot.findMany({
       where: { userId },
       orderBy: { date: "desc" },
@@ -37,6 +38,14 @@ export async function DashboardContent({ userId }: { userId: string }) {
       select: { updatedAt: true },
     }),
   ]);
+
+  if (!dbUser) redirect("/api/auth/signout");
+
+  const baseCurrency = settings.baseCurrency;
+
+  // On a cache hit this is instant; on a cache miss the accounts and exchange-rate
+  // queries inside it resolve from the React cache populated above.
+  const summary = await getCachedNetWorthSummary(userId, baseCurrency);
 
   // Empty state for new users with no accounts yet
   if (summary.accounts.length === 0) {
