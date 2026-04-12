@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     console.log("Cron: Refreshing prices...");
     await refreshAllPrices();
     // Invalidate cached net worth summaries so snapshots use fresh prices
-    revalidateTag("net-worth");
+    revalidateTag("net-worth", "max");
 
     // 2. Get all users and their settings
     const users = await prisma.user.findMany({
