@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -13,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currencies";
+import { CalendarClock } from "lucide-react";
 
 type SnapshotRow = {
   id: string;
@@ -44,8 +47,14 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
       </CardHeader>
       <CardContent>
         {rows.length === 0 ? (
-          <div className="py-12 text-center text-muted-foreground text-sm">
-            {t("noData")}
+          <div className="py-12 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <CalendarClock className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">{t("noData")}</p>
+            <Button asChild variant="outline" className="mt-4">
+              <Link href="/">{t("goDashboard")}</Link>
+            </Button>
           </div>
         ) : (
           <div className="max-h-[480px] overflow-y-auto">

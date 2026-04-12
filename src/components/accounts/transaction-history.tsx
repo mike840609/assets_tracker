@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { formatNumber } from "@/lib/currencies";
 import type { SerializedTransaction } from "@/lib/types";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, ReceiptText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -50,7 +50,21 @@ const TYPE_VARIANTS: Record<string, "default" | "secondary" | "destructive"> = {
   EDIT: "secondary",
 };
 
-export function TransactionHistory({ accountId, isBank, refreshTrigger }: { accountId: string; isBank?: boolean; refreshTrigger?: number }) {
+export function TransactionHistory({
+  accountId,
+  isBank,
+  refreshTrigger,
+  onEmptyAction,
+  emptyActionLabel,
+  emptyDescription,
+}: {
+  accountId: string;
+  isBank?: boolean;
+  refreshTrigger?: number;
+  onEmptyAction?: () => void;
+  emptyActionLabel?: string;
+  emptyDescription?: string;
+}) {
   const router = useRouter();
   const t = useTranslations("transactionHistory");
   const tCommon = useTranslations("common");
@@ -177,9 +191,20 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
       </CardHeader>
       <CardContent>
         {transactions.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">
-            {t("empty")}
-          </p>
+          <div className="py-10 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <ReceiptText className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium">{t("empty")}</p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+              {emptyDescription ?? t("emptyDescription")}
+            </p>
+            {onEmptyAction && emptyActionLabel && (
+              <Button className="mt-5" onClick={onEmptyAction}>
+                {emptyActionLabel}
+              </Button>
+            )}
+          </div>
         ) : (
           <Table>
             <TableHeader>

@@ -189,6 +189,9 @@ export function AccountDetail({
   }
 
   const isBank = account.category === "BANK";
+  const transactionEmptyActionLabel = isBank
+    ? t("transactionHistory.ctaUpdateCash")
+    : t("transactionHistory.ctaAddHolding");
 
   return (
     <>
@@ -440,7 +443,24 @@ export function AccountDetail({
         </Card>
       )}
 
-      <TransactionHistory accountId={account.id} isBank={isBank} refreshTrigger={refreshTrigger} />
+      <TransactionHistory
+        accountId={account.id}
+        isBank={isBank}
+        refreshTrigger={refreshTrigger}
+        emptyDescription={
+          isBank
+            ? t("transactionHistory.emptyDescriptionBank")
+            : t("transactionHistory.emptyDescriptionInvestments")
+        }
+        emptyActionLabel={transactionEmptyActionLabel}
+        onEmptyAction={() => {
+          if (isBank) {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+          }
+          setShowHoldingForm(true);
+        }}
+      />
 
       <HoldingForm
         open={showHoldingForm}

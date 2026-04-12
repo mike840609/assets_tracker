@@ -76,8 +76,9 @@
     "colAssets": "總資產",
     "colLiabilities": "總負債",
     "colChange": "變化",
-    "noData": "尚無快照。請從儀表板建立快照以開始追蹤歷史。",
-    "noDataForRange": "此範圍內無資料。"
+    "noData": "尚無快照。首次每日快照建立後，這裡就會顯示淨資產歷史。",
+    "noDataForRange": "此範圍內無資料。",
+    "goDashboard": "前往儀表板"
   },
   "netWorthCard": {
     "netWorth": "淨資產",
@@ -122,7 +123,8 @@
     "selected": "已選 {count} 項",
     "addItem": "新增項目",
     "addAccount": "新增帳戶",
-    "noAccounts": "尚無帳戶。新增您的第一個帳戶以開始使用。",
+    "emptyTitle": "尚無帳戶",
+    "noAccounts": "新增第一個帳戶，開始追蹤您的資產與負債。",
     "assets": "資產",
     "liabilities": "負債",
     "nAccounts": "{count} 個帳戶",
@@ -253,7 +255,12 @@
   "transactionHistory": {
     "title": "交易紀錄",
     "loading": "載入中...",
-    "empty": "尚無交易紀錄。",
+    "empty": "尚無交易紀錄",
+    "emptyDescription": "新增第一筆交易後，這裡會顯示您的活動紀錄。",
+    "emptyDescriptionInvestments": "先新增持倉，即可開始記錄此帳戶的買賣交易。",
+    "emptyDescriptionBank": "更新現金餘額即可建立第一筆存提款交易。",
+    "ctaAddHolding": "新增持倉",
+    "ctaUpdateCash": "更新現金餘額",
     "loadMore": "載入更多",
     "colDate": "日期",
     "colSymbol": "代號",

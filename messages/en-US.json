@@ -76,8 +76,9 @@
     "colAssets": "Assets",
     "colLiabilities": "Liabilities",
     "colChange": "Change",
-    "noData": "No snapshots yet. Take a snapshot from the dashboard to start tracking.",
-    "noDataForRange": "No data for this range."
+    "noData": "No snapshots yet. Your net worth history appears after your first daily snapshot.",
+    "noDataForRange": "No data for this range.",
+    "goDashboard": "Go to Dashboard"
   },
   "netWorthCard": {
     "netWorth": "Net Worth",
@@ -122,7 +123,8 @@
     "selected": "{count} selected",
     "addItem": "Add Item",
     "addAccount": "Add Account",
-    "noAccounts": "No accounts yet. Add your first account to get started.",
+    "emptyTitle": "No accounts yet",
+    "noAccounts": "Track your assets and liabilities by adding your first account.",
     "assets": "Assets",
     "liabilities": "Liabilities",
     "nAccounts": "{count, plural, one {# account} other {# accounts}}",
@@ -253,7 +255,12 @@
   "transactionHistory": {
     "title": "Transaction History",
     "loading": "Loading...",
-    "empty": "No transactions yet.",
+    "empty": "No transactions yet",
+    "emptyDescription": "Your activity will show up here once you add your first transaction.",
+    "emptyDescriptionInvestments": "Add a holding to begin recording buy and sell activity for this account.",
+    "emptyDescriptionBank": "Update your cash balance to create your first deposit or withdrawal transaction.",
+    "ctaAddHolding": "Add Holding",
+    "ctaUpdateCash": "Update Cash Balance",
     "loadMore": "Load More",
     "colDate": "Date",
     "colSymbol": "Symbol",

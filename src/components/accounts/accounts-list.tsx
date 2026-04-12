@@ -13,6 +13,7 @@ import { QuickAddHolding } from "./quick-add-holding";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
+import { FolderPlus } from "lucide-react";
 
 const CATEGORY_ICONS: Record<string, string> = {
   BANK: "🏦",
@@ -186,9 +187,20 @@ export function AccountsList({
       </div>
 
       {accounts.length === 0 && (
-        <p className="text-center text-muted-foreground py-12">
-          {t("accountsList.noAccounts")}
-        </p>
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <FolderPlus className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold">{t("accountsList.emptyTitle")}</h3>
+            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+              {t("accountsList.noAccounts")}
+            </p>
+            <Button className="mt-6" onClick={() => setShowForm(true)}>
+              {t("accountsList.addAccount")}
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {assetsByCategory.length > 0 && (
