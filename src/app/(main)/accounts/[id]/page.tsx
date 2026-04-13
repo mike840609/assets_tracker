@@ -11,7 +11,8 @@ import AccountDetailLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["accountDetail", "common", "categories", "transactionHistory"];
 
-async function AccountDetailContent({ id }: { id: string }) {
+async function AccountDetailContent({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   // Fetch account first to know which symbols to filter prices by
   const account = await prisma.account.findUnique({
     where: { id },
@@ -66,16 +67,14 @@ async function AccountDetailContent({ id }: { id: string }) {
   );
 }
 
-export default async function AccountDetailPage({
+export default function AccountDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-
   return (
     <Suspense fallback={<AccountDetailLoading />}>
-      <AccountDetailContent id={id} />
+      <AccountDetailContent params={params} />
     </Suspense>
   );
 }

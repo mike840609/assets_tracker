@@ -17,7 +17,10 @@ const CLIENT_NAMESPACES = [
   "categories",
 ];
 
-async function AccountsContent({ userId }: { userId: string }) {
+async function AccountsContent() {
+  const session = await getSession();
+  if (!session?.user?.id) return null;
+  const userId = session.user.id;
   // Run all independent queries in parallel (translations + data)
   const [t, messages, accountsRaw, settings, allRatesMap] = await Promise.all([
     getTranslations("accounts"),
@@ -87,13 +90,10 @@ async function AccountsContent({ userId }: { userId: string }) {
   );
 }
 
-export default async function AccountsPage() {
-  const session = await getSession();
-  if (!session?.user?.id) return null;
-
+export default function AccountsPage() {
   return (
     <Suspense fallback={<AccountsLoading />}>
-      <AccountsContent userId={session.user.id} />
+      <AccountsContent />
     </Suspense>
   );
 }

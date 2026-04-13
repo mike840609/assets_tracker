@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, JetBrains_Mono } from "next/font/google";
+import { Suspense } from "react";
+import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -9,15 +10,15 @@ import { getLocale, getMessages } from "next-intl/server";
 import { pickMessages } from "@/lib/i18n-utils";
 import "./globals.css";
 
-const outfit = Outfit({
+const geist = localFont({
+  src: "./fonts/geist-latin.woff2",
   variable: "--font-sans",
-  subsets: ["latin"],
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const geistMono = localFont({
+  src: "./fonts/geist-mono-latin.woff2",
   variable: "--font-mono",
-  subsets: ["latin"],
   display: "swap",
 });
 
@@ -33,18 +34,20 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default async function RootLayout({
+async function LocaleHtml({
   children,
-}: Readonly<{
+  className,
+}: {
   children: React.ReactNode;
-}>) {
+  className: string;
+}) {
   const locale = await getLocale();
   const messages = await getMessages();
 
   return (
     <html
       lang={locale}
-      className={`${outfit.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${className} h-full antialiased`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
@@ -68,5 +71,19 @@ export default async function RootLayout({
         </NextIntlClientProvider>
       </body>
     </html>
+  );
+}
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <Suspense>
+      <LocaleHtml className={`${geist.variable} ${geistMono.variable}`}>
+        {children}
+      </LocaleHtml>
+    </Suspense>
   );
 }

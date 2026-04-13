@@ -11,7 +11,10 @@ import HistoryLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["trendChart", "history"];
 
-async function HistoryContent({ userId }: { userId: string }) {
+async function HistoryContent() {
+  const session = await getSession();
+  if (!session?.user?.id) return null;
+  const userId = session.user.id;
   const [t, allMessages, settings] = await Promise.all([
     getTranslations("history"),
     getMessages(),
@@ -39,13 +42,10 @@ async function HistoryContent({ userId }: { userId: string }) {
   );
 }
 
-export default async function HistoryPage() {
-  const session = await getSession();
-  if (!session?.user?.id) return null;
-
+export default function HistoryPage() {
   return (
     <Suspense fallback={<HistoryLoading />}>
-      <HistoryContent userId={session.user.id} />
+      <HistoryContent />
     </Suspense>
   );
 }

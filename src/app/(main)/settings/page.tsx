@@ -12,7 +12,10 @@ import SettingsLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["settings", "toast", "languages", "dataManagement"];
 
-async function SettingsContent({ userId }: { userId: string }) {
+async function SettingsContent() {
+  const session = await getSession();
+  if (!session?.user?.id) return null;
+  const userId = session.user.id;
   // Run all independent queries in parallel
   const [t, allMessages, settings] = await Promise.all([
     getTranslations("settings"),
@@ -45,13 +48,10 @@ async function SettingsContent({ userId }: { userId: string }) {
   );
 }
 
-export default async function SettingsPage() {
-  const session = await getSession();
-  if (!session?.user?.id) return null;
-
+export default function SettingsPage() {
   return (
     <Suspense fallback={<SettingsLoading />}>
-      <SettingsContent userId={session.user.id} />
+      <SettingsContent />
     </Suspense>
   );
 }
