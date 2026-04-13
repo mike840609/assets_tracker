@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { DataManagement } from "@/components/settings/data-management";
 import { signOut } from "@/auth";
@@ -7,14 +8,11 @@ import { Button } from "@/components/ui/button";
 import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
+import SettingsLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["settings", "toast", "languages", "dataManagement"];
 
-export default async function SettingsPage() {
-  const session = await getSession();
-  if (!session?.user?.id) return null;
-  const userId = session.user.id;
-
+async function SettingsContent({ userId }: { userId: string }) {
   // Run all independent queries in parallel
   const [t, allMessages, settings] = await Promise.all([
     getTranslations("settings"),
@@ -44,5 +42,16 @@ export default async function SettingsPage() {
         </div>
       </div>
     </NextIntlClientProvider>
+  );
+}
+
+export default async function SettingsPage() {
+  const session = await getSession();
+  if (!session?.user?.id) return null;
+
+  return (
+    <Suspense fallback={<SettingsLoading />}>
+      <SettingsContent userId={session.user.id} />
+    </Suspense>
   );
 }

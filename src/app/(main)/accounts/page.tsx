@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getSession } from "@/lib/auth-session";
 import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
@@ -7,6 +8,7 @@ import { AccountsList } from "@/components/accounts/accounts-list";
 import { serializeAccountWithHoldings } from "@/lib/types";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
+import AccountsLoading from "./loading";
 
 const CLIENT_NAMESPACES = [
   "accountsList",
@@ -15,11 +17,7 @@ const CLIENT_NAMESPACES = [
   "categories",
 ];
 
-export default async function AccountsPage() {
-  const session = await getSession();
-  if (!session?.user?.id) return null;
-  const userId = session.user.id;
-
+async function AccountsContent({ userId }: { userId: string }) {
   // Run all independent queries in parallel (translations + data)
   const [t, messages, accountsRaw, settings, allRatesMap] = await Promise.all([
     getTranslations("accounts"),
@@ -86,5 +84,16 @@ export default async function AccountsPage() {
         <AccountsList accounts={serialized} priceMap={priceMap} ratesMap={ratesMap} baseCurrency={baseCurrency} />
       </div>
     </NextIntlClientProvider>
+  );
+}
+
+export default async function AccountsPage() {
+  const session = await getSession();
+  if (!session?.user?.id) return null;
+
+  return (
+    <Suspense fallback={<AccountsLoading />}>
+      <AccountsContent userId={session.user.id} />
+    </Suspense>
   );
 }

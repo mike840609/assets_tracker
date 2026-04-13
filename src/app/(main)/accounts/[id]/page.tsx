@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
@@ -6,16 +7,11 @@ import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/ser
 import { getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
+import AccountDetailLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["accountDetail", "common", "categories", "transactionHistory"];
 
-export default async function AccountDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-
+async function AccountDetailContent({ id }: { id: string }) {
   // Fetch account first to know which symbols to filter prices by
   const account = await prisma.account.findUnique({
     where: { id },
@@ -67,5 +63,19 @@ export default async function AccountDetailPage({
         <AccountDetail account={serialized} priceMap={priceMap} ratesMap={ratesMap} />
       </div>
     </NextIntlClientProvider>
+  );
+}
+
+export default async function AccountDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  return (
+    <Suspense fallback={<AccountDetailLoading />}>
+      <AccountDetailContent id={id} />
+    </Suspense>
   );
 }
