@@ -1,9 +1,10 @@
+import { Suspense } from "react"
 import { signIn } from "@/auth"
 import { Button } from "@/components/ui/button"
 import { TrendingUp } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 
-export default async function LoginPage() {
+async function LoginContent() {
   const t = await getTranslations("login")
   const isPreview = process.env.VERCEL_ENV === "preview"
 
@@ -91,5 +92,24 @@ export default async function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen w-full items-center justify-center bg-slate-50">
+        <div className="w-full max-w-md rounded-3xl bg-white/80 p-10 space-y-8 animate-pulse">
+          <div className="flex flex-col items-center space-y-3">
+            <div className="w-16 h-16 rounded-xl bg-emerald-100" />
+            <div className="h-8 w-48 rounded bg-slate-200" />
+            <div className="h-4 w-56 rounded bg-slate-100" />
+          </div>
+          <div className="h-12 w-full rounded-xl bg-slate-100" />
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

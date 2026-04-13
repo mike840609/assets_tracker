@@ -7,7 +7,6 @@ import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 
 const CLIENT_NAMESPACES = [
-  "netWorthCard",
   "dashboardActions",
   "trendChart",
   "allocationChart",
@@ -17,7 +16,7 @@ const CLIENT_NAMESPACES = [
   "common",
 ];
 
-export default async function DashboardPage() {
+async function DashboardPageContent() {
   const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
@@ -35,10 +34,16 @@ export default async function DashboardPage() {
           </h2>
         </div>
 
-        <Suspense fallback={<DashboardSkeleton />}>
-          <DashboardContent userId={userId} />
-        </Suspense>
+        <DashboardContent userId={userId} />
       </div>
     </NextIntlClientProvider>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardPageContent />
+    </Suspense>
   );
 }

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { getTranslations, getMessages } from "next-intl/server";
@@ -6,14 +7,14 @@ import { pickMessages } from "@/lib/i18n-utils";
 import { LazyTrendChart } from "@/components/dashboard/lazy-charts";
 import { HistoryTable } from "@/components/history/history-table";
 import { getNormalizedHistory } from "@/lib/services/history-service";
+import HistoryLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["trendChart", "history"];
 
-export default async function HistoryPage() {
+async function HistoryContent() {
   const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
-
   const [t, allMessages, settings] = await Promise.all([
     getTranslations("history"),
     getMessages(),
@@ -38,5 +39,13 @@ export default async function HistoryPage() {
         </div>
       </div>
     </NextIntlClientProvider>
+  );
+}
+
+export default function HistoryPage() {
+  return (
+    <Suspense fallback={<HistoryLoading />}>
+      <HistoryContent />
+    </Suspense>
   );
 }

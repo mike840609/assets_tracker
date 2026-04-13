@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { updateSettingsSchema } from "@/lib/validators";
 import { auth } from "@/auth";
@@ -36,6 +37,9 @@ export async function PATCH(request: Request) {
       locale: parsed.data.locale ?? "en-US",
     },
   });
+
+  // Invalidate cached settings so pages pick up the new values immediately
+  revalidateTag("settings", "max");
 
   const response = NextResponse.json(settings);
 

@@ -1,28 +1,27 @@
-import { prisma } from "@/lib/prisma";
+import { Suspense } from "react";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { DataManagement } from "@/components/settings/data-management";
 import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
+import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { Button } from "@/components/ui/button";
 import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
+import SettingsLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["settings", "toast", "languages", "dataManagement"];
 
-export default async function SettingsPage() {
+async function SettingsContent() {
   const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
-  const [t, allMessages] = await Promise.all([
+  // Run all independent queries in parallel
+  const [t, allMessages, settings] = await Promise.all([
     getTranslations("settings"),
     getMessages(),
+    getOrCreateSettings(userId),
   ]);
-
-  let settings = await prisma.setting.findUnique({ where: { userId } });
-  if (!settings) {
-    settings = await prisma.setting.create({ data: { userId, baseCurrency: "USD", locale: "en-US" } });
-  }
 
   return (
     <NextIntlClientProvider messages={pickMessages(allMessages, CLIENT_NAMESPACES)}>
@@ -46,5 +45,13 @@ export default async function SettingsPage() {
         </div>
       </div>
     </NextIntlClientProvider>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<SettingsLoading />}>
+      <SettingsContent />
+    </Suspense>
   );
 }

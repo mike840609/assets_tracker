@@ -1,21 +1,35 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
 /** How long to wait (ms) before giving up on external rate APIs */
-const RATE_FETCH_TIMEOUT_MS = 2000;
+const RATE_FETCH_TIMEOUT_MS = 1200;
 
 /**
- * Load ALL cached exchange rates from the database in a single query.
- * Returns a lookup map keyed by "FROM_TO" (e.g. "USD_TWD").
- * Memoised per server render via React cache().
+ * Data-cached exchange rates fetcher (5-minute TTL).
+ * Returns a plain object (JSON-serializable) for the data cache layer.
+ */
+const getCachedExchangeRates = unstable_cache(
+  async (): Promise<Record<string, number>> => {
+    const rates = await prisma.exchangeRate.findMany();
+    const map: Record<string, number> = {};
+    for (const r of rates) {
+      map[`${r.fromCurrency}_${r.toCurrency}`] = Number(r.rate);
+    }
+    return map;
+  },
+  ["exchange-rates"],
+  { revalidate: 300, tags: ["exchange-rates"] }
+);
+
+/**
+ * Load ALL cached exchange rates.
+ * Uses the data cache (5-min TTL) and React cache() for per-render dedup.
+ * Returns a Map keyed by "FROM_TO" (e.g. "USD_TWD").
  */
 export const getAllExchangeRates = cache(async (): Promise<Map<string, number>> => {
-  const rates = await prisma.exchangeRate.findMany();
-  const map = new Map<string, number>();
-  for (const r of rates) {
-    map.set(`${r.fromCurrency}_${r.toCurrency}`, Number(r.rate));
-  }
-  return map;
+  const rates = await getCachedExchangeRates();
+  return new Map(Object.entries(rates));
 });
 
 /**
@@ -177,8 +191,9 @@ export const getExchangeRate = cache(async function getExchangeRate(
 
 /**
  * Resolve missing exchange rate pairs with a global timeout.
+ * Groups pairs by source currency to minimise external API calls
+ * (one fetchExchangeRates per unique source instead of per pair).
  * If resolution takes too long, unresolved pairs default to 1.
- * Use this in page components instead of calling getExchangeRate directly.
  */
 export async function resolveMissingRates(
   missingPairs: Array<[string, string]>,
@@ -189,10 +204,34 @@ export async function resolveMissingRates(
 
   const uniquePairs = [...new Set(missingPairs.map(([f, t]) => `${f}_${t}`))];
 
+  // Group by source currency to batch external API calls
+  const bySource = new Map<string, string[]>();
+  for (const key of uniquePairs) {
+    const [from, to] = key.split("_");
+    let targets = bySource.get(from);
+    if (!targets) {
+      targets = [];
+      bySource.set(from, targets);
+    }
+    targets.push(to);
+  }
+
   const resolveAll = Promise.all(
-    uniquePairs.map(async (key) => {
-      const [from, to] = key.split("_");
-      ratesMap[key] = await getExchangeRate(from, to);
+    [...bySource.entries()].map(async ([from, targets]) => {
+      const rates = await fetchExchangeRates(from);
+      for (const to of targets) {
+        const key = `${from}_${to}`;
+        if (rates[to] !== undefined) {
+          ratesMap[key] = rates[to];
+          // Fire-and-forget persist
+          const id = key;
+          prisma.exchangeRate.upsert({
+            where: { id },
+            update: { rate: rates[to], updatedAt: new Date() },
+            create: { id, fromCurrency: from, toCurrency: to, rate: rates[to] },
+          }).catch(() => {});
+        }
+      }
     })
   );
 

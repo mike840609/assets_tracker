@@ -1,11 +1,9 @@
-"use client";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import type { NetWorthSummary } from "@/lib/types";
 
-export function NetWorthCard({
+export async function NetWorthCard({
   summary,
   previousNetWorth,
 }: {
@@ -13,7 +11,7 @@ export function NetWorthCard({
   previousNetWorth?: number;
 }) {
   const { totalAssets, totalLiabilities, netWorth, baseCurrency } = summary;
-  const t = useTranslations("netWorthCard");
+  const t = await getTranslations("netWorthCard");
 
   const delta = previousNetWorth !== undefined ? netWorth - previousNetWorth : null;
   const pct =
