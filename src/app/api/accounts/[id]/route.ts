@@ -1,24 +1,22 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updateAccountSchema } from "@/lib/validators";
 import { auth } from "@/auth";
+import { ok, failure, validationError } from "@/lib/api-responses";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return failure("Unauthorized", 401);
 
   const { id } = await params;
   const account = await prisma.account.findUnique({
     where: { id, userId: session.user.id },
     include: { holdings: { where: { quantity: { gt: 0 } } } },
   });
-  if (!account) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-  return NextResponse.json(account);
+  if (!account) return failure("Not found", 404);
+  return ok(account);
 }
 
 export async function PATCH(
@@ -26,19 +24,15 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return failure("Unauthorized", 401);
 
   const { id } = await params;
   const body = await request.json();
   const parsed = updateAccountSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  if (!parsed.success) return validationError(parsed.error);
 
   const existingAccount = await prisma.account.findUnique({ where: { id, userId: session.user.id } });
-  if (!existingAccount) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  if (!existingAccount) return failure("Not found", 404);
 
   // If cashBalance is being updated to a new value, log it as an EDIT transaction
   if (
@@ -60,7 +54,7 @@ export async function PATCH(
     where: { id, userId: session.user.id },
     data: parsed.data,
   });
-  return NextResponse.json(account);
+  return ok(account);
 }
 
 export async function DELETE(
@@ -68,9 +62,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return failure("Unauthorized", 401);
 
   const { id } = await params;
   await prisma.account.delete({ where: { id, userId: session.user.id } });
-  return NextResponse.json({ ok: true });
+  return ok({ ok: true });
 }

@@ -1,29 +1,26 @@
-import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { updateSettingsSchema } from "@/lib/validators";
 import { auth } from "@/auth";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
+import { ok, failure, validationError } from "@/lib/api-responses";
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const userId = session.user.id;
+  if (!session?.user?.id) return failure("Unauthorized", 401);
 
-  const settings = await getOrCreateSettings(userId);
-  return NextResponse.json(settings);
+  const settings = await getOrCreateSettings(session.user.id);
+  return ok(settings);
 }
 
 export async function PATCH(request: Request) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const userId = session.user.id;
+  if (!session?.user?.id) return failure("Unauthorized", 401);
 
+  const userId = session.user.id;
   const body = await request.json();
   const parsed = updateSettingsSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  if (!parsed.success) return validationError(parsed.error);
 
   const settings = await prisma.setting.upsert({
     where: { userId },
@@ -38,10 +35,9 @@ export async function PATCH(request: Request) {
     },
   });
 
-  // Invalidate cached settings so pages pick up the new values immediately
   revalidateTag("settings", "max");
 
-  const response = NextResponse.json(settings);
+  const response = ok(settings);
 
   // Set locale cookie so next-intl picks it up on the next request
   if (parsed.data.locale) {

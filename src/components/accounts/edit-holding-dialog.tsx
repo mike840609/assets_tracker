@@ -89,7 +89,7 @@ export function EditHoldingDialog({
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(JSON.stringify(err.error) || "Failed");
+        throw new Error(err.error?.message || "Failed");
       }
 
       toast.success("Holding updated");

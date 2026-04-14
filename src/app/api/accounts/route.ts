@@ -1,54 +1,49 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAccountSchema } from "@/lib/validators";
 import { auth } from "@/auth";
+import { ok, failure, validationError } from "@/lib/api-responses";
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  
+  if (!session?.user?.id) return failure("Unauthorized", 401);
+
   const accounts = await prisma.account.findMany({
     where: { userId: session.user.id },
     include: { holdings: { where: { quantity: { gt: 0 } } } },
     orderBy: { createdAt: "desc" },
   });
-  return NextResponse.json(accounts);
+  return ok(accounts);
 }
 
 export async function DELETE(request: Request) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return failure("Unauthorized", 401);
 
   const body = await request.json();
   const ids: string[] = body.ids;
   if (!Array.isArray(ids) || ids.length === 0) {
-    return NextResponse.json({ error: "ids array required" }, { status: 400 });
+    return failure("ids array required");
   }
-  
-  await prisma.account.deleteMany({ 
-    where: { 
+
+  await prisma.account.deleteMany({
+    where: {
       id: { in: ids },
-      userId: session.user.id 
-    } 
+      userId: session.user.id,
+    },
   });
-  return NextResponse.json({ ok: true });
+  return ok({ ok: true });
 }
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return failure("Unauthorized", 401);
 
   const body = await request.json();
   const parsed = createAccountSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  if (!parsed.success) return validationError(parsed.error);
 
   const account = await prisma.account.create({
-    data: {
-      ...parsed.data,
-      userId: session.user.id
-    },
+    data: { ...parsed.data, userId: session.user.id },
   });
-  return NextResponse.json(account, { status: 201 });
+  return ok(account, { status: 201 });
 }

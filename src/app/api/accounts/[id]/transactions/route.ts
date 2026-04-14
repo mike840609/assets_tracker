@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ok } from "@/lib/api-responses";
 
 interface UnifiedRow {
   id: string;
@@ -63,5 +63,5 @@ export async function GET(
     ...(row.holdingId ? { holdingId: row.holdingId, holding: holdingsMap.get(row.holdingId) ?? null } : {}),
   }));
 
-  return NextResponse.json(result);
+  return ok(result);
 }

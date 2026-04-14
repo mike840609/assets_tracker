@@ -2,12 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { dataImportSchema } from "@/lib/validators";
+import { ok, failure, validationError } from "@/lib/api-responses";
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session?.user?.id) return failure("Unauthorized", 401);
 
   const userId = session.user.id;
 
@@ -18,11 +17,7 @@ export async function GET() {
         appSettings: true,
         appAccounts: {
           include: {
-            holdings: {
-              include: {
-                transactions: true,
-              },
-            },
+            holdings: { include: { transactions: true } },
             cashTransactions: true,
           },
         },
@@ -30,9 +25,7 @@ export async function GET() {
       },
     });
 
-    if (!data) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    if (!data) return failure("User not found", 404);
 
     const exportData = {
       version: "1.0",
@@ -42,22 +35,22 @@ export async function GET() {
       snapshots: data.snapshots,
     };
 
+    // Return as a raw JSON file download — NOT wrapped in ok() so the blob
+    // content matches the dataImportSchema format for round-trip import.
     return NextResponse.json(exportData, {
       headers: {
-        "Content-Disposition": `attachment; filename="asset-tracker-backup-${new Date().toISOString().split('T')[0]}.json"`,
+        "Content-Disposition": `attachment; filename="asset-tracker-backup-${new Date().toISOString().split("T")[0]}.json"`,
       },
     });
   } catch (error) {
     console.error("Export error:", error);
-    return NextResponse.json({ error: "Failed to export data" }, { status: 500 });
+    return failure("Failed to export data", 500);
   }
 }
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session?.user?.id) return failure("Unauthorized", 401);
 
   const userId = session.user.id;
 
@@ -67,13 +60,7 @@ export async function POST(request: Request) {
 
     if (!parsed.success) {
       console.error("Validation error:", parsed.error.format());
-      return NextResponse.json(
-        { 
-          error: "Invalid data format", 
-          details: parsed.error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')
-        }, 
-        { status: 400 }
-      );
+      return validationError(parsed.error);
     }
 
     const importData = parsed.data;
@@ -131,9 +118,9 @@ export async function POST(request: Request) {
               },
             });
 
-            // Holding Transactions
             if (Array.isArray(h.transactions) && h.transactions.length > 0) {
               await tx.holdingTransaction.createMany({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 data: h.transactions.map((t: any) => ({
                   holdingId: newHolding.id,
                   type: t.type,
@@ -149,6 +136,7 @@ export async function POST(request: Request) {
         // Cash Transactions
         if (Array.isArray(acc.cashTransactions) && acc.cashTransactions.length > 0) {
           await tx.cashTransaction.createMany({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             data: acc.cashTransactions.map((t: any) => ({
               accountId: newAccount.id,
               type: t.type,
@@ -163,6 +151,7 @@ export async function POST(request: Request) {
       // 4. Import snapshots
       if (Array.isArray(importData.snapshots) && importData.snapshots.length > 0) {
         await tx.netWorthSnapshot.createMany({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           data: importData.snapshots.map((s: any) => ({
             userId,
             date: new Date(s.date),
@@ -175,16 +164,11 @@ export async function POST(request: Request) {
           })),
         });
       }
-    }, {
-      timeout: 30000, // Increase timeout for potentially large imports
-    });
+    }, { timeout: 30000 });
 
-    return NextResponse.json({ ok: true });
+    return ok({ ok: true });
   } catch (error) {
     console.error("Import error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to import data" },
-      { status: 500 }
-    );
+    return failure(error instanceof Error ? error.message : "Failed to import data", 500);
   }
 }

@@ -43,7 +43,7 @@ export function DashboardActions({
         fetch("/api/prices/refresh", { method: "POST" }),
         fetch("/api/exchange-rates/refresh", { method: "POST" }),
       ]);
-      const priceData = await priceRes.json();
+      const { data: priceData } = await priceRes.json();
       toast.success(t("refreshSuccess", { count: priceData.updated }));
       router.refresh();
     } catch {

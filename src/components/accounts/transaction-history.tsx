@@ -66,7 +66,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
   const [editDate, setEditDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetcher = (url: string) => fetch(url).then((res) => res.json());
+  const fetcher = (url: string) => fetch(url).then((res) => res.json()).then((r) => r.data);
 
   const getKey = (pageIndex: number, previousPageData: SerializedTransaction[]) => {
     if (previousPageData && !previousPageData.length) return null; // reached the end

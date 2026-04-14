@@ -11,22 +11,17 @@ import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { formatCurrency, formatNumber } from "@/lib/currencies";
+import { formatCurrency } from "@/lib/currencies";
 import { HoldingForm } from "./holding-form";
 import { EditHoldingDialog } from "./edit-holding-dialog";
 import { TransactionHistory } from "./transaction-history";
-import { InlineBalanceEditor } from "./inline-balance-editor";
+import { AccountStatCards } from "./account-stat-cards";
+import { HoldingRow } from "./holding-row";
+import type { HoldingWithPrice } from "./holding-row";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { SerializedAccountWithHoldings, SerializedHolding } from "@/lib/types";
@@ -64,7 +59,7 @@ export function AccountDetail({
     }
   };
 
-  const holdingsWithValue = account.holdings.map((h) => {
+  const holdingsWithValue: HoldingWithPrice[] = account.holdings.map((h) => {
     const price = priceMap[h.symbol] ?? null;
     const hc = h.currency || "USD";
     const rate = hc === account.currency ? 1 : ratesMap[`${hc}_${account.currency}`] ?? 1;
@@ -112,8 +107,8 @@ export function AccountDetail({
     if (sortField !== field) return <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-muted-foreground opacity-50" />;
     return sortDirection === "asc" ? <ArrowUp className="ml-1 h-3.5 w-3.5" /> : <ArrowDown className="ml-1 h-3.5 w-3.5" />;
   };
-  const isBrokerage = account.category === "BROKERAGE" || account.category === "CRYPTO_WALLET";
-  const totalValue = account.cashBalance + totalHoldingsValue;
+
+  const isBank = account.category === "BANK";
 
   async function saveBalance(newBalance: number, note?: string) {
     await fetch(`/api/accounts/${account.id}`, {
@@ -143,7 +138,7 @@ export function AccountDetail({
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || t("accountDetail.updateFailed"));
+        throw new Error(err.error?.message || t("accountDetail.updateFailed"));
       }
 
       toast.success(t("accountDetail.accountUpdated"));
@@ -187,8 +182,6 @@ export function AccountDetail({
       toast.error(t("accountDetail.holdingDeleteFailed"));
     }
   }
-
-  const isBank = account.category === "BANK";
 
   return (
     <>
@@ -242,79 +235,11 @@ export function AccountDetail({
         </Button>
       </div>
 
-      {isBrokerage ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">{t("accountDetail.marketValue")}</p>
-              <p className="text-2xl font-bold mt-1">
-                {formatCurrency(totalHoldingsValue, account.currency)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">{t("accountDetail.holdingsCount")}</p>
-              <p className="text-2xl font-bold mt-1">{holdingsWithValue.length}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">{t("accountDetail.cashBalance")}</p>
-              <InlineBalanceEditor
-                currentBalance={account.cashBalance}
-                currency={account.currency}
-                notePlaceholder={t("accountDetail.notePlaceholderDeposit")}
-                onSave={saveBalance}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      ) : isBank ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">{t("accountDetail.cashBalance")}</p>
-              <InlineBalanceEditor
-                currentBalance={account.cashBalance}
-                currency={account.currency}
-                notePlaceholder={t("accountDetail.notePlaceholderSalary")}
-                onSave={saveBalance}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">{t("accountDetail.totalValue")}</p>
-              <p className="text-2xl font-bold mt-1">
-                {formatCurrency(totalValue, account.currency)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">{t("accountDetail.cashBalance")}</p>
-              <InlineBalanceEditor
-                currentBalance={account.cashBalance}
-                currency={account.currency}
-                notePlaceholder={t("accountDetail.notePlaceholderSalary")}
-                onSave={saveBalance}
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">{t("accountDetail.holdingsValue")}</p>
-              <p className="text-2xl font-bold mt-1">
-                {formatCurrency(totalHoldingsValue, account.currency)}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <AccountStatCards
+        account={account}
+        totalHoldingsValue={totalHoldingsValue}
+        onSaveBalance={saveBalance}
+      />
 
       {!isBank && (
         <Card>
@@ -333,49 +258,49 @@ export function AccountDetail({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead 
+                    <TableHead
                       className="cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("symbol")}
                     >
                       <div className="flex items-center">{t("accountDetail.colSymbol")} <SortIcon field="symbol" /></div>
                     </TableHead>
-                    <TableHead 
+                    <TableHead
                       className="cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("name")}
                     >
                       <div className="flex items-center">{t("accountDetail.colName")} <SortIcon field="name" /></div>
                     </TableHead>
-                    <TableHead 
+                    <TableHead
                       className="cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("assetType")}
                     >
                       <div className="flex items-center">{t("accountDetail.colType")} <SortIcon field="assetType" /></div>
                     </TableHead>
-                    <TableHead 
+                    <TableHead
                       className="cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("currency")}
                     >
                       <div className="flex items-center">{t("accountDetail.colCurrency")} <SortIcon field="currency" /></div>
                     </TableHead>
-                    <TableHead 
+                    <TableHead
                       className="text-right cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("quantity")}
                     >
                       <div className="flex items-center justify-end">{t("accountDetail.colQty")} <SortIcon field="quantity" /></div>
                     </TableHead>
-                    <TableHead 
+                    <TableHead
                       className="text-right cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("currentPrice")}
                     >
                       <div className="flex items-center justify-end">{t("accountDetail.colPrice")} <SortIcon field="currentPrice" /></div>
                     </TableHead>
-                    <TableHead 
+                    <TableHead
                       className="text-right cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("marketValue")}
                     >
                       <div className="flex items-center justify-end">{t("accountDetail.colValue")} <SortIcon field="marketValue" /></div>
                     </TableHead>
-                    <TableHead 
+                    <TableHead
                       className="text-right cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("percentage")}
                     >
@@ -386,52 +311,14 @@ export function AccountDetail({
                 </TableHeader>
                 <TableBody>
                   {sortedHoldings.map((h) => (
-                    <TableRow key={h.id}>
-                      <TableCell className="font-mono font-medium">{h.symbol}</TableCell>
-                      <TableCell>{h.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{h.assetType}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{h.currency || "USD"}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatNumber(h.quantity, h.assetType === "CRYPTO" ? 7 : 2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {h.currentPrice !== null
-                          ? formatCurrency(h.currentPrice, h.currency || "USD")
-                          : "—"}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {h.marketValue !== null
-                          ? formatCurrency(h.marketValue, account.currency)
-                          : "—"}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        {h.marketValue !== null && totalHoldingsValue > 0
-                          ? `${((h.marketValue / totalHoldingsValue) * 100).toFixed(1)}%`
-                          : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 hover:bg-accent hover:text-accent-foreground">
-                            ...
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setEditingHolding(h)}>
-                              {t("common.edit")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => deleteHolding(h.id)}
-                            >
-                              {t("common.delete")}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                    <HoldingRow
+                      key={h.id}
+                      holding={h}
+                      totalValue={totalHoldingsValue}
+                      accountCurrency={account.currency}
+                      onEdit={setEditingHolding}
+                      onDelete={deleteHolding}
+                    />
                   ))}
                 </TableBody>
               </Table>

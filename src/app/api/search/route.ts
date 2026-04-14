@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { ok } from "@/lib/api-responses";
 
 type SearchResult = {
   symbol: string;
@@ -33,38 +33,13 @@ function inferCurrency(symbol: string, exchange: string): string {
   if (symbol.endsWith(".KS") || symbol.endsWith(".KQ")) return "KRW";
 
   const exchangeCurrencyMap: Record<string, string> = {
-    NMS: "USD",
-    NYQ: "USD",
-    NGM: "USD",
-    NCM: "USD",
-    PCX: "USD",
-    ASE: "USD",
-    TAI: "TWD",
-    TWO: "TWD",
-    HKG: "HKD",
-    TYO: "JPY",
-    LSE: "GBP",
-    KSC: "KRW",
-    KOE: "KRW",
-    SHH: "CNY",
-    SHZ: "CNY",
-    FRA: "EUR",
-    GER: "EUR",
-    PAR: "EUR",
-    AMS: "EUR",
-    ASX: "AUD",
-    TSE: "CAD",
-    CNQ: "CAD",
-    SES: "SGD",
-    BKK: "THB",
-    SAO: "BRL",
-    BMV: "MXN",
-    OSL: "NOK",
-    STO: "SEK",
-    CPH: "DKK",
-    NZE: "NZD",
-    NSI: "INR",
-    BOM: "INR",
+    NMS: "USD", NYQ: "USD", NGM: "USD", NCM: "USD", PCX: "USD", ASE: "USD",
+    TAI: "TWD", TWO: "TWD", HKG: "HKD", TYO: "JPY", LSE: "GBP",
+    KSC: "KRW", KOE: "KRW", SHH: "CNY", SHZ: "CNY",
+    FRA: "EUR", GER: "EUR", PAR: "EUR", AMS: "EUR",
+    ASX: "AUD", TSE: "CAD", CNQ: "CAD", SES: "SGD",
+    BKK: "THB", SAO: "BRL", BMV: "MXN", OSL: "NOK",
+    STO: "SEK", CPH: "DKK", NZE: "NZD", NSI: "INR", BOM: "INR",
   };
 
   return exchangeCurrencyMap[exchange] || "USD";
@@ -75,7 +50,7 @@ export async function GET(request: Request) {
   const query = searchParams.get("q")?.trim();
 
   if (!query || query.length < 1) {
-    return NextResponse.json([]);
+    return ok([] as SearchResult[]);
   }
 
   try {
@@ -100,9 +75,9 @@ export async function GET(request: Request) {
         currency: inferCurrency(q.symbol as string, (q.exchange as string) || ""),
       }));
 
-    return NextResponse.json(quotes);
+    return ok(quotes);
   } catch (error) {
     console.error("Search failed:", error);
-    return NextResponse.json([]);
+    return ok([] as SearchResult[]);
   }
 }

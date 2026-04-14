@@ -71,7 +71,7 @@ export function AccountForm({
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error?.fieldErrors?.name?.[0] || t("accountForm.createFailed"));
+        throw new Error(err.error?.issues?.fieldErrors?.name?.[0] || t("accountForm.createFailed"));
       }
 
       toast.success(t("accountForm.created"));
