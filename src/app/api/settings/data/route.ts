@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
 import { dataImportSchema } from "@/lib/validators";
 import { ok, failure, validationError } from "@/lib/api-responses";
+import { withAuth } from "@/lib/api-handler";
 
-export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return failure("Unauthorized", 401);
-
-  const userId = session.user.id;
-
+export const GET = withAuth(async (_req, _ctx, userId) => {
   try {
     const data = await prisma.user.findUnique({
       where: { id: userId },
@@ -46,14 +41,9 @@ export async function GET() {
     console.error("Export error:", error);
     return failure("Failed to export data", 500);
   }
-}
+});
 
-export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) return failure("Unauthorized", 401);
-
-  const userId = session.user.id;
-
+export const POST = withAuth(async (request, _ctx, userId) => {
   try {
     const body = await request.json();
     const parsed = dataImportSchema.safeParse(body);
@@ -171,4 +161,4 @@ export async function POST(request: Request) {
     console.error("Import error:", error);
     return failure(error instanceof Error ? error.message : "Failed to import data", 500);
   }
-}
+});

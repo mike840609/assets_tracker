@@ -106,6 +106,23 @@ export async function fetchExchangeRates(
 }
 
 /**
+ * Upsert a single exchange rate into the DB.
+ * Errors are caught and logged as warnings so callers are never blocked.
+ */
+async function persistExchangeRate(from: string, to: string, rate: number): Promise<void> {
+  const id = `${from}_${to}`;
+  try {
+    await prisma.exchangeRate.upsert({
+      where: { id },
+      update: { rate, updatedAt: new Date() },
+      create: { id, fromCurrency: from, toCurrency: to, rate },
+    });
+  } catch (error) {
+    console.warn(`Failed to persist exchange rate ${from}->${to}`, error);
+  }
+}
+
+/**
  * Refresh all exchange rates for a base currency and persist to DB.
  * Uses batched concurrent upserts instead of sequential writes.
  */
@@ -116,16 +133,7 @@ export async function refreshExchangeRates(baseCurrency: string): Promise<number
   if (entries.length === 0) return 0;
 
   // Batch upserts concurrently (instead of sequential loop)
-  await Promise.all(
-    entries.map(([toCurrency, rate]) => {
-      const id = `${baseCurrency}_${toCurrency}`;
-      return prisma.exchangeRate.upsert({
-        where: { id },
-        update: { rate, updatedAt: new Date() },
-        create: { id, fromCurrency: baseCurrency, toCurrency, rate },
-      });
-    })
-  );
+  await Promise.all(entries.map(([toCurrency, rate]) => persistExchangeRate(baseCurrency, toCurrency, rate)));
 
   return entries.length;
 }
@@ -157,25 +165,15 @@ export const getExchangeRate = cache(async function getExchangeRate(
   const fetchAndStore = async (): Promise<number> => {
     const rates = await fetchExchangeRates(from);
     if (rates[to]) {
-      const id = `${from}_${to}`;
       // Fire-and-forget: don't block on persisting
-      prisma.exchangeRate.upsert({
-        where: { id },
-        update: { rate: rates[to], updatedAt: new Date() },
-        create: { id, fromCurrency: from, toCurrency: to, rate: rates[to] },
-      }).catch(() => {});
+      void persistExchangeRate(from, to, rates[to]);
       return rates[to];
     }
 
     const reverseRates = await fetchExchangeRates(to);
     if (reverseRates[from]) {
       const rate = 1 / reverseRates[from];
-      const id = `${from}_${to}`;
-      prisma.exchangeRate.upsert({
-        where: { id },
-        update: { rate, updatedAt: new Date() },
-        create: { id, fromCurrency: from, toCurrency: to, rate },
-      }).catch(() => {});
+      void persistExchangeRate(from, to, rate);
       return rate;
     }
 
@@ -224,12 +222,7 @@ export async function resolveMissingRates(
         if (rates[to] !== undefined) {
           ratesMap[key] = rates[to];
           // Fire-and-forget persist
-          const id = key;
-          prisma.exchangeRate.upsert({
-            where: { id },
-            update: { rate: rates[to], updatedAt: new Date() },
-            create: { id, fromCurrency: from, toCurrency: to, rate: rates[to] },
-          }).catch(() => {});
+          void persistExchangeRate(from, to, rates[to]);
         }
       }
     })

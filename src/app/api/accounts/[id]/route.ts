@@ -1,37 +1,27 @@
 import { prisma } from "@/lib/prisma";
 import { updateAccountSchema } from "@/lib/validators";
-import { auth } from "@/auth";
 import { ok, failure, validationError } from "@/lib/api-responses";
+import { withAuth } from "@/lib/api-handler";
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const session = await auth();
-  if (!session?.user?.id) return failure("Unauthorized", 401);
+type IdCtx = { params: Promise<{ id: string }> };
 
+export const GET = withAuth<IdCtx>(async (_request, { params }, userId) => {
   const { id } = await params;
   const account = await prisma.account.findUnique({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
     include: { holdings: { where: { quantity: { gt: 0 } } } },
   });
   if (!account) return failure("Not found", 404);
   return ok(account);
-}
+});
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const session = await auth();
-  if (!session?.user?.id) return failure("Unauthorized", 401);
-
+export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
   const { id } = await params;
   const body = await request.json();
   const parsed = updateAccountSchema.safeParse(body);
   if (!parsed.success) return validationError(parsed.error);
 
-  const existingAccount = await prisma.account.findUnique({ where: { id, userId: session.user.id } });
+  const existingAccount = await prisma.account.findUnique({ where: { id, userId } });
   if (!existingAccount) return failure("Not found", 404);
 
   // If cashBalance is being updated to a new value, log it as an EDIT transaction
@@ -51,20 +41,14 @@ export async function PATCH(
   }
 
   const account = await prisma.account.update({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
     data: parsed.data,
   });
   return ok(account);
-}
+});
 
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const session = await auth();
-  if (!session?.user?.id) return failure("Unauthorized", 401);
-
+export const DELETE = withAuth<IdCtx>(async (_request, { params }, userId) => {
   const { id } = await params;
-  await prisma.account.delete({ where: { id, userId: session.user.id } });
+  await prisma.account.delete({ where: { id, userId } });
   return ok({ ok: true });
-}
+});

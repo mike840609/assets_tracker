@@ -1,23 +1,16 @@
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { updateSettingsSchema } from "@/lib/validators";
-import { auth } from "@/auth";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
-import { ok, failure, validationError } from "@/lib/api-responses";
+import { ok, validationError } from "@/lib/api-responses";
+import { withAuth } from "@/lib/api-handler";
 
-export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return failure("Unauthorized", 401);
-
-  const settings = await getOrCreateSettings(session.user.id);
+export const GET = withAuth(async (_req, _ctx, userId) => {
+  const settings = await getOrCreateSettings(userId);
   return ok(settings);
-}
+});
 
-export async function PATCH(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) return failure("Unauthorized", 401);
-
-  const userId = session.user.id;
+export const PATCH = withAuth(async (request, _ctx, userId) => {
   const body = await request.json();
   const parsed = updateSettingsSchema.safeParse(body);
   if (!parsed.success) return validationError(parsed.error);
@@ -49,4 +42,4 @@ export async function PATCH(request: Request) {
   }
 
   return response;
-}
+});
