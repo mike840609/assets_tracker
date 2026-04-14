@@ -12,6 +12,7 @@ import {
   AreaChart,
 } from "recharts";
 import { useTranslations } from "next-intl";
+import { createCurrencyTooltipFormatter } from "@/lib/chart-formatters";
 
 type SnapshotData = {
   date: string;
@@ -94,14 +95,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
                       : v.toString()
                 }
               />
-              <Tooltip
-                formatter={(value) =>
-                  new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: baseCurrency,
-                  }).format(Number(value))
-                }
-              />
+              <Tooltip formatter={createCurrencyTooltipFormatter(baseCurrency)} />
               <Area
                 type="monotone"
                 dataKey="netWorth"

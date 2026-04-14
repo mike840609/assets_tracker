@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useTranslations } from "next-intl";
 import type { NetWorthSummary } from "@/lib/types";
+import { createPieTooltipFormatter, createPieLegendFormatter } from "@/lib/chart-formatters";
 
 const COLORS = [
   "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
@@ -66,31 +67,8 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                   />
                 ))}
               </Pie>
-              <Tooltip
-                formatter={(value: any, name: any, props: any) => {
-                  const formattedValue = new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: summary.baseCurrency,
-                  }).format(Number(value || 0));
-                  const percentage = props?.payload?.percentage || "0";
-                  return [`${formattedValue} (${percentage}%)`, name];
-                }}
-              />
-              <Legend
-                formatter={(value, entry: any) => {
-                  const percentage = entry?.payload?.percentage;
-                  return (
-                    <span className="inline-flex items-baseline gap-1.5 ml-1 select-none">
-                      <span className="font-medium text-foreground">{value}</span>
-                      {percentage && (
-                        <span className="text-sm font-normal text-muted-foreground tabular-nums">
-                          {percentage}%
-                        </span>
-                      )}
-                    </span>
-                  );
-                }}
-              />
+              <Tooltip formatter={createPieTooltipFormatter(summary.baseCurrency)} />
+              <Legend formatter={createPieLegendFormatter()} />
             </PieChart>
           </ResponsiveContainer>
         )}

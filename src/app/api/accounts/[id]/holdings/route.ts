@@ -1,18 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { createHoldingSchema, updateHoldingSchema } from "@/lib/validators";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
-import { auth } from "@/auth";
 import { ok, failure, validationError } from "@/lib/api-responses";
+import { withAuth } from "@/lib/api-handler";
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const session = await auth();
-  if (!session?.user?.id) return failure("Unauthorized", 401);
+type IdCtx = { params: Promise<{ id: string }> };
 
+export const GET = withAuth<IdCtx>(async (_request, { params }, userId) => {
   const { id } = await params;
-  const account = await prisma.account.findUnique({ where: { id, userId: session.user.id } });
+  const account = await prisma.account.findUnique({ where: { id, userId } });
   if (!account) return failure("Not found", 404);
 
   const holdings = await prisma.holding.findMany({
@@ -20,7 +16,7 @@ export async function GET(
     orderBy: { symbol: "asc" },
   });
   return ok(holdings);
-}
+});
 
 export async function POST(
   request: Request,
