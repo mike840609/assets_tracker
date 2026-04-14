@@ -872,3 +872,347 @@ return NextResponse.json(rates, {
 This allows CDN edges and the browser to serve the cached response for up to 1 hour, and serve a stale response for up to 24 hours while revalidating in the background. The exchange-rate refresh endpoint (`POST /api/exchange-rates/refresh`) already bypasses caching since it's a mutation.
 
 - **Affected files:** `src/app/api/exchange-rates/route.ts`
+
+---
+
+## 2026-04-14 Code-Quality Refactor Review
+
+> New code-quality findings from a full read of the codebase. Items are numbered starting at 76 to continue the running sequence. These focus on DRY, cohesion, and consistency — not on features, security, or performance work already tracked above.
+
+| # | Suggestion | Category | Impact | Effort | Status |
+|---|-----------|----------|--------|--------|--------|
+| 76 | Extract `withAuth()` HOF for API routes | Code Quality | 🟡 Medium | 2-3 hrs | ❌ Not Done |
+| 77 | Unify Yahoo Finance quote fetcher (stock + crypto) | Code Quality | 🟢 Low | 30 min | ❌ Not Done |
+| 78 | Dedupe `normalizeSnapshots` in history-service | Code Quality | 🟡 Medium | 1 hr | ❌ Not Done |
+| 79 | Centralize exchange-rate upsert (`persistExchangeRate`) | Code Quality | 🟢 Low | 30 min | ❌ Not Done |
+| 80 | Share chart tooltip/legend formatters | Code Quality | 🟡 Medium | 30 min | ❌ Not Done |
+| 81 | Extract `<HoldingSearch>` component | Code Quality | 🟡 Medium | 1-2 hrs | ❌ Not Done |
+| 82 | `formatQuantity()` helper in `currencies.ts` | Code Quality | 🟢 Low | 30 min | ❌ Not Done |
+| 83 | Shared enum constants for Prisma/Zod | Code Quality | 🟡 Medium | 30 min | ❌ Not Done |
+| 84 | `Serialized<T>` type + `serializeModel` helper | Code Quality | 🟡 Medium | 1-2 hrs | ❌ Not Done |
+| 85 | Standardize API response shape | Code Quality | 🟡 Medium | 2-3 hrs | ❌ Not Done |
+| 86 | `calculateBalanceDelta()` for cash-tx edits | Correctness | 🔴 High | 1 hr | ❌ Not Done |
+| 87 | Split `account-detail.tsx` into subcomponents | Code Quality | 🟡 Medium | 2-3 hrs | ❌ Not Done |
+
+---
+
+### 76. Extract `withAuth()` Higher-Order Handler for API Routes
+
+**Files:** `src/app/api/**/route.ts`
+
+Every route handler opens with the same 3-line auth check:
+
+```ts
+const session = await auth();
+if (!session?.user?.id) {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+}
+```
+
+This pattern appears in 15+ handlers across `/accounts`, `/holdings`, `/snapshots`, `/settings`, `/exchange-rates`, `/prices`, and `/search`. The duplication is mechanical and easy to get wrong (e.g., a route might forget the `user.id` narrowing).
+
+**Fix:** Introduce `src/lib/api-handler.ts` exporting a wrapper:
+
+```ts
+export function withAuth<Ctx>(
+  handler: (req: NextRequest, ctx: Ctx, userId: string) => Promise<Response>
+) {
+  return async (req: NextRequest, ctx: Ctx) => {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return handler(req, ctx, session.user.id);
+  };
+}
+```
+
+Then handlers become `export const GET = withAuth(async (req, _ctx, userId) => { ... })`. Removes ~50 lines of boilerplate and guarantees a consistent 401 shape.
+
+- **Affected files:** new `src/lib/api-handler.ts`; every `src/app/api/**/route.ts` file.
+
+
+### 77. Unify Yahoo Finance Quote Fetcher Between Stock and Crypto
+
+**File:** `src/lib/services/price-service.ts` (lines 26–53 and 60–85)
+
+`fetchStockPrices` and `fetchCryptoPrices` share identical Yahoo Finance scaffolding — dynamic import, `Array.isArray(quotes)` guard, result-map population. Only the CoinGecko fallback differs.
+
+**Fix:** Extract a private helper:
+
+```ts
+async function fetchYahooQuotes(
+  symbols: string[]
+): Promise<Map<string, { price: number; currency: string }>> {
+  const results = new Map<string, { price: number; currency: string }>();
+  if (symbols.length === 0) return results;
+  try {
+    const YahooFinance = (await import("yahoo-finance2")).default;
+    const yahooFinance = new YahooFinance();
+    const quotes = await yahooFinance.quote(symbols);
+    for (const q of Array.isArray(quotes) ? quotes : [quotes]) {
+      if (q?.regularMarketPrice && q.symbol) {
+        results.set(q.symbol, { price: q.regularMarketPrice, currency: q.currency || "USD" });
+      }
+    }
+  } catch (error) {
+    console.error("Yahoo Finance fetch failed:", error);
+  }
+  return results;
+}
+```
+
+`fetchStockPrices` then becomes a direct alias. `fetchCryptoPrices` calls `fetchYahooQuotes` first, then layers the CoinGecko fallback for any symbols still missing. Cuts ~40 lines of duplication.
+
+- **Affected files:** `src/lib/services/price-service.ts`.
+
+
+### 78. Deduplicate Snapshot Normalization Logic in `history-service`
+
+**File:** `src/lib/services/history-service.ts`
+
+`computeNormalizedHistory` and `getFullNormalizedHistory` implement the same pipeline — fetch snapshots → convert each snapshot's values to the target base currency → dedupe by date — with only caching and default date ranges differing. Changes to the conversion logic must be kept in sync across both functions today.
+
+**Fix:** Extract the pure transformation:
+
+```ts
+function normalizeSnapshots(
+  snapshots: NetWorthSnapshot[],
+  allRatesMap: Map<string, number>,
+  targetBaseCurrency: string
+): NormalizedSnapshot[] {
+  // existing per-snapshot conversion + dedupe-by-date logic
+}
+```
+
+Both entry points then call it. This also sets up a natural home for the eventual `breakdown`-aware multi-currency conversion described in #35.
+
+- **Affected files:** `src/lib/services/history-service.ts`.
+
+
+### 79. Centralize Exchange-Rate Persistence
+
+**File:** `src/lib/services/exchange-rate-service.ts` (lines ~120, ~162, ~174, ~228)
+
+The same fire-and-forget upsert appears 4 times:
+
+```ts
+prisma.exchangeRate
+  .upsert({
+    where: { fromCurrency_toCurrency: { fromCurrency, toCurrency } },
+    update: { rate, updatedAt: new Date() },
+    create: { fromCurrency, toCurrency, rate, updatedAt: new Date() },
+  })
+  .catch(() => {});
+```
+
+**Fix:** Extract:
+
+```ts
+async function persistExchangeRate(from: string, to: string, rate: number) {
+  try {
+    await prisma.exchangeRate.upsert({
+      where: { fromCurrency_toCurrency: { fromCurrency: from, toCurrency: to } },
+      update: { rate, updatedAt: new Date() },
+      create: { fromCurrency: from, toCurrency: to, rate, updatedAt: new Date() },
+    });
+  } catch (error) {
+    console.warn(`Failed to persist exchange rate ${from}->${to}`, error);
+  }
+}
+```
+
+This also gives a single spot to upgrade to structured logging later (#55) instead of the current silent swallow.
+
+- **Affected files:** `src/lib/services/exchange-rate-service.ts`.
+
+
+### 80. Share Chart Tooltip and Legend Formatters
+
+**Files:** `src/components/dashboard/allocation-chart.tsx` (L70-77), `currency-exposure-chart.tsx` (L59-66), `trend-chart.tsx` (L98-103)
+
+Three Recharts tooltips reimplement the same `Intl.NumberFormat`-based currency formatter. `allocation-chart` and `currency-exposure-chart` are ~95% duplicated — both pie charts, same tooltip signature, same Legend wrapper.
+
+**Fix:** Create `src/lib/chart-formatters.ts`:
+
+```ts
+export function createCurrencyTooltipFormatter(currency: string) {
+  return (value: number) => formatCurrency(value, currency);
+}
+
+export function createPercentLegendFormatter(total: number) {
+  return (value: string, entry: { payload?: { value?: number } }) => {
+    const pct = total > 0 ? ((entry.payload?.value ?? 0) / total) * 100 : 0;
+    return `${value} (${pct.toFixed(1)}%)`;
+  };
+}
+```
+
+Removes ~30 lines of duplication and guarantees consistent formatting — a single change in `formatCurrency` now propagates to every chart tooltip.
+
+- **Affected files:** new `src/lib/chart-formatters.ts`; `src/components/dashboard/allocation-chart.tsx`, `currency-exposure-chart.tsx`, `trend-chart.tsx`.
+
+
+### 81. Extract Reusable `<HoldingSearch>` Component
+
+**Files:** `src/components/accounts/holding-form.tsx`, `src/components/accounts/quick-add-holding.tsx`
+
+Both components reimplement debounced ticker search, results state, loading spinner, and result-row JSX — roughly 80 lines of code each with ~80% overlap. A future search improvement (e.g., exchange filter, type filter, keyboard navigation) would require duplicate changes.
+
+**Fix:** Extract `<HoldingSearch onSelect={(result) => ...} />` that owns `query`, `results`, `isLoading`, debounce, and the result-row UI internally, emitting only the chosen result. The two parent components then consume it in their own step flow without caring about search internals.
+
+- **Affected files:** new `src/components/accounts/holding-search.tsx`; `src/components/accounts/holding-form.tsx`, `src/components/accounts/quick-add-holding.tsx`.
+
+
+### 82. Centralize Quantity Formatting in `currencies.ts`
+
+**Files:** `src/components/accounts/accounts-list.tsx` (L426), `account-detail.tsx` (L399), `transaction-history.tsx` (L220)
+
+The crypto-vs-non-crypto decimals rule — `h.assetType === "CRYPTO" ? 7 : 2` followed by `.toFixed()` — is inlined in at least three components. The logic is trivial, but duplicated string formatting inevitably drifts (e.g., one site adds thousands separators and others don't).
+
+**Fix:** Add to `src/lib/currencies.ts` (which already hosts `formatCurrency` / `formatNumber`):
+
+```ts
+export function formatQuantity(qty: number, assetType: string): string {
+  const decimals = assetType === "CRYPTO" ? 7 : 2;
+  return formatNumber(qty, decimals);
+}
+```
+
+Components import and call `formatQuantity(h.quantity, h.assetType)`.
+
+- **Affected files:** `src/lib/currencies.ts`; `src/components/accounts/accounts-list.tsx`, `account-detail.tsx`, `transaction-history.tsx`.
+
+
+### 83. Extract Enum Constants Shared Between Prisma and Zod Schemas
+
+**Files:** `src/lib/validators.ts` (L5-15, L32, L58, L64, L87-95, L102, L106, L113); `prisma/schema.prisma`
+
+Account categories, account types, holding asset types, and transaction types are hardcoded as `z.enum([...])` tuples at least twice — once in each individual create/update schema and again inside `dataImportSchema`. Adding a new category requires updating 3+ call sites and keeping them aligned with the Prisma enum.
+
+**Fix:** Create `src/lib/enums.ts`:
+
+```ts
+export const ACCOUNT_TYPES = ["ASSET", "LIABILITY"] as const;
+export const ACCOUNT_CATEGORIES = [
+  "BANK", "BROKERAGE", "CRYPTO_WALLET", "PROPERTY", "VEHICLE",
+  "CREDIT_CARD", "LOAN", "MORTGAGE", "OTHER",
+] as const;
+export const HOLDING_ASSET_TYPES = [
+  "STOCK", "ETF", "CRYPTO", "MUTUAL_FUND", "BOND", "OTHER",
+] as const;
+export const HOLDING_TRANSACTION_TYPES = ["BUY", "SELL", "EDIT"] as const;
+export const CASH_TRANSACTION_TYPES = ["DEPOSIT", "WITHDRAWAL", "EDIT"] as const;
+```
+
+Zod schemas reference via `z.enum(ACCOUNT_CATEGORIES)`. Optional future improvement: a small test that compares these tuples to `Prisma.$Enums.*` to catch drift.
+
+- **Affected files:** new `src/lib/enums.ts`; `src/lib/validators.ts`.
+
+
+### 84. Add `Serialized<T>` Utility Type and `serializeModel` Helper
+
+**File:** `src/lib/types.ts`
+
+`SerializedAccount`, `SerializedHolding`, and `SerializedTransaction` each manually `Omit<...>` Decimal/Date fields and intersect with a literal reshape. The corresponding `serializeAccount` / `serializeHolding` functions then hand-copy every column. Adding a new column to any model requires touching both the type and the serializer.
+
+**Fix:** Introduce:
+
+```ts
+export type Serialized<
+  T,
+  DecimalKeys extends keyof T = never,
+  DateKeys extends keyof T = never,
+> = {
+  [K in keyof T]: K extends DecimalKeys ? number : K extends DateKeys ? string : T[K];
+};
+
+export function serializeModel<T, D extends keyof T, Dt extends keyof T>(
+  obj: T,
+  opts: { decimals: readonly D[]; dates: readonly Dt[] }
+): Serialized<T, D, Dt> {
+  // iterate keys, coerce Decimal via Number(), Dates via .toISOString()
+}
+```
+
+`serializeAccount(a)` becomes a one-liner: `serializeModel(a, { decimals: ["cashBalance"], dates: ["createdAt", "updatedAt"] })`. Shrinks `types.ts` by ~30 lines and keeps serializers in sync with model shape automatically.
+
+- **Affected files:** `src/lib/types.ts`.
+
+
+### 85. Standardize API Response Shape via `src/lib/api-responses.ts`
+
+**Files:** all `src/app/api/**/route.ts`
+
+Route handlers return three different error shapes today:
+
+- `{ error: "Unauthorized" }` (most routes)
+- `{ error: parsed.error.flatten() }` (validation failures)
+- `{ ok: true }` (mutation success in some routes, bare data in others)
+
+The client therefore has to branch on response shape, and Zod validation details are inconsistently surfaced.
+
+**Fix:** Add `src/lib/api-responses.ts`:
+
+```ts
+export const ok = <T>(data: T, init?: ResponseInit) =>
+  NextResponse.json({ data }, init);
+
+export const failure = (message: string, status = 400) =>
+  NextResponse.json({ error: { message } }, { status });
+
+export const validationError = (zodError: z.ZodError) =>
+  NextResponse.json(
+    { error: { message: "Validation failed", issues: zodError.flatten() } },
+    { status: 400 }
+  );
+```
+
+Update routes to emit `ok(data)` / `failure("Unauthorized", 401)` / `validationError(parsed.error)`. Clients then parse a single envelope.
+
+- **Affected files:** new `src/lib/api-responses.ts`; all `src/app/api/**/route.ts`.
+
+
+### 86. Extract `calculateBalanceDelta()` for Cash-Transaction Edits
+
+**Files:** `src/app/api/accounts/[id]/cash-transactions/route.ts` (L39-57); `src/app/api/accounts/[id]/transactions/[transactionId]/route.ts` (L79-95, L153-154)
+
+The sign arithmetic for DEPOSIT/WITHDRAWAL/EDIT — including the "old type vs new type changed" branch on edit, and the "reverse effect on delete" branch — is inlined in at least three places with slightly different sign conventions. This is exactly the kind of logic that silently drifts and produces wrong balances.
+
+**Fix:** Extract a pure function:
+
+```ts
+type CashTxInput = { type: "DEPOSIT" | "WITHDRAWAL" | "EDIT"; amount: number };
+
+export function calculateBalanceDelta(
+  oldTx: CashTxInput | null,
+  newTx: CashTxInput | null
+): number {
+  const toSign = (tx: CashTxInput) =>
+    tx.type === "DEPOSIT" ? tx.amount
+    : tx.type === "WITHDRAWAL" ? -tx.amount
+    : tx.amount; // EDIT represents an absolute adjustment
+  return (newTx ? toSign(newTx) : 0) - (oldTx ? toSign(oldTx) : 0);
+}
+```
+
+All three call sites then become `account.cashBalance += calculateBalanceDelta(old, next)`. Unit-testable, single source of truth for an error-prone calculation.
+
+- **Affected files:** new `src/lib/services/balance.ts` (or inline in `cash-transaction-service.ts`); `src/app/api/accounts/[id]/cash-transactions/route.ts`; `src/app/api/accounts/[id]/transactions/[transactionId]/route.ts`.
+
+
+### 87. Split Oversized `account-detail.tsx` into Focused Subcomponents
+
+**File:** `src/components/accounts/account-detail.tsx` (~460 lines, `"use client"`)
+
+One large client component renders the breadcrumb + three conditional stat-card blocks + holdings table + transaction history + edit/delete menus. The breadcrumb and stat cards have no interactivity yet ship as client JS. The three stat-card branches (brokerage / bank / investment) also duplicate a Card → CardContent → Label → Value pattern ~3× with small variations.
+
+**Fix:** Break the file into:
+
+- `<AccountStatCards account={...}>` — presentational RSC deriving the right set of stats from `account.category`.
+- `<HoldingRow holding={...} totalValue={...} onEdit onDelete>` — isolates the `assetType === "CRYPTO" ? 7 : 2` decimals, percentage, and color logic into one row component (pairs naturally with #82).
+- Keep the outer `AccountDetail` as a thin `"use client"` wrapper for dialogs, sorting, and mutation state.
+
+Result: smaller client bundle, each subcomponent is independently testable, and the stat-card branching collapses into one declarative RSC.
+
+- **Affected files:** `src/components/accounts/account-detail.tsx`; new `src/components/accounts/account-stat-cards.tsx`, `src/components/accounts/holding-row.tsx`.
