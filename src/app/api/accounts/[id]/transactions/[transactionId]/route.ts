@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updateTransactionSchema, updateCashTransactionSchema } from "@/lib/validators";
+import { calculateBalanceDelta } from "@/lib/services/balance";
 
 export async function PATCH(
   request: Request,
@@ -73,26 +74,20 @@ export async function PATCH(
 
     const { id, ...data } = parsed.data;
 
-    // We don't automatically adjust account balance for CashTransaction edits, 
-    // unless the amount is edited explicitly and we know how to adjust it.
-    // Let's do a simple adjustment if amount changed.
-    if (data.amount !== undefined) {
-       // Only adjust if it's a deposit or withdrawal, EDIT is absolute usually, but here diff is diff
-       let diff = data.amount - Number(cashTx.amount);
-       // if we are changing type too, it gets complicated. Assuming type doesn't change for now or handled fully manually.
-       // Easiest is to adjust balance.
-       // Actually user typically adjusts manual cash balance for EDIT.
-       // But if DEPOSIT/WITHDRAWAL changed amount:
-       const currentType = data.type || cashTx.type;
-       if (currentType === "WITHDRAWAL") diff = -diff;
-       // if EDIT, diff = diff.
-       
-       if (diff !== 0) {
-         await prisma.account.update({
-           where: { id: accountId },
-           data: { cashBalance: { increment: diff } }
-         });
-       }
+    // Recompute balance delta whenever amount or type changes.
+    if (data.amount !== undefined || data.type !== undefined) {
+      const oldTx = { type: cashTx.type, amount: Number(cashTx.amount) };
+      const newTx = {
+        type: data.type ?? cashTx.type,
+        amount: data.amount ?? Number(cashTx.amount),
+      };
+      const delta = calculateBalanceDelta(oldTx, newTx);
+      if (delta !== 0) {
+        await prisma.account.update({
+          where: { id: accountId },
+          data: { cashBalance: { increment: delta } },
+        });
+      }
     }
 
     const updatedTx = await prisma.cashTransaction.update({
@@ -150,12 +145,10 @@ export async function DELETE(
       return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
     }
 
-    let diff = -Number(cashTx.amount);
-    if (cashTx.type === "WITHDRAWAL") diff = Number(cashTx.amount);
-
+    const delta = calculateBalanceDelta({ type: cashTx.type, amount: Number(cashTx.amount) }, null);
     await prisma.account.update({
       where: { id: accountId },
-      data: { cashBalance: { increment: diff } }
+      data: { cashBalance: { increment: delta } },
     });
 
     await prisma.cashTransaction.delete({
