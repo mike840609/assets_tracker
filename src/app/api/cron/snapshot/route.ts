@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createSnapshot } from "@/lib/services/snapshot-service";
 import { refreshAllPrices } from "@/lib/services/price-service";
+import { ok, failure } from "@/lib/api-responses";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -14,7 +14,6 @@ export async function GET(request: Request) {
     // 1. Refresh all prices first to ensure the snapshot is accurate
     console.log("Cron: Refreshing prices...");
     await refreshAllPrices();
-    // Invalidate cached net worth summaries so snapshots use fresh prices
     revalidateTag("net-worth", "max");
 
     // 2. Get all users and their settings
@@ -30,18 +29,14 @@ export async function GET(request: Request) {
         return createSnapshot(user.id, baseCurrency);
       })
     );
-    const results = snapshots.map((s) => s.id);
 
-    return NextResponse.json({
+    return ok({
       success: true,
-      snapshotIds: results,
+      snapshotIds: snapshots.map((s) => s.id),
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error("Cron snapshot failed:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return failure("Internal Server Error", 500);
   }
 }

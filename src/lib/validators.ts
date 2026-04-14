@@ -1,19 +1,16 @@
 import { z } from "zod";
+import {
+  ACCOUNT_TYPES,
+  ACCOUNT_CATEGORIES,
+  HOLDING_ASSET_TYPES,
+  HOLDING_TRANSACTION_TYPES,
+  CASH_TRANSACTION_TYPES,
+} from "./enums";
 
 export const createAccountSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
-  type: z.enum(["ASSET", "LIABILITY"]),
-  category: z.enum([
-    "BANK",
-    "BROKERAGE",
-    "CRYPTO_WALLET",
-    "PROPERTY",
-    "VEHICLE",
-    "CREDIT_CARD",
-    "LOAN",
-    "MORTGAGE",
-    "OTHER",
-  ]),
+  type: z.enum(ACCOUNT_TYPES),
+  category: z.enum(ACCOUNT_CATEGORIES),
   currency: z.string().length(3),
   cashBalance: z.number().default(0),
 });
@@ -29,7 +26,7 @@ export const createHoldingSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   quantity: z.number().positive("Quantity must be positive"),
   currency: z.string().length(3).default("USD"),
-  assetType: z.enum(["STOCK", "ETF", "CRYPTO", "MUTUAL_FUND", "BOND", "OTHER"]),
+  assetType: z.enum(HOLDING_ASSET_TYPES),
 });
 
 export const updateHoldingSchema = z.object({
@@ -42,9 +39,7 @@ export const updateHoldingSchema = z.object({
     .optional(),
   name: z.string().min(1).max(100).optional(),
   quantity: z.number().positive().optional(),
-  assetType: z
-    .enum(["STOCK", "ETF", "CRYPTO", "MUTUAL_FUND", "BOND", "OTHER"])
-    .optional(),
+  assetType: z.enum(HOLDING_ASSET_TYPES).optional(),
 });
 
 export const updateSettingsSchema = z.object({
@@ -55,20 +50,20 @@ export const updateSettingsSchema = z.object({
 export const updateTransactionSchema = z.object({
   id: z.string(),
   quantity: z.number().optional(),
-  type: z.enum(["BUY", "SELL", "EDIT"]).optional(),
+  type: z.enum(HOLDING_TRANSACTION_TYPES).optional(),
   note: z.string().optional().nullable(),
   createdAt: z.string().optional(), // Using string for ISO dates
 });
 
 export const createCashTransactionSchema = z.object({
-  type: z.enum(["DEPOSIT", "WITHDRAWAL", "EDIT"]),
+  type: z.enum(CASH_TRANSACTION_TYPES),
   amount: z.number(),
   note: z.string().optional().nullable(),
 });
 
 export const updateCashTransactionSchema = z.object({
   id: z.string(),
-  type: z.enum(["DEPOSIT", "WITHDRAWAL", "EDIT"]).optional(),
+  type: z.enum(CASH_TRANSACTION_TYPES).optional(),
   amount: z.number().optional(),
   note: z.string().optional().nullable(),
   createdAt: z.string().optional(),
@@ -84,11 +79,8 @@ export const dataImportSchema = z.object({
   }).optional().nullable(),
   accounts: z.array(z.object({
     name: z.string().min(1),
-    type: z.enum(["ASSET", "LIABILITY"]),
-    category: z.enum([
-      "BANK", "BROKERAGE", "CRYPTO_WALLET", "PROPERTY", "VEHICLE", 
-      "CREDIT_CARD", "LOAN", "MORTGAGE", "OTHER"
-    ]),
+    type: z.enum(ACCOUNT_TYPES),
+    category: z.enum(ACCOUNT_CATEGORIES),
     currency: z.string().length(3),
     cashBalance: decimalSchema,
     isActive: z.boolean().default(true),
@@ -99,18 +91,18 @@ export const dataImportSchema = z.object({
       name: z.string().min(1),
       quantity: decimalSchema,
       currency: z.string().length(3),
-      assetType: z.enum(["STOCK", "ETF", "CRYPTO", "MUTUAL_FUND", "BOND", "OTHER"]),
+      assetType: z.enum(HOLDING_ASSET_TYPES),
       createdAt: z.string().optional(),
       updatedAt: z.string().optional(),
       transactions: z.array(z.object({
-        type: z.enum(["BUY", "SELL", "EDIT"]),
+        type: z.enum(HOLDING_TRANSACTION_TYPES),
         quantity: decimalSchema,
         note: z.string().optional().nullable(),
         createdAt: z.string().optional(),
       })).optional(),
     })).optional(),
     cashTransactions: z.array(z.object({
-      type: z.enum(["DEPOSIT", "WITHDRAWAL", "EDIT"]),
+      type: z.enum(CASH_TRANSACTION_TYPES),
       amount: decimalSchema,
       note: z.string().optional().nullable(),
       createdAt: z.string().optional(),

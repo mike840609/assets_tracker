@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
 import { createSnapshot } from "@/lib/services/snapshot-service";
 import { getFullNormalizedHistory } from "@/lib/services/history-service";
 import { auth } from "@/auth";
+import { ok, failure } from "@/lib/api-responses";
 
 export async function GET(request: Request) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return failure("Unauthorized", 401);
 
   const { searchParams } = new URL(request.url);
   const from = searchParams.get("from");
@@ -17,15 +17,15 @@ export async function GET(request: Request) {
   if (to) options.to = new Date(to);
 
   const snapshots = await getFullNormalizedHistory(session.user.id, baseCurrency, options);
-  return NextResponse.json(snapshots);
+  return ok(snapshots);
 }
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return failure("Unauthorized", 401);
 
   const body = await request.json().catch(() => ({}));
   const baseCurrency = body.baseCurrency ?? "USD";
   const snapshot = await createSnapshot(session.user.id, baseCurrency);
-  return NextResponse.json(snapshot, { status: 201 });
+  return ok(snapshot, { status: 201 });
 }

@@ -91,11 +91,8 @@ export function DataManagement() {
           });
 
           if (!response.ok) {
-            const data = await response.json();
-            const errorMessage = data.details 
-              ? `${data.error}: ${data.details.split(',').slice(0, 3).join(', ')}${data.details.split(',').length > 3 ? '...' : ''}`
-              : data.error || "Import failed";
-            throw new Error(errorMessage);
+            const body = await response.json();
+            throw new Error(body.error?.message || "Import failed");
           }
 
           setShowSuccessDialog(true);

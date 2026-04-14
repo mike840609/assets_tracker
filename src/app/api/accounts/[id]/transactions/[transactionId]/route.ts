@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updateTransactionSchema, updateCashTransactionSchema } from "@/lib/validators";
 import { calculateBalanceDelta } from "@/lib/services/balance";
+import { ok, failure, validationError } from "@/lib/api-responses";
 
 export async function PATCH(
   request: Request,
@@ -18,13 +18,11 @@ export async function PATCH(
 
   if (holdingTx) {
     if (holdingTx.holding.accountId !== accountId) {
-      return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+      return failure("Transaction not found", 404);
     }
 
     const parsed = updateTransactionSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-    }
+    if (!parsed.success) return validationError(parsed.error);
 
     const { id, ...data } = parsed.data;
 
@@ -49,7 +47,7 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(updatedTx);
+    return ok(updatedTx);
   }
 
   const cashTx = await prisma.cashTransaction.findUnique({
@@ -59,7 +57,7 @@ export async function PATCH(
 
   if (cashTx) {
     if (cashTx.accountId !== accountId) {
-      return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+      return failure("Transaction not found", 404);
     }
 
     // Since UI might send `quantity` for amount, let's map it if `amount` is missing.
@@ -68,9 +66,7 @@ export async function PATCH(
     }
 
     const parsed = updateCashTransactionSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-    }
+    if (!parsed.success) return validationError(parsed.error);
 
     const { id, ...data } = parsed.data;
 
@@ -100,10 +96,10 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(updatedTx);
+    return ok(updatedTx);
   }
 
-  return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+  return failure("Transaction not found", 404);
 }
 
 export async function DELETE(
@@ -119,7 +115,7 @@ export async function DELETE(
 
   if (holdingTx) {
     if (holdingTx.holding.accountId !== accountId) {
-      return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+      return failure("Transaction not found", 404);
     }
 
     const newHoldingQty = Number(holdingTx.holding.quantity) - Number(holdingTx.quantity);
@@ -128,11 +124,8 @@ export async function DELETE(
       data: { quantity: newHoldingQty },
     });
 
-    await prisma.holdingTransaction.delete({
-      where: { id: transactionId },
-    });
-
-    return NextResponse.json({ ok: true });
+    await prisma.holdingTransaction.delete({ where: { id: transactionId } });
+    return ok({ ok: true });
   }
 
   const cashTx = await prisma.cashTransaction.findUnique({
@@ -142,7 +135,7 @@ export async function DELETE(
 
   if (cashTx) {
     if (cashTx.accountId !== accountId) {
-      return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+      return failure("Transaction not found", 404);
     }
 
     const delta = calculateBalanceDelta({ type: cashTx.type, amount: Number(cashTx.amount) }, null);
@@ -151,11 +144,9 @@ export async function DELETE(
       data: { cashBalance: { increment: delta } },
     });
 
-    await prisma.cashTransaction.delete({
-       where: { id: transactionId }
-    });
-    return NextResponse.json({ ok: true });
+    await prisma.cashTransaction.delete({ where: { id: transactionId } });
+    return ok({ ok: true });
   }
 
-  return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+  return failure("Transaction not found", 404);
 }

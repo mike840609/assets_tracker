@@ -1,23 +1,73 @@
 import type { Account, Holding, HoldingTransaction } from "@/generated/prisma/client";
 
-// Serialized types where Prisma Decimal fields are converted to number
-// These are safe to pass from Server Components to Client Components
-export type SerializedAccount = Omit<Account, "cashBalance" | "createdAt" | "updatedAt"> & {
-  cashBalance: number;
-  createdAt: string;
-  updatedAt: string;
+// ---------------------------------------------------------------------------
+// Generic serialization utilities
+// ---------------------------------------------------------------------------
+
+/**
+ * Maps a Prisma model type to its serialized form:
+ * - Decimal fields → number
+ * - Date fields   → string (ISO)
+ * - All other fields pass through unchanged
+ */
+export type Serialized<
+  T,
+  DecimalKeys extends keyof T = never,
+  DateKeys extends keyof T = never,
+> = {
+  [K in keyof T]: K extends DecimalKeys ? number : K extends DateKeys ? string : T[K];
 };
 
-export type SerializedHolding = Omit<Holding, "quantity" | "createdAt" | "updatedAt"> & {
-  quantity: number;
-  currency: string;
-  createdAt: string;
-  updatedAt: string;
-};
+/**
+ * Converts a Prisma model instance to its serialized form.
+ * Coerces Decimal fields via Number() and Date fields via .toISOString().
+ * Safe to pass from Server Components to Client Components.
+ */
+export function serializeModel<
+  T extends object,
+  D extends keyof T,
+  Dt extends keyof T,
+>(
+  obj: T,
+  opts: { decimals: readonly D[]; dates: readonly Dt[] },
+): Serialized<T, D, Dt> {
+  const result: Record<string, unknown> = {};
+  for (const key of Object.keys(obj) as (keyof T & string)[]) {
+    if ((opts.decimals as readonly (keyof T)[]).includes(key)) {
+      result[key] = Number(obj[key]);
+    } else if ((opts.dates as readonly (keyof T)[]).includes(key)) {
+      result[key] = (obj[key] as unknown as Date).toISOString();
+    } else {
+      result[key] = obj[key];
+    }
+  }
+  return result as Serialized<T, D, Dt>;
+}
+
+// ---------------------------------------------------------------------------
+// Serialized model types
+// ---------------------------------------------------------------------------
+
+export type SerializedAccount = Serialized<Account, "cashBalance", "createdAt" | "updatedAt">;
+
+export type SerializedHolding = Serialized<Holding, "quantity", "createdAt" | "updatedAt">;
 
 export type SerializedAccountWithHoldings = SerializedAccount & {
   holdings: SerializedHolding[];
 };
+
+export type SerializedTransaction = Serialized<HoldingTransaction, "quantity", "createdAt"> & {
+  holding?: {
+    symbol: string;
+    name: string;
+    currency: string;
+    assetType: string;
+  };
+};
+
+// ---------------------------------------------------------------------------
+// Calculation types
+// ---------------------------------------------------------------------------
 
 export type HoldingWithPrice = SerializedHolding & {
   currentPrice: number | null;
@@ -46,46 +96,22 @@ export type AllocationItem = {
   color: string;
 };
 
-export type SerializedTransaction = Omit<HoldingTransaction, "quantity" | "createdAt"> & {
-  quantity: number;
-  createdAt: string;
-  holding?: {
-    symbol: string;
-    name: string;
-    currency: string;
-    assetType: string;
-  };
-};
+// ---------------------------------------------------------------------------
+// Serialization helpers
+// ---------------------------------------------------------------------------
 
-// Serialization helpers — explicitly construct plain objects
-// (spreading Prisma model instances doesn't strip Decimal/Date properly)
 export function serializeAccount(account: Account): SerializedAccount {
-  return {
-    id: account.id,
-    userId: account.userId,
-    name: account.name,
-    type: account.type,
-    category: account.category,
-    currency: account.currency,
-    cashBalance: Number(account.cashBalance),
-    isActive: account.isActive,
-    createdAt: account.createdAt.toISOString(),
-    updatedAt: account.updatedAt.toISOString(),
-  };
+  return serializeModel(account, {
+    decimals: ["cashBalance"] as const,
+    dates: ["createdAt", "updatedAt"] as const,
+  });
 }
 
 export function serializeHolding(holding: Holding): SerializedHolding {
-  return {
-    id: holding.id,
-    accountId: holding.accountId,
-    symbol: holding.symbol,
-    name: holding.name,
-    quantity: Number(holding.quantity),
-    currency: holding.currency,
-    assetType: holding.assetType,
-    createdAt: holding.createdAt.toISOString(),
-    updatedAt: holding.updatedAt.toISOString(),
-  };
+  return serializeModel(holding, {
+    decimals: ["quantity"] as const,
+    dates: ["createdAt", "updatedAt"] as const,
+  });
 }
 
 export function serializeAccountWithHoldings(

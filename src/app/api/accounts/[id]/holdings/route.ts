@@ -1,25 +1,25 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createHoldingSchema, updateHoldingSchema } from "@/lib/validators";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
 import { auth } from "@/auth";
+import { ok, failure, validationError } from "@/lib/api-responses";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return failure("Unauthorized", 401);
 
   const { id } = await params;
   const account = await prisma.account.findUnique({ where: { id, userId: session.user.id } });
-  if (!account) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!account) return failure("Not found", 404);
 
   const holdings = await prisma.holding.findMany({
     where: { accountId: id, quantity: { gt: 0 } },
     orderBy: { symbol: "asc" },
   });
-  return NextResponse.json(holdings);
+  return ok(holdings);
 }
 
 export async function POST(
@@ -29,9 +29,7 @@ export async function POST(
   const { id } = await params;
   const body = await request.json();
   const parsed = createHoldingSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  if (!parsed.success) return validationError(parsed.error);
 
   // Check if holding already exists in this account
   const existing = await prisma.holding.findUnique({
@@ -48,20 +46,13 @@ export async function POST(
     });
   } else {
     holding = await prisma.holding.create({
-      data: {
-        accountId: id,
-        ...parsed.data,
-      },
+      data: { accountId: id, ...parsed.data },
     });
   }
 
   // Log the transaction
   await prisma.holdingTransaction.create({
-    data: {
-      holdingId: holding.id,
-      type: "BUY",
-      quantity: parsed.data.quantity,
-    },
+    data: { holdingId: holding.id, type: "BUY", quantity: parsed.data.quantity },
   });
 
   // Auto-fetch the market price for the holding
@@ -84,7 +75,7 @@ export async function POST(
     console.error(`Failed to fetch price for ${holding.symbol}:`, error);
   }
 
-  return NextResponse.json(holding, { status: 201 });
+  return ok(holding, { status: 201 });
 }
 
 export async function PATCH(
@@ -94,9 +85,7 @@ export async function PATCH(
   const { id: _accountId } = await params;
   const body = await request.json();
   const parsed = updateHoldingSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  if (!parsed.success) return validationError(parsed.error);
 
   const { id, ...data } = parsed.data;
 
@@ -118,11 +107,8 @@ export async function PATCH(
     }
   }
 
-  const holding = await prisma.holding.update({
-    where: { id },
-    data,
-  });
-  return NextResponse.json(holding);
+  const holding = await prisma.holding.update({ where: { id }, data });
+  return ok(holding);
 }
 
 export async function DELETE(
@@ -132,10 +118,8 @@ export async function DELETE(
   const { id: _accountId } = await params;
   const body = await request.json();
   const { id } = body;
-  if (!id) {
-    return NextResponse.json({ error: "Holding ID required" }, { status: 400 });
-  }
+  if (!id) return failure("Holding ID required");
 
   await prisma.holding.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+  return ok({ ok: true });
 }

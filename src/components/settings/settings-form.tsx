@@ -75,7 +75,7 @@ export function SettingsForm({
     setRefreshing(true);
     try {
       const res = await fetch("/api/prices/refresh", { method: "POST" });
-      const data = await res.json();
+      const { data } = await res.json();
       toast.success(t("toast.pricesUpdated", { count: data.updated }));
       router.refresh();
     } catch {
