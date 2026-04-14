@@ -891,7 +891,7 @@ This allows CDN edges and the browser to serve the cached response for up to 1 h
 | 83 | Shared enum constants for Prisma/Zod | Code Quality | 🟡 Medium | 30 min | ❌ Not Done |
 | 84 | `Serialized<T>` type + `serializeModel` helper | Code Quality | 🟡 Medium | 1-2 hrs | ❌ Not Done |
 | 85 | Standardize API response shape | Code Quality | 🟡 Medium | 2-3 hrs | ❌ Not Done |
-| 86 | `calculateBalanceDelta()` for cash-tx edits | Correctness | 🔴 High | 1 hr | ❌ Not Done |
+| 86 | `calculateBalanceDelta()` for cash-tx edits | Correctness | 🔴 High | 1 hr | ✅ Done |
 | 87 | Split `account-detail.tsx` into subcomponents | Code Quality | 🟡 Medium | 2-3 hrs | ❌ Not Done |
 
 ---
