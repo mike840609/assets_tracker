@@ -1,4 +1,4 @@
-import { CashTransactionType } from "@/generated/prisma";
+import { CashTransactionType } from "@/generated/prisma/client";
 
 type CashTxInput = { type: CashTransactionType; amount: number };
 
