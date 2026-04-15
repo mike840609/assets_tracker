@@ -10,21 +10,21 @@
 | 4 | Dashboard "Refresh Prices" button | Feature | 🔴 High | 1-2 hrs | ✅ Done |
 | 5 | "Last Updated" timestamp for prices on dashboard | Feature | 🔴 High | 1-2 hrs | ✅ Done |
 | 6 | Dark/Light/System theme toggle | Feature | 🟡 Medium | 1-2 hrs | ✅ Done |
+| 7 | Cost basis & gain/loss tracking | Feature | 🔴 High | 4-6 hrs | ❌ Not Done |
 | 8 | Authentication & multi-user support | Feature | 🔴 High | 6-10 hrs | ✅ Done |
+| 9 | Data import/export | Feature | 🔴 High | 4-6 hrs | ✅ Done |
 | 10 | Error handling & loading states | Architecture | 🟡 Medium | 3-4 hrs | ✅ Done |
 | 11 | Fix N+1 query patterns | Architecture | 🟡 Medium | 3-5 hrs | ✅ Done |
 | 12 | Input validation on API routes | Architecture | 🟡 Medium | 2-3 hrs | ✅ Done |
-| 18 | Automated Daily Snapshots (Cron) | Feature | 🔴 High | 1-2 hrs | ✅ Done |
-| 19 | Internationalization (en-US / zh-TW) | Feature | 🟡 Medium | 3-4 hrs | ✅ Done |
-| 20 | Inline account name editing | UX | 🟡 Medium | 1-2 hrs | ✅ Done |
-| 21 | Holding & cash transaction history | Feature | 🔴 High | 3-4 hrs | ✅ Done |
-| 7 | Cost basis & gain/loss tracking | Feature | 🔴 High | 4-6 hrs | ❌ Not Done |
-| 9 | Data import/export | Feature | 🔴 High | 4-6 hrs | ✅ Done |
 | 13 | Account reordering & archiving | UX | 🟡 Medium | 3-4 hrs | ❌ Not Done |
 | 14 | Mobile-responsive holdings table | UX | 🟡 Medium | 2-3 hrs | ✅ Done |
 | 15 | Monthly/yearly performance reports | Analytics | 🟡 Medium | 4-5 hrs | ❌ Not Done |
 | 16 | Currency exposure chart | Analytics | 🟢 Low | 2-3 hrs | ✅ Done |
 | 17 | Dividend / income tracking | Analytics | 🟡 Medium | 4-6 hrs | ❌ Not Done |
+| 18 | Automated Daily Snapshots (Cron) | Feature | 🔴 High | 1-2 hrs | ✅ Done |
+| 19 | Internationalization (en-US / zh-TW) | Feature | 🟡 Medium | 3-4 hrs | ✅ Done |
+| 20 | Inline account name editing | UX | 🟡 Medium | 1-2 hrs | ✅ Done |
+| 21 | Holding & cash transaction history | Feature | 🔴 High | 3-4 hrs | ✅ Done |
 | 22 | Pagination / Infinite Scroll for Transactions | Performance | 🟡 Medium | 2-3 hrs | ✅ Done |
 | 23 | Two-Factor Authentication (2FA) | Security | 🔴 High | 4-6 hrs | ❌ Not Done |
 | 24 | Plaid / Brokerage API Sync | Feature | 🔴 High | 10+ hrs | ❌ Not Done |
@@ -62,6 +62,41 @@
 | 56 | Add baseline automated tests (unit/API/E2E smoke) | Testing | 🔴 High | 1-2 days | ❌ Not Done |
 | 57 | Improve accessibility semantics on controls/tables | Accessibility | 🟡 Medium | 2-3 hrs | ❌ Not Done |
 | 58 | Add composite database indexes for hot query paths | Performance | 🔴 High | 1-2 hrs | ✅ Done |
+| 59 | Filter `PriceCache` query in `getNetWorthSummary` | Performance | 🔴 High | 15 min | ✅ Done |
+| 60 | Remove live price fetches from accounts page SSR | Performance | 🔴 High | 30 min | ✅ Done |
+| 61 | Remove dead code in `getNormalizedHistory` | Code Quality | 🟢 Low | 15 min | ✅ Done |
+| 62 | Fix collapse animation (`max-h-[2000px]` → grid collapse) | Performance / UX | 🟡 Medium | 1 hr | ✅ Done |
+| 63 | Fix DashboardSkeleton to match 3-chart layout (CLS) | UX | 🔴 High | 15 min | ✅ Done |
+| 64 | Replace `window.confirm()` with `AlertDialog` | UX | 🟡 Medium | 1 hr | ❌ Not Done |
+| 65 | Show net worth change delta in `NetWorthCard` | UX | 🔴 High | 1 hr | ❌ Not Done |
+| 66 | Add assets/liabilities series to `TrendChart` | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
+| 67 | Show full date in trend chart tooltip | UX | 🟢 Low | 15 min | ❌ Not Done |
+| 68 | Unified onboarding empty state for new users | UX | 🔴 High | 2-3 hrs | ✅ Done |
+| 69 | Clarify "%" column in holdings (% of holdings vs. account) | UX | 🟡 Medium | 15 min | ❌ Not Done |
+| 70 | Add `aria-hidden` to decorative emoji icons | Accessibility | 🟡 Medium | 15 min | ❌ Not Done |
+| 71 | Wrap `getOrCreateSettings` in `React.cache()` | Performance | 🟡 Medium | 15 min | ✅ Done |
+| 72 | Eliminate Phase 1→Phase 2 waterfall in `DashboardContent` | Performance | 🟡 Medium | 1 hr | ✅ Done |
+| 73 | Cache `getNetWorthSummary` with Next.js `unstable_cache` | Performance | 🔴 High | 1-2 hrs | ✅ Done |
+| 74 | Add granular Suspense boundaries inside `DashboardContent` | Performance | 🔴 High | 2-3 hrs | ✅ Done |
+| 75 | Add `Cache-Control` headers to `GET /api/exchange-rates` | Performance | 🟢 Low | 15 min | ❌ Not Done |
+| 76 | Extract `withAuth()` HOF for API routes | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
+| 77 | Unify Yahoo Finance quote fetcher (stock + crypto) | Code Quality | 🟢 Low | 30 min | ❌ Not Done |
+| 78 | Dedupe `normalizeSnapshots` in history-service | Code Quality | 🟡 Medium | 1 hr | ✅ Done |
+| 79 | Centralize exchange-rate upsert (`persistExchangeRate`) | Code Quality | 🟢 Low | 30 min | ✅ Done |
+| 80 | Share chart tooltip/legend formatters | Code Quality | 🟡 Medium | 30 min | ✅ Done |
+| 81 | Extract `<HoldingSearch>` component | Code Quality | 🟡 Medium | 1-2 hrs | ✅ Done |
+| 82 | `formatQuantity()` helper in `currencies.ts` | Code Quality | 🟢 Low | 30 min | ✅ Done |
+| 83 | Shared enum constants for Prisma/Zod | Code Quality | 🟡 Medium | 30 min | ✅ Done |
+| 84 | `Serialized<T>` type + `serializeModel` helper | Code Quality | 🟡 Medium | 1-2 hrs | ✅ Done |
+| 85 | Standardize API response shape | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
+| 86 | `calculateBalanceDelta()` for cash-tx edits | Correctness | 🔴 High | 1 hr | ✅ Done |
+| 87 | Split `account-detail.tsx` into subcomponents | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
+| 88 | Skip fresh pairs in `/api/exchange-rates/refresh` | Performance | 🟡 Medium | 30 min | ❌ Not Done |
+| 89 | Parallelize initial queries in exchange-rate refresh | Performance | 🟢 Low | 10 min | ❌ Not Done |
+| 90 | Memoize derived data in chart components | Performance | 🟡 Medium | 30 min | ❌ Not Done |
+| 91 | Stabilize inline `tickFormatter`s in `TrendChart` | Performance | 🟢 Low | 15 min | ❌ Not Done |
+| 92 | Batch `PriceCache` upserts via `$transaction` | Performance | 🔴 High | 30 min | ❌ Not Done |
+
 ---
 
 
@@ -435,22 +470,7 @@ Several API endpoints repeatedly filter/order by the same fields (especially acc
 
 ## 2026-04-12 Performance & UI/UX Audit
 
-> New findings from a full read of the codebase. Items are numbered starting at 59 to continue the running sequence.
-
-| # | Suggestion | Category | Impact | Effort | Status |
-|---|-----------|----------|--------|--------|--------|
-| 59 | Filter `PriceCache` query in `getNetWorthSummary` | Performance | 🔴 High | 15 min | ✅ Done |
-| 60 | Remove live price fetches from accounts page SSR | Performance | 🔴 High | 30 min | ✅ Done |
-| 61 | Remove dead code in `getNormalizedHistory` | Code Quality | 🟢 Low | 15 min | ✅ Done |
-| 62 | Fix collapse animation (`max-h-[2000px]` → grid collapse) | Performance / UX | 🟡 Medium | 1 hr | ✅ Done |
-| 63 | Fix DashboardSkeleton to match 3-chart layout (CLS) | UX | 🔴 High | 15 min | ✅ Done |
-| 64 | Replace `window.confirm()` with `AlertDialog` | UX | 🟡 Medium | 1 hr | ❌ Not Done |
-| 65 | Show net worth change delta in `NetWorthCard` | UX | 🔴 High | 1 hr | ❌ Not Done |
-| 66 | Add assets/liabilities series to `TrendChart` | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
-| 67 | Show full date in trend chart tooltip | UX | 🟢 Low | 15 min | ❌ Not Done |
-| 68 | Unified onboarding empty state for new users | UX | 🔴 High | 2-3 hrs | ✅ Done |
-| 69 | Clarify "%" column in holdings (% of holdings vs. account) | UX | 🟡 Medium | 15 min | ❌ Not Done |
-| 70 | Add `aria-hidden` to decorative emoji icons | Accessibility | 🟡 Medium | 15 min | ❌ Not Done |
+> New findings from a full read of the codebase. Items #59–70.
 
 ---
 
@@ -666,15 +686,7 @@ Emoji without `aria-hidden="true"` are announced by screen readers using their U
 
 ## 2026-04-12 Loading Speed Improvements
 
-> Targeted findings focused on reducing time-to-first-content on the dashboard and reducing redundant work across page loads.
-
-| # | Suggestion | Category | Impact | Effort | Status |
-|---|-----------|----------|--------|--------|--------|
-| 71 | Wrap `getOrCreateSettings` in `React.cache()` | Performance | 🟡 Medium | 15 min | ✅ Done |
-| 72 | Eliminate Phase 1→Phase 2 waterfall in `DashboardContent` | Performance | 🟡 Medium | 1 hr | ✅ Done |
-| 73 | Cache `getNetWorthSummary` with Next.js `unstable_cache` | Performance | 🔴 High | 1-2 hrs | ✅ Done |
-| 74 | Add granular Suspense boundaries inside `DashboardContent` | Performance | 🔴 High | 2-3 hrs | ✅ Done |
-| 75 | Add `Cache-Control` headers to `GET /api/exchange-rates` | Performance | 🟢 Low | 15 min | ❌ Not Done |
+> Targeted findings focused on reducing time-to-first-content on the dashboard and reducing redundant work across page loads. Items #71–75.
 
 ---
 
@@ -877,22 +889,7 @@ This allows CDN edges and the browser to serve the cached response for up to 1 h
 
 ## 2026-04-14 Code-Quality Refactor Review
 
-> New code-quality findings from a full read of the codebase. Items are numbered starting at 76 to continue the running sequence. These focus on DRY, cohesion, and consistency — not on features, security, or performance work already tracked above.
-
-| # | Suggestion | Category | Impact | Effort | Status |
-|---|-----------|----------|--------|--------|--------|
-| 76 | Extract `withAuth()` HOF for API routes | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
-| 77 | Unify Yahoo Finance quote fetcher (stock + crypto) | Code Quality | 🟢 Low | 30 min | ✅ Done |
-| 78 | Dedupe `normalizeSnapshots` in history-service | Code Quality | 🟡 Medium | 1 hr | ✅ Done |
-| 79 | Centralize exchange-rate upsert (`persistExchangeRate`) | Code Quality | 🟢 Low | 30 min | ✅ Done |
-| 80 | Share chart tooltip/legend formatters | Code Quality | 🟡 Medium | 30 min | ✅ Done |
-| 81 | Extract `<HoldingSearch>` component | Code Quality | 🟡 Medium | 1-2 hrs | ✅ Done |
-| 82 | `formatQuantity()` helper in `currencies.ts` | Code Quality | 🟢 Low | 30 min | ✅ Done |
-| 83 | Shared enum constants for Prisma/Zod | Code Quality | 🟡 Medium | 30 min | ✅ Done |
-| 84 | `Serialized<T>` type + `serializeModel` helper | Code Quality | 🟡 Medium | 1-2 hrs | ✅ Done |
-| 85 | Standardize API response shape | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
-| 86 | `calculateBalanceDelta()` for cash-tx edits | Correctness | 🔴 High | 1 hr | ✅ Done |
-| 87 | Split `account-detail.tsx` into subcomponents | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
+> New code-quality findings from a full read of the codebase. Focus on DRY, cohesion, and consistency — not on features, security, or performance work already tracked above. Items #76–87.
 
 ---
 
@@ -1221,15 +1218,7 @@ Result: smaller client bundle, each subcomponent is independently testable, and 
 
 ## 2026-04-15 Performance Deep-Dive
 
-> Fresh performance findings from a full read of the codebase. Items are numbered starting at 88 to continue the running sequence. None of these duplicate earlier performance passes (#11, #22, #38–42, #58–60, #62, #71–75).
-
-| # | Suggestion | Category | Impact | Effort | Status |
-|---|-----------|----------|--------|--------|--------|
-| 88 | Skip fresh pairs in `/api/exchange-rates/refresh` | Performance | 🟡 Medium | 30 min | ❌ Not Done |
-| 89 | Parallelize initial queries in exchange-rate refresh | Performance | 🟢 Low | 10 min | ❌ Not Done |
-| 90 | Memoize derived data in chart components | Performance | 🟡 Medium | 30 min | ❌ Not Done |
-| 91 | Stabilize inline `tickFormatter`s in `TrendChart` | Performance | 🟢 Low | 15 min | ❌ Not Done |
-| 92 | Batch `PriceCache` upserts via `$transaction` | Performance | 🔴 High | 30 min | ❌ Not Done |
+> Fresh performance findings from a full read of the codebase. Items #88–92.
 
 ---
 
