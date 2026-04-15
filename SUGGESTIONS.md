@@ -10,21 +10,21 @@
 | 4 | Dashboard "Refresh Prices" button | Feature | 🔴 High | 1-2 hrs | ✅ Done |
 | 5 | "Last Updated" timestamp for prices on dashboard | Feature | 🔴 High | 1-2 hrs | ✅ Done |
 | 6 | Dark/Light/System theme toggle | Feature | 🟡 Medium | 1-2 hrs | ✅ Done |
+| 7 | Cost basis & gain/loss tracking | Feature | 🔴 High | 4-6 hrs | ❌ Not Done |
 | 8 | Authentication & multi-user support | Feature | 🔴 High | 6-10 hrs | ✅ Done |
+| 9 | Data import/export | Feature | 🔴 High | 4-6 hrs | ✅ Done |
 | 10 | Error handling & loading states | Architecture | 🟡 Medium | 3-4 hrs | ✅ Done |
 | 11 | Fix N+1 query patterns | Architecture | 🟡 Medium | 3-5 hrs | ✅ Done |
 | 12 | Input validation on API routes | Architecture | 🟡 Medium | 2-3 hrs | ✅ Done |
-| 18 | Automated Daily Snapshots (Cron) | Feature | 🔴 High | 1-2 hrs | ✅ Done |
-| 19 | Internationalization (en-US / zh-TW) | Feature | 🟡 Medium | 3-4 hrs | ✅ Done |
-| 20 | Inline account name editing | UX | 🟡 Medium | 1-2 hrs | ✅ Done |
-| 21 | Holding & cash transaction history | Feature | 🔴 High | 3-4 hrs | ✅ Done |
-| 7 | Cost basis & gain/loss tracking | Feature | 🔴 High | 4-6 hrs | ❌ Not Done |
-| 9 | Data import/export | Feature | 🔴 High | 4-6 hrs | ✅ Done |
 | 13 | Account reordering & archiving | UX | 🟡 Medium | 3-4 hrs | ❌ Not Done |
 | 14 | Mobile-responsive holdings table | UX | 🟡 Medium | 2-3 hrs | ✅ Done |
 | 15 | Monthly/yearly performance reports | Analytics | 🟡 Medium | 4-5 hrs | ❌ Not Done |
 | 16 | Currency exposure chart | Analytics | 🟢 Low | 2-3 hrs | ✅ Done |
 | 17 | Dividend / income tracking | Analytics | 🟡 Medium | 4-6 hrs | ❌ Not Done |
+| 18 | Automated Daily Snapshots (Cron) | Feature | 🔴 High | 1-2 hrs | ✅ Done |
+| 19 | Internationalization (en-US / zh-TW) | Feature | 🟡 Medium | 3-4 hrs | ✅ Done |
+| 20 | Inline account name editing | UX | 🟡 Medium | 1-2 hrs | ✅ Done |
+| 21 | Holding & cash transaction history | Feature | 🔴 High | 3-4 hrs | ✅ Done |
 | 22 | Pagination / Infinite Scroll for Transactions | Performance | 🟡 Medium | 2-3 hrs | ✅ Done |
 | 23 | Two-Factor Authentication (2FA) | Security | 🔴 High | 4-6 hrs | ❌ Not Done |
 | 24 | Plaid / Brokerage API Sync | Feature | 🔴 High | 10+ hrs | ❌ Not Done |
@@ -62,6 +62,41 @@
 | 56 | Add baseline automated tests (unit/API/E2E smoke) | Testing | 🔴 High | 1-2 days | ❌ Not Done |
 | 57 | Improve accessibility semantics on controls/tables | Accessibility | 🟡 Medium | 2-3 hrs | ❌ Not Done |
 | 58 | Add composite database indexes for hot query paths | Performance | 🔴 High | 1-2 hrs | ✅ Done |
+| 59 | Filter `PriceCache` query in `getNetWorthSummary` | Performance | 🔴 High | 15 min | ✅ Done |
+| 60 | Remove live price fetches from accounts page SSR | Performance | 🔴 High | 30 min | ✅ Done |
+| 61 | Remove dead code in `getNormalizedHistory` | Code Quality | 🟢 Low | 15 min | ✅ Done |
+| 62 | Fix collapse animation (`max-h-[2000px]` → grid collapse) | Performance / UX | 🟡 Medium | 1 hr | ✅ Done |
+| 63 | Fix DashboardSkeleton to match 3-chart layout (CLS) | UX | 🔴 High | 15 min | ✅ Done |
+| 64 | Replace `window.confirm()` with `AlertDialog` | UX | 🟡 Medium | 1 hr | ❌ Not Done |
+| 65 | Show net worth change delta in `NetWorthCard` | UX | 🔴 High | 1 hr | ❌ Not Done |
+| 66 | Add assets/liabilities series to `TrendChart` | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
+| 67 | Show full date in trend chart tooltip | UX | 🟢 Low | 15 min | ❌ Not Done |
+| 68 | Unified onboarding empty state for new users | UX | 🔴 High | 2-3 hrs | ✅ Done |
+| 69 | Clarify "%" column in holdings (% of holdings vs. account) | UX | 🟡 Medium | 15 min | ❌ Not Done |
+| 70 | Add `aria-hidden` to decorative emoji icons | Accessibility | 🟡 Medium | 15 min | ❌ Not Done |
+| 71 | Wrap `getOrCreateSettings` in `React.cache()` | Performance | 🟡 Medium | 15 min | ✅ Done |
+| 72 | Eliminate Phase 1→Phase 2 waterfall in `DashboardContent` | Performance | 🟡 Medium | 1 hr | ✅ Done |
+| 73 | Cache `getNetWorthSummary` with Next.js `unstable_cache` | Performance | 🔴 High | 1-2 hrs | ✅ Done |
+| 74 | Add granular Suspense boundaries inside `DashboardContent` | Performance | 🔴 High | 2-3 hrs | ✅ Done |
+| 75 | Add `Cache-Control` headers to `GET /api/exchange-rates` | Performance | 🟢 Low | 15 min | ❌ Not Done |
+| 76 | Extract `withAuth()` HOF for API routes | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
+| 77 | Unify Yahoo Finance quote fetcher (stock + crypto) | Code Quality | 🟢 Low | 30 min | ✅ Done |
+| 78 | Dedupe `normalizeSnapshots` in history-service | Code Quality | 🟡 Medium | 1 hr | ✅ Done |
+| 79 | Centralize exchange-rate upsert (`persistExchangeRate`) | Code Quality | 🟢 Low | 30 min | ✅ Done |
+| 80 | Share chart tooltip/legend formatters | Code Quality | 🟡 Medium | 30 min | ✅ Done |
+| 81 | Extract `<HoldingSearch>` component | Code Quality | 🟡 Medium | 1-2 hrs | ✅ Done |
+| 82 | `formatQuantity()` helper in `currencies.ts` | Code Quality | 🟢 Low | 30 min | ✅ Done |
+| 83 | Shared enum constants for Prisma/Zod | Code Quality | 🟡 Medium | 30 min | ✅ Done |
+| 84 | `Serialized<T>` type + `serializeModel` helper | Code Quality | 🟡 Medium | 1-2 hrs | ✅ Done |
+| 85 | Standardize API response shape | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
+| 86 | `calculateBalanceDelta()` for cash-tx edits | Correctness | 🔴 High | 1 hr | ✅ Done |
+| 87 | Split `account-detail.tsx` into subcomponents | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
+| 88 | Skip fresh pairs in `/api/exchange-rates/refresh` | Performance | 🟡 Medium | 30 min | ❌ Not Done |
+| 89 | Parallelize initial queries in exchange-rate refresh | Performance | 🟢 Low | 10 min | ❌ Not Done |
+| 90 | Memoize derived data in chart components | Performance | 🟡 Medium | 30 min | ❌ Not Done |
+| 91 | Stabilize inline `tickFormatter`s in `TrendChart` | Performance | 🟢 Low | 15 min | ❌ Not Done |
+| 92 | Batch `PriceCache` upserts via `$transaction` | Performance | 🔴 High | 30 min | ❌ Not Done |
+
 ---
 
 
@@ -435,22 +470,7 @@ Several API endpoints repeatedly filter/order by the same fields (especially acc
 
 ## 2026-04-12 Performance & UI/UX Audit
 
-> New findings from a full read of the codebase. Items are numbered starting at 59 to continue the running sequence.
-
-| # | Suggestion | Category | Impact | Effort | Status |
-|---|-----------|----------|--------|--------|--------|
-| 59 | Filter `PriceCache` query in `getNetWorthSummary` | Performance | 🔴 High | 15 min | ✅ Done |
-| 60 | Remove live price fetches from accounts page SSR | Performance | 🔴 High | 30 min | ✅ Done |
-| 61 | Remove dead code in `getNormalizedHistory` | Code Quality | 🟢 Low | 15 min | ✅ Done |
-| 62 | Fix collapse animation (`max-h-[2000px]` → grid collapse) | Performance / UX | 🟡 Medium | 1 hr | ✅ Done |
-| 63 | Fix DashboardSkeleton to match 3-chart layout (CLS) | UX | 🔴 High | 15 min | ✅ Done |
-| 64 | Replace `window.confirm()` with `AlertDialog` | UX | 🟡 Medium | 1 hr | ❌ Not Done |
-| 65 | Show net worth change delta in `NetWorthCard` | UX | 🔴 High | 1 hr | ❌ Not Done |
-| 66 | Add assets/liabilities series to `TrendChart` | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
-| 67 | Show full date in trend chart tooltip | UX | 🟢 Low | 15 min | ❌ Not Done |
-| 68 | Unified onboarding empty state for new users | UX | 🔴 High | 2-3 hrs | ✅ Done |
-| 69 | Clarify "%" column in holdings (% of holdings vs. account) | UX | 🟡 Medium | 15 min | ❌ Not Done |
-| 70 | Add `aria-hidden` to decorative emoji icons | Accessibility | 🟡 Medium | 15 min | ❌ Not Done |
+> New findings from a full read of the codebase. Items #59–70.
 
 ---
 
@@ -666,15 +686,7 @@ Emoji without `aria-hidden="true"` are announced by screen readers using their U
 
 ## 2026-04-12 Loading Speed Improvements
 
-> Targeted findings focused on reducing time-to-first-content on the dashboard and reducing redundant work across page loads.
-
-| # | Suggestion | Category | Impact | Effort | Status |
-|---|-----------|----------|--------|--------|--------|
-| 71 | Wrap `getOrCreateSettings` in `React.cache()` | Performance | 🟡 Medium | 15 min | ✅ Done |
-| 72 | Eliminate Phase 1→Phase 2 waterfall in `DashboardContent` | Performance | 🟡 Medium | 1 hr | ✅ Done |
-| 73 | Cache `getNetWorthSummary` with Next.js `unstable_cache` | Performance | 🔴 High | 1-2 hrs | ✅ Done |
-| 74 | Add granular Suspense boundaries inside `DashboardContent` | Performance | 🔴 High | 2-3 hrs | ✅ Done |
-| 75 | Add `Cache-Control` headers to `GET /api/exchange-rates` | Performance | 🟢 Low | 15 min | ❌ Not Done |
+> Targeted findings focused on reducing time-to-first-content on the dashboard and reducing redundant work across page loads. Items #71–75.
 
 ---
 
@@ -877,22 +889,7 @@ This allows CDN edges and the browser to serve the cached response for up to 1 h
 
 ## 2026-04-14 Code-Quality Refactor Review
 
-> New code-quality findings from a full read of the codebase. Items are numbered starting at 76 to continue the running sequence. These focus on DRY, cohesion, and consistency — not on features, security, or performance work already tracked above.
-
-| # | Suggestion | Category | Impact | Effort | Status |
-|---|-----------|----------|--------|--------|--------|
-| 76 | Extract `withAuth()` HOF for API routes | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
-| 77 | Unify Yahoo Finance quote fetcher (stock + crypto) | Code Quality | 🟢 Low | 30 min | ✅ Done |
-| 78 | Dedupe `normalizeSnapshots` in history-service | Code Quality | 🟡 Medium | 1 hr | ✅ Done |
-| 79 | Centralize exchange-rate upsert (`persistExchangeRate`) | Code Quality | 🟢 Low | 30 min | ✅ Done |
-| 80 | Share chart tooltip/legend formatters | Code Quality | 🟡 Medium | 30 min | ✅ Done |
-| 81 | Extract `<HoldingSearch>` component | Code Quality | 🟡 Medium | 1-2 hrs | ✅ Done |
-| 82 | `formatQuantity()` helper in `currencies.ts` | Code Quality | 🟢 Low | 30 min | ✅ Done |
-| 83 | Shared enum constants for Prisma/Zod | Code Quality | 🟡 Medium | 30 min | ✅ Done |
-| 84 | `Serialized<T>` type + `serializeModel` helper | Code Quality | 🟡 Medium | 1-2 hrs | ✅ Done |
-| 85 | Standardize API response shape | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
-| 86 | `calculateBalanceDelta()` for cash-tx edits | Correctness | 🔴 High | 1 hr | ✅ Done |
-| 87 | Split `account-detail.tsx` into subcomponents | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
+> New code-quality findings from a full read of the codebase. Focus on DRY, cohesion, and consistency — not on features, security, or performance work already tracked above. Items #76–87.
 
 ---
 
@@ -1216,3 +1213,161 @@ One large client component renders the breadcrumb + three conditional stat-card 
 Result: smaller client bundle, each subcomponent is independently testable, and the stat-card branching collapses into one declarative RSC.
 
 - **Affected files:** `src/components/accounts/account-detail.tsx`; new `src/components/accounts/account-stat-cards.tsx`, `src/components/accounts/holding-row.tsx`.
+
+---
+
+## 2026-04-15 Performance Deep-Dive
+
+> Fresh performance findings from a full read of the codebase. Items #88–92.
+
+---
+
+### 88. Skip Freshly-Updated Pairs in `POST /api/exchange-rates/refresh`
+
+**File:** `src/app/api/exchange-rates/refresh/route.ts`
+
+The handler unconditionally calls `refreshExchangeRates(baseCurrency)` plus `refreshExchangeRates(currency)` for every distinct account currency on every invocation. If a user taps "Refresh" twice within a minute — or if the cron job overlaps with a manual refresh — the code re-hits frankfurter.app / er-api for the exact same pairs that were just persisted. External-API budget and latency both suffer for no gain.
+
+**Fix:** Before kicking off the external fetches, read the existing `ExchangeRate` rows once and skip any pair whose `updatedAt` is within a freshness window (e.g. 15 minutes):
+
+```ts
+const FRESH_MS = 15 * 60 * 1000;
+const existing = await prisma.exchangeRate.findMany({
+  select: { fromCurrency: true, toCurrency: true, updatedAt: true },
+});
+const freshPairs = new Set(
+  existing
+    .filter((r) => Date.now() - r.updatedAt.getTime() < FRESH_MS)
+    .map((r) => `${r.fromCurrency}_${r.toCurrency}`)
+);
+
+const candidates = [baseCurrency, ...otherCurrencies].filter(
+  (c) => !freshPairs.has(`${baseCurrency}_${c}`)
+);
+const results = await Promise.all(candidates.map(refreshExchangeRates));
+```
+
+Removes redundant outbound HTTP on rapid-fire refreshes and keeps the cron job idempotent within its cadence.
+
+- **Affected files:** `src/app/api/exchange-rates/refresh/route.ts`.
+
+
+### 89. Parallelize Initial Queries in `POST /api/exchange-rates/refresh`
+
+**File:** `src/app/api/exchange-rates/refresh/route.ts` (lines 7–13)
+
+The handler awaits `prisma.setting.findFirst()` and then awaits `prisma.account.findMany({ distinct: ["currency"] })` sequentially, even though neither depends on the other. On cold Neon WebSocket connections this is ~20–40 ms of pure waterfall on the critical path.
+
+**Fix:**
+
+```ts
+const [settings, accounts] = await Promise.all([
+  prisma.setting.findFirst(),
+  prisma.account.findMany({ select: { currency: true }, distinct: ["currency"] }),
+]);
+const baseCurrency = settings?.baseCurrency ?? "USD";
+```
+
+A ten-minute change that shaves one DB round-trip off every exchange-rate refresh (user-triggered and scheduled).
+
+- **Affected files:** `src/app/api/exchange-rates/refresh/route.ts`.
+
+
+### 90. Memoize Derived Chart Data in `AllocationChart`, `CurrencyExposureChart`, `TrendChart`
+
+**Files:**
+- `src/components/dashboard/allocation-chart.tsx` (lines 20–37) — rebuilds `categoryMap`, `total`, and the `data` array on every render.
+- `src/components/dashboard/currency-exposure-chart.tsx` — same pattern: per-render `reduce` + `map` + `toFixed`.
+- `src/components/dashboard/trend-chart.tsx` (lines 38–45) — rebuilds `filtered` (and a fresh `cutoff` Date) on every render, including unrelated parent re-renders.
+
+These components sit on the dashboard and re-render whenever the parent state, price ticks, or theme toggle changes. Each rebuild allocates fresh object references, which also forces Recharts to treat the `data` prop as new and recompute scales/axes even when the underlying values are unchanged.
+
+**Fix:** Wrap the derivations in `useMemo` keyed on their actual inputs.
+
+```tsx
+// trend-chart.tsx
+const filtered = useMemo(() => {
+  if (hideRangeFilter || selectedRange.days === Infinity) return snapshots;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - selectedRange.days);
+  return snapshots.filter((s) => new Date(s.date) >= cutoff);
+}, [snapshots, selectedRange.days, hideRangeFilter]);
+
+// allocation-chart.tsx
+const data = useMemo(() => {
+  const categoryMap = new Map<string, number>();
+  for (const a of summary.accounts) {
+    if (a.type !== "ASSET") continue;
+    categoryMap.set(a.category, (categoryMap.get(a.category) ?? 0) + a.totalValueInBaseCurrency);
+  }
+  const total = [...categoryMap.values()].reduce((x, y) => x + y, 0);
+  return [...categoryMap.entries()]
+    .map(([category, value]) => ({
+      name: t(`categories.${category}`, { defaultValue: category }),
+      value: Math.round(value * 100) / 100,
+      percentage: total > 0 ? ((value / total) * 100).toFixed(1) : "0",
+    }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
+}, [summary.accounts, t]);
+```
+
+- **Affected files:** `src/components/dashboard/allocation-chart.tsx`, `src/components/dashboard/currency-exposure-chart.tsx`, `src/components/dashboard/trend-chart.tsx`.
+
+
+### 91. Stabilize Inline `tickFormatter` Functions in `TrendChart`
+
+**File:** `src/components/dashboard/trend-chart.tsx` (lines 83–96)
+
+Both `<XAxis tickFormatter={(v) => ...} />` and `<YAxis tickFormatter={(v) => ...} />` receive inline arrow functions. Every render allocates a fresh function identity, which defeats Recharts' shallow-prop memoization on the axis components. Combined with the per-render `filtered` rebuild (#90), this forces axis redraws during window resizes, range-button clicks, and parent price ticks.
+
+**Fix:** Hoist the formatters to module scope — they do not close over props — or wrap them in `useCallback` inside the component:
+
+```tsx
+// Module scope (cleanest — zero dependencies)
+const formatXTick = (v: string) => {
+  const d = new Date(v);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+};
+const formatYTick = (v: number) =>
+  v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M`
+  : v >= 1_000 ? `${(v / 1_000).toFixed(0)}K`
+  : String(v);
+
+// …then in JSX:
+<XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={formatXTick} />
+<YAxis tick={{ fontSize: 12 }} tickFormatter={formatYTick} />
+```
+
+- **Affected files:** `src/components/dashboard/trend-chart.tsx`.
+
+
+### 92. Batch `PriceCache` Upserts via `prisma.$transaction`
+
+**File:** `src/lib/services/price-service.ts` (lines 147–155)
+
+`refreshAllPrices` fires N parallel `prisma.priceCache.upsert()` calls through `Promise.allSettled`. Each upsert is its own round-trip over the Neon WebSocket. For a realistic portfolio spanning 30–50 unique symbols (stocks + ETFs + crypto), that's 30–50 network round-trips per refresh even though each payload is tiny. On the daily cron job — which runs inside `GET /api/cron/snapshot` right before snapshots are written — this round-trip count is the dominant component of latency.
+
+**Fix:** Pipeline the upserts into a single `prisma.$transaction([...])` so the Neon driver sends them as one interactive-transaction batch instead of N independent ones:
+
+```ts
+const entries = [...allPrices];
+const upserts = entries.map(([symbol, { price, currency }]) =>
+  prisma.priceCache.upsert({
+    where: { symbol },
+    update: { price, currency, updatedAt: new Date() },
+    create: { symbol, price, currency },
+  })
+);
+
+try {
+  await prisma.$transaction(upserts);
+  updated = upserts.length;
+} catch (error) {
+  errors.push(`Batch upsert failed: ${String(error)}`);
+}
+```
+
+If per-symbol error granularity is desired, chunk into small batches (e.g. 10) and run each chunk inside its own transaction. This still collapses 30–50 round-trips into 3–5. Expected impact: meaningful reduction in cron-job wall time and in the "Refresh Prices" button latency perceived by users.
+
+- **Affected files:** `src/lib/services/price-service.ts`.
