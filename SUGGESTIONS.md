@@ -1216,3 +1216,169 @@ One large client component renders the breadcrumb + three conditional stat-card 
 Result: smaller client bundle, each subcomponent is independently testable, and the stat-card branching collapses into one declarative RSC.
 
 - **Affected files:** `src/components/accounts/account-detail.tsx`; new `src/components/accounts/account-stat-cards.tsx`, `src/components/accounts/holding-row.tsx`.
+
+---
+
+## 2026-04-15 Performance Deep-Dive
+
+> Fresh performance findings from a full read of the codebase. Items are numbered starting at 88 to continue the running sequence. None of these duplicate earlier performance passes (#11, #22, #38–42, #58–60, #62, #71–75).
+
+| # | Suggestion | Category | Impact | Effort | Status |
+|---|-----------|----------|--------|--------|--------|
+| 88 | Skip fresh pairs in `/api/exchange-rates/refresh` | Performance | 🟡 Medium | 30 min | ❌ Not Done |
+| 89 | Parallelize initial queries in exchange-rate refresh | Performance | 🟢 Low | 10 min | ❌ Not Done |
+| 90 | Memoize derived data in chart components | Performance | 🟡 Medium | 30 min | ❌ Not Done |
+| 91 | Stabilize inline `tickFormatter`s in `TrendChart` | Performance | 🟢 Low | 15 min | ❌ Not Done |
+| 92 | Batch `PriceCache` upserts via `$transaction` | Performance | 🔴 High | 30 min | ❌ Not Done |
+
+---
+
+### 88. Skip Freshly-Updated Pairs in `POST /api/exchange-rates/refresh`
+
+**File:** `src/app/api/exchange-rates/refresh/route.ts`
+
+The handler unconditionally calls `refreshExchangeRates(baseCurrency)` plus `refreshExchangeRates(currency)` for every distinct account currency on every invocation. If a user taps "Refresh" twice within a minute — or if the cron job overlaps with a manual refresh — the code re-hits frankfurter.app / er-api for the exact same pairs that were just persisted. External-API budget and latency both suffer for no gain.
+
+**Fix:** Before kicking off the external fetches, read the existing `ExchangeRate` rows once and skip any pair whose `updatedAt` is within a freshness window (e.g. 15 minutes):
+
+```ts
+const FRESH_MS = 15 * 60 * 1000;
+const existing = await prisma.exchangeRate.findMany({
+  select: { fromCurrency: true, toCurrency: true, updatedAt: true },
+});
+const freshPairs = new Set(
+  existing
+    .filter((r) => Date.now() - r.updatedAt.getTime() < FRESH_MS)
+    .map((r) => `${r.fromCurrency}_${r.toCurrency}`)
+);
+
+const candidates = [baseCurrency, ...otherCurrencies].filter(
+  (c) => !freshPairs.has(`${baseCurrency}_${c}`)
+);
+const results = await Promise.all(candidates.map(refreshExchangeRates));
+```
+
+Removes redundant outbound HTTP on rapid-fire refreshes and keeps the cron job idempotent within its cadence.
+
+- **Affected files:** `src/app/api/exchange-rates/refresh/route.ts`.
+
+
+### 89. Parallelize Initial Queries in `POST /api/exchange-rates/refresh`
+
+**File:** `src/app/api/exchange-rates/refresh/route.ts` (lines 7–13)
+
+The handler awaits `prisma.setting.findFirst()` and then awaits `prisma.account.findMany({ distinct: ["currency"] })` sequentially, even though neither depends on the other. On cold Neon WebSocket connections this is ~20–40 ms of pure waterfall on the critical path.
+
+**Fix:**
+
+```ts
+const [settings, accounts] = await Promise.all([
+  prisma.setting.findFirst(),
+  prisma.account.findMany({ select: { currency: true }, distinct: ["currency"] }),
+]);
+const baseCurrency = settings?.baseCurrency ?? "USD";
+```
+
+A ten-minute change that shaves one DB round-trip off every exchange-rate refresh (user-triggered and scheduled).
+
+- **Affected files:** `src/app/api/exchange-rates/refresh/route.ts`.
+
+
+### 90. Memoize Derived Chart Data in `AllocationChart`, `CurrencyExposureChart`, `TrendChart`
+
+**Files:**
+- `src/components/dashboard/allocation-chart.tsx` (lines 20–37) — rebuilds `categoryMap`, `total`, and the `data` array on every render.
+- `src/components/dashboard/currency-exposure-chart.tsx` — same pattern: per-render `reduce` + `map` + `toFixed`.
+- `src/components/dashboard/trend-chart.tsx` (lines 38–45) — rebuilds `filtered` (and a fresh `cutoff` Date) on every render, including unrelated parent re-renders.
+
+These components sit on the dashboard and re-render whenever the parent state, price ticks, or theme toggle changes. Each rebuild allocates fresh object references, which also forces Recharts to treat the `data` prop as new and recompute scales/axes even when the underlying values are unchanged.
+
+**Fix:** Wrap the derivations in `useMemo` keyed on their actual inputs.
+
+```tsx
+// trend-chart.tsx
+const filtered = useMemo(() => {
+  if (hideRangeFilter || selectedRange.days === Infinity) return snapshots;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - selectedRange.days);
+  return snapshots.filter((s) => new Date(s.date) >= cutoff);
+}, [snapshots, selectedRange.days, hideRangeFilter]);
+
+// allocation-chart.tsx
+const data = useMemo(() => {
+  const categoryMap = new Map<string, number>();
+  for (const a of summary.accounts) {
+    if (a.type !== "ASSET") continue;
+    categoryMap.set(a.category, (categoryMap.get(a.category) ?? 0) + a.totalValueInBaseCurrency);
+  }
+  const total = [...categoryMap.values()].reduce((x, y) => x + y, 0);
+  return [...categoryMap.entries()]
+    .map(([category, value]) => ({
+      name: t(`categories.${category}`, { defaultValue: category }),
+      value: Math.round(value * 100) / 100,
+      percentage: total > 0 ? ((value / total) * 100).toFixed(1) : "0",
+    }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
+}, [summary.accounts, t]);
+```
+
+- **Affected files:** `src/components/dashboard/allocation-chart.tsx`, `src/components/dashboard/currency-exposure-chart.tsx`, `src/components/dashboard/trend-chart.tsx`.
+
+
+### 91. Stabilize Inline `tickFormatter` Functions in `TrendChart`
+
+**File:** `src/components/dashboard/trend-chart.tsx` (lines 83–96)
+
+Both `<XAxis tickFormatter={(v) => ...} />` and `<YAxis tickFormatter={(v) => ...} />` receive inline arrow functions. Every render allocates a fresh function identity, which defeats Recharts' shallow-prop memoization on the axis components. Combined with the per-render `filtered` rebuild (#90), this forces axis redraws during window resizes, range-button clicks, and parent price ticks.
+
+**Fix:** Hoist the formatters to module scope — they do not close over props — or wrap them in `useCallback` inside the component:
+
+```tsx
+// Module scope (cleanest — zero dependencies)
+const formatXTick = (v: string) => {
+  const d = new Date(v);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+};
+const formatYTick = (v: number) =>
+  v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M`
+  : v >= 1_000 ? `${(v / 1_000).toFixed(0)}K`
+  : String(v);
+
+// …then in JSX:
+<XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={formatXTick} />
+<YAxis tick={{ fontSize: 12 }} tickFormatter={formatYTick} />
+```
+
+- **Affected files:** `src/components/dashboard/trend-chart.tsx`.
+
+
+### 92. Batch `PriceCache` Upserts via `prisma.$transaction`
+
+**File:** `src/lib/services/price-service.ts` (lines 147–155)
+
+`refreshAllPrices` fires N parallel `prisma.priceCache.upsert()` calls through `Promise.allSettled`. Each upsert is its own round-trip over the Neon WebSocket. For a realistic portfolio spanning 30–50 unique symbols (stocks + ETFs + crypto), that's 30–50 network round-trips per refresh even though each payload is tiny. On the daily cron job — which runs inside `GET /api/cron/snapshot` right before snapshots are written — this round-trip count is the dominant component of latency.
+
+**Fix:** Pipeline the upserts into a single `prisma.$transaction([...])` so the Neon driver sends them as one interactive-transaction batch instead of N independent ones:
+
+```ts
+const entries = [...allPrices];
+const upserts = entries.map(([symbol, { price, currency }]) =>
+  prisma.priceCache.upsert({
+    where: { symbol },
+    update: { price, currency, updatedAt: new Date() },
+    create: { symbol, price, currency },
+  })
+);
+
+try {
+  await prisma.$transaction(upserts);
+  updated = upserts.length;
+} catch (error) {
+  errors.push(`Batch upsert failed: ${String(error)}`);
+}
+```
+
+If per-symbol error granularity is desired, chunk into small batches (e.g. 10) and run each chunk inside its own transaction. This still collapses 30–50 round-trips into 3–5. Expected impact: meaningful reduction in cron-job wall time and in the "Refresh Prices" button latency perceived by users.
+
+- **Affected files:** `src/lib/services/price-service.ts`.
