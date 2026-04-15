@@ -247,6 +247,16 @@
     "importSuccessTitle": "Import Successful",
     "importSuccessMessage": "Your data has been restored successfully. Please refresh the page to see the changes."
   },
+  "installApp": {
+    "title": "Add to Home Screen",
+    "description": "Access Asset Tracker like a native app directly from your home screen.",
+    "platform": "Works in Safari on iPhone and iPad",
+    "step1": "Open this page in Safari on your iPhone or iPad",
+    "step2Before": "Tap the Share button",
+    "step2After": "in the toolbar",
+    "step3": "Scroll down and tap \"Add to Home Screen\"",
+    "step4": "Tap \"Add\" — the app icon will appear on your home screen"
+  },
   "login": {
     "title": "Asset Tracker",
     "subtitle": "Securely access your financial portfolio",
