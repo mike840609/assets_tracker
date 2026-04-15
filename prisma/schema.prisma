@@ -75,6 +75,7 @@ model Holding {
   transactions HoldingTransaction[]
 
   @@unique([accountId, symbol])
+  @@index([symbol])
 }
 
 enum TransactionType {
