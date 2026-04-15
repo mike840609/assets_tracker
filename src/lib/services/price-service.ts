@@ -23,7 +23,7 @@ const COINGECKO_IDS: Record<string, string> = {
   APT: "aptos",
 };
 
-export async function fetchStockPrices(
+async function fetchYahooQuotes(
   symbols: string[]
 ): Promise<Map<string, { price: number; currency: string }>> {
   const results = new Map<string, { price: number; currency: string }>();
@@ -32,13 +32,9 @@ export async function fetchStockPrices(
   try {
     const YahooFinance = (await import("yahoo-finance2")).default;
     const yahooFinance = new YahooFinance();
-    
-    // Use batching for multiple symbols in one request
     const quotes = await yahooFinance.quote(symbols);
-    const quoteArray = Array.isArray(quotes) ? quotes : [quotes];
-    
-    for (const q of quoteArray) {
-      if (q && q.regularMarketPrice && q.symbol) {
+    for (const q of Array.isArray(quotes) ? quotes : [quotes]) {
+      if (q?.regularMarketPrice && q.symbol) {
         results.set(q.symbol, {
           price: q.regularMarketPrice,
           currency: q.currency || "USD",
@@ -46,10 +42,16 @@ export async function fetchStockPrices(
       }
     }
   } catch (error) {
-    console.error("Failed to fetch stock prices:", error);
+    console.error("Yahoo Finance fetch failed:", error);
   }
 
   return results;
+}
+
+export async function fetchStockPrices(
+  symbols: string[]
+): Promise<Map<string, { price: number; currency: string }>> {
+  return fetchYahooQuotes(symbols);
 }
 
 // Strip currency suffix from crypto symbol (e.g. "BTC-USD" -> "BTC")
@@ -60,31 +62,12 @@ function stripCurrencySuffix(symbol: string): string {
 export async function fetchCryptoPrices(
   symbols: string[]
 ): Promise<Map<string, { price: number; currency: string }>> {
-  const results = new Map<string, { price: number; currency: string }>();
-  if (symbols.length === 0) return results;
+  if (symbols.length === 0) return new Map();
 
-  // Primary: Use Yahoo Finance (crypto symbols like BTC-USD are valid Yahoo symbols)
-  try {
-    const YahooFinance = (await import("yahoo-finance2")).default;
-    const yahooFinance = new YahooFinance();
-    
-    // Batch fetch crypto quotes (Yahoo handles crypto pairs like BTC-USD)
-    const quotes = await yahooFinance.quote(symbols);
-    const quoteArray = Array.isArray(quotes) ? quotes : [quotes];
-    
-    for (const q of quoteArray) {
-      if (q && q.regularMarketPrice && q.symbol) {
-        results.set(q.symbol, {
-          price: q.regularMarketPrice,
-          currency: q.currency || "USD",
-        });
-      }
-    }
-  } catch (error) {
-    console.error("Yahoo Finance crypto fetch failed:", error);
-  }
+  // Primary: Yahoo Finance (handles crypto pairs like BTC-USD)
+  const results = await fetchYahooQuotes(symbols);
 
-  // Fallback: Use CoinGecko for any symbols not found via Yahoo Finance
+  // Fallback: CoinGecko for any symbols not found via Yahoo Finance
   const missing = symbols.filter((s) => !results.has(s));
   if (missing.length > 0) {
     const symbolMap = missing.map((s) => {

@@ -882,7 +882,7 @@ This allows CDN edges and the browser to serve the cached response for up to 1 h
 | # | Suggestion | Category | Impact | Effort | Status |
 |---|-----------|----------|--------|--------|--------|
 | 76 | Extract `withAuth()` HOF for API routes | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
-| 77 | Unify Yahoo Finance quote fetcher (stock + crypto) | Code Quality | 🟢 Low | 30 min | ❌ Not Done |
+| 77 | Unify Yahoo Finance quote fetcher (stock + crypto) | Code Quality | 🟢 Low | 30 min | ✅ Done |
 | 78 | Dedupe `normalizeSnapshots` in history-service | Code Quality | 🟡 Medium | 1 hr | ✅ Done |
 | 79 | Centralize exchange-rate upsert (`persistExchangeRate`) | Code Quality | 🟢 Low | 30 min | ✅ Done |
 | 80 | Share chart tooltip/legend formatters | Code Quality | 🟡 Medium | 30 min | ✅ Done |
