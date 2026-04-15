@@ -887,7 +887,7 @@ This allows CDN edges and the browser to serve the cached response for up to 1 h
 | 79 | Centralize exchange-rate upsert (`persistExchangeRate`) | Code Quality | 🟢 Low | 30 min | ✅ Done |
 | 80 | Share chart tooltip/legend formatters | Code Quality | 🟡 Medium | 30 min | ✅ Done |
 | 81 | Extract `<HoldingSearch>` component | Code Quality | 🟡 Medium | 1-2 hrs | ✅ Done |
-| 82 | `formatQuantity()` helper in `currencies.ts` | Code Quality | 🟢 Low | 30 min | ❌ Not Done |
+| 82 | `formatQuantity()` helper in `currencies.ts` | Code Quality | 🟢 Low | 30 min | ✅ Done |
 | 83 | Shared enum constants for Prisma/Zod | Code Quality | 🟡 Medium | 30 min | ✅ Done |
 | 84 | `Serialized<T>` type + `serializeModel` helper | Code Quality | 🟡 Medium | 1-2 hrs | ✅ Done |
 | 85 | Standardize API response shape | Code Quality | 🟡 Medium | 2-3 hrs | ✅ Done |
