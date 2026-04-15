@@ -54,6 +54,11 @@ export function formatNumber(amount: number, decimals = 2): string {
   }).format(amount);
 }
 
+export function formatQuantity(qty: number, assetType: string): string {
+  const decimals = assetType === "CRYPTO" ? 7 : 2;
+  return formatNumber(qty, decimals);
+}
+
 export function getLocaleDefaultCurrency(locale: string): string {
   if (locale.includes("zh-TW")) return "TWD";
   return "USD";

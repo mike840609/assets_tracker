@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { formatCurrency } from "@/lib/currencies";
+import { formatCurrency, formatQuantity } from "@/lib/currencies";
 import { AccountForm } from "./account-form";
 import { QuickAddHolding } from "./quick-add-holding";
 import { toast } from "sonner";
@@ -423,7 +423,7 @@ function AccountCardWithHoldings({
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 text-right">
                         <span className="text-xs text-muted-foreground tabular-nums">
-                          {h.assetType === "CRYPTO" ? h.quantity.toFixed(4) : h.quantity.toFixed(2)}
+                          {formatQuantity(h.quantity, h.assetType)}
                         </span>
                         <span className="text-sm font-medium tabular-nums w-20 text-right">
                           {h.marketValue !== null ? formatCurrency(h.marketValue, account.currency) : "—"}
