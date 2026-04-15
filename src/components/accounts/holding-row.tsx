@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formatCurrency, formatNumber } from "@/lib/currencies";
+import { formatCurrency, formatQuantity } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
 import type { SerializedHolding } from "@/lib/types";
 
@@ -25,8 +25,6 @@ interface HoldingRowProps {
 
 export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, onDelete }: HoldingRowProps) {
   const t = useTranslations();
-  const quantityDecimals = h.assetType === "CRYPTO" ? 7 : 2;
-
   return (
     <TableRow key={h.id}>
       <TableCell className="font-mono font-medium">{h.symbol}</TableCell>
@@ -38,7 +36,7 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
         <Badge variant="outline">{h.currency || "USD"}</Badge>
       </TableCell>
       <TableCell className="text-right">
-        {formatNumber(h.quantity, quantityDecimals)}
+        {formatQuantity(h.quantity, h.assetType)}
       </TableCell>
       <TableCell className="text-right">
         {h.currentPrice !== null

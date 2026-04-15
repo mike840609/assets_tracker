@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatNumber } from "@/lib/currencies";
+import { formatQuantity } from "@/lib/currencies";
 import type { SerializedTransaction } from "@/lib/types";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -197,7 +197,6 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
                 const typeVariant = TYPE_VARIANTS[tx.type] ?? "secondary";
                 const typeKey = `type${tx.type.charAt(0) + tx.type.slice(1).toLowerCase()}` as Parameters<typeof t>[0];
                 const typeLabel = t.has(typeKey) ? t(typeKey) : tx.type;
-                const isCrypto = tx.holding?.assetType === "CRYPTO";
                 return (
                   <TableRow key={tx.id}>
                     <TableCell className="text-muted-foreground">
@@ -217,7 +216,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
                     </TableCell>
                     <TableCell className="text-right">
                       {tx.quantity > 0 ? "+" : ""}
-                      {formatNumber(tx.quantity, isCrypto ? 7 : 2)}
+                      {formatQuantity(tx.quantity, tx.holding?.assetType ?? "")}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {tx.note || "—"}
