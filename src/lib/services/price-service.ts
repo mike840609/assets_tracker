@@ -127,23 +127,24 @@ export async function refreshAllPrices(): Promise<{
 
   const allPrices = new Map([...stockPrices, ...cryptoPrices]);
 
-  const upsertResults = await Promise.allSettled(
-    [...allPrices].map(([symbol, { price, currency }]) =>
+  const entries = [...allPrices];
+  const CHUNK_SIZE = 10;
+
+  for (let i = 0; i < entries.length; i += CHUNK_SIZE) {
+    const chunk = entries.slice(i, i + CHUNK_SIZE);
+    const upserts = chunk.map(([symbol, { price, currency }]) =>
       prisma.priceCache.upsert({
         where: { symbol },
         update: { price, currency, updatedAt: new Date() },
         create: { symbol, price, currency },
       })
-    )
-  );
-
-  for (let i = 0; i < upsertResults.length; i++) {
-    const result = upsertResults[i];
-    if (result.status === "fulfilled") {
-      updated++;
-    } else {
-      const symbol = [...allPrices.keys()][i];
-      errors.push(`Failed to update ${symbol}: ${result.reason}`);
+    );
+    try {
+      await prisma.$transaction(upserts);
+      updated += chunk.length;
+    } catch (error) {
+      const symbols = chunk.map(([s]) => s).join(", ");
+      errors.push(`Batch upsert failed for [${symbols}]: ${String(error)}`);
     }
   }
 
