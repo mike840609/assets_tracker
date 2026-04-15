@@ -15,13 +15,12 @@ async function HistoryContent() {
   const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
-  const [t, allMessages, settings] = await Promise.all([
+  const settings = await getOrCreateSettings(userId);
+  const [t, allMessages, snapshots] = await Promise.all([
     getTranslations("history"),
     getMessages(),
-    getOrCreateSettings(userId),
+    getNormalizedHistory(userId, settings.baseCurrency),
   ]);
-
-  const snapshots = await getNormalizedHistory(userId, settings.baseCurrency);
 
   return (
     <NextIntlClientProvider messages={pickMessages(allMessages, CLIENT_NAMESPACES)}>
