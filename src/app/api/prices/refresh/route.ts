@@ -4,6 +4,6 @@ import { ok } from "@/lib/api-responses";
 
 export async function POST() {
   const result = await refreshAllPrices();
-  revalidateTag("net-worth");
+  revalidateTag("net-worth", "max");
   return ok(result);
 }

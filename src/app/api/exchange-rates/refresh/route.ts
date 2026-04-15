@@ -21,6 +21,6 @@ export async function POST() {
   ]);
   const totalUpdated = results.reduce((a, b) => a + b, 0);
 
-  revalidateTag("exchange-rates");
+  revalidateTag("exchange-rates", "max");
   return ok({ updated: totalUpdated, baseCurrency });
 }

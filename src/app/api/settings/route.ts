@@ -28,7 +28,7 @@ export const PATCH = withAuth(async (request, _ctx, userId) => {
     },
   });
 
-  revalidateTag("settings");
+  revalidateTag("settings", "max");
 
   const response = ok(settings);
 

@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     // 1. Refresh all prices first to ensure the snapshot is accurate
     console.log("Cron: Refreshing prices...");
     await refreshAllPrices();
-    revalidateTag("net-worth");
+    revalidateTag("net-worth", "max");
 
     // 2. Get all users and their settings
     const users = await prisma.user.findMany({
