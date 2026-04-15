@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { DataManagement } from "@/components/settings/data-management";
+import { InstallAppCard } from "@/components/settings/install-app-card";
 import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
@@ -29,6 +30,7 @@ async function SettingsContent() {
         <h2 className="text-2xl font-bold tracking-tight">{t("title")}</h2>
         <SettingsForm currentCurrency={settings.baseCurrency} currentLocale={settings.locale} />
         <DataManagement />
+        <InstallAppCard />
 
         <div className="mt-8 border-t pt-8 max-w-lg">
           <h3 className="text-lg font-medium text-red-500 mb-4">{t("dangerZone")}</h3>

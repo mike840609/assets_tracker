@@ -247,6 +247,16 @@
     "importSuccessTitle": "匯入成功",
     "importSuccessMessage": "您的資料已成功還原。請重新整理頁面以查看變更。"
   },
+  "installApp": {
+    "title": "加入主畫面",
+    "description": "將資產追蹤器加入主畫面，像原生 App 一樣快速啟動。",
+    "platform": "適用於 iPhone 和 iPad 的 Safari 瀏覽器",
+    "step1": "在 iPhone 或 iPad 上用 Safari 開啟本頁",
+    "step2Before": "點選",
+    "step2After": "工具列上的分享按鈕",
+    "step3": "往下捲動並點選「加入主畫面」",
+    "step4": "點選「新增」— App 圖示即會出現在主畫面上"
+  },
   "login": {
     "title": "資產追蹤",
     "subtitle": "安全地訪問您的財務投資組合",
