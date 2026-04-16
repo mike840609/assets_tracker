@@ -286,6 +286,38 @@
     "googleButton": "Continue with Google",
     "footer": "By continuing, you agree to secure your data privately."
   },
+  "onboarding": {
+    "tourTitle": "App Tour",
+    "tourDescription": "Take a guided walkthrough of all the key features.",
+    "takeTour": "Take Tour",
+    "step": "{current} / {total}",
+    "skip": "Skip",
+    "previous": "Previous",
+    "next": "Next",
+    "getStarted": "Get Started",
+    "steps": {
+      "netWorth": {
+        "title": "Your Net Worth at a Glance",
+        "description": "The dashboard shows your total net worth, what you own vs. what you owe, and how your portfolio is split by category — all updated whenever you refresh prices."
+      },
+      "allocation": {
+        "title": "See Where Your Money Lives",
+        "description": "The allocation chart breaks down your assets by account type — bank, brokerage, crypto, property, and more. Spot concentration risk at a glance."
+      },
+      "accounts": {
+        "title": "Assets & Liabilities Together",
+        "description": "Every account you track lives here. Assets (savings, investments, crypto) and liabilities (credit cards, loans) are grouped separately. Net worth = assets − liabilities."
+      },
+      "holdings": {
+        "title": "Track Individual Holdings",
+        "description": "Drill into any investment account to see each position with live market prices, quantities, and current market value. Supports stocks, ETFs, crypto, mutual funds, and bonds."
+      },
+      "finish": {
+        "title": "Ready to Start Tracking!",
+        "description": "Add your first account and start building a clear picture of your finances. Prices refresh automatically, and daily snapshots capture your progress over time."
+      }
+    }
+  },
   "transactionHistory": {
     "title": "Transaction History",
     "loading": "Loading...",

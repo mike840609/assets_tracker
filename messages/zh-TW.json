@@ -286,6 +286,38 @@
     "googleButton": "使用 Google 帳號繼續",
     "footer": "繼續操作即表示您同意私密地保護您的數據。"
   },
+  "onboarding": {
+    "tourTitle": "功能導覽",
+    "tourDescription": "透過引導式導覽，快速了解所有主要功能。",
+    "takeTour": "開始導覽",
+    "step": "{current} / {total}",
+    "skip": "跳過",
+    "previous": "上一步",
+    "next": "下一步",
+    "getStarted": "開始使用",
+    "steps": {
+      "netWorth": {
+        "title": "一目瞭然的淨資產",
+        "description": "儀表板顯示您的總淨資產、資產與負債對比，以及投資組合的類別分配——每次重新整理價格時自動更新。"
+      },
+      "allocation": {
+        "title": "掌握資金分布",
+        "description": "資產配置圖依帳戶類型（銀行、券商、加密貨幣、房產等）呈現資產比例，讓您一眼看出集中風險。"
+      },
+      "accounts": {
+        "title": "資產與負債一覽",
+        "description": "所有帳戶集中管理。資產（存款、投資、加密貨幣）與負債（信用卡、貸款）分組顯示。淨資產 = 資產 − 負債。"
+      },
+      "holdings": {
+        "title": "追蹤個別持倉",
+        "description": "深入任何投資帳戶，查看各持倉的即時市價、數量與當前市值。支援股票、ETF、加密貨幣、共同基金與債券。"
+      },
+      "finish": {
+        "title": "準備好開始追蹤了！",
+        "description": "新增您的第一個帳戶，開始建立清晰的財務全貌。價格自動更新，每日快照持續記錄您的成長歷程。"
+      }
+    }
+  },
   "transactionHistory": {
     "title": "交易紀錄",
     "loading": "載入中...",

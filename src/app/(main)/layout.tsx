@@ -1,5 +1,6 @@
 import { Sidebar, MobileNav } from "@/components/layout/sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
+import { OnboardingCheck } from "@/components/onboarding/onboarding-check";
 
 export default function MainLayout({
   children,
@@ -14,6 +15,7 @@ export default function MainLayout({
         <div className="mx-auto w-full max-w-6xl p-4 md:p-6">{children}</div>
       </main>
       <MobileNav />
+      <OnboardingCheck />
     </>
   );
 }
