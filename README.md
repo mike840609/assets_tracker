@@ -97,7 +97,8 @@ This approach ensures that your trend lines always remain continuous and compara
 
 ## 📝 Roadmap
 
-Check the [SUGGESTIONS.md](./SUGGESTIONS.md) file for the prioritized feature roadmap.
+- [SUGGESTIONS.md](./docs/SUGGESTIONS.md) — prioritized feature roadmap across the whole app.
+- [ANALYSIS_ROADMAP.md](./docs/ANALYSIS_ROADMAP.md) — phased roadmap for the `/analysis` tab.
 
 ## 📄 License
 
