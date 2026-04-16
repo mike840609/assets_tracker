@@ -205,71 +205,80 @@ export function TutorialDialog({ open, onOpenChange }: TutorialDialogProps) {
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) handleClose(); }}>
       <DialogContent
         showCloseButton={false}
-        className="max-w-2xl w-full p-0 overflow-hidden"
+        className="max-w-2xl w-full p-0"
       >
-        {/* Preview area */}
-        <div className="flex min-h-[220px] items-center justify-center bg-muted/30 px-6 py-6">
-          <div className="w-full max-w-lg">
-            <StepPreview />
-          </div>
-        </div>
+        {/*
+          Single child div so the base DialogContent grid stays happy (1 row, no gap issues).
+          Flex column with max-h keeps the footer always visible; the body scrolls if needed.
+        */}
+        <div className="flex flex-col max-h-[90svh] overflow-hidden rounded-xl">
+          {/* Scrollable body: preview + text */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {/* Preview area */}
+            <div className="flex min-h-[220px] items-center justify-center bg-muted/30 px-6 py-6">
+              <div className="w-full max-w-lg">
+                <StepPreview />
+              </div>
+            </div>
 
-        {/* Text content */}
-        <div className="px-6 pt-4 pb-2">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">
-              {t(`steps.${stepKey}.title`)}
-            </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
-              {t(`steps.${stepKey}.description`)}
-            </DialogDescription>
-          </DialogHeader>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border/50">
-          {/* Step dots */}
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: totalSteps }).map((_, i) => (
-              <span
-                key={i}
-                className={cn(
-                  "inline-block h-2 rounded-full transition-all duration-200",
-                  i === step
-                    ? "w-5 bg-primary"
-                    : "w-2 bg-muted-foreground/30"
-                )}
-              />
-            ))}
+            {/* Text content */}
+            <div className="px-6 pt-4 pb-6">
+              <DialogHeader>
+                <DialogTitle className="text-lg font-semibold">
+                  {t(`steps.${stepKey}.title`)}
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
+                  {t(`steps.${stepKey}.description`)}
+                </DialogDescription>
+              </DialogHeader>
+            </div>
           </div>
 
-          {/* Navigation */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors mr-1"
-            >
-              {t("skip")}
-            </button>
-            {step > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setStep((s) => s - 1)}
+          {/* Pinned footer — never clipped */}
+          <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-y-3 px-6 py-4 border-t border-border/50 bg-popover">
+            {/* Step dots */}
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: totalSteps }).map((_, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "inline-block h-2 rounded-full transition-all duration-200",
+                    i === step
+                      ? "w-5 bg-primary"
+                      : "w-2 bg-muted-foreground/30"
+                  )}
+                />
+              ))}
+            </div>
+
+            {/* Navigation buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors mr-1"
               >
-                {t("previous")}
-              </Button>
-            )}
-            {isLast ? (
-              <Button size="sm" onClick={handleClose}>
-                {t("getStarted")}
-              </Button>
-            ) : (
-              <Button size="sm" onClick={() => setStep((s) => s + 1)}>
-                {t("next")}
-              </Button>
-            )}
+                {t("skip")}
+              </button>
+              {step > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setStep((s) => s - 1)}
+                >
+                  {t("previous")}
+                </Button>
+              )}
+              {isLast ? (
+                <Button size="sm" onClick={handleClose}>
+                  {t("getStarted")}
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => setStep((s) => s + 1)}>
+                  {t("next")}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>
