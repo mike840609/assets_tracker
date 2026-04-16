@@ -83,7 +83,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">{t("assetsVsLiabilities")}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-4">
         {data.length === 0 ? (
           <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noData")}
@@ -92,10 +92,11 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
           <div className="h-[280px]" />
         ) : (
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <BarChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="label" tick={{ fontSize: 12 }} />
               <YAxis
+                width={40}
                 tick={{ fontSize: 12 }}
                 tickFormatter={(v) =>
                   v >= 1000000
