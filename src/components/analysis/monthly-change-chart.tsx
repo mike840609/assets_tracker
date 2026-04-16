@@ -99,6 +99,10 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
         ) : !mounted ? (
           <div className="h-[280px]" />
         ) : (
+          <div className="relative">
+            {privacyMode && (
+              <div className="absolute inset-0 backdrop-blur-sm bg-background/30 rounded-lg z-10" />
+            )}
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -135,6 +139,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>

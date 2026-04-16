@@ -95,37 +95,42 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
         ) : !mounted ? (
           <div className="h-[280px]" />
         ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-              <YAxis
-                width={40}
-                tick={{ fontSize: 12 }}
-                tickFormatter={(v) =>
-                  v >= 1000000
-                    ? `${(v / 1000000).toFixed(1)}M`
-                    : v >= 1000
-                      ? `${(v / 1000).toFixed(0)}K`
-                      : String(v)
-                }
-              />
-              <Tooltip content={<AssetsTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar
-                dataKey="assets"
-                name={t("seriesAssets")}
-                fill="var(--chart-1)"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey="liabilities"
-                name={t("seriesLiabilities")}
-                fill="var(--destructive)"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="relative">
+            {privacyMode && (
+              <div className="absolute inset-0 backdrop-blur-sm bg-background/30 rounded-lg z-10" />
+            )}
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                <YAxis
+                  width={40}
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(v) =>
+                    v >= 1000000
+                      ? `${(v / 1000000).toFixed(1)}M`
+                      : v >= 1000
+                        ? `${(v / 1000).toFixed(0)}K`
+                        : String(v)
+                  }
+                />
+                <Tooltip content={<AssetsTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar
+                  dataKey="assets"
+                  name={t("seriesAssets")}
+                  fill="var(--chart-1)"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="liabilities"
+                  name={t("seriesLiabilities")}
+                  fill="var(--destructive)"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>
