@@ -95,10 +95,17 @@
 | 89 | Parallelize initial queries in exchange-rate refresh | Performance | 🟢 Low | 10 min | ❌ Not Done |
 | 90 | Memoize derived data in chart components | Performance | 🟡 Medium | 30 min | ❌ Not Done |
 | 91 | Stabilize inline `tickFormatter`s in `TrendChart` | Performance | 🟢 Low | 15 min | ❌ Not Done |
-| 92 | Batch `PriceCache` upserts via `$transaction` | Performance | 🔴 High | 30 min | ❌ Not Done |
-| 93 | Update Onboarding Empty State Text | UX | 🟢 Low | 15 min | ❌ Not Done |
-| 94 | Clarify "Growth" definition with Tooltips | UX | 🟢 Low | 30 min | ❌ Not Done |
-| 95 | Remove/Tweak "P&L" or "Trading" jargon | UX | 🟡 Medium | 1 hr | ❌ Not Done |
+| 92 | Batch `PriceCache` upserts via `$transaction` | Performance | 🔴 High | 30 min | ✅ Done |
+| 93 | Deduplicate `recentSnapshots` query in dashboard sections | Performance | 🟡 Medium | 15 min | ❌ Not Done |
+| 94 | Parallelize account detail page waterfall | Performance | 🟡 Medium | 15 min | ❌ Not Done |
+| 95 | Add `Cache-Control` headers to `GET /api/exchange-rates` | Performance | 🟢 Low | 15 min | ❌ Not Done |
+| 96 | Prefetch high-traffic routes in accounts list | Performance | 🟡 Medium | 15 min | ❌ Not Done |
+| 97 | Scope cron `refreshAllPrices` to per-user symbols | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
+| 98 | Lazy-load `AccountForm` / `QuickAddHolding` dialogs | Performance | 🟡 Medium | 30 min | ❌ Not Done |
+| 99 | Add `useMemo` to `getAccountValue` in `AccountsList` | Performance | 🟡 Medium | 15 min | ❌ Not Done |
+| 100 | Update Onboarding Empty State Text | UX | 🟢 Low | 15 min | ❌ Not Done |
+| 101 | Clarify "Growth" definition with Tooltips | UX | 🟢 Low | 30 min | ❌ Not Done |
+| 102 | Remove/Tweak "P&L" or "Trading" jargon | UX | 🟡 Medium | 1 hr | ❌ Not Done |
 
 ---
 
@@ -1377,6 +1384,7 @@ If per-symbol error granularity is desired, chunk into small batches (e.g. 10) a
 
 ---
 
+<<<<<<< HEAD
 ## 2026-04-16 App Philosophy & Wealth Tracking UX
 
 > New targeted suggestions to improve the UX and product copy to communicate that Asset Tracker is a holistic wealth tracker based on snapshots, rather than a short-term trading P&L tool.
@@ -1401,3 +1409,222 @@ To avoid setting up the application as a strict stock-trading tracker:
 - Avoid words like `Cost Basis`, `Realized / Unrealized Gains`, `P&L`, `Buy/Sell`.
 - Instead, lean entirely on wording such as `Current Value`, `Net Worth Change`, `Transaction Type`, `Total Allocation`, `Asset Distribution`.
 - Make sure that currency conversion loss/gain is absorbed conceptually into "wealth change" rather than explicitly highlighted as Forex speculation.
+=======
+## 2026-04-16 Performance Audit
+
+> Fresh performance findings from a full codebase read. Items #93–99.
+
+---
+
+### 93. Deduplicate `recentSnapshots` Query in Dashboard Sections
+
+**Files:** `src/components/dashboard/dashboard-content.tsx` (lines 86–97 and 122–130)
+
+`DashboardActionsSection` and `NetWorthSection` both issue the same Prisma query:
+
+```ts
+prisma.netWorthSnapshot.findMany({
+  where: { userId },
+  orderBy: { date: "desc" },
+  take: 2,
+  select: { date: true, netWorth: true, baseCurrency: true },
+});
+```
+
+Because these are separate async RSCs wrapped in independent `<Suspense>` boundaries, React's `cache()` dedup does **not** apply across them — each triggers its own DB round-trip. The result is two identical queries hitting Neon on every dashboard load.
+
+**Fix:** Extract the query into a React `cache()`-wrapped helper at module scope (similar to `fetchUserAccountsWithHoldings`), then call it from both sections:
+
+```ts
+const fetchRecentSnapshots = cache((userId: string) =>
+  prisma.netWorthSnapshot.findMany({
+    where: { userId },
+    orderBy: { date: "desc" },
+    take: 2,
+    select: { date: true, netWorth: true, baseCurrency: true },
+  })
+);
+```
+
+Both `DashboardActionsSection` and `NetWorthSection` then call `fetchRecentSnapshots(userId)` and share a single DB round-trip within the same server render.
+
+- **Affected files:** `src/components/dashboard/dashboard-content.tsx`
+
+
+### 94. Parallelize Account Detail Page Waterfall
+
+**File:** `src/app/(main)/accounts/[id]/page.tsx` (lines 17–31)
+
+The page runs a sequential two-phase fetch:
+
+```ts
+// Phase 1 — must complete before Phase 2 starts
+const account = await prisma.account.findUnique({ ... });
+if (!account) notFound();
+
+// Phase 2 — blocked until Phase 1 finishes
+const [allRatesMap, cachedPrices, messages] = await Promise.all([
+  getAllExchangeRates(),
+  prisma.priceCache.findMany({ where: { symbol: { in: symbols } } }),
+  getMessages(),
+]);
+```
+
+`getAllExchangeRates()` and `getMessages()` do **not** depend on the account result. Only `cachedPrices` needs the symbol list from the account. Starting the exchange rates and messages fetches in parallel with the account query eliminates one round-trip from the critical path.
+
+**Fix:**
+
+```ts
+// Kick off independent queries immediately
+const accountP = prisma.account.findUnique({
+  where: { id },
+  include: { holdings: { where: { quantity: { gt: 0 } } } },
+});
+const ratesP = getAllExchangeRates();
+const messagesP = getMessages();
+
+const account = await accountP;
+if (!account) notFound();
+
+const symbols = account.holdings.map((h) => h.symbol);
+const [allRatesMap, cachedPrices, messages] = await Promise.all([
+  ratesP,
+  prisma.priceCache.findMany({ where: { symbol: { in: symbols } } }),
+  messagesP,
+]);
+```
+
+Expected impact: ~20–40ms shaved off account detail page TTFB on cold Neon connections (one fewer sequential round-trip).
+
+- **Affected files:** `src/app/(main)/accounts/[id]/page.tsx`
+
+
+### 95. Add `Cache-Control` Headers to `GET /api/exchange-rates`
+
+> Mirrors the existing suggestion #75, but re-flagged here because it remains unimplemented and is a zero-effort performance win.
+
+**File:** `src/app/api/exchange-rates/route.ts`
+
+The `GET /api/exchange-rates` endpoint returns all stored exchange rates with no caching headers. Exchange rates are refreshed at most once per hour by user action, yet every client-side `fetch` or page navigation re-fetches this endpoint from the origin.
+
+**Fix:** Add a `Cache-Control` response header:
+
+```ts
+return NextResponse.json(rates, {
+  headers: {
+    "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+  },
+});
+```
+
+CDN edges and browsers cache the response for up to 1 hour, with stale-while-revalidate for up to 24 hours. The `POST /api/exchange-rates/refresh` mutation naturally bypasses this.
+
+- **Affected files:** `src/app/api/exchange-rates/route.ts`
+
+
+### 96. Prefetch High-Traffic Routes in Accounts List
+
+**File:** `src/components/accounts/accounts-list.tsx`
+
+Each account card renders `<Link href={`/accounts/${account.id}`}>`. Next.js auto-prefetches visible `<Link>` elements, but because account cards are inside a collapse animation (`grid-rows-[0fr]` → `grid-rows-[1fr]`), the links aren't considered "visible" until the user expands a category. By that point, the user is likely to click immediately — and the prefetch hasn't started yet.
+
+**Fix:** On category expand, proactively call `router.prefetch()` for each account in the newly-expanded section:
+
+```ts
+function toggleCategory(type: string, category: string) {
+  const key = `${type}_${category}`;
+  setExpandedCategories((prev) => {
+    const next = new Set(prev);
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+      // Prefetch account detail pages for the revealed category
+      const catAccounts =
+        type === "ASSET"
+          ? assetsByCategory.find((c) => c.category === category)?.accounts
+          : liabilitiesByCategory.find((c) => c.category === category)?.accounts;
+      catAccounts?.forEach((a) => router.prefetch(`/accounts/${a.id}`));
+    }
+    return next;
+  });
+}
+```
+
+This ensures the RSC payload is pre-fetched by the time the user clicks, making account detail navigation feel near-instant.
+
+- **Affected files:** `src/components/accounts/accounts-list.tsx`
+
+
+### 97. Scope Cron `refreshAllPrices` to Per-User Symbols
+
+**File:** `src/lib/services/price-service.ts` (lines 107–110), `src/app/api/cron/snapshot/route.ts`
+
+`refreshAllPrices` queries `prisma.holding.findMany({ distinct: ["symbol"] })` across **all users**. As the user count grows, this fetches symbols from every user's portfolio — including inactive accounts and zero-quantity holdings that have been sold.
+
+The cron route already iterates users individually for snapshot creation; there's no need to refresh prices for holdings that no active user owns.
+
+**Fix:** Add a `userId` filter or at least scope to active accounts:
+
+```ts
+const holdings = await prisma.holding.findMany({
+  where: {
+    quantity: { gt: 0 },
+    account: { isActive: true },
+  },
+  select: { symbol: true, assetType: true },
+  distinct: ["symbol"],
+});
+```
+
+This filters out holdings with zero quantity (already sold) and holdings in archived accounts, reducing external API calls to Yahoo Finance and CoinGecko.
+
+- **Affected files:** `src/lib/services/price-service.ts`
+
+
+### 98. Lazy-Load `AccountForm` / `QuickAddHolding` Dialogs
+
+**File:** `src/components/accounts/accounts-list.tsx` (lines 11–12, 249–250)
+
+`AccountForm` and `QuickAddHolding` are imported statically and rendered (hidden) on every accounts page load. Both are dialog/sheet components that most users don't interact with on every visit. They pull in `HoldingSearch`, `cmdk`, debounce logic, and Zod validation — all shipped eagerly in the client bundle.
+
+**Fix:** Use `next/dynamic` to lazy-load them, triggered by the button click that toggles `showForm` / `showQuickAdd`:
+
+```ts
+import dynamic from "next/dynamic";
+
+const AccountForm = dynamic(() =>
+  import("./account-form").then((m) => m.AccountForm)
+);
+const QuickAddHolding = dynamic(() =>
+  import("./quick-add-holding").then((m) => m.QuickAddHolding)
+);
+```
+
+Since these components are only rendered when the corresponding `open` state is `true`, the dynamic import's code-split chunk is only fetched once the user actually clicks "Add Account" or "Add Item". This reduces the initial JS bundle for the accounts page.
+
+- **Affected files:** `src/components/accounts/accounts-list.tsx`
+
+
+### 99. Add `useMemo` to `getAccountValue` Calls in `AccountsList`
+
+**File:** `src/components/accounts/accounts-list.tsx` (lines 286–294, 374)
+
+`getAccountValue` is called multiple times per render: once in each `CategorySection` to compute `totalInBaseCurrency`, and again for each `AccountCardWithHoldings`. When the user toggles privacy mode, expands/collapses categories, or enters selection mode, the entire tree re-renders and recomputes every account's value from scratch.
+
+**Fix:** Memoize the per-account value map once at the top of `AccountsList` and pass the pre-computed values down:
+
+```ts
+const accountValues = useMemo(() => {
+  const map = new Map<string, number>();
+  for (const account of accounts) {
+    map.set(account.id, getAccountValue(account, priceMap, ratesMap));
+  }
+  return map;
+}, [accounts, priceMap, ratesMap]);
+```
+
+`CategorySection` and `AccountCardWithHoldings` then look up `accountValues.get(account.id)` instead of recomputing. This eliminates redundant iteration over holdings and rate lookups across every re-render.
+
+- **Affected files:** `src/components/accounts/accounts-list.tsx`
+>>>>>>> origin/master
