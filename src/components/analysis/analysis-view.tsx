@@ -39,7 +39,7 @@ function rangeCutoff(months: number): Date {
 
 export function AnalysisView({ snapshots, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
-  const [range, setRange] = useState<RangeLabel>("1Y");
+  const [range, setRange] = useState<RangeLabel>("YTD");
 
   const rangeLabelKey: Record<RangeLabel, string> = {
     YTD: "rangeYTD",
