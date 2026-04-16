@@ -22,33 +22,31 @@ export async function InstallAppCard() {
   const t = await getTranslations("installApp");
 
   return (
-    <div className="max-w-lg">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <SmartphoneIcon className="h-5 w-5" />
-            {t("title")}
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">{t("description")}</p>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            {t("platform")}
-          </p>
-          <ol className="list-decimal list-inside space-y-2">
-            <li className="text-sm">{t("step1")}</li>
-            <li className="text-sm">
+    <section className="space-y-3 w-full">
+      <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+        <SmartphoneIcon className="h-4 w-4" />
+        {t("title")}
+      </h3>
+      <Card className="overflow-hidden p-0">
+        <CardContent className="p-4 space-y-4">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">{t("platform")}</p>
+            <p className="text-sm text-muted-foreground">{t("description")}</p>
+          </div>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground bg-muted/30 p-4 rounded-md">
+            <li>{t("step1")}</li>
+            <li>
               <span className="inline-flex items-center gap-1.5">
                 {t("step2Before")}
                 <ShareIcon />
                 {t("step2After")}
               </span>
             </li>
-            <li className="text-sm">{t("step3")}</li>
-            <li className="text-sm">{t("step4")}</li>
+            <li>{t("step3")}</li>
+            <li>{t("step4")}</li>
           </ol>
         </CardContent>
       </Card>
-    </div>
+    </section>
   );
 }

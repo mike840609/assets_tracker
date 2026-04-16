@@ -103,6 +103,9 @@
 | 97 | Scope cron `refreshAllPrices` to per-user symbols | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
 | 98 | Lazy-load `AccountForm` / `QuickAddHolding` dialogs | Performance | 🟡 Medium | 30 min | ❌ Not Done |
 | 99 | Add `useMemo` to `getAccountValue` in `AccountsList` | Performance | 🟡 Medium | 15 min | ❌ Not Done |
+| 100 | Update Onboarding Empty State Text | UX | 🟢 Low | 15 min | ❌ Not Done |
+| 101 | Clarify "Growth" definition with Tooltips | UX | 🟢 Low | 30 min | ❌ Not Done |
+| 102 | Remove/Tweak "P&L" or "Trading" jargon | UX | 🟡 Medium | 1 hr | ❌ Not Done |
 
 ---
 
@@ -1381,6 +1384,32 @@ If per-symbol error granularity is desired, chunk into small batches (e.g. 10) a
 
 ---
 
+<<<<<<< HEAD
+## 2026-04-16 App Philosophy & Wealth Tracking UX
+
+> New targeted suggestions to improve the UX and product copy to communicate that Asset Tracker is a holistic wealth tracker based on snapshots, rather than a short-term trading P&L tool.
+
+### 93. Update Onboarding Empty State Text
+**Files:** `src/components/dashboard/dashboard-content.tsx`, `messages/en-US.json`, `messages/zh-TW.json`
+
+Currently, the onboarding text just says "Add your first account to get started." We should make it more robust, explicitly setting user expectations:
+*"Start tracking your wealth journey. Add your accounts to visualize your steady asset growth over time via periodic snapshots, helping you focus on the big picture instead of daily market noise."*
+
+### 94. Clarify "Growth" definition with Tooltips
+**Files:** `src/components/dashboard/net-worth-card.tsx`
+
+If / when we implement `#65` (displaying net worth change delta), we should add a small info `(i)` tooltip right next to it:
+*"Growth is measured by comparing periodic snapshots of your total asset values."* 
+This ensures users understand that it's not a strict "cost basis vs market value" ROI metric, but an absolute tracking of their total net worth.
+
+### 95. Remove/Tweak "P&L" or "Trading" jargon
+**Files:** *Across application*
+
+To avoid setting up the application as a strict stock-trading tracker:
+- Avoid words like `Cost Basis`, `Realized / Unrealized Gains`, `P&L`, `Buy/Sell`.
+- Instead, lean entirely on wording such as `Current Value`, `Net Worth Change`, `Transaction Type`, `Total Allocation`, `Asset Distribution`.
+- Make sure that currency conversion loss/gain is absorbed conceptually into "wealth change" rather than explicitly highlighted as Forex speculation.
+=======
 ## 2026-04-16 Performance Audit
 
 > Fresh performance findings from a full codebase read. Items #93–99.
@@ -1598,3 +1627,4 @@ const accountValues = useMemo(() => {
 `CategorySection` and `AccountCardWithHoldings` then look up `accountValues.get(account.id)` instead of recomputing. This eliminates redundant iteration over holdings and rate lookups across every re-render.
 
 - **Affected files:** `src/components/accounts/accounts-list.tsx`
+>>>>>>> origin/master

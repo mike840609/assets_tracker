@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { CURRENCIES } from "@/lib/currencies";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 
 export function SettingsForm({
@@ -25,9 +25,10 @@ export function SettingsForm({
 }) {
   const router = useRouter();
   const t = useTranslations();
+  const activeLocale = useLocale();
   const [currency, setCurrency] = useState(currentCurrency);
   const [locale, setLocale] = useState<Locale>(
-    SUPPORTED_LOCALES.includes(currentLocale as Locale) ? (currentLocale as Locale) : DEFAULT_LOCALE
+    SUPPORTED_LOCALES.includes(activeLocale as Locale) ? (activeLocale as Locale) : DEFAULT_LOCALE
   );
   const [saving, setSaving] = useState(false);
   const [savingLocale, setSavingLocale] = useState(false);
@@ -103,89 +104,128 @@ export function SettingsForm({
   }
 
   return (
-    <div className="space-y-6 max-w-lg">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("settings.baseCurrency")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
-            <SelectTrigger>
-              <SelectValue>
-                {(() => { const c = CURRENCIES.find((c) => c.code === currency); return c ? `${c.code} — ${c.name} (${c.symbol})` : currency; })()}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {CURRENCIES.map((c) => (
-                <SelectItem key={c.code} value={c.code}>
-                  {c.code} — {c.name} ({c.symbol})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button onClick={saveCurrency} disabled={saving || currency === currentCurrency}>
-            {saving ? t("settings.saving") : t("settings.save")}
-          </Button>
-        </CardContent>
-      </Card>
+    <div className="space-y-8 w-full">
+      {/* PREFERENCES SECTION */}
+      <section className="space-y-3">
+        <h3 className="text-lg font-semibold text-foreground">
+          {t("settings.preferencesTitle")}
+        </h3>
+        <Card className="overflow-hidden p-0">
+          <CardContent className="p-0">
+            {/* Currency Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t("settings.baseCurrency")}</p>
+              </div>
+              <div className="flex items-center gap-2 sm:w-auto w-full">
+                <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue>
+                      {(() => {
+                        const c = CURRENCIES.find((c) => c.code === currency);
+                        return c ? `${c.code} — ${c.name} (${c.symbol})` : currency;
+                      })()}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.code} — {c.name} ({c.symbol})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={saveCurrency} disabled={saving || currency === currentCurrency}>
+                  {saving ? t("settings.saving") : t("settings.save")}
+                </Button>
+              </div>
+            </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("settings.language")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
-            <SelectTrigger>
-              <SelectValue>{t(`languages.${locale}`)}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {SUPPORTED_LOCALES.map((l) => (
-                <SelectItem key={l} value={l}>
-                  {t(`languages.${l}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button onClick={saveLocale} disabled={savingLocale || locale === currentLocale}>
-            {savingLocale ? t("settings.saving") : t("settings.save")}
-          </Button>
-        </CardContent>
-      </Card>
+            {/* Language Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t("settings.language")}</p>
+                <p className="text-sm text-muted-foreground">{t("settings.languageDescription")}</p>
+              </div>
+              <div className="flex items-center gap-2 sm:w-auto w-full">
+                <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue>{t(`languages.${locale}`)}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_LOCALES.map((l) => (
+                      <SelectItem key={l} value={l}>
+                        {t(`languages.${l}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={saveLocale} disabled={savingLocale || locale === currentLocale}>
+                  {savingLocale ? t("settings.saving") : t("settings.save")}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("settings.dataActions")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={refreshPrices}
-            disabled={refreshing}
-          >
-            {refreshing ? t("settings.refreshing") : t("settings.refreshPrices")}
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() =>
-              fetch("/api/exchange-rates/refresh", { method: "POST" })
-                .then(() => toast.success(t("toast.exchangeRatesRefreshed")))
-                .catch(() => toast.error(t("toast.failed")))
-            }
-          >
-            {t("settings.refreshExchangeRates")}
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={takeSnapshot}
-            disabled={snapshotting}
-          >
-            {snapshotting ? t("settings.creating") : t("settings.takeSnapshot")}
-          </Button>
-        </CardContent>
-      </Card>
+      {/* SYNCHRONIZATION SECTION */}
+      <section className="space-y-3">
+        <h3 className="text-lg font-semibold text-foreground">
+          {t("settings.synchronizationTitle")}
+        </h3>
+        <Card className="overflow-hidden p-0">
+          <CardContent className="p-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t("settings.syncPricesTitle")}</p>
+                <p className="text-sm text-muted-foreground">{t("settings.syncPricesDesc")}</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={refreshPrices}
+                disabled={refreshing}
+                className="w-full sm:w-auto min-w-[150px]"
+              >
+                {refreshing ? t("settings.refreshing") : t("settings.btnRefresh")}
+              </Button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t("settings.syncRatesTitle")}</p>
+                <p className="text-sm text-muted-foreground">{t("settings.syncRatesDesc")}</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  fetch("/api/exchange-rates/refresh", { method: "POST" })
+                    .then(() => toast.success(t("toast.exchangeRatesRefreshed")))
+                    .catch(() => toast.error(t("toast.failed")))
+                }
+                className="w-full sm:w-auto min-w-[150px]"
+              >
+                {t("settings.btnRefresh")}
+              </Button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t("settings.syncSnapshotTitle")}</p>
+                <p className="text-sm text-muted-foreground">{t("settings.syncSnapshotDesc")}</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={takeSnapshot}
+                disabled={snapshotting}
+                className="w-full sm:w-auto min-w-[150px]"
+              >
+                {snapshotting ? t("settings.creating") : t("settings.btnSnapshot")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }
