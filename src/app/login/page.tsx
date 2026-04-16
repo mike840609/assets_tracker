@@ -1,8 +1,9 @@
 import { Suspense } from "react"
 import { signIn } from "@/auth"
 import { Button } from "@/components/ui/button"
-import { TrendingUp } from "lucide-react"
+import { TrendingUp, Lock, ShieldCheck, EyeOff } from "lucide-react"
 import { getTranslations } from "next-intl/server"
+import Link from "next/link"
 
 async function LoginContent() {
   const t = await getTranslations("login")
@@ -51,6 +52,22 @@ async function LoginContent() {
           </Button>
         </form>
 
+        {/* Trust badges */}
+        <div className="flex flex-col gap-2 pt-2">
+          <div className="flex items-center gap-2.5 text-xs text-slate-500">
+            <Lock className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
+            <span>{t("trust1")}</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-xs text-slate-500">
+            <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
+            <span>{t("trust2")}</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-xs text-slate-500">
+            <EyeOff className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
+            <span>{t("trust3")}</span>
+          </div>
+        </div>
+
         {isPreview && (
           <>
             <div className="flex items-center gap-3 pt-2">
@@ -87,8 +104,12 @@ async function LoginContent() {
           </>
         )}
 
-        <div className="text-center text-xs text-slate-400 pt-4 mb-[-1rem]">
-          {t("footer")}
+        <div className="text-center text-xs text-slate-400 pt-2 mb-[-1rem]">
+          {t("footerBefore")}{" "}
+          <Link href="/privacy" className="underline hover:text-slate-600 transition-colors">
+            {t("footerLink")}
+          </Link>
+          .
         </div>
       </div>
     </div>

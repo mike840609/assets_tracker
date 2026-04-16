@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currencies";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 
 type SnapshotRow = {
   id: string;
@@ -29,6 +30,7 @@ type Props = {
 
 export function HistoryTable({ snapshots, baseCurrency }: Props) {
   const t = useTranslations("history");
+  const { privacyMode } = usePrivacyMode();
 
   const rows = useMemo(() => {
     return [...snapshots].reverse().map((snap, idx, arr) => ({
@@ -70,13 +72,13 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                       })}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatCurrency(row.netWorth, baseCurrency)}
+                      {privacyMode ? "***" : formatCurrency(row.netWorth, baseCurrency)}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatCurrency(row.totalAssets, baseCurrency)}
+                      {privacyMode ? "***" : formatCurrency(row.totalAssets, baseCurrency)}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatCurrency(row.totalLiabilities, baseCurrency)}
+                      {privacyMode ? "***" : formatCurrency(row.totalLiabilities, baseCurrency)}
                     </TableCell>
                     <TableCell
                       className={cn(
@@ -88,7 +90,7 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                             : "text-red-500 dark:text-red-400"
                       )}
                     >
-                      {row.change === null
+                      {privacyMode ? "***" : row.change === null
                         ? "—"
                         : (row.change >= 0 ? "+" : "") +
                           formatCurrency(row.change, baseCurrency)}

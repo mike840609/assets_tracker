@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { AnalysisKpis } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 
@@ -57,15 +58,18 @@ function signed(n: number, currency: string): string {
 
 export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
+  const { privacyMode } = usePrivacyMode();
   const dash = "—";
+  const hidden = "***";
 
-  const bestValue = kpis.best ? signed(kpis.best.deltaNetWorth, baseCurrency) : dash;
-  const bestSub = kpis.best ? formatMonthLabel(kpis.best.monthKey, locale) : undefined;
-  const worstValue = kpis.worst ? signed(kpis.worst.deltaNetWorth, baseCurrency) : dash;
-  const worstSub = kpis.worst ? formatMonthLabel(kpis.worst.monthKey, locale) : undefined;
+  const bestValue = privacyMode ? hidden : kpis.best ? signed(kpis.best.deltaNetWorth, baseCurrency) : dash;
+  const bestSub = privacyMode ? undefined : kpis.best ? formatMonthLabel(kpis.best.monthKey, locale) : undefined;
+  const worstValue = privacyMode ? hidden : kpis.worst ? signed(kpis.worst.deltaNetWorth, baseCurrency) : dash;
+  const worstSub = privacyMode ? undefined : kpis.worst ? formatMonthLabel(kpis.worst.monthKey, locale) : undefined;
 
-  const ytdSub =
-    kpis.ytdPct === null ? undefined : `${kpis.ytdPct >= 0 ? "+" : ""}${kpis.ytdPct.toFixed(1)}%`;
+  const ytdSub = privacyMode
+    ? undefined
+    : kpis.ytdPct === null ? undefined : `${kpis.ytdPct >= 0 ? "+" : ""}${kpis.ytdPct.toFixed(1)}%`;
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -73,24 +77,24 @@ export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
         title={t("bestMonth")}
         value={bestValue}
         subtitle={bestSub}
-        tone={kpis.best ? toneFor(kpis.best.deltaNetWorth) : "neutral"}
+        tone={privacyMode ? "neutral" : kpis.best ? toneFor(kpis.best.deltaNetWorth) : "neutral"}
       />
       <Tile
         title={t("worstMonth")}
         value={worstValue}
         subtitle={worstSub}
-        tone={kpis.worst ? toneFor(kpis.worst.deltaNetWorth) : "neutral"}
+        tone={privacyMode ? "neutral" : kpis.worst ? toneFor(kpis.worst.deltaNetWorth) : "neutral"}
       />
       <Tile
         title={t("avgMonthly")}
-        value={signed(kpis.avgMonthlyDelta, baseCurrency)}
-        tone={toneFor(kpis.avgMonthlyDelta)}
+        value={privacyMode ? hidden : signed(kpis.avgMonthlyDelta, baseCurrency)}
+        tone={privacyMode ? "neutral" : toneFor(kpis.avgMonthlyDelta)}
       />
       <Tile
         title={t("ytdGrowth")}
-        value={signed(kpis.ytdDelta, baseCurrency)}
+        value={privacyMode ? hidden : signed(kpis.ytdDelta, baseCurrency)}
         subtitle={ytdSub}
-        tone={toneFor(kpis.ytdDelta)}
+        tone={privacyMode ? "neutral" : toneFor(kpis.ytdDelta)}
       />
     </div>
   );

@@ -1,9 +1,14 @@
+"use client";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
-import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { NetWorthSummary } from "@/lib/types";
 
-export async function NetWorthCard({
+const HIDDEN = "***";
+
+export function NetWorthCard({
   summary,
   previousNetWorth,
 }: {
@@ -11,7 +16,8 @@ export async function NetWorthCard({
   previousNetWorth?: number;
 }) {
   const { totalAssets, totalLiabilities, netWorth, baseCurrency } = summary;
-  const t = await getTranslations("netWorthCard");
+  const t = useTranslations("netWorthCard");
+  const { privacyMode } = usePrivacyMode();
 
   const delta = previousNetWorth !== undefined ? netWorth - previousNetWorth : null;
   const pct =
@@ -29,9 +35,9 @@ export async function NetWorthCard({
         <CardContent className="pt-6">
           <p className="text-sm font-medium text-muted-foreground">{t("netWorth")}</p>
           <p className="text-3xl font-bold tracking-tight mt-1">
-            {formatCurrency(netWorth, baseCurrency)}
+            {privacyMode ? HIDDEN : formatCurrency(netWorth, baseCurrency)}
           </p>
-          {delta !== null && pct !== null && (
+          {!privacyMode && delta !== null && pct !== null && (
             <p className={`text-sm font-medium mt-1 ${deltaColor}`}>
               {deltaSign}{formatCurrency(delta, baseCurrency)}{" "}
               ({deltaSign}{pct.toFixed(2)}%)
@@ -43,7 +49,7 @@ export async function NetWorthCard({
         <CardContent className="pt-6">
           <p className="text-sm font-medium text-muted-foreground">{t("totalAssets")}</p>
           <p className="text-2xl font-semibold text-green-600 mt-1">
-            {formatCurrency(totalAssets, baseCurrency)}
+            {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency)}
           </p>
         </CardContent>
       </Card>
@@ -51,7 +57,7 @@ export async function NetWorthCard({
         <CardContent className="pt-6">
           <p className="text-sm font-medium text-muted-foreground">{t("totalLiabilities")}</p>
           <p className="text-2xl font-semibold text-red-600 mt-1">
-            {formatCurrency(totalLiabilities, baseCurrency)}
+            {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency)}
           </p>
         </CardContent>
       </Card>

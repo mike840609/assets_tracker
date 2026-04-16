@@ -284,7 +284,29 @@
     "title": "資產追蹤",
     "subtitle": "安全地訪問您的財務投資組合",
     "googleButton": "使用 Google 帳號繼續",
-    "footer": "繼續操作即表示您同意私密地保護您的數據。"
+    "trust1": "Google OAuth — 我們絕不儲存您的密碼",
+    "trust2": "您的資料私密保存，絕不出售",
+    "trust3": "只有您能查看自己的投資組合",
+    "footerBefore": "您的資料受到保護。閱讀我們的",
+    "footerLink": "隱私政策"
+  },
+  "privacy": {
+    "title": "隱私政策",
+    "subtitle": "資產追蹤如何處理您的資料",
+    "backToLogin": "← 返回登入",
+    "section1Title": "我們收集的資料",
+    "section1Body": "當您使用 Google 登入時，我們會取得您的姓名、電子郵件地址和個人頭像。任何財務資料（帳戶、持倉、餘額）均由您手動輸入並儲存在您的私人資料庫中。",
+    "section2Title": "我們不收集的資料",
+    "section2Body": "我們絕不存取您真實的銀行或券商帳戶。我們不收集您的密碼、瀏覽歷史、位置或聯絡人資訊。",
+    "section3Title": "第三方服務",
+    "section3Body": "我們僅使用您輸入的股票代號，從 Yahoo Finance 和 CoinGecko 獲取公開市場價格。不會將任何個人資訊傳送至這些服務。",
+    "section4Title": "資料共享",
+    "section4Body": "您的資料絕不會以任何方式出售、出租或與第三方共享。",
+    "section5Title": "您的控制權",
+    "section5Body": "您可以隨時在設定頁面匯出所有資料或刪除帳號。",
+    "section6Title": "身份驗證",
+    "section6Body": "登入完全由 Google OAuth 處理。我們只接收安全的工作階段令牌，您的 Google 密碼絕不會被本應用程式接收或儲存。",
+    "lastUpdated": "最後更新：2026 年 4 月"
   },
   "transactionHistory": {
     "title": "交易紀錄",

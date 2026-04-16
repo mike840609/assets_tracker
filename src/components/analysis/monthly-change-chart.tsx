@@ -14,6 +14,7 @@ import {
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { MonthlyBucket } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 
@@ -32,11 +33,13 @@ function ChangeTooltip({
   payload,
   baseCurrency,
   t,
+  privacyMode,
 }: {
   active?: boolean;
   payload?: TooltipPayload[];
   baseCurrency: string;
   t: (key: string) => string;
+  privacyMode?: boolean;
 }) {
   if (!active || !payload?.length) return null;
   const b = payload[0].payload;
@@ -55,11 +58,11 @@ function ChangeTooltip({
       <div className="font-medium">{b.label}</div>
       <div className="flex justify-between gap-4">
         <span className="text-muted-foreground">{t("tooltipStart")}</span>
-        <span className="tabular-nums">{formatCurrency(b.startNetWorth, baseCurrency)}</span>
+        <span className="tabular-nums">{privacyMode ? "***" : formatCurrency(b.startNetWorth, baseCurrency)}</span>
       </div>
       <div className="flex justify-between gap-4">
         <span className="text-muted-foreground">{t("tooltipEnd")}</span>
-        <span className="tabular-nums">{formatCurrency(b.endNetWorth, baseCurrency)}</span>
+        <span className="tabular-nums">{privacyMode ? "***" : formatCurrency(b.endNetWorth, baseCurrency)}</span>
       </div>
       <div className="flex justify-between gap-4 border-t border-border/60 pt-1">
         <span className="text-muted-foreground">{t("tooltipChange")}</span>
@@ -68,8 +71,7 @@ function ChangeTooltip({
             b.deltaNetWorth >= 0 ? "text-[var(--chart-1)]" : "text-destructive"
           }`}
         >
-          {sign}
-          {formatCurrency(b.deltaNetWorth, baseCurrency)} ({pct})
+          {privacyMode ? "***" : `${sign}${formatCurrency(b.deltaNetWorth, baseCurrency)} (${pct})`}
         </span>
       </div>
     </div>
@@ -78,6 +80,7 @@ function ChangeTooltip({
 
 export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
+  const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -96,6 +99,10 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
         ) : !mounted ? (
           <div className="h-[280px]" />
         ) : (
+          <div className="relative">
+            {privacyMode && (
+              <div className="absolute inset-0 backdrop-blur-sm bg-background/30 rounded-lg z-10" />
+            )}
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -113,7 +120,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
               />
               <Tooltip
                 cursor={{ fill: "var(--muted)", opacity: 0.3 }}
-                content={<ChangeTooltip baseCurrency={baseCurrency} t={t} />}
+                content={<ChangeTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />}
               />
               <Bar dataKey="deltaNetWorth" radius={[4, 4, 0, 0]}>
                 {data.map((entry) => (
@@ -132,6 +139,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>

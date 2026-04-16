@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { BarChart3, Copy, History, LayoutDashboard, Settings } from "lucide-react";
+import { BarChart3, Copy, Eye, EyeOff, History, LayoutDashboard, Settings } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
+import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -13,6 +14,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations();
+  const { privacyMode, togglePrivacyMode } = usePrivacyMode();
 
   const navItems = [
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
@@ -69,7 +71,21 @@ export function Sidebar() {
       <div className="p-4 border-t border-border/50 bg-background/30 backdrop-blur-md">
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">v0.1.0</span>
-          <ThemeToggle />
+          <div className="flex items-center gap-1">
+            <button
+              onClick={togglePrivacyMode}
+              title={privacyMode ? "Show values" : "Hide values"}
+              className={cn(
+                "inline-flex items-center justify-center rounded-md p-1.5 text-sm transition-all duration-200",
+                privacyMode
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {privacyMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </aside>

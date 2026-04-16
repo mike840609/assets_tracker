@@ -12,6 +12,7 @@ import {
   AreaChart,
 } from "recharts";
 import { useTranslations } from "next-intl";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { createCurrencyTooltipFormatter } from "@/lib/chart-formatters";
 
 type SnapshotData = {
@@ -33,6 +34,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
   const [range, setRange] = useState("All");
   const [mounted, setMounted] = useState(false);
   const t = useTranslations("trendChart");
+  const { privacyMode } = usePrivacyMode();
   useEffect(() => setMounted(true), []);
 
   const selectedRange = ranges.find((r) => r.label === range)!;
@@ -74,6 +76,10 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
         ) : !mounted ? (
           <div className="h-[250px]" />
         ) : (
+          <div className="relative">
+            {privacyMode && (
+              <div className="absolute inset-0 backdrop-blur-sm bg-background/30 rounded-lg z-10" />
+            )}
           <ResponsiveContainer width="100%" height={250}>
             <AreaChart data={filtered}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -107,6 +113,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
               />
             </AreaChart>
           </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>
