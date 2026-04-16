@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Copy, History, LayoutDashboard, Settings } from "lucide-react";
+import { BarChart3, Copy, History, LayoutDashboard, Settings } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -17,6 +17,7 @@ export function Sidebar() {
   const navItems = [
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
     { label: t("nav.accounts"), href: "/accounts", icon: Copy },
+    { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
     { label: t("nav.history"), href: "/history", icon: History },
     { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];
@@ -83,6 +84,7 @@ export function MobileNav() {
   const navItems = [
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
     { label: t("nav.accounts"), href: "/accounts", icon: Copy },
+    { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
     { label: t("nav.history"), href: "/history", icon: History },
     { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];

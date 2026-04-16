@@ -7,6 +7,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "accounts": "Accounts",
+    "analysis": "Analysis",
     "history": "History",
     "settings": "Settings"
   },
@@ -71,6 +72,26 @@
   },
   "accounts": {
     "title": "Accounts"
+  },
+  "analysis": {
+    "title": "Analysis",
+    "subtitle": "Month-over-month breakdown of your net worth.",
+    "monthlyChange": "Monthly Net Worth Change",
+    "assetsVsLiabilities": "Assets vs. Liabilities by Month",
+    "bestMonth": "Best Month",
+    "worstMonth": "Worst Month",
+    "avgMonthly": "Avg. Monthly Change",
+    "ytdGrowth": "YTD Growth",
+    "seriesAssets": "Assets",
+    "seriesLiabilities": "Liabilities",
+    "tooltipStart": "Start",
+    "tooltipEnd": "End",
+    "tooltipChange": "Change",
+    "noData": "Not enough snapshots yet. Analysis appears after a few days of history.",
+    "range6M": "6M",
+    "range1Y": "1Y",
+    "range2Y": "2Y",
+    "rangeAll": "All"
   },
   "history": {
     "title": "Net Worth History",
