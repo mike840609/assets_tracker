@@ -6,6 +6,7 @@ import type { NormalizedSnapshot } from "@/lib/services/history-service";
 import {
   aggregateMonthlyChange,
   computeKpis,
+  fillMonthRange,
 } from "@/lib/services/analysis-service";
 import { MonthlyChangeChart } from "./monthly-change-chart";
 import { AssetsLiabilitiesChart } from "./assets-liabilities-chart";
@@ -46,18 +47,29 @@ export function AnalysisView({ snapshots, baseCurrency, locale }: Props) {
     All: "rangeAll",
   };
 
-  const filteredSnapshots = useMemo(() => {
+  const { filteredSnapshots, rangeStart, rangeEnd } = useMemo(() => {
     const selected = ranges.find((r) => r.label === range)!;
-    if (selected.months === Infinity) return snapshots;
+    const now = new Date();
+    const rangeEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+    if (selected.months === Infinity) {
+      const firstDate = snapshots.length > 0 ? new Date(snapshots[0].date) : now;
+      const rangeStart = new Date(Date.UTC(firstDate.getFullYear(), firstDate.getMonth(), 1));
+      return { filteredSnapshots: snapshots, rangeStart, rangeEnd };
+    }
     const cutoff = rangeCutoff(selected.months);
     const cutoffIso = cutoff.toISOString().split("T")[0];
-    return snapshots.filter((s) => s.date >= cutoffIso);
+    const rangeStart = new Date(Date.UTC(cutoff.getFullYear(), cutoff.getMonth(), 1));
+    return {
+      filteredSnapshots: snapshots.filter((s) => s.date >= cutoffIso),
+      rangeStart,
+      rangeEnd,
+    };
   }, [snapshots, range]);
 
-  const buckets = useMemo(
-    () => aggregateMonthlyChange(filteredSnapshots),
-    [filteredSnapshots]
-  );
+  const buckets = useMemo(() => {
+    const real = aggregateMonthlyChange(filteredSnapshots);
+    return fillMonthRange(real, rangeStart, rangeEnd);
+  }, [filteredSnapshots, rangeStart, rangeEnd]);
 
   // KPIs use the full series so YTD can reach into prior-year data even when
   // the user has zoomed into a 6M view.

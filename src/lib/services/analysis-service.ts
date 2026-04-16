@@ -23,6 +23,8 @@ export interface MonthlyBucket {
   deltaNetWorth: number;
   /** Percent change vs. startNetWorth; null when startNetWorth is 0. */
   deltaPct: number | null;
+  /** True when this month has no snapshot data and was synthesized to fill the range. */
+  isEmpty?: boolean;
 }
 
 export interface AnalysisKpis {
@@ -91,10 +93,52 @@ export function aggregateMonthlyChange(
       totalLiabilities: group.last.totalLiabilities,
       deltaNetWorth,
       deltaPct,
+      isEmpty: false,
     });
   }
 
   return buckets;
+}
+
+/**
+ * Pad a MonthlyBucket array so that every calendar month from rangeStart to
+ * rangeEnd appears. Months with no data are represented with isEmpty:true and
+ * all numeric fields set to 0.
+ *
+ * @param buckets   Output of aggregateMonthlyChange(), already sorted asc.
+ * @param rangeStart  First month to show (day/time ignored).
+ * @param rangeEnd    Last month to show (day/time ignored).
+ */
+export function fillMonthRange(
+  buckets: MonthlyBucket[],
+  rangeStart: Date,
+  rangeEnd: Date
+): MonthlyBucket[] {
+  const byKey = new Map(buckets.map((b) => [b.monthKey, b]));
+  const result: MonthlyBucket[] = [];
+  const cursor = new Date(Date.UTC(rangeStart.getFullYear(), rangeStart.getMonth(), 1));
+  const endKey = `${rangeEnd.getFullYear()}-${String(rangeEnd.getMonth() + 1).padStart(2, "0")}`;
+  while (true) {
+    const year = cursor.getUTCFullYear();
+    const month = cursor.getUTCMonth();
+    const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
+    result.push(
+      byKey.get(monthKey) ?? {
+        monthKey,
+        endDate: monthKey,
+        startNetWorth: 0,
+        endNetWorth: 0,
+        totalAssets: 0,
+        totalLiabilities: 0,
+        deltaNetWorth: 0,
+        deltaPct: null,
+        isEmpty: true,
+      }
+    );
+    if (monthKey === endKey) break;
+    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  }
+  return result;
 }
 
 /**
@@ -108,7 +152,8 @@ export function computeKpis(
   buckets: MonthlyBucket[],
   snapshots: NormalizedSnapshot[]
 ): AnalysisKpis {
-  if (buckets.length === 0) {
+  const realBuckets = buckets.filter((b) => !b.isEmpty);
+  if (realBuckets.length === 0) {
     return {
       best: null,
       worst: null,
@@ -121,12 +166,12 @@ export function computeKpis(
   let best: MonthlyBucket | null = null;
   let worst: MonthlyBucket | null = null;
   let sum = 0;
-  for (const b of buckets) {
+  for (const b of realBuckets) {
     sum += b.deltaNetWorth;
     if (!best || b.deltaNetWorth > best.deltaNetWorth) best = b;
     if (!worst || b.deltaNetWorth < worst.deltaNetWorth) worst = b;
   }
-  const avgMonthlyDelta = sum / buckets.length;
+  const avgMonthlyDelta = sum / realBuckets.length;
 
   // YTD: prefer the last snapshot from the prior year as the baseline;
   // otherwise fall back to the first snapshot of the current year.

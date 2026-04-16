@@ -88,6 +88,7 @@
     "tooltipEnd": "期末",
     "tooltipChange": "變化",
     "noData": "尚無足夠的快照資料。累積幾天歷史後即可看到分析結果。",
+    "noDataMonth": "無資料",
     "range6M": "6個月",
     "range1Y": "1年",
     "range2Y": "2年",

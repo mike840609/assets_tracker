@@ -40,6 +40,14 @@ function ChangeTooltip({
 }) {
   if (!active || !payload?.length) return null;
   const b = payload[0].payload;
+  if (b.isEmpty) {
+    return (
+      <div className="rounded-md border border-border/60 bg-popover/95 backdrop-blur-sm px-3 py-2 text-xs shadow-md">
+        <div className="font-medium">{b.label}</div>
+        <div className="text-muted-foreground">{t("noDataMonth")}</div>
+      </div>
+    );
+  }
   const pct = b.deltaPct === null ? "—" : `${b.deltaPct >= 0 ? "+" : ""}${b.deltaPct.toFixed(1)}%`;
   const sign = b.deltaNetWorth >= 0 ? "+" : "";
   return (
@@ -110,7 +118,14 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
                 {data.map((entry) => (
                   <Cell
                     key={entry.monthKey}
-                    fill={entry.deltaNetWorth >= 0 ? "var(--chart-1)" : "var(--destructive)"}
+                    fill={
+                      entry.isEmpty
+                        ? "var(--muted-foreground)"
+                        : entry.deltaNetWorth >= 0
+                          ? "var(--chart-1)"
+                          : "var(--destructive)"
+                    }
+                    opacity={entry.isEmpty ? 0.3 : 1}
                   />
                 ))}
               </Bar>
