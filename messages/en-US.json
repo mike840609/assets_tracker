@@ -88,6 +88,8 @@
     "tooltipEnd": "End",
     "tooltipChange": "Change",
     "noData": "Not enough snapshots yet. Analysis appears after a few days of history.",
+    "noDataMonth": "No data",
+    "rangeYTD": "YTD",
     "range6M": "6M",
     "range1Y": "1Y",
     "range2Y": "2Y",
