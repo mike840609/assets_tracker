@@ -19,6 +19,7 @@ interface Props {
 }
 
 const ranges = [
+  { label: "YTD", months: 0 },
   { label: "6M", months: 6 },
   { label: "1Y", months: 12 },
   { label: "2Y", months: 24 },
@@ -41,6 +42,7 @@ export function AnalysisView({ snapshots, baseCurrency, locale }: Props) {
   const [range, setRange] = useState<RangeLabel>("1Y");
 
   const rangeLabelKey: Record<RangeLabel, string> = {
+    YTD: "rangeYTD",
     "6M": "range6M",
     "1Y": "range1Y",
     "2Y": "range2Y",
@@ -50,6 +52,18 @@ export function AnalysisView({ snapshots, baseCurrency, locale }: Props) {
   const { filteredSnapshots, rangeStart, rangeEnd } = useMemo(() => {
     const selected = ranges.find((r) => r.label === range)!;
     const now = new Date();
+    // YTD: always Jan–Dec of the current calendar year.
+    if (selected.months === 0) {
+      const year = now.getFullYear();
+      const rangeStart = new Date(Date.UTC(year, 0, 1));   // Jan 1
+      const rangeEnd = new Date(Date.UTC(year, 11, 1));    // Dec 1 (shows all 12 months)
+      const cutoffIso = `${year}-01-01`;
+      return {
+        filteredSnapshots: snapshots.filter((s) => s.date >= cutoffIso),
+        rangeStart,
+        rangeEnd,
+      };
+    }
     const rangeEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
     if (selected.months === Infinity) {
       const firstDate = snapshots.length > 0 ? new Date(snapshots[0].date) : now;
