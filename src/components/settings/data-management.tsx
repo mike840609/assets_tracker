@@ -114,21 +114,21 @@ export function DataManagement() {
   };
 
   return (
-    <div className="space-y-6 max-w-lg">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("title")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+    <div className="space-y-3 w-full">
+      <h3 className="text-lg font-semibold text-foreground">
+        {t("title")}
+      </h3>
+      <Card className="overflow-hidden p-0">
+        <CardContent className="p-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
             <div className="flex-1 space-y-1">
-              <h4 className="text-sm font-medium">{t("export")}</h4>
-              <p className="text-xs text-muted-foreground">{t("exportDescription")}</p>
+              <p className="text-sm font-medium">{t("export")}</p>
+              <p className="text-sm text-muted-foreground">{t("exportDescription")}</p>
             </div>
             <Button
               onClick={handleExport}
               disabled={isExporting}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto min-w-[200px]"
             >
               {isExporting ? (
                 <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
@@ -139,10 +139,10 @@ export function DataManagement() {
             </Button>
           </div>
           
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
             <div className="flex-1 space-y-1">
-              <h4 className="text-sm font-medium">{t("import")}</h4>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm font-medium">{t("import")}</p>
+              <p className="text-sm text-muted-foreground">
                 {t("importDescription")}
               </p>
             </div>
@@ -158,7 +158,7 @@ export function DataManagement() {
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
-                className="w-full"
+                className="w-full min-w-[200px]"
               >
                 {isImporting ? (
                   <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />

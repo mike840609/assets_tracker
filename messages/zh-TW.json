@@ -34,6 +34,18 @@
   },
   "settings": {
     "title": "設定",
+    "appPhilosophy": "關於資產追蹤器",
+    "appDescription": "資產追蹤器幫助您視覺化整體的財富增長旅程。透過定期快照追蹤資產成長，讓您專注於大局，而非每日的交易波動。",
+    "preferencesTitle": "偏好設定",
+    "synchronizationTitle": "同步與更新",
+    "syncPricesTitle": "資產價格",
+    "syncPricesDesc": "從 Yahoo Finance 與 CoinGecko 取得最新市場價格。",
+    "syncRatesTitle": "匯率",
+    "syncRatesDesc": "更新法幣轉換匯率。",
+    "syncSnapshotTitle": "手動快照",
+    "syncSnapshotDesc": "將目前的餘額手動記錄至歷史圖表中。",
+    "btnRefresh": "更新",
+    "btnSnapshot": "建立快照",
     "baseCurrency": "基礎貨幣",
     "language": "語言",
     "languageDescription": "選擇您偏好的顯示語言",
@@ -46,6 +58,7 @@
     "takeSnapshot": "建立淨資產快照",
     "creating": "建立中...",
     "signOut": "登出",
+    "signOutDesc": "安全地登出此裝置上的帳戶。",
     "dangerZone": "危險區域"
   },
   "languages": {

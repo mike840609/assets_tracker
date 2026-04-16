@@ -34,6 +34,18 @@
   },
   "settings": {
     "title": "Settings",
+    "appPhilosophy": "About Asset Tracker",
+    "appDescription": "Asset Tracker is designed to help you visualize your high-level wealth journey. By tracking asset growth through periodic snapshots, you can focus on the big picture instead of daily trading noise.",
+    "preferencesTitle": "Preferences",
+    "synchronizationTitle": "Synchronization",
+    "syncPricesTitle": "Asset Prices",
+    "syncPricesDesc": "Fetch the latest market prices from Yahoo Finance and CoinGecko.",
+    "syncRatesTitle": "Exchange Rates",
+    "syncRatesDesc": "Update fiat currency conversion rates.",
+    "syncSnapshotTitle": "Manual Snapshot",
+    "syncSnapshotDesc": "Manually record your current balances to the history chart.",
+    "btnRefresh": "Refresh",
+    "btnSnapshot": "Snapshot",
     "baseCurrency": "Base Currency",
     "language": "Language",
     "languageDescription": "Choose your preferred display language",
@@ -46,6 +58,7 @@
     "takeSnapshot": "Take Net Worth Snapshot",
     "creating": "Creating...",
     "signOut": "Sign Out",
+    "signOutDesc": "Securely log out of your account on this device.",
     "dangerZone": "Danger Zone"
   },
   "languages": {

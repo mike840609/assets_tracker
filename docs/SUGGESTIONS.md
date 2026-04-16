@@ -96,6 +96,9 @@
 | 90 | Memoize derived data in chart components | Performance | 🟡 Medium | 30 min | ❌ Not Done |
 | 91 | Stabilize inline `tickFormatter`s in `TrendChart` | Performance | 🟢 Low | 15 min | ❌ Not Done |
 | 92 | Batch `PriceCache` upserts via `$transaction` | Performance | 🔴 High | 30 min | ❌ Not Done |
+| 93 | Update Onboarding Empty State Text | UX | 🟢 Low | 15 min | ❌ Not Done |
+| 94 | Clarify "Growth" definition with Tooltips | UX | 🟢 Low | 30 min | ❌ Not Done |
+| 95 | Remove/Tweak "P&L" or "Trading" jargon | UX | 🟡 Medium | 1 hr | ❌ Not Done |
 
 ---
 
@@ -1371,3 +1374,30 @@ try {
 If per-symbol error granularity is desired, chunk into small batches (e.g. 10) and run each chunk inside its own transaction. This still collapses 30–50 round-trips into 3–5. Expected impact: meaningful reduction in cron-job wall time and in the "Refresh Prices" button latency perceived by users.
 
 - **Affected files:** `src/lib/services/price-service.ts`.
+
+---
+
+## 2026-04-16 App Philosophy & Wealth Tracking UX
+
+> New targeted suggestions to improve the UX and product copy to communicate that Asset Tracker is a holistic wealth tracker based on snapshots, rather than a short-term trading P&L tool.
+
+### 93. Update Onboarding Empty State Text
+**Files:** `src/components/dashboard/dashboard-content.tsx`, `messages/en-US.json`, `messages/zh-TW.json`
+
+Currently, the onboarding text just says "Add your first account to get started." We should make it more robust, explicitly setting user expectations:
+*"Start tracking your wealth journey. Add your accounts to visualize your steady asset growth over time via periodic snapshots, helping you focus on the big picture instead of daily market noise."*
+
+### 94. Clarify "Growth" definition with Tooltips
+**Files:** `src/components/dashboard/net-worth-card.tsx`
+
+If / when we implement `#65` (displaying net worth change delta), we should add a small info `(i)` tooltip right next to it:
+*"Growth is measured by comparing periodic snapshots of your total asset values."* 
+This ensures users understand that it's not a strict "cost basis vs market value" ROI metric, but an absolute tracking of their total net worth.
+
+### 95. Remove/Tweak "P&L" or "Trading" jargon
+**Files:** *Across application*
+
+To avoid setting up the application as a strict stock-trading tracker:
+- Avoid words like `Cost Basis`, `Realized / Unrealized Gains`, `P&L`, `Buy/Sell`.
+- Instead, lean entirely on wording such as `Current Value`, `Net Worth Change`, `Transaction Type`, `Total Allocation`, `Asset Distribution`.
+- Make sure that currency conversion loss/gain is absorbed conceptually into "wealth change" rather than explicitly highlighted as Forex speculation.
