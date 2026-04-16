@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { EyeOff } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { NetWorthSummary } from "@/lib/types";
 import { createPieTooltipFormatter, createPieLegendFormatter } from "@/lib/chart-formatters";
 
@@ -15,6 +17,7 @@ const COLORS = [
 export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary }) {
   const [mounted, setMounted] = useState(false);
   const t = useTranslations("currencyExposure");
+  const { privacyMode } = usePrivacyMode();
   useEffect(() => setMounted(true), []);
 
   const total = summary.currencyExposure.reduce((acc, curr) => acc + curr.value, 0);
@@ -39,28 +42,35 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
         ) : !mounted ? (
           <div className="h-[250px]" />
         ) : (
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={90}
-                paddingAngle={2}
-                dataKey="value"
-              >
-                {data.map((_, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip formatter={createPieTooltipFormatter(summary.baseCurrency)} />
-              <Legend formatter={createPieLegendFormatter()} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="relative">
+            {privacyMode && (
+              <div className="absolute inset-0 backdrop-blur-sm bg-background/30 rounded-lg z-10 flex items-center justify-center">
+                <EyeOff className="h-6 w-6 text-muted-foreground opacity-50" />
+              </div>
+            )}
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  paddingAngle={2}
+                  dataKey="value"
+                >
+                  {data.map((_, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip formatter={createPieTooltipFormatter(summary.baseCurrency)} />
+                <Legend formatter={createPieLegendFormatter()} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>

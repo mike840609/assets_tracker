@@ -15,7 +15,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { NetWorthSummary } from "@/lib/types";
+
+const HIDDEN = "••••••";
 
 type SortField = "name" | "category" | "value" | "percentage";
 type SortOrder = "asc" | "desc";
@@ -24,6 +27,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   const [sortField, setSortField] = useState<SortField>("value");
   const [sortDirection, setSortDirection] = useState<SortOrder>("desc");
   const t = useTranslations();
+  const { privacyMode } = usePrivacyMode();
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -126,10 +130,10 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
           {t(`categories.${account.category}`, { defaultValue: account.category })}
         </TableCell>
         <TableCell className="text-right text-muted-foreground tabular-nums">
-          {getPercentage(account).toFixed(1)}%
+          {privacyMode ? "—" : `${getPercentage(account).toFixed(1)}%`}
         </TableCell>
         <TableCell className="text-right font-medium tabular-nums">
-          {formatCurrency(account.totalValueInBaseCurrency, summary.baseCurrency)}
+          {privacyMode ? HIDDEN : formatCurrency(account.totalValueInBaseCurrency, summary.baseCurrency)}
         </TableCell>
       </TableRow>
     ));
@@ -157,7 +161,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
                     </td>
                     <td />
                     <td className="px-1 sm:px-4 py-2 text-right text-sm tabular-nums">
-                      {formatCurrency(summary.totalAssets, summary.baseCurrency)}
+                      {privacyMode ? HIDDEN : formatCurrency(summary.totalAssets, summary.baseCurrency)}
                     </td>
                   </tr>
                 </tfoot>
@@ -183,7 +187,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
                     </td>
                     <td />
                     <td className="px-1 sm:px-4 py-2 text-right text-sm tabular-nums">
-                      {formatCurrency(summary.totalLiabilities, summary.baseCurrency)}
+                      {privacyMode ? HIDDEN : formatCurrency(summary.totalLiabilities, summary.baseCurrency)}
                     </td>
                   </tr>
                 </tfoot>

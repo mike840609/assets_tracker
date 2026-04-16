@@ -284,7 +284,29 @@
     "title": "Asset Tracker",
     "subtitle": "Securely access your financial portfolio",
     "googleButton": "Continue with Google",
-    "footer": "By continuing, you agree to secure your data privately."
+    "trust1": "Google OAuth — we never store your password",
+    "trust2": "Your data is private & never sold",
+    "trust3": "Only you can see your portfolio",
+    "footerBefore": "Your data stays private. Read our",
+    "footerLink": "Privacy Policy"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "subtitle": "How Asset Tracker handles your data",
+    "backToLogin": "← Back to Login",
+    "section1Title": "What we collect",
+    "section1Body": "When you sign in with Google, we receive your name, email address, and profile picture. Any financial data (accounts, holdings, balances) is entered by you manually and stored in your private database.",
+    "section2Title": "What we don't collect",
+    "section2Body": "We never access your real bank or brokerage accounts. We do not collect your passwords, browsing history, location, or contacts.",
+    "section3Title": "Third-party services",
+    "section3Body": "We fetch public market prices from Yahoo Finance and CoinGecko using only the ticker symbols you enter. No personal information is sent to these services.",
+    "section4Title": "Data sharing",
+    "section4Body": "Your data is never sold, rented, or shared with third parties for any purpose.",
+    "section5Title": "Your control",
+    "section5Body": "You can export all your data or delete your account at any time from the Settings page.",
+    "section6Title": "Authentication",
+    "section6Body": "Sign-in is handled entirely by Google OAuth. We receive only a secure session token — your Google password is never shared with or stored by this app.",
+    "lastUpdated": "Last updated: April 2026"
   },
   "transactionHistory": {
     "title": "Transaction History",

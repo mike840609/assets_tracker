@@ -12,6 +12,7 @@ const CLIENT_NAMESPACES = [
   "allocationChart",
   "currencyExposure",
   "accountsSummary",
+  "netWorthCard",
   "categories",
   "common",
 ];
