@@ -1,8 +1,13 @@
+"use client";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { InlineBalanceEditor } from "./inline-balance-editor";
 import { useTranslations } from "next-intl";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
+
+const HIDDEN = "***";
 
 interface AccountStatCardsProps {
   account: SerializedAccountWithHoldings;
@@ -12,6 +17,7 @@ interface AccountStatCardsProps {
 
 export function AccountStatCards({ account, totalHoldingsValue, onSaveBalance }: AccountStatCardsProps) {
   const t = useTranslations();
+  const { privacyMode } = usePrivacyMode();
   const isBrokerage = account.category === "BROKERAGE" || account.category === "CRYPTO_WALLET";
   const isBank = account.category === "BANK";
   const totalValue = account.cashBalance + totalHoldingsValue;
@@ -23,7 +29,7 @@ export function AccountStatCards({ account, totalHoldingsValue, onSaveBalance }:
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">{t("accountDetail.marketValue")}</p>
             <p className="text-2xl font-bold mt-1">
-              {formatCurrency(totalHoldingsValue, account.currency)}
+              {privacyMode ? HIDDEN : formatCurrency(totalHoldingsValue, account.currency)}
             </p>
           </CardContent>
         </Card>
@@ -73,7 +79,7 @@ export function AccountStatCards({ account, totalHoldingsValue, onSaveBalance }:
         <CardContent className="pt-6">
           <p className="text-sm text-muted-foreground">{t("accountDetail.totalValue")}</p>
           <p className="text-2xl font-bold mt-1">
-            {formatCurrency(totalValue, account.currency)}
+            {privacyMode ? HIDDEN : formatCurrency(totalValue, account.currency)}
           </p>
         </CardContent>
       </Card>
@@ -92,7 +98,7 @@ export function AccountStatCards({ account, totalHoldingsValue, onSaveBalance }:
         <CardContent className="pt-6">
           <p className="text-sm text-muted-foreground">{t("accountDetail.holdingsValue")}</p>
           <p className="text-2xl font-bold mt-1">
-            {formatCurrency(totalHoldingsValue, account.currency)}
+            {privacyMode ? HIDDEN : formatCurrency(totalHoldingsValue, account.currency)}
           </p>
         </CardContent>
       </Card>

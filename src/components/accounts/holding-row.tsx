@@ -1,3 +1,5 @@
+"use client";
+
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,7 +10,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatQuantity } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { SerializedHolding } from "@/lib/types";
+
+const HIDDEN = "***";
 
 export interface HoldingWithPrice extends SerializedHolding {
   currentPrice: number | null;
@@ -25,6 +30,7 @@ interface HoldingRowProps {
 
 export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, onDelete }: HoldingRowProps) {
   const t = useTranslations();
+  const { privacyMode } = usePrivacyMode();
   return (
     <TableRow key={h.id}>
       <TableCell className="font-mono font-medium">{h.symbol}</TableCell>
@@ -39,17 +45,17 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
         {formatQuantity(h.quantity, h.assetType)}
       </TableCell>
       <TableCell className="text-right">
-        {h.currentPrice !== null
+        {privacyMode ? HIDDEN : h.currentPrice !== null
           ? formatCurrency(h.currentPrice, h.currency || "USD")
           : "—"}
       </TableCell>
       <TableCell className="text-right font-medium">
-        {h.marketValue !== null
+        {privacyMode ? HIDDEN : h.marketValue !== null
           ? formatCurrency(h.marketValue, accountCurrency)
           : "—"}
       </TableCell>
       <TableCell className="text-right text-muted-foreground">
-        {h.marketValue !== null && totalValue > 0
+        {privacyMode ? "—" : h.marketValue !== null && totalValue > 0
           ? `${((h.marketValue / totalValue) * 100).toFixed(1)}%`
           : "—"}
       </TableCell>

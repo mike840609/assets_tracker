@@ -12,7 +12,10 @@ import { AccountForm } from "./account-form";
 import { QuickAddHolding } from "./quick-add-holding";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
+
+const HIDDEN = "***";
 
 const CATEGORY_ICONS: Record<string, string> = {
   BANK: "🏦",
@@ -275,6 +278,7 @@ function CategorySection({
   isSelecting: boolean;
 }) {
   const t = useTranslations();
+  const { privacyMode } = usePrivacyMode();
   const colors = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.OTHER;
   const icon = CATEGORY_ICONS[category] ?? "📁";
   const label = t(`categories.${category}`, { defaultValue: category });
@@ -312,7 +316,7 @@ function CategorySection({
         <div className="flex items-center gap-3 flex-shrink-0">
           <div className="text-right">
             <p className="text-sm font-bold tabular-nums">
-              {formatCurrency(totalInBaseCurrency, baseCurrency)}
+              {privacyMode ? HIDDEN : formatCurrency(totalInBaseCurrency, baseCurrency)}
             </p>
           </div>
           <svg
@@ -366,6 +370,7 @@ function AccountCardWithHoldings({
   onToggle: () => void;
   isSelecting: boolean;
 }) {
+  const { privacyMode } = usePrivacyMode();
   const displayValue = getAccountValue(account, priceMap, ratesMap);
   const displayCurrency = account.currency;
   const rate = displayCurrency === baseCurrency ? 1 : (ratesMap[`${displayCurrency}_${baseCurrency}`] ?? 1);
@@ -397,14 +402,14 @@ function AccountCardWithHoldings({
               <div className="flex flex-col items-end">
                 <div className="flex items-center gap-2">
                   <p className="text-lg font-bold tabular-nums text-foreground">
-                    {formatCurrency(convertedValue, baseCurrency)}
+                    {privacyMode ? HIDDEN : formatCurrency(convertedValue, baseCurrency)}
                   </p>
                   <Badge variant="secondary" className="bg-foreground text-background hover:bg-foreground/90">{baseCurrency}</Badge>
                 </div>
                 {displayCurrency !== baseCurrency && (
                   <div className="flex items-center gap-2 mt-1">
                     <p className="text-sm font-medium text-muted-foreground tabular-nums">
-                      {formatCurrency(displayValue, displayCurrency)}
+                      {privacyMode ? HIDDEN : formatCurrency(displayValue, displayCurrency)}
                     </p>
                     <span className="text-xs font-semibold text-muted-foreground uppercase">{displayCurrency}</span>
                   </div>
@@ -426,7 +431,7 @@ function AccountCardWithHoldings({
                           {formatQuantity(h.quantity, h.assetType)}
                         </span>
                         <span className="text-sm font-medium tabular-nums w-20 text-right">
-                          {h.marketValue !== null ? formatCurrency(h.marketValue, account.currency) : "—"}
+                          {privacyMode ? HIDDEN : h.marketValue !== null ? formatCurrency(h.marketValue, account.currency) : "—"}
                         </span>
                       </div>
                     </div>

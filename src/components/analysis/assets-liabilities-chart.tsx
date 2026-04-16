@@ -14,6 +14,7 @@ import {
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { MonthlyBucket } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 
@@ -35,11 +36,13 @@ function AssetsTooltip({
   payload,
   baseCurrency,
   t,
+  privacyMode,
 }: {
   active?: boolean;
   payload?: Array<{ payload: AssetsTooltipEntry }>;
   baseCurrency: string;
   t: (key: string) => string;
+  privacyMode?: boolean;
 }) {
   if (!active || !payload?.length) return null;
   const entry = payload[0].payload;
@@ -56,11 +59,11 @@ function AssetsTooltip({
       <div className="font-medium">{entry.label}</div>
       <div className="flex justify-between gap-4">
         <span className="text-muted-foreground">{t("seriesAssets")}</span>
-        <span className="tabular-nums">{formatCurrency(entry.assets, baseCurrency)}</span>
+        <span className="tabular-nums">{privacyMode ? "***" : formatCurrency(entry.assets, baseCurrency)}</span>
       </div>
       <div className="flex justify-between gap-4">
         <span className="text-muted-foreground">{t("seriesLiabilities")}</span>
-        <span className="tabular-nums">{formatCurrency(entry.liabilities, baseCurrency)}</span>
+        <span className="tabular-nums">{privacyMode ? "***" : formatCurrency(entry.liabilities, baseCurrency)}</span>
       </div>
     </div>
   );
@@ -68,6 +71,7 @@ function AssetsTooltip({
 
 export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
+  const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -106,7 +110,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                       : String(v)
                 }
               />
-              <Tooltip content={<AssetsTooltip baseCurrency={baseCurrency} t={t} />} />
+              <Tooltip content={<AssetsTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar
                 dataKey="assets"

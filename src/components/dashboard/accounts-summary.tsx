@@ -18,7 +18,7 @@ import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { NetWorthSummary } from "@/lib/types";
 
-const HIDDEN = "••••••";
+const HIDDEN = "***";
 
 type SortField = "name" | "category" | "value" | "percentage";
 type SortOrder = "asc" | "desc";

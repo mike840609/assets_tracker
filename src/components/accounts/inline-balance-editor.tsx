@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency, formatNumber } from "@/lib/currencies";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 
 interface InlineBalanceEditorProps {
   currentBalance: number;
@@ -22,6 +23,7 @@ export function InlineBalanceEditor({
   const [balance, setBalance] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const { privacyMode } = usePrivacyMode();
 
   async function handleSave() {
     if (balance.trim() === "") {
@@ -83,7 +85,7 @@ export function InlineBalanceEditor({
       className="text-2xl font-bold mt-1 cursor-pointer hover:text-primary"
       onClick={() => setEditing(true)}
     >
-      {formatCurrency(currentBalance, currency)}
+      {privacyMode ? "***" : formatCurrency(currentBalance, currency)}
     </p>
   );
 }
