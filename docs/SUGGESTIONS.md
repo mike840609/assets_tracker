@@ -106,6 +106,12 @@
 | 100 | Update Onboarding Empty State Text | UX | 🟢 Low | 15 min | ❌ Not Done |
 | 101 | Clarify "Growth" definition with Tooltips | UX | 🟢 Low | 30 min | ❌ Not Done |
 | 102 | Remove/Tweak "P&L" or "Trading" jargon | UX | 🟡 Medium | 1 hr | ❌ Not Done |
+| 103 | Scope exchange-rate refresh to current user context | Correctness / Multi-tenant | 🔴 High | 1-2 hrs | ❌ Not Done |
+| 104 | Guard cron secret misconfiguration in snapshot route | Security / Reliability | 🔴 High | 15-30 min | ❌ Not Done |
+| 105 | Add concurrency limits to daily snapshot cron fan-out | Reliability / Performance | 🟡 Medium | 1-2 hrs | ❌ Not Done |
+| 106 | Move transactions API to cursor/keyset pagination | Performance | 🔴 High | 2-3 hrs | ❌ Not Done |
+| 107 | Cache `/api/search` symbol lookups with short TTL | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
+| 108 | Chunk and dedupe symbol batches in price refresh | Performance | 🟡 Medium | 1-2 hrs | ❌ Not Done |
 
 ---
 
@@ -122,6 +128,12 @@
 55. **Adopt structured logging** (e.g., Pino) to replace scattered `console.*` for production debugging/monitoring.
 56. **Establish baseline automated tests** (unit + API integration + one E2E smoke path).
 57. **Improve accessibility semantics** on icon-only controls and sortable tables (`aria-label`, `aria-expanded`, `aria-sort`, keyboard handlers).
+103. **Scope `/api/exchange-rates/refresh` to the authenticated user**. The current implementation uses `setting.findFirst()` and all account currencies globally, which can pick another user's base currency and trigger unnecessary cross-tenant work.
+104. **Fail fast when `CRON_SECRET` is missing** in `/api/cron/snapshot`. Current string comparison allows `Authorization: Bearer undefined` when secret is not configured.
+105. **Limit snapshot cron concurrency** (batch/chunk users instead of `Promise.all` across all users) to reduce API burst load and DB contention as tenant count grows.
+106. **Replace offset pagination with cursor/keyset pagination** for `/api/accounts/[id]/transactions` to avoid growing `OFFSET` scan costs on deep history pages.
+107. **Add short-lived caching to `/api/search` Yahoo lookups** (e.g., 30–120s per normalized query) to reduce repetitive external requests from frequent typing/search interactions.
+108. **Dedupe + chunk symbol requests in `refreshAllPrices`** before Yahoo/CoinGecko fetches to avoid oversized quote payloads and reduce redundant symbol lookups.
 
 ---
 ## Details (Pending Tasks)
@@ -239,7 +251,6 @@ No API endpoints have rate limiting. A malicious or misconfigured client could s
   - `GET/POST /api/settings/data` (full database export/import)
 - Use a lightweight in-memory approach (e.g., `Map`-based token bucket) or `upstash/ratelimit` for serverless-friendly limiting
 - **Affected files**: new rate limit utility, API route files listed above
-
 
 ### 32. Validate Query Parameters with Zod
 Date range query parameters in `/api/snapshots` and history-related endpoints are parsed with raw `new Date()` without Zod validation. Invalid or malformed date strings could produce `NaN` dates and cause silent data corruption or unexpected query results.
@@ -1384,37 +1395,9 @@ If per-symbol error granularity is desired, chunk into small batches (e.g. 10) a
 
 ---
 
-<<<<<<< HEAD
 ## 2026-04-16 App Philosophy & Wealth Tracking UX
 
 > New targeted suggestions to improve the UX and product copy to communicate that Asset Tracker is a holistic wealth tracker based on snapshots, rather than a short-term trading P&L tool.
-
-### 93. Update Onboarding Empty State Text
-**Files:** `src/components/dashboard/dashboard-content.tsx`, `messages/en-US.json`, `messages/zh-TW.json`
-
-Currently, the onboarding text just says "Add your first account to get started." We should make it more robust, explicitly setting user expectations:
-*"Start tracking your wealth journey. Add your accounts to visualize your steady asset growth over time via periodic snapshots, helping you focus on the big picture instead of daily market noise."*
-
-### 94. Clarify "Growth" definition with Tooltips
-**Files:** `src/components/dashboard/net-worth-card.tsx`
-
-If / when we implement `#65` (displaying net worth change delta), we should add a small info `(i)` tooltip right next to it:
-*"Growth is measured by comparing periodic snapshots of your total asset values."* 
-This ensures users understand that it's not a strict "cost basis vs market value" ROI metric, but an absolute tracking of their total net worth.
-
-### 95. Remove/Tweak "P&L" or "Trading" jargon
-**Files:** *Across application*
-
-To avoid setting up the application as a strict stock-trading tracker:
-- Avoid words like `Cost Basis`, `Realized / Unrealized Gains`, `P&L`, `Buy/Sell`.
-- Instead, lean entirely on wording such as `Current Value`, `Net Worth Change`, `Transaction Type`, `Total Allocation`, `Asset Distribution`.
-- Make sure that currency conversion loss/gain is absorbed conceptually into "wealth change" rather than explicitly highlighted as Forex speculation.
-=======
-## 2026-04-16 Performance Audit
-
-> Fresh performance findings from a full codebase read. Items #93–99.
-
----
 
 ### 93. Deduplicate `recentSnapshots` Query in Dashboard Sections
 
@@ -1627,4 +1610,83 @@ const accountValues = useMemo(() => {
 `CategorySection` and `AccountCardWithHoldings` then look up `accountValues.get(account.id)` instead of recomputing. This eliminates redundant iteration over holdings and rate lookups across every re-render.
 
 - **Affected files:** `src/components/accounts/accounts-list.tsx`
->>>>>>> origin/master
+
+### 100. Update Onboarding Empty State Text
+**Files:** `src/components/dashboard/dashboard-content.tsx`, `messages/en-US.json`, `messages/zh-TW.json`
+
+Currently, the onboarding text just says "Add your first account to get started." We should make it more robust, explicitly setting user expectations:
+*"Start tracking your wealth journey. Add your accounts to visualize your steady asset growth over time via periodic snapshots, helping you focus on the big picture instead of daily market noise."*
+
+### 101. Clarify "Growth" definition with Tooltips
+**Files:** `src/components/dashboard/net-worth-card.tsx`
+
+If / when we implement `#65` (displaying net worth change delta), we should add a small info `(i)` tooltip right next to it:
+*"Growth is measured by comparing periodic snapshots of your total asset values."*
+This ensures users understand that it's not a strict "cost basis vs market value" ROI metric, but an absolute tracking of their total net worth.
+
+### 102. Remove/Tweak "P&L" or "Trading" jargon
+**Files:** *Across application*
+
+To avoid setting up the application as a strict stock-trading tracker:
+- Avoid words like `Cost Basis`, `Realized / Unrealized Gains`, `P&L`, `Buy/Sell`.
+- Instead, lean entirely on wording such as `Current Value`, `Net Worth Change`, `Transaction Type`, `Total Allocation`, `Asset Distribution`.
+- Make sure that currency conversion loss/gain is absorbed conceptually into "wealth change" rather than explicitly highlighted as Forex speculation.
+## 2026-04-16 Performance Audit
+
+> Fresh performance findings from a full codebase read. Items #93–99.
+
+---
+
+### 103. Scope Exchange-Rate Refresh to Current User Context
+`POST /api/exchange-rates/refresh` currently reads:
+- `prisma.setting.findFirst()` (not tied to session user)
+- `prisma.account.findMany({ distinct: ["currency"] })` (across all users)
+
+In a multi-user app, this can select the wrong base currency and do extra refresh work unrelated to the caller.
+
+- Wrap route with `withAuth` and resolve `baseCurrency` from the current user's `Setting`
+- Collect currencies only from the current user's active accounts
+- Keep cache/global table updates, but derive the requested currency set from user scope
+- **Affected file**: `src/app/api/exchange-rates/refresh/route.ts`
+
+### 104. Guard Cron Secret Misconfiguration in Snapshot Route
+`GET /api/cron/snapshot` checks `authorization === Bearer ${process.env.CRON_SECRET}`. If `CRON_SECRET` is missing, `Bearer undefined` can pass unexpectedly.
+
+- Add explicit startup/runtime check that `CRON_SECRET` exists
+- Return `500` (or throw at startup) when secret is unset
+- Optionally compare using a timing-safe method for secrets
+- **Affected files**: `src/app/api/cron/snapshot/route.ts`, `src/lib/env.ts` (or equivalent env validation module)
+
+### 105. Add Concurrency Limits to Daily Snapshot Cron Fan-out
+Snapshot cron currently executes `Promise.all(users.map(...createSnapshot))`, which can create large parallel fan-out as user count grows.
+
+- Replace unbounded `Promise.all` with chunked/bounded concurrency (e.g., `p-limit`)
+- Log per-batch durations and failures while allowing partial success reporting
+- Consider queuing long-running snapshot jobs if runtime limits become an issue
+- **Affected file**: `src/app/api/cron/snapshot/route.ts`
+
+### 106. Move Transactions API to Cursor/Keyset Pagination
+`GET /api/accounts/[id]/transactions` currently uses `LIMIT/OFFSET` over a `UNION ALL` ordered by `createdAt DESC`.
+As transaction history grows, high offsets force the database to scan/discard more rows per request.
+
+- Replace `page + offset` with keyset pagination (e.g., `beforeCreatedAt`, `beforeId`)
+- Add a stable compound sort key (`createdAt DESC, id DESC`) for deterministic pagination
+- Return `nextCursor` instead of `page` metadata
+- **Affected file**: `src/app/api/accounts/[id]/transactions/route.ts`
+
+### 107. Cache `/api/search` Symbol Lookups with Short TTL
+`GET /api/search` calls Yahoo on every request and returns empty on errors. Frequent UI typing can trigger repeated identical lookups.
+
+- Normalize query (`trim`, uppercase), then cache successful responses for a short TTL (30–120 seconds)
+- Use `unstable_cache` or a lightweight in-memory cache keyed by normalized query
+- Optionally add client-side debounce + server-side cache for layered protection
+- **Affected file**: `src/app/api/search/route.ts`
+
+### 108. Chunk and Dedupe Symbol Batches in Price Refresh
+`refreshAllPrices` currently builds stock/crypto symbol arrays directly from holdings and sends each full list in one Yahoo call.
+With large portfolios, this can create oversized external calls and redundant fetches.
+
+- Deduplicate symbols before external fetch (`Set`) and chunk requests (e.g., 100–200 symbols per batch)
+- Parallelize chunk fetches with bounded concurrency to balance speed and upstream limits
+- Keep existing batched DB upsert path, but feed it a more controlled fetch pipeline
+- **Affected file**: `src/lib/services/price-service.ts`
