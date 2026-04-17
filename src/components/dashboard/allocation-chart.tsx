@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useTranslations } from "next-intl";
@@ -19,24 +19,23 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
   const { privacyMode } = usePrivacyMode();
   useEffect(() => setMounted(true), []);
 
-  const assetAccounts = summary.accounts.filter((a) => a.type === "ASSET");
-
-  const categoryMap = new Map<string, number>();
-  for (const account of assetAccounts) {
-    const cat = account.category;
-    const current = categoryMap.get(cat) ?? 0;
-    categoryMap.set(cat, current + account.totalValueInBaseCurrency);
-  }
-
-  const total = Array.from(categoryMap.values()).reduce((a, b) => a + b, 0);
-  const data = Array.from(categoryMap.entries())
-    .map(([category, value]) => ({
-      name: t(`categories.${category}`, { defaultValue: category }),
-      value: Math.round(value * 100) / 100,
-      percentage: total > 0 ? ((value / total) * 100).toFixed(1) : "0",
-    }))
-    .filter((d) => d.value > 0)
-    .sort((a, b) => b.value - a.value);
+  const data = useMemo(() => {
+    const categoryMap = new Map<string, number>();
+    for (const account of summary.accounts) {
+      if (account.type !== "ASSET") continue;
+      const cat = account.category;
+      categoryMap.set(cat, (categoryMap.get(cat) ?? 0) + account.totalValueInBaseCurrency);
+    }
+    const total = Array.from(categoryMap.values()).reduce((a, b) => a + b, 0);
+    return Array.from(categoryMap.entries())
+      .map(([category, value]) => ({
+        name: t(`categories.${category}`, { defaultValue: category }),
+        value: Math.round(value * 100) / 100,
+        percentage: total > 0 ? ((value / total) * 100).toFixed(1) : "0",
+      }))
+      .filter((d) => d.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [summary.accounts, t]);
 
   return (
     <Card>

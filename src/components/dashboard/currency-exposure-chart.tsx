@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useTranslations } from "next-intl";
@@ -19,14 +19,16 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
   const { privacyMode } = usePrivacyMode();
   useEffect(() => setMounted(true), []);
 
-  const total = summary.currencyExposure.reduce((acc, curr) => acc + curr.value, 0);
-  const data = summary.currencyExposure
-    .map((exposure) => ({
-      name: exposure.currency,
-      value: Math.round(exposure.value * 100) / 100,
-      percentage: total > 0 ? ((exposure.value / total) * 100).toFixed(1) : "0",
-    }))
-    .filter((d) => d.value > 0);
+  const data = useMemo(() => {
+    const total = summary.currencyExposure.reduce((acc, curr) => acc + curr.value, 0);
+    return summary.currencyExposure
+      .map((exposure) => ({
+        name: exposure.currency,
+        value: Math.round(exposure.value * 100) / 100,
+        percentage: total > 0 ? ((exposure.value / total) * 100).toFixed(1) : "0",
+      }))
+      .filter((d) => d.value > 0);
+  }, [summary.currencyExposure]);
 
   return (
     <Card>

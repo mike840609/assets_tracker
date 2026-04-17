@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   XAxis,
@@ -38,13 +38,13 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
   useEffect(() => setMounted(true), []);
 
   const selectedRange = ranges.find((r) => r.label === range)!;
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - selectedRange.days);
 
-  const filtered =
-    hideRangeFilter || selectedRange.days === Infinity
-      ? snapshots
-      : snapshots.filter((s) => new Date(s.date) >= cutoff);
+  const filtered = useMemo(() => {
+    if (hideRangeFilter || selectedRange.days === Infinity) return snapshots;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - selectedRange.days);
+    return snapshots.filter((s) => new Date(s.date) >= cutoff);
+  }, [snapshots, selectedRange.days, hideRangeFilter]);
 
   return (
     <Card>
