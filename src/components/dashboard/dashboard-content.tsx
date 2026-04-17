@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { NetWorthCard } from "@/components/dashboard/net-worth-card";
 import { LazyAllocationChart, LazyCurrencyExposureChart } from "@/components/dashboard/lazy-charts";
@@ -11,6 +11,15 @@ import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+
+const fetchRecentSnapshots = cache((userId: string) =>
+  prisma.netWorthSnapshot.findMany({
+    where: { userId },
+    orderBy: { date: "desc" },
+    take: 2,
+    select: { date: true, netWorth: true, baseCurrency: true },
+  })
+);
 
 const CARD_CLASS =
   "bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg";
@@ -84,12 +93,7 @@ async function DashboardActionsSection({
   baseCurrency: string;
 }) {
   const [recentSnapshots, latestPrice] = await Promise.all([
-    prisma.netWorthSnapshot.findMany({
-      where: { userId },
-      orderBy: { date: "desc" },
-      take: 2,
-      select: { date: true, netWorth: true, baseCurrency: true },
-    }),
+    fetchRecentSnapshots(userId),
     prisma.priceCache.findFirst({
       orderBy: { updatedAt: "desc" },
       select: { updatedAt: true },
@@ -121,12 +125,7 @@ async function NetWorthSection({
 }) {
   const [summary, recentSnapshots] = await Promise.all([
     getCachedNetWorthSummary(userId, baseCurrency),
-    prisma.netWorthSnapshot.findMany({
-      where: { userId },
-      orderBy: { date: "desc" },
-      take: 2,
-      select: { date: true, netWorth: true, baseCurrency: true },
-    }),
+    fetchRecentSnapshots(userId),
   ]);
 
   if (summary.accounts.length === 0) return null;

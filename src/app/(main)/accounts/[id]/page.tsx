@@ -13,7 +13,11 @@ const CLIENT_NAMESPACES = ["accountDetail", "common", "categories", "transaction
 
 async function AccountDetailContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // Fetch account first to know which symbols to filter prices by
+
+  // Kick off independent queries before awaiting the account
+  const ratesP = getAllExchangeRates();
+  const messagesP = getMessages();
+
   const account = await prisma.account.findUnique({
     where: { id },
     include: { holdings: { where: { quantity: { gt: 0 } } } },
@@ -23,11 +27,11 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
 
   const symbols = account.holdings.map((h) => h.symbol);
 
-  // Parallel: load filtered prices, exchange rates, and messages
+  // cachedPrices needs symbols from account; ratesP and messagesP are already in-flight
   const [allRatesMap, cachedPrices, messages] = await Promise.all([
-    getAllExchangeRates(),
+    ratesP,
     prisma.priceCache.findMany({ where: { symbol: { in: symbols } } }),
-    getMessages(),
+    messagesP,
   ]);
 
   const priceMap = Object.fromEntries(
