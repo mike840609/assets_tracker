@@ -68,7 +68,7 @@
 | 62 | Fix collapse animation (`max-h-[2000px]` → grid collapse) | Performance / UX | 🟡 Medium | 1 hr | ✅ Done |
 | 63 | Fix DashboardSkeleton to match 3-chart layout (CLS) | UX | 🔴 High | 15 min | ✅ Done |
 | 64 | Replace `window.confirm()` with `AlertDialog` | UX | 🟡 Medium | 1 hr | ❌ Not Done |
-| 65 | Show net worth change delta in `NetWorthCard` | UX | 🔴 High | 1 hr | ❌ Not Done |
+| 65 | Show net worth change delta in `NetWorthCard` | UX | 🔴 High | 1 hr | ✅ Done |
 | 66 | Add assets/liabilities series to `TrendChart` | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
 | 67 | Show full date in trend chart tooltip | UX | 🟢 Low | 15 min | ❌ Not Done |
 | 68 | Unified onboarding empty state for new users | UX | 🔴 High | 2-3 hrs | ✅ Done |
@@ -112,6 +112,33 @@
 | 106 | Move transactions API to cursor/keyset pagination | Performance | 🔴 High | 2-3 hrs | ❌ Not Done |
 | 107 | Cache `/api/search` symbol lookups with short TTL | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
 | 108 | Chunk and dedupe symbol batches in price refresh | Performance | 🟡 Medium | 1-2 hrs | ❌ Not Done |
+| 109 | Add auth + ownership checks on cash-transactions routes | Security | 🔴 High | 1 hr | ❌ Not Done |
+| 110 | Verify holding ownership on PATCH/DELETE holdings | Security | 🔴 High | 1 hr | ❌ Not Done |
+| 111 | Don't leak raw exception messages from data-import | Security | 🟡 Medium | 15 min | ❌ Not Done |
+| 112 | Timing-safe compare for `CRON_SECRET` | Security | 🟡 Medium | 15 min | ❌ Not Done |
+| 113 | Add baseline security headers (CSP, XFO, etc.) | Security | 🔴 High | 1-2 hrs | ❌ Not Done |
+| 114 | Explicit NextAuth cookie / session options | Security | 🟡 Medium | 30 min | ❌ Not Done |
+| 115 | Keyboard accessibility for `InlineBalanceEditor` | Accessibility | 🟡 Medium | 30 min | ❌ Not Done |
+| 116 | Keyboard + `aria-sort` on `AccountDetail` sortable headers | Accessibility | 🟡 Medium | 30 min | ❌ Not Done |
+| 117 | Keyboard handler on `AccountDetail` h2 inline edit | Accessibility | 🟢 Low | 15 min | ❌ Not Done |
+| 118 | `aria-label` on `HoldingRow` dropdown trigger | Accessibility | 🟢 Low | 5 min | ❌ Not Done |
+| 119 | `AccountForm` label/id association + `aria-describedby` | Accessibility | 🟡 Medium | 30 min | ❌ Not Done |
+| 120 | Visible required-field indicator on `AccountForm` | UX | 🟢 Low | 15 min | ❌ Not Done |
+| 121 | Sonner toaster `aria-live` / `role="status"` | Accessibility | 🟢 Low | 15 min | ❌ Not Done |
+| 122 | Undo affordance on transaction delete | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
+| 123 | Responsive Settings `SelectTrigger` width | UX | 🟢 Low | 5 min | ❌ Not Done |
+| 124 | Expand Settings loading skeleton to match layout | UX | 🟢 Low | 15 min | ❌ Not Done |
+| 125 | Visible label on login preview password field | Accessibility | 🟢 Low | 5 min | ❌ Not Done |
+| 126 | `revalidateTag("net-worth")` after mutation routes | Performance | 🔴 High | 1 hr | ❌ Not Done |
+| 127 | `/api/health` readiness endpoint | Reliability | 🟡 Medium | 30 min | ❌ Not Done |
+| 128 | `select` clause on `GET /api/exchange-rates` | Performance | 🟢 Low | 10 min | ❌ Not Done |
+| 129 | Derive account count from cached accounts array | Performance | 🟢 Low | 10 min | ❌ Not Done |
+| 130 | `Cache-Control` on `GET /api/search` | Performance | 🟢 Low | 10 min | ❌ Not Done |
+| 131 | Stream `HistoryTable` with its own Suspense boundary | Performance | 🟡 Medium | 30 min | ❌ Not Done |
+| 132 | Prefetch account detail pages from sidebar | Performance | 🟡 Medium | 30 min | ❌ Not Done |
+| 133 | Hoist `getOrCreateSettings` into `(main)/layout.tsx` | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
+| 134 | Add `.prettierrc` + Prettier in CI | DX | 🟢 Low | 30 min | ❌ Not Done |
+| 135 | Husky + lint-staged pre-commit hook | DX | 🟢 Low | 30 min | ❌ Not Done |
 
 ---
 
@@ -1690,3 +1717,427 @@ With large portfolios, this can create oversized external calls and redundant fe
 - Parallelize chunk fetches with bounded concurrency to balance speed and upstream limits
 - Keep existing batched DB upsert path, but feed it a more controlled fetch pipeline
 - **Affected file**: `src/lib/services/price-service.ts`
+
+---
+
+## 2026-04-17 Fresh Review (Security / UX / Perf / DX)
+
+> Fresh codebase audit. Items #109–#135. Items already implemented in the code (e.g. #65 net-worth delta in `net-worth-card.tsx`) have been flipped to ✅ in the overview table.
+
+---
+
+### Security & Authorization
+
+### 109. Add Auth + Ownership Checks on Cash-Transactions Routes
+
+**File:** `src/app/api/accounts/[id]/cash-transactions/route.ts`
+
+The `POST` handler has **no `auth()` call** and does **not** verify that the URL `accountId` belongs to the session user. If edge-layer middleware is ever relaxed or bypassed (e.g. a new route group), any authenticated user can create cash transactions on another user's account.
+
+**Fix:** Wrap with `withAuth` (introduced in #76) and add an ownership check before the mutation:
+
+```ts
+export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
+  const { id } = await params;
+  // ...validation...
+  const account = await prisma.account.findUnique({ where: { id, userId } });
+  if (!account) return failure("Account not found", 404);
+  // ...existing create + balance-update logic...
+});
+```
+
+Apply the same pattern to `PATCH` / `DELETE` handlers for cash transactions in `src/app/api/accounts/[id]/transactions/[transactionId]/route.ts` — verify the transaction's `accountId` belongs to a `userId`-scoped account before mutating.
+
+- **Affected file:** `src/app/api/accounts/[id]/cash-transactions/route.ts`
+
+
+### 110. Verify Holding Ownership on PATCH / DELETE Holdings
+
+**File:** `src/app/api/accounts/[id]/holdings/route.ts` (lines 77–121)
+
+`PATCH` and `DELETE` accept a holding `id` from the request body and mutate it **without** verifying that (a) the holding's `accountId` matches the route's `_accountId`, or (b) that account belongs to the session user. `POST` (lines 21–75) is also missing the `withAuth` wrapper used by `GET`. This is a straightforward IDOR.
+
+**Fix:** Wrap all three with `withAuth`, then before any mutation:
+
+```ts
+const existing = await prisma.holding.findUnique({
+  where: { id },
+  select: { accountId: true, account: { select: { userId: true } } },
+});
+if (!existing || existing.accountId !== accountId || existing.account.userId !== userId) {
+  return failure("Not found", 404);
+}
+```
+
+- **Affected file:** `src/app/api/accounts/[id]/holdings/route.ts`
+
+
+### 111. Don't Leak Raw Exception Messages from Data Import
+
+**File:** `src/app/api/settings/data/route.ts` (lines 161–162)
+
+On failure the route returns `error.message` verbatim: `error instanceof Error ? error.message : "Failed to import data"`. Prisma validation failures and SQL errors leak schema information, column names, and constraint identifiers to the client.
+
+**Fix:** Always return a generic client message; log the detailed error server-side only:
+
+```ts
+} catch (error) {
+  console.error("Data import failed", { userId, error });
+  return failure("Failed to import data", 500);
+}
+```
+
+Pair with structured logging once #55 lands.
+
+- **Affected file:** `src/app/api/settings/data/route.ts`
+
+
+### 112. Timing-Safe Compare for `CRON_SECRET`
+
+**File:** `src/app/api/cron/snapshot/route.ts` (line 9)
+
+`if (authHeader !== \`Bearer ${process.env.CRON_SECRET}\`)` is a plain string comparison. After fixing #104 (reject when `CRON_SECRET` is missing), also replace the compare itself:
+
+```ts
+import { timingSafeEqual } from "node:crypto";
+const expected = Buffer.from(`Bearer ${process.env.CRON_SECRET}`);
+const provided = Buffer.from(authHeader ?? "");
+if (provided.length !== expected.length || !timingSafeEqual(provided, expected)) {
+  return failure("Unauthorized", 401);
+}
+```
+
+- **Affected file:** `src/app/api/cron/snapshot/route.ts`
+
+
+### 113. Add Baseline Security Headers in `next.config.ts`
+
+**File:** `next.config.ts`
+
+Only `X-DNS-Prefetch-Control: on` is set today. Add a `headers()` block returning:
+
+- `Content-Security-Policy` — scoped to `'self'` + required external origins (Yahoo Finance, CoinGecko, Google OAuth) with `nonce`-based `script-src` or `strict-dynamic`.
+- `X-Frame-Options: DENY` — clickjacking.
+- `X-Content-Type-Options: nosniff` — MIME sniffing.
+- `Referrer-Policy: strict-origin-when-cross-origin`.
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`.
+
+A missing CSP in a Next.js 16 app is the single largest untapped XSS mitigation.
+
+- **Affected file:** `next.config.ts`
+
+
+### 114. Explicit NextAuth Cookie / Session Options
+
+**File:** `src/auth.ts`
+
+`session: { strategy: "jwt" }` relies on NextAuth defaults, which can vary across deployments. Pin:
+
+```ts
+session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60, updateAge: 24 * 60 * 60 },
+cookies: {
+  sessionToken: {
+    name: "__Secure-next-auth.session-token",
+    options: { httpOnly: true, sameSite: "lax", secure: true, path: "/" },
+  },
+},
+```
+
+- **Affected file:** `src/auth.ts`
+
+
+---
+
+### UI / UX / Accessibility
+
+### 115. Keyboard Accessibility for `InlineBalanceEditor`
+
+**File:** `src/components/accounts/inline-balance-editor.tsx` (lines 84–89)
+
+The `<p>` click target has no `role="button"`, `tabIndex={0}`, or `onKeyDown`. Keyboard-only users cannot enter edit mode.
+
+**Fix:** Turn the `<p>` into a `<button>` (styled like a paragraph) — gives semantics + focus ring for free — or add the three attributes manually and an Enter/Space handler.
+
+
+### 116. Keyboard + `aria-sort` on `AccountDetail` Sortable Headers
+
+**File:** `src/components/accounts/account-detail.tsx` (lines 261–300)
+
+The holdings table sort headers are `onClick` only. Extend #48's plan to cover these explicitly:
+
+```tsx
+<TableHead
+  role="button"
+  tabIndex={0}
+  aria-sort={sortKey === "marketValue" ? sortDir : "none"}
+  onClick={toggleSort}
+  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && toggleSort()}
+>
+  Market Value
+</TableHead>
+```
+
+
+### 117. Keyboard Handler on `AccountDetail` H2 Inline Edit
+
+**File:** `src/components/accounts/account-detail.tsx` (lines 217–223)
+
+The clickable `<h2>` that triggers inline name editing is not keyboard-accessible. Same pattern as #115 — either convert to a `<button>` wrapping the heading text, or add `role="button"`, `tabIndex={0}`, and an Enter-key handler.
+
+
+### 118. `aria-label` on `HoldingRow` Dropdown Trigger
+
+**File:** `src/components/accounts/holding-row.tsx` (lines 64–65)
+
+The `DropdownMenuTrigger` shows just "…". Screen readers announce "button" with no context.
+
+**Fix:** `<Button aria-label={t("holdingActions")}>…</Button>`. Add the string to `messages/en-US.json` and `messages/zh-TW.json`.
+
+
+### 119. `AccountForm` Label/Id Association + `aria-describedby`
+
+**File:** `src/components/accounts/account-form.tsx` (lines 95–103)
+
+`<Label>` elements don't use `htmlFor` and inputs don't use `id`. Screen readers can't associate them. When #45 (inline validation) ships, error messages also need `aria-describedby` linking the input to its error node.
+
+**Fix:**
+
+```tsx
+<Label htmlFor="account-name">{t("name")}</Label>
+<Input id="account-name" aria-describedby={nameError ? "account-name-error" : undefined} {...} />
+{nameError && <p id="account-name-error" role="alert">{nameError}</p>}
+```
+
+
+### 120. Visible Required-Field Indicator on `AccountForm`
+
+**File:** `src/components/accounts/account-form.tsx` (line 102)
+
+The `name` input is `required` but there is no visible asterisk or "Required" badge next to the label.
+
+**Fix:** Append `<span aria-hidden="true" className="text-red-500 ml-0.5">*</span>` to the label and add `aria-required` on the input.
+
+
+### 121. Configure Sonner Toaster with `aria-live` / `role="status"`
+
+**File:** `src/components/ui/sonner.tsx`
+
+Default Sonner setup doesn't consistently set ARIA live-region semantics. Critical success/failure toasts can be missed by screen reader users.
+
+**Fix:** Pass explicit `toastOptions`:
+
+```tsx
+<Toaster
+  toastOptions={{
+    classNames: { toast: "..." },
+    // sonner exposes ARIA props at the toast level
+  }}
+/>
+```
+
+And on calls that matter (errors), use `toast.error(..., { duration: 8000 })` with `role="alert"`.
+
+
+### 122. Undo Affordance on Transaction Delete
+
+**File:** `src/components/accounts/transaction-history.tsx` (line 149)
+
+Deleting a transaction is immediate and silent except for a success toast. Accidental deletes are unrecoverable without manually re-creating the row.
+
+**Fix:** Switch to a soft-delete pattern: show a Sonner toast with an **Undo** action for ~5 s; only commit the `DELETE /api/...` call after the toast dismisses without undo. Alternatively, make the mutation idempotent on the server and optimistically restore on client-side undo.
+
+
+### 123. Responsive Settings `SelectTrigger` Width
+
+**File:** `src/components/settings/settings-form.tsx` (line 122)
+
+`SelectTrigger` is fixed at `w-[200px]`, causing horizontal overflow inside flex containers on <360 px viewports.
+
+**Fix:** `className="w-full sm:w-[200px]"`.
+
+
+### 124. Expand Settings Loading Skeleton to Match Layout
+
+**File:** `src/app/(main)/settings/loading.tsx` (lines 8–12)
+
+The skeleton renders 3 generic rows; the real settings page has multiple cards (profile, currency, locale, data import/export). The mismatch causes noticeable CLS on first load — same class of bug as #63.
+
+**Fix:** Render 3–4 card-shaped skeletons matching the real layout's card/header/content structure.
+
+
+### 125. Visible Label on Login Preview Password Field
+
+**File:** `src/app/login/page.tsx` (lines 89–95)
+
+The preview password field only has a `placeholder`; no `<Label>`. Placeholders disappear on focus and are not a substitute for labels (WCAG 3.3.2).
+
+**Fix:** Add `<Label htmlFor="preview-password">{t("password")}</Label>` and `id="preview-password"` on the input.
+
+
+---
+
+### Performance
+
+### 126. `revalidateTag("net-worth")` After Mutation Routes
+
+**Files:** `src/app/api/accounts/[id]/holdings/route.ts`, `src/app/api/accounts/[id]/route.ts` (DELETE at L50–54), `src/app/api/accounts/[id]/cash-transactions/route.ts`, `src/app/api/accounts/[id]/transactions/[transactionId]/route.ts`, `src/app/api/settings/data/route.ts`
+
+The `"net-worth"` cache tag introduced with #73 is only invalidated by `POST /api/prices/refresh` and the snapshot cron. Every other mutation — creating/editing/deleting an account, holding, or cash transaction, importing a data file — leaves the cached summary untouched. Users see stale totals until the 60-second TTL expires.
+
+**Fix:** Add `revalidateTag("net-worth")` (and `revalidatePath("/")` where appropriate) as the last step of each handler:
+
+```ts
+import { revalidateTag } from "next/cache";
+// ...after the prisma mutation...
+revalidateTag("net-worth");
+return ok(result);
+```
+
+- **Affected files:** all mutation route handlers listed above.
+
+
+### 127. Add `/api/health` Readiness Endpoint
+
+**File:** *new* `src/app/api/health/route.ts`
+
+There is no public health-check endpoint. Uptime monitors and container orchestrators currently have to either hit `/` (which requires auth) or skip liveness probes entirely.
+
+**Fix:**
+
+```ts
+export async function GET() {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return NextResponse.json({ ok: true, ts: Date.now() });
+  } catch (error) {
+    return NextResponse.json({ ok: false, ts: Date.now() }, { status: 503 });
+  }
+}
+```
+
+Register `/api/health` as a public route in middleware so it's not gated by auth.
+
+- **Affected files:** new `src/app/api/health/route.ts`, `src/middleware.ts`.
+
+
+### 128. `select` Clause on `GET /api/exchange-rates`
+
+**File:** `src/app/api/exchange-rates/route.ts` (lines 4–7)
+
+A bare `prisma.exchangeRate.findMany()` returns every column (`id`, `createdAt`, `updatedAt`, `fromCurrency`, `toCurrency`, `rate`) when clients only consume `{ fromCurrency, toCurrency, rate }`. Combined with the `Cache-Control` fix from #75/#95, this halves the response payload.
+
+**Fix:** `findMany({ select: { fromCurrency: true, toCurrency: true, rate: true } })`.
+
+- **Affected file:** `src/app/api/exchange-rates/route.ts`
+
+
+### 129. Derive Account Count from Cached Accounts Array
+
+**File:** `src/components/dashboard/dashboard-content.tsx` (lines 200–202)
+
+`prisma.account.count({ where: { userId } })` runs in its own round-trip even though `fetchUserAccountsWithHoldings(userId)` — a React-cached helper — already has the full list in memory the same render.
+
+**Fix:** Replace the count query with `(await fetchUserAccountsWithHoldings(userId)).length`. One fewer Neon round-trip on every dashboard load.
+
+- **Affected file:** `src/components/dashboard/dashboard-content.tsx`
+
+
+### 130. `Cache-Control` on `GET /api/search`
+
+**File:** `src/app/api/search/route.ts`
+
+`/api/search` hits Yahoo Finance on every keystroke-triggered request. Regardless of whether server-side `unstable_cache` (#107) lands, the **browser** should also cache the response briefly so rapid typing / backspacing doesn't re-fetch an identical query from the origin.
+
+**Fix:**
+
+```ts
+return NextResponse.json(results, {
+  headers: { "Cache-Control": "public, max-age=30, stale-while-revalidate=60" },
+});
+```
+
+- **Affected file:** `src/app/api/search/route.ts`
+
+
+### 131. Stream `HistoryTable` with Its Own Suspense Boundary
+
+**File:** `src/app/(main)/history/page.tsx` (lines 18–22)
+
+The page awaits `getNormalizedHistory` (90-day snapshots + rate conversion) before rendering anything. On slow Neon cold-starts this blocks the entire page shell.
+
+**Fix:** Mirror #74's pattern — split into two async RSCs wrapped in `<Suspense>`:
+
+```tsx
+<Suspense fallback={<HistoryChartSkeleton />}>
+  <HistoryChartSection userId={userId} baseCurrency={baseCurrency} />
+</Suspense>
+<Suspense fallback={<HistoryTableSkeleton />}>
+  <HistoryTableSection userId={userId} baseCurrency={baseCurrency} />
+</Suspense>
+```
+
+The page header + navigation render immediately; the chart and table stream in independently.
+
+- **Affected file:** `src/app/(main)/history/page.tsx`
+
+
+### 132. Prefetch Account Detail Pages from Sidebar
+
+**File:** `src/components/layout/sidebar.tsx`
+
+The sidebar renders account links that users click frequently, but nothing triggers Next.js prefetch of the account detail RSC payload until hover. On mobile (no hover) the first click always pays the full TTFB.
+
+**Fix:** On sidebar mount (or link `onFocus`/`onMouseEnter`), call `router.prefetch("/accounts/" + id)` for the 3–5 most recently viewed accounts:
+
+```tsx
+const router = useRouter();
+useEffect(() => {
+  recentAccounts.slice(0, 5).forEach((a) => router.prefetch(`/accounts/${a.id}`));
+}, [recentAccounts, router]);
+```
+
+Complements #96, which prefetches on category expand — this prefetches on sidebar render.
+
+- **Affected file:** `src/components/layout/sidebar.tsx`
+
+
+### 133. Hoist `getOrCreateSettings(userId)` into `(main)/layout.tsx`
+
+**Files:** `src/app/(main)/history/page.tsx`, `src/app/(main)/analysis/page.tsx`, `src/app/(main)/settings/page.tsx`, `src/app/(main)/layout.tsx`
+
+React `cache()` dedups within a single RSC render, not across route transitions. Each secondary page calls `getOrCreateSettings(userId)` fresh on first render.
+
+**Fix:** Resolve settings once in `(main)/layout.tsx`, expose it via a `SettingsProvider` React context (set via `children` prop passthrough or `React.cache`-scoped helper), and let pages read `baseCurrency` from that. One `setting.findUnique` per page navigation becomes zero.
+
+- **Affected files:** `src/app/(main)/layout.tsx`, plus each page that currently calls `getOrCreateSettings` directly.
+
+
+---
+
+### Developer Experience
+
+### 134. Add `.prettierrc` + Prettier in CI
+
+**File:** *new* `.prettierrc.json`, `package.json`
+
+No Prettier config exists; different editors format files differently, producing noisy diffs.
+
+**Fix:** Ship a minimal config (`{ "semi": true, "singleQuote": false, "trailingComma": "all", "tabWidth": 2 }`), add scripts `"format": "prettier --write ."` and `"format:check": "prettier --check ."`, and wire `format:check` into the existing lint CI step.
+
+
+### 135. Husky + lint-staged Pre-commit Hook
+
+**File:** *new* `.husky/pre-commit`, `package.json`
+
+Bad formatting and ESLint errors currently only surface in CI. A pre-commit hook running `eslint --fix` + `prettier --write` on staged files prevents the broken-lint commit in the first place.
+
+**Fix:** `npx husky init`, install `lint-staged`, configure:
+
+```json
+"lint-staged": {
+  "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
+  "*.{json,md}": ["prettier --write"]
+}
+```
+
+Run `npx lint-staged` from `.husky/pre-commit`.
