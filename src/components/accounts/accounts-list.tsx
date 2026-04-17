@@ -2,18 +2,25 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency, formatQuantity } from "@/lib/currencies";
-import { AccountForm } from "./account-form";
-import { QuickAddHolding } from "./quick-add-holding";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
+
+const AccountForm = dynamic(
+  () => import("./account-form").then((m) => m.AccountForm)
+);
+
+const QuickAddHolding = dynamic(
+  () => import("./quick-add-holding").then((m) => m.QuickAddHolding)
+);
 
 const HIDDEN = "***";
 
@@ -203,7 +210,6 @@ export function AccountsList({
             {assetsByCategory.map(({ category, accounts: catAccounts }) => (
               <CategorySection
                 key={`asset_${category}`}
-                type="ASSET"
                 category={category}
                 accounts={catAccounts}
                 priceMap={priceMap}
@@ -229,7 +235,6 @@ export function AccountsList({
             {liabilitiesByCategory.map(({ category, accounts: catAccounts }) => (
               <CategorySection
                 key={`liability_${category}`}
-                type="LIABILITY"
                 category={category}
                 accounts={catAccounts}
                 priceMap={priceMap}
@@ -246,14 +251,26 @@ export function AccountsList({
         </div>
       )}
 
-      <AccountForm open={showForm} onClose={() => setShowForm(false)} defaultCurrency={baseCurrency} />
-      <QuickAddHolding open={showQuickAdd} onClose={() => setShowQuickAdd(false)} accounts={accounts} defaultCurrency={baseCurrency} />
+      {showForm && (
+        <AccountForm
+          open={showForm}
+          onClose={() => setShowForm(false)}
+          defaultCurrency={baseCurrency}
+        />
+      )}
+      {showQuickAdd && (
+        <QuickAddHolding
+          open={showQuickAdd}
+          onClose={() => setShowQuickAdd(false)}
+          accounts={accounts}
+          defaultCurrency={baseCurrency}
+        />
+      )}
     </div>
   );
 }
 
 function CategorySection({
-  type,
   category,
   accounts,
   priceMap,
@@ -265,7 +282,6 @@ function CategorySection({
   onToggleSelect,
   isSelecting,
 }: {
-  type: string;
   category: string;
   accounts: SerializedAccountWithHoldings[];
   priceMap: Record<string, number>;
