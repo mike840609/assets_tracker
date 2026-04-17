@@ -101,7 +101,7 @@
 | 95 | Add `Cache-Control` headers to `GET /api/exchange-rates` | Performance | 🟢 Low | 15 min | ❌ Not Done |
 | 96 | Prefetch high-traffic routes in accounts list | Performance | 🟡 Medium | 15 min | ❌ Not Done |
 | 97 | Scope cron `refreshAllPrices` to per-user symbols | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
-| 98 | Lazy-load `AccountForm` / `QuickAddHolding` dialogs | Performance | 🟡 Medium | 30 min | ❌ Not Done |
+| 98 | Lazy-load `AccountForm` / `QuickAddHolding` dialogs | Performance | 🟡 Medium | 30 min | ✅ Done |
 | 99 | Add `useMemo` to `getAccountValue` in `AccountsList` | Performance | 🟡 Medium | 15 min | ❌ Not Done |
 | 100 | Update Onboarding Empty State Text | UX | 🟢 Low | 15 min | ❌ Not Done |
 | 101 | Clarify "Growth" definition with Tooltips | UX | 🟢 Low | 30 min | ❌ Not Done |
@@ -1582,7 +1582,7 @@ This filters out holdings with zero quantity (already sold) and holdings in arch
 - **Affected files:** `src/lib/services/price-service.ts`
 
 
-### 98. Lazy-Load `AccountForm` / `QuickAddHolding` Dialogs
+### 98. Lazy-Load `AccountForm` / `QuickAddHolding` Dialogs ✅ Done
 
 **File:** `src/components/accounts/accounts-list.tsx` (lines 11–12, 249–250)
 
