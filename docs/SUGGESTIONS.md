@@ -96,7 +96,7 @@
 | 90 | Memoize derived data in chart components | Performance | 🟡 Medium | 30 min | ❌ Not Done |
 | 91 | Stabilize inline `tickFormatter`s in `TrendChart` | Performance | 🟢 Low | 15 min | ❌ Not Done |
 | 92 | Batch `PriceCache` upserts via `$transaction` | Performance | 🔴 High | 30 min | ✅ Done |
-| 93 | Deduplicate `recentSnapshots` query in dashboard sections | Performance | 🟡 Medium | 15 min | ❌ Not Done |
+| 93 | Deduplicate `recentSnapshots` query in dashboard sections | Performance | 🟡 Medium | 15 min | ✅ Done |
 | 94 | Parallelize account detail page waterfall | Performance | 🟡 Medium | 15 min | ❌ Not Done |
 | 95 | Add `Cache-Control` headers to `GET /api/exchange-rates` | Performance | 🟢 Low | 15 min | ❌ Not Done |
 | 96 | Prefetch high-traffic routes in accounts list | Performance | 🟡 Medium | 15 min | ❌ Not Done |
