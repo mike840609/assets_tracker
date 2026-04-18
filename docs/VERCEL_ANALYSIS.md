@@ -19,6 +19,17 @@
 | V13 | Add baseline security headers (HSTS, X-CTO, XFO, Referrer-Policy, Permissions-Policy) | Security | 🔴 High | 1 hr | ❌ Not Done |
 | V14 | Add CSP (Report-Only first, then enforce) | Security | 🔴 High | 2-3 hrs | ❌ Not Done |
 | V15 | Audit & shrink `.next/cache` (currently 292 MB) | Build Perf | 🟢 Low | 1 hr | ❌ Not Done |
+| V16 | React `cache()` wrap for `/accounts/[id]` reads + audit `<Link prefetch>` to stop 5–8× burst | Performance | 🔴 High | 45 min | ❌ Not Done |
+| V17 | `Cache-Control` + `"use cache"` / `cacheTag("exchange-rates")` on `/api/exchange-rates` | Performance | 🟡 Medium | 20 min | ❌ Not Done |
+| V18 | Opt `/analysis` and `/history` into PPR with `"use cache"` + `cacheTag` | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
+| V19 | Dynamic-import `AllocationChart` + `CurrencyExposureChart` like `TrendChart` | Bundle | 🟡 Medium | 30 min | ❌ Not Done |
+| V20 | `Cache-Control: public, max-age=31536000, immutable` for `/public/*` | Performance | 🟢 Low | 15 min | ❌ Not Done |
+| V21 | Audit `revalidateTag` after `POST /accounts`, `/holdings`, `/transactions` | Performance | 🟡 Medium | 1–2 hrs | ❌ Not Done |
+| V22 | Add `@next/bundle-analyzer` + baseline dashboard RSC payload | Observability | 🟢 Low | 30 min | ❌ Not Done |
+| V23 | Reserve `min-h` / `aspect-ratio` on chart cards (CLS fix) | Speed Insights · CLS | 🔴 High | 30 min | ❌ Not Done |
+| V24 | Preload Geist Sans `.woff2` + `content-visibility: auto` on below-fold cards | Speed Insights · LCP/FCP | 🟡 Medium | 45 min | ❌ Not Done |
+| V25 | `startTransition` + memoize privacy/theme-toggle consumers | Speed Insights · INP | 🟡 Medium | 1 hr | ❌ Not Done |
+| V26 | Extend V18's PPR pattern to `/settings` and `/` (per-user cache key) | Speed Insights · TTFB | 🟡 Medium | 1–2 hrs | ❌ Not Done |
 
 ## Methodology
 
@@ -434,6 +445,381 @@ the build cache.
 
 ---
 
+## Addendum — 2026-04-18 Re-Pull
+
+A second read of the Vercel MCP connector against deployment
+`dpl_DWV5d3wfpoSZajQy6zyHNjhUyHFz` (commit `6c73a35`, 2026-04-17)
+surfaced new signals that the 2026-04-17 pass did not catch. Items
+**V16–V26** below are sourced from this second pass and from a direct
+request to propose Speed-Insights-score-focused changes.
+
+Key new observations:
+
+1. **The prefetch storm is still present post-V6.** Runtime logs
+   (7-day window ending 2026-04-18 14:17) show `/accounts/[id]` firing
+   **5–8 times within the same second** for the same id (e.g.
+   `cmnk06j7300030al1829iwqi6` at 14:15:28 → 5 hits, 14:15:29 → 2
+   hits). V6 fixed the sidebar trigger but the accounts-list `<Link>`
+   and RSC renderer still multiply the hit count.
+2. **`/history`, `/settings`, `/analysis` fire 4× per second** right
+   after settings clicks. Residual fan-out from unbatched RSC
+   prefetches.
+3. **Only one route is PPR.** Build output shows `/accounts/[id]` as
+   `◐ (Partial Prerender)`; `/`, `/analysis`, `/history`, `/settings`
+   are all `ƒ (Dynamic)`. `cacheComponents: true` is set but no other
+   route opts into `"use cache"` — the framework's headline win is
+   mostly unused.
+4. **`/api/exchange-rates` ships zero cache headers** and has no
+   `"use cache"` directive (`src/app/api/exchange-rates/route.ts:4`).
+   Every client fetch round-trips to Neon.
+5. **Static-asset caching relies entirely on Vercel defaults.**
+   `next.config.ts` only sets `X-DNS-Prefetch-Control`; `/public/*`
+   (favicon, icons, apple-touch) has no `immutable` cache directive.
+6. **Dashboard ships all three recharts bundles eagerly.** Only
+   `TrendChart` is dynamic-imported; `AllocationChart` and
+   `CurrencyExposureChart` are not.
+
+The Speed-Insights-specific items (V23–V26) each map to one Web Vital
+and are grouped so the team can pick the metric they most want to
+move.
+
+## Detailed Enhancement Write-ups — V16 onward
+
+### V16 — Dedupe `/accounts/[id]` reads with React `cache()` and tighten link prefetch
+
+**Observation.** Runtime logs show 5–8 hits per second for the same
+account id. `src/app/(main)/accounts/[id]/page.tsx:21` calls
+`prisma.account.findUnique` without wrapping in React `cache()`; when
+the RSC renderer re-enters `AccountDetailContent` after each `await`,
+or when the accounts-list prefetches the detail `<Link>`, each pass
+re-hits Neon. The repo already uses this idiom elsewhere (commit
+`dc593ee7` "perf: deduplicate recentSnapshots query via React
+cache()").
+
+**Recommendation.** (1) Factor the lookup into
+`src/lib/services/account-service.ts`:
+
+```ts
+import { cache } from "react";
+import { prisma } from "@/lib/prisma";
+
+export const getAccountWithHoldings = cache(async (id: string) =>
+  prisma.account.findUnique({
+    where: { id },
+    include: { holdings: { where: { quantity: { gt: 0 } } } },
+  }),
+);
+```
+
+(2) Call that from the page. (3) Audit
+`src/components/accounts/accounts-list.tsx` — if each row renders
+`<Link href={...} prefetch={true}>` on hover, drop to
+`prefetch={false}` + `router.prefetch` on first-intent (mirrors V6).
+
+**Critical files.** `src/app/(main)/accounts/[id]/page.tsx`,
+`src/lib/services/account-service.ts` (new), `src/components/accounts/accounts-list.tsx`.
+
+---
+
+### V17 — Cache `/api/exchange-rates`
+
+**Observation.** `src/app/api/exchange-rates/route.ts:4-6` returns
+`findMany()` with no `Cache-Control`, no `revalidate`, no
+`"use cache"`. Exchange rates update daily at cron time — client
+requests should be served from the CDN.
+
+**Recommendation.** Either (a) add a response header:
+
+```ts
+return NextResponse.json(rates, {
+  headers: {
+    "Cache-Control":
+      "public, s-maxage=3600, stale-while-revalidate=86400",
+  },
+});
+```
+
+or (b) adopt the Next 16 cache directive:
+
+```ts
+"use cache";
+import { cacheTag, cacheLife } from "next/cache";
+
+export async function GET() {
+  cacheTag("exchange-rates");
+  cacheLife("hours");
+  const rates = await prisma.exchangeRate.findMany();
+  return ok(rates);
+}
+```
+
+Then call `revalidateTag("exchange-rates")` inside
+`POST /api/exchange-rates/refresh` and the cron snapshot job so the
+edge cache invalidates on refresh.
+
+**Critical files.** `src/app/api/exchange-rates/route.ts`,
+`src/app/api/exchange-rates/refresh/route.ts`,
+`src/app/api/cron/snapshot/route.ts`.
+
+---
+
+### V18 — Opt `/analysis` and `/history` into PPR
+
+**Observation.** Build output lists both routes as `ƒ (Dynamic)`.
+`src/app/(main)/analysis/page.tsx` and
+`src/app/(main)/history/page.tsx` await services but use no
+`"use cache"` directive — `cacheComponents: true` is wasted on them.
+
+**Recommendation.** Move each route's data-fetching helper into a
+cached server function:
+
+```ts
+// src/lib/services/history-service.ts
+"use cache";
+import { cacheTag, cacheLife } from "next/cache";
+
+export async function getNormalizedHistory(userId: string, days = 90) {
+  cacheTag(`history:${userId}`);
+  cacheLife("minutes");
+  // …existing logic
+}
+```
+
+Trigger `revalidateTag("history:" + userId)` in the mutation handlers
+(snapshot writes, account create/update) so caches stay correct.
+The page's dynamic islands (user-specific chrome) remain dynamic;
+the rest moves to the CDN. Expected build-output change: both routes
+flip from `ƒ` to `◐`.
+
+**Critical files.** `src/app/(main)/analysis/page.tsx`,
+`src/app/(main)/history/page.tsx`,
+`src/lib/services/history-service.ts`,
+`src/lib/services/net-worth-service.ts`.
+
+---
+
+### V19 — Dynamic-import sibling dashboard charts
+
+**Observation.** `src/components/dashboard/lazy-charts.tsx` only
+dynamic-imports `TrendChart`. `AllocationChart` and
+`CurrencyExposureChart` are imported statically from
+`src/components/dashboard/dashboard-content.tsx`, so their recharts
+subtree is in the initial dashboard RSC payload / client JS.
+
+**Recommendation.** Extend the existing `lazy-charts` pattern:
+
+```ts
+export const LazyAllocationChart = dynamic(
+  () => import("./allocation-chart").then((m) => m.AllocationChart),
+);
+export const LazyCurrencyExposureChart = dynamic(
+  () => import("./currency-exposure-chart").then(
+    (m) => m.CurrencyExposureChart,
+  ),
+);
+```
+
+Keep SSR enabled for these (unlike TrendChart which uses `ssr: false`
+for chart-library safety) to preserve CLS — they render with data
+already.
+
+**Critical files.** `src/components/dashboard/lazy-charts.tsx`,
+`src/components/dashboard/dashboard-content.tsx`.
+
+---
+
+### V20 — Long-cache `/public/*` static assets
+
+**Observation.** `next.config.ts:18-28` only sets
+`X-DNS-Prefetch-Control`. Vercel's default static-asset TTL is
+conservative; brand assets (logo, favicon, apple-touch) can safely be
+`immutable` for a year since a filename change forces a new URL.
+
+**Recommendation.** Add a second `source: "/:all*(svg|jpg|png|webp|avif|ico)"`
+entry in `next.config.ts` `headers()`:
+
+```ts
+{
+  source: "/:all*(svg|jpg|jpeg|png|webp|avif|ico|woff2)",
+  headers: [
+    { key: "Cache-Control",
+      value: "public, max-age=31536000, immutable" },
+  ],
+},
+```
+
+Verify with `curl -I https://asset-tracker-ct.vercel.app/icon.svg`.
+
+**Critical files.** `next.config.ts`.
+
+---
+
+### V21 — Audit `revalidateTag` fan-out
+
+**Observation.** Runtime logs show `POST /accounts` at 14:10:34
+immediately followed by `GET /` at 14:10:36 and `GET /accounts` at
+14:10:33. Expected revalidation — but if the POST handler calls
+`revalidatePath("/")` or tags broadly (e.g. `"accounts"`), it can
+cascade-invalidate unrelated cached reads once V18/V26 land.
+
+**Recommendation.** Grep `src/app/api/**/route.ts` for
+`revalidatePath`, `revalidateTag`, `router.refresh`. Map each mutation
+to the **narrowest** tag(s) it should invalidate:
+
+| Mutation | Correct tag(s) |
+|----------|----------------|
+| `POST /api/accounts` | `accounts:${userId}`, `net-worth:${userId}` |
+| `POST /api/accounts/[id]/holdings` | `account:${id}`, `net-worth:${userId}` |
+| `POST /api/prices/refresh` | `prices` |
+| `POST /api/cron/snapshot` | `history:${userId}` (per user), `net-worth:${userId}` |
+
+Land V18 first so there are actual tagged reads to invalidate.
+
+**Critical files.** `src/app/api/accounts/route.ts`,
+`src/app/api/accounts/[id]/holdings/route.ts`,
+`src/app/api/accounts/[id]/transactions/route.ts`,
+`src/app/api/prices/refresh/route.ts`,
+`src/app/api/cron/snapshot/route.ts`.
+
+---
+
+### V22 — Bundle-analyzer baseline
+
+**Observation.** `next.config.ts:9-15` passes the right names to
+`optimizePackageImports` (recharts, lucide-react, date-fns,
+next-intl, @prisma/client), but there is no way to verify
+effectiveness or catch regressions. No `@next/bundle-analyzer` in
+`package.json`.
+
+**Recommendation.**
+
+```bash
+npm i -D @next/bundle-analyzer
+```
+
+Wrap the export in `next.config.ts`:
+
+```ts
+import withBundleAnalyzer from "@next/bundle-analyzer";
+const analyzer = withBundleAnalyzer({ enabled: process.env.ANALYZE === "true" });
+export default analyzer(withNextIntl(nextConfig));
+```
+
+Run `ANALYZE=true npm run build` once and commit the baseline numbers
+to this doc (app JS, dashboard route JS, shared chunks). Re-run before
+shipping V19 to measure the savings.
+
+**Critical files.** `next.config.ts`, `package.json`.
+
+---
+
+### V23 — Reserve chart card height (CLS)
+
+**Observation.** Recharts renders client-side and has no intrinsic
+height. On the dashboard, the skeleton collapses to 0 and the chart
+injects its SVG, producing a layout shift as the card height grows to
+~320 px. Speed Insights counts this toward CLS.
+
+**Recommendation.** Set an explicit `min-h-[320px]` (or
+`aspect-[4/3]`) on each chart card wrapper in
+`src/components/dashboard/allocation-chart.tsx`,
+`currency-exposure-chart.tsx`, `trend-chart.tsx`. Match the skeleton
+in `src/components/dashboard/dashboard-skeleton.tsx` to the same
+height. Verify in DevTools → Performance → Layout shifts that the
+dashboard's CLS score lands below 0.1.
+
+**Critical files.** `src/components/dashboard/allocation-chart.tsx`,
+`src/components/dashboard/currency-exposure-chart.tsx`,
+`src/components/dashboard/trend-chart.tsx`,
+`src/components/dashboard/dashboard-skeleton.tsx`.
+
+---
+
+### V24 — Preload fonts + defer below-fold work (LCP / FCP)
+
+**Observation.** Geist Sans is loaded via `next/font/local` with
+`display: "swap"` — correct — but the dashboard title (likely the
+LCP candidate on `/`) still waits one paint cycle for the
+400/600-weight subset. Below-fold chart cards render immediately even
+though the user may not scroll to them.
+
+**Recommendation.** (1) In `src/app/layout.tsx`, mark the
+`next/font/local` declaration with `preload: true` for the weights
+used by the hero (`400`, `600`). (2) Add `content-visibility: auto;
+contain-intrinsic-size: 320px 600px;` (Tailwind arbitrary value) to
+below-fold chart cards so the browser skips their layout/paint until
+they scroll near.
+
+**Critical files.** `src/app/layout.tsx`,
+`src/components/dashboard/allocation-chart.tsx`,
+`src/components/dashboard/currency-exposure-chart.tsx`.
+
+---
+
+### V25 — `startTransition` around privacy / theme toggles (INP)
+
+**Observation.** `src/components/layout/privacy-mode-context.tsx` and
+`next-themes` both trigger a synchronous re-render of every currency
+cell across accounts, transactions, and charts when the user toggles
+privacy or theme. On a 50+ holding account, this pushes INP past the
+200 ms "needs improvement" threshold.
+
+**Recommendation.**
+
+```ts
+import { startTransition } from "react";
+// …
+const togglePrivacyMode = () =>
+  startTransition(() => setPrivacyMode((v) => !v));
+```
+
+Also wrap currency-formatting cells in `React.memo` and pass a stable
+`formatCurrency` reference so they skip re-renders when neither
+amount nor currency changed. Measure with the "Interactions" panel in
+the Vercel Speed Insights dashboard.
+
+**Critical files.**
+`src/components/layout/privacy-mode-context.tsx`,
+`src/components/layout/theme-toggle.tsx`,
+`src/lib/currencies.ts` (add memoized `<CurrencyCell>` component).
+
+---
+
+### V26 — Extend PPR to `/settings` and `/` (TTFB)
+
+**Observation.** Build output flags `/` and `/settings` as
+`ƒ (Dynamic)`. Both pages pay a full Neon round-trip from `sin1` on
+every visit — TTFB baselines around 250–400 ms.
+
+**Recommendation.** Apply V18's pattern with a user-keyed cache tag.
+`/settings` is straightforward (one row keyed by `userId`):
+
+```ts
+"use cache";
+import { cacheTag, cacheLife } from "next/cache";
+
+export async function getUserSettings(userId: string) {
+  cacheTag(`settings:${userId}`);
+  cacheLife("minutes");
+  return prisma.userSettings.findUnique({ where: { userId } });
+}
+```
+
+`/` (dashboard) is trickier because net-worth depends on prices
+refreshed by the cron. Cache the **structural** parts (list of
+account names, currencies, holdings) under `accounts:${userId}`, and
+leave the price-valued numbers as dynamic islands streamed from the
+server. Build output should flip both routes from `ƒ` to `◐` without
+losing correctness. Pair with V21 so mutations invalidate the right
+tags.
+
+**Critical files.** `src/app/(main)/page.tsx`,
+`src/app/(main)/settings/page.tsx`,
+`src/lib/services/settings-service.ts` (or similar),
+`src/lib/services/net-worth-service.ts`.
+
+---
+
 ## Next Steps
 
 1. Implement **V1, V2, V3, V7, V13** first — low effort, high signal.
@@ -443,3 +829,17 @@ the build cache.
 4. **V6** requires careful testing to avoid regressing #127's perceived
    nav speed.
 5. **V14** (CSP) should land only after V13 + a week of report-only data.
+6. **V16 + V23** are the highest-signal new items — V16 removes
+   multi-second duplicate DB hits, V23 removes measurable CLS from
+   every dashboard load.
+7. **V17 and V20** are 15–20-minute quick wins and both tighten cache
+   headers — batch them with V2's build-command cleanup.
+8. **V18 + V26** unlock PPR on the three currently-dynamic routes,
+   but require V21's `revalidateTag` discipline first; otherwise
+   mutations will either leave stale data or cascade-invalidate too
+   much.
+9. **V24 + V25** are the Speed Insights polish pass — land them after
+   the structural items (V16, V18, V23, V26) so baseline scores move
+   first.
+10. **V22** before and after V19 — bundle-analyzer output is the
+    cleanest evidence that recharts got slimmer.
