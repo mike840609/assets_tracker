@@ -11,7 +11,7 @@
 | V5 | Pin `regions` in `vercel.json` to match Neon region (`sin1`) | Performance | 🟡 Medium | 15 min | ✅ Done |
 | V6 | Hover/viewport prefetch in sidebar (replace eager all-routes prefetch) | Performance | 🟡 Medium | 30 min | ✅ Done |
 | V7 | Suppress yahoo-finance2 consent notices in `price-service.ts` | Observability | 🟢 Low | 15 min | ❌ Not Done |
-| V8 | Evaluate edge runtime for `/api/search` + `/api/exchange-rates` | Performance | 🟡 Medium | 1-2 hrs | ❌ Not Done |
+| V8 | Evaluate edge runtime for `/api/search` + `/api/exchange-rates` | Performance | 🟡 Medium | 1-2 hrs | ⚠️ Blocked (see notes) |
 | V9 | Verify `@vercel/speed-insights` + `@vercel/analytics` are mounted | Observability | 🟢 Low | 15 min | ✅ Done |
 | V10 | Add `/api/health` endpoint | Observability | 🟡 Medium | 30 min | ❌ Not Done |
 | V11 | Verify Vercel Cron `/api/cron/snapshot` is firing daily | Reliability | 🔴 High | 15 min | ❌ Not Done |
@@ -223,6 +223,40 @@ the import graph.
 
 **Critical files.** `src/app/api/search/route.ts`,
 `src/app/api/exchange-rates/route.ts`
+
+**Evaluation outcome (2026-04-18): blocked by Cache Components.** Adding
+`export const runtime = "edge"` to either route fails the Turbopack
+build with:
+
+> Route segment config "runtime" is not compatible with
+> `nextConfig.cacheComponents`. Please remove it.
+
+This is a documented Next.js 16 constraint. Per
+`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/02-route-segment-config/runtime.md:23`:
+
+> Using `runtime: 'edge'` is **not supported** for Cache Components.
+
+`next.config.ts` sets `cacheComponents: true` (the umbrella flag that
+replaces `ppr` + `useCache` + `dynamicIO` in Next.js 16). Disabling it
+to unlock edge on two read-only routes would give up PPR and the
+`use cache` directive app-wide — a bad trade.
+
+Additional blockers below the framework constraint (for reference if
+this is revisited after `cacheComponents` evolves):
+
+- `/api/exchange-rates` imports `@/lib/prisma`, which constructs
+  `PrismaNeon` with `ws` (Node-only) at `src/lib/prisma.ts:1-7`. An
+  edge variant would need `@neondatabase/serverless` HTTP driver and
+  raw SQL (or a separate edge-only Prisma client).
+- `/api/search` uses `yahoo-finance2`, which is Node-only. An edge
+  variant would need a direct `fetch` to
+  `https://query1.finance.yahoo.com/v1/finance/search` and would lose
+  the library's consent/header/cookie handling.
+
+**Recommendation.** Leave both routes on the Node runtime. Re-evaluate
+when either Next.js relaxes the Cache Components + edge restriction, or
+when the team decides to trade PPR / `use cache` for edge latency. No
+code change lands from this evaluation.
 
 ---
 
