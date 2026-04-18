@@ -5,14 +5,14 @@
 | # | Suggestion | Category | Impact | Effort | Status |
 |---|-----------|----------|--------|--------|--------|
 | V1 | Rename `src/middleware.ts` → `src/proxy.ts` (Next.js 16 convention) | Deprecation | 🟢 Low | 10 min | ❌ Not Done |
-| V2 | Remove duplicate `prisma generate` (postinstall + build) | Build Perf | 🟢 Low | 5 min | ❌ Not Done |
+| V2 | Remove duplicate `prisma generate` (postinstall + build) | Build Perf | 🟢 Low | 5 min | ✅ Done |
 | V3 | Upgrade `prisma` + `@prisma/client` 7.6.0 → 7.7.0 | Maintenance | 🟢 Low | 10 min | ❌ Not Done |
-| V4 | Set `maxDuration: 60` for `/api/cron/snapshot` in `vercel.json` | Reliability | 🔴 High | 10 min | ❌ Not Done |
-| V5 | Pin `regions` in `vercel.json` to match Neon region | Performance | 🟡 Medium | 15 min | ❌ Not Done |
-| V6 | Hover/viewport prefetch in sidebar (replace eager all-routes prefetch) | Performance | 🟡 Medium | 30 min | ❌ Not Done |
+| V4 | Set `maxDuration: 60` for `/api/cron/snapshot` in `vercel.json` | Reliability | 🔴 High | 10 min | ✅ Done |
+| V5 | Pin `regions` in `vercel.json` to match Neon region (`sin1`) | Performance | 🟡 Medium | 15 min | ✅ Done |
+| V6 | Hover/viewport prefetch in sidebar (replace eager all-routes prefetch) | Performance | 🟡 Medium | 30 min | ✅ Done |
 | V7 | Suppress yahoo-finance2 consent notices in `price-service.ts` | Observability | 🟢 Low | 15 min | ❌ Not Done |
 | V8 | Evaluate edge runtime for `/api/search` + `/api/exchange-rates` | Performance | 🟡 Medium | 1-2 hrs | ❌ Not Done |
-| V9 | Verify `@vercel/speed-insights` + `@vercel/analytics` are mounted | Observability | 🟢 Low | 15 min | ❌ Not Done |
+| V9 | Verify `@vercel/speed-insights` + `@vercel/analytics` are mounted | Observability | 🟢 Low | 15 min | ✅ Done |
 | V10 | Add `/api/health` endpoint | Observability | 🟡 Medium | 30 min | ❌ Not Done |
 | V11 | Verify Vercel Cron `/api/cron/snapshot` is firing daily | Reliability | 🔴 High | 15 min | ❌ Not Done |
 | V12 | Structured error logging in `price-service.ts` | Observability | 🟡 Medium | 1 hr | ❌ Not Done |

@@ -24,14 +24,6 @@ export function Sidebar() {
     { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];
 
-  // Prefetch all routes on mount for instant tab switching
-  useEffect(() => {
-    navItems.forEach((item) => {
-      router.prefetch(item.href);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
-
   return (
     <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar/80 backdrop-blur-md text-sidebar-foreground glass z-10 shrink-0">
       <div className="p-6">
@@ -49,6 +41,9 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
+              onMouseEnter={() => router.prefetch(item.href)}
+              onFocus={() => router.prefetch(item.href)}
               className={cn(
                 "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 isActive
