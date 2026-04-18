@@ -1,8 +1,13 @@
 {
+  "buildCommand": "next build",
+  "regions": ["iad1"],
   "crons": [
     {
       "path": "/api/cron/snapshot",
       "schedule": "30 21 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "src/app/api/cron/snapshot/route.ts": { "maxDuration": 60 }
+  }
 }
