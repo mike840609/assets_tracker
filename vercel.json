@@ -1,6 +1,6 @@
 {
   "buildCommand": "next build",
-  "regions": ["iad1"],
+  "regions": ["sin1"],
   "crons": [
     {
       "path": "/api/cron/snapshot",
