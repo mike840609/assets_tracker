@@ -1,4 +1,4 @@
-import { unstable_cache } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAllExchangeRates, resolveRate } from "./exchange-rate-service";
 import type { NetWorthSnapshot } from "@/generated/prisma/client";
@@ -50,14 +50,21 @@ function normalizeSnapshots(
 }
 
 /**
- * Fetch and normalize net worth history for a user.
- * Converts all snapshots to the current target base currency.
- * Defaults to the last 90 days if no date range is specified.
+ * Cache Components read of the default (last-90-day) normalized
+ * history. Tagged both globally (`snapshots`, `net-worth`) and
+ * per-user (`history:${userId}`) so cron snapshot + account mutations
+ * can invalidate cleanly.
  */
-async function computeNormalizedHistory(
+export async function getNormalizedHistory(
   userId: string,
   targetBaseCurrency: string,
 ): Promise<NormalizedSnapshot[]> {
+  "use cache";
+  cacheTag("snapshots");
+  cacheTag("net-worth");
+  cacheTag(`history:${userId}`);
+  cacheLife("minutes");
+
   const fromDate = new Date();
   fromDate.setDate(fromDate.getDate() - DEFAULT_HISTORY_DAYS);
 
@@ -73,29 +80,52 @@ async function computeNormalizedHistory(
 }
 
 /**
- * Cached version of normalized history (60-second TTL, invalidated by "snapshots" tag).
- * Used by the dashboard trend chart for fast repeated loads.
- */
-export const getNormalizedHistory = unstable_cache(
-  computeNormalizedHistory,
-  ["normalized-history"],
-  { revalidate: 60, tags: ["snapshots", "net-worth"] }
-);
-
-/**
- * Full history fetch (uncached, no date limit) for pages that need the complete history.
+ * Full history fetch for pages that need the complete history.
+ * Uses `"use cache"` only when no custom range is supplied; a custom
+ * range short-circuits to a raw DB call so the cache key isn't
+ * polluted by arbitrary window selections.
  */
 export async function getFullNormalizedHistory(
   userId: string,
   targetBaseCurrency: string,
   options?: { from?: Date; to?: Date }
 ): Promise<NormalizedSnapshot[]> {
-  const where: { userId: string; date?: { gte?: Date; lte?: Date } } = { userId };
   if (options?.from || options?.to) {
-    where.date = {};
-    if (options.from) where.date.gte = options.from;
-    if (options.to) where.date.lte = options.to;
+    return fetchFullHistoryRange(userId, targetBaseCurrency, options);
   }
+  return fetchFullHistoryCached(userId, targetBaseCurrency);
+}
+
+async function fetchFullHistoryCached(
+  userId: string,
+  targetBaseCurrency: string,
+): Promise<NormalizedSnapshot[]> {
+  "use cache";
+  cacheTag("snapshots");
+  cacheTag("net-worth");
+  cacheTag(`history:${userId}`);
+  cacheLife("minutes");
+
+  const [snapshotsRaw, allRatesMap] = await Promise.all([
+    prisma.netWorthSnapshot.findMany({
+      where: { userId },
+      orderBy: { date: "asc" },
+    }),
+    getAllExchangeRates(),
+  ]);
+
+  return normalizeSnapshots(snapshotsRaw, allRatesMap, targetBaseCurrency);
+}
+
+async function fetchFullHistoryRange(
+  userId: string,
+  targetBaseCurrency: string,
+  options: { from?: Date; to?: Date },
+): Promise<NormalizedSnapshot[]> {
+  const where: { userId: string; date?: { gte?: Date; lte?: Date } } = { userId };
+  where.date = {};
+  if (options.from) where.date.gte = options.from;
+  if (options.to) where.date.lte = options.to;
 
   const [snapshotsRaw, allRatesMap] = await Promise.all([
     prisma.netWorthSnapshot.findMany({
