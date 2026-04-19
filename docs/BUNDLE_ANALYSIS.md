@@ -16,6 +16,11 @@ We leveraged `@next/bundle-analyzer` to inspect the client, server, and edge bun
 | B8 | Opt-out `yahoo-finance2` from client bundle via `server-only` | Bundle Size | 🔴 High | 15 min | ❌ Not Done |
 | B9 | Evaluate `next-intl` dictionary loading per route | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
 | B10 | Migrate `swr` fetching to RSCs (Server Components) | Bundle Size | 🟡 Medium | 1 hr | ❌ Not Done |
+| B11 | Lazy-load `cmdk` (Command Palette) | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
+| B12 | Audit `@base-ui/react` tree-shaking | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
+| B13 | Profile `tw-animate-css` payload | Bundle Size | 🟢 Low | 15 min | ❌ Not Done |
+| B14 | Optimize Root Layout Font preloading | Performance | 🟡 Medium | 15 min | ❌ Not Done |
+| B15 | Defer Vercel Analytics/Speed Insights | Performance | 🟢 Low | 10 min | ❌ Not Done |
 
 ## Methodology
 
@@ -138,3 +143,55 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 
 **Critical files:**
 - Client components currently using SWR Hooks
+
+---
+
+### B11 — Lazy-load `cmdk` (Command Palette)
+
+**Observation.** Command menus (`cmdk`) are extremely useful but often include a significant chunk of logic and styles that are only needed when the user explicitly triggers the shortcut (e.g., `Cmd+K`).
+
+**Recommendation.** Use a dynamic import for the Command Palette component. Only load the `cmdk` library when the user performs the trigger or hovers over a search UI element.
+
+**Critical files:**
+- Search or Shortcut handler components.
+
+---
+
+### B12 — Audit `@base-ui/react` Tree-shaking
+
+**Observation.** The project uses `@base-ui/react` (the successor to Radix/headless UI). While it is designed to be tree-shakeable, certain patterns of exporting components in a shared `ui` folder can occasionally pull in more primitives than necessary.
+
+**Recommendation.** Inspect the client bundle to ensure only the primitives actually used (Select, Dialog, Popover) appear in the output. If a single `index.ts` in a UI folder is re-exporting everything, it may defeat tree-shaking in some build configurations.
+
+**Critical files:**
+- `src/components/ui/*`
+
+---
+
+### B13 — Profile `tw-animate-css` Payload
+
+**Observation.** Animation libraries can sometimes inject a large block of global CSS or JS-based animation logic.
+
+**Recommendation.** Verify if `tw-animate-css` is strictly generating Tailwind utility classes at build time or if it's shipping a runtime animation engine. If it's the latter, evaluate if native Tailwind/CSS transitions are sufficient for the desired "rich aesthetics".
+
+---
+
+### B14 — Optimize Root Layout Font Preloading
+
+**Observation.** Next.js Font optimization is present, but if the bundle analyzer shows the font files being fetched with high priority before the main JS chunks, it could compete for bandwidth during the critical FCP window.
+
+**Recommendation.** Ensure Geist or other custom fonts are subsetted to only the characters needed for the initial render and that only the `400/700` weights are preloaded.
+
+**Critical files:**
+- `src/app/layout.tsx`
+
+---
+
+### B15 — Defer Vercel Analytics/Speed Insights
+
+**Observation.** While tiny, these scripts still execute on every page load.
+
+**Recommendation.** While the Vercel components handle this well, verify that they aren't executing before the main application logic becomes interactive. Using `next/script` with `strategy="afterInteractive"` or `lazyOnload` for non-critical telemetry can help clear the thread for the initial render.
+
+**Critical files:**
+- `src/app/layout.tsx`
