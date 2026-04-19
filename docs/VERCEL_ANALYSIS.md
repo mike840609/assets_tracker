@@ -28,8 +28,8 @@
 | V22 | Add `@next/bundle-analyzer` + baseline dashboard RSC payload | Observability | 🟢 Low | 30 min | ❌ Not Done |
 | V23 | Reserve `min-h` / `aspect-ratio` on chart cards (CLS fix) | Speed Insights · CLS | 🔴 High | 30 min | ✅ Done |
 | V24 | Preload Geist Sans `.woff2` + `content-visibility: auto` on below-fold cards | Speed Insights · LCP/FCP | 🟡 Medium | 45 min | ✅ Done |
-| V25 | `startTransition` + memoize privacy/theme-toggle consumers | Speed Insights · INP | 🟡 Medium | 1 hr | ❌ Not Done |
-| V26 | Extend V18's PPR pattern to `/settings` and `/` (per-user cache key) | Speed Insights · TTFB | 🟡 Medium | 1–2 hrs | ❌ Not Done |
+| V25 | `startTransition` + memoize privacy/theme-toggle consumers | Speed Insights · INP | 🟡 Medium | 1 hr | ✅ Done |
+| V26 | Extend V18's PPR pattern to `/settings` and `/` (per-user cache key) | Speed Insights · TTFB | 🟡 Medium | 1–2 hrs | ✅ Done |
 
 ## Methodology
 
