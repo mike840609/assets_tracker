@@ -3,10 +3,6 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true',
-})
-
 const nextConfig: NextConfig = {
   cacheComponents: true,
   images: {
@@ -38,4 +34,8 @@ const nextConfig: NextConfig = {
   ],
 };
 
-export default withBundleAnalyzer(withNextIntl(nextConfig));
+const wrappedConfig = withNextIntl(nextConfig);
+
+export default process.env.ANALYZE === "true"
+  ? require("@next/bundle-analyzer")({ enabled: true })(wrappedConfig)
+  : wrappedConfig;
