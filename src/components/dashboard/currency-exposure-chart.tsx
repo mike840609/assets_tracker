@@ -5,8 +5,40 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { formatCurrency } from "@/lib/currencies";
+import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 import type { NetWorthSummary } from "@/lib/types";
-import { createPieTooltipFormatter, createPieLegendFormatter } from "@/lib/chart-formatters";
+import { createPieLegendFormatter } from "@/lib/chart-formatters";
+
+function ExposureTooltip({
+  active,
+  payload,
+  baseCurrency,
+  privacyMode,
+}: {
+  active?: boolean;
+  payload?: any[];
+  baseCurrency: string;
+  privacyMode: boolean;
+}) {
+  if (!active || !payload?.length) return null;
+  const entry = payload[0];
+  const percentage = entry.payload.percentage;
+
+  return (
+    <ChartTooltipContainer title={entry.name}>
+      <ChartTooltipRow
+        label="Value"
+        value={
+          privacyMode
+            ? "***"
+            : `${formatCurrency(entry.value, baseCurrency)} (${percentage}%)`
+        }
+        indicatorColor={entry.fill || entry.color}
+      />
+    </ChartTooltipContainer>
+  );
+}
 
 const COLORS = [
   "#8b5cf6", "#ec4899", "#f59e0b", "#3b82f6", "#10b981",
@@ -65,7 +97,14 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                     />
                   ))}
                 </Pie>
-                <Tooltip formatter={createPieTooltipFormatter(summary.baseCurrency)} />
+                <Tooltip
+                  content={
+                    <ExposureTooltip
+                      baseCurrency={summary.baseCurrency}
+                      privacyMode={privacyMode}
+                    />
+                  }
+                />
                 <Legend formatter={createPieLegendFormatter()} />
               </PieChart>
             </ResponsiveContainer>

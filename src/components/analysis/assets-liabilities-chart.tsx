@@ -17,6 +17,7 @@ import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { MonthlyBucket } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
+import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 
 interface Props {
   buckets: MonthlyBucket[];
@@ -46,26 +47,28 @@ function AssetsTooltip({
 }) {
   if (!active || !payload?.length) return null;
   const entry = payload[0].payload;
+
   if (entry.isEmpty) {
     return (
-      <div className="rounded-md border border-border/60 bg-popover/95 backdrop-blur-sm px-3 py-2 text-xs shadow-md">
-        <div className="font-medium">{entry.label}</div>
-        <div className="text-muted-foreground">{t("noDataMonth")}</div>
-      </div>
+      <ChartTooltipContainer title={entry.label}>
+        <div className="text-[11px] text-muted-foreground">{t("noDataMonth")}</div>
+      </ChartTooltipContainer>
     );
   }
+
   return (
-    <div className="rounded-md border border-border/60 bg-popover/95 backdrop-blur-sm px-3 py-2 text-xs shadow-md space-y-1">
-      <div className="font-medium">{entry.label}</div>
-      <div className="flex justify-between gap-4">
-        <span className="text-muted-foreground">{t("seriesAssets")}</span>
-        <span className="tabular-nums">{privacyMode ? "***" : formatCurrency(entry.assets, baseCurrency)}</span>
-      </div>
-      <div className="flex justify-between gap-4">
-        <span className="text-muted-foreground">{t("seriesLiabilities")}</span>
-        <span className="tabular-nums">{privacyMode ? "***" : formatCurrency(entry.liabilities, baseCurrency)}</span>
-      </div>
-    </div>
+    <ChartTooltipContainer title={entry.label}>
+      <ChartTooltipRow
+        label={t("seriesAssets")}
+        value={privacyMode ? "***" : formatCurrency(entry.assets, baseCurrency)}
+        indicatorColor="var(--chart-1)"
+      />
+      <ChartTooltipRow
+        label={t("seriesLiabilities")}
+        value={privacyMode ? "***" : formatCurrency(entry.liabilities, baseCurrency)}
+        indicatorColor="var(--destructive)"
+      />
+    </ChartTooltipContainer>
   );
 }
 
