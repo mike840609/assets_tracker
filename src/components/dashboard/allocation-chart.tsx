@@ -42,7 +42,7 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">{t("allocationChart.title")}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-h-[320px]">
         {data.length === 0 ? (
           <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
             {t("allocationChart.noAssets")}

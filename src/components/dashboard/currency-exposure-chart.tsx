@@ -35,7 +35,7 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">{t("title")}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-h-[320px]">
         {data.length === 0 ? (
           <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noExposure")}

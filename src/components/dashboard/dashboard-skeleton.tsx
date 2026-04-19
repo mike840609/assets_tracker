@@ -30,7 +30,7 @@ export function DashboardSkeleton() {
               <div className="h-5 w-32 bg-muted animate-pulse rounded" />
             </CardHeader>
             <CardContent>
-              <div className="h-[250px] bg-muted animate-pulse rounded" />
+              <div className="h-[320px] bg-muted animate-pulse rounded" />
             </CardContent>
           </Card>
         ))}

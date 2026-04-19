@@ -68,7 +68,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
           </div>
         )}
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-h-[320px]">
         {filtered.length === 0 ? (
           <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noData")}
