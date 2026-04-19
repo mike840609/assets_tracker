@@ -146,7 +146,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
       <CardContent className="space-y-4">
         {assets.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-1 px-1">
+            <p className="text-xs font-semibold text-chart-2 uppercase tracking-wide mb-1 px-1">
               {t("common.asset")}
             </p>
             <div className="overflow-x-auto">
@@ -172,7 +172,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
 
         {liabilities.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-red-500 dark:text-red-400 uppercase tracking-wide mb-1 px-1">
+            <p className="text-xs font-semibold text-destructive uppercase tracking-wide mb-1 px-1">
               {t("common.liability")}
             </p>
             <div className="overflow-x-auto">
