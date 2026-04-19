@@ -13,7 +13,8 @@ import {
 } from "recharts";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
-import { createCurrencyTooltipFormatter } from "@/lib/chart-formatters";
+import { formatCurrency } from "@/lib/currencies";
+import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 
 type SnapshotData = {
   date: string;
@@ -21,6 +22,42 @@ type SnapshotData = {
   totalAssets: number;
   totalLiabilities: number;
 };
+
+function TrendTooltip({
+  active,
+  payload,
+  label,
+  baseCurrency,
+  privacyMode,
+}: {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+  baseCurrency: string;
+  privacyMode: boolean;
+}) {
+  if (!active || !payload?.length || !label) return null;
+
+  const date = new Date(label);
+  const formattedDate = date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return (
+    <ChartTooltipContainer title={formattedDate}>
+      {payload.map((entry, i) => (
+        <ChartTooltipRow
+          key={i}
+          label={entry.name}
+          value={privacyMode ? "***" : formatCurrency(entry.value, baseCurrency)}
+          indicatorColor={entry.color || entry.stroke}
+        />
+      ))}
+    </ChartTooltipContainer>
+  );
+}
 
 const ranges = [
   { label: "1M", days: 30 },
@@ -101,7 +138,14 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
                       : v.toString()
                 }
               />
-              <Tooltip formatter={createCurrencyTooltipFormatter(baseCurrency)} />
+              <Tooltip
+                content={
+                  <TrendTooltip
+                    baseCurrency={baseCurrency}
+                    privacyMode={privacyMode}
+                  />
+                }
+              />
               <Area
                 type="monotone"
                 dataKey="netWorth"

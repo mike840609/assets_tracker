@@ -18,6 +18,8 @@ import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { MonthlyBucket } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 
+import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
+
 interface Props {
   buckets: MonthlyBucket[];
   baseCurrency: string;
@@ -43,38 +45,43 @@ function ChangeTooltip({
 }) {
   if (!active || !payload?.length) return null;
   const b = payload[0].payload;
+
   if (b.isEmpty) {
     return (
-      <div className="rounded-md border border-border/60 bg-popover/95 backdrop-blur-sm px-3 py-2 text-xs shadow-md">
-        <div className="font-medium">{b.label}</div>
-        <div className="text-muted-foreground">{t("noDataMonth")}</div>
-      </div>
+      <ChartTooltipContainer title={b.label}>
+        <div className="text-[11px] text-muted-foreground">{t("noDataMonth")}</div>
+      </ChartTooltipContainer>
     );
   }
-  const pct = b.deltaPct === null ? "—" : `${b.deltaPct >= 0 ? "+" : ""}${b.deltaPct.toFixed(1)}%`;
+
+  const pct =
+    b.deltaPct === null ? "—" : `${b.deltaPct >= 0 ? "+" : ""}${b.deltaPct.toFixed(1)}%`;
   const sign = b.deltaNetWorth >= 0 ? "+" : "";
+
   return (
-    <div className="rounded-md border border-border/60 bg-popover/95 backdrop-blur-sm px-3 py-2 text-xs shadow-md space-y-1">
-      <div className="font-medium">{b.label}</div>
-      <div className="flex justify-between gap-4">
-        <span className="text-muted-foreground">{t("tooltipStart")}</span>
-        <span className="tabular-nums">{privacyMode ? "***" : formatCurrency(b.startNetWorth, baseCurrency)}</span>
-      </div>
-      <div className="flex justify-between gap-4">
-        <span className="text-muted-foreground">{t("tooltipEnd")}</span>
-        <span className="tabular-nums">{privacyMode ? "***" : formatCurrency(b.endNetWorth, baseCurrency)}</span>
-      </div>
-      <div className="flex justify-between gap-4 border-t border-border/60 pt-1">
-        <span className="text-muted-foreground">{t("tooltipChange")}</span>
-        <span
-          className={`tabular-nums font-medium ${
+    <ChartTooltipContainer title={b.label}>
+      <ChartTooltipRow
+        label={t("tooltipStart")}
+        value={privacyMode ? "***" : formatCurrency(b.startNetWorth, baseCurrency)}
+      />
+      <ChartTooltipRow
+        label={t("tooltipEnd")}
+        value={privacyMode ? "***" : formatCurrency(b.endNetWorth, baseCurrency)}
+      />
+      <div className="pt-1.5 mt-1.5 border-t border-border/40">
+        <ChartTooltipRow
+          label={t("tooltipChange")}
+          value={
+            privacyMode
+              ? "***"
+              : `${sign}${formatCurrency(b.deltaNetWorth, baseCurrency)} (${pct})`
+          }
+          valueClassName={
             b.deltaNetWorth >= 0 ? "text-[var(--chart-1)]" : "text-destructive"
-          }`}
-        >
-          {privacyMode ? "***" : `${sign}${formatCurrency(b.deltaNetWorth, baseCurrency)} (${pct})`}
-        </span>
+          }
+        />
       </div>
-    </div>
+    </ChartTooltipContainer>
   );
 }
 
