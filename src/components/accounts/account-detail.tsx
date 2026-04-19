@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
@@ -118,7 +118,7 @@ export function AccountDetail({
     });
     setRefreshTrigger((prev) => prev + 1);
     toast.success(t("accountDetail.balanceUpdated"));
-    router.refresh();
+    startTransition(() => { router.refresh(); });
   }
 
   async function handleNameSave() {
@@ -143,7 +143,7 @@ export function AccountDetail({
 
       toast.success(t("accountDetail.accountUpdated"));
       setIsEditingName(false);
-      router.refresh();
+      startTransition(() => { router.refresh(); });
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : t("accountDetail.updateFailed")
@@ -161,7 +161,7 @@ export function AccountDetail({
     try {
       await fetch(`/api/accounts/${account.id}`, { method: "DELETE" });
       toast.success(t("accountDetail.accountDeleted"));
-      router.push("/accounts");
+      startTransition(() => { router.push("/accounts"); });
     } catch {
       toast.error(t("accountDetail.deleteFailed"));
       setDeleting(false);
@@ -177,7 +177,7 @@ export function AccountDetail({
       });
       toast.success(t("accountDetail.holdingRemoved"));
       setRefreshTrigger((prev) => prev + 1);
-      router.refresh();
+      startTransition(() => { router.refresh(); });
     } catch {
       toast.error(t("accountDetail.holdingDeleteFailed"));
     }
