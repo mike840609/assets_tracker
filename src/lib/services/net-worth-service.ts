@@ -9,16 +9,26 @@ import {
 import type { AccountWithValue, NetWorthSummary, HoldingWithPrice } from "@/lib/types";
 
 /**
- * React-cached account + holdings fetcher.
- * Memoised per server render so concurrent calls with the same userId
- * (e.g. an early pre-fetch in DashboardContent and the later call inside
- * computeNetWorthSummary) share a single database round-trip.
+ * Structural account + holdings fetcher.
+ * Data-cached per user so the dashboard's "list of accounts/holdings"
+ * shape — which rarely changes — is served from the CDN cache even
+ * though the downstream net-worth computation (which multiplies by
+ * current prices) stays dynamic. React cache() dedupes concurrent
+ * calls within a single render.
  */
 export const fetchUserAccountsWithHoldings = cache((userId: string) =>
-  prisma.account.findMany({
-    where: { userId, isActive: true },
-    include: { holdings: { where: { quantity: { gt: 0 } } } },
-  })
+  unstable_cache(
+    () =>
+      prisma.account.findMany({
+        where: { userId, isActive: true },
+        include: { holdings: { where: { quantity: { gt: 0 } } } },
+      }),
+    ["user-accounts-with-holdings", userId],
+    {
+      revalidate: 300,
+      tags: ["accounts", `accounts:${userId}`],
+    },
+  )(),
 );
 
 async function computeNetWorthSummary(
@@ -174,14 +184,21 @@ async function computeNetWorthSummary(
 }
 
 /**
- * Cached version of net worth summary (5-minute TTL, invalidated by "net-worth" tag).
- * Used by the dashboard and accounts pages for fast repeated loads.
- * Invalidate explicitly via `revalidateTag("net-worth")` after price or data changes.
+ * Cached version of net worth summary (5-minute TTL).
+ * Tagged both broadly (`net-worth`) and per-user (`net-worth:${userId}`)
+ * so global invalidators (cron snapshot, price refresh) keep working
+ * while per-user mutations (account/holding writes) can scope their
+ * invalidation. React cache() dedupes per-render.
  */
-export const getCachedNetWorthSummary = unstable_cache(
-  computeNetWorthSummary,
-  ["net-worth-summary"],
-  { revalidate: 300, tags: ["net-worth"] }
+export const getCachedNetWorthSummary = cache((userId: string, baseCurrency: string) =>
+  unstable_cache(
+    () => computeNetWorthSummary(userId, baseCurrency),
+    ["net-worth-summary", userId, baseCurrency],
+    {
+      revalidate: 300,
+      tags: ["net-worth", `net-worth:${userId}`],
+    },
+  )(),
 );
 
 /**

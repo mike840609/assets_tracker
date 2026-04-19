@@ -28,12 +28,18 @@ async function getOrCreateSettingsInner(userId: string) {
 }
 
 /**
- * Data-cached settings fetcher (5-minute TTL, invalidated by "settings" tag).
- * Wrapped in React cache() so duplicate calls within the same render are deduped.
+ * Data-cached settings fetcher (5-minute TTL).
+ * Tagged both broadly (`settings`) and per-user (`settings:${userId}`) so
+ * `/settings` can rely on a cached read and be invalidated for just the
+ * mutating user. React cache() dedupes within a single render.
  */
-export const getOrCreateSettings = cache(
-  unstable_cache(getOrCreateSettingsInner, ["user-settings"], {
-    revalidate: 300,
-    tags: ["settings"],
-  })
+export const getOrCreateSettings = cache((userId: string) =>
+  unstable_cache(
+    () => getOrCreateSettingsInner(userId),
+    ["user-settings", userId],
+    {
+      revalidate: 300,
+      tags: ["settings", `settings:${userId}`],
+    },
+  )(),
 );

@@ -1,7 +1,13 @@
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createAccountSchema } from "@/lib/validators";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
+
+function invalidateUserCaches(userId: string) {
+  revalidateTag(`accounts:${userId}`, "max");
+  revalidateTag(`net-worth:${userId}`, "max");
+}
 
 export const GET = withAuth(async (_req, _ctx, userId) => {
   const accounts = await prisma.account.findMany({
@@ -25,6 +31,7 @@ export const DELETE = withAuth(async (request, _ctx, userId) => {
       userId,
     },
   });
+  invalidateUserCaches(userId);
   return ok({ ok: true });
 });
 
@@ -36,5 +43,6 @@ export const POST = withAuth(async (request, _ctx, userId) => {
   const account = await prisma.account.create({
     data: { ...parsed.data, userId },
   });
+  invalidateUserCaches(userId);
   return ok(account, { status: 201 });
 });

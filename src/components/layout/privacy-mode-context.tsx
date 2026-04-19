@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  startTransition,
+} from "react";
 
 interface PrivacyModeContextType {
   privacyMode: boolean;
@@ -22,18 +30,22 @@ export function PrivacyModeProvider({ children }: { children: React.ReactNode })
     setPrivacyMode(stored === "true");
   }, []);
 
-  const togglePrivacyMode = () => {
-    setPrivacyMode((prev) => {
-      const next = !prev;
-      localStorage.setItem("privacy-mode", String(next));
-      return next;
-    });
-  };
+  // Persist synchronously, flip the visible state in a transition so the
+  // dozens of currency cells across the tree re-render without blocking
+  // the click → paint cycle (keeps INP under 200 ms).
+  const togglePrivacyMode = useCallback(() => {
+    const next = localStorage.getItem("privacy-mode") !== "true";
+    localStorage.setItem("privacy-mode", String(next));
+    startTransition(() => setPrivacyMode(next));
+  }, []);
+
+  const value = useMemo(
+    () => ({ privacyMode: mounted ? privacyMode : false, togglePrivacyMode }),
+    [mounted, privacyMode, togglePrivacyMode],
+  );
 
   return (
-    <PrivacyModeContext.Provider
-      value={{ privacyMode: mounted ? privacyMode : false, togglePrivacyMode }}
-    >
+    <PrivacyModeContext.Provider value={value}>
       {children}
     </PrivacyModeContext.Provider>
   );
