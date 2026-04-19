@@ -14,6 +14,7 @@ const geist = localFont({
   src: "./fonts/geist-latin.woff2",
   variable: "--font-sans",
   display: "swap",
+  preload: true,
 });
 
 const geistMono = localFont({
