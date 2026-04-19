@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
-import { CustomSpeedInsights } from "@/components/layout/speed-insights";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -69,7 +69,7 @@ async function LocaleHtml({
             {children}
             <Toaster />
             <Analytics />
-            <CustomSpeedInsights />
+            <SpeedInsights />
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>
