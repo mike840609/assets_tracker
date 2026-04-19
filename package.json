@@ -13,6 +13,7 @@
     "@auth/prisma-adapter": "^2.11.1",
     "@base-ui/react": "^1.3.0",
     "@neondatabase/serverless": "^1.0.2",
+    "@next/bundle-analyzer": "^16.2.4",
     "@prisma/adapter-neon": "^7.6.0",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
