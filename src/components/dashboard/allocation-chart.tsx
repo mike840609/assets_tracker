@@ -38,7 +38,7 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
   }, [summary.accounts, t]);
 
   return (
-    <Card>
+    <Card className="[content-visibility:auto] [contain-intrinsic-size:320px_600px]">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">{t("allocationChart.title")}</CardTitle>
       </CardHeader>
