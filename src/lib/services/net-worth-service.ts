@@ -3,10 +3,9 @@ import { cacheLife, cacheTag, unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "./exchange-rate-service";
 import {
-  serializeAccount,
-  serializeHolding,
+  serializeAccountWithHoldings,
 } from "@/lib/types";
-import type { AccountWithValue, NetWorthSummary, HoldingWithPrice } from "@/lib/types";
+import type { AccountWithValue, NetWorthSummary, HoldingWithPrice, SerializedAccountWithHoldings } from "@/lib/types";
 
 /**
  * Structural account + holdings fetcher.
@@ -17,15 +16,16 @@ import type { AccountWithValue, NetWorthSummary, HoldingWithPrice } from "@/lib/
  * dynamic. React cache() dedupes concurrent calls within a single
  * render.
  */
-async function fetchUserAccountsWithHoldingsInner(userId: string) {
+async function fetchUserAccountsWithHoldingsInner(userId: string): Promise<SerializedAccountWithHoldings[]> {
   "use cache";
   cacheTag("accounts");
   cacheTag(`accounts:${userId}`);
   cacheLife("minutes");
-  return prisma.account.findMany({
+  const raw = await prisma.account.findMany({
     where: { userId, isActive: true },
     include: { holdings: { where: { quantity: { gt: 0 } } } },
   });
+  return raw.map(serializeAccountWithHoldings);
 }
 
 export const fetchUserAccountsWithHoldings = cache(fetchUserAccountsWithHoldingsInner);
@@ -66,16 +66,16 @@ async function computeNetWorthSummary(
       missingPairs.add(`${account.currency}_${baseCurrency}`);
     }
 
-    const cashBalance = Number(account.cashBalance);
+    const cashBalance = account.cashBalance;
 
     const holdingsWithPrice: HoldingWithPrice[] = account.holdings.map((h) => {
       const cached = priceMap[h.symbol];
       const currentPrice = cached?.price ?? null;
-      const quantity = Number(h.quantity);
+      const quantity = h.quantity;
       const marketValue =
         currentPrice !== null ? currentPrice * quantity : null;
       return {
-        ...serializeHolding(h),
+        ...h,
         currentPrice,
         marketValue,
       };
@@ -94,7 +94,7 @@ async function computeNetWorthSummary(
     }
 
     accountsWithValue.push({
-      ...serializeAccount(account),
+      ...account,
       holdings: holdingsWithPrice,
       totalValue: 0, // will be filled after missing rates are resolved
       totalValueInBaseCurrency: 0,
