@@ -33,8 +33,8 @@
 | V27 | Convert `/`, `/accounts`, `/analysis`, `/history`, `/settings` from `ƒ` → `◐` by adding the Next.js 16 `"use cache"` directive to service-layer reads (executes what V18+V26 proposed but didn't land in the route classifier) | Speed Insights · TTFB | 🔴 High | 1–2 hrs | ✅ Done |
 | V28 | `<link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin="anonymous">` for Analytics + Speed Insights | Speed Insights · LCP/FCP | 🟢 Low | 5 min | ✅ Done |
 | V29 | Re-enable SSR for `AllocationChart` + `CurrencyExposureChart` (drop `ssr: false`) so the chart card shell + localized title ship in server HTML instead of waiting for hydration | Speed Insights · LCP | 🟡 Medium | 30 min | ✅ Done |
-| V30 | Wrap `router.refresh()` + inline-edit state setters in `startTransition` across `transaction-history.tsx`, `edit-holding-dialog.tsx`, `quick-add-holding.tsx`, `holding-form.tsx` (extend V25 beyond privacy/theme toggles) | Speed Insights · INP | 🟡 Medium | 45 min | ❌ Not Done |
-| V31 | Add `next.config.ts` `images.formats = ["image/avif", "image/webp"]` + `remotePatterns` for `lh3.googleusercontent.com` so any avatar render is optimized | Speed Insights · LCP | 🟢 Low | 15 min | ❌ Not Done |
+| V30 | Wrap `router.refresh()` + inline-edit state setters in `startTransition` across `transaction-history.tsx`, `edit-holding-dialog.tsx`, `quick-add-holding.tsx`, `holding-form.tsx` (extend V25 beyond privacy/theme toggles) | Speed Insights · INP | 🟡 Medium | 45 min | ✅ Done |
+| V31 | Add `next.config.ts` `images.formats = ["image/avif", "image/webp"]` + `remotePatterns` for `lh3.googleusercontent.com` so any avatar render is optimized | Speed Insights · LCP | 🟢 Low | 15 min | ✅ Done |
 | V32 | Configure `<SpeedInsights beforeSend={…}>` to drop `/login` + `/privacy` from telemetry (score quality + cost) | Observability | 🟢 Low | 15 min | ❌ Not Done |
 | V33 | Ship `@next/bundle-analyzer` (supersedes V22) — prerequisite for measuring any further client-JS Speed Insights wins | Observability | 🟢 Low | 30 min | ❌ Not Done |
 

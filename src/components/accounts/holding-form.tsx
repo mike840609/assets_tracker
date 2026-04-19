@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -94,7 +94,7 @@ export function HoldingForm({
       toast.success(`Added ${symbol}`);
       handleClose();
       if (onSuccess) onSuccess();
-      router.refresh();
+      startTransition(() => { router.refresh(); });
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to add holding"

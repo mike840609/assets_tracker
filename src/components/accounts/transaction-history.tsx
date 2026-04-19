@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import useSWRInfinite from "swr/infinite";
 import { useTranslations } from "next-intl";
@@ -128,7 +128,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
       toast.success(t("updateSuccess"));
       setEditingTx(null);
       mutate();
-      router.refresh(); // Refresh holdings on parent page
+      startTransition(() => { router.refresh(); }); // Refresh holdings on parent page
     } catch (e) {
       toast.error(t("updateFailed"));
     } finally {
@@ -149,7 +149,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
       toast.success(t("deleteSuccess"));
       setDeletingTx(null);
       mutate();
-      router.refresh(); // Refresh holdings on parent page
+      startTransition(() => { router.refresh(); }); // Refresh holdings on parent page
     } catch (e) {
       toast.error(t("deleteFailed"));
     } finally {

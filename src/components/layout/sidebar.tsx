@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -10,7 +11,7 @@ import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-export function Sidebar() {
+export function Sidebar({ userImage, userName }: { userImage?: string | null; userName?: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations();
@@ -65,7 +66,18 @@ export function Sidebar() {
       </nav>
       <div className="p-4 border-t border-border/50 bg-background/30 backdrop-blur-md">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">v0.1.0</span>
+          {userImage ? (
+            <Image
+              src={userImage}
+              priority
+              width={28}
+              height={28}
+              alt={userName ?? "User avatar"}
+              className="rounded-full"
+            />
+          ) : (
+            <span className="text-xs text-muted-foreground">v0.1.0</span>
+          )}
           <div className="flex items-center gap-1">
             <button
               onClick={togglePrivacyMode}

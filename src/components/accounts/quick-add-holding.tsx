@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -155,7 +155,7 @@ export function QuickAddHolding({
 
       toast.success(t("quickAddHolding.addedSymbol", { symbol }));
       handleClose();
-      router.refresh();
+      startTransition(() => { router.refresh(); });
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : t("quickAddHolding.addFailed")
