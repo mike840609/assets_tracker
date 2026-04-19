@@ -53,6 +53,8 @@ async function LocaleHtml({
       suppressHydrationWarning
     >
       <head>
+        <link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://va.vercel-scripts.com" />
         <link rel="dns-prefetch" href="https://api.frankfurter.app" />
         <link rel="dns-prefetch" href="https://open.er-api.com" />
       </head>

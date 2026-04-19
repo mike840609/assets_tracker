@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { unstable_cache } from "next/cache";
+import { cacheLife, cacheTag, unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "./exchange-rate-service";
 import {
@@ -10,26 +10,25 @@ import type { AccountWithValue, NetWorthSummary, HoldingWithPrice } from "@/lib/
 
 /**
  * Structural account + holdings fetcher.
- * Data-cached per user so the dashboard's "list of accounts/holdings"
- * shape — which rarely changes — is served from the CDN cache even
- * though the downstream net-worth computation (which multiplies by
- * current prices) stays dynamic. React cache() dedupes concurrent
- * calls within a single render.
+ * Uses the Next.js 16 `"use cache"` directive so the dashboard's
+ * "list of accounts/holdings" shape — which rarely changes — is
+ * served from the Cache Components layer while the downstream
+ * net-worth computation (which multiplies by current prices) stays
+ * dynamic. React cache() dedupes concurrent calls within a single
+ * render.
  */
-export const fetchUserAccountsWithHoldings = cache((userId: string) =>
-  unstable_cache(
-    () =>
-      prisma.account.findMany({
-        where: { userId, isActive: true },
-        include: { holdings: { where: { quantity: { gt: 0 } } } },
-      }),
-    ["user-accounts-with-holdings", userId],
-    {
-      revalidate: 300,
-      tags: ["accounts", `accounts:${userId}`],
-    },
-  )(),
-);
+async function fetchUserAccountsWithHoldingsInner(userId: string) {
+  "use cache";
+  cacheTag("accounts");
+  cacheTag(`accounts:${userId}`);
+  cacheLife("minutes");
+  return prisma.account.findMany({
+    where: { userId, isActive: true },
+    include: { holdings: { where: { quantity: { gt: 0 } } } },
+  });
+}
+
+export const fetchUserAccountsWithHoldings = cache(fetchUserAccountsWithHoldingsInner);
 
 async function computeNetWorthSummary(
   userId: string,

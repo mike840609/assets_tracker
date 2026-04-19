@@ -30,6 +30,13 @@
 | V24 | Preload Geist Sans `.woff2` + `content-visibility: auto` on below-fold cards | Speed Insights · LCP/FCP | 🟡 Medium | 45 min | ✅ Done |
 | V25 | `startTransition` + memoize privacy/theme-toggle consumers | Speed Insights · INP | 🟡 Medium | 1 hr | ✅ Done |
 | V26 | Extend V18's PPR pattern to `/settings` and `/` (per-user cache key) | Speed Insights · TTFB | 🟡 Medium | 1–2 hrs | ✅ Done |
+| V27 | Convert `/`, `/accounts`, `/analysis`, `/history`, `/settings` from `ƒ` → `◐` by adding the Next.js 16 `"use cache"` directive to service-layer reads (executes what V18+V26 proposed but didn't land in the route classifier) | Speed Insights · TTFB | 🔴 High | 1–2 hrs | ✅ Done |
+| V28 | `<link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin="anonymous">` for Analytics + Speed Insights | Speed Insights · LCP/FCP | 🟢 Low | 5 min | ✅ Done |
+| V29 | Re-enable SSR for `AllocationChart` + `CurrencyExposureChart` (drop `ssr: false`) so the chart card shell + localized title ship in server HTML instead of waiting for hydration | Speed Insights · LCP | 🟡 Medium | 30 min | ✅ Done |
+| V30 | Wrap `router.refresh()` + inline-edit state setters in `startTransition` across `transaction-history.tsx`, `edit-holding-dialog.tsx`, `quick-add-holding.tsx`, `holding-form.tsx` (extend V25 beyond privacy/theme toggles) | Speed Insights · INP | 🟡 Medium | 45 min | ❌ Not Done |
+| V31 | Add `next.config.ts` `images.formats = ["image/avif", "image/webp"]` + `remotePatterns` for `lh3.googleusercontent.com` so any avatar render is optimized | Speed Insights · LCP | 🟢 Low | 15 min | ❌ Not Done |
+| V32 | Configure `<SpeedInsights beforeSend={…}>` to drop `/login` + `/privacy` from telemetry (score quality + cost) | Observability | 🟢 Low | 15 min | ❌ Not Done |
+| V33 | Ship `@next/bundle-analyzer` (supersedes V22) — prerequisite for measuring any further client-JS Speed Insights wins | Observability | 🟢 Low | 30 min | ❌ Not Done |
 
 ## Methodology
 
@@ -817,6 +824,252 @@ tags.
 `src/app/(main)/settings/page.tsx`,
 `src/lib/services/settings-service.ts` (or similar),
 `src/lib/services/net-worth-service.ts`.
+
+---
+
+## Addendum — 2026-04-19 Re-Pull (V27–V33)
+
+A third read of the Vercel MCP connector against production deployment
+`dpl_GiNydqzEuRBeKv7iw8hVgWrbvPQd` (commit `1c0c953`, 2026-04-19)
+surfaced a critical gap: **V26 was marked ✅ Done but the build output
+still classifies `/`, `/accounts`, `/analysis`, `/history`, `/settings`
+as `ƒ (Dynamic)`.** Only `/accounts/[id]` is `◐ (Partial Prerender)`.
+V26 added per-user `cacheTag()` calls to the existing `unstable_cache`
+wrappers, but **no file in the repo used the Next.js 16 `"use cache"`
+directive** (grep confirms zero hits), so the Cache Components layer
+never adopted those routes.
+
+Items V27–V33 address the remaining Speed-Insights headroom across
+every Core Web Vital. V27–V29 ship in this same pass; V30–V33 are
+queued follow-ups.
+
+### V27 — Flip five routes to Partial Prerender via `"use cache"`
+
+**Observation.** Despite `cacheComponents: true` in `next.config.ts`,
+no service-layer read declared `"use cache"`. The routes never opted
+into PPR and every visit paid a Neon round-trip from `sin1`. Build
+output at `dpl_GiNydqzEuRBeKv7iw8hVgWrbvPQd` confirmed `ƒ /`,
+`ƒ /accounts`, `ƒ /analysis`, `ƒ /history`, `ƒ /settings`.
+
+**Recommendation.** Keep React `cache()` wrappers (per-render dedup)
+and replace `unstable_cache` with the Next.js 16 `"use cache"`
+directive on the structural reads the pages await. Tags and
+`cacheLife("minutes")` migrate across:
+
+```ts
+// src/lib/services/settings-service.ts
+async function findSettings(userId: string) {
+  "use cache";
+  cacheTag("settings");
+  cacheTag(`settings:${userId}`);
+  cacheLife("minutes");
+  return prisma.setting.findUnique({ where: { userId } });
+}
+```
+
+`getLocale()` reads cookies, so the create-fallback branch stays
+outside the cached function. Same pattern applied to
+`fetchUserAccountsWithHoldings`, `getCachedExchangeRates`,
+`getNormalizedHistory`, and `fetchFullHistoryCached`. The existing
+mutation-layer `revalidateTag` calls (`accounts:${userId}`,
+`settings:${userId}`, `net-worth:${userId}`, `exchange-rates`,
+`net-worth`, `snapshots`) already match the new tags — no API-route
+changes needed.
+
+**Critical files.** `src/lib/services/settings-service.ts`,
+`src/lib/services/net-worth-service.ts`,
+`src/lib/services/exchange-rate-service.ts`,
+`src/lib/services/history-service.ts`.
+
+---
+
+### V28 — Preconnect to `va.vercel-scripts.com`
+
+**Observation.** `src/app/layout.tsx` mounts `<Analytics />` and
+`<SpeedInsights />` which load their runtime from
+`https://va.vercel-scripts.com`. The head block had
+`dns-prefetch` entries for the FX-rate APIs but nothing for the
+Vercel scripts origin — first-time visitors on cellular pay the full
+TLS handshake before the analytics script starts.
+
+**Recommendation.** Add two lines next to the existing
+`dns-prefetch` entries:
+
+```tsx
+<link
+  rel="preconnect"
+  href="https://va.vercel-scripts.com"
+  crossOrigin="anonymous"
+/>
+<link rel="dns-prefetch" href="https://va.vercel-scripts.com" />
+```
+
+The `crossOrigin="anonymous"` attribute is required so the preconnect
+matches the script's CORS mode. Verify with DevTools → Network →
+`va.vercel-scripts.com` TLS handshake starts alongside HTML parse.
+
+**Critical files.** `src/app/layout.tsx`.
+
+---
+
+### V29 — SSR the pie-chart card shells
+
+**Observation.**
+`src/components/dashboard/lazy-charts.tsx` wrapped
+`AllocationChart` and `CurrencyExposureChart` in
+`dynamic(..., { ssr: false })`. The server sent the generic
+`<ChartSkeleton />` placeholder; the real card title and shell only
+rendered after client hydration. Because recharts'
+`ResponsiveContainer` uses `ResizeObserver`, the chart SVG itself
+does need a client pass — but the card header with the localized
+title does not.
+
+**Recommendation.** Drop `ssr: false` from both Lazy exports:
+
+```ts
+export const LazyAllocationChart = dynamic(
+  () => import("./allocation-chart").then((m) => m.AllocationChart),
+  { loading: () => <ChartSkeleton /> },
+);
+export const LazyCurrencyExposureChart = dynamic(
+  () => import("./currency-exposure-chart").then((m) => m.CurrencyExposureChart),
+  { loading: () => <ChartSkeleton /> },
+);
+```
+
+With SSR enabled the server renders the real `Card` + `CardHeader`
++ localized title in HTML. The chart's internal
+`mounted`-gated `<ResponsiveContainer>` still waits for the client,
+but the visible card title ships immediately — shifting the LCP
+candidate to a server-rendered element. `TrendChart` stays
+`ssr: false` because its line-chart animation logic has historically
+collided with hydration.
+
+**Critical files.** `src/components/dashboard/lazy-charts.tsx`.
+
+---
+
+### V30 — Extend `startTransition` to transaction/holding mutators
+
+**Observation.** V25 wrapped privacy/theme toggles in
+`startTransition`. Inline-edit submit paths on `/accounts/[id]`
+still call `router.refresh()` synchronously after every save —
+`src/components/accounts/transaction-history.tsx:131,152`,
+`src/components/accounts/edit-holding-dialog.tsx:98`,
+`src/components/accounts/quick-add-holding.tsx:158`,
+`src/components/accounts/holding-form.tsx:97`. On a 50+ holding
+account each click blocks the next frame while React re-renders the
+whole table.
+
+**Recommendation.** Wrap `router.refresh()` + optimistic state
+setters in `startTransition`:
+
+```tsx
+import { startTransition } from "react";
+// …
+startTransition(() => {
+  router.refresh();
+  onSuccess?.();
+});
+```
+
+Measure with the Vercel Speed Insights dashboard → Interactions
+panel; INP should move below 200ms on mid-range Android devices.
+
+**Critical files.** `src/components/accounts/transaction-history.tsx`,
+`src/components/accounts/edit-holding-dialog.tsx`,
+`src/components/accounts/quick-add-holding.tsx`,
+`src/components/accounts/holding-form.tsx`,
+`src/components/accounts/account-detail.tsx`.
+
+---
+
+### V31 — Optimize remote avatar images
+
+**Observation.** `next.config.ts` has no `images` block, so any
+`next/image` rendering a Google avatar (`lh3.googleusercontent.com`,
+set by NextAuth for Google OAuth users) would fail with
+"unconfigured host". AVIF/WebP formats are off by default on Next.js
+16 — every avatar request ships PNG even though modern browsers
+support AVIF.
+
+**Recommendation.**
+
+```ts
+// next.config.ts
+images: {
+  formats: ["image/avif", "image/webp"],
+  remotePatterns: [
+    { protocol: "https", hostname: "lh3.googleusercontent.com" },
+  ],
+},
+```
+
+Pair with `<Image src={session.user.image} priority width={32} height={32} />`
+in the sidebar user block (if added) so the above-fold avatar
+preloads.
+
+**Critical files.** `next.config.ts`,
+`src/components/layout/sidebar.tsx` (if/when an avatar lands).
+
+---
+
+### V32 — Trim Speed Insights telemetry
+
+**Observation.** `<SpeedInsights />` currently samples every page at
+100%, including `/login` (single-purpose OAuth redirect) and
+`/privacy` (legal copy). Both inflate the sampling budget without
+providing actionable score data.
+
+**Recommendation.**
+
+```tsx
+<SpeedInsights
+  beforeSend={(data) => {
+    if (data.url.includes("/login") || data.url.includes("/privacy")) {
+      return null;
+    }
+    return data;
+  }}
+/>
+```
+
+On Pro tier, set `sampleRate={0.5}` once traffic exceeds 10k
+page-views/day. Neither change affects Lighthouse lab scores — this
+is a cost + signal-to-noise cleanup.
+
+**Critical files.** `src/app/layout.tsx`.
+
+---
+
+### V33 — Ship `@next/bundle-analyzer`
+
+**Observation.** V22 recommended bundle-analyzer for baseline
+measurement but never landed. Without it, the team can't prove that
+`optimizePackageImports` is actually trimming recharts / lucide /
+date-fns, and any future client-JS win (V30, dynamic form loaders,
+etc.) has no before/after evidence.
+
+**Recommendation.**
+
+```bash
+npm i -D @next/bundle-analyzer
+```
+
+```ts
+// next.config.ts
+import withBundleAnalyzer from "@next/bundle-analyzer";
+const analyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
+export default analyzer(withNextIntl(nextConfig));
+```
+
+Commit the `ANALYZE=true npm run build` baseline (dashboard route
+JS, shared chunks, largest single module) to this doc. Re-run on
+every Speed Insights PR to quantify client-JS movement.
+
+**Critical files.** `next.config.ts`, `package.json`, this doc.
 
 ---
 

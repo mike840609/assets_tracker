@@ -1,31 +1,32 @@
 import { cache } from "react";
-import { unstable_cache } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
 /** How long to wait (ms) before giving up on external rate APIs */
 const RATE_FETCH_TIMEOUT_MS = 1200;
 
 /**
- * Data-cached exchange rates fetcher (5-minute TTL).
- * Returns a plain object (JSON-serializable) for the data cache layer.
+ * Cache Components read of all exchange rates.
+ * Returns a plain object (`"use cache"` compatible). Invalidated by
+ * the `exchange-rates` tag on refresh + cron snapshot.
  */
-const getCachedExchangeRates = unstable_cache(
-  async (): Promise<Record<string, number>> => {
-    const rates = await prisma.exchangeRate.findMany();
-    const map: Record<string, number> = {};
-    for (const r of rates) {
-      map[`${r.fromCurrency}_${r.toCurrency}`] = Number(r.rate);
-    }
-    return map;
-  },
-  ["exchange-rates"],
-  { revalidate: 300, tags: ["exchange-rates"] }
-);
+async function getCachedExchangeRates(): Promise<Record<string, number>> {
+  "use cache";
+  cacheTag("exchange-rates");
+  cacheLife("minutes");
+  const rates = await prisma.exchangeRate.findMany();
+  const map: Record<string, number> = {};
+  for (const r of rates) {
+    map[`${r.fromCurrency}_${r.toCurrency}`] = Number(r.rate);
+  }
+  return map;
+}
 
 /**
  * Load ALL cached exchange rates.
- * Uses the data cache (5-min TTL) and React cache() for per-render dedup.
- * Returns a Map keyed by "FROM_TO" (e.g. "USD_TWD").
+ * Uses the Cache Components layer (invalidated by the `exchange-rates`
+ * tag) plus React cache() for per-render dedup. Returns a Map keyed
+ * by "FROM_TO" (e.g. "USD_TWD").
  */
 export const getAllExchangeRates = cache(async (): Promise<Map<string, number>> => {
   const rates = await getCachedExchangeRates();

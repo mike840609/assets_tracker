@@ -1,45 +1,45 @@
 import { cache } from "react";
-import { unstable_cache } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getLocale } from "next-intl/server";
 import { getLocaleDefaultCurrency } from "../currencies";
 
 /**
- * Inner settings fetcher — plain async function, no cache wrappers here.
- * Falls back to creating default settings if none exist.
+ * Cached read of user settings. Opts this request branch into the Next.js
+ * 16 Cache Components layer so pages that only need settings (e.g.
+ * `/settings`, the dashboard shell) can prerender the structural HTML
+ * and stream only the dynamic islands.
+ *
+ * The create-fallback path is kept outside this function because
+ * `getLocale()` reads cookies and cannot be called inside a cached
+ * function.
  */
+async function findSettings(userId: string) {
+  "use cache";
+  cacheTag("settings");
+  cacheTag(`settings:${userId}`);
+  cacheLife("minutes");
+  return prisma.setting.findUnique({ where: { userId } });
+}
+
 async function getOrCreateSettingsInner(userId: string) {
-  let settings = await prisma.setting.findUnique({ where: { userId } });
+  const existing = await findSettings(userId);
+  if (existing) return existing;
 
-  if (!settings) {
-    const locale = await getLocale();
-    const baseCurrency = getLocaleDefaultCurrency(locale);
+  const locale = await getLocale();
+  const baseCurrency = getLocaleDefaultCurrency(locale);
 
-    settings = await prisma.setting.create({
-      data: {
-        userId,
-        locale,
-        baseCurrency,
-      },
-    });
-  }
-
-  return settings;
+  return prisma.setting.create({
+    data: {
+      userId,
+      locale,
+      baseCurrency,
+    },
+  });
 }
 
 /**
- * Data-cached settings fetcher (5-minute TTL).
- * Tagged both broadly (`settings`) and per-user (`settings:${userId}`) so
- * `/settings` can rely on a cached read and be invalidated for just the
- * mutating user. React cache() dedupes within a single render.
+ * Per-render dedup via React cache(). Cross-request caching is handled
+ * by the `"use cache"` directive on `findSettings`.
  */
-export const getOrCreateSettings = cache((userId: string) =>
-  unstable_cache(
-    () => getOrCreateSettingsInner(userId),
-    ["user-settings", userId],
-    {
-      revalidate: 300,
-      tags: ["settings", `settings:${userId}`],
-    },
-  )(),
-);
+export const getOrCreateSettings = cache(getOrCreateSettingsInner);
