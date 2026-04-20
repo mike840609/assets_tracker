@@ -1,3 +1,4 @@
+import "server-only";
 import { prisma } from "@/lib/prisma";
 
 const COINGECKO_IDS: Record<string, string> = {
@@ -150,4 +151,3 @@ export async function refreshAllPrices(): Promise<{
 
   return { updated, errors };
 }
-
