@@ -3,19 +3,23 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { BarChart3, Copy, Eye, EyeOff, History, LayoutDashboard, Settings } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
 
 export function Sidebar({ userImage, userName }: { userImage?: string | null; userName?: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations();
   const { privacyMode, togglePrivacyMode } = usePrivacyMode();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
 
   const navItems = [
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
@@ -24,6 +28,8 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
     { label: t("nav.history"), href: "/history", icon: History },
     { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];
+
+  const effectivePathname = pendingHref ?? pathname;
 
   return (
     <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar/80 backdrop-blur-md text-sidebar-foreground glass z-10 shrink-0">
@@ -35,8 +41,8 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
         {navItems.map((item) => {
           const isActive =
             item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href);
+              ? effectivePathname === "/"
+              : effectivePathname.startsWith(item.href);
           const Icon = item.icon;
           return (
             <Link
@@ -45,6 +51,7 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
               prefetch={false}
               onMouseEnter={() => router.prefetch(item.href)}
               onFocus={() => router.prefetch(item.href)}
+              onClick={() => setPendingHref(item.href)}
               className={cn(
                 "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 isActive
@@ -103,6 +110,11 @@ export function MobileNav() {
   const pathname = usePathname();
   const t = useTranslations();
   const [hidden, setHidden] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
 
   const navItems = [
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
@@ -111,6 +123,8 @@ export function MobileNav() {
     { label: t("nav.history"), href: "/history", icon: History },
     { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];
+
+  const effectivePathname = pendingHref ?? pathname;
 
   useEffect(() => {
     const main = document.querySelector("main");
@@ -155,13 +169,14 @@ export function MobileNav() {
       {navItems.map((item) => {
         const isActive =
           item.href === "/"
-            ? pathname === "/"
-            : pathname.startsWith(item.href);
+            ? effectivePathname === "/"
+            : effectivePathname.startsWith(item.href);
         const Icon = item.icon;
         return (
           <Link
             key={item.href}
             href={item.href}
+            onClick={() => setPendingHref(item.href)}
             className={cn(
               "relative flex flex-col items-center gap-1.5 px-3 py-1 text-xs transition-colors group",
               isActive
