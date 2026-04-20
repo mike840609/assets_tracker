@@ -15,7 +15,6 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
-import { EyeOff } from "lucide-react";
 import type { MonthlyBucket } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
@@ -99,13 +98,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
         ) : !mounted ? (
           <div className="h-[280px]" />
         ) : (
-          <div className="relative">
-            <div className={`absolute inset-0 rounded-lg z-10 flex items-center justify-center transition-all duration-300 ${privacyMode ? "backdrop-blur-md bg-background/40 opacity-100" : "opacity-0 pointer-events-none"}`}>
-              <div className="flex flex-col items-center gap-1.5 text-muted-foreground select-none">
-                <EyeOff className="h-5 w-5" />
-                <span className="text-xs font-medium">Hidden</span>
-              </div>
-            </div>
+          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm" : ""}`}>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
