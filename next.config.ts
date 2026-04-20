@@ -34,4 +34,8 @@ const nextConfig: NextConfig = {
   ],
 };
 
-export default withNextIntl(nextConfig);
+const wrappedConfig = withNextIntl(nextConfig);
+
+export default process.env.ANALYZE === "true"
+  ? require("@next/bundle-analyzer")({ enabled: true })(wrappedConfig)
+  : wrappedConfig;
