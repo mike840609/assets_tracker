@@ -1,4 +1,3 @@
-import "server-only";
 import { prisma } from "@/lib/prisma";
 
 const COINGECKO_IDS: Record<string, string> = {
