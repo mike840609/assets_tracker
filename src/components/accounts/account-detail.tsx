@@ -3,7 +3,6 @@
 import { useState, useMemo, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,14 +16,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/currencies";
-const HoldingForm = dynamic(
-  () => import("./holding-form").then((m) => m.HoldingForm),
-  { ssr: false },
-);
-const EditHoldingDialog = dynamic(
-  () => import("./edit-holding-dialog").then((m) => m.EditHoldingDialog),
-  { ssr: false },
-);
+import { HoldingForm } from "./holding-form";
+import { EditHoldingDialog } from "./edit-holding-dialog";
 import { TransactionHistory } from "./transaction-history";
 import { AccountStatCards } from "./account-stat-cards";
 import { HoldingRow } from "./holding-row";
@@ -336,14 +329,12 @@ export function AccountDetail({
 
       <TransactionHistory accountId={account.id} isBank={isBank} refreshTrigger={refreshTrigger} />
 
-      {showHoldingForm && (
-        <HoldingForm
-          open={showHoldingForm}
-          onClose={() => setShowHoldingForm(false)}
-          accountId={account.id}
-          onSuccess={() => setRefreshTrigger((prev) => prev + 1)}
-        />
-      )}
+      <HoldingForm
+        open={showHoldingForm}
+        onClose={() => setShowHoldingForm(false)}
+        accountId={account.id}
+        onSuccess={() => setRefreshTrigger((prev) => prev + 1)}
+      />
 
       {editingHolding && (
         <EditHoldingDialog
