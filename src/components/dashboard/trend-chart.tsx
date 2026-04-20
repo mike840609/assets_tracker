@@ -14,6 +14,7 @@ import {
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
+import { EyeOff } from "lucide-react";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 
 type SnapshotData = {
@@ -114,9 +115,12 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
           <div className="h-[250px]" />
         ) : (
           <div className="relative">
-            {privacyMode && (
-              <div className="absolute inset-0 backdrop-blur-sm bg-background/30 rounded-lg z-10" />
-            )}
+            <div className={`absolute inset-0 rounded-lg z-10 flex items-center justify-center transition-all duration-300 ${privacyMode ? "backdrop-blur-md bg-background/40 opacity-100" : "opacity-0 pointer-events-none"}`}>
+              <div className="flex flex-col items-center gap-1.5 text-muted-foreground select-none">
+                <EyeOff className="h-5 w-5" />
+                <span className="text-xs font-medium">Hidden</span>
+              </div>
+            </div>
           <ResponsiveContainer width="100%" height={250}>
             <AreaChart data={filtered}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -131,11 +135,13 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
               <YAxis
                 tick={{ fontSize: 12 }}
                 tickFormatter={(v) =>
-                  v >= 1000000
-                    ? `${(v / 1000000).toFixed(1)}M`
-                    : v >= 1000
-                      ? `${(v / 1000).toFixed(0)}K`
-                      : v.toString()
+                  privacyMode
+                    ? ""
+                    : v >= 1000000
+                      ? `${(v / 1000000).toFixed(1)}M`
+                      : v >= 1000
+                        ? `${(v / 1000).toFixed(0)}K`
+                        : v.toString()
                 }
               />
               <Tooltip
