@@ -6,14 +6,14 @@ We leveraged `@next/bundle-analyzer` to inspect the client, server, and edge bun
 
 | # | Suggestion | Category | Impact | Effort | Status |
 |---|-----------|----------|--------|--------|--------|
-| B1 | Ensure `@prisma/client` and `@neondatabase/serverless` are strictly server-only | Bundle Size | 🔴 High | 15 min | ❌ Not Done |
+| B1 | Ensure `@prisma/client` and `@neondatabase/serverless` are strictly server-only | Bundle Size | 🔴 High | 15 min | ✅ Done |
 | B2 | Dynamic Import `AllocationChart` & `CurrencyExposureChart` | Bundle Size | 🔴 High | 30 min | ❌ Not Done |
 | B3 | Inspect `date-fns` usage for tree-shaking | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
 | B4 | Audit `lucide-react` usage | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
 | B5 | Monitor `recharts` library payload | Bundle Size | 🟡 Medium | 45 min | ❌ Not Done |
 | B6 | Lazy-load `sonner` Toaster | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
 | B7 | Restrict `zod` to Server Actions/API routes | Bundle Size | 🔴 High | 1 hr | ❌ Not Done |
-| B8 | Opt-out `yahoo-finance2` from client bundle via `server-only` | Bundle Size | 🔴 High | 15 min | ❌ Not Done |
+| B8 | Opt-out `yahoo-finance2` from client bundle via `server-only` | Bundle Size | 🔴 High | 15 min | ✅ Done |
 | B9 | Evaluate `next-intl` dictionary loading per route | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
 | B10 | Migrate `swr` fetching to RSCs (Server Components) | Bundle Size | 🟡 Medium | 1 hr | ❌ Not Done |
 | B11 | Lazy-load `cmdk` (Command Palette) | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
@@ -39,7 +39,9 @@ Findings sourced from running `@next/bundle-analyzer` against the project locall
 
 **Critical files:**
 - `src/lib/prisma.ts`
-- Missing `npm i server-only`
+- `src/lib/neon-server.ts`
+- Added `import "server-only";` guard in both server-only data-layer modules to cover Prisma and Neon imports
+- Expanded `server-only` guards to auth/session and data service modules that import Prisma/Neon-backed data paths (`auth.ts`, `auth-adapter.ts`, `auth-session.ts`, `services/{exchange-rate,history,net-worth,price,settings,snapshot}-service.ts`)
 
 ---
 
@@ -120,6 +122,8 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 
 **Critical files:**
 - `src/lib/services/price-service.ts`
+- `src/app/api/search/route.ts`
+- Added `import "server-only";` guard where `yahoo-finance2` is imported (directly or via service wrappers)
 
 ---
 
