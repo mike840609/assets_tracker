@@ -18,7 +18,8 @@
       "Bash(git commit -m 'feat\\(i18n\\): translate all page titles, section headings, and dashboard components:*)",
       "Bash(git commit -m 'feat\\(i18n\\): translate accounts list — select all, add item/account, assets/liabilities, category labels, plural counts:*)",
       "Bash(npm run:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npx next *)"
     ]
   }
 }
