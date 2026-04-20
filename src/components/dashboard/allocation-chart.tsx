@@ -31,7 +31,7 @@ function AllocationTooltip({
         label="Value"
         value={
           privacyMode
-            ? "***"
+            ? `${percentage}%`
             : `${formatCurrency(entry.value, baseCurrency)} (${percentage}%)`
         }
         indicatorColor={entry.fill || entry.color}
@@ -82,10 +82,7 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
         ) : !mounted ? (
           <div className="h-[250px]" />
         ) : (
-          <div className="relative">
-            {privacyMode && (
-              <div className="absolute inset-0 backdrop-blur-sm bg-background/30 rounded-lg z-10" />
-            )}
+          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm" : ""}`}>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie

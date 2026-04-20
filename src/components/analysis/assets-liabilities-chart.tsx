@@ -98,10 +98,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
         ) : !mounted ? (
           <div className="h-[280px]" />
         ) : (
-          <div className="relative">
-            {privacyMode && (
-              <div className="absolute inset-0 backdrop-blur-sm bg-background/30 rounded-lg z-10" />
-            )}
+          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm" : ""}`}>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -110,11 +107,13 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                   width={40}
                   tick={{ fontSize: 12 }}
                   tickFormatter={(v) =>
-                    v >= 1000000
-                      ? `${(v / 1000000).toFixed(1)}M`
-                      : v >= 1000
-                        ? `${(v / 1000).toFixed(0)}K`
-                        : String(v)
+                    privacyMode
+                      ? ""
+                      : v >= 1000000
+                        ? `${(v / 1000000).toFixed(1)}M`
+                        : v >= 1000
+                          ? `${(v / 1000).toFixed(0)}K`
+                          : String(v)
                   }
                 />
                 <Tooltip content={<AssetsTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />} />

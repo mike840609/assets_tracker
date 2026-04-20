@@ -60,20 +60,24 @@ function ChangeTooltip({
 
   return (
     <ChartTooltipContainer title={b.label}>
-      <ChartTooltipRow
-        label={t("tooltipStart")}
-        value={privacyMode ? "***" : formatCurrency(b.startNetWorth, baseCurrency)}
-      />
-      <ChartTooltipRow
-        label={t("tooltipEnd")}
-        value={privacyMode ? "***" : formatCurrency(b.endNetWorth, baseCurrency)}
-      />
-      <div className="pt-1.5 mt-1.5 border-t border-border/40">
+      {!privacyMode && (
+        <>
+          <ChartTooltipRow
+            label={t("tooltipStart")}
+            value={formatCurrency(b.startNetWorth, baseCurrency)}
+          />
+          <ChartTooltipRow
+            label={t("tooltipEnd")}
+            value={formatCurrency(b.endNetWorth, baseCurrency)}
+          />
+        </>
+      )}
+      <div className={!privacyMode ? "pt-1.5 mt-1.5 border-t border-border/40" : undefined}>
         <ChartTooltipRow
           label={t("tooltipChange")}
           value={
             privacyMode
-              ? "***"
+              ? pct
               : `${sign}${formatCurrency(b.deltaNetWorth, baseCurrency)} (${pct})`
           }
           valueClassName={
@@ -106,10 +110,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
         ) : !mounted ? (
           <div className="h-[280px]" />
         ) : (
-          <div className="relative">
-            {privacyMode && (
-              <div className="absolute inset-0 backdrop-blur-sm bg-background/30 rounded-lg z-10" />
-            )}
+          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm" : ""}`}>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -118,11 +119,13 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
                 width={40}
                 tick={{ fontSize: 12 }}
                 tickFormatter={(v) =>
-                  Math.abs(v) >= 1000000
-                    ? `${(v / 1000000).toFixed(1)}M`
-                    : Math.abs(v) >= 1000
-                      ? `${(v / 1000).toFixed(0)}K`
-                      : String(v)
+                  privacyMode
+                    ? ""
+                    : Math.abs(v) >= 1000000
+                      ? `${(v / 1000000).toFixed(1)}M`
+                      : Math.abs(v) >= 1000
+                        ? `${(v / 1000).toFixed(0)}K`
+                        : String(v)
                 }
               />
               <Tooltip
