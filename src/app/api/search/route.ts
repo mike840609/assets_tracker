@@ -1,3 +1,4 @@
+import "server-only";
 import { ok } from "@/lib/api-responses";
 
 type SearchResult = {
