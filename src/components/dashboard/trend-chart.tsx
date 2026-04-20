@@ -113,7 +113,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
         ) : !mounted ? (
           <div className="h-[250px]" />
         ) : (
-          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm" : ""}`}>
+          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}>
           <ResponsiveContainer width="100%" height={250}>
             <AreaChart data={filtered}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
