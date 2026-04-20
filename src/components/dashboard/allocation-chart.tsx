@@ -82,7 +82,7 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
         ) : !mounted ? (
           <div className="h-[250px]" />
         ) : (
-          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm" : ""}`}>
+          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie

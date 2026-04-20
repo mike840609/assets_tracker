@@ -7,7 +7,7 @@ We leveraged `@next/bundle-analyzer` to inspect the client, server, and edge bun
 | # | Suggestion | Category | Impact | Effort | Status |
 |---|-----------|----------|--------|--------|--------|
 | B1 | Ensure `@prisma/client` and `@neondatabase/serverless` are strictly server-only | Bundle Size | 🔴 High | 15 min | ✅ Done |
-| B2 | Dynamic Import `AllocationChart` & `CurrencyExposureChart` | Bundle Size | 🔴 High | 30 min | ❌ Not Done |
+| B2 | Dynamic Import `AllocationChart` & `CurrencyExposureChart` | Bundle Size | 🔴 High | 30 min | ✅ Done (2026-04-20) |
 | B3 | Inspect `date-fns` usage for tree-shaking | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
 | B4 | Audit `lucide-react` usage | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
 | B5 | Monitor `recharts` library payload | Bundle Size | 🟡 Medium | 45 min | ❌ Not Done |

@@ -110,7 +110,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
         ) : !mounted ? (
           <div className="h-[280px]" />
         ) : (
-          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm" : ""}`}>
+          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
