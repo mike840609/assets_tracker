@@ -125,8 +125,6 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                   name={t("seriesAssets")}
                   fill="var(--chart-1)"
                   radius={[4, 4, 0, 0]}
-                  isAnimationActive={isAnimationActive}
-                  onAnimationEnd={onAnimationEnd}
                 />
                 <Bar
                   dataKey="liabilities"
