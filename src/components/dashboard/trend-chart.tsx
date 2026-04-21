@@ -14,6 +14,7 @@ import {
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
+import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 
 type SnapshotData = {
@@ -72,6 +73,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
   const [mounted, setMounted] = useState(false);
   const t = useTranslations("trendChart");
   const { privacyMode } = usePrivacyMode();
+  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => setMounted(true), []);
 
   const selectedRange = ranges.find((r) => r.label === range)!;
@@ -153,6 +155,8 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
                 fillOpacity={0.1}
                 strokeWidth={2}
                 name={t("seriesName")}
+                isAnimationActive={isAnimationActive}
+                onAnimationEnd={onAnimationEnd}
               />
             </AreaChart>
           </ResponsiveContainer>

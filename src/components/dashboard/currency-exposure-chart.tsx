@@ -6,6 +6,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
+import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 import type { NetWorthSummary } from "@/lib/types";
 import { createPieLegendFormatter } from "@/lib/chart-formatters";
@@ -49,6 +50,7 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
   const [mounted, setMounted] = useState(false);
   const t = useTranslations("currencyExposure");
   const { privacyMode } = usePrivacyMode();
+  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => setMounted(true), []);
 
   const data = useMemo(() => {
@@ -86,6 +88,8 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                   outerRadius={90}
                   paddingAngle={2}
                   dataKey="value"
+                  isAnimationActive={isAnimationActive}
+                  onAnimationEnd={onAnimationEnd}
                 >
                   {data.map((_, index) => (
                     <Cell
