@@ -1,3 +1,7 @@
+// S2: Legal copy only — no Prisma, no session. Invalidates naturally on redeploy.
+export const dynamic = "force-static";
+export const revalidate = false;
+
 import { Suspense } from "react"
 import { getTranslations } from "next-intl/server"
 import Link from "next/link"

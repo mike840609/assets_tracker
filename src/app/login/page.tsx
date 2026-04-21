@@ -1,3 +1,8 @@
+// S1: No per-user data — bake as static. Locale is resolved from the NEXT_LOCALE
+// cookie at runtime; force-static serves the default (en-US) HTML from the CDN.
+export const dynamic = "force-static";
+export const revalidate = false;
+
 import { Suspense } from "react"
 import { signIn } from "@/auth"
 import { Button } from "@/components/ui/button"
