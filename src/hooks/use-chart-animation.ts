@@ -1,27 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-export function useChartAnimation(): boolean {
-  const [isAnimationActive, setIsAnimationActive] = useState(true);
+export function useChartAnimation(): { isAnimationActive: boolean; onAnimationEnd: () => void } {
+  const [isAnimationActive, setIsAnimationActive] = useState(false);
 
   useEffect(() => {
-    const coarse = window.matchMedia("(pointer: coarse)");
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-    const update = () => {
-      setIsAnimationActive(!coarse.matches && !reducedMotion.matches);
-    };
-
-    update();
-    coarse.addEventListener("change", update);
-    reducedMotion.addEventListener("change", update);
-
-    return () => {
-      coarse.removeEventListener("change", update);
-      reducedMotion.removeEventListener("change", update);
-    };
+    setIsAnimationActive(!reducedMotion.matches);
   }, []);
 
-  return isAnimationActive;
+  const onAnimationEnd = useCallback(() => {
+    setIsAnimationActive(false);
+  }, []);
+
+  return { isAnimationActive, onAnimationEnd };
 }
