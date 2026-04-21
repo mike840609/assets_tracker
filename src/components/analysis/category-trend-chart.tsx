@@ -108,12 +108,12 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
   }));
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium">{t("categoryTrend")}</CardTitle>
+    <Card className="border-0 bg-transparent shadow-none">
+      <CardHeader className="pb-2 px-2 sm:px-4">
+        <CardTitle className="text-base font-medium text-foreground">{t("categoryTrend")}</CardTitle>
         <p className="text-xs text-muted-foreground">{t("categoryTrendSubtitle")}</p>
       </CardHeader>
-      <CardContent className="px-2 sm:px-4">
+      <CardContent className="px-2 sm:px-4 pb-4">
         {data.length === 0 ? (
           <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noData")}

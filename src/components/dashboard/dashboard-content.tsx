@@ -21,22 +21,22 @@ const fetchRecentSnapshots = cache((userId: string) =>
   })
 );
 
-const CARD_CLASS =
-  "bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg";
+const CARD_CLASS = "premium-card";
 
 /* ---------- Section skeleton helpers ---------- */
 
 function NetWorthSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {[...Array(3)].map((_, i) => (
-        <Card key={i}>
-          <CardContent className="pt-6">
-            <div className="h-4 w-24 bg-muted animate-pulse rounded mb-2" />
-            <div className="h-8 w-36 bg-muted animate-pulse rounded" />
-          </CardContent>
-        </Card>
-      ))}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
+      <Card className="rounded-2xl h-[126px]">
+        <CardContent className="h-full bg-muted/50 rounded-2xl" />
+      </Card>
+      <Card className="rounded-2xl h-[126px]">
+        <CardContent className="h-full bg-muted/50 rounded-2xl" />
+      </Card>
+      <Card className="rounded-2xl h-[126px]">
+        <CardContent className="h-full bg-muted/50 rounded-2xl" />
+      </Card>
     </div>
   );
 }
@@ -46,7 +46,7 @@ function ChartsSkeleton() {
     <>
       {[...Array(2)].map((_, i) => (
         <div key={i} className={CARD_CLASS}>
-          <Card className="border-0 shadow-none">
+          <Card className="border-0 shadow-none bg-transparent">
             <CardHeader className="pb-2">
               <div className="h-5 w-32 bg-muted animate-pulse rounded" />
             </CardHeader>
@@ -63,7 +63,7 @@ function ChartsSkeleton() {
 function AccountsSummarySkeleton() {
   return (
     <div className={CARD_CLASS}>
-      <Card className="border-0 shadow-none">
+      <Card className="border-0 shadow-none bg-transparent">
         <CardHeader>
           <div className="h-5 w-40 bg-muted animate-pulse rounded" />
         </CardHeader>
@@ -204,10 +204,10 @@ export async function DashboardContent({ userId }: { userId: string }) {
   if (accountCount === 0) {
     const t = await getTranslations("dashboard");
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-6 text-center">
-        <div className="rounded-full bg-primary/10 p-6">
+      <div className="flex flex-col items-center justify-center py-24 gap-6 text-center animate-in fade-in zoom-in-95 duration-500">
+        <div className="rounded-full bg-primary/10 p-8 shadow-sm">
           <svg
-            className="h-12 w-12 text-primary"
+            className="h-12 w-12 text-primary animate-bounce-slow"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
@@ -222,12 +222,12 @@ export async function DashboardContent({ userId }: { userId: string }) {
           </svg>
         </div>
         <div className="space-y-2 max-w-sm">
-          <h3 className="text-xl font-semibold">{t("emptyTitle")}</h3>
-          <p className="text-muted-foreground text-sm">{t("emptyDescription")}</p>
+          <h3 className="text-2xl font-bold tracking-tight">{t("emptyTitle")}</h3>
+          <p className="text-muted-foreground text-base">{t("emptyDescription")}</p>
         </div>
         <Link
           href="/accounts"
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 hover:scale-105 transition-all"
         >
           {t("emptyAction")}
         </Link>
@@ -252,7 +252,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
       </Suspense>
 
       {/* Charts grid — trend chart + allocation + currency exposure */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both delay-150">
         <div className={`${CARD_CLASS} lg:col-span-2 xl:col-span-1`}>
           <Suspense
             fallback={
@@ -268,9 +268,11 @@ export async function DashboardContent({ userId }: { userId: string }) {
       </div>
 
       {/* Accounts summary table */}
-      <Suspense fallback={<AccountsSummarySkeleton />}>
-        <AccountsSummarySection userId={userId} baseCurrency={baseCurrency} />
-      </Suspense>
+      <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000 fill-mode-both delay-300">
+        <Suspense fallback={<AccountsSummarySkeleton />}>
+          <AccountsSummarySection userId={userId} baseCurrency={baseCurrency} />
+        </Suspense>
+      </div>
     </>
   );
 }

@@ -86,9 +86,9 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
   }, [snapshots, selectedRange.days, hideRangeFilter]);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-base font-medium">{t("title")}</CardTitle>
+    <Card className="border-0 bg-transparent shadow-none">
+      <CardHeader className="flex flex-row items-center justify-between pb-2 px-2 sm:px-4">
+        <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
         {!hideRangeFilter && (
           <div className="flex gap-1">
             {ranges.map((r) => (
@@ -107,7 +107,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
           </div>
         )}
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-4 pb-4">
         {filtered.length === 0 ? (
           <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noData")}

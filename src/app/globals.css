@@ -168,4 +168,21 @@
     @apply absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none
            dark:from-primary/8 dark:to-chart-3/5;
   }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .premium-card {
+    @apply bg-background/80 border border-border/50 shadow-sm
+           dark:bg-card/80 dark:border-border/60 dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)]
+           relative overflow-hidden rounded-2xl p-1 hover:shadow-lg transition-all duration-300 hover:-translate-y-1;
+  }
+  .premium-card::after {
+    content: "";
+    @apply absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none
+           dark:from-primary/8 dark:to-chart-3/5;
+  }
 }

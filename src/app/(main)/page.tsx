@@ -28,9 +28,9 @@ async function DashboardPageContent() {
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
-      <div className="space-y-8">
+      <div className="space-y-8 animate-in fade-in duration-500">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">
             {t("title")}
           </h2>
         </div>

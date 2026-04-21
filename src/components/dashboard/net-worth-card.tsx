@@ -4,7 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useCountUp } from "@/hooks/use-count-up";
 import type { NetWorthSummary } from "@/lib/types";
+import { TrendingUp, TrendingDown, Layers, Wallet } from "lucide-react";
 
 const HIDDEN = "***";
 
@@ -19,6 +21,10 @@ export function NetWorthCard({
   const t = useTranslations("netWorthCard");
   const { privacyMode } = usePrivacyMode();
 
+  const animatedNetWorth = useCountUp(netWorth, 1200);
+  const animatedAssets = useCountUp(totalAssets, 1000);
+  const animatedLiabilities = useCountUp(totalLiabilities, 1000);
+
   const delta = previousNetWorth !== undefined ? netWorth - previousNetWorth : null;
   const pct =
     delta !== null && previousNetWorth !== undefined && previousNetWorth !== 0
@@ -26,39 +32,73 @@ export function NetWorthCard({
       : null;
 
   const isPositive = delta !== null && delta >= 0;
-  const deltaColor = delta === null ? "" : isPositive ? "text-green-600" : "text-red-600";
+  const deltaColor = delta === null ? "" : isPositive ? "text-primary" : "text-destructive";
+  const bgDeltaColor = delta === null ? "" : isPositive ? "bg-primary/10" : "bg-destructive/10";
   const deltaSign = delta !== null && delta > 0 ? "+" : "";
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-sm font-medium text-muted-foreground">{t("netWorth")}</p>
-          <p className="text-3xl font-bold tracking-tight mt-1">
-            {privacyMode ? HIDDEN : formatCurrency(netWorth, baseCurrency)}
-          </p>
-          {!privacyMode && delta !== null && pct !== null && (
-            <p className={`text-sm font-medium mt-1 ${deltaColor}`}>
-              {deltaSign}{formatCurrency(delta, baseCurrency)}{" "}
-              ({deltaSign}{pct.toFixed(2)}%)
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both">
+      {/* Primary Hero Metric: Net Worth */}
+      <Card className="glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative group min-w-0">
+        <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-primary to-primary/50 opacity-100 transition-opacity" />
+        <CardContent className="pt-6 pb-6 px-6 h-full flex flex-col justify-center min-w-0">
+          <div className="flex items-center gap-2.5 mb-1.5 whitespace-nowrap overflow-hidden">
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <Layers className="h-4 w-4" />
+            </div>
+            <p className="text-sm font-medium text-muted-foreground truncate">
+              {t("netWorth")}
             </p>
+          </div>
+          <div className="overflow-x-auto scrollbar-none">
+            <p className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent mt-1 whitespace-nowrap tabular-nums">
+              {privacyMode ? HIDDEN : formatCurrency(animatedNetWorth, baseCurrency)}
+            </p>
+          </div>
+          {!privacyMode && delta !== null && pct !== null && (
+            <div className="overflow-x-auto scrollbar-none mt-3">
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${bgDeltaColor} ${deltaColor} w-max transition-all group-hover:scale-105 cursor-default whitespace-nowrap`}>
+                {isPositive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                <span>
+                  {deltaSign}{formatCurrency(delta, baseCurrency)} ({deltaSign}{pct.toFixed(2)}%)
+                </span>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-sm font-medium text-muted-foreground">{t("totalAssets")}</p>
-          <p className="text-2xl font-semibold text-green-600 mt-1">
-            {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency)}
-          </p>
+
+      {/* Secondary Metrics: Assets */}
+      <Card className="glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 min-w-0">
+        <CardContent className="pt-6 pb-6 px-6 h-full flex flex-col justify-center min-w-0">
+          <div className="flex items-center gap-2 mb-1 whitespace-nowrap overflow-hidden">
+            <Wallet className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-sm font-medium text-muted-foreground truncate">
+              {t("totalAssets")}
+            </p>
+          </div>
+          <div className="overflow-x-auto scrollbar-none">
+            <p className="text-2xl font-semibold text-primary mt-1 whitespace-nowrap tabular-nums">
+              {privacyMode ? HIDDEN : formatCurrency(animatedAssets, baseCurrency)}
+            </p>
+          </div>
         </CardContent>
       </Card>
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-sm font-medium text-muted-foreground">{t("totalLiabilities")}</p>
-          <p className="text-2xl font-semibold text-red-600 mt-1">
-            {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency)}
-          </p>
+      
+      {/* Secondary Metrics: Liabilities */}
+      <Card className="glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 min-w-0">
+        <CardContent className="pt-6 pb-6 px-6 h-full flex flex-col justify-center min-w-0">
+          <div className="flex items-center gap-2 mb-1 whitespace-nowrap overflow-hidden">
+            <TrendingDown className="h-4 w-4 text-destructive shrink-0" />
+            <p className="text-sm font-medium text-muted-foreground truncate">
+              {t("totalLiabilities")}
+            </p>
+          </div>
+          <div className="overflow-x-auto scrollbar-none">
+            <p className="text-2xl font-semibold text-destructive mt-1 whitespace-nowrap tabular-nums">
+              {privacyMode ? HIDDEN : formatCurrency(animatedLiabilities, baseCurrency)}
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

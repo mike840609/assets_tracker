@@ -90,7 +90,7 @@ export function DashboardActions({
           size="sm"
           onClick={handleRefreshPrices}
           disabled={refreshing}
-          className="gap-1.5"
+          className="gap-2 rounded-full px-5 border-primary/20 bg-primary/5 hover:bg-primary/15 text-primary hover:text-primary transition-all shadow-sm hover:shadow"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
           {refreshing ? t("refreshing") : t("refreshPrices")}

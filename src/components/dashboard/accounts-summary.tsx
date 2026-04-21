@@ -120,47 +120,47 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
 
   const renderRows = (accounts: typeof summary.accounts) =>
     accounts.map((account) => (
-      <TableRow key={account.id}>
-        <TableCell className="whitespace-normal break-words">
-          <Link href={`/accounts/${account.id}`} className="font-medium hover:underline">
+      <TableRow key={account.id} className="group hover:bg-muted/30 transition-colors duration-200 border-border/50">
+        <TableCell className="whitespace-normal break-words py-3">
+          <Link href={`/accounts/${account.id}`} className="font-medium group-hover:text-primary transition-colors">
             {account.name}
           </Link>
         </TableCell>
-        <TableCell className="whitespace-normal text-muted-foreground">
+        <TableCell className="whitespace-normal text-muted-foreground py-3">
           {t(`categories.${account.category}`, { defaultValue: account.category })}
         </TableCell>
-        <TableCell className="text-right text-muted-foreground tabular-nums">
+        <TableCell className="text-right text-muted-foreground tabular-nums py-3">
           {privacyMode ? "—" : `${getPercentage(account).toFixed(1)}%`}
         </TableCell>
-        <TableCell className="text-right font-medium tabular-nums">
+        <TableCell className="text-right font-medium tabular-nums py-3">
           {privacyMode ? HIDDEN : formatCurrency(account.totalValueInBaseCurrency, summary.baseCurrency)}
         </TableCell>
       </TableRow>
     ));
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium">{t("accountsSummary.title")}</CardTitle>
+    <Card className="border-0 shadow-none bg-transparent">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold tracking-tight">{t("accountsSummary.title")}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {assets.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-1 px-1">
-              {t("common.asset")}
+            <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-2 px-1 flex items-center gap-1.5 opacity-80">
+              <span className="w-2 h-2 rounded-full bg-primary" /> {t("common.asset")}
             </p>
-            <div className="overflow-x-auto">
-              <Table className="table-fixed [&_th]:px-1 sm:[&_th]:px-2 [&_td]:px-1 sm:[&_td]:px-2">
+            <div className="overflow-x-auto rounded-lg border border-border/40 bg-background/30 backdrop-blur-sm">
+              <Table className="table-fixed [&_th]:px-3 sm:[&_th]:px-4 [&_td]:px-3 sm:[&_td]:px-4">
                 {colGroup}
                 {tableHeader}
                 <TableBody>{renderRows(assets)}</TableBody>
                 <tfoot>
-                  <tr className="border-t border-border font-semibold">
-                    <td colSpan={2} className="px-1 sm:px-4 py-2 text-sm text-muted-foreground">
+                  <tr className="border-t-[2px] border-border/50 font-semibold bg-muted/10">
+                    <td colSpan={2} className="px-3 sm:px-4 py-3 text-sm text-muted-foreground">
                       {t("accountsSummary.total")}
                     </td>
                     <td />
-                    <td className="px-1 sm:px-4 py-2 text-right text-sm tabular-nums">
+                    <td className="px-3 sm:px-4 py-3 text-right text-base tabular-nums text-primary">
                       {privacyMode ? HIDDEN : formatCurrency(summary.totalAssets, summary.baseCurrency)}
                     </td>
                   </tr>
@@ -172,21 +172,21 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
 
         {liabilities.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-red-500 dark:text-red-400 uppercase tracking-wide mb-1 px-1">
-              {t("common.liability")}
+            <p className="text-xs font-semibold text-destructive uppercase tracking-wider mb-2 px-1 flex items-center gap-1.5 opacity-80 mt-6">
+              <span className="w-2 h-2 rounded-full bg-destructive" /> {t("common.liability")}
             </p>
-            <div className="overflow-x-auto">
-              <Table className="table-fixed [&_th]:px-1 sm:[&_th]:px-2 [&_td]:px-1 sm:[&_td]:px-2">
+            <div className="overflow-x-auto rounded-lg border border-border/40 bg-background/30 backdrop-blur-sm">
+              <Table className="table-fixed [&_th]:px-3 sm:[&_th]:px-4 [&_td]:px-3 sm:[&_td]:px-4">
                 {colGroup}
                 {tableHeader}
                 <TableBody>{renderRows(liabilities)}</TableBody>
                 <tfoot>
-                  <tr className="border-t border-border font-semibold">
-                    <td colSpan={2} className="px-1 sm:px-4 py-2 text-sm text-muted-foreground">
+                  <tr className="border-t-[2px] border-border/50 font-semibold bg-muted/10">
+                    <td colSpan={2} className="px-3 sm:px-4 py-3 text-sm text-muted-foreground">
                       {t("accountsSummary.total")}
                     </td>
                     <td />
-                    <td className="px-1 sm:px-4 py-2 text-right text-sm tabular-nums">
+                    <td className="px-3 sm:px-4 py-3 text-right text-base tabular-nums text-destructive">
                       {privacyMode ? HIDDEN : formatCurrency(summary.totalLiabilities, summary.baseCurrency)}
                     </td>
                   </tr>
