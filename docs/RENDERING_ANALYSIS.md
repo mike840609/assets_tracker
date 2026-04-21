@@ -13,7 +13,7 @@ The user asked for ISR suggestions. The correct Next.js 16 answer is to walk the
 | I1 | ISR on `GET /api/exchange-rates` (`revalidate` + `Cache-Control`) | ISR · Route handler | 🔴 High | 15 min | 🚫 Blocked — route-segment `revalidate` conflicts with `nextConfig.cacheComponents`; `Cache-Control` shipped |
 | I2 | ISR on `GET /api/search` (`revalidate` + `Cache-Control`) | ISR · Route handler | 🔴 High | 15 min | 🚫 Blocked — same constraint as I1; `Cache-Control` shipped |
 | I3 | `fetch({ next: { revalidate, tags } })` on CoinGecko fallback | ISR · Upstream fetch | 🟡 Medium | 15 min | ✅ Done (PR 4) |
-| I4 | Route-segment `revalidate` backstop on PPR routes | ISR · Backstop | 🟢 Low | 15 min | ✅ Done (PR 5) |
+| I4 | Route-segment `revalidate` backstop on PPR routes | ISR · Backstop | 🟢 Low | 15 min | 🚫 Blocked — route-segment `revalidate` is incompatible with `nextConfig.cacheComponents` |
 | I5 | Document the `fetch({ next: { revalidate } })` pattern on upstream FX APIs | ISR · Reference | 🟢 Low | 10 min | ✅ Done (PR 4) |
 | X1 | Verify / trim `revalidateTag(tag, "max")` second argument | Prereq · Correctness | 🔴 High | 15 min | ✅ Done |
 | X2 | Add `revalidateTag("snapshots")` after cron snapshot creation | Prereq · Invalidation | 🔴 High | 10 min | ✅ Done |
@@ -224,13 +224,9 @@ export const revalidate = 900; // 15-minute failure floor
 
 This does **not** replace the tag contract (V21) — it's a floor, not a ceiling. Tags invalidate in seconds; the segment `revalidate` only kicks in when a tag call is missed. Low risk, cheap insurance. Cross-reference `VERCEL_ANALYSIS.md` V21.
 
-**Implementation status (2026-04-21).** Shipped via PR 5 by setting `export const revalidate = 900` in:
-
-- `src/app/(main)/page.tsx`
-- `src/app/(main)/accounts/page.tsx`
-- `src/app/(main)/history/page.tsx`
-- `src/app/(main)/analysis/page.tsx`
-- `src/app/(main)/settings/page.tsx`
+**Implementation status (2026-04-21).** Attempted in PR 5, then reverted after `next build` failed with:
+`Route segment config "revalidate" is not compatible with nextConfig.cacheComponents`.
+Until Next.js lifts this constraint, this item remains blocked in this project configuration.
 
 **Critical files.** `src/app/(main)/page.tsx`, `src/app/(main)/accounts/page.tsx`, `src/app/(main)/history/page.tsx`, `src/app/(main)/analysis/page.tsx`, `src/app/(main)/settings/page.tsx`.
 
@@ -348,4 +344,4 @@ Suggested PR grouping:
 - **PR 2 (SSG):** S1 + S2 — trivial, high-confidence.
 - **PR 3 (PPR):** P1 verification + P2 refactor — these want to land together so P1's `next build` output already reflects P2.
 - **PR 4 (ISR):** I1 + I2 + I3 + I5 — all route/fetch-level caching.
-- **PR 5 (backstop + verification):** I4 + X3 — ship after PR 4 has baked for a few days.
+- **PR 5 (verification):** X3 now; keep I4 queued until `cacheComponents` allows route-segment `revalidate` again.

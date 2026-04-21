@@ -6,8 +6,6 @@ import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 
-export const revalidate = 900;
-
 const CLIENT_NAMESPACES = [
   "dashboardActions",
   "trendChart",

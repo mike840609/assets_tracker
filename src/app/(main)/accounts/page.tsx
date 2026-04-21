@@ -10,8 +10,6 @@ import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/ser
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import AccountsLoading from "./loading";
 
-export const revalidate = 900;
-
 const CLIENT_NAMESPACES = [
   "accountsList",
   "accountForm",

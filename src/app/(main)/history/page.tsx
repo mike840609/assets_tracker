@@ -9,8 +9,6 @@ import { HistoryTable } from "@/components/history/history-table";
 import { getNormalizedHistory } from "@/lib/services/history-service";
 import HistoryLoading from "./loading";
 
-export const revalidate = 900;
-
 const CLIENT_NAMESPACES = ["trendChart", "history"];
 
 async function HistoryContent() {

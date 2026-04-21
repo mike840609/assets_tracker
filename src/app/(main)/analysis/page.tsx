@@ -8,8 +8,6 @@ import { pickMessages } from "@/lib/i18n-utils";
 import { AnalysisView } from "@/components/analysis/analysis-view";
 import AnalysisLoading from "./loading";
 
-export const revalidate = 900;
-
 const CLIENT_NAMESPACES = ["analysis"];
 
 async function AnalysisContent() {
