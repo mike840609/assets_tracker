@@ -1,7 +1,5 @@
-// S2: Legal copy only — no Prisma, no session. Invalidates naturally on redeploy.
-export const dynamic = "force-static";
-export const revalidate = false;
-
+// S2: force-static is incompatible with nextConfig.cacheComponents (PPR mode).
+// PPR prerendering the Suspense fallback shell is the correct tier here.
 import { Suspense } from "react"
 import { getTranslations } from "next-intl/server"
 import Link from "next/link"
