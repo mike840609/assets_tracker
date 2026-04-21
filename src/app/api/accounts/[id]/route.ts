@@ -7,9 +7,9 @@ import { withAuth } from "@/lib/api-handler";
 type IdCtx = { params: Promise<{ id: string }> };
 
 function invalidateUserCaches(userId: string) {
-  revalidateTag(`accounts:${userId}`, "max");
-  revalidateTag(`net-worth:${userId}`, "max");
-  revalidateTag(`history:${userId}`, "max");
+  revalidateTag(`accounts:${userId}`);
+  revalidateTag(`net-worth:${userId}`);
+  revalidateTag(`history:${userId}`);
 }
 
 export const GET = withAuth<IdCtx>(async (_request, { params }, userId) => {

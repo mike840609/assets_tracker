@@ -5,8 +5,8 @@ import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 
 function invalidateUserCaches(userId: string) {
-  revalidateTag(`accounts:${userId}`, "max");
-  revalidateTag(`net-worth:${userId}`, "max");
+  revalidateTag(`accounts:${userId}`);
+  revalidateTag(`net-worth:${userId}`);
 }
 
 export const GET = withAuth(async (_req, _ctx, userId) => {

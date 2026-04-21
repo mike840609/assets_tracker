@@ -28,11 +28,11 @@ export const PATCH = withAuth(async (request, _ctx, userId) => {
     },
   });
 
-  revalidateTag(`settings:${userId}`, "max");
+  revalidateTag(`settings:${userId}`);
   // If the base currency changed, the cached net-worth summary for this
   // user is stale (values are denominated in the old currency).
   if (parsed.data.baseCurrency !== undefined) {
-    revalidateTag(`net-worth:${userId}`, "max");
+    revalidateTag(`net-worth:${userId}`);
   }
 
   const response = ok(settings);
