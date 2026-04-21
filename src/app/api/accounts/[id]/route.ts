@@ -1,9 +1,16 @@
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { updateAccountSchema } from "@/lib/validators";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 
 type IdCtx = { params: Promise<{ id: string }> };
+
+function invalidateUserCaches(userId: string) {
+  revalidateTag(`accounts:${userId}`, "max");
+  revalidateTag(`net-worth:${userId}`, "max");
+  revalidateTag(`history:${userId}`, "max");
+}
 
 export const GET = withAuth<IdCtx>(async (_request, { params }, userId) => {
   const { id } = await params;
@@ -44,11 +51,13 @@ export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
     where: { id, userId },
     data: parsed.data,
   });
+  invalidateUserCaches(userId);
   return ok(account);
 });
 
 export const DELETE = withAuth<IdCtx>(async (_request, { params }, userId) => {
   const { id } = await params;
   await prisma.account.delete({ where: { id, userId } });
+  invalidateUserCaches(userId);
   return ok({ ok: true });
 });

@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createHoldingSchema, updateHoldingSchema } from "@/lib/validators";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
@@ -5,6 +6,12 @@ import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 
 type IdCtx = { params: Promise<{ id: string }> };
+
+function invalidateUserCaches(userId: string) {
+  revalidateTag(`accounts:${userId}`, "max");
+  revalidateTag(`net-worth:${userId}`, "max");
+  revalidateTag(`history:${userId}`, "max");
+}
 
 export const GET = withAuth<IdCtx>(async (_request, { params }, userId) => {
   const { id } = await params;
@@ -18,10 +25,7 @@ export const GET = withAuth<IdCtx>(async (_request, { params }, userId) => {
   return ok(holdings);
 });
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
   const { id } = await params;
   const body = await request.json();
   const parsed = createHoldingSchema.safeParse(body);
@@ -71,13 +75,11 @@ export async function POST(
     console.error(`Failed to fetch price for ${holding.symbol}:`, error);
   }
 
+  invalidateUserCaches(userId);
   return ok(holding, { status: 201 });
-}
+});
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
   const { id: _accountId } = await params;
   const body = await request.json();
   const parsed = updateHoldingSchema.safeParse(body);
@@ -104,18 +106,17 @@ export async function PATCH(
   }
 
   const holding = await prisma.holding.update({ where: { id }, data });
+  invalidateUserCaches(userId);
   return ok(holding);
-}
+});
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const DELETE = withAuth<IdCtx>(async (request, { params }, userId) => {
   const { id: _accountId } = await params;
   const body = await request.json();
   const { id } = body;
   if (!id) return failure("Holding ID required");
 
   await prisma.holding.delete({ where: { id } });
+  invalidateUserCaches(userId);
   return ok({ ok: true });
-}
+});
