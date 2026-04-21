@@ -77,7 +77,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
-  const isAnimationActive = useChartAnimation();
+  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => setMounted(true), []);
 
   const data = buckets.map((b) => ({
@@ -126,6 +126,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                   fill="var(--chart-1)"
                   radius={[4, 4, 0, 0]}
                   isAnimationActive={isAnimationActive}
+                  onAnimationEnd={onAnimationEnd}
                 />
                 <Bar
                   dataKey="liabilities"

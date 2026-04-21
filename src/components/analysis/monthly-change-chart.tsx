@@ -94,7 +94,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
-  const isAnimationActive = useChartAnimation();
+  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => setMounted(true), []);
 
   const data = buckets.map((b) => ({ ...b, label: formatMonthLabel(b.monthKey, locale) }));
@@ -134,7 +134,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
                 cursor={{ fill: "var(--muted)", opacity: 0.3 }}
                 content={<ChangeTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />}
               />
-              <Bar dataKey="deltaNetWorth" radius={[4, 4, 0, 0]} isAnimationActive={isAnimationActive}>
+              <Bar dataKey="deltaNetWorth" radius={[4, 4, 0, 0]} isAnimationActive={isAnimationActive} onAnimationEnd={onAnimationEnd}>
                 {data.map((entry) => (
                   <Cell
                     key={entry.monthKey}
