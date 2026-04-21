@@ -4,6 +4,7 @@ import { ok } from "@/lib/api-responses";
 
 export async function POST() {
   const result = await refreshAllPrices();
-  revalidateTag("net-worth");
+  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
+  revalidateTag("net-worth", "max");
   return ok(result);
 }

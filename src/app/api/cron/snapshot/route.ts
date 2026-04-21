@@ -14,7 +14,8 @@ export async function GET(request: Request) {
     // 1. Refresh all prices first to ensure the snapshot is accurate
     console.log("Cron: Refreshing prices...");
     await refreshAllPrices();
-    revalidateTag("net-worth");
+    // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
+    revalidateTag("net-worth", "max");
 
     // 2. Get all users and their settings
     const users = await prisma.user.findMany({
@@ -31,9 +32,9 @@ export async function GET(request: Request) {
     );
 
     // 4. Invalidate snapshot/history caches now that new rows exist
-    revalidateTag("snapshots");
+    revalidateTag("snapshots", "max");
     for (const user of users) {
-      revalidateTag(`history:${user.id}`);
+      revalidateTag(`history:${user.id}`, "max");
     }
 
     return ok({

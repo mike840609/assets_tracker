@@ -5,8 +5,9 @@ import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 
 function invalidateUserCaches(userId: string) {
-  revalidateTag(`accounts:${userId}`);
-  revalidateTag(`net-worth:${userId}`);
+  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
+  revalidateTag(`accounts:${userId}`, "max");
+  revalidateTag(`net-worth:${userId}`, "max");
 }
 
 export const GET = withAuth(async (_req, _ctx, userId) => {
