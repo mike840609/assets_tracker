@@ -73,7 +73,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
   const [mounted, setMounted] = useState(false);
   const t = useTranslations("trendChart");
   const { privacyMode } = usePrivacyMode();
-  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
+  const isAnimationActive = useChartAnimation();
   useEffect(() => setMounted(true), []);
 
   const selectedRange = ranges.find((r) => r.label === range)!;
@@ -156,7 +156,6 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
                 strokeWidth={2}
                 name={t("seriesName")}
                 isAnimationActive={isAnimationActive}
-                onAnimationEnd={onAnimationEnd}
               />
             </AreaChart>
           </ResponsiveContainer>

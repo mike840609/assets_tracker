@@ -50,7 +50,7 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
   const [mounted, setMounted] = useState(false);
   const t = useTranslations("currencyExposure");
   const { privacyMode } = usePrivacyMode();
-  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
+  const isAnimationActive = useChartAnimation();
   useEffect(() => setMounted(true), []);
 
   const data = useMemo(() => {
@@ -89,7 +89,6 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                   paddingAngle={2}
                   dataKey="value"
                   isAnimationActive={isAnimationActive}
-                  onAnimationEnd={onAnimationEnd}
                 >
                   {data.map((_, index) => (
                     <Cell
