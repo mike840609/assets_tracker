@@ -81,7 +81,7 @@ export async function fetchCryptoPrices(
       try {
         const res = await fetch(
           `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=usd`,
-          { cache: "no-store" }
+          { next: { revalidate: 60, tags: ["prices:crypto"] } }
         );
         if (res.ok) {
           const data = await res.json();
@@ -150,4 +150,3 @@ export async function refreshAllPrices(): Promise<{
 
   return { updated, errors };
 }
-

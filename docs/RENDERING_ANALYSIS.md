@@ -10,11 +10,11 @@ The user asked for ISR suggestions. The correct Next.js 16 answer is to walk the
 | S2 | `/privacy` → SSG (`force-static`) | SSG · Public page | 🟡 Medium | 10 min | 🚫 Blocked — same constraint as S1 |
 | P1 | Verify build output classifies `/`, `/accounts`, `/accounts/[id]`, `/history`, `/analysis`, `/settings` as `◐` | PPR · Verification | 🟡 Medium | 20 min | ❌ Not Done |
 | P2 | Move `/accounts` list reads into the cached `fetchUserAccountsWithHoldings` helper | PPR · Route coverage | 🟡 Medium | 45 min | ❌ Not Done |
-| I1 | ISR on `GET /api/exchange-rates` (`revalidate` + `Cache-Control`) | ISR · Route handler | 🔴 High | 15 min | ❌ Not Done |
-| I2 | ISR on `GET /api/search` (`revalidate` + `Cache-Control`) | ISR · Route handler | 🔴 High | 15 min | ❌ Not Done |
-| I3 | `fetch({ next: { revalidate, tags } })` on CoinGecko fallback | ISR · Upstream fetch | 🟡 Medium | 15 min | ❌ Not Done |
+| I1 | ISR on `GET /api/exchange-rates` (`revalidate` + `Cache-Control`) | ISR · Route handler | 🔴 High | 15 min | ✅ Done (PR 4) |
+| I2 | ISR on `GET /api/search` (`revalidate` + `Cache-Control`) | ISR · Route handler | 🔴 High | 15 min | ✅ Done (PR 4) |
+| I3 | `fetch({ next: { revalidate, tags } })` on CoinGecko fallback | ISR · Upstream fetch | 🟡 Medium | 15 min | ✅ Done (PR 4) |
 | I4 | Route-segment `revalidate` backstop on PPR routes | ISR · Backstop | 🟢 Low | 15 min | ❌ Not Done |
-| I5 | Document the `fetch({ next: { revalidate } })` pattern on upstream FX APIs | ISR · Reference | 🟢 Low | 10 min | ❌ Not Done |
+| I5 | Document the `fetch({ next: { revalidate } })` pattern on upstream FX APIs | ISR · Reference | 🟢 Low | 10 min | ✅ Done (PR 4) |
 | X1 | Verify / trim `revalidateTag(tag, "max")` second argument | Prereq · Correctness | 🔴 High | 15 min | ✅ Done |
 | X2 | Add `revalidateTag("snapshots")` after cron snapshot creation | Prereq · Invalidation | 🔴 High | 10 min | ✅ Done |
 | X3 | Commit the `next build` classification snippet to this doc | Verification | 🟢 Low | 10 min | ❌ Not Done |
