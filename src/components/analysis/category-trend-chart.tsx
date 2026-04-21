@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import {
-  Area,
-  AreaChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,6 +14,7 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { CategoryDataPoint } from "@/lib/services/analysis-service";
 
 const CATEGORY_COLORS = [
@@ -46,11 +47,13 @@ function CategoryTooltip({
   payload,
   label,
   baseCurrency,
+  privacyMode,
 }: {
   active?: boolean;
   payload?: TooltipPayload[];
   label?: string;
   baseCurrency: string;
+  privacyMode?: boolean;
 }) {
   if (!active || !payload?.length) return null;
   const sorted = [...payload].sort((a, b) => b.value - a.value);
@@ -66,7 +69,9 @@ function CategoryTooltip({
             />
             {p.name}
           </span>
-          <span className="tabular-nums">{formatCurrency(p.value, baseCurrency)}</span>
+          <span className="tabular-nums">
+            {privacyMode ? "***" : formatCurrency(p.value, baseCurrency)}
+          </span>
         </div>
       ))}
     </div>
@@ -83,6 +88,7 @@ const tickFormatter = (v: number) =>
 export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
   const tCat = useTranslations("categories");
+  const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -106,7 +112,7 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
         <CardTitle className="text-base font-medium">{t("categoryTrend")}</CardTitle>
         <p className="text-xs text-muted-foreground">{t("categoryTrendSubtitle")}</p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-4">
         {data.length === 0 ? (
           <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noData")}
@@ -114,31 +120,35 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
         ) : !mounted ? (
           <div className="h-[280px]" />
         ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} tickFormatter={tickFormatter} />
-              <Tooltip
-                content={
-                  <CategoryTooltip baseCurrency={baseCurrency} />
-                }
-              />
-              {categories.map((cat, idx) => (
-                <Area
-                  key={cat}
-                  type="monotone"
-                  dataKey={cat}
-                  name={tCat(cat as Parameters<typeof tCat>[0], { defaultValue: cat })}
-                  stackId="1"
-                  stroke={CATEGORY_COLORS[idx % CATEGORY_COLORS.length]}
-                  fill={CATEGORY_COLORS[idx % CATEGORY_COLORS.length]}
-                  fillOpacity={0.6}
-                  strokeWidth={1.5}
+          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}>
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={chartData} margin={{ top: 10, right: 4, left: 0, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(v) => (privacyMode ? "" : tickFormatter(v))}
                 />
-              ))}
-            </AreaChart>
-          </ResponsiveContainer>
+                <Tooltip
+                  content={
+                    <CategoryTooltip baseCurrency={baseCurrency} privacyMode={privacyMode} />
+                  }
+                />
+                {categories.map((cat, idx) => (
+                  <Line
+                    key={cat}
+                    type="monotone"
+                    dataKey={cat}
+                    name={tCat(cat as Parameters<typeof tCat>[0], { defaultValue: cat })}
+                    stroke={CATEGORY_COLORS[idx % CATEGORY_COLORS.length]}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>

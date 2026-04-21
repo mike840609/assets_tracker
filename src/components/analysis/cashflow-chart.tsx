@@ -14,6 +14,7 @@ import {
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { CashFlowBucket } from "@/lib/services/analysis-service";
 
 interface Props {
@@ -33,11 +34,13 @@ function CashFlowTooltip({
   payload,
   baseCurrency,
   t,
+  privacyMode,
 }: {
   active?: boolean;
   payload?: TooltipPayload[];
   baseCurrency: string;
   t: (key: string) => string;
+  privacyMode?: boolean;
 }) {
   if (!active || !payload?.length) return null;
   const b = payload[0].payload;
@@ -60,7 +63,7 @@ function CashFlowTooltip({
       <div className="flex justify-between gap-4">
         <span className="text-muted-foreground">{t("seriesContributions")}</span>
         <span className="tabular-nums">
-          {contribSign}{formatCurrency(b.contributions, baseCurrency)}
+          {privacyMode ? "***" : `${contribSign}${formatCurrency(b.contributions, baseCurrency)}`}
         </span>
       </div>
       <div className="flex justify-between gap-4">
@@ -70,7 +73,7 @@ function CashFlowTooltip({
             b.marketPerformance >= 0 ? "text-[var(--chart-1)]" : "text-destructive"
           }`}
         >
-          {marketSign}{formatCurrency(b.marketPerformance, baseCurrency)}
+          {privacyMode ? "***" : `${marketSign}${formatCurrency(b.marketPerformance, baseCurrency)}`}
         </span>
       </div>
       <div className="flex justify-between gap-4 border-t border-border/60 pt-1">
@@ -80,8 +83,12 @@ function CashFlowTooltip({
             b.deltaNetWorth >= 0 ? "text-[var(--chart-1)]" : "text-destructive"
           }`}
         >
-          {b.deltaNetWorth >= 0 ? "+" : ""}
-          {formatCurrency(b.deltaNetWorth, baseCurrency)}
+          {privacyMode ? "***" : (
+            <>
+              {b.deltaNetWorth >= 0 ? "+" : ""}
+              {formatCurrency(b.deltaNetWorth, baseCurrency)}
+            </>
+          )}
         </span>
       </div>
     </div>
@@ -97,6 +104,7 @@ const tickFormatter = (v: number) =>
 
 export function CashFlowChart({ buckets, baseCurrency }: Props) {
   const t = useTranslations("analysis");
+  const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -106,7 +114,7 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
         <CardTitle className="text-base font-medium">{t("cashFlow")}</CardTitle>
         <p className="text-xs text-muted-foreground">{t("cashFlowSubtitle")}</p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-4">
         {buckets.length === 0 ? (
           <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noData")}
@@ -114,15 +122,18 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
         ) : !mounted ? (
           <div className="h-[280px]" />
         ) : (
-          <>
+          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={buckets} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <BarChart data={buckets} margin={{ top: 10, right: 4, left: 0, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} tickFormatter={tickFormatter} />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(v) => (privacyMode ? "" : tickFormatter(v))}
+                />
                 <Tooltip
                   cursor={{ fill: "var(--muted)", opacity: 0.3 }}
-                  content={<CashFlowTooltip baseCurrency={baseCurrency} t={t} />}
+                  content={<CashFlowTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />}
                 />
                 {/* Contributions bar */}
                 <Bar dataKey="contributions" name={t("seriesContributions")} stackId="a" radius={[0, 0, 0, 0]}>
@@ -153,7 +164,7 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
               </BarChart>
             </ResponsiveContainer>
             <p className="mt-2 text-[11px] text-muted-foreground">{t("cashFlowNote")}</p>
-          </>
+          </div>
         )}
       </CardContent>
     </Card>

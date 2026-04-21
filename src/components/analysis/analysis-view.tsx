@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
 import type { RawHistoryData, SnapshotBreakdown } from "@/lib/services/history-service";
 import {
@@ -121,10 +120,20 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
     return rawHistory.snapshots.filter((s) => s.date >= rangeStartIso);
   }, [rawHistory.snapshots, rangeStartIso]);
 
-  const categoryHistory = useMemo(
-    () => aggregateCategoryHistory(filteredRawSnapshots, rawHistory.accounts),
-    [filteredRawSnapshots, rawHistory.accounts]
-  );
+  const categoryHistory = useMemo(() => {
+    const real = aggregateCategoryHistory(filteredRawSnapshots, rawHistory.accounts);
+    const byKey = new Map(real.map((c) => [c.monthKey, c]));
+    return buckets.map((b) => {
+      const existing = byKey.get(b.monthKey);
+      if (existing) return existing;
+      // Pad empty months with 0s for all categories to match the other charts' X-axis length
+      const empty: CategoryDataPoint & Record<string, any> = { monthKey: b.monthKey };
+      for (const acc of rawHistory.accounts) {
+        empty[acc.category] = 0;
+      }
+      return empty as CategoryDataPoint;
+    });
+  }, [filteredRawSnapshots, rawHistory.accounts, buckets]);
 
   const topMovers = useMemo(
     () => computeTopMovers(filteredRawSnapshots, rawHistory.accounts),
@@ -161,36 +170,18 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
           {t("noData")}
         </div>
       ) : (
-        <Tabs defaultValue="overview">
-          <TabsList className="mb-4">
-            <TabsTrigger value="overview">{t("tabOverview")}</TabsTrigger>
-            <TabsTrigger value="cashflow">{t("tabCashFlow")}</TabsTrigger>
-            <TabsTrigger value="categories">{t("tabCategories")}</TabsTrigger>
-            <TabsTrigger value="movers">{t("tabMovers")}</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6 mt-0">
-            <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
-            <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
-            <AssetsLiabilitiesChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
-          </TabsContent>
-
-          <TabsContent value="cashflow" className="mt-0">
-            <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
-          </TabsContent>
-
-          <TabsContent value="categories" className="mt-0">
-            <CategoryTrendChart
-              data={categoryHistory}
-              baseCurrency={baseCurrency}
-              locale={locale}
-            />
-          </TabsContent>
-
-          <TabsContent value="movers" className="mt-0">
-            <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
-          </TabsContent>
-        </Tabs>
+        <div className="space-y-6">
+          <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
+          <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+          <AssetsLiabilitiesChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+          <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+          <CategoryTrendChart
+            data={categoryHistory}
+            baseCurrency={baseCurrency}
+            locale={locale}
+          />
+          <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
+        </div>
       )}
     </div>
   );

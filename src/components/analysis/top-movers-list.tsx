@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { TopMover } from "@/lib/services/analysis-service";
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 export function TopMoversList({ movers, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const tCat = useTranslations("categories");
+  const { privacyMode } = usePrivacyMode();
 
   return (
     <Card>
@@ -68,17 +70,21 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
                         </div>
                       </td>
                       <td className="py-2.5 text-right tabular-nums text-muted-foreground">
-                        {formatCurrency(m.startValue, baseCurrency)}
+                        {privacyMode ? "***" : formatCurrency(m.startValue, baseCurrency)}
                       </td>
                       <td className="py-2.5 text-right tabular-nums">
-                        {formatCurrency(m.endValue, baseCurrency)}
+                        {privacyMode ? "***" : formatCurrency(m.endValue, baseCurrency)}
                       </td>
                       <td className={`py-2.5 text-right tabular-nums font-medium ${changeColor}`}>
                         <div>
-                          {sign}
-                          {formatCurrency(m.absoluteChange, baseCurrency)}
+                          {privacyMode ? "***" : (
+                            <>
+                              {sign}
+                              {formatCurrency(m.absoluteChange, baseCurrency)}
+                            </>
+                          )}
                         </div>
-                        <div className="text-xs font-normal">{pct}</div>
+                        <div className="text-xs font-normal">{privacyMode ? "***" : pct}</div>
                       </td>
                     </tr>
                   );

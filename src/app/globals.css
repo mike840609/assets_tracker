@@ -147,6 +147,9 @@
   html {
     @apply font-sans scroll-smooth;
   }
+  .recharts-wrapper * {
+    outline: none !important;
+  }
 }
 
 /* Premium utilities */
