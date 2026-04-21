@@ -1,7 +1,5 @@
 import { ok } from "@/lib/api-responses";
 
-export const revalidate = 86400;
-
 type SearchResult = {
   symbol: string;
   name: string;
