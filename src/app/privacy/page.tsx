@@ -18,7 +18,7 @@ async function PrivacyContent() {
   ]
 
   return (
-    <div className="flex min-h-screen w-full items-start justify-center relative overflow-hidden bg-slate-50 py-12 px-4">
+    <div className="flex min-h-screen w-full items-start justify-center relative overflow-x-hidden bg-slate-50 py-12 px-4">
       {/* Background elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-3xl pointer-events-none -z-10" />
       <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-chart-4/10 blur-3xl pointer-events-none -z-10" />
