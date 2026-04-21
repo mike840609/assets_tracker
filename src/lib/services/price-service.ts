@@ -1,3 +1,4 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
 const COINGECKO_IDS: Record<string, string> = {
@@ -98,6 +99,23 @@ export async function fetchCryptoPrices(
   }
 
   return results;
+}
+
+export async function getCachedPricesForSymbols(
+  symbols: string[]
+): Promise<{ symbol: string; price: number; currency: string }[]> {
+  "use cache";
+  cacheTag("prices");
+  cacheLife("minutes");
+  if (symbols.length === 0) return [];
+  const results = await prisma.priceCache.findMany({
+    where: { symbol: { in: symbols } },
+  });
+  return results.map((p) => ({
+    symbol: p.symbol,
+    price: Number(p.price),
+    currency: p.currency,
+  }));
 }
 
 export async function refreshAllPrices(): Promise<{

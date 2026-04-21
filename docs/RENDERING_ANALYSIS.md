@@ -8,8 +8,8 @@ The user asked for ISR suggestions. The correct Next.js 16 answer is to walk the
 |---|-----------|----------|--------|--------|--------|
 | S1 | `/login` → SSG (`force-static`) | SSG · Public page | 🟡 Medium | 10 min | 🚫 Blocked — `force-static` incompatible with `nextConfig.cacheComponents`; PPR shell serves as fallback |
 | S2 | `/privacy` → SSG (`force-static`) | SSG · Public page | 🟡 Medium | 10 min | 🚫 Blocked — same constraint as S1 |
-| P1 | Verify build output classifies `/`, `/accounts`, `/accounts/[id]`, `/history`, `/analysis`, `/settings` as `◐` | PPR · Verification | 🟡 Medium | 20 min | ❌ Not Done |
-| P2 | Move `/accounts` list reads into the cached `fetchUserAccountsWithHoldings` helper | PPR · Route coverage | 🟡 Medium | 45 min | ❌ Not Done |
+| P1 | Verify build output classifies `/`, `/accounts`, `/accounts/[id]`, `/history`, `/analysis`, `/settings` as `◐` | PPR · Verification | 🟡 Medium | 20 min | ✅ Done |
+| P2 | Move `/accounts` list reads into the cached `fetchUserAccountsWithHoldings` helper | PPR · Route coverage | 🟡 Medium | 45 min | ✅ Done |
 | I1 | ISR on `GET /api/exchange-rates` (`revalidate` + `Cache-Control`) | ISR · Route handler | 🔴 High | 15 min | 🚫 Blocked — route-segment `revalidate` conflicts with `nextConfig.cacheComponents`; `Cache-Control` shipped |
 | I2 | ISR on `GET /api/search` (`revalidate` + `Cache-Control`) | ISR · Route handler | 🔴 High | 15 min | 🚫 Blocked — same constraint as I1; `Cache-Control` shipped |
 | I3 | `fetch({ next: { revalidate, tags } })` on CoinGecko fallback | ISR · Upstream fetch | 🟡 Medium | 15 min | ✅ Done (PR 4) |
@@ -344,4 +344,71 @@ Suggested PR grouping:
 - **PR 2 (SSG):** S1 + S2 — trivial, high-confidence.
 - **PR 3 (PPR):** P1 verification + P2 refactor — these want to land together so P1's `next build` output already reflects P2.
 - **PR 4 (ISR):** I1 + I2 + I3 + I5 — all route/fetch-level caching.
+<<<<<<< HEAD
 - **PR 5 (verification):** X3 now; keep I4 queued until `cacheComponents` allows route-segment `revalidate` again.
+=======
+- **PR 5 (backstop + verification):** I4 + X3 — ship after PR 4 has baked for a few days.
+
+---
+
+## Verification (PR 3 — 2026-04-21)
+
+### P1 — PPR route classification confirmed
+
+`npm run build` run after P2 landed. All target routes are `◐ (Partial Prerender)`.
+
+```
+Route (app)
+┌ ◐ /
+├ ◐ /_not-found
+├ ◐ /accounts
+├ ◐ /accounts/[id]
+│ └ /accounts/[id]
+├ ◐ /analysis
+├ ƒ /api/accounts
+├ ƒ /api/accounts/[id]
+├ ƒ /api/accounts/[id]/cash-transactions
+├ ƒ /api/accounts/[id]/holdings
+├ ƒ /api/accounts/[id]/transactions
+├ ƒ /api/accounts/[id]/transactions/[transactionId]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/cron/snapshot
+├ ƒ /api/exchange-rates
+├ ƒ /api/exchange-rates/refresh
+├ ƒ /api/prices/refresh
+├ ƒ /api/search
+├ ƒ /api/settings
+├ ƒ /api/settings/data
+├ ƒ /api/snapshots
+├ ƒ /apple-icon
+├ ◐ /history
+├ ○ /icon.svg
+├ ◐ /login
+├ ◐ /privacy
+└ ◐ /settings
+
+○  (Static)             prerendered as static content
+◐  (Partial Prerender)  prerendered as static HTML with dynamic server-streamed content
+ƒ  (Dynamic)            server-rendered on demand
+```
+
+**Note on S1/S2:** `/login` and `/privacy` now show `◐` (not `○ Static` as originally targeted) because they are inside `LocaleProviders` (async, reads locale cookie). This is functionally equivalent — the PPR shell is served from the CDN on the first hit and the locale streams in ~immediately. The `force-static` approach is superseded by this fix.
+
+### P1 — Leak trace and fix
+
+**Root cause.** Before this PR, `src/app/layout.tsx` wrapped the entire `<html>/<body>` tree in `<Suspense>` with no fallback (the `LocaleHtml` async component). Per the Next.js 16 docs, a `<Suspense fallback={null}>` above the document body causes all static routes to defer to request time (`ƒ`). Only `/accounts/[id]` escaped to `◐` because its `params` are a runtime API, giving it PPR treatment regardless of the layout.
+
+**Fix applied.**
+
+1. **`src/app/layout.tsx`** — Moved `<html>/<body>` outside `<Suspense>`. Extracted `LocaleProviders` (async, reads locale cookie) as a separate component. Gave the root `<Suspense>` a non-null fallback (`<span />`), satisfying the "static shell must exist" requirement. Default `lang="en"` with `suppressHydrationWarning` handles the locale mismatch during hydration.
+
+2. **`src/app/(main)/layout.tsx`** — Moved `getSession()` inside a `SidebarWithSession` async component wrapped in `<Suspense>`, making the `MainLayout` function synchronous. This removes the session cookie read from the layout's static shell, allowing the layout to participate in PPR.
+
+### P2 — `/accounts` cached helpers
+
+Replaced inline Prisma calls in `src/app/(main)/accounts/page.tsx`:
+- `prisma.account.findMany(…)` → `fetchUserAccountsWithHoldings(userId)` (existing `"use cache"` helper from `net-worth-service.ts`)
+- `prisma.priceCache.findMany(…)` → `getCachedPricesForSymbols(symbols)` (new `"use cache"` helper added to `price-service.ts`)
+
+The `getCachedPricesForSymbols` helper uses `cacheTag("prices")` + `cacheLife("minutes")` and returns plain `{ symbol, price, currency }` objects (Decimal converted to number) so the result survives cache serialization.
+>>>>>>> b46d2af (Implement PR3: PPR verification (P1) + /accounts cached helpers (P2))

@@ -35,20 +35,31 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-async function LocaleHtml({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className: string;
-}) {
+/**
+ * Reads locale from NEXT_LOCALE cookie / Accept-Language header and
+ * provides messages to client components. Wrapped in Suspense in the
+ * root layout so the <html>/<body> shell is prerenderable without a
+ * cookie read.
+ */
+async function LocaleProviders({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
+  return (
+    <NextIntlClientProvider messages={pickMessages(messages, ["app", "nav"])}>
+      {children}
+    </NextIntlClientProvider>
+  );
+}
 
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html
-      lang={locale}
-      className={`${className} h-full antialiased`}
+      lang="en"
+      className={`${geist.variable} ${geistMono.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
@@ -59,34 +70,27 @@ async function LocaleHtml({
         <link rel="dns-prefetch" href="https://open.er-api.com" />
       </head>
       <body className="h-full flex flex-col md:flex-row overflow-hidden bg-background text-foreground">
-        <NextIntlClientProvider messages={pickMessages(messages, ["app", "nav"])}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-            <Toaster />
-            <Analytics />
-            <CustomSpeedInsights />
-          </ThemeProvider>
-        </NextIntlClientProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {/*
+           * LocaleProviders reads the NEXT_LOCALE cookie — a runtime API.
+           * Suspense keeps this cookie read out of the prerender pass so
+           * static routes can produce a ◐ (Partial Prerender) shell.
+           * The fallback is a non-null element to avoid the Next.js
+           * "empty fallback above document body" anti-pattern.
+           */}
+          <Suspense fallback={<span />}>
+            <LocaleProviders>{children}</LocaleProviders>
+          </Suspense>
+          <Toaster />
+          <Analytics />
+          <CustomSpeedInsights />
+        </ThemeProvider>
       </body>
     </html>
-  );
-}
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <Suspense>
-      <LocaleHtml className={`${geist.variable} ${geistMono.variable}`}>
-        {children}
-      </LocaleHtml>
-    </Suspense>
   );
 }
