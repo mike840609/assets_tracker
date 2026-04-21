@@ -9,6 +9,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  Legend,
 } from "recharts";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -124,8 +125,16 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={chartData} margin={{ top: 10, right: 4, left: 0, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="label" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
+                <XAxis 
+                  dataKey="label" 
+                  padding={{ left: 16, right: 16 }}
+                  tick={{ fontSize: 12 }} 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={60} 
+                />
                 <YAxis
+                  width={50}
                   tick={{ fontSize: 12 }}
                   tickFormatter={(v) => (privacyMode ? "" : tickFormatter(v))}
                 />
@@ -134,6 +143,7 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
                     <CategoryTooltip baseCurrency={baseCurrency} privacyMode={privacyMode} />
                   }
                 />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
                 {categories.map((cat, idx) => (
                   <Line
                     key={cat}

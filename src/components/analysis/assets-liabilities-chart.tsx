@@ -106,7 +106,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
                 <YAxis
-                  width={40}
+                  width={50}
                   tick={{ fontSize: 12 }}
                   tickFormatter={(v) =>
                     privacyMode
