@@ -3,17 +3,27 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
+import type { RawHistoryData, SnapshotBreakdown } from "@/lib/services/history-service";
 import {
   aggregateMonthlyChange,
   computeKpis,
   fillMonthRange,
+  buildCashFlowBuckets,
+  aggregateCategoryHistory,
+  computeTopMovers,
 } from "@/lib/services/analysis-service";
+import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/analysis-service";
 import { MonthlyChangeChart } from "./monthly-change-chart";
 import { AssetsLiabilitiesChart } from "./assets-liabilities-chart";
 import { KpiTiles } from "./kpi-tiles";
+import { CashFlowChart } from "./cashflow-chart";
+import { CategoryTrendChart } from "./category-trend-chart";
+import { TopMoversList } from "./top-movers-list";
 
 interface Props {
   snapshots: NormalizedSnapshot[];
+  cashFlowData: MonthlyContribution[];
+  rawHistory: RawHistoryData;
   baseCurrency: string;
   locale: string;
 }
@@ -31,13 +41,12 @@ type RangeLabel = (typeof ranges)[number]["label"];
 function rangeCutoff(months: number): Date {
   const d = new Date();
   d.setMonth(d.getMonth() - months);
-  // Start from the first day of that month so we don't truncate its snapshots.
   d.setDate(1);
   d.setHours(0, 0, 0, 0);
   return d;
 }
 
-export function AnalysisView({ snapshots, baseCurrency, locale }: Props) {
+export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
   const [range, setRange] = useState<RangeLabel>("YTD");
 
@@ -49,34 +58,44 @@ export function AnalysisView({ snapshots, baseCurrency, locale }: Props) {
     All: "rangeAll",
   };
 
-  const { filteredSnapshots, rangeStart, rangeEnd } = useMemo(() => {
+  const { filteredSnapshots, rangeStart, rangeEnd, rangeStartIso } = useMemo(() => {
     const selected = ranges.find((r) => r.label === range)!;
     const now = new Date();
-    // YTD: always Jan–Dec of the current calendar year.
+
     if (selected.months === 0) {
       const year = now.getFullYear();
-      const rangeStart = new Date(Date.UTC(year, 0, 1));   // Jan 1
-      const rangeEnd = new Date(Date.UTC(year, 11, 1));    // Dec 1 (shows all 12 months)
-      const cutoffIso = `${year}-01-01`;
+      const rangeStart = new Date(Date.UTC(year, 0, 1));
+      const rangeEnd = new Date(Date.UTC(year, 11, 1));
+      const rangeStartIso = `${year}-01-01`;
       return {
-        filteredSnapshots: snapshots.filter((s) => s.date >= cutoffIso),
+        filteredSnapshots: snapshots.filter((s) => s.date >= rangeStartIso),
         rangeStart,
         rangeEnd,
+        rangeStartIso,
       };
     }
+
     const rangeEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+
     if (selected.months === Infinity) {
       const firstDate = snapshots.length > 0 ? new Date(snapshots[0].date) : now;
       const rangeStart = new Date(Date.UTC(firstDate.getFullYear(), firstDate.getMonth(), 1));
-      return { filteredSnapshots: snapshots, rangeStart, rangeEnd };
+      return {
+        filteredSnapshots: snapshots,
+        rangeStart,
+        rangeEnd,
+        rangeStartIso: snapshots.length > 0 ? snapshots[0].date : "1970-01-01",
+      };
     }
+
     const cutoff = rangeCutoff(selected.months);
-    const cutoffIso = cutoff.toISOString().split("T")[0];
+    const rangeStartIso = cutoff.toISOString().split("T")[0];
     const rangeStart = new Date(Date.UTC(cutoff.getFullYear(), cutoff.getMonth(), 1));
     return {
-      filteredSnapshots: snapshots.filter((s) => s.date >= cutoffIso),
+      filteredSnapshots: snapshots.filter((s) => s.date >= rangeStartIso),
       rangeStart,
       rangeEnd,
+      rangeStartIso,
     };
   }, [snapshots, range]);
 
@@ -85,17 +104,47 @@ export function AnalysisView({ snapshots, baseCurrency, locale }: Props) {
     return fillMonthRange(real, rangeStart, rangeEnd);
   }, [filteredSnapshots, rangeStart, rangeEnd]);
 
-  // KPIs use the full series so YTD can reach into prior-year data even when
-  // the user has zoomed into a 6M view.
   const kpis = useMemo(
     () => computeKpis(buckets, snapshots),
     [buckets, snapshots]
   );
 
+  // Cash flow: filter contributions to range, then merge with buckets
+  const cashFlowBuckets = useMemo(() => {
+    const filtered = cashFlowData.filter((c) => c.monthKey >= rangeStartIso.slice(0, 7));
+    return buildCashFlowBuckets(buckets, filtered, locale);
+  }, [cashFlowData, buckets, rangeStartIso, locale]);
+
+  // Raw history filtered to range
+  const filteredRawSnapshots = useMemo((): SnapshotBreakdown[] => {
+    return rawHistory.snapshots.filter((s) => s.date >= rangeStartIso);
+  }, [rawHistory.snapshots, rangeStartIso]);
+
+  const categoryHistory = useMemo(() => {
+    const real = aggregateCategoryHistory(filteredRawSnapshots, rawHistory.accounts);
+    const byKey = new Map(real.map((c) => [c.monthKey, c]));
+    return buckets.map((b) => {
+      const existing = byKey.get(b.monthKey);
+      if (existing) return existing;
+      // Pad empty months with 0s for all categories to match the other charts' X-axis length
+      const empty: CategoryDataPoint & Record<string, any> = { monthKey: b.monthKey };
+      for (const acc of rawHistory.accounts) {
+        empty[acc.category] = 0;
+      }
+      return empty as CategoryDataPoint;
+    });
+  }, [filteredRawSnapshots, rawHistory.accounts, buckets]);
+
+  const topMovers = useMemo(
+    () => computeTopMovers(filteredRawSnapshots, rawHistory.accounts),
+    [filteredRawSnapshots, rawHistory.accounts]
+  );
+
   const hasData = snapshots.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Range selector + subtitle row */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         <div className="flex gap-1">
@@ -110,7 +159,7 @@ export function AnalysisView({ snapshots, baseCurrency, locale }: Props) {
                   : "text-muted-foreground hover:bg-muted"
               }`}
             >
-              {t(rangeLabelKey[r.label])}
+              {t(rangeLabelKey[r.label] as Parameters<typeof t>[0])}
             </button>
           ))}
         </div>
@@ -121,19 +170,18 @@ export function AnalysisView({ snapshots, baseCurrency, locale }: Props) {
           {t("noData")}
         </div>
       ) : (
-        <>
+        <div className="space-y-6">
           <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
-          <MonthlyChangeChart
-            buckets={buckets}
+          <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+          <AssetsLiabilitiesChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+          <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+          <CategoryTrendChart
+            data={categoryHistory}
             baseCurrency={baseCurrency}
             locale={locale}
           />
-          <AssetsLiabilitiesChart
-            buckets={buckets}
-            baseCurrency={baseCurrency}
-            locale={locale}
-          />
-        </>
+          <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
+        </div>
       )}
     </div>
   );

@@ -36,7 +36,7 @@ The foundation: turn existing `NetWorthSnapshot` data into month-over-month insi
 
 Deepen "what drove the change?" insight by bringing transaction data in.
 
-### 2.1 Cash Flow Decomposition — 🔴
+### 2.1 Cash Flow Decomposition — 🔴 ✅
 
 Split each month's Δ net worth into **contributions** (money the user actually put in or pulled out) vs. **market performance** (price movement on existing holdings).
 
@@ -53,7 +53,7 @@ Split each month's Δ net worth into **contributions** (money the user actually 
 - **Risks**: historical transactions predate the current base currency — need to pull the FX rate *at transaction time* (not today's rate). Start with today's rate for v1 and document the drift, then layer in historical rates later.
 - **i18n keys**: `analysis.cashFlow`, `analysis.seriesContributions`, `analysis.seriesMarket`.
 
-### 2.2 Category Trend Over Time — 🟡
+### 2.2 Category Trend Over Time — 🟡 ✅
 
 Which asset category is actually driving growth — brokerage, crypto, property, cash?
 
@@ -65,7 +65,7 @@ Which asset category is actually driving growth — brokerage, crypto, property,
   - Client: `src/components/analysis/category-trend-chart.tsx`, reusing the category colors/labels already used by `allocation-chart.tsx`.
 - **Blocking prerequisite**: confirm the cron is actually writing `breakdown` JSON for all users (SUGGESTIONS.md #35 implies it's captured but unused).
 
-### 2.3 Top Movers — 🟡
+### 2.3 Top Movers — 🟡 ✅
 
 Which individual holdings gained/lost the most over the selected period.
 
