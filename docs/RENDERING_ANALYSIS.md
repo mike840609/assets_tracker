@@ -15,8 +15,8 @@ The user asked for ISR suggestions. The correct Next.js 16 answer is to walk the
 | I3 | `fetch({ next: { revalidate, tags } })` on CoinGecko fallback | ISR · Upstream fetch | 🟡 Medium | 15 min | ❌ Not Done |
 | I4 | Route-segment `revalidate` backstop on PPR routes | ISR · Backstop | 🟢 Low | 15 min | ❌ Not Done |
 | I5 | Document the `fetch({ next: { revalidate } })` pattern on upstream FX APIs | ISR · Reference | 🟢 Low | 10 min | ❌ Not Done |
-| X1 | Verify / trim `revalidateTag(tag, "max")` second argument | Prereq · Correctness | 🔴 High | 15 min | ❌ Not Done |
-| X2 | Add `revalidateTag("snapshots")` after cron snapshot creation | Prereq · Invalidation | 🔴 High | 10 min | ❌ Not Done |
+| X1 | Verify / trim `revalidateTag(tag, "max")` second argument | Prereq · Correctness | 🔴 High | 15 min | ✅ Done |
+| X2 | Add `revalidateTag("snapshots")` after cron snapshot creation | Prereq · Invalidation | 🔴 High | 10 min | ✅ Done |
 | X3 | Commit the `next build` classification snippet to this doc | Verification | 🟢 Low | 10 min | ❌ Not Done |
 
 ## Methodology
