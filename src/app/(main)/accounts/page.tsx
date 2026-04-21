@@ -3,11 +3,11 @@ import { getSession } from "@/lib/auth-session";
 import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
-import { prisma } from "@/lib/prisma";
 import { AccountsList } from "@/components/accounts/accounts-list";
-import { serializeAccountWithHoldings } from "@/lib/types";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
+import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
+import { getCachedPricesForSymbols } from "@/lib/services/price-service";
 import AccountsLoading from "./loading";
 
 const CLIENT_NAMESPACES = [
@@ -22,14 +22,10 @@ async function AccountsContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
   // Run all independent queries in parallel (translations + data)
-  const [t, messages, accountsRaw, settings, allRatesMap] = await Promise.all([
+  const [t, messages, accounts, settings, allRatesMap] = await Promise.all([
     getTranslations("accounts"),
     getMessages(),
-    prisma.account.findMany({
-      where: { userId },
-      include: { holdings: { where: { quantity: { gt: 0 } } } },
-      orderBy: { createdAt: "desc" },
-    }),
+    fetchUserAccountsWithHoldings(userId),
     getOrCreateSettings(userId),
     getAllExchangeRates(),
   ]);
@@ -37,21 +33,17 @@ async function AccountsContent() {
   const baseCurrency = settings.baseCurrency;
 
   // Fetch cached prices for this user's holding symbols only
-  const allSymbols = [...new Set(accountsRaw.flatMap((a) => a.holdings.map((h) => h.symbol)))];
-  const cachedPrices = allSymbols.length > 0
-    ? await prisma.priceCache.findMany({ where: { symbol: { in: allSymbols } } })
-    : [];
+  const allSymbols = [...new Set(accounts.flatMap((a) => a.holdings.map((h) => h.symbol)))];
+  const cachedPrices = await getCachedPricesForSymbols(allSymbols);
   const priceMap: Record<string, number> = Object.fromEntries(
-    cachedPrices.map((p) => [p.symbol, Number(p.price)])
+    cachedPrices.map((p) => [p.symbol, p.price])
   );
-
-  const serialized = accountsRaw.map(serializeAccountWithHoldings);
 
   // Build rates map from the bulk-loaded rates (no sequential DB calls!)
   const ratesMap: Record<string, number> = {};
   const missingPairs: Array<[string, string]> = [];
 
-  for (const account of serialized) {
+  for (const account of accounts) {
     if (account.currency !== baseCurrency) {
       const key = `${account.currency}_${baseCurrency}`;
       const rate = resolveRate(allRatesMap, account.currency, baseCurrency);
@@ -84,7 +76,7 @@ async function AccountsContent() {
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
       <div className="space-y-6">
         <h2 className="text-2xl font-bold tracking-tight">{t("title")}</h2>
-        <AccountsList accounts={serialized} priceMap={priceMap} ratesMap={ratesMap} baseCurrency={baseCurrency} />
+        <AccountsList accounts={accounts} priceMap={priceMap} ratesMap={ratesMap} baseCurrency={baseCurrency} />
       </div>
     </NextIntlClientProvider>
   );
