@@ -27,14 +27,14 @@ const CARD_CLASS = "premium-card";
 
 function NetWorthSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
-      <Card className="rounded-2xl h-[126px]">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 animate-pulse">
+      <Card className="col-span-2 lg:col-span-1 rounded-2xl h-[126px]">
         <CardContent className="h-full bg-muted/50 rounded-2xl" />
       </Card>
-      <Card className="rounded-2xl h-[126px]">
+      <Card className="col-span-1 rounded-2xl h-[126px]">
         <CardContent className="h-full bg-muted/50 rounded-2xl" />
       </Card>
-      <Card className="rounded-2xl h-[126px]">
+      <Card className="col-span-1 rounded-2xl h-[126px]">
         <CardContent className="h-full bg-muted/50 rounded-2xl" />
       </Card>
     </div>
