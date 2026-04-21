@@ -11,6 +11,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import SettingsLoading from "./loading";
 
+export const revalidate = 900;
+
 const CLIENT_NAMESPACES = ["settings", "toast", "languages", "dataManagement"];
 
 async function SettingsContent() {
