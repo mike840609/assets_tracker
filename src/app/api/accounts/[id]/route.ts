@@ -7,6 +7,7 @@ import { withAuth } from "@/lib/api-handler";
 type IdCtx = { params: Promise<{ id: string }> };
 
 function invalidateUserCaches(userId: string) {
+  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
   revalidateTag(`accounts:${userId}`, "max");
   revalidateTag(`net-worth:${userId}`, "max");
   revalidateTag(`history:${userId}`, "max");

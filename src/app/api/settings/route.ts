@@ -28,6 +28,7 @@ export const PATCH = withAuth(async (request, _ctx, userId) => {
     },
   });
 
+  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
   revalidateTag(`settings:${userId}`, "max");
   // If the base currency changed, the cached net-worth summary for this
   // user is stale (values are denominated in the old currency).

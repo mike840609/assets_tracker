@@ -21,6 +21,7 @@ export async function POST() {
   ]);
   const totalUpdated = results.reduce((a, b) => a + b, 0);
 
+  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
   revalidateTag("exchange-rates", "max");
   return ok({ updated: totalUpdated, baseCurrency });
 }

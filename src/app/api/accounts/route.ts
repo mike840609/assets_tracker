@@ -5,6 +5,7 @@ import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 
 function invalidateUserCaches(userId: string) {
+  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
   revalidateTag(`accounts:${userId}`, "max");
   revalidateTag(`net-worth:${userId}`, "max");
 }
