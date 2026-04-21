@@ -128,6 +128,7 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
                 <YAxis
+                  width={50}
                   tick={{ fontSize: 12 }}
                   tickFormatter={(v) => (privacyMode ? "" : tickFormatter(v))}
                 />
