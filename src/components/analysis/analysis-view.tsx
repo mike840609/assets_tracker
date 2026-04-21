@@ -12,7 +12,7 @@ import {
   aggregateCategoryHistory,
   computeTopMovers,
 } from "@/lib/services/analysis-service";
-import type { MonthlyContribution } from "@/lib/services/analysis-service";
+import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/analysis-service";
 import { MonthlyChangeChart } from "./monthly-change-chart";
 import { AssetsLiabilitiesChart } from "./assets-liabilities-chart";
 import { KpiTiles } from "./kpi-tiles";
