@@ -1,3 +1,5 @@
+// S1: force-static is incompatible with nextConfig.cacheComponents (PPR mode).
+// PPR prerendering the Suspense fallback shell is the correct tier here.
 import { Suspense } from "react"
 import { signIn } from "@/auth"
 import { Button } from "@/components/ui/button"

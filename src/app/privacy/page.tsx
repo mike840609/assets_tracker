@@ -1,3 +1,5 @@
+// S2: force-static is incompatible with nextConfig.cacheComponents (PPR mode).
+// PPR prerendering the Suspense fallback shell is the correct tier here.
 import { Suspense } from "react"
 import { getTranslations } from "next-intl/server"
 import Link from "next/link"

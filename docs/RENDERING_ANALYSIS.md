@@ -6,8 +6,8 @@ The user asked for ISR suggestions. The correct Next.js 16 answer is to walk the
 
 | # | Suggestion | Category | Impact | Effort | Status |
 |---|-----------|----------|--------|--------|--------|
-| S1 | `/login` → SSG (`force-static`) | SSG · Public page | 🟡 Medium | 10 min | ❌ Not Done |
-| S2 | `/privacy` → SSG (`force-static`) | SSG · Public page | 🟡 Medium | 10 min | ❌ Not Done |
+| S1 | `/login` → SSG (`force-static`) | SSG · Public page | 🟡 Medium | 10 min | 🚫 Blocked — `force-static` incompatible with `nextConfig.cacheComponents`; PPR shell serves as fallback |
+| S2 | `/privacy` → SSG (`force-static`) | SSG · Public page | 🟡 Medium | 10 min | 🚫 Blocked — same constraint as S1 |
 | P1 | Verify build output classifies `/`, `/accounts`, `/accounts/[id]`, `/history`, `/analysis`, `/settings` as `◐` | PPR · Verification | 🟡 Medium | 20 min | ❌ Not Done |
 | P2 | Move `/accounts` list reads into the cached `fetchUserAccountsWithHoldings` helper | PPR · Route coverage | 🟡 Medium | 45 min | ❌ Not Done |
 | I1 | ISR on `GET /api/exchange-rates` (`revalidate` + `Cache-Control`) | ISR · Route handler | 🔴 High | 15 min | ❌ Not Done |
