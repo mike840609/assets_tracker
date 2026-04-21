@@ -16,6 +16,7 @@ export async function GET(request: Request) {
     await refreshAllPrices();
     // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
     revalidateTag("net-worth", "max");
+    revalidateTag("prices:crypto", "max");
 
     // 2. Get all users and their settings
     const users = await prisma.user.findMany({

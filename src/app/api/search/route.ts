@@ -75,9 +75,17 @@ export async function GET(request: Request) {
         currency: inferCurrency(q.symbol as string, (q.exchange as string) || ""),
       }));
 
-    return ok(quotes);
+    return ok(quotes, {
+      headers: {
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+      },
+    });
   } catch (error) {
     console.error("Search failed:", error);
-    return ok([] as SearchResult[]);
+    return ok([] as SearchResult[], {
+      headers: {
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+      },
+    });
   }
 }
