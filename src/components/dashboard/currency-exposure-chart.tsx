@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, Sector } from "recharts";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
@@ -46,8 +46,30 @@ const COLORS = [
   "#ef4444", "#06b6d4", "#84cc16", "#f97316",
 ];
 
+function ActiveSlice(props: any) {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+
+  return (
+    <g>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 8}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        fillOpacity={0.95}
+        stroke={fill}
+        strokeWidth={2}
+      />
+    </g>
+  );
+}
+
 export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary }) {
   const [mounted, setMounted] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const t = useTranslations("currencyExposure");
   const { privacyMode } = usePrivacyMode();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
@@ -63,6 +85,11 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
       }))
       .filter((d) => d.value > 0);
   }, [summary.currencyExposure]);
+  const totalValue = useMemo(
+    () => data.reduce((acc, item) => acc + item.value, 0),
+    [data]
+  );
+  const activeSlice = data[activeIndex] ?? data[0];
 
   return (
     <Card className="border-0 bg-transparent shadow-none">
@@ -78,16 +105,19 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
           <div className="h-[250px]" />
         ) : (
           <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}>
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={285}>
               <PieChart>
                 <Pie
                   data={data}
                   cx="50%"
-                  cy="50%"
+                  cy="46%"
                   innerRadius={60}
                   outerRadius={90}
                   paddingAngle={2}
                   dataKey="value"
+                  activeIndex={activeIndex}
+                  activeShape={ActiveSlice}
+                  onMouseEnter={(_, index) => setActiveIndex(index)}
                   isAnimationActive={isAnimationActive}
                   onAnimationEnd={onAnimationEnd}
                 >
@@ -98,6 +128,15 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                     />
                   ))}
                 </Pie>
+                <text x="50%" y="42%" textAnchor="middle" className="fill-muted-foreground text-[12px]">
+                  {t("title")}
+                </text>
+                <text x="50%" y="50%" textAnchor="middle" className="fill-foreground text-[16px] font-semibold">
+                  {privacyMode ? "••••" : formatCurrency(totalValue, summary.baseCurrency)}
+                </text>
+                <text x="50%" y="58%" textAnchor="middle" className="fill-muted-foreground text-[12px]">
+                  {activeSlice ? `${activeSlice.name} · ${activeSlice.percentage}%` : ""}
+                </text>
                 <Tooltip
                   content={
                     <ExposureTooltip
@@ -106,7 +145,14 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                     />
                   }
                 />
-                <Legend formatter={createPieLegendFormatter()} />
+                <Legend
+                  verticalAlign="bottom"
+                  align="center"
+                  iconType="circle"
+                  iconSize={8}
+                  wrapperStyle={{ paddingTop: 20 }}
+                  formatter={createPieLegendFormatter()}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
