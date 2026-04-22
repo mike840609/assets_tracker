@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, Sector } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
@@ -45,27 +45,6 @@ const COLORS = [
   "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
   "#06b6d4", "#ec4899", "#84cc16", "#f97316",
 ];
-
-function ActiveSlice(props: any) {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
-
-  return (
-    <g>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius + 8}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-        fillOpacity={0.95}
-        stroke={fill}
-        strokeWidth={2}
-      />
-    </g>
-  );
-}
 
 export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
   const [mounted, setMounted] = useState(false);
@@ -123,9 +102,8 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                   outerRadius={90}
                   paddingAngle={2}
                   dataKey="value"
-                  activeIndex={activeIndex}
-                  activeShape={ActiveSlice}
                   onMouseEnter={(_, index) => setActiveIndex(index)}
+                  onMouseLeave={() => setActiveIndex(0)}
                   isAnimationActive={isAnimationActive}
                   onAnimationEnd={onAnimationEnd}
                 >
@@ -133,6 +111,9 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
+                      fillOpacity={index === activeIndex ? 1 : 0.55}
+                      stroke={COLORS[index % COLORS.length]}
+                      strokeWidth={index === activeIndex ? 2 : 0}
                     />
                   ))}
                 </Pie>
