@@ -10,6 +10,7 @@ import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 import type { NetWorthSummary } from "@/lib/types";
 import { createPieLegendFormatter } from "@/lib/chart-formatters";
+import { PieActiveSlice } from "@/components/dashboard/pie-active-slice";
 
 function AllocationTooltip({
   active,
@@ -48,6 +49,7 @@ const COLORS = [
 
 export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
   const [mounted, setMounted] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const t = useTranslations();
   const { privacyMode } = usePrivacyMode();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
@@ -71,6 +73,12 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
       .sort((a, b) => b.value - a.value);
   }, [summary.accounts, t]);
 
+  const totalValue = useMemo(
+    () => data.reduce((acc, item) => acc + item.value, 0),
+    [data]
+  );
+  const activeSlice = data[activeIndex] ?? data[0];
+
   return (
     <Card className="border-0 bg-transparent shadow-none">
       <CardHeader className="pb-2 px-2 sm:px-4">
@@ -85,16 +93,19 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
           <div className="h-[250px]" />
         ) : (
           <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}>
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={285}>
               <PieChart>
                 <Pie
                   data={data}
                   cx="50%"
-                  cy="50%"
+                  cy="46%"
                   innerRadius={60}
                   outerRadius={90}
                   paddingAngle={2}
                   dataKey="value"
+                  activeIndex={activeIndex}
+                  activeShape={PieActiveSlice}
+                  onMouseEnter={(_, index) => setActiveIndex(index)}
                   isAnimationActive={isAnimationActive}
                   onAnimationEnd={onAnimationEnd}
                 >
@@ -105,6 +116,15 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                     />
                   ))}
                 </Pie>
+                <text x="50%" y="42%" textAnchor="middle" className="fill-muted-foreground text-[12px]">
+                  {t("allocationChart.title")}
+                </text>
+                <text x="50%" y="50%" textAnchor="middle" className="fill-foreground text-[16px] font-semibold">
+                  {privacyMode ? "••••" : formatCurrency(totalValue, summary.baseCurrency)}
+                </text>
+                <text x="50%" y="58%" textAnchor="middle" className="fill-muted-foreground text-[12px]">
+                  {activeSlice ? `${activeSlice.name} · ${activeSlice.percentage}%` : ""}
+                </text>
                 <Tooltip
                   content={
                     <AllocationTooltip
@@ -113,7 +133,14 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                     />
                   }
                 />
-                <Legend formatter={createPieLegendFormatter()} />
+                <Legend
+                  verticalAlign="bottom"
+                  align="center"
+                  iconType="circle"
+                  iconSize={8}
+                  wrapperStyle={{ paddingTop: 20 }}
+                  formatter={createPieLegendFormatter()}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
