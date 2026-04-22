@@ -32,12 +32,12 @@
 | 26 | Add test coverage (Vitest + Playwright) | Testing | 🔴 High | 8-12 hrs | ❌ Not Done |
 | 27 | Add error boundary pages (error.tsx / not-found.tsx) | Reliability | 🔴 High | 1-2 hrs | ❌ Not Done |
 | 28 | Fix missing auth checks on API routes | Security | 🔴 High | 30 min | ❌ Not Done |
-| 29 | Validate environment variables at startup | DX / Reliability | 🔴 High | 1 hr | ❌ Not Done |
+| 29 | Validate environment variables at startup | DX / Reliability | 🔴 High | 1 hr | ✅ Done |
 | 30 | Add structured logging (Pino) | Observability | 🟡 Medium | 3-4 hrs | ❌ Not Done |
 | 31 | Add API rate limiting | Security | 🟡 Medium | 2-3 hrs | ❌ Not Done |
 | 32 | Validate query parameters with Zod | Security | 🟡 Medium | 1 hr | ❌ Not Done |
 | 33 | Add timeout guards to price service | Reliability | 🟡 Medium | 30 min | ❌ Not Done |
-| 34 | Add .env.example file | DX | 🟢 Low | 15 min | ❌ Not Done |
+| 34 | Add .env.example file | DX | 🟢 Low | 15 min | ✅ Done |
 | 35 | Utilize snapshot breakdown data in history service | Feature | 🟡 Medium | 2-3 hrs | ❌ Not Done |
 | 36 | Non-destructive data import (merge strategy) | Reliability | 🟡 Medium | 3-4 hrs | ❌ Not Done |
 | 37 | Expand supported currency list | Feature | 🟢 Low | 1 hr | ❌ Not Done |
@@ -57,7 +57,7 @@
 | 51 | Validate snapshots query parameters with Zod | Reliability | 🔴 High | 30-60 min | ❌ Not Done |
 | 52 | Add timeout guards to external pricing calls | Reliability | 🔴 High | 30-60 min | ❌ Not Done |
 | 53 | Make data import merge-first (non-destructive) by default | Reliability | 🔴 High | 3-4 hrs | ❌ Not Done |
-| 54 | Add startup environment validation module (`env.ts`) | DX / Reliability | 🔴 High | 1 hr | ❌ Not Done |
+| 54 | Add startup environment validation module (`env.ts`) | DX / Reliability | 🔴 High | 1 hr | ✅ Done |
 | 55 | Replace console logs with structured logging | Observability | 🟡 Medium | 2-4 hrs | ❌ Not Done |
 | 56 | Add baseline automated tests (unit/API/E2E smoke) | Testing | 🔴 High | 1-2 days | ❌ Not Done |
 | 57 | Improve accessibility semantics on controls/tables | Accessibility | 🟡 Medium | 2-3 hrs | ❌ Not Done |
@@ -107,7 +107,7 @@
 | 101 | Clarify "Growth" definition with Tooltips | UX | 🟢 Low | 30 min | ❌ Not Done |
 | 102 | Remove/Tweak "P&L" or "Trading" jargon | UX | 🟡 Medium | 1 hr | ❌ Not Done |
 | 103 | Scope exchange-rate refresh to current user context | Correctness / Multi-tenant | 🔴 High | 1-2 hrs | ❌ Not Done |
-| 104 | Guard cron secret misconfiguration in snapshot route | Security / Reliability | 🔴 High | 15-30 min | ❌ Not Done |
+| 104 | Guard cron secret misconfiguration in snapshot route | Security / Reliability | 🔴 High | 15-30 min | ✅ Done |
 | 105 | Add concurrency limits to daily snapshot cron fan-out | Reliability / Performance | 🟡 Medium | 1-2 hrs | ❌ Not Done |
 | 106 | Move transactions API to cursor/keyset pagination | Performance | 🔴 High | 2-3 hrs | ❌ Not Done |
 | 107 | Cache `/api/search` symbol lookups with short TTL | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
@@ -151,12 +151,12 @@
 51. **Validate `/api/snapshots` query params with Zod** (`from`, `to`, `currency`) and return `400` for invalid values.
 52. **Add timeout guards in `price-service.ts`** for Yahoo and CoinGecko calls to avoid long-hanging refresh operations.
 53. **Change import default to merge/upsert strategy** in `POST /api/settings/data`; keep destructive replace as explicit opt-in.
-54. **Add startup env validation** via `src/lib/env.ts` instead of direct non-null assertions on `process.env`.
+54. ✅ **Add startup env validation** via `src/lib/env.ts` instead of direct non-null assertions on `process.env`.
 55. **Adopt structured logging** (e.g., Pino) to replace scattered `console.*` for production debugging/monitoring.
 56. **Establish baseline automated tests** (unit + API integration + one E2E smoke path).
 57. **Improve accessibility semantics** on icon-only controls and sortable tables (`aria-label`, `aria-expanded`, `aria-sort`, keyboard handlers).
 103. **Scope `/api/exchange-rates/refresh` to the authenticated user**. The current implementation uses `setting.findFirst()` and all account currencies globally, which can pick another user's base currency and trigger unnecessary cross-tenant work.
-104. **Fail fast when `CRON_SECRET` is missing** in `/api/cron/snapshot`. Current string comparison allows `Authorization: Bearer undefined` when secret is not configured.
+104. ✅ **Fail fast when `CRON_SECRET` is missing** in `/api/cron/snapshot`. Current string comparison allows `Authorization: Bearer undefined` when secret is not configured.
 105. **Limit snapshot cron concurrency** (batch/chunk users instead of `Promise.all` across all users) to reduce API burst load and DB contention as tenant count grows.
 106. **Replace offset pagination with cursor/keyset pagination** for `/api/accounts/[id]/transactions` to avoid growing `OFFSET` scan costs on deep history pages.
 107. **Add short-lived caching to `/api/search` Yahoo lookups** (e.g., 30–120s per normalized query) to reduce repetitive external requests from frequent typing/search interactions.
