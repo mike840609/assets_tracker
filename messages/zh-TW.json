@@ -151,7 +151,9 @@
   "trendChart": {
     "title": "淨資產趨勢",
     "noData": "尚無資料。新增帳戶後，淨資產將於每日午夜（UTC+8）自動記錄。",
-    "seriesName": "淨資產"
+    "seriesNetWorth": "淨資產",
+    "seriesAssets": "資產",
+    "seriesLiabilities": "負債"
   },
   "allocationChart": {
     "title": "資產配置",

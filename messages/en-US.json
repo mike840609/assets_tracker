@@ -151,7 +151,9 @@
   "trendChart": {
     "title": "Net Worth Trend",
     "noData": "No data to display yet. Add accounts and your net worth will be tracked automatically at midnight (UTC+8).",
-    "seriesName": "Net Worth"
+    "seriesNetWorth": "Net Worth",
+    "seriesAssets": "Assets",
+    "seriesLiabilities": "Liabilities"
   },
   "allocationChart": {
     "title": "Asset Allocation",
