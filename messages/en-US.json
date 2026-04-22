@@ -155,11 +155,13 @@
   },
   "allocationChart": {
     "title": "Asset Allocation",
-    "noAssets": "No assets to display."
+    "noAssets": "No assets to display.",
+    "total": "Total"
   },
   "currencyExposure": {
     "title": "Currency Exposure",
-    "noExposure": "No assets found to compute exposure."
+    "noExposure": "No assets found to compute exposure.",
+    "total": "Total"
   },
   "accountsSummary": {
     "title": "All Accounts",
