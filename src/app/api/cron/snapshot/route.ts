@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { createSnapshot } from "@/lib/services/snapshot-service";
 import { refreshAllPrices } from "@/lib/services/price-service";
 import { ok, failure } from "@/lib/api-responses";
+import { CRON_SECRET } from "@/lib/env";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${CRON_SECRET}`) {
     return new Response("Unauthorized", { status: 401 });
   }
 

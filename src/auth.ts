@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials"
 import authConfig from "./auth.config"
 import { customPrismaAdapter } from "@/lib/auth-adapter"
 import { prisma } from "@/lib/prisma"
+import { PREVIEW_AUTH_PASSWORD, VERCEL_ENV } from "@/lib/env"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -14,8 +15,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
-        if (process.env.VERCEL_ENV !== "preview") return null
-        const expected = process.env.PREVIEW_AUTH_PASSWORD
+        if (VERCEL_ENV !== "preview") return null
+        const expected = PREVIEW_AUTH_PASSWORD
         if (!expected || credentials?.password !== expected) return null
         const user = await prisma.user.findFirst()
         if (!user) return null
