@@ -95,6 +95,19 @@ When you view your history chart or table, the system:
 
 This approach ensures that your trend lines always remain continuous and comparable, regardless of currency fluctuations or setting changes.
 
+### 3. Monthly Contributions vs Market Performance Decomposition
+The **Analysis** page includes a dedicated decomposition chart under the KPI cards:
+- **Contributions** = monthly net cash flow (DEPOSIT − WITHDRAWAL).
+- **Market Performance** = monthly net-worth delta − contributions.
+
+This ensures each month satisfies:
+`deltaNetWorth = contributions + marketPerformance`
+
+### 4. Transaction-time FX Conversion Behavior (Cash Flow)
+Cash-flow conversion resolves FX **per transaction timestamp** (each transaction passes its own `createdAt` into the FX resolver).
+
+Current implementation uses the latest cached FX table as the resolver source, so this remains a known v1 approximation for historical data. The timestamp-aware resolver contract is intentionally preserved so historical FX providers can be plugged in later without changing chart semantics.
+
 ## 📝 Roadmap
 
 - [SUGGESTIONS.md](./docs/SUGGESTIONS.md) — prioritized feature roadmap across the whole app.

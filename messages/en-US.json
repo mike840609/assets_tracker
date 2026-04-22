@@ -122,7 +122,7 @@
     "topMoversAccount": "Account",
     "topMoversChange": "Change",
     "topMoversNoData": "Not enough history to show movers.",
-    "cashFlowNote": "Contributions reflect cash deposits and withdrawals only."
+    "cashFlowNote": "Contributions include DEPOSIT/WITHDRAWAL only, converted per transaction timestamp with the latest cached FX rates."
   },
   "history": {
     "title": "Net Worth History",

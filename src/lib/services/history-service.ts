@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAllExchangeRates, resolveRate } from "./exchange-rate-service";
 import type { NetWorthSnapshot } from "@/generated/prisma/client";
 import type { MonthlyContribution } from "./analysis-service";
+import { aggregateMonthlyCashFlow } from "./cashflow-service";
 
 export interface NormalizedSnapshot {
   id: string;
@@ -236,7 +237,10 @@ export async function getRawHistoryWithBreakdown(
 
 /**
  * Aggregate CashTransaction (DEPOSIT/WITHDRAWAL) records into per-month net
- * contribution amounts, converted to baseCurrency at current rates (v1 drift).
+ * contribution amounts, converted to baseCurrency with per-transaction FX
+ * resolution. The resolver currently uses the latest cached rates (v1 drift),
+ * but is invoked with each transaction timestamp so the behavior is compatible
+ * with historical-rate resolvers.
  *
  * EDIT-type transactions are excluded — they represent balance corrections,
  * not real cash flows.
@@ -257,17 +261,14 @@ export async function getMonthlyCashFlow(
     getAllExchangeRates(),
   ]);
 
-  const byMonth = new Map<string, number>();
-
-  for (const tx of transactions) {
-    const monthKey = tx.createdAt.toISOString().slice(0, 7); // "YYYY-MM"
-    const rate = resolveRate(allRatesMap, tx.account.currency, baseCurrency) ?? 1;
-    const amount = Number(tx.amount) * rate;
-    const signed = tx.type === "DEPOSIT" ? amount : -amount;
-    byMonth.set(monthKey, (byMonth.get(monthKey) ?? 0) + signed);
-  }
-
-  return Array.from(byMonth.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([monthKey, contributions]) => ({ monthKey, contributions }));
+  return aggregateMonthlyCashFlow(
+    transactions.map((tx) => ({
+      createdAt: tx.createdAt,
+      amount: Number(tx.amount),
+      type: tx.type,
+      accountCurrency: tx.account.currency,
+    })),
+    baseCurrency,
+    ({ fromCurrency, toCurrency }) => resolveRate(allRatesMap, fromCurrency, toCurrency) ?? 1,
+  );
 }

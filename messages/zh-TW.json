@@ -122,7 +122,7 @@
     "topMoversAccount": "帳戶",
     "topMoversChange": "變化",
     "topMoversNoData": "歷史資料不足，無法顯示變動。",
-    "cashFlowNote": "貢獻僅反映現金存入與提領。"
+    "cashFlowNote": "貢獻僅包含存入/提領，並以每筆交易時間戳記逐筆換算（使用目前快取的最新匯率）。"
   },
   "history": {
     "title": "淨資產歷史",
