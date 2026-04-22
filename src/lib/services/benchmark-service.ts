@@ -33,7 +33,6 @@ async function refreshBenchmarkRange(symbol: string, from: Date, to: Date): Prom
         symbol,
         date: new Date(Date.UTC(r.date!.getUTCFullYear(), r.date!.getUTCMonth(), r.date!.getUTCDate())),
         close: r.close!,
-        currency: r.currency ?? "USD",
       }));
 
     if (validRows.length === 0) return;
@@ -41,12 +40,11 @@ async function refreshBenchmarkRange(symbol: string, from: Date, to: Date): Prom
     for (const row of validRows) {
       await prisma.benchmarkPrice.upsert({
         where: { symbol_date: { symbol: row.symbol, date: row.date } },
-        update: { close: row.close, currency: row.currency, updatedAt: new Date() },
+        update: { close: row.close, updatedAt: new Date() },
         create: {
           symbol: row.symbol,
           date: row.date,
           close: row.close,
-          currency: row.currency,
         },
       });
     }
