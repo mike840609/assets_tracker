@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import {
   Bar,
-  BarChart,
+  ComposedChart,
   CartesianGrid,
   Cell,
+  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -25,10 +26,12 @@ interface Props {
   buckets: MonthlyBucket[];
   baseCurrency: string;
   locale: string;
+  benchmarkData: Array<{ monthKey: string; value: number | null }>;
+  benchmarkLabel: string;
 }
 
 interface TooltipPayload {
-  payload: MonthlyBucket & { label: string };
+  payload: MonthlyBucket & { label: string; benchmarkValue: number | null };
 }
 
 function ChangeTooltip({
@@ -37,12 +40,14 @@ function ChangeTooltip({
   baseCurrency,
   t,
   privacyMode,
+  benchmarkLabel,
 }: {
   active?: boolean;
   payload?: TooltipPayload[];
   baseCurrency: string;
   t: (key: string) => string;
   privacyMode?: boolean;
+  benchmarkLabel: string;
 }) {
   if (!active || !payload?.length) return null;
   const b = payload[0].payload;
@@ -85,19 +90,37 @@ function ChangeTooltip({
             b.deltaNetWorth >= 0 ? "text-[var(--chart-1)]" : "text-destructive"
           }
         />
+        {b.benchmarkValue !== null && (
+          <ChartTooltipRow
+            label={benchmarkLabel}
+            value={`${b.benchmarkValue.toFixed(1)}`}
+            valueClassName="text-[var(--chart-4)]"
+          />
+        )}
       </div>
     </ChartTooltipContainer>
   );
 }
 
-export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
+export function MonthlyChangeChart({
+  buckets,
+  baseCurrency,
+  locale,
+  benchmarkData,
+  benchmarkLabel,
+}: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => setMounted(true), []);
 
-  const data = buckets.map((b) => ({ ...b, label: formatMonthLabel(b.monthKey, locale) }));
+  const benchmarkByMonth = new Map(benchmarkData.map((b) => [b.monthKey, b.value]));
+  const data = buckets.map((b) => ({
+    ...b,
+    label: formatMonthLabel(b.monthKey, locale),
+    benchmarkValue: benchmarkByMonth.get(b.monthKey) ?? null,
+  }));
 
   return (
     <Card className="border-0 bg-transparent shadow-none">
@@ -114,7 +137,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
         ) : (
           <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}>
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 20 }}>
+            <ComposedChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="label" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
               <YAxis
@@ -132,7 +155,14 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
               />
               <Tooltip
                 cursor={{ fill: "var(--muted)", opacity: 0.3 }}
-                content={<ChangeTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />}
+                content={
+                  <ChangeTooltip
+                    baseCurrency={baseCurrency}
+                    t={t}
+                    privacyMode={privacyMode}
+                    benchmarkLabel={benchmarkLabel}
+                  />
+                }
               />
               <Bar dataKey="deltaNetWorth" radius={[4, 4, 0, 0]}>
                 {data.map((entry) => (
@@ -149,7 +179,16 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
                   />
                 ))}
               </Bar>
-            </BarChart>
+              <Line
+                type="monotone"
+                dataKey="benchmarkValue"
+                name={benchmarkLabel}
+                stroke="var(--chart-4)"
+                strokeWidth={2}
+                dot={false}
+                connectNulls={false}
+              />
+            </ComposedChart>
           </ResponsiveContainer>
           </div>
         )}

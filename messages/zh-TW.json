@@ -122,7 +122,12 @@
     "topMoversAccount": "帳戶",
     "topMoversChange": "變化",
     "topMoversNoData": "歷史資料不足，無法顯示變動。",
-    "cashFlowNote": "貢獻僅反映現金存入與提領。"
+    "cashFlowNote": "貢獻僅反映現金存入與提領。",
+    "benchmarkSelectorLabel": "基準指數",
+    "benchmarkSP500": "標普 500",
+    "benchmarkNasdaq100": "那斯達克 100",
+    "benchmarkDisclaimerLabel": "比較說明",
+    "benchmarkDisclaimerText": "基準線會在所選區間起點重設為 100。投資組合績效包含現金流、槓桿與資產配置差異，因此無法與單一指數直接對比。"
   },
   "history": {
     "title": "淨資產歷史",

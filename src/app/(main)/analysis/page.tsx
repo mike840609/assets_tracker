@@ -8,6 +8,7 @@ import {
   getRawHistoryWithBreakdown,
   getMonthlyCashFlow,
 } from "@/lib/services/history-service";
+import { BENCHMARK_OPTIONS, getBenchmarkSeries } from "@/lib/services/benchmark-service";
 import { pickMessages } from "@/lib/i18n-utils";
 import { AnalysisView } from "@/components/analysis/analysis-view";
 import AnalysisLoading from "./loading";
@@ -29,6 +30,18 @@ async function AnalysisContent() {
     getLocale(),
   ]);
 
+  const benchmarkFrom = snapshots[0]
+    ? new Date(`${snapshots[0].date}T00:00:00.000Z`)
+    : new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1));
+  const benchmarkTo = new Date();
+  const benchmarkEntries = await Promise.all(
+    BENCHMARK_OPTIONS.map(async (option) => ({
+      symbol: option.symbol,
+      labelKey: option.labelKey,
+      points: await getBenchmarkSeries(option.symbol, benchmarkFrom, benchmarkTo),
+    })),
+  );
+
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
       <div className="space-y-8 animate-in fade-in duration-500">
@@ -42,6 +55,7 @@ async function AnalysisContent() {
           rawHistory={rawHistory}
           baseCurrency={settings.baseCurrency}
           locale={locale}
+          benchmarkEntries={benchmarkEntries}
         />
       </div>
     </NextIntlClientProvider>

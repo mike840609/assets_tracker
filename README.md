@@ -10,6 +10,7 @@ A modern, high-performance net worth and investment tracker. Built with **Next.j
 - **🚀 Real-time Tracking**: Automatically fetch latest prices for Stocks, ETFs, and Cryptocurrencies (via Yahoo Finance + CoinGecko fallback).
 - **🌍 Multi-Currency Support**: Track assets in USD, TWD, EUR, and more. All values are automatically converted to your selected **Base Currency**.
 - **📈 Trend Visualization**: Interactive charts showing your net worth, assets, and liabilities over time.
+- **📉 Benchmark Overlay (Analysis)**: Compare monthly portfolio trend against normalized benchmark indices (S&P 500 / NASDAQ 100), with range-aware rebasing.
 - **🔄 Lossless History**: Snapshots store original account balances and currencies, allowing perfectly accurate history normalization even if you change your base currency later.
 - **🤖 Automated Snapshots**: Built-in Vercel Cron integration to automatically record your net worth daily.
 - **🌗 Light / Dark / System Theme**: Full theme support with smooth toggle.
@@ -94,6 +95,18 @@ When you view your history chart or table, the system:
 - **Legacy Support**: If a snapshot was taken before the lossless system was implemented, it converts the snapshot's total value from its original base currency to your current one.
 
 This approach ensures that your trend lines always remain continuous and comparable, regardless of currency fluctuations or setting changes.
+
+## 📊 Benchmark Overlay in Analysis
+
+The Analysis tab supports benchmark comparison overlays to contextualize monthly performance.
+
+- **Benchmarks**: S&P 500 (`^GSPC`, default) and NASDAQ 100 (`^NDX`)
+- **Normalization**: Benchmark values are rebased to `100` at the selected analysis range start
+- **Caching model**: Historical index closes are persisted in `BenchmarkPrice` (`symbol + date`) and refreshed on demand
+- **UI**: Selector + disclaimer tooltip to clarify portfolio-vs-index comparability limits
+
+> [!NOTE]
+> Benchmark comparison is intended for directional context only. Portfolio returns include contributions/withdrawals, leverage, and allocation differences that are not directly comparable to a single market index.
 
 ## 📝 Roadmap
 

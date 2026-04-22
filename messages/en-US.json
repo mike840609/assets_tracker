@@ -122,7 +122,12 @@
     "topMoversAccount": "Account",
     "topMoversChange": "Change",
     "topMoversNoData": "Not enough history to show movers.",
-    "cashFlowNote": "Contributions reflect cash deposits and withdrawals only."
+    "cashFlowNote": "Contributions reflect cash deposits and withdrawals only.",
+    "benchmarkSelectorLabel": "Benchmark",
+    "benchmarkSP500": "S&P 500",
+    "benchmarkNasdaq100": "NASDAQ 100",
+    "benchmarkDisclaimerLabel": "Comparison notes",
+    "benchmarkDisclaimerText": "Benchmark overlays are normalized to 100 at the selected range start. Portfolio returns include cash flows, leverage, and asset mix differences, so they are not directly comparable to a single index."
   },
   "history": {
     "title": "Net Worth History",

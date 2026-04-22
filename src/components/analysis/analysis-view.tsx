@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { CircleHelpIcon } from "lucide-react";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
 import type { RawHistoryData, SnapshotBreakdown } from "@/lib/services/history-service";
 import {
@@ -11,8 +12,21 @@ import {
   buildCashFlowBuckets,
   aggregateCategoryHistory,
   computeTopMovers,
+  getNormalizedBenchmarkSeries,
 } from "@/lib/services/analysis-service";
-import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/analysis-service";
+import type {
+  MonthlyContribution,
+  CategoryDataPoint,
+  BenchmarkSeriesPoint,
+} from "@/lib/services/analysis-service";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MonthlyChangeChart } from "./monthly-change-chart";
 import { AssetsLiabilitiesChart } from "./assets-liabilities-chart";
 import { KpiTiles } from "./kpi-tiles";
@@ -26,6 +40,11 @@ interface Props {
   rawHistory: RawHistoryData;
   baseCurrency: string;
   locale: string;
+  benchmarkEntries: Array<{
+    symbol: string;
+    labelKey: "benchmarkSP500" | "benchmarkNasdaq100";
+    points: BenchmarkSeriesPoint[];
+  }>;
 }
 
 const ranges = [
@@ -46,9 +65,17 @@ function rangeCutoff(months: number): Date {
   return d;
 }
 
-export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency, locale }: Props) {
+export function AnalysisView({
+  snapshots,
+  cashFlowData,
+  rawHistory,
+  baseCurrency,
+  locale,
+  benchmarkEntries,
+}: Props) {
   const t = useTranslations("analysis");
   const [range, setRange] = useState<RangeLabel>("YTD");
+  const [selectedBenchmark, setSelectedBenchmark] = useState("^GSPC");
 
   const rangeLabelKey: Record<RangeLabel, string> = {
     YTD: "rangeYTD",
@@ -140,6 +167,31 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
     [filteredRawSnapshots, rawHistory.accounts]
   );
 
+  const benchmarkData = useMemo(() => {
+    const selected = benchmarkEntries.find((entry) => entry.symbol === selectedBenchmark);
+    if (!selected) return [];
+    const rangeEndIso = new Date(
+      Date.UTC(rangeEnd.getUTCFullYear(), rangeEnd.getUTCMonth() + 1, 0),
+    )
+      .toISOString()
+      .slice(0, 10);
+
+    const normalized = getNormalizedBenchmarkSeries(
+      selected.points,
+      rangeStartIso,
+      rangeEndIso,
+    );
+    const byMonth = new Map<string, number>();
+    for (const point of normalized) {
+      byMonth.set(point.date.slice(0, 7), point.normalized);
+    }
+
+    return buckets.map((bucket) => ({
+      monthKey: bucket.monthKey,
+      value: byMonth.get(bucket.monthKey) ?? null,
+    }));
+  }, [benchmarkEntries, selectedBenchmark, rangeStartIso, rangeEnd, buckets]);
+
   const hasData = snapshots.length > 0;
 
   return (
@@ -164,6 +216,32 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
           ))}
         </div>
       </div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">{t("benchmarkSelectorLabel")}</span>
+          <Select value={selectedBenchmark} onValueChange={(value) => setSelectedBenchmark(value)}>
+            <SelectTrigger className="h-8 min-w-[220px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {benchmarkEntries.map((entry) => (
+                <SelectItem key={entry.symbol} value={entry.symbol}>
+                  {t(entry.labelKey)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Popover>
+          <PopoverTrigger className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <CircleHelpIcon className="size-3.5" />
+            {t("benchmarkDisclaimerLabel")}
+          </PopoverTrigger>
+          <PopoverContent sideOffset={8} className="w-80 text-xs leading-relaxed text-muted-foreground">
+            {t("benchmarkDisclaimerText")}
+          </PopoverContent>
+        </Popover>
+      </div>
 
       {!hasData ? (
         <div className="rounded-xl border border-dashed border-border/60 bg-card/50 p-12 text-center text-sm text-muted-foreground">
@@ -173,7 +251,13 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
         <div className="space-y-6">
           <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
           <div className="premium-card">
-            <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+            <MonthlyChangeChart
+              buckets={buckets}
+              baseCurrency={baseCurrency}
+              locale={locale}
+              benchmarkData={benchmarkData}
+              benchmarkLabel={t(benchmarkEntries.find((entry) => entry.symbol === selectedBenchmark)?.labelKey ?? "benchmarkSP500")}
+            />
           </div>
           <div className="premium-card">
             <AssetsLiabilitiesChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />

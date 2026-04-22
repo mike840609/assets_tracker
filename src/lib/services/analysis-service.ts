@@ -259,6 +259,17 @@ export interface TopMover {
   percentChange: number | null;
 }
 
+export interface BenchmarkSeriesPoint {
+  symbol: string;
+  date: string;
+  close: number;
+}
+
+export interface NormalizedBenchmarkPoint {
+  date: string;
+  normalized: number;
+}
+
 // ---------------------------------------------------------------------------
 // Phase 2 pure functions (no DB access)
 // ---------------------------------------------------------------------------
@@ -358,4 +369,25 @@ export function computeTopMovers(
     .filter((m) => m.startValue !== 0 || m.endValue !== 0)
     .sort((a, b) => Math.abs(b.absoluteChange) - Math.abs(a.absoluteChange))
     .slice(0, 10);
+}
+
+/**
+ * Normalize a benchmark series to 100 at the first available point within the selected range.
+ * Returns empty when no data points exist in the range.
+ */
+export function getNormalizedBenchmarkSeries(
+  series: BenchmarkSeriesPoint[],
+  rangeStartIso: string,
+  rangeEndIso: string,
+): NormalizedBenchmarkPoint[] {
+  const inRange = series.filter((p) => p.date >= rangeStartIso && p.date <= rangeEndIso);
+  if (inRange.length === 0) return [];
+
+  const baseline = inRange[0].close;
+  if (baseline <= 0) return [];
+
+  return inRange.map((p) => ({
+    date: p.date,
+    normalized: (p.close / baseline) * 100,
+  }));
 }

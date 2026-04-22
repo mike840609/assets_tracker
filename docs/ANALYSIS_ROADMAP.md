@@ -103,12 +103,18 @@ Reuse `aggregateMonthlyChange()` and add `aggregateYearlyChange()`.
 
 Download the visible analysis as CSV (simple) or PDF (nicer for reports). CSV first — drop-in `papaparse` + blob download. PDF via `@react-pdf/renderer` or screenshot-driven `html2canvas`.
 
-### 3.4 Benchmark Overlay — 🟢
+### 3.4 Benchmark Overlay — 🟢 ✅
 
 Plot the user's net-worth growth curve against a benchmark (S&P 500, or user's base-currency inflation) normalized to 100 at the period start.
 
-- **Data**: use Yahoo Finance 2 (already a dependency) to pull `^GSPC`, `^IXIC`, index history. Cache in a new `BenchmarkPrice` model or reuse `PriceCache`.
-- **Risk**: comparing apples to oranges (portfolio vs. equity index). Add a disclaimer tooltip.
+- **Shipped scope**:
+  - Added benchmark cache model `BenchmarkPrice` keyed by `(symbol, date)`.
+  - Added service layer benchmark fetch/cache flow in `src/lib/services/benchmark-service.ts`.
+  - Added range-aware normalization helper in `analysis-service.ts` (rebase to 100).
+  - Added Analysis UI benchmark selector (default S&P 500), overlay line on monthly chart, and disclaimer tooltip.
+  - Added i18n strings in both `en-US` and `zh-TW`.
+- **Data source**: Yahoo Finance 2 historical endpoint for `^GSPC` and `^NDX`.
+- **Known risk (still true)**: comparing apples to oranges (portfolio vs. equity index), mitigated with explicit UI disclaimer.
 
 ### 3.5 Volatility / Drawdown Indicator — 🟢
 

@@ -123,6 +123,17 @@ model PriceCache {
   @@index([updatedAt])
 }
 
+model BenchmarkPrice {
+  symbol    String
+  date      DateTime @db.Date
+  close     Decimal  @db.Decimal(18, 8)
+  currency  String   @default("USD")
+  updatedAt DateTime @updatedAt
+
+  @@id([symbol, date])
+  @@index([symbol, date(sort: Desc)])
+}
+
 model ExchangeRate {
   id           String   @id
   fromCurrency String
