@@ -42,7 +42,12 @@ async function refreshBenchmarkRange(symbol: string, from: Date, to: Date): Prom
       await prisma.benchmarkPrice.upsert({
         where: { symbol_date: { symbol: row.symbol, date: row.date } },
         update: { close: row.close, currency: row.currency, updatedAt: new Date() },
-        create: row,
+        create: {
+          symbol: row.symbol,
+          date: row.date,
+          close: row.close,
+          currency: row.currency,
+        },
       });
     }
   } catch (error) {
