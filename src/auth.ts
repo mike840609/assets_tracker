@@ -1,4 +1,4 @@
-import NextAuth from "next-auth"
+import NextAuth, { type NextAuthConfig } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import authConfig from "./auth.config"
 import { customPrismaAdapter } from "@/lib/auth-adapter"
@@ -7,7 +7,7 @@ import { PREVIEW_AUTH_PASSWORD, VERCEL_ENV } from "@/lib/env"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  adapter: customPrismaAdapter as any,
+  adapter: customPrismaAdapter as NextAuthConfig["adapter"],
   providers: [
     ...authConfig.providers,
     Credentials({

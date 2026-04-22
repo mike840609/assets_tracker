@@ -76,7 +76,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
   const { data, size, setSize, isValidating, mutate } = useSWRInfinite(getKey, fetcher);
 
   const transactions = data
-    ? data.flat().map((t: any) => ({
+    ? data.flat().map((t: { quantity: string | number } & Record<string, unknown>) => ({
         ...t,
         quantity: Number(t.quantity),
       })) as SerializedTransaction[]
@@ -129,7 +129,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
       setEditingTx(null);
       mutate();
       startTransition(() => { router.refresh(); }); // Refresh holdings on parent page
-    } catch (e) {
+    } catch {
       toast.error(t("updateFailed"));
     } finally {
       setIsSubmitting(false);
@@ -150,7 +150,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
       setDeletingTx(null);
       mutate();
       startTransition(() => { router.refresh(); }); // Refresh holdings on parent page
-    } catch (e) {
+    } catch {
       toast.error(t("deleteFailed"));
     } finally {
       setIsSubmitting(false);
@@ -209,7 +209,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
                       })}
                     </TableCell>
                     <TableCell className="font-mono font-medium">
-                      {(tx as any).isCash ? "" : (tx.holding?.symbol ?? "—")}
+                      {(tx as SerializedTransaction & { isCash?: boolean }).isCash ? "" : (tx.holding?.symbol ?? "—")}
                     </TableCell>
                     <TableCell>
                       <Badge variant={typeVariant}>{typeLabel}</Badge>
@@ -274,7 +274,7 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
                     <SelectValue placeholder={t("labelType")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {(editingTx as any)?.isCash ? (
+                    {(editingTx as SerializedTransaction & { isCash?: boolean })?.isCash ? (
                       <>
                         <SelectItem value="DEPOSIT">{t("typeDeposit")}</SelectItem>
                         <SelectItem value="WITHDRAWAL">{t("typeWithdrawal")}</SelectItem>
@@ -338,11 +338,11 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
           </DialogHeader>
           <div className="py-4">
             <p>
-              {(deletingTx as any)?.isCash
+              {(deletingTx as SerializedTransaction & { isCash?: boolean })?.isCash
                 ? t("deleteConfirm")
                 : t("deleteConfirmSymbol", { symbol: deletingTx?.holding?.symbol ?? "" })}
             </p>
-            {!(deletingTx as any)?.isCash && (
+            {!(deletingTx as SerializedTransaction & { isCash?: boolean })?.isCash && (
               <p className="text-sm text-muted-foreground mt-2">{t("deleteWarning")}</p>
             )}
           </div>

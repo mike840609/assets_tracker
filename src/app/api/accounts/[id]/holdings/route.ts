@@ -80,8 +80,7 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
   return ok(holding, { status: 201 });
 });
 
-export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
-  const { id: _accountId } = await params;
+export const PATCH = withAuth<IdCtx>(async (request, _ctx, userId) => {
   const body = await request.json();
   const parsed = updateHoldingSchema.safeParse(body);
   if (!parsed.success) return validationError(parsed.error);
@@ -111,8 +110,7 @@ export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
   return ok(holding);
 });
 
-export const DELETE = withAuth<IdCtx>(async (request, { params }, userId) => {
-  const { id: _accountId } = await params;
+export const DELETE = withAuth<IdCtx>(async (request, _ctx, userId) => {
   const body = await request.json();
   const { id } = body;
   if (!id) return failure("Holding ID required");

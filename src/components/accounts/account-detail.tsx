@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency } from "@/lib/currencies";
+
 import { HoldingForm } from "./holding-form";
 import { EditHoldingDialog } from "./edit-holding-dialog";
 import { TransactionHistory } from "./transaction-history";
@@ -28,6 +28,19 @@ import type { SerializedAccountWithHoldings, SerializedHolding } from "@/lib/typ
 
 type HoldingSortField = "symbol" | "name" | "assetType" | "currency" | "quantity" | "currentPrice" | "marketValue" | "percentage";
 type SortOrder = "asc" | "desc";
+
+function SortIcon({
+  field,
+  sortField,
+  sortDirection,
+}: {
+  field: HoldingSortField;
+  sortField: HoldingSortField;
+  sortDirection: SortOrder;
+}) {
+  if (sortField !== field) return <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-muted-foreground opacity-50" />;
+  return sortDirection === "asc" ? <ArrowUp className="ml-1 h-3.5 w-3.5" /> : <ArrowDown className="ml-1 h-3.5 w-3.5" />;
+}
 
 export function AccountDetail({
   account,
@@ -103,10 +116,6 @@ export function AccountDetail({
     });
   }, [holdingsWithValue, sortField, sortDirection]);
 
-  const SortIcon = ({ field }: { field: HoldingSortField }) => {
-    if (sortField !== field) return <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-muted-foreground opacity-50" />;
-    return sortDirection === "asc" ? <ArrowUp className="ml-1 h-3.5 w-3.5" /> : <ArrowDown className="ml-1 h-3.5 w-3.5" />;
-  };
 
   const isBank = account.category === "BANK";
 
@@ -262,49 +271,49 @@ export function AccountDetail({
                       className="cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("symbol")}
                     >
-                      <div className="flex items-center">{t("accountDetail.colSymbol")} <SortIcon field="symbol" /></div>
+                      <div className="flex items-center">{t("accountDetail.colSymbol")} <SortIcon field="symbol" sortField={sortField} sortDirection={sortDirection} /></div>
                     </TableHead>
                     <TableHead
                       className="cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("name")}
                     >
-                      <div className="flex items-center">{t("accountDetail.colName")} <SortIcon field="name" /></div>
+                      <div className="flex items-center">{t("accountDetail.colName")} <SortIcon field="name" sortField={sortField} sortDirection={sortDirection} /></div>
                     </TableHead>
                     <TableHead
                       className="cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("assetType")}
                     >
-                      <div className="flex items-center">{t("accountDetail.colType")} <SortIcon field="assetType" /></div>
+                      <div className="flex items-center">{t("accountDetail.colType")} <SortIcon field="assetType" sortField={sortField} sortDirection={sortDirection} /></div>
                     </TableHead>
                     <TableHead
                       className="cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("currency")}
                     >
-                      <div className="flex items-center">{t("accountDetail.colCurrency")} <SortIcon field="currency" /></div>
+                      <div className="flex items-center">{t("accountDetail.colCurrency")} <SortIcon field="currency" sortField={sortField} sortDirection={sortDirection} /></div>
                     </TableHead>
                     <TableHead
                       className="text-right cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("quantity")}
                     >
-                      <div className="flex items-center justify-end">{t("accountDetail.colQty")} <SortIcon field="quantity" /></div>
+                      <div className="flex items-center justify-end">{t("accountDetail.colQty")} <SortIcon field="quantity" sortField={sortField} sortDirection={sortDirection} /></div>
                     </TableHead>
                     <TableHead
                       className="text-right cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("currentPrice")}
                     >
-                      <div className="flex items-center justify-end">{t("accountDetail.colPrice")} <SortIcon field="currentPrice" /></div>
+                      <div className="flex items-center justify-end">{t("accountDetail.colPrice")} <SortIcon field="currentPrice" sortField={sortField} sortDirection={sortDirection} /></div>
                     </TableHead>
                     <TableHead
                       className="text-right cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("marketValue")}
                     >
-                      <div className="flex items-center justify-end">{t("accountDetail.colValue")} <SortIcon field="marketValue" /></div>
+                      <div className="flex items-center justify-end">{t("accountDetail.colValue")} <SortIcon field="marketValue" sortField={sortField} sortDirection={sortDirection} /></div>
                     </TableHead>
                     <TableHead
                       className="text-right cursor-pointer select-none hover:bg-accent/50"
                       onClick={() => handleSort("percentage")}
                     >
-                      <div className="flex items-center justify-end">{t("accountDetail.colPercentage")} <SortIcon field="percentage" /></div>
+                      <div className="flex items-center justify-end">{t("accountDetail.colPercentage")} <SortIcon field="percentage" sortField={sortField} sortDirection={sortDirection} /></div>
                     </TableHead>
                     <TableHead />
                   </TableRow>

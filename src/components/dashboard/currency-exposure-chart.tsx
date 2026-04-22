@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, startTransition } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector, Label } from "recharts";
 import { useTranslations } from "next-intl";
@@ -27,7 +27,7 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
   const t = useTranslations("currencyExposure");
   const { privacyMode } = usePrivacyMode();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
-  useEffect(() => setMounted(true), []);
+  useEffect(() => startTransition(() => setMounted(true)), []);
 
   const data = useMemo(() => {
     const total = summary.currencyExposure.reduce((acc, curr) => acc + curr.value, 0);
@@ -40,12 +40,12 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
       .filter((d) => d.value > 0);
   }, [summary.currencyExposure]);
 
-  const handleMouseEnter = useCallback((_: any, index: number) => setActiveIndex(index), []);
+  const handleMouseEnter = useCallback((_: unknown, index: number) => setActiveIndex(index), []);
   const handleMouseLeave = useCallback(() => setActiveIndex(-1), []);
 
   /* Custom shape function that expands the hovered slice */
   const renderShape = useCallback(
-    (props: any) => {
+    (props: { cx: number; cy: number; innerRadius: number; outerRadius: number; startAngle: number; endAngle: number; fill?: string; index: number }) => {
       const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, index } = props;
       const isActive = index === activeIndex;
       return (

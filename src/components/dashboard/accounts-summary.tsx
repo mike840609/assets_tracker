@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+
 import { formatCurrency } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -22,6 +22,19 @@ const HIDDEN = "***";
 
 type SortField = "name" | "category" | "value" | "percentage";
 type SortOrder = "asc" | "desc";
+
+function SortIcon({
+  field,
+  sortField,
+  sortDirection,
+}: {
+  field: SortField;
+  sortField: SortField;
+  sortDirection: SortOrder;
+}) {
+  if (sortField !== field) return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground opacity-50" />;
+  return sortDirection === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />;
+}
 
 export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   const [sortField, setSortField] = useState<SortField>("value");
@@ -38,7 +51,8 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
     }
   };
 
-  const getPercentage = (account: any) => {
+
+  const getPercentage = (account: (typeof summary.accounts)[number]) => {
     if (account.type === "ASSET") {
       return summary.totalAssets > 0 ? (account.totalValueInBaseCurrency / summary.totalAssets) * 100 : 0;
     } else {
@@ -46,34 +60,33 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
     }
   };
 
-  const sortAccounts = (accounts: typeof summary.accounts) => {
-    return [...accounts].sort((a, b) => {
-      let comparison = 0;
-      if (sortField === "name") {
-        comparison = a.name.localeCompare(b.name);
-      } else if (sortField === "category") {
-        const catA = t(`categories.${a.category}`, { defaultValue: a.category });
-        const catB = t(`categories.${b.category}`, { defaultValue: b.category });
-        comparison = catA.localeCompare(catB);
-      } else if (sortField === "value") {
-        comparison = a.totalValueInBaseCurrency - b.totalValueInBaseCurrency;
-      } else if (sortField === "percentage") {
-        comparison = getPercentage(a) - getPercentage(b);
-      }
-      return sortDirection === "asc" ? comparison : -comparison;
-    });
-  };
-
   const { assets, liabilities } = useMemo(() => {
-    const assets = sortAccounts(summary.accounts.filter((a) => a.type === "ASSET"));
-    const liabilities = sortAccounts(summary.accounts.filter((a) => a.type === "LIABILITY"));
-    return { assets, liabilities };
-  }, [summary.accounts, sortField, sortDirection, summary.totalAssets, summary.totalLiabilities]);
+    const doSort = (accounts: typeof summary.accounts) =>
+      [...accounts].sort((a, b) => {
+        let comparison = 0;
+        if (sortField === "name") {
+          comparison = a.name.localeCompare(b.name);
+        } else if (sortField === "category") {
+          const catA = t(`categories.${a.category}`, { defaultValue: a.category });
+          const catB = t(`categories.${b.category}`, { defaultValue: b.category });
+          comparison = catA.localeCompare(catB);
+        } else if (sortField === "value") {
+          comparison = a.totalValueInBaseCurrency - b.totalValueInBaseCurrency;
+        } else if (sortField === "percentage") {
+          const getPct = (acc: typeof a) =>
+            acc.type === "ASSET"
+              ? summary.totalAssets > 0 ? (acc.totalValueInBaseCurrency / summary.totalAssets) * 100 : 0
+              : summary.totalLiabilities > 0 ? (acc.totalValueInBaseCurrency / summary.totalLiabilities) * 100 : 0;
+          comparison = getPct(a) - getPct(b);
+        }
+        return sortDirection === "asc" ? comparison : -comparison;
+      });
+    return {
+      assets: doSort(summary.accounts.filter((a) => a.type === "ASSET")),
+      liabilities: doSort(summary.accounts.filter((a) => a.type === "LIABILITY")),
+    };
+  }, [summary, sortField, sortDirection, t]);
 
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground opacity-50" />;
-    return sortDirection === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />;
-  };
 
   if (summary.accounts.length === 0) {
     return (
@@ -103,16 +116,16 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
     <TableHeader>
       <TableRow>
         <TableHead onClick={() => handleSort("name")} className="whitespace-normal cursor-pointer select-none hover:bg-muted/50">
-          <div className="flex items-center">{t("accountsSummary.colAccount")} <SortIcon field="name" /></div>
+          <div className="flex items-center">{t("accountsSummary.colAccount")} <SortIcon field="name" sortField={sortField} sortDirection={sortDirection} /></div>
         </TableHead>
         <TableHead onClick={() => handleSort("category")} className="whitespace-normal cursor-pointer select-none hover:bg-muted/50">
-          <div className="flex items-center">{t("accountsSummary.colCategory")} <SortIcon field="category" /></div>
+          <div className="flex items-center">{t("accountsSummary.colCategory")} <SortIcon field="category" sortField={sortField} sortDirection={sortDirection} /></div>
         </TableHead>
         <TableHead onClick={() => handleSort("percentage")} className="cursor-pointer select-none hover:bg-muted/50 text-right">
-          <div className="flex items-center justify-end">{t("accountsSummary.colPercentage")} <SortIcon field="percentage" /></div>
+          <div className="flex items-center justify-end">{t("accountsSummary.colPercentage")} <SortIcon field="percentage" sortField={sortField} sortDirection={sortDirection} /></div>
         </TableHead>
         <TableHead onClick={() => handleSort("value")} className="cursor-pointer select-none hover:bg-muted/50 text-right">
-          <div className="flex items-center justify-end">{t("accountsSummary.colValue", { currency: summary.baseCurrency })} <SortIcon field="value" /></div>
+          <div className="flex items-center justify-end">{t("accountsSummary.colValue", { currency: summary.baseCurrency })} <SortIcon field="value" sortField={sortField} sortDirection={sortDirection} /></div>
         </TableHead>
       </TableRow>
     </TableHeader>

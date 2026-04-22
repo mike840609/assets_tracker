@@ -112,7 +112,7 @@ export function QuickAddHolding({
       // Auto-create account if needed
       if (!accountId) {
         const targetCategory = ASSET_TYPE_TO_CATEGORY[assetType] || "BROKERAGE";
-        const defaultName = t(`quickAddHolding.defaultAccountNames.${targetCategory}` as any, { defaultValue: "Brokerage" });
+        const defaultName = t(`quickAddHolding.defaultAccountNames.${targetCategory}` as Parameters<typeof t>[0], { defaultValue: "Brokerage" });
         const res = await fetch("/api/accounts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -167,8 +167,8 @@ export function QuickAddHolding({
 
   const targetCategory = ASSET_TYPE_TO_CATEGORY[assetType] || "BROKERAGE";
   const matchingAccounts = getMatchingAccounts();
-  const categoryLabel = t(`categories.${targetCategory}` as any, { defaultValue: targetCategory });
-  const defaultAccountName = t(`quickAddHolding.defaultAccountNames.${targetCategory}` as any, { defaultValue: "Brokerage" });
+  const categoryLabel = t(`categories.${targetCategory}` as Parameters<typeof t>[0], { defaultValue: targetCategory });
+  const defaultAccountName = t(`quickAddHolding.defaultAccountNames.${targetCategory}` as Parameters<typeof t>[0], { defaultValue: "Brokerage" });
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
@@ -218,7 +218,7 @@ export function QuickAddHolding({
                       variant="secondary"
                       className="text-[10px] px-1.5 py-0"
                     >
-                      {t(`quickAddHolding.assetTypes.${assetType}` as any, { defaultValue: assetType })}
+                      {t(`quickAddHolding.assetTypes.${assetType}` as Parameters<typeof t>[0], { defaultValue: assetType })}
                     </Badge>
                     <Badge
                       variant="outline"
@@ -320,7 +320,7 @@ export function QuickAddHolding({
                   variant="secondary"
                   className="text-[10px] px-1.5 py-0"
                 >
-                  {t(`quickAddHolding.assetTypes.${assetType}` as any, { defaultValue: assetType })}
+                  {t(`quickAddHolding.assetTypes.${assetType}` as Parameters<typeof t>[0], { defaultValue: assetType })}
                 </Badge>
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                   {currency}
@@ -348,7 +348,7 @@ export function QuickAddHolding({
                 <div className="rounded-lg border bg-muted/50 p-3">
                   <p className="font-medium">{matchingAccounts[0].name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {t(`categories.${matchingAccounts[0].category}` as any, { defaultValue: matchingAccounts[0].category })}
+                    {t(`categories.${matchingAccounts[0].category}` as Parameters<typeof t>[0], { defaultValue: matchingAccounts[0].category })}
                   </p>
                 </div>
               </div>

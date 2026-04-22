@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import {
   Bar,
   BarChart,
@@ -106,7 +106,7 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => startTransition(() => setMounted(true)), []);
 
   return (
     <Card className="border-0 bg-transparent shadow-none">

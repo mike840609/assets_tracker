@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import {
   Bar,
   BarChart,
@@ -15,7 +15,6 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
-import { useChartAnimation } from "@/hooks/use-chart-animation";
 import type { MonthlyBucket } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 
@@ -94,8 +93,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
-  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
-  useEffect(() => setMounted(true), []);
+  useEffect(() => startTransition(() => setMounted(true)), []);
 
   const data = buckets.map((b) => ({ ...b, label: formatMonthLabel(b.monthKey, locale) }));
 

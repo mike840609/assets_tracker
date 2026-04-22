@@ -25,9 +25,11 @@ export function PrivacyModeProvider({ children }: { children: React.ReactNode })
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const stored = localStorage.getItem("privacy-mode");
-    setPrivacyMode(stored === "true");
+    startTransition(() => {
+      setMounted(true);
+      setPrivacyMode(stored === "true");
+    });
   }, []);
 
   // Persist synchronously, flip the visible state in a transition so the

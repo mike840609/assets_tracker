@@ -24,7 +24,7 @@ export async function PATCH(
     const parsed = updateTransactionSchema.safeParse(body);
     if (!parsed.success) return validationError(parsed.error);
 
-    const { id, ...data } = parsed.data;
+    const { id: _txId, ...data } = parsed.data;
 
     if (data.quantity !== undefined) {
       const diff = data.quantity - Number(holdingTx.quantity);
@@ -68,7 +68,7 @@ export async function PATCH(
     const parsed = updateCashTransactionSchema.safeParse(body);
     if (!parsed.success) return validationError(parsed.error);
 
-    const { id, ...data } = parsed.data;
+    const { id: _txId, ...data } = parsed.data;
 
     // Recompute balance delta whenever amount or type changes.
     if (data.amount !== undefined || data.type !== undefined) {

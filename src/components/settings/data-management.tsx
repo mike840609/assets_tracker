@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { DownloadIcon, UploadIcon, Loader2Icon, AlertTriangleIcon, CheckCircleIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -77,7 +77,7 @@ export function DataManagement() {
           let json;
           try {
             json = JSON.parse(content);
-          } catch (pErr) {
+          } catch {
             setImportError(t("parseError"));
             setShowErrorDialog(true);
             setIsImporting(false);
@@ -97,9 +97,9 @@ export function DataManagement() {
 
           setShowSuccessDialog(true);
           setIsImporting(false);
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error(err);
-          setImportError(err.message || t("importFailed"));
+          setImportError((err instanceof Error ? err.message : null) || t("importFailed"));
           setShowErrorDialog(true);
           setIsImporting(false);
         }

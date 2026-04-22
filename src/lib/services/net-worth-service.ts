@@ -61,7 +61,7 @@ async function computeNetWorthSummary(
 
   for (const account of accounts) {
     // Try to resolve rate from bulk map first
-    let rate = resolveRate(allRatesMap, account.currency, baseCurrency);
+    const rate = resolveRate(allRatesMap, account.currency, baseCurrency);
     if (rate === undefined) {
       missingPairs.add(`${account.currency}_${baseCurrency}`);
     }
@@ -158,8 +158,8 @@ async function computeNetWorthSummary(
     awv.totalValueInBaseCurrency = totalValue;
 
     // Clean up temporary fields
-    delete (awv as any)._cashBalance;
-    delete (awv as any)._currency;
+    delete (awv as AccountWithValue & { _cashBalance?: number; _currency?: string })._cashBalance;
+    delete (awv as AccountWithValue & { _cashBalance?: number; _currency?: string })._currency;
 
     if (account.type === "ASSET") {
       totalAssets += totalValue;

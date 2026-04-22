@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import {
   Bar,
   BarChart,
@@ -77,8 +77,8 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
-  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
-  useEffect(() => setMounted(true), []);
+  const { isAnimationActive } = useChartAnimation();
+  useEffect(() => startTransition(() => setMounted(true)), []);
 
   const data = buckets.map((b) => ({
     label: formatMonthLabel(b.monthKey, locale),

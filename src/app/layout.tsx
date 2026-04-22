@@ -42,7 +42,7 @@ export const viewport: Viewport = {
  * cookie read.
  */
 async function LocaleProviders({ children }: { children: React.ReactNode }) {
-  const locale = await getLocale();
+  await getLocale();
   const messages = await getMessages();
   return (
     <NextIntlClientProvider messages={pickMessages(messages, ["app", "nav"])}>

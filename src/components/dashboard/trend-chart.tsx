@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, startTransition } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   XAxis,
@@ -32,7 +32,7 @@ function TrendTooltip({
   privacyMode,
 }: {
   active?: boolean;
-  payload?: any[];
+  payload?: { name: string; value: number; color?: string; stroke?: string }[];
   label?: string;
   baseCurrency: string;
   privacyMode: boolean;
@@ -74,7 +74,7 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
   const t = useTranslations("trendChart");
   const { privacyMode } = usePrivacyMode();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
-  useEffect(() => setMounted(true), []);
+  useEffect(() => startTransition(() => setMounted(true)), []);
 
   const selectedRange = ranges.find((r) => r.label === range)!;
 

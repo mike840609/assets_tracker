@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import {
   CartesianGrid,
   Line,
@@ -91,7 +91,7 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
   const tCat = useTranslations("categories");
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => startTransition(() => setMounted(true)), []);
 
   // Collect unique categories present in the data, preserving insertion order.
   const categories = Array.from(

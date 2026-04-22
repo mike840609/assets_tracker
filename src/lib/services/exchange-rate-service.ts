@@ -93,7 +93,9 @@ export async function fetchExchangeRates(
       );
       const data = await res.json();
       if (data.result === "success" && data.rates) {
-        const { [base]: _, ...rates } = data.rates;
+        const rates = Object.fromEntries(
+          Object.entries(data.rates as Record<string, number>).filter(([key]) => key !== base)
+        );
         return rates;
       }
     } catch (error) {

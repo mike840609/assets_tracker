@@ -27,7 +27,6 @@ interface DashboardActionsProps {
 }
 
 export function DashboardActions({
-  baseCurrency,
   lastPriceUpdate,
   lastSnapshotDate,
 }: DashboardActionsProps) {
@@ -39,7 +38,7 @@ export function DashboardActions({
   async function handleRefreshPrices() {
     setRefreshing(true);
     try {
-      const [priceRes, rateRes] = await Promise.all([
+      const [priceRes] = await Promise.all([
         fetch("/api/prices/refresh", { method: "POST" }),
         fetch("/api/exchange-rates/refresh", { method: "POST" }),
       ]);

@@ -127,7 +127,7 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
       const existing = byKey.get(b.monthKey);
       if (existing) return existing;
       // Pad empty months with 0s for all categories to match the other charts' X-axis length
-      const empty: CategoryDataPoint & Record<string, any> = { monthKey: b.monthKey };
+      const empty: CategoryDataPoint & Record<string, number | string> = { monthKey: b.monthKey };
       for (const acc of rawHistory.accounts) {
         empty[acc.category] = 0;
       }
