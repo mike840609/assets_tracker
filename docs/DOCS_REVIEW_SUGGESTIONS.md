@@ -14,7 +14,7 @@ It is intended to be an execution-oriented backlog with dependency-aware orderin
 |---|-----------|----------|--------|--------|--------|
 | D1 | Enforce auth + ownership checks on all sensitive API routes | Security | 🔴 High | 1-2 hrs | ❌ Not Done |
 | D2 | Harden cron path (`CRON_SECRET` guard, timing-safe compare, controlled fan-out concurrency) | Security / Reliability | 🔴 High | 1-2 hrs | ❌ Not Done |
-| D3 | Add startup environment validation (`src/lib/env.ts`) | Reliability / DX | 🔴 High | 1 hr | ❌ Not Done |
+| D3 | Add startup environment validation (`src/lib/env.ts`) | Reliability / DX | 🔴 High | 1 hr | ✅ Done |
 | D4 | Add baseline tests (service-layer + API auth checks + 1 E2E smoke) | Testing | 🔴 High | 1-2 days | ❌ Not Done |
 | D5 | Complete caching hygiene (`Cache-Control`, `revalidateTag` coverage audit) | Performance | 🟡 Medium | 1-2 hrs | ❌ Not Done |
 | D6 | Finish accessibility quick wins (`aria-label`, keyboard semantics, non-color cues) | Accessibility | 🔴 High | 2-3 hrs | ❌ Not Done |
