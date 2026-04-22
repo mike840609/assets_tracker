@@ -173,13 +173,13 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
         <div className="space-y-6">
           <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
           <div className="premium-card">
-            <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
-          </div>
-          <div className="premium-card">
             <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
           </div>
           <div className="premium-card">
             <AssetsLiabilitiesChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+          </div>
+          <div className="premium-card">
+            <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
           </div>
           <div className="premium-card">
             <CategoryTrendChart
