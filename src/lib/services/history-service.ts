@@ -261,13 +261,19 @@ export async function getMonthlyCashFlow(
     getAllExchangeRates(),
   ]);
 
-  return aggregateMonthlyCashFlow(
-    transactions.map((tx) => ({
+  const cashFlowTransactions = transactions
+    .filter((tx): tx is typeof tx & { type: "DEPOSIT" | "WITHDRAWAL" } => (
+      tx.type === "DEPOSIT" || tx.type === "WITHDRAWAL"
+    ))
+    .map((tx) => ({
       createdAt: tx.createdAt,
       amount: Number(tx.amount),
       type: tx.type,
       accountCurrency: tx.account.currency,
-    })),
+    }));
+
+  return aggregateMonthlyCashFlow(
+    cashFlowTransactions,
     baseCurrency,
     ({ fromCurrency, toCurrency }) => resolveRate(allRatesMap, fromCurrency, toCurrency) ?? 1,
   );
