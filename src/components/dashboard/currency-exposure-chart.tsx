@@ -10,7 +10,6 @@ import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 import type { NetWorthSummary } from "@/lib/types";
 import { createPieLegendFormatter } from "@/lib/chart-formatters";
-import { PieActiveSlice } from "@/components/dashboard/pie-active-slice";
 
 function ExposureTooltip({
   active,
@@ -95,8 +94,6 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                   outerRadius={90}
                   paddingAngle={2}
                   dataKey="value"
-                  activeIndex={activeIndex}
-                  activeShape={PieActiveSlice}
                   onMouseEnter={(_, index) => setActiveIndex(index)}
                   isAnimationActive={isAnimationActive}
                   onAnimationEnd={onAnimationEnd}
@@ -105,6 +102,9 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
+                      fillOpacity={index === activeIndex ? 1 : 0.55}
+                      stroke={index === activeIndex ? COLORS[index % COLORS.length] : "transparent"}
+                      strokeWidth={index === activeIndex ? 3 : 0}
                     />
                   ))}
                 </Pie>
