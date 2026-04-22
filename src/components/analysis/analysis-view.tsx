@@ -219,7 +219,10 @@ export function AnalysisView({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">{t("benchmarkSelectorLabel")}</span>
-          <Select value={selectedBenchmark} onValueChange={(value) => setSelectedBenchmark(value)}>
+          <Select
+            value={selectedBenchmark}
+            onValueChange={(value) => value && setSelectedBenchmark(value)}
+          >
             <SelectTrigger className="h-8 min-w-[220px]">
               <SelectValue />
             </SelectTrigger>
