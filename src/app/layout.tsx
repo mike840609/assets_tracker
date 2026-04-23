@@ -72,7 +72,7 @@ export default function RootLayout({
       <body className="h-full flex flex-col md:flex-row overflow-hidden bg-background text-foreground">
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
