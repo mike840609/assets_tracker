@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,12 +28,28 @@ export function SettingsForm({
   const activeLocale = useLocale();
   const [currency, setCurrency] = useState(currentCurrency);
   const [locale, setLocale] = useState<Locale>(
-    SUPPORTED_LOCALES.includes(activeLocale as Locale) ? (activeLocale as Locale) : DEFAULT_LOCALE
+    SUPPORTED_LOCALES.includes(currentLocale as Locale)
+      ? (currentLocale as Locale)
+      : SUPPORTED_LOCALES.includes(activeLocale as Locale)
+        ? (activeLocale as Locale)
+        : DEFAULT_LOCALE
   );
   const [saving, setSaving] = useState(false);
   const [savingLocale, setSavingLocale] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [snapshotting, setSnapshotting] = useState(false);
+
+  useEffect(() => {
+    if (SUPPORTED_LOCALES.includes(currentLocale as Locale)) {
+      setLocale(currentLocale as Locale);
+      return;
+    }
+    if (SUPPORTED_LOCALES.includes(activeLocale as Locale)) {
+      setLocale(activeLocale as Locale);
+      return;
+    }
+    setLocale(DEFAULT_LOCALE);
+  }, [activeLocale, currentLocale]);
 
   async function saveCurrency() {
     setSaving(true);
