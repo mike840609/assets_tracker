@@ -26,10 +26,13 @@ export function SettingsForm({
   const router = useRouter();
   const t = useTranslations();
   const activeLocale = useLocale();
+  const resolvedActiveLocale: Locale = SUPPORTED_LOCALES.includes(activeLocale as Locale)
+    ? (activeLocale as Locale)
+    : SUPPORTED_LOCALES.includes(currentLocale as Locale)
+      ? (currentLocale as Locale)
+      : DEFAULT_LOCALE;
   const [currency, setCurrency] = useState(currentCurrency);
-  const [locale, setLocale] = useState<Locale>(
-    SUPPORTED_LOCALES.includes(activeLocale as Locale) ? (activeLocale as Locale) : DEFAULT_LOCALE
-  );
+  const [locale, setLocale] = useState<Locale>(resolvedActiveLocale);
   const [saving, setSaving] = useState(false);
   const [savingLocale, setSavingLocale] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -160,7 +163,10 @@ export function SettingsForm({
                     ))}
                   </SelectContent>
                 </Select>
-                <Button onClick={saveLocale} disabled={savingLocale || locale === currentLocale}>
+                <Button
+                  onClick={saveLocale}
+                  disabled={savingLocale || locale === resolvedActiveLocale}
+                >
                   {savingLocale ? t("settings.saving") : t("settings.save")}
                 </Button>
               </div>
