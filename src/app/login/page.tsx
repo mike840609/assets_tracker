@@ -41,7 +41,7 @@ async function LoginContent() {
           className="pt-4"
         >
           <Button
-            className="w-full h-12 text-[15px] font-medium tracking-wide bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg hover:shadow-primary/30 transition-all hover:-translate-y-0.5 rounded-xl flex items-center justify-center gap-3"
+            className="w-full h-12 text-[15px] font-medium tracking-wide bg-background text-foreground hover:bg-secondary border border-border shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 rounded-xl flex items-center justify-center gap-3"
             type="submit"
           >
             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
