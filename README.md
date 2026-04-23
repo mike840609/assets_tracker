@@ -1,4 +1,4 @@
-# 💰 Asset Tracker
+# 💰 Assets Tracker
 
 A modern, high-performance net worth and investment tracker. Built with **Next.js 16**, **Prisma**, and **Tailwind CSS**.
 

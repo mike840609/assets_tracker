@@ -1,4 +1,4 @@
-# Asset Tracker — Bundle Analysis
+# Assets Tracker — Bundle Analysis
 
 ## Overview
 

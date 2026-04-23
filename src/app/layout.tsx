@@ -24,7 +24,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Asset Tracker",
+  title: "Assets Tracker",
   description: "Track your net worth, assets, and investments",
 };
 

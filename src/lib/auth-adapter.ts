@@ -8,6 +8,7 @@ type AnyRecord = Record<string, unknown> & { [key: string]: any };
 
 export const customPrismaAdapter = {
   ...PrismaAdapter(prisma),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   linkAccount: (data: AnyRecord) => prisma.authAccount.create({ data: data as any }) as any,
   unlinkAccount: (provider_providerAccountId: ProviderAccountId) =>
     prisma.authAccount.delete({

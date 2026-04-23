@@ -1,4 +1,4 @@
-# Asset Tracker — Suggestions
+# Assets Tracker — Suggestions
 
 ## Overview
 
@@ -1424,7 +1424,7 @@ If per-symbol error granularity is desired, chunk into small batches (e.g. 10) a
 
 ## 2026-04-16 App Philosophy & Wealth Tracking UX
 
-> New targeted suggestions to improve the UX and product copy to communicate that Asset Tracker is a holistic wealth tracker based on snapshots, rather than a short-term trading P&L tool.
+> New targeted suggestions to improve the UX and product copy to communicate that Assets Tracker is a holistic wealth tracker based on snapshots, rather than a short-term trading P&L tool.
 
 ### 93. Deduplicate `recentSnapshots` Query in Dashboard Sections
 
