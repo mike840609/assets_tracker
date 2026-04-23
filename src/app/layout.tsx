@@ -24,8 +24,21 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://assets-tracker-ct.vercel.app"),
   title: "Assets Tracker",
   description: "Track your net worth, assets, and investments",
+  openGraph: {
+    title: "Assets Tracker",
+    description: "Track your net worth, assets, and investments",
+    url: "https://assets-tracker-ct.vercel.app",
+    siteName: "Assets Tracker",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Assets Tracker",
+    description: "Track your net worth, assets, and investments",
+  },
 };
 
 export const viewport: Viewport = {
