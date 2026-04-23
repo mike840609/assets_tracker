@@ -12,23 +12,23 @@ async function LoginContent() {
   const isPreview = process.env.VERCEL_ENV === "preview"
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center relative overflow-hidden bg-slate-50">
+    <div className="flex min-h-screen w-full items-center justify-center relative overflow-hidden bg-background">
       {/* Dynamic Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-3xl pointer-events-none -z-10 animate-pulse-slow" />
       <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-chart-4/10 blur-3xl pointer-events-none -z-10 animate-pulse-slow" style={{ animationDelay: "2s" }} />
 
       {/* Glassmorphism Card */}
-      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col justify-center space-y-8 p-10 bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.1)] rounded-3xl animate-slide-in-bottom">
+      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col justify-center space-y-8 p-10 bg-card/80 dark:bg-card/70 backdrop-blur-xl border border-border/60 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_36px_-8px_rgba(0,0,0,0.55)] rounded-3xl animate-slide-in-bottom">
 
         <div className="flex flex-col space-y-3 text-center">
           <div className="w-16 h-16 mx-auto rounded-xl flex items-center justify-center mb-4 relative group shadow-lg" style={{ background: "linear-gradient(135deg, #34d399 0%, #065f46 100%)" }}>
             <div className="absolute inset-0 rounded-xl blur-md bg-emerald-500/50 opacity-40 group-hover:opacity-70 transition-opacity duration-500 animate-pulse" style={{ background: "linear-gradient(135deg, #34d399 0%, #065f46 100%)" }}></div>
             <TrendingUp className="w-7 h-7 text-white relative z-10 transform transition-all group-hover:scale-110 group-hover:-rotate-12 duration-300" strokeWidth={2} />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
             {t("title")}
           </h1>
-          <p className="text-sm text-slate-500 font-medium">
+          <p className="text-sm text-muted-foreground font-medium">
             {t("subtitle")}
           </p>
         </div>
@@ -41,7 +41,7 @@ async function LoginContent() {
           className="pt-4"
         >
           <Button
-            className="w-full h-12 text-[15px] font-medium tracking-wide bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 rounded-xl flex items-center justify-center gap-3"
+            className="w-full h-12 text-[15px] font-medium tracking-wide bg-background text-foreground hover:bg-muted border border-border shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 rounded-xl flex items-center justify-center gap-3"
             type="submit"
           >
             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -56,15 +56,15 @@ async function LoginContent() {
 
         {/* Trust badges */}
         <div className="flex flex-col gap-2 pt-2">
-          <div className="flex items-center gap-2.5 text-xs text-slate-500">
+          <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
             <Lock className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
             <span>{t("trust1")}</span>
           </div>
-          <div className="flex items-center gap-2.5 text-xs text-slate-500">
+          <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
             <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
             <span>{t("trust2")}</span>
           </div>
-          <div className="flex items-center gap-2.5 text-xs text-slate-500">
+          <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
             <EyeOff className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
             <span>{t("trust3")}</span>
           </div>
@@ -73,9 +73,9 @@ async function LoginContent() {
         {isPreview && (
           <>
             <div className="flex items-center gap-3 pt-2">
-              <div className="flex-1 h-px bg-slate-200" />
-              <span className="text-xs text-slate-400 font-medium">Preview Mode</span>
-              <div className="flex-1 h-px bg-slate-200" />
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground font-medium">Preview Mode</span>
+              <div className="flex-1 h-px bg-border" />
             </div>
 
             <form
@@ -93,11 +93,11 @@ async function LoginContent() {
                   type="password"
                   placeholder="Preview password"
                   required
-                  className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
+                  className="h-12 w-full rounded-xl border border-input bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 />
                 <Button
                   type="submit"
-                  className="w-full h-12 text-[15px] font-medium tracking-wide bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 rounded-xl"
+                  className="w-full h-12 text-[15px] font-medium tracking-wide bg-amber-100/70 text-amber-900 hover:bg-amber-100 border border-amber-300 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 rounded-xl dark:bg-amber-300/20 dark:text-amber-200 dark:border-amber-400/40 dark:hover:bg-amber-300/30"
                 >
                   Preview Login
                 </Button>
@@ -106,9 +106,9 @@ async function LoginContent() {
           </>
         )}
 
-        <div className="text-center text-xs text-slate-400 pt-2 mb-[-1rem]">
+        <div className="text-center text-xs text-muted-foreground pt-2 mb-[-1rem]">
           {t("footerBefore")}{" "}
-          <Link href="/privacy" className="underline hover:text-slate-600 transition-colors">
+          <Link href="/privacy" className="underline hover:text-foreground transition-colors">
             {t("footerLink")}
           </Link>
           .
@@ -121,14 +121,14 @@ async function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen w-full items-center justify-center bg-slate-50">
-        <div className="w-full max-w-md rounded-3xl bg-white/80 p-10 space-y-8 animate-pulse">
+      <div className="flex min-h-screen w-full items-center justify-center bg-background">
+        <div className="w-full max-w-md rounded-3xl bg-card/80 p-10 space-y-8 animate-pulse border border-border/60">
           <div className="flex flex-col items-center space-y-3">
-            <div className="w-16 h-16 rounded-xl bg-emerald-100" />
-            <div className="h-8 w-48 rounded bg-slate-200" />
-            <div className="h-4 w-56 rounded bg-slate-100" />
+            <div className="w-16 h-16 rounded-xl bg-primary/20" />
+            <div className="h-8 w-48 rounded bg-muted" />
+            <div className="h-4 w-56 rounded bg-muted/70" />
           </div>
-          <div className="h-12 w-full rounded-xl bg-slate-100" />
+          <div className="h-12 w-full rounded-xl bg-muted/70" />
         </div>
       </div>
     }>
