@@ -1,4 +1,4 @@
-# Asset Tracker — Vercel Deploy Analysis
+# Assets Tracker — Vercel Deploy Analysis
 
 ## Overview
 

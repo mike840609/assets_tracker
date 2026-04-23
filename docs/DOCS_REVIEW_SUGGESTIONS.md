@@ -1,4 +1,4 @@
-# Asset Tracker — Consolidated Docs Suggestions
+# Assets Tracker — Consolidated Docs Suggestions
 
 ## Overview
 

@@ -37,7 +37,7 @@ export function DataManagement() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `asset-tracker-backup-${new Date().toISOString().split("T")[0]}.json`;
+      a.download = `assets-tracker-backup-${new Date().toISOString().split("T")[0]}.json`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

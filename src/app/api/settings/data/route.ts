@@ -34,7 +34,7 @@ export const GET = withAuth(async (_req, _ctx, userId) => {
     // content matches the dataImportSchema format for round-trip import.
     return NextResponse.json(exportData, {
       headers: {
-        "Content-Disposition": `attachment; filename="asset-tracker-backup-${new Date().toISOString().split("T")[0]}.json"`,
+        "Content-Disposition": `attachment; filename="assets-tracker-backup-${new Date().toISOString().split("T")[0]}.json"`,
       },
     });
   } catch (error) {

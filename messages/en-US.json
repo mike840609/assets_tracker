@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Asset Tracker",
+    "name": "Assets Tracker",
     "subtitle": "Net Worth Dashboard",
     "subtitleMobile": "Net Worth"
   },
@@ -34,8 +34,8 @@
   },
   "settings": {
     "title": "Settings",
-    "appPhilosophy": "About Asset Tracker",
-    "appDescription": "Asset Tracker is designed to help you visualize your high-level wealth journey. By tracking asset growth through periodic snapshots, you can focus on the big picture instead of daily trading noise.",
+    "appPhilosophy": "About Assets Tracker",
+    "appDescription": "Assets Tracker is designed to help you visualize your high-level wealth journey. By tracking asset growth through periodic snapshots, you can focus on the big picture instead of daily trading noise.",
     "preferencesTitle": "Preferences",
     "synchronizationTitle": "Synchronization",
     "syncPricesTitle": "Asset Prices",
@@ -79,7 +79,7 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "emptyTitle": "Welcome to Asset Tracker",
+    "emptyTitle": "Welcome to Assets Tracker",
     "emptyDescription": "Start by adding your first account — a bank account, brokerage, crypto wallet, or anything else you want to track.",
     "emptyAction": "Add your first account"
   },
@@ -303,7 +303,7 @@
   },
   "installApp": {
     "title": "Add to Home Screen",
-    "description": "Access Asset Tracker like a native app directly from your home screen.",
+    "description": "Access Assets Tracker like a native app directly from your home screen.",
     "platform": "Works in Safari on iPhone and iPad",
     "step1": "Open this page in Safari on your iPhone or iPad",
     "step2Before": "Tap the Share button",
@@ -312,7 +312,7 @@
     "step4": "Tap \"Add\" — the app icon will appear on your home screen"
   },
   "login": {
-    "title": "Asset Tracker",
+    "title": "Assets Tracker",
     "subtitle": "Securely access your financial portfolio",
     "googleButton": "Continue with Google",
     "trust1": "Google OAuth — we never store your password",
@@ -323,7 +323,7 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "subtitle": "How Asset Tracker handles your data",
+    "subtitle": "How Assets Tracker handles your data",
     "backToLogin": "← Back to Login",
     "section1Title": "What we collect",
     "section1Body": "When you sign in with Google, we receive your name, email address, and profile picture. Any financial data (accounts, holdings, balances) is entered by you manually and stored in your private database.",

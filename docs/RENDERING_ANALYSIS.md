@@ -1,4 +1,4 @@
-# Asset Tracker — Rendering Strategy Analysis (SSG → PPR → ISR)
+# Assets Tracker — Rendering Strategy Analysis (SSG → PPR → ISR)
 
 ## Overview
 
