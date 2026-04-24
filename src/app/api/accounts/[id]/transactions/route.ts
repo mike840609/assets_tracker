@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { ok } from "@/lib/api-responses";
+import { ok, failure } from "@/lib/api-responses";
+import { withAuth } from "@/lib/api-handler";
 
 interface UnifiedRow {
   id: string;
@@ -11,11 +12,15 @@ interface UnifiedRow {
   holdingId: string | null;
 }
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+type IdCtx = { params: Promise<{ id: string }> };
+
+export const GET = withAuth<IdCtx>(async (request, { params }, userId) => {
   const { id } = await params;
+
+  // Verify the account belongs to the authenticated user
+  const account = await prisma.account.findUnique({ where: { id, userId }, select: { id: true } });
+  if (!account) return failure("Not found", 404);
+
   const { searchParams } = new URL(request.url);
 
   const page = Math.max(1, Number(searchParams.get("page") || "1"));
@@ -64,4 +69,4 @@ export async function GET(
   }));
 
   return ok(result);
-}
+});

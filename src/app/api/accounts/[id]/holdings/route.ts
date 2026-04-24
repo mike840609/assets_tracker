@@ -87,21 +87,25 @@ export const PATCH = withAuth<IdCtx>(async (request, _ctx, userId) => {
 
   const { id, ...data } = parsed.data;
 
+  // Verify the holding belongs to an account owned by the authenticated user
+  const existing = await prisma.holding.findUnique({
+    where: { id },
+    include: { account: { select: { userId: true } } },
+  });
+  if (!existing || existing.account.userId !== userId) return failure("Not found", 404);
+
   // Log quantity change as EDIT transaction
   if (data.quantity !== undefined) {
-    const existing = await prisma.holding.findUnique({ where: { id } });
-    if (existing) {
-      const diff = data.quantity - Number(existing.quantity);
-      if (diff !== 0) {
-        await prisma.holdingTransaction.create({
-          data: {
-            holdingId: id,
-            type: "EDIT",
-            quantity: diff,
-            note: `Quantity changed from ${Number(existing.quantity)} to ${data.quantity}`,
-          },
-        });
-      }
+    const diff = data.quantity - Number(existing.quantity);
+    if (diff !== 0) {
+      await prisma.holdingTransaction.create({
+        data: {
+          holdingId: id,
+          type: "EDIT",
+          quantity: diff,
+          note: `Quantity changed from ${Number(existing.quantity)} to ${data.quantity}`,
+        },
+      });
     }
   }
 
@@ -114,6 +118,13 @@ export const DELETE = withAuth<IdCtx>(async (request, _ctx, userId) => {
   const body = await request.json();
   const { id } = body;
   if (!id) return failure("Holding ID required");
+
+  // Verify the holding belongs to an account owned by the authenticated user
+  const holding = await prisma.holding.findUnique({
+    where: { id },
+    include: { account: { select: { userId: true } } },
+  });
+  if (!holding || holding.account.userId !== userId) return failure("Not found", 404);
 
   await prisma.holding.delete({ where: { id } });
   invalidateUserCaches(userId);
