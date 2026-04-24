@@ -1,6 +1,44 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
+const FETCH_TIMEOUT_MS = 5_000;
+const RETRY_DELAYS_MS = [500, 1_500]; // 2 retries: 500 ms then 1.5 s
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function isRetryable(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  if (err.name === "AbortError" || err.name === "TimeoutError") return true;
+  const msg = err.message.toLowerCase();
+  return (
+    msg.includes("etimedout") ||
+    msg.includes("econnreset") ||
+    msg.includes("econnrefused") ||
+    msg.includes("fetch failed") ||
+    msg.includes("timed out") ||
+    /\b5\d\d\b/.test(err.message)
+  );
+}
+
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (attempt < RETRY_DELAYS_MS.length && isRetryable(err)) {
+        await sleep(RETRY_DELAYS_MS[attempt]);
+      } else {
+        break;
+      }
+    }
+  }
+  throw lastError;
+}
+
 const COINGECKO_IDS: Record<string, string> = {
   BTC: "bitcoin",
   ETH: "ethereum",
@@ -30,10 +68,21 @@ async function fetchYahooQuotes(
   const results = new Map<string, { price: number; currency: string }>();
   if (symbols.length === 0) return results;
 
-  try {
-    const YahooFinance = (await import("yahoo-finance2")).default;
-    const yahooFinance = new YahooFinance();
-    const quotes = await yahooFinance.quote(symbols);
+  const YahooFinance = (await import("yahoo-finance2")).default;
+  const yahooFinance = new YahooFinance();
+
+  const fetchSymbols = async (syms: string[]) => {
+    const quotes = await withRetry(() =>
+      Promise.race([
+        yahooFinance.quote(syms),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("Yahoo Finance request timed out")),
+            FETCH_TIMEOUT_MS
+          )
+        ),
+      ])
+    );
     for (const q of Array.isArray(quotes) ? quotes : [quotes]) {
       if (q?.regularMarketPrice && q.symbol) {
         results.set(q.symbol, {
@@ -42,8 +91,22 @@ async function fetchYahooQuotes(
         });
       }
     }
-  } catch (error) {
-    console.error("Yahoo Finance fetch failed:", error);
+  };
+
+  try {
+    await fetchSymbols(symbols);
+  } catch (batchErr) {
+    // Batch failed after retries — fall back to per-symbol to isolate bad tickers
+    console.error("Yahoo Finance batch fetch failed, retrying per-symbol:", batchErr);
+    await Promise.allSettled(
+      symbols.map(async (symbol) => {
+        try {
+          await fetchSymbols([symbol]);
+        } catch (err) {
+          console.error(`Yahoo Finance fetch failed for ${symbol}:`, err);
+        }
+      })
+    );
   }
 
   return results;
@@ -79,17 +142,25 @@ export async function fetchCryptoPrices(
 
     const ids = symbolMap.map((s) => s.geckoId).filter(Boolean);
     if (ids.length > 0) {
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=usd`;
       try {
-        const res = await fetch(
-          `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=usd`,
-          { next: { revalidate: 60, tags: ["prices:crypto"] } }
-        );
-        if (res.ok) {
-          const data = await res.json();
-          for (const { original, geckoId } of symbolMap) {
-            if (data[geckoId]?.usd) {
-              results.set(original, { price: data[geckoId].usd, currency: "USD" });
-            }
+        const data = await withRetry(async () => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+          try {
+            const res = await fetch(url, {
+              signal: controller.signal,
+              next: { revalidate: 60, tags: ["prices:crypto"] },
+            } as RequestInit);
+            if (!res.ok) throw new Error(`CoinGecko returned HTTP ${res.status}`);
+            return res.json() as Promise<Record<string, { usd: number }>>;
+          } finally {
+            clearTimeout(timeoutId);
+          }
+        });
+        for (const { original, geckoId } of symbolMap) {
+          if (data[geckoId]?.usd) {
+            results.set(original, { price: data[geckoId].usd, currency: "USD" });
           }
         }
       } catch (error) {
