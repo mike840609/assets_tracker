@@ -1,2 +1,3 @@
 - 2026-04-24: [ADD]: R1 — Add baseline security headers (HSTS, XFO, XCTO, Referrer-Policy, Permissions-Policy) to `next.config.ts`
 - 2026-04-24: [ADD]: R3 — Add sliding-window rate limiter (`src/lib/rate-limit.ts`); apply to `/api/search` (60/min), `/api/exchange-rates` (30/min), and `/api/auth/*` (20/min via proxy middleware)
+- 2026-04-24: [ADD]: R23 — Non-destructive data import: new `POST /api/settings/data/preview` endpoint returns diff (new/updated/unchanged) without writing; `POST /api/settings/data` rewritten to merge/upsert (accounts by name+currency, holdings by accountId+symbol, snapshots by userId+date+baseCurrency); `DataManagement` UI updated with 2-step preview-then-confirm flow; i18n strings added for en-US and zh-TW
