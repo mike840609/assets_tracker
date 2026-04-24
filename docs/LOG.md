@@ -1,0 +1,2 @@
+- 2026-04-24: [ADD]: R1 — Add baseline security headers (HSTS, XFO, XCTO, Referrer-Policy, Permissions-Policy) to `next.config.ts`
+- 2026-04-24: [ADD]: R3 — Add sliding-window rate limiter (`src/lib/rate-limit.ts`); apply to `/api/search` (60/min), `/api/exchange-rates` (30/min), and `/api/auth/*` (20/min via proxy middleware)

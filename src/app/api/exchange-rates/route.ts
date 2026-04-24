@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { ok } from "@/lib/api-responses";
+import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const limited = rateLimitCheckWithPrune(request, { limit: 30, prefix: "exchange-rates" });
+  if (limited) return limited;
+
   const rates = await prisma.exchangeRate.findMany();
   return ok(rates, {
     headers: {

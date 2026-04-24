@@ -4,9 +4,9 @@
 
 | #   | Suggestion                                                                  | Category              | Impact    | Effort   | Status      |
 |-----|-----------------------------------------------------------------------------|-----------------------|-----------|----------|-------------|
-| R1  | Add baseline security headers (HSTS, XFO, XCTO, Referrer-Policy, Permissions-Policy) | Security              | 🔴 High   | 1 hr     | ❌ Not Done |
+| R1  | Add baseline security headers (HSTS, XFO, XCTO, Referrer-Policy, Permissions-Policy) | Security              | 🔴 High   | 1 hr     | ✅ Done     |
 | R2  | Content-Security-Policy (Report-Only → enforce)                             | Security              | 🔴 High   | 2–3 hrs  | ❌ Not Done |
-| R3  | Rate limit `/api/search`, `/api/exchange-rates`, `/api/auth/*`              | Security              | 🔴 High   | 2–3 hrs  | ❌ Not Done |
+| R3  | Rate limit `/api/search`, `/api/exchange-rates`, `/api/auth/*`              | Security              | 🔴 High   | 2–3 hrs  | ✅ Done     |
 | R4  | `crypto.timingSafeEqual` compare for `CRON_SECRET`                          | Security              | 🟡 Medium | 15 min   | ❌ Not Done |
 | R5  | Enforce account/holding ownership on every mutation route                   | Security              | 🔴 High   | 1–2 hrs  | ❌ Not Done |
 | R6  | Add `/terms` (Terms of Service) page                                        | Legal / Compliance    | 🔴 High   | 1–2 hrs  | ❌ Not Done |
