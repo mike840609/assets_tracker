@@ -56,11 +56,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
     const importData = parsed.data;
 
     await prisma.$transaction(async (tx) => {
-      // 1. Delete existing data for the user (Cascades should handle holdings and transactions)
-      await tx.account.deleteMany({ where: { userId } });
-      await tx.netWorthSnapshot.deleteMany({ where: { userId } });
-
-      // 2. Import settings if present
+      // 1. Upsert settings if present
       if (importData.settings) {
         await tx.setting.upsert({
           where: { userId },
@@ -76,89 +72,162 @@ export const POST = withAuth(async (request, _ctx, userId) => {
         });
       }
 
-      // 3. Import accounts & their relations
+      // 2. Load existing accounts once so the loop doesn't re-query
+      const existingAccounts = await tx.account.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          name: true,
+          currency: true,
+          holdings: { select: { id: true, symbol: true } },
+        },
+      });
+      const accountMap = new Map(
+        existingAccounts.map((a) => [`${a.name}::${a.currency}`, a])
+      );
+
+      // 3. Merge accounts, holdings, and transactions
       for (const acc of importData.accounts) {
-        const newAccount = await tx.account.create({
-          data: {
-            userId,
-            name: acc.name,
-            type: acc.type,
-            category: acc.category,
-            currency: acc.currency,
-            cashBalance: acc.cashBalance,
-            isActive: acc.isActive,
-            createdAt: acc.createdAt,
-            updatedAt: acc.updatedAt,
-          },
-        });
+        const key = `${acc.name}::${acc.currency}`;
+        const existing = accountMap.get(key);
+        const isNewAccount = !existing;
+        let accountId: string;
+
+        if (isNewAccount) {
+          const created = await tx.account.create({
+            data: {
+              userId,
+              name: acc.name,
+              type: acc.type,
+              category: acc.category,
+              currency: acc.currency,
+              cashBalance: acc.cashBalance,
+              isActive: acc.isActive,
+              ...(acc.createdAt ? { createdAt: new Date(acc.createdAt) } : {}),
+            },
+          });
+          accountId = created.id;
+        } else {
+          // Update mutable fields on existing account; preserve name/currency
+          await tx.account.update({
+            where: { id: existing.id },
+            data: {
+              type: acc.type,
+              category: acc.category,
+              cashBalance: acc.cashBalance,
+              isActive: acc.isActive,
+            },
+          });
+          accountId = existing.id;
+        }
 
         // Holdings
         if (Array.isArray(acc.holdings)) {
-          for (const h of acc.holdings) {
-            const newHolding = await tx.holding.create({
-              data: {
-                accountId: newAccount.id,
-                symbol: h.symbol,
-                name: h.name,
-                quantity: h.quantity,
-                currency: h.currency,
-                assetType: h.assetType,
-                createdAt: h.createdAt,
-                updatedAt: h.updatedAt,
-              },
-            });
+          const existingHoldingMap = new Map(
+            (existing?.holdings ?? []).map((h) => [h.symbol, h])
+          );
 
-            if (Array.isArray(h.transactions) && h.transactions.length > 0) {
-              await tx.holdingTransaction.createMany({
+          for (const h of acc.holdings) {
+            const existingHolding = existingHoldingMap.get(h.symbol);
+
+            if (!existingHolding) {
+              // New holding — create with its full transaction history
+              const newHolding = await tx.holding.create({
+                data: {
+                  accountId,
+                  symbol: h.symbol,
+                  name: h.name,
+                  quantity: h.quantity,
+                  currency: h.currency,
+                  assetType: h.assetType,
+                  ...(h.createdAt ? { createdAt: new Date(h.createdAt) } : {}),
+                },
+              });
+
+              if (Array.isArray(h.transactions) && h.transactions.length > 0) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                data: h.transactions.map((t: any) => ({
-                  holdingId: newHolding.id,
-                  type: t.type,
-                  quantity: t.quantity,
-                  note: t.note,
-                  createdAt: t.createdAt,
-                })),
+                await tx.holdingTransaction.createMany({
+                  data: h.transactions.map((t: any) => ({
+                    holdingId: newHolding.id,
+                    type: t.type,
+                    quantity: t.quantity,
+                    note: t.note ?? null,
+                    ...(t.createdAt ? { createdAt: new Date(t.createdAt) } : {}),
+                  })),
+                });
+              }
+            } else {
+              // Existing holding — update quantity/metadata only.
+              // Transactions are intentionally left untouched to avoid duplicates.
+              await tx.holding.update({
+                where: { id: existingHolding.id },
+                data: {
+                  name: h.name,
+                  quantity: h.quantity,
+                  currency: h.currency,
+                  assetType: h.assetType,
+                },
               });
             }
           }
         }
 
-        // Cash Transactions
-        if (Array.isArray(acc.cashTransactions) && acc.cashTransactions.length > 0) {
+        // Cash transactions — only inserted for new accounts; adding them to
+        // existing accounts would duplicate every transaction on re-import.
+        if (
+          isNewAccount &&
+          Array.isArray(acc.cashTransactions) &&
+          acc.cashTransactions.length > 0
+        ) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await tx.cashTransaction.createMany({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             data: acc.cashTransactions.map((t: any) => ({
-              accountId: newAccount.id,
+              accountId,
               type: t.type,
               amount: t.amount,
-              note: t.note,
-              createdAt: t.createdAt,
+              note: t.note ?? null,
+              ...(t.createdAt ? { createdAt: new Date(t.createdAt) } : {}),
             })),
           });
         }
       }
 
-      // 4. Import snapshots
+      // 4. Upsert snapshots by (userId, date, baseCurrency)
       if (Array.isArray(importData.snapshots) && importData.snapshots.length > 0) {
-        await tx.netWorthSnapshot.createMany({
+        for (const s of importData.snapshots) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          data: importData.snapshots.map((s: any) => ({
-            userId,
-            date: new Date(s.date),
-            totalAssets: s.totalAssets,
-            totalLiabilities: s.totalLiabilities,
-            netWorth: s.netWorth,
-            baseCurrency: s.baseCurrency,
-            breakdown: s.breakdown,
-            createdAt: s.createdAt,
-          })),
-        });
+          await tx.netWorthSnapshot.upsert({
+            where: {
+              userId_date_baseCurrency: {
+                userId,
+                date: new Date(s.date),
+                baseCurrency: s.baseCurrency,
+              },
+            },
+            update: {
+              totalAssets: s.totalAssets,
+              totalLiabilities: s.totalLiabilities,
+              netWorth: s.netWorth,
+              breakdown: (s as any).breakdown ?? null,
+            },
+            create: {
+              userId,
+              date: new Date(s.date),
+              totalAssets: s.totalAssets,
+              totalLiabilities: s.totalLiabilities,
+              netWorth: s.netWorth,
+              baseCurrency: s.baseCurrency,
+              breakdown: (s as any).breakdown ?? null,
+              ...(s.createdAt ? { createdAt: new Date(s.createdAt) } : {}),
+            },
+          });
+        }
       }
     }, { timeout: 30000 });
 
     return ok({ ok: true });
   } catch (error) {
     console.error("Import error:", error);
-    return failure(error instanceof Error ? error.message : "Failed to import data", 500);
+    return failure("Failed to import data", 500);
   }
 });

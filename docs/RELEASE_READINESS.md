@@ -26,7 +26,7 @@
 | R20 | `.github/workflows/ci.yml` — lint + `tsc --noEmit` + `next build` on PR     | Testing / CI          | 🔴 High   | 1 hr     | ❌ Not Done |
 | R21 | Playwright smoke E2E — login, create account+holding, view dashboard        | Testing / CI          | 🔴 High   | 4–6 hrs  | ❌ Not Done |
 | R22 | In-app help / FAQ modal + support link                                      | Product               | 🟡 Medium | 2–3 hrs  | ❌ Not Done |
-| R23 | Non-destructive data import (merge, not overwrite)                          | Product               | 🔴 High   | 3–4 hrs  | ❌ Not Done |
+| R23 | Non-destructive data import (merge, not overwrite)                          | Product               | 🔴 High   | 3–4 hrs  | ✅ Done     |
 | R24 | Rename `src/middleware.ts` → `src/proxy.ts` (Next.js 16)                    | Platform Config       | 🟢 Low    | 10 min   | ❌ Not Done |
 | R25 | Add `public/robots.txt` + `/sitemap.xml`                                    | Platform Config       | 🟡 Medium | 30 min   | ❌ Not Done |
 | R26 | Flip Vercel project `live: true` ONLY after R1–R14 land                     | Platform Config       | 🔴 High   | 5 min    | ❌ Not Done |
