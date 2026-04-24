@@ -29,11 +29,12 @@ A personal net-worth / asset tracking application built with **Next.js 16** (App
 
 ```bash
 # Development
-npm run dev          # Start dev server (http://localhost:3000)
+npm run dev          # Start dev server; binds 0.0.0.0 (LAN-reachable) on port 3000
 
 # Build & Production
 npm run build        # Production build
 npm run start        # Start production server
+ANALYZE=true npm run build  # Build with @next/bundle-analyzer HTML reports
 
 # Linting
 npm run lint         # Run ESLint
@@ -77,13 +78,19 @@ src/app/
 - **`params` is a `Promise`** — page components receive `params: Promise<{ id: string }>` and must `await params` before accessing fields.
 - Read `node_modules/next/dist/docs/` for any Next.js APIs before using them — many APIs changed from earlier versions.
 
+### Cache model (`cacheComponents: true`)
+
+`next.config.ts` enables `cacheComponents: true` (Next.js 16's dynamic-IO / PPR-era cache flag). Service-layer reads throughout `src/lib/services/` use the `"use cache"` directive with `cacheTag("...")` — see `getNetWorthSummary`, `getNormalizedHistory`, settings, and the `/analysis` + `/history` reads (landed per `docs/VERCEL_ANALYSIS.md` V18/V26/V27). Follow the same pattern for new server reads; then invalidate from mutation routes via `revalidateTag(...)`.
+
+`next.config.ts` also declares `serverExternalPackages: ["ws", "@neondatabase/serverless"]`. Any new server-only dep that imports Node built-ins (fs, net, tls) must be added here or the build breaks with Edge-incompat errors.
+
 ### Auth Architecture (Split Config Pattern)
 
 NextAuth v5 requires two files to avoid loading Node.js-only modules in Edge middleware:
 
 - `src/auth.config.ts` — Edge-compatible config (providers only, no adapter)
 - `src/auth.ts` — Full server config (imports Prisma adapter, used in RSC and API routes)
-- `src/middleware.ts` — Uses `auth.config.ts` to protect all routes except `/login` and `/api/auth/*`
+- `src/middleware.ts` — Uses `auth.config.ts` to protect all routes except the public-route allowlist in its matcher: `/login`, `/privacy`, `/api/auth/*`, and the file-based metadata routes `/opengraph-image.png` + `/twitter-image.png`. Any new public page must be added to the matcher exclusion.
 
 The `session.user.id` is populated from `token.sub` in the JWT callback.
 
@@ -141,7 +148,7 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 
 ### Daily Snapshot Cron
 
-`GET /api/cron/snapshot` — requires `Authorization: Bearer <CRON_SECRET>` header. Refreshes all prices, then creates `NetWorthSnapshot` records for every user. Intended to be called by a scheduler (e.g., Vercel Cron).
+`GET /api/cron/snapshot` — requires `Authorization: Bearer <CRON_SECRET>` header. Refreshes all prices, then creates `NetWorthSnapshot` records for every user. Scheduled in `vercel.json` at `30 21 * * *` (21:30 UTC daily); `maxDuration` is 60s and the function region is pinned to `sin1` to match the Neon database region.
 
 ### Component Organization
 
@@ -162,7 +169,7 @@ src/components/
 - Use Tailwind CSS 4 utilities only — no inline styles or CSS Modules
 - Add shadcn/ui components via `npx shadcn@latest add <component>`
 - Zod 4 schemas live in `@/lib/validators.ts`
-- Prisma schema: `prisma/schema.prisma`; generated client: `src/generated/prisma/` (gitignored)
+- Prisma schema: `prisma/schema.prisma`; generator config: `prisma.config.ts` (Prisma 7 convention); generated client: `src/generated/prisma/` (gitignored). `Decimal` is imported from `@/generated/prisma/runtime/library`, not `@prisma/client`.
 - i18n strings go in `messages/en-US.json` and `messages/zh-TW.json`
 
 ### Required Environment Variables
@@ -174,3 +181,15 @@ AUTH_GOOGLE_ID      # Google OAuth client ID
 AUTH_GOOGLE_SECRET  # Google OAuth client secret
 CRON_SECRET         # Bearer token for /api/cron/snapshot
 ```
+
+### Long-form analysis docs (`docs/`)
+
+Before proposing changes, check whether the work is already tracked in one of these — items are status-marked and cross-referenced:
+
+- `docs/SUGGESTIONS.md` — master backlog (110+ items, ✅/❌ tracked)
+- `docs/VERCEL_ANALYSIS.md` — Vercel-side perf + security items (V1–V33)
+- `docs/BUNDLE_ANALYSIS.md` — bundle-size reduction work
+- `docs/RENDERING_ANALYSIS.md` — SSG → PPR → ISR strategy
+- `docs/ANALYSIS_ROADMAP.md` — `/analysis` tab feature roadmap
+- `docs/RELEASE_READINESS.md` — pre-market-launch blockers (R1–R26)
+- `docs/DOCS_REVIEW_SUGGESTIONS.md` — consolidated cross-doc recommendations
