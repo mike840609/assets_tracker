@@ -55,9 +55,13 @@ CRON_SECRET="your_secure_random_string"
 
 ```bash
 npm install
-npx prisma generate
-npx prisma db push
+npx prisma migrate deploy
 ```
+
+> [!NOTE]
+> `prisma migrate deploy` applies all committed migrations from `prisma/migrations/` in order.
+> For local schema experimentation, use `npx prisma migrate dev --name <description>` to generate
+> a new migration file, then commit it so CI and production deployments pick it up automatically.
 
 ### 4. Running Locally
 

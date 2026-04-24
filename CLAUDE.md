@@ -40,9 +40,15 @@ ANALYZE=true npm run build  # Build with @next/bundle-analyzer HTML reports
 npm run lint         # Run ESLint
 
 # Database
-npx prisma generate  # Regenerate Prisma client after schema changes
-npx prisma db push   # Push schema to database (dev)
-npx prisma studio    # Open Prisma Studio GUI
+npx prisma generate                        # Regenerate Prisma client after schema changes
+npx prisma migrate dev --name <desc>       # Create + apply a new migration during development
+npx prisma migrate deploy                  # Apply committed migrations (used in CI/production build)
+npx prisma migrate resolve --applied <id>  # Mark a migration as applied without running SQL (existing DBs)
+npx prisma studio                          # Open Prisma Studio GUI
+
+# IMPORTANT: Never use `prisma db push` for schema changes. All schema changes must go through
+# `prisma migrate dev` (dev) → commit the generated migration file → `prisma migrate deploy` (prod).
+# The build script (`npm run build`) runs `prisma migrate deploy` automatically before next build.
 ```
 
 ## Architecture
