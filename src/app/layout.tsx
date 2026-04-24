@@ -60,7 +60,7 @@ async function LocaleProviders({ children }: { children: React.ReactNode }) {
   await getLocale();
   const messages = await getMessages();
   return (
-    <NextIntlClientProvider messages={pickMessages(messages, ["app", "nav"])}>
+    <NextIntlClientProvider messages={pickMessages(messages, ["app", "nav", "errorBoundary"])}>
       {children}
     </NextIntlClientProvider>
   );

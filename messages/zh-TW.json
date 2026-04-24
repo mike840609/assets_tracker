@@ -368,5 +368,17 @@
     "updateFailed": "更新交易失敗",
     "deleteSuccess": "交易已刪除",
     "deleteFailed": "刪除交易失敗"
+  },
+  "errorBoundary": {
+    "title": "發生錯誤",
+    "description": "發生了未預期的錯誤，已記錄相關資訊，我們將盡快處理。",
+    "digest": "錯誤代碼",
+    "retry": "重試",
+    "goHome": "返回首頁"
+  },
+  "notFound": {
+    "title": "找不到頁面",
+    "description": "您所尋找的頁面不存在或已被移除。",
+    "goHome": "返回首頁"
   }
 }

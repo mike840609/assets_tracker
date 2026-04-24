@@ -368,5 +368,17 @@
     "updateFailed": "Failed to update transaction",
     "deleteSuccess": "Transaction deleted",
     "deleteFailed": "Failed to delete transaction"
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred. It has been logged and our team will look into it.",
+    "digest": "Error ref",
+    "retry": "Try again",
+    "goHome": "Return to home"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you're looking for doesn't exist or has been moved.",
+    "goHome": "Return to home"
   }
 }
