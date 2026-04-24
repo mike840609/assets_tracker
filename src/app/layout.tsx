@@ -32,12 +32,21 @@ export const metadata: Metadata = {
     description: "Track your net worth, assets, and investments",
     url: "https://assets-tracker-ct.vercel.app",
     siteName: "Assets Tracker",
+    images: [
+      {
+        url: "/opengraph-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Assets Tracker",
+      },
+    ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "Assets Tracker",
     description: "Track your net worth, assets, and investments",
+    images: ["/twitter-image.png"],
   },
 };
 
