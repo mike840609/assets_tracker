@@ -1,4 +1,5 @@
 import { ok } from "@/lib/api-responses";
+import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
 
 type SearchResult = {
   symbol: string;
@@ -46,6 +47,9 @@ function inferCurrency(symbol: string, exchange: string): string {
 }
 
 export async function GET(request: Request) {
+  const limited = rateLimitCheckWithPrune(request, { limit: 60, prefix: "search" });
+  if (limited) return limited;
+
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim();
 
