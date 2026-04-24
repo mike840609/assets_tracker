@@ -23,7 +23,7 @@
 | R17 | Ship Sentry (or equivalent) for error aggregation + alerts                  | Observability         | 🔴 High   | 1–2 hrs  | ❌ Not Done |
 | R18 | Structured logging via `pino` with `userId` / `requestId` context           | Observability         | 🟡 Medium | 3–4 hrs  | ❌ Not Done |
 | R19 | On-call playbook (Vercel log queries + baselines) in `README.md`            | Observability         | 🟡 Medium | 45 min   | ❌ Not Done |
-| R20 | `.github/workflows/ci.yml` — lint + `tsc --noEmit` + `next build` on PR     | Testing / CI          | 🔴 High   | 1 hr     | ❌ Not Done |
+| R20 | `.github/workflows/ci.yml` — lint + `tsc --noEmit` + `next build` on PR     | Testing / CI          | 🔴 High   | 1 hr     | ✅ Done     |
 | R21 | Playwright smoke E2E — login, create account+holding, view dashboard        | Testing / CI          | 🔴 High   | 4–6 hrs  | ❌ Not Done |
 | R22 | In-app help / FAQ modal + support link                                      | Product               | 🟡 Medium | 2–3 hrs  | ❌ Not Done |
 | R23 | Non-destructive data import (merge, not overwrite)                          | Product               | 🔴 High   | 3–4 hrs  | ❌ Not Done |

@@ -1,2 +1,3 @@
 - 2026-04-24: [ADD]: R1 — Add baseline security headers (HSTS, XFO, XCTO, Referrer-Policy, Permissions-Policy) to `next.config.ts`
 - 2026-04-24: [ADD]: R3 — Add sliding-window rate limiter (`src/lib/rate-limit.ts`); apply to `/api/search` (60/min), `/api/exchange-rates` (30/min), and `/api/auth/*` (20/min via proxy middleware)
+- 2026-04-24: [ADD]: R20 — Add `.github/workflows/ci.yml`; runs `npm ci` → `prisma generate` → `lint` → `tsc --noEmit` → `next build` on every PR and push to master/main
