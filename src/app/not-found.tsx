@@ -7,7 +7,7 @@ async function NotFoundContent() {
   const t = await getTranslations("errors")
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center relative overflow-hidden bg-background">
+    <div className="flex flex-1 h-full w-full items-center justify-center relative overflow-y-auto bg-background">
       {/* Ambient background */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-3xl pointer-events-none -z-10 animate-pulse" />
       <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-chart-3/8 blur-3xl pointer-events-none -z-10 animate-pulse" style={{ animationDelay: "2s" }} />
@@ -52,7 +52,7 @@ async function NotFoundContent() {
 export default function NotFound() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen w-full items-center justify-center bg-background">
+      <div className="flex flex-1 h-full w-full items-center justify-center bg-background">
         <div className="w-full max-w-md rounded-3xl bg-card/80 p-10 space-y-6 animate-pulse">
           <div className="flex flex-col items-center space-y-3">
             <div className="w-16 h-16 rounded-xl bg-primary/20" />
