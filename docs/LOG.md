@@ -2,3 +2,8 @@
 - 2026-04-24: [ADD]: R3 — Add sliding-window rate limiter (`src/lib/rate-limit.ts`); apply to `/api/search` (60/min), `/api/exchange-rates` (30/min), and `/api/auth/*` (20/min via proxy middleware)
 - 2026-04-25: [MOD]: R5 — Enforce account/holding ownership on every mutation route; wrap `cash-transactions` POST, `transactions` GET, and `transactions/[transactionId]` PATCH/DELETE with `withAuth`; add `{ id, userId }` ownership guards to `holdings` PATCH/DELETE; close IDOR across all mutation routes
 - 2026-04-25: [ADD]: R11 — Add `src/app/error.tsx` (per-route client error boundary with `unstable_retry`), `src/app/global-error.tsx` (last-resort boundary with own `<html><body>`), and `src/app/not-found.tsx` (localized 404 Server Component); add `errorBoundary` and `notFound` i18n namespaces to en-US and zh-TW; expose `errorBoundary` namespace in root layout provider
+- 2026-04-24: [ADD]: R14 — Add 5 s timeout + 2-retry exponential backoff (500 ms, 1.5 s) to Yahoo Finance and CoinGecko calls in `src/lib/services/price-service.ts`; per-symbol fallback isolation on Yahoo Finance batch failure
+- 2026-04-24: [ADD]: R20 — Add `.github/workflows/ci.yml`; runs `npm ci` → `prisma generate` → `lint` → `tsc --noEmit` → `next build` on every PR and push to master/main
+- 2026-04-24: [ADD]: R21 — Add Playwright smoke E2E suite (`playwright.config.ts`, `tests/e2e/global-setup.ts`, `tests/e2e/smoke.spec.ts`, `.github/workflows/e2e.yml`); covers unauthenticated redirect → login, account + holding creation, and dashboard net-worth card + trend chart; auth stubbed via preview-credentials provider
+- 2026-04-25: [MOD]: R9 — Verify Google OAuth consent screen is published & verified; marked as done in docs
+- 2026-04-25: [ADD]: R6 — Add `/terms` (Terms of Service) page

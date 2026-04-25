@@ -18,7 +18,10 @@
       "Bash(git commit -m 'feat\\(i18n\\): translate all page titles, section headings, and dashboard components:*)",
       "Bash(git commit -m 'feat\\(i18n\\): translate accounts list — select all, add item/account, assets/liabilities, category labels, plural counts:*)",
       "Bash(npm run:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm ci *)",
+      "Bash(npx tsc *)",
+      "Bash(DATABASE_URL=\"postgresql://ci:ci@localhost:5432/ci\" AUTH_SECRET=\"ci-secret-placeholder-not-real\" AUTH_GOOGLE_ID=\"ci-google-id\" AUTH_GOOGLE_SECRET=\"ci-google-secret\" CRON_SECRET=\"ci-cron-secret\" npm run build)"
     ]
   }
 }

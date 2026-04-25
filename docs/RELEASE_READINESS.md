@@ -12,19 +12,19 @@
 | R6  | Add `/terms` (Terms of Service) page                                        | Legal / Compliance    | 🔴 High   | 1–2 hrs  | ❌ Not Done |
 | R7  | Cookie / analytics consent banner                                           | Legal / Compliance    | 🔴 High   | 2–3 hrs  | ❌ Not Done |
 | R8  | GDPR data-export + delete-account flows                                     | Legal / Compliance    | 🔴 High   | 2–3 hrs  | ❌ Not Done |
-| R9  | Verify Google OAuth consent screen is published & verified                  | Legal / Compliance    | 🔴 High   | 30 min   | ❌ Not Done |
+| R9  | Verify Google OAuth consent screen is published & verified                  | Legal / Compliance    | 🔴 High   | 30 min   | ✅ Done     |
 | R10 | Add support/contact email in footer + `/privacy`                            | Legal / Compliance    | 🟡 Medium | 15 min   | ❌ Not Done |
 | R11 | Add `error.tsx`, `global-error.tsx`, `not-found.tsx`                        | Reliability           | 🔴 High   | 1–2 hrs  | ✅ Done     |
 | R12 | Add `/api/health` endpoint                                                  | Reliability           | 🟡 Medium | 30 min   | ❌ Not Done |
 | R13 | Verify Vercel Cron `/api/cron/snapshot` fires daily in production           | Reliability           | 🔴 High   | 15 min   | ❌ Not Done |
-| R14 | Timeout + retry guards on Yahoo Finance / CoinGecko calls                   | Reliability           | 🔴 High   | 30–60 min| ❌ Not Done |
+| R14 | Timeout + retry guards on Yahoo Finance / CoinGecko calls                   | Reliability           | 🔴 High   | 30–60 min| ✅ Done     |
 | R15 | Switch Prisma `db push` → `migrate deploy` (committed migrations)           | Reliability           | 🔴 High   | 2–3 hrs  | ❌ Not Done |
 | R16 | Document Neon backup / PITR SLA in `README.md`                              | Reliability           | 🟡 Medium | 30 min   | ❌ Not Done |
 | R17 | Ship Sentry (or equivalent) for error aggregation + alerts                  | Observability         | 🔴 High   | 1–2 hrs  | ❌ Not Done |
 | R18 | Structured logging via `pino` with `userId` / `requestId` context           | Observability         | 🟡 Medium | 3–4 hrs  | ❌ Not Done |
 | R19 | On-call playbook (Vercel log queries + baselines) in `README.md`            | Observability         | 🟡 Medium | 45 min   | ❌ Not Done |
-| R20 | `.github/workflows/ci.yml` — lint + `tsc --noEmit` + `next build` on PR     | Testing / CI          | 🔴 High   | 1 hr     | ❌ Not Done |
-| R21 | Playwright smoke E2E — login, create account+holding, view dashboard        | Testing / CI          | 🔴 High   | 4–6 hrs  | ❌ Not Done |
+| R20 | `.github/workflows/ci.yml` — lint + `tsc --noEmit` + `next build` on PR     | Testing / CI          | 🔴 High   | 1 hr     | ✅ Done     |
+| R21 | Playwright smoke E2E — login, create account+holding, view dashboard        | Testing / CI          | 🔴 High   | 4–6 hrs  | ✅ Done     |
 | R22 | In-app help / FAQ modal + support link                                      | Product               | 🟡 Medium | 2–3 hrs  | ❌ Not Done |
 | R23 | Non-destructive data import (merge, not overwrite)                          | Product               | 🔴 High   | 3–4 hrs  | ❌ Not Done |
 | R24 | Rename `src/middleware.ts` → `src/proxy.ts` (Next.js 16)                    | Platform Config       | 🟢 Low    | 10 min   | ❌ Not Done |

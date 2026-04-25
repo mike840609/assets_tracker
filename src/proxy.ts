@@ -46,10 +46,11 @@ export default auth((req) => {
   if (req.nextUrl.pathname.startsWith("/api/auth")) {
     const limited = _authRateLimit(req);
     if (limited) return limited;
+    return;
   }
 
   const isLoggedIn = !!req.auth;
-  const isPublicRoute = ["/login", "/privacy"].includes(req.nextUrl.pathname);
+  const isPublicRoute = ["/login", "/privacy", "/terms"].includes(req.nextUrl.pathname);
 
   if (!isLoggedIn && !isPublicRoute) {
     const newUrl = new URL("/login", req.nextUrl.origin);

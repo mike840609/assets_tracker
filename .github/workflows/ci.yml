@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master, main]
+
+jobs:
+  ci:
+    name: Lint, type-check, and build
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
+      AUTH_SECRET: "ci-secret-placeholder-not-real"
+      AUTH_GOOGLE_ID: "ci-google-id"
+      AUTH_GOOGLE_SECRET: "ci-google-secret"
+      CRON_SECRET: "ci-cron-secret"
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
