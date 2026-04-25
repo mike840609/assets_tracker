@@ -30,7 +30,7 @@ export function DataManagement() {
   const handleExport = async () => {
     try {
       setIsExporting(true);
-      const response = await fetch("/api/settings/data");
+      const response = await fetch("/api/user/export", { method: "POST" });
       if (!response.ok) throw new Error("Export failed");
 
       const blob = await response.blob();
