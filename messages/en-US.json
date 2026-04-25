@@ -386,13 +386,5 @@
     "updateFailed": "Failed to update transaction",
     "deleteSuccess": "Transaction deleted",
     "deleteFailed": "Failed to delete transaction"
-  },
-  "errors": {
-    "notFoundTitle": "Page Not Found",
-    "notFoundDescription": "The page you're looking for doesn't exist or has been moved.",
-    "backToDashboard": "Back to Dashboard",
-    "errorTitle": "Something went wrong",
-    "errorDescription": "An unexpected error occurred. You can try again or return to the dashboard.",
-    "tryAgain": "Try Again"
   }
 }
