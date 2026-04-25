@@ -8,7 +8,7 @@ export default async function NotFound() {
   const t = await getTranslations("notFound");
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center px-4 relative overflow-hidden">
+    <div className="flex flex-1 h-full w-full items-center justify-center px-4 relative overflow-y-auto">
       {/* Ambient blobs */}
       <div className="pointer-events-none absolute top-[-10%] left-[-10%] h-[50%] w-[50%] rounded-full bg-primary/10 blur-3xl -z-10" />
       <div className="pointer-events-none absolute bottom-[-10%] right-[-5%] h-[40%] w-[40%] rounded-full bg-chart-3/10 blur-3xl -z-10" />
