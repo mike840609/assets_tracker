@@ -16,7 +16,7 @@ const fetchRecentSnapshots = cache((userId: string, baseCurrency: string) =>
   prisma.netWorthSnapshot.findMany({
     where: { userId, baseCurrency },
     orderBy: { date: "desc" },
-    take: 2,
+    take: 1,
     select: { date: true, netWorth: true },
   })
 );
@@ -131,8 +131,8 @@ async function NetWorthSection({
   if (summary.accounts.length === 0) return null;
 
   const previousNetWorth =
-    recentSnapshots.length >= 2
-      ? Number(recentSnapshots[1].netWorth)
+    recentSnapshots.length >= 1
+      ? Number(recentSnapshots[0].netWorth)
       : undefined;
 
   return <NetWorthCard summary={summary} previousNetWorth={previousNetWorth} />;
