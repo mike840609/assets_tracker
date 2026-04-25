@@ -19,7 +19,14 @@ async function globalSetup() {
   }
 
   const baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://localhost:3000"
-  const password = process.env.E2E_PASSWORD ?? "e2e-smoke-test"
+  const password = process.env.E2E_PASSWORD || "e2e-smoke-test"
+
+  if (process.env.CI && !process.env.E2E_PASSWORD) {
+    throw new Error(
+      "E2E_PASSWORD is empty. Set the GitHub Actions secret E2E_PASSWORD to the " +
+      "same value as PREVIEW_AUTH_PASSWORD on the Vercel deployment.",
+    )
+  }
 
   const browser = await chromium.launch()
   const context = await browser.newContext()
