@@ -5,6 +5,7 @@ const E2E_PASSWORD = process.env.E2E_PASSWORD ?? "e2e-smoke-test"
 
 export default defineConfig({
   globalSetup: "./tests/e2e/global-setup",
+  globalTeardown: "./tests/e2e/global-teardown",
   testDir: "./tests/e2e",
   fullyParallel: false,
   forbidOnly: !!process.env.CI,

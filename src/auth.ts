@@ -18,7 +18,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (VERCEL_ENV !== "preview") return null
         const expected = PREVIEW_AUTH_PASSWORD
         if (!expected || credentials?.password !== expected) return null
-        const user = await prisma.user.findFirst()
+        const E2E_TEST_EMAIL = "e2e-test@preview.local"
+        const user = await prisma.user.upsert({
+          where: { email: E2E_TEST_EMAIL },
+          update: {},
+          create: { email: E2E_TEST_EMAIL, name: "E2E Test User" },
+        })
         if (!user) return null
         return { id: user.id, name: user.name, email: user.email, image: user.image }
       },
