@@ -386,5 +386,13 @@
     "updateFailed": "更新交易失敗",
     "deleteSuccess": "交易已刪除",
     "deleteFailed": "刪除交易失敗"
+  },
+  "errors": {
+    "notFoundTitle": "找不到頁面",
+    "notFoundDescription": "您尋找的頁面不存在或已被移動。",
+    "backToDashboard": "返回儀表板",
+    "errorTitle": "發生錯誤",
+    "errorDescription": "發生了意外錯誤。您可以重試或返回儀表板。",
+    "tryAgain": "重試"
   }
 }
