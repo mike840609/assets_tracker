@@ -4,7 +4,8 @@ import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { CustomSpeedInsights } from "@/components/layout/speed-insights";
-import { Analytics } from "@vercel/analytics/next";
+import { CustomAnalytics } from "@/components/layout/analytics";
+import { ConsentBanner } from "@/components/layout/consent-banner";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { pickMessages } from "@/lib/i18n-utils";
@@ -102,8 +103,9 @@ export default function RootLayout({
             <LocaleProviders>{children}</LocaleProviders>
           </Suspense>
           <Toaster />
-          <Analytics />
+          <CustomAnalytics />
           <CustomSpeedInsights />
+          <ConsentBanner />
         </ThemeProvider>
       </body>
     </html>
