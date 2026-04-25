@@ -129,7 +129,7 @@ export function DataManagement() {
               variant="outline"
               onClick={handleExport}
               disabled={isExporting}
-              className="w-full sm:w-auto min-w-[200px]"
+              className="w-full min-w-[200px]"
             >
               {isExporting ? (
                 <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />

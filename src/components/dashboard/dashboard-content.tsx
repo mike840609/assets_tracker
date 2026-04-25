@@ -5,19 +5,18 @@ import { LazyAllocationChart, LazyCurrencyExposureChart } from "@/components/das
 import { AccountsSummary } from "@/components/dashboard/accounts-summary";
 import { DashboardActions } from "@/components/dashboard/dashboard-actions";
 import { getCachedNetWorthSummary, fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
-import { getAllExchangeRates } from "@/lib/services/exchange-rate-service";
+import { getAllExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-const fetchRecentSnapshots = cache((userId: string) =>
-  prisma.netWorthSnapshot.findMany({
+const fetchPreviousSnapshot = cache((userId: string) =>
+  prisma.netWorthSnapshot.findFirst({
     where: { userId },
     orderBy: { date: "desc" },
-    take: 2,
-    select: { date: true, netWorth: true, baseCurrency: true },
+    select: { date: true, netWorth: true, baseCurrency: true, createdAt: true },
   })
 );
 
@@ -92,8 +91,8 @@ async function DashboardActionsSection({
   userId: string;
   baseCurrency: string;
 }) {
-  const [recentSnapshots, latestPrice] = await Promise.all([
-    fetchRecentSnapshots(userId),
+  const [previousSnapshot, latestPrice] = await Promise.all([
+    fetchPreviousSnapshot(userId),
     prisma.priceCache.findFirst({
       orderBy: { updatedAt: "desc" },
       select: { updatedAt: true },
@@ -101,7 +100,7 @@ async function DashboardActionsSection({
   ]);
 
   const latestSnapshotDate =
-    recentSnapshots[0]?.date?.toISOString().split("T")[0] ?? null;
+    previousSnapshot?.createdAt?.toISOString() ?? null;
 
   return (
     <DashboardActions
@@ -123,17 +122,23 @@ async function NetWorthSection({
   userId: string;
   baseCurrency: string;
 }) {
-  const [summary, recentSnapshots] = await Promise.all([
+  const [summary, previousSnapshot] = await Promise.all([
     getCachedNetWorthSummary(userId, baseCurrency),
-    fetchRecentSnapshots(userId),
+    fetchPreviousSnapshot(userId),
   ]);
 
   if (summary.accounts.length === 0) return null;
 
-  const previousNetWorth =
-    recentSnapshots.length >= 2 && recentSnapshots[1].baseCurrency === baseCurrency
-      ? Number(recentSnapshots[1].netWorth)
-      : undefined;
+  let previousNetWorth: number | undefined;
+  if (previousSnapshot) {
+    if (previousSnapshot.baseCurrency === baseCurrency) {
+      previousNetWorth = Number(previousSnapshot.netWorth);
+    } else {
+      const rateMap = await getAllExchangeRates();
+      const rate = resolveRate(rateMap, previousSnapshot.baseCurrency, baseCurrency);
+      if (rate !== undefined) previousNetWorth = Number(previousSnapshot.netWorth) * rate;
+    }
+  }
 
   return <NetWorthCard summary={summary} previousNetWorth={previousNetWorth} />;
 }

@@ -1,4 +1,3 @@
-import { createSnapshot } from "@/lib/services/snapshot-service";
 import { getFullNormalizedHistory } from "@/lib/services/history-service";
 import { ok } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
@@ -15,11 +14,4 @@ export const GET = withAuth(async (request, _ctx, userId) => {
 
   const snapshots = await getFullNormalizedHistory(userId, baseCurrency, options);
   return ok(snapshots);
-});
-
-export const POST = withAuth(async (request, _ctx, userId) => {
-  const body = await request.json().catch(() => ({}));
-  const baseCurrency = body.baseCurrency ?? "USD";
-  const snapshot = await createSnapshot(userId, baseCurrency);
-  return ok(snapshot, { status: 201 });
 });

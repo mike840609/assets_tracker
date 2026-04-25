@@ -9,7 +9,9 @@ import { useTranslations, useLocale } from "next-intl";
 
 function getRelativeTime(dateString: string, locale: string) {
   const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
-  const diffInSeconds = Math.round((new Date(dateString).getTime() - Date.now()) / 1000);
+  // Parse as local noon to avoid UTC-midnight causing off-by-one-day in non-UTC timezones
+  const localDate = dateString.includes("T") ? new Date(dateString) : new Date(`${dateString}T12:00:00`);
+  const diffInSeconds = Math.round((localDate.getTime() - Date.now()) / 1000);
   const absDiff = Math.abs(diffInSeconds);
   
   if (absDiff < 60) return rtf.format(Math.sign(diffInSeconds) * absDiff, "second");

@@ -36,7 +36,6 @@ export function SettingsForm({
   const [saving, setSaving] = useState(false);
   const [savingLocale, setSavingLocale] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [snapshotting, setSnapshotting] = useState(false);
 
   async function saveCurrency() {
     setSaving(true);
@@ -86,23 +85,6 @@ export function SettingsForm({
       toast.error(t("toast.pricesFailed"));
     } finally {
       setRefreshing(false);
-    }
-  }
-
-  async function takeSnapshot() {
-    setSnapshotting(true);
-    try {
-      await fetch("/api/snapshots", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ baseCurrency: currency }),
-      });
-      toast.success(t("toast.snapshotCreated"));
-      router.refresh();
-    } catch {
-      toast.error(t("toast.snapshotFailed"));
-    } finally {
-      setSnapshotting(false);
     }
   }
 
@@ -197,7 +179,7 @@ export function SettingsForm({
               </Button>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
               <div className="space-y-1">
                 <p className="text-sm font-medium">{t("settings.syncRatesTitle")}</p>
                 <p className="text-sm text-muted-foreground">{t("settings.syncRatesDesc")}</p>
@@ -212,21 +194,6 @@ export function SettingsForm({
                 className="w-full sm:w-auto min-w-[150px]"
               >
                 {t("settings.btnRefresh")}
-              </Button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">{t("settings.syncSnapshotTitle")}</p>
-                <p className="text-sm text-muted-foreground">{t("settings.syncSnapshotDesc")}</p>
-              </div>
-              <Button
-                variant="outline"
-                onClick={takeSnapshot}
-                disabled={snapshotting}
-                className="w-full sm:w-auto min-w-[150px]"
-              >
-                {snapshotting ? t("settings.creating") : t("settings.btnSnapshot")}
               </Button>
             </div>
           </CardContent>
