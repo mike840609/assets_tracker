@@ -2,7 +2,7 @@
 
 A modern, high-performance net worth and investment tracker. Built with **Next.js 16**, **Prisma**, and **Tailwind CSS**.
 
-![Dashboard Mockup](https://images.unsplash.com/photo-1611974714013-3c8c0d088bd3?auto=format&fit=crop&q=80&w=1200&h=400)
+![Assets Tracker](./public/opengraph-image.png)
 
 ## ✨ Features
 
@@ -32,7 +32,7 @@ A modern, high-performance net worth and investment tracker. Built with **Next.j
 
 ### 1. Prerequisites
 
-- Node.js 18+
+- Node.js 20.9+ (required by Next.js 16)
 - A [Neon](https://neon.tech) PostgreSQL database (or any PostgreSQL with a Neon-compatible connection string)
 - A Google OAuth app (for authentication)
 
@@ -67,13 +67,24 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to see your dashboard.
 
+### 5. End-to-End Tests
+
+A Playwright suite lives in `tests/e2e/`. The global setup provisions a dedicated test user so runs don't pollute real data.
+
+```bash
+npm run test:e2e         # Run headless
+npm run test:e2e:ui      # Open the Playwright UI runner
+npm run test:e2e:report  # Open the last HTML report
+```
+
 ## 🤖 Automated Snapshots (Cron Jobs)
 
 This project is optimized for **Vercel** and includes native Cron Job support via `vercel.json`.
 
 - **Endpoint**: `/api/cron/snapshot`
-- **Schedule**: Every day at 00:00 UTC.
+- **Schedule**: Every day at 21:30 UTC (`30 21 * * *`).
 - **Security**: Protected via `CRON_SECRET` header verification.
+- **Region**: Functions are pinned to `sin1` to colocate with the Neon database. If your Neon project lives in a different region, update `regions` in `vercel.json` to match.
 
 To enable automation, deploy to Vercel and set all environment variables in your project settings.
 
