@@ -9,7 +9,7 @@
 | R3  | Rate limit `/api/search`, `/api/exchange-rates`, `/api/auth/*`              | Security              | 🔴 High   | 2–3 hrs  | ✅ Done     |
 | R4  | `crypto.timingSafeEqual` compare for `CRON_SECRET`                          | Security              | 🟡 Medium | 15 min   | ❌ Not Done |
 | R5  | Enforce account/holding ownership on every mutation route                   | Security              | 🔴 High   | 1–2 hrs  | ❌ Not Done |
-| R6  | Add `/terms` (Terms of Service) page                                        | Legal / Compliance    | 🔴 High   | 1–2 hrs  | ❌ Not Done |
+| R6  | Add `/terms` (Terms of Service) page                                        | Legal / Compliance    | 🔴 High   | 1–2 hrs  | ✅ Done     |
 | R7  | Cookie / analytics consent banner                                           | Legal / Compliance    | 🔴 High   | 2–3 hrs  | ❌ Not Done |
 | R8  | GDPR data-export + delete-account flows                                     | Legal / Compliance    | 🔴 High   | 2–3 hrs  | ❌ Not Done |
 | R9  | Verify Google OAuth consent screen is published & verified                  | Legal / Compliance    | 🔴 High   | 30 min   | ✅ Done     |
