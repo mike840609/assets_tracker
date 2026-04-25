@@ -93,7 +93,7 @@ async function DashboardActionsSection({
   baseCurrency: string;
 }) {
   const [recentSnapshots, latestPrice] = await Promise.all([
-    fetchRecentSnapshots(userId),
+    fetchRecentSnapshots(userId, baseCurrency),
     prisma.priceCache.findFirst({
       orderBy: { updatedAt: "desc" },
       select: { updatedAt: true },
