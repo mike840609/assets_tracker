@@ -385,6 +385,7 @@
     "updateSuccess": "交易已更新",
     "updateFailed": "更新交易失敗",
     "deleteSuccess": "交易已刪除",
+    "deleteFailed": "刪除交易失敗"
   },
   "gdprManagement": {
     "dangerZone": "危險區域與隱私",

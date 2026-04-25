@@ -385,6 +385,7 @@
     "updateSuccess": "Transaction updated",
     "updateFailed": "Failed to update transaction",
     "deleteSuccess": "Transaction deleted",
+    "deleteFailed": "Failed to delete transaction"
   },
   "gdprManagement": {
     "dangerZone": "Danger Zone & Privacy",
