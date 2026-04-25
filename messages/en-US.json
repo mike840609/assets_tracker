@@ -241,12 +241,40 @@
       "CRYPTO": "Crypto",
       "MUTUAL_FUND": "Mutual Fund",
       "BOND": "Bond",
+      "OPTION": "Option",
       "OTHER": "Other"
     },
     "defaultAccountNames": {
       "BROKERAGE": "Brokerage",
       "CRYPTO_WALLET": "Crypto Wallet"
     }
+  },
+  "optionFlow": {
+    "title": "Add Option Contract",
+    "modeStock": "Stock / ETF / Crypto",
+    "modeOption": "Option",
+    "stepUnderlyingLabel": "Search underlying stock or ETF",
+    "stepUnderlyingPlaceholder": "e.g. AAPL, SPY",
+    "pasteOcc": "Paste OCC symbol",
+    "pasteOccLabel": "OCC symbol",
+    "pasteOccPlaceholder": "e.g. AAPL250117C00150000",
+    "pasteOccHint": "Already know the contract?",
+    "labelExpiration": "Expiration",
+    "labelStrike": "Strike",
+    "labelType": "Type",
+    "tabCall": "Call",
+    "tabPut": "Put",
+    "labelContracts": "Number of contracts",
+    "helperContractSize": "1 contract = 100 shares",
+    "loadingChain": "Loading option chain...",
+    "noChain": "No option chain available for {symbol}",
+    "chainLoadFailed": "Failed to load option chain for {symbol}",
+    "invalidOcc": "Invalid option symbol",
+    "miniNotSupported": "Mini-options (10-share contracts) are not supported",
+    "expiredNote": "Expired",
+    "estimatedCost": "Estimated cost at ask: {amount} ({qty} × {ask} × 100)",
+    "addOption": "Add Option",
+    "closeHint": "Set to 0 to close the position."
   },
   "accountDetail": {
     "breadcrumb": "Accounts",

@@ -55,6 +55,7 @@ export function formatNumber(amount: number, decimals = 2): string {
 }
 
 export function formatQuantity(qty: number, assetType: string): string {
+  if (assetType === "OPTION") return formatNumber(qty, 0);
   const decimals = assetType === "CRYPTO" ? 7 : 2;
   return formatNumber(qty, decimals);
 }

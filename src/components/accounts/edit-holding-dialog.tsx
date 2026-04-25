@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import type { SerializedHolding } from "@/lib/types";
 
+import { getOptionDisplay } from "@/lib/options";
+
 const ASSET_TYPES = [
   { value: "STOCK", label: "Stock" },
   { value: "ETF", label: "ETF" },
@@ -41,7 +43,9 @@ export function EditHoldingDialog({
   const [loading, setLoading] = useState(false);
   const [quantity, setQuantity] = useState(String(holding.quantity));
   const [name, setName] = useState(holding.name);
-  const [assetType, setAssetType] = useState<"STOCK" | "ETF" | "CRYPTO" | "MUTUAL_FUND" | "BOND" | "OTHER">(holding.assetType);
+  const [assetType, setAssetType] = useState<"STOCK" | "ETF" | "CRYPTO" | "MUTUAL_FUND" | "BOND" | "OTHER" | "OPTION">(holding.assetType);
+  const isOption = holding.assetType === "OPTION";
+  const optionDisplay = getOptionDisplay(holding);
 
   function handleOpen(isOpen: boolean) {
     if (!isOpen) {
@@ -61,7 +65,13 @@ export function EditHoldingDialog({
     setLoading(true);
 
     const parsedQty = parseFloat(quantity);
-    if (isNaN(parsedQty) || parsedQty <= 0) {
+    const minAllowed = isOption ? 0 : Number.MIN_VALUE;
+    if (isNaN(parsedQty) || parsedQty < minAllowed) {
+      toast.error(isOption ? "Quantity must be 0 or greater" : "Quantity must be a positive number");
+      setLoading(false);
+      return;
+    }
+    if (!isOption && parsedQty <= 0) {
       toast.error("Quantity must be a positive number");
       setLoading(false);
       return;
@@ -117,11 +127,18 @@ export function EditHoldingDialog({
           <div className="flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-mono font-bold">{holding.symbol}</span>
+                <span className="font-mono font-bold">
+                  {optionDisplay ? optionDisplay.short : holding.symbol}
+                </span>
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                   {holding.currency || "USD"}
                 </Badge>
               </div>
+              {optionDisplay && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {optionDisplay.long}
+                </p>
+              )}
             </div>
             <Button
               type="button"
@@ -134,45 +151,57 @@ export function EditHoldingDialog({
             </Button>
           </div>
 
-          {/* Name */}
-          <div className="space-y-2">
-            <Label>Name</Label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Apple Inc."
-              required
-            />
-          </div>
+          {!isOption && (
+            <>
+              {/* Name */}
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Apple Inc."
+                  required
+                />
+              </div>
 
-          {/* Asset Type */}
-          <div className="space-y-2">
-            <Label>Asset Type</Label>
-            <select
-              value={assetType}
-              onChange={(e) => setAssetType(e.target.value as typeof assetType)}
-              className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              {ASSET_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
+              {/* Asset Type */}
+              <div className="space-y-2">
+                <Label>Asset Type</Label>
+                <select
+                  value={assetType}
+                  onChange={(e) => setAssetType(e.target.value as typeof assetType)}
+                  className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  {ASSET_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
 
           {/* Quantity */}
           <div className="space-y-2">
-            <Label className="text-base font-medium">Quantity</Label>
+            <Label className="text-base font-medium">
+              {isOption ? "Number of contracts" : "Quantity"}
+            </Label>
             <Input
               type="number"
-              step="any"
+              step={isOption ? "1" : "any"}
+              min={isOption ? "0" : undefined}
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              placeholder="e.g. 100"
+              placeholder={isOption ? "e.g. 1" : "e.g. 100"}
               required
               className="text-lg h-12"
             />
+            {isOption && (
+              <p className="text-xs text-muted-foreground">
+                Set to 0 to close the position.
+              </p>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-2">

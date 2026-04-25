@@ -241,12 +241,40 @@
       "CRYPTO": "加密貨幣",
       "MUTUAL_FUND": "共同基金",
       "BOND": "債券",
+      "OPTION": "選擇權",
       "OTHER": "其他"
     },
     "defaultAccountNames": {
       "BROKERAGE": "券商帳戶",
       "CRYPTO_WALLET": "加密錢包"
     }
+  },
+  "optionFlow": {
+    "title": "新增選擇權合約",
+    "modeStock": "股票 / ETF / 加密貨幣",
+    "modeOption": "選擇權",
+    "stepUnderlyingLabel": "搜尋標的股票或 ETF",
+    "stepUnderlyingPlaceholder": "例如 AAPL、SPY",
+    "pasteOcc": "貼上 OCC 代號",
+    "pasteOccLabel": "OCC 代號",
+    "pasteOccPlaceholder": "例如 AAPL250117C00150000",
+    "pasteOccHint": "已經知道合約代號?",
+    "labelExpiration": "到期日",
+    "labelStrike": "履約價",
+    "labelType": "類型",
+    "tabCall": "買權",
+    "tabPut": "賣權",
+    "labelContracts": "合約口數",
+    "helperContractSize": "1 口契約 = 100 股",
+    "loadingChain": "載入選擇權鏈中...",
+    "noChain": "{symbol} 沒有可用的選擇權鏈",
+    "chainLoadFailed": "{symbol} 選擇權鏈載入失敗",
+    "invalidOcc": "選擇權代號無效",
+    "miniNotSupported": "不支援迷你選擇權(10 股合約)",
+    "expiredNote": "已到期",
+    "estimatedCost": "依賣價估算成本:{amount}({qty} × {ask} × 100)",
+    "addOption": "新增選擇權",
+    "closeHint": "設為 0 即可平倉。"
   },
   "accountDetail": {
     "breadcrumb": "帳戶",

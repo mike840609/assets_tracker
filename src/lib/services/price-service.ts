@@ -199,7 +199,7 @@ export async function refreshAllPrices(): Promise<{
   });
 
   const stockSymbols = holdings
-    .filter((h) => ["STOCK", "ETF", "MUTUAL_FUND", "BOND"].includes(h.assetType))
+    .filter((h) => ["STOCK", "ETF", "MUTUAL_FUND", "BOND", "OPTION"].includes(h.assetType))
     .map((h) => h.symbol);
 
   const cryptoSymbols = holdings

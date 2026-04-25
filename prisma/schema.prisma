@@ -58,24 +58,36 @@ enum HoldingAssetType {
   CRYPTO
   MUTUAL_FUND
   BOND
+  OPTION
   OTHER
 }
 
+enum OptionType {
+  CALL
+  PUT
+}
+
 model Holding {
-  id           String               @id @default(cuid())
-  accountId    String
-  account      Account              @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  symbol       String
-  name         String
-  quantity     Decimal              @db.Decimal(18, 8)
-  currency     String               @default("USD")
-  assetType    HoldingAssetType
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  transactions HoldingTransaction[]
+  id                 String               @id @default(cuid())
+  accountId          String
+  account            Account              @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  symbol             String
+  name               String
+  quantity           Decimal              @db.Decimal(18, 8)
+  currency           String               @default("USD")
+  assetType          HoldingAssetType
+  underlyingSymbol   String?
+  optionType         OptionType?
+  strike             Decimal?             @db.Decimal(18, 4)
+  expiration         DateTime?            @db.Date
+  contractMultiplier Int?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  transactions       HoldingTransaction[]
 
   @@unique([accountId, symbol])
   @@index([symbol])
+  @@index([assetType, expiration])
 }
 
 enum TransactionType {

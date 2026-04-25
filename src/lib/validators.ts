@@ -5,7 +5,10 @@ import {
   HOLDING_ASSET_TYPES,
   HOLDING_TRANSACTION_TYPES,
   CASH_TRANSACTION_TYPES,
+  OPTION_TYPES,
 } from "./enums";
+
+const OCC_SHAPE = /^[A-Z][A-Z0-9.\-]{0,5}\d{6}[CP]\d{8}$/;
 
 export const createAccountSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -17,28 +20,57 @@ export const createAccountSchema = z.object({
 
 export const updateAccountSchema = createAccountSchema.partial();
 
-export const createHoldingSchema = z.object({
+const NON_OPTION_ASSET_TYPES = HOLDING_ASSET_TYPES.filter(
+  (t) => t !== "OPTION",
+) as Exclude<(typeof HOLDING_ASSET_TYPES)[number], "OPTION">[];
+
+const baseHoldingFields = {
   symbol: z
     .string()
     .min(1, "Symbol is required")
-    .max(20)
+    .max(32)
     .transform((s) => s.toUpperCase()),
   name: z.string().min(1, "Name is required").max(100),
   quantity: z.number().positive("Quantity must be positive"),
   currency: z.string().length(3).default("USD"),
-  assetType: z.enum(HOLDING_ASSET_TYPES),
+};
+
+const createNonOptionHoldingSchema = z.object({
+  ...baseHoldingFields,
+  assetType: z.enum(NON_OPTION_ASSET_TYPES),
 });
+
+const createOptionHoldingSchema = z.object({
+  ...baseHoldingFields,
+  assetType: z.literal("OPTION"),
+  underlyingSymbol: z.string().min(1).max(8).optional(),
+  optionType: z.enum(OPTION_TYPES).optional(),
+  strike: z.number().positive().optional(),
+  expiration: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}/)
+    .optional(),
+  contractMultiplier: z.literal(100).default(100),
+}).refine((d) => OCC_SHAPE.test(d.symbol), {
+  message: "Invalid OCC option symbol",
+  path: ["symbol"],
+});
+
+export const createHoldingSchema = z.discriminatedUnion("assetType", [
+  createNonOptionHoldingSchema,
+  createOptionHoldingSchema,
+]);
 
 export const updateHoldingSchema = z.object({
   id: z.string(),
   symbol: z
     .string()
     .min(1)
-    .max(20)
+    .max(32)
     .transform((s) => s.toUpperCase())
     .optional(),
   name: z.string().min(1).max(100).optional(),
-  quantity: z.number().positive().optional(),
+  quantity: z.number().nonnegative().optional(),
   assetType: z.enum(HOLDING_ASSET_TYPES).optional(),
 });
 

@@ -4,6 +4,7 @@ import { createHoldingSchema, updateHoldingSchema } from "@/lib/validators";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
+import { parseOccSymbol, formatOptionLabel, OptionError } from "@/lib/options";
 
 type IdCtx = { params: Promise<{ id: string }> };
 
@@ -32,6 +33,36 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
   const parsed = createHoldingSchema.safeParse(body);
   if (!parsed.success) return validationError(parsed.error);
 
+  // For OPTION holdings, derive metadata from the OCC symbol on the server
+  // — never trust client-supplied option fields.
+  let optionMetadata: {
+    underlyingSymbol: string;
+    optionType: "CALL" | "PUT";
+    strike: number;
+    expiration: Date;
+    contractMultiplier: 100;
+    currency: "USD";
+    name: string;
+  } | null = null;
+
+  if (parsed.data.assetType === "OPTION") {
+    try {
+      const p = parseOccSymbol(parsed.data.symbol);
+      optionMetadata = {
+        underlyingSymbol: p.underlying,
+        optionType: p.optionType,
+        strike: p.strike,
+        expiration: p.expiration,
+        contractMultiplier: p.contractMultiplier,
+        currency: "USD",
+        name: parsed.data.name?.trim() || formatOptionLabel(p),
+      };
+    } catch (err) {
+      const message = err instanceof OptionError ? err.message : "Invalid OCC option symbol";
+      return failure(message, 400);
+    }
+  }
+
   // Check if holding already exists in this account
   const existing = await prisma.holding.findUnique({
     where: { accountId_symbol: { accountId: id, symbol: parsed.data.symbol } },
@@ -44,6 +75,22 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
     holding = await prisma.holding.update({
       where: { id: existing.id },
       data: { quantity: newQuantity },
+    });
+  } else if (optionMetadata) {
+    holding = await prisma.holding.create({
+      data: {
+        accountId: id,
+        symbol: parsed.data.symbol,
+        name: optionMetadata.name,
+        quantity: parsed.data.quantity,
+        currency: optionMetadata.currency,
+        assetType: "OPTION",
+        underlyingSymbol: optionMetadata.underlyingSymbol,
+        optionType: optionMetadata.optionType,
+        strike: optionMetadata.strike,
+        expiration: optionMetadata.expiration,
+        contractMultiplier: optionMetadata.contractMultiplier,
+      },
     });
   } else {
     holding = await prisma.holding.create({
