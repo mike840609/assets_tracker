@@ -47,6 +47,8 @@ npx prisma migrate resolve --applied <migration>   # One-shot baseline: mark a m
 npx prisma db push                                 # Quick prototype-only schema sync — bypasses migration history; commit a migrate dev before merging
 npx prisma studio                                  # Open Prisma Studio GUI
 
+# Skip CI/Vercel for a one-off commit: add [skip ci] or [skip actions] to the commit message
+
 # E2E tests (Playwright)
 npm run test:e2e         # Run Playwright suite headless
 npm run test:e2e:ui      # Open the Playwright UI runner
