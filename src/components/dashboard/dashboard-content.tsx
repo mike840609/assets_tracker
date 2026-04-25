@@ -12,12 +12,12 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-const fetchRecentSnapshots = cache((userId: string) =>
+const fetchRecentSnapshots = cache((userId: string, baseCurrency: string) =>
   prisma.netWorthSnapshot.findMany({
-    where: { userId },
+    where: { userId, baseCurrency },
     orderBy: { date: "desc" },
     take: 2,
-    select: { date: true, netWorth: true, baseCurrency: true },
+    select: { date: true, netWorth: true },
   })
 );
 
@@ -125,13 +125,13 @@ async function NetWorthSection({
 }) {
   const [summary, recentSnapshots] = await Promise.all([
     getCachedNetWorthSummary(userId, baseCurrency),
-    fetchRecentSnapshots(userId),
+    fetchRecentSnapshots(userId, baseCurrency),
   ]);
 
   if (summary.accounts.length === 0) return null;
 
   const previousNetWorth =
-    recentSnapshots.length >= 2 && recentSnapshots[1].baseCurrency === baseCurrency
+    recentSnapshots.length >= 2
       ? Number(recentSnapshots[1].netWorth)
       : undefined;
 
