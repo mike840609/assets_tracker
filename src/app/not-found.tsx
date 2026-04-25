@@ -1,10 +1,11 @@
-import { Suspense } from "react"
-import { getTranslations } from "next-intl/server"
+"use client"
+
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import { Search, Home } from "lucide-react"
 
-async function NotFoundContent() {
-  const t = await getTranslations("errors")
+export default function NotFound() {
+  const t = useTranslations("errors")
 
   return (
     <div className="flex flex-1 h-full w-full items-center justify-center relative overflow-y-auto bg-background">
@@ -46,25 +47,5 @@ async function NotFoundContent() {
         </Link>
       </div>
     </div>
-  )
-}
-
-export default function NotFound() {
-  return (
-    <Suspense fallback={
-      <div className="flex flex-1 h-full w-full items-center justify-center bg-background">
-        <div className="w-full max-w-md rounded-3xl bg-card/80 p-10 space-y-6 animate-pulse">
-          <div className="flex flex-col items-center space-y-3">
-            <div className="w-16 h-16 rounded-xl bg-primary/20" />
-            <div className="h-16 w-32 rounded bg-muted" />
-            <div className="h-6 w-40 rounded bg-muted" />
-            <div className="h-4 w-56 rounded bg-muted" />
-          </div>
-          <div className="h-12 w-full rounded-xl bg-muted" />
-        </div>
-      </div>
-    }>
-      <NotFoundContent />
-    </Suspense>
   )
 }
