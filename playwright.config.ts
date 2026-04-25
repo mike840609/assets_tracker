@@ -4,6 +4,7 @@ const BASE_URL = process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://localhost:3000"
 const E2E_PASSWORD = process.env.E2E_PASSWORD ?? "e2e-smoke-test"
 
 export default defineConfig({
+  globalSetup: "./tests/e2e/global-setup",
   testDir: "./tests/e2e",
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
@@ -19,16 +20,11 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "setup",
-      testMatch: /global-setup\.ts/,
-    },
-    {
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
         storageState: "tests/e2e/.auth/user.json",
       },
-      dependencies: ["setup"],
     },
   ],
   ...(process.env.PLAYWRIGHT_TEST_BASE_URL
