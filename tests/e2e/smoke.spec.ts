@@ -22,8 +22,8 @@ import { test, expect, type Page } from "@playwright/test"
 test("1. unauthenticated visitor is redirected to /login and can sign in", async ({
   browser,
 }) => {
-  // Fresh context — no cookies, no stored session
-  const ctx = await browser.newContext()
+  // Fresh context with no cookies — must not inherit the project storageState
+  const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } })
   const page = await ctx.newPage()
 
   // Visiting the root without auth should redirect to /login
@@ -92,8 +92,10 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   await page.getByRole("button", { name: "Enter manually" }).click()
 
   const symbol = `TSTT${Date.now().toString().slice(-4)}` // unique-ish symbol
-  await page.fill('input[placeholder="e.g. AAPL"]', symbol)
+  // Fill name BEFORE symbol: the name input is inside {!symbol && ...} in the component
+  // and disappears as soon as the symbol field has a value.
   await page.fill('input[placeholder="e.g. Apple Inc."]', "E2E Test Corp")
+  await page.fill('input[placeholder="e.g. AAPL"]', symbol)
   await page.fill('input[placeholder="e.g. 100"]', "5")
 
   await page.getByRole("button", { name: "Next" }).click()
@@ -133,10 +135,8 @@ test("3. dashboard renders the net-worth card and trend chart section", async ({
   await page.goto("/")
   await waitForPageReady(page)
 
-  // Net-worth card: the heading "Net Worth" is rendered inside the card
-  await expect(
-    page.getByRole("heading", { name: /net worth/i }).first(),
-  ).toBeVisible({ timeout: 15_000 })
+  // Net-worth card: the label is a <p>, not a heading element
+  await expect(page.getByText(/net worth/i).first()).toBeVisible({ timeout: 15_000 })
 
   // Total-assets sub-card label
   await expect(page.getByText(/total assets/i).first()).toBeVisible({
