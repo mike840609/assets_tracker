@@ -46,6 +46,7 @@ export default auth((req) => {
   if (req.nextUrl.pathname.startsWith("/api/auth")) {
     const limited = _authRateLimit(req);
     if (limited) return limited;
+    return;
   }
 
   const isLoggedIn = !!req.auth;
