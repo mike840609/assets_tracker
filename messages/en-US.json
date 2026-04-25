@@ -389,6 +389,7 @@
   },
   "gdprManagement": {
     "dangerZone": "Danger Zone & Privacy",
+    "cancel": "Cancel",
     "deleteAccount": "Delete Account",
     "deleteAccountDescription": "Permanently delete your account and all associated data. This action cannot be undone.",
     "deleteButton": "Delete Account",
