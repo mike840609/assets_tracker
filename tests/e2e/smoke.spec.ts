@@ -113,6 +113,9 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   // Holding symbol must appear somewhere on the page
   await expect(page.getByText(symbol)).toBeVisible({ timeout: 15_000 })
 
+  // Wait for the "Add Holding" dialog to fully close before hovering
+  await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 10_000 })
+
   // ── Cleanup: delete the test account ────────────────────────────────────
   // Select the account checkbox and delete it so test runs stay idempotent
   const accountCard = page.locator("a", { hasText: accountName })
