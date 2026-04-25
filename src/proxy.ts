@@ -50,25 +50,14 @@ export default auth((req) => {
   }
 
   const isLoggedIn = !!req.auth;
-  const { pathname } = req.nextUrl;
-  const isPublicRoute = ["/login", "/privacy", "/terms"].includes(pathname);
+  const isPublicRoute = ["/login", "/privacy", "/terms"].includes(req.nextUrl.pathname);
 
-  // Known app routes that require authentication (the (main) route group).
-  // Unknown routes fall through so Next.js can render not-found.tsx (404).
-  const isProtectedRoute =
-    pathname === "/" ||
-    pathname.startsWith("/accounts") ||
-    pathname.startsWith("/analysis") ||
-    pathname.startsWith("/history") ||
-    pathname.startsWith("/settings") ||
-    pathname.startsWith("/api/");
-
-  if (!isLoggedIn && !isPublicRoute && isProtectedRoute) {
+  if (!isLoggedIn && !isPublicRoute) {
     const newUrl = new URL("/login", req.nextUrl.origin);
     return Response.redirect(newUrl);
   }
 
-  if (isLoggedIn && pathname === "/login") {
+  if (isLoggedIn && req.nextUrl.pathname === "/login") {
     const newUrl = new URL("/", req.nextUrl.origin);
     return Response.redirect(newUrl);
   }
