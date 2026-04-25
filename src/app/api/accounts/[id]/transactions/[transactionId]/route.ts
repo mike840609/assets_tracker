@@ -2,13 +2,16 @@ import { prisma } from "@/lib/prisma";
 import { updateTransactionSchema, updateCashTransactionSchema } from "@/lib/validators";
 import { calculateBalanceDelta } from "@/lib/services/balance";
 import { ok, failure, validationError } from "@/lib/api-responses";
+import { withAuth } from "@/lib/api-handler";
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string; transactionId: string }> }
-) {
+type TxCtx = { params: Promise<{ id: string; transactionId: string }> };
+
+export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
   const { id: accountId, transactionId } = await params;
   const body = await request.json();
+
+  const account = await prisma.account.findUnique({ where: { id: accountId, userId } });
+  if (!account) return failure("Account not found", 404);
 
   // Determine if it's a HoldingTransaction or CashTransaction
   const holdingTx = await prisma.holdingTransaction.findUnique({
@@ -100,13 +103,13 @@ export async function PATCH(
   }
 
   return failure("Transaction not found", 404);
-}
+});
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string; transactionId: string }> }
-) {
+export const DELETE = withAuth<TxCtx>(async (request, { params }, userId) => {
   const { id: accountId, transactionId } = await params;
+
+  const account = await prisma.account.findUnique({ where: { id: accountId, userId } });
+  if (!account) return failure("Account not found", 404);
 
   const holdingTx = await prisma.holdingTransaction.findUnique({
     where: { id: transactionId },
@@ -149,4 +152,4 @@ export async function DELETE(
   }
 
   return failure("Transaction not found", 404);
-}
+});
