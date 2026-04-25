@@ -339,6 +339,24 @@
     "section6Body": "Sign-in is handled entirely by Google OAuth. We receive only a secure session token — your Google password is never shared with or stored by this app.",
     "lastUpdated": "Last updated: April 2026"
   },
+  "terms": {
+    "title": "Terms of Service",
+    "subtitle": "Rules and guidelines for using Assets Tracker",
+    "backToLogin": "← Back to Login",
+    "section1Title": "Acceptance of Terms",
+    "section1Body": "By accessing and using Assets Tracker, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by these terms, please do not use this service.",
+    "section2Title": "Use of Service",
+    "section2Body": "Assets Tracker is provided 'as is' for personal financial tracking. You agree to use the service only for lawful purposes and in a way that does not infringe the rights of, restrict or inhibit anyone else's use and enjoyment of the service.",
+    "section3Title": "User Accounts",
+    "section3Body": "You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account. We reserve the right to refuse service, terminate accounts, or remove or edit content in our sole discretion.",
+    "section4Title": "Financial Data",
+    "section4Body": "The information provided by Assets Tracker is for informational purposes only and does not constitute financial advice. We do not guarantee the accuracy, completeness, or usefulness of any market data provided.",
+    "section5Title": "Limitation of Liability",
+    "section5Body": "Assets Tracker shall not be liable for any direct, indirect, incidental, special, consequential or exemplary damages resulting from your use of the service or any reliance on the information provided.",
+    "section6Title": "Changes to Terms",
+    "section6Body": "We reserve the right to modify these terms from time to time at our sole discretion. Your continued use of the service following the posting of changes to these terms will mean you accept those changes.",
+    "lastUpdated": "Last updated: April 2026"
+  },
   "transactionHistory": {
     "title": "Transaction History",
     "loading": "Loading...",
