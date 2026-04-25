@@ -14,7 +14,7 @@ async function globalTeardown() {
   try {
     const res = await context.request.get(`${baseURL}/api/accounts`)
     if (res.ok()) {
-      const accounts: { id: string; name: string }[] = await res.json()
+      const { data: accounts }: { data: { id: string; name: string }[] } = await res.json()
       const e2eIds = accounts
         .filter((a) => a.name.startsWith("E2E "))
         .map((a) => a.id)
