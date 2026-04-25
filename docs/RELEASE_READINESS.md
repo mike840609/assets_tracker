@@ -14,7 +14,7 @@
 | R8  | GDPR data-export + delete-account flows                                     | Legal / Compliance    | 🔴 High   | 2–3 hrs  | ❌ Not Done |
 | R9  | Verify Google OAuth consent screen is published & verified                  | Legal / Compliance    | 🔴 High   | 30 min   | ✅ Done     |
 | R10 | Add support/contact email in footer + `/privacy`                            | Legal / Compliance    | 🟡 Medium | 15 min   | ❌ Not Done |
-| R11 | Add `error.tsx`, `global-error.tsx`, `not-found.tsx`                        | Reliability           | 🔴 High   | 1–2 hrs  | ✅ Done     |
+| R11 | Add `error.tsx`, `global-error.tsx`, `not-found.tsx`                        | Reliability           | 🔴 High   | 1–2 hrs  | ❌ Not Done |
 | R12 | Add `/api/health` endpoint                                                  | Reliability           | 🟡 Medium | 30 min   | ❌ Not Done |
 | R13 | Verify Vercel Cron `/api/cron/snapshot` fires daily in production           | Reliability           | 🔴 High   | 15 min   | ❌ Not Done |
 | R14 | Timeout + retry guards on Yahoo Finance / CoinGecko calls                   | Reliability           | 🔴 High   | 30–60 min| ✅ Done     |
