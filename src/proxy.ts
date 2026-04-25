@@ -50,7 +50,7 @@ export default auth((req) => {
   }
 
   const isLoggedIn = !!req.auth;
-  const isPublicRoute = ["/login", "/privacy"].includes(req.nextUrl.pathname);
+  const isPublicRoute = ["/login", "/privacy", "/terms"].includes(req.nextUrl.pathname);
 
   if (!isLoggedIn && !isPublicRoute) {
     const newUrl = new URL("/login", req.nextUrl.origin);

@@ -4,3 +4,5 @@
 - 2026-04-24: [ADD]: R20 — Add `.github/workflows/ci.yml`; runs `npm ci` → `prisma generate` → `lint` → `tsc --noEmit` → `next build` on every PR and push to master/main
 - 2026-04-24: [ADD]: R21 — Add Playwright smoke E2E suite (`playwright.config.ts`, `tests/e2e/global-setup.ts`, `tests/e2e/smoke.spec.ts`, `.github/workflows/e2e.yml`); covers unauthenticated redirect → login, account + holding creation, and dashboard net-worth card + trend chart; auth stubbed via preview-credentials provider
 - 2026-04-25: [MOD]: R9 — Verify Google OAuth consent screen is published & verified; marked as done in docs
+- 2026-04-25: [ADD]: R6 — Add `/terms` (Terms of Service) page
+
