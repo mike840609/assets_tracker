@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { DataManagement } from "@/components/settings/data-management";
+import { GdprManagement } from "@/components/settings/gdpr-management";
 import { InstallAppCard } from "@/components/settings/install-app-card";
 import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
@@ -11,7 +12,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import SettingsLoading from "./loading";
 
-const CLIENT_NAMESPACES = ["settings", "toast", "languages", "dataManagement"];
+const CLIENT_NAMESPACES = ["settings", "toast", "languages", "dataManagement", "gdprManagement"];
 
 async function SettingsContent() {
   const session = await getSession();
@@ -46,6 +47,8 @@ async function SettingsContent() {
             {t("dangerZone")}
           </h3>
           <div className="border border-red-500/20 bg-red-500/5 rounded-lg overflow-hidden">
+            <GdprManagement />
+            
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-red-600 dark:text-red-400">{t("signOut")}</p>

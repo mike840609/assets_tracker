@@ -385,6 +385,24 @@
     "updateSuccess": "交易已更新",
     "updateFailed": "更新交易失敗",
     "deleteSuccess": "交易已刪除",
-    "deleteFailed": "刪除交易失敗"
+  },
+  "gdprManagement": {
+    "dangerZone": "危險區域與隱私",
+    "exportData": "匯出個人資料",
+    "exportDataDescription": "下載您所有的個人資料副本（GDPR 第15條）。",
+    "exportButton": "請求匯出資料",
+    "exportConfirmTitle": "匯出個人資料",
+    "exportConfirmDescription": "這將編譯一個 JSON 檔案，其中包含您所有的帳戶資訊、交易紀錄、持倉和設定。是否繼續匯出？",
+    "confirmExportButton": "是的，匯出資料",
+    "cancel": "取消",
+    "exportFailed": "匯出資料失敗",
+    "deleteAccount": "刪除帳號",
+    "deleteAccountDescription": "永久刪除您的帳號及其所有相關資料。此操作無法復原。",
+    "deleteButton": "刪除帳號",
+    "deleteConfirmTitle": "刪除帳號",
+    "deleteConfirmDescription": "您絕對確定嗎？這將永久清除您的帳號及所有相關資料。此操作無法復原。",
+    "confirmDeleteButton": "是的，永久刪除",
+    "deleteSuccess": "帳號已成功刪除",
+    "deleteFailed": "刪除帳號失敗"
   }
 }
