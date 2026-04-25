@@ -6,4 +6,5 @@
 - 2026-04-25: [ADD]: R11 — Add error boundaries (`src/app/error.tsx`, `src/app/global-error.tsx`) and localized 404 page (`src/app/not-found.tsx`); i18n strings added under `errors` namespace in both `en-US` and `zh-TW` message files
 - 2026-04-25: [MOD]: R9 — Verify Google OAuth consent screen is published & verified; marked as done in docs
 - 2026-04-25: [ADD]: R6 — Add `/terms` (Terms of Service) page
+- 2026-04-25: [MOD]: R11 — Fix 404 page not rendering on Vercel production; proxy now uses protected-route allowlist instead of catch-all redirect; not-found.tsx layout changed from `min-h-screen` to `flex-1 h-full` to fit root layout flex container
 

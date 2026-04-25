@@ -50,14 +50,25 @@ export default auth((req) => {
   }
 
   const isLoggedIn = !!req.auth;
-  const isPublicRoute = ["/login", "/privacy", "/terms"].includes(req.nextUrl.pathname);
+  const { pathname } = req.nextUrl;
 
-  if (!isLoggedIn && !isPublicRoute) {
+  // Routes accessible without authentication.
+  const PUBLIC_PATHS = ["/login", "/privacy", "/terms"];
+  const isPublicRoute = PUBLIC_PATHS.includes(pathname);
+
+  // Route prefixes that require authentication — mirrors the (main) route group.
+  // Add new protected segments here when expanding the app.
+  const PROTECTED_PREFIXES = ["/accounts", "/analysis", "/history", "/settings", "/api"];
+  const isProtectedRoute =
+    pathname === "/" ||
+    PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
+  if (!isLoggedIn && !isPublicRoute && isProtectedRoute) {
     const newUrl = new URL("/login", req.nextUrl.origin);
     return Response.redirect(newUrl);
   }
 
-  if (isLoggedIn && req.nextUrl.pathname === "/login") {
+  if (isLoggedIn && pathname === "/login") {
     const newUrl = new URL("/", req.nextUrl.origin);
     return Response.redirect(newUrl);
   }
