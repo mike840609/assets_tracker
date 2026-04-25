@@ -1,22 +1,24 @@
 name: E2E Smoke Tests
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+  deployment_status:
 
 jobs:
   e2e:
     name: Playwright smoke tests
+    # Vercel sets state=success when the preview is live and ready
+    if: github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          # Check out the exact commit that was deployed
+          ref: ${{ github.event.deployment.sha }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: npm
@@ -27,33 +29,12 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      # ------------------------------------------------------------------
-      # Run against a live preview deployment when the URL is supplied.
-      # The preview deployment must have VERCEL_ENV=preview and
-      # PREVIEW_AUTH_PASSWORD set to the same value as E2E_PASSWORD below.
-      # ------------------------------------------------------------------
-      - name: Run E2E tests (preview deployment)
-        if: vars.E2E_BASE_URL != ''
+      - name: Run E2E tests
         run: npm run test:e2e
         env:
-          PLAYWRIGHT_TEST_BASE_URL: ${{ vars.E2E_BASE_URL }}
+          # Vercel posts the live URL here automatically — no hardcoding needed
+          PLAYWRIGHT_TEST_BASE_URL: ${{ github.event.deployment_status.environment_url }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
-
-      # ------------------------------------------------------------------
-      # Fallback: spin up a local dev server when no preview URL is set.
-      # playwright.config.ts webServer block starts Next.js automatically.
-      # ------------------------------------------------------------------
-      - name: Run E2E tests (local dev server)
-        if: vars.E2E_BASE_URL == ''
-        run: npm run test:e2e
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          AUTH_GOOGLE_ID: ${{ secrets.AUTH_GOOGLE_ID }}
-          AUTH_GOOGLE_SECRET: ${{ secrets.AUTH_GOOGLE_SECRET }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          # webServer env override sets VERCEL_ENV=preview + PREVIEW_AUTH_PASSWORD
-          E2E_PASSWORD: e2e-smoke-test
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
