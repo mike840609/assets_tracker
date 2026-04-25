@@ -12,15 +12,13 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-const fetchPreviousSnapshot = cache((userId: string) => {
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
-  return prisma.netWorthSnapshot.findFirst({
-    where: { userId, date: { lt: today } },
+const fetchPreviousSnapshot = cache((userId: string) =>
+  prisma.netWorthSnapshot.findFirst({
+    where: { userId },
     orderBy: { date: "desc" },
     select: { date: true, netWorth: true, baseCurrency: true, createdAt: true },
-  });
-});
+  })
+);
 
 const CARD_CLASS = "premium-card";
 
