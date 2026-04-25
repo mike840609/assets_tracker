@@ -121,6 +121,7 @@ export default function GlobalError({
             >
               Try again
             </button>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- global-error replaces root layout; next/link router context unavailable */}
             <a
               id="global-error-home-link"
               href="/"

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { AlertTriangle, RotateCcw } from "lucide-react";
+import Link from "next/link";
 
 export default function Error({
   error,
@@ -57,13 +58,13 @@ export default function Error({
             <RotateCcw className="h-4 w-4" />
             {t("retry")}
           </button>
-          <a
+          <Link
             id="error-home-link"
             href="/"
             className="text-sm text-muted-foreground hover:text-foreground underline transition-colors"
           >
             {t("goHome")}
-          </a>
+          </Link>
         </div>
       </div>
     </div>
