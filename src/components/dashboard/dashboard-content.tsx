@@ -18,7 +18,7 @@ const fetchPreviousSnapshot = cache((userId: string) => {
   return prisma.netWorthSnapshot.findFirst({
     where: { userId, date: { lt: today } },
     orderBy: { date: "desc" },
-    select: { date: true, netWorth: true, baseCurrency: true },
+    select: { date: true, netWorth: true, baseCurrency: true, createdAt: true },
   });
 });
 
@@ -102,7 +102,7 @@ async function DashboardActionsSection({
   ]);
 
   const latestSnapshotDate =
-    previousSnapshot?.date?.toISOString().split("T")[0] ?? null;
+    previousSnapshot?.createdAt?.toISOString() ?? null;
 
   return (
     <DashboardActions
