@@ -30,9 +30,9 @@ test("1. unauthenticated visitor is redirected to /login and can sign in", async
   await page.goto("/")
   await expect(page).toHaveURL(/\/login/, { timeout: 15_000 })
 
-  // Login page must show the Google OAuth button
+  // Login page must show the Google OAuth button (translation: "Continue with Google")
   await expect(
-    page.getByRole("button", { name: /sign in with google/i }),
+    page.getByRole("button", { name: /continue with google/i }),
   ).toBeVisible()
 
   // Sign in via preview-credentials (the OAuth stub for CI)
@@ -119,9 +119,11 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   await accountCard.hover()
   const checkbox = accountCard.locator("..").locator('[role="checkbox"]').first()
   await checkbox.check()
+  // Register the dialog handler BEFORE the click — confirm() fires synchronously
+  // when the button is clicked, so a handler registered after would miss it and
+  // Playwright would auto-dismiss the dialog (= delete cancelled).
+  page.once("dialog", (d) => d.accept())
   await page.getByRole("button", { name: /delete \(1\)/i }).click()
-  // Confirm the browser dialog
-  page.on("dialog", (d) => d.accept())
   await expect(page.getByText(accountName)).not.toBeVisible({ timeout: 10_000 })
 })
 
