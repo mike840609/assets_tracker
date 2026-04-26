@@ -46,6 +46,10 @@ AUTH_SECRET="your_secure_random_string"
 AUTH_GOOGLE_ID="your_google_oauth_client_id"
 AUTH_GOOGLE_SECRET="your_google_oauth_client_secret"
 CRON_SECRET="your_secure_random_string"
+
+# Preview-only (required when VERCEL_ENV=preview):
+# PREVIEW_AUTH_PASSWORD="shared_password_to_gate_preview_access"
+# AUTH_REDIRECT_PROXY_URL="https://stable-preview-host.vercel.app"  # optional, for Google OAuth on preview URLs
 ```
 
 > [!TIP]
@@ -56,8 +60,11 @@ CRON_SECRET="your_secure_random_string"
 ```bash
 npm install
 npx prisma generate
-npx prisma db push
+npx prisma migrate deploy   # apply committed migrations to your database
 ```
+
+> [!NOTE]
+> For brand-new schema changes during local development, use `npx prisma migrate dev --name <description>` to generate a new migration file. `prisma db push` is still useful for quick prototyping but bypasses migration history; commit a migration before pushing the change.
 
 ### 4. Running Locally
 
@@ -72,10 +79,19 @@ Open [http://localhost:3000](http://localhost:3000) to see your dashboard.
 This project is optimized for **Vercel** and includes native Cron Job support via `vercel.json`.
 
 - **Endpoint**: `/api/cron/snapshot`
-- **Schedule**: Every day at 00:00 UTC.
+- **Schedule**: Daily at 21:30 UTC (configured in `vercel.json`).
 - **Security**: Protected via `CRON_SECRET` header verification.
+- **Region**: Pinned to `sin1` to match the Neon database region.
 
-To enable automation, deploy to Vercel and set all environment variables in your project settings.
+To enable automation, deploy to Vercel and set all environment variables in your project settings. Vercel only runs cron jobs on production deployments, so preview deployments are unaffected.
+
+### Preview deployments
+
+Vercel preview deployments use a **separate Neon branch** so they never touch production data:
+
+- Set `DATABASE_URL` with two scopes in Vercel → Settings → Environment Variables: one for **Production** (prod Neon branch) and one for **Preview** (a dedicated `preview` Neon branch). If your `DATABASE_URL` is managed by the Neon-Vercel integration, configure the per-environment branch mapping inside the integration UI instead.
+- The Vercel build runs `npm run build:vercel` (= `prisma migrate deploy && next build`), so each deploy applies pending migrations to whichever DB is wired in for that environment.
+- CI / local `npm run build` is plain `next build` and does **not** require a database.
 
 ## 💹 Net Worth History & Currency Normalization
 

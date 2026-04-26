@@ -40,9 +40,12 @@ ANALYZE=true npm run build  # Build with @next/bundle-analyzer HTML reports
 npm run lint         # Run ESLint
 
 # Database
-npx prisma generate  # Regenerate Prisma client after schema changes
-npx prisma db push   # Push schema to database (dev)
-npx prisma studio    # Open Prisma Studio GUI
+npx prisma generate                                # Regenerate Prisma client after schema changes
+npx prisma migrate dev --name <description>        # Author a new migration locally (commits to prisma/migrations/)
+npx prisma migrate deploy                          # Apply pending migrations against $DATABASE_URL (run by build:vercel on Vercel)
+npx prisma migrate resolve --applied <migration>   # One-shot baseline: mark a migration as already-applied (e.g. when adopting migrations on a DB seeded via db push)
+npx prisma db push                                 # Quick prototype-only schema sync — bypasses migration history; commit a migrate dev before merging
+npx prisma studio                                  # Open Prisma Studio GUI
 ```
 
 ## Architecture
