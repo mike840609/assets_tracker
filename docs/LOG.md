@@ -5,4 +5,5 @@
 - 2026-04-24: [ADD]: R21 — Add Playwright smoke E2E suite (`playwright.config.ts`, `tests/e2e/global-setup.ts`, `tests/e2e/smoke.spec.ts`, `.github/workflows/e2e.yml`); covers unauthenticated redirect → login, account + holding creation, and dashboard net-worth card + trend chart; auth stubbed via preview-credentials provider
 - 2026-04-25: [MOD]: R9 — Verify Google OAuth consent screen is published & verified; marked as done in docs
 - 2026-04-25: [ADD]: R6 — Add `/terms` (Terms of Service) page
+- 2026-04-26: [MOD]: R15 (partial) + V2 — Isolate preview database via env-scoped `DATABASE_URL`; add `build:vercel` npm script (`prisma migrate deploy && next build`) and point `vercel.json` `buildCommand` at it so each Vercel deploy applies pending Prisma migrations against whichever DB is wired in for that environment (prod vs. shared `preview` Neon branch); CI / local `npm run build` stays as plain `next build` so it does not require a database. Pre-existing Neon branches still need a one-time `npx prisma migrate resolve --applied 202604120001_add_hot_path_indexes` to baseline the empty `_prisma_migrations` history before the next Vercel deploy succeeds.
 

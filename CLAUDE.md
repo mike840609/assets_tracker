@@ -40,9 +40,12 @@ ANALYZE=true npm run build  # Build with @next/bundle-analyzer HTML reports
 npm run lint         # Run ESLint
 
 # Database
-npx prisma generate  # Regenerate Prisma client after schema changes (also runs automatically via `postinstall` after `npm install`)
-npx prisma db push   # Push schema to database (dev)
-npx prisma studio    # Open Prisma Studio GUI
+npx prisma generate                                # Regenerate Prisma client after schema changes (also runs automatically via `postinstall` after `npm install`)
+npx prisma migrate dev --name <description>        # Author a new migration locally (commits to prisma/migrations/)
+npx prisma migrate deploy                          # Apply pending migrations against $DATABASE_URL (run by build:vercel on Vercel)
+npx prisma migrate resolve --applied <migration>   # One-shot baseline: mark a migration as already-applied (e.g. when adopting migrations on a DB seeded via db push)
+npx prisma db push                                 # Quick prototype-only schema sync — bypasses migration history; commit a migrate dev before merging
+npx prisma studio                                  # Open Prisma Studio GUI
 
 # E2E tests (Playwright)
 npm run test:e2e         # Run Playwright suite headless
@@ -212,6 +215,8 @@ AUTH_GOOGLE_ID      # Google OAuth client ID
 AUTH_GOOGLE_SECRET  # Google OAuth client secret
 CRON_SECRET         # Bearer token for /api/cron/snapshot
 ```
+
+`DATABASE_URL` is scoped per Vercel environment — Production uses the prod Neon branch, Preview uses a separate shared `preview` Neon branch, so previews never touch live data. Vercel runs the `build:vercel` script (`prisma migrate deploy && next build`, wired via `vercel.json` → `buildCommand`) so each deploy applies pending migrations to whichever DB is wired in for that environment. CI/local `npm run build` stays as plain `next build` so it doesn't need a database.
 
 ### Long-form analysis docs (`docs/`)
 

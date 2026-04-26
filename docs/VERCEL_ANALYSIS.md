@@ -66,10 +66,11 @@ Deployment `dpl_3KqPj4qBr3ZojdDaSxtKvo8iNhC2` (44s total, 292 MB build cache):
    The repo still has `src/middleware.ts`.
 2. **Prisma minor out of date.** Every build prints a 7.6.0 → 7.7.0 upgrade
    banner.
-3. **Duplicate `prisma generate`.** Runs once via the `postinstall` npm
-   script, then again via Vercel's build command
-   `npx prisma generate && next build`. Each run is ~200ms (~400ms total
-   wasted per build).
+3. **Duplicate `prisma generate` (resolved 2026-04-26).** Originally ran once
+   via `postinstall` and again via Vercel's auto-detected
+   `npx prisma generate && next build`. `vercel.json` now pins
+   `buildCommand: "npm run build:vercel"` (= `prisma migrate deploy && next build`),
+   so `prisma generate` only runs in `postinstall`.
 4. **Only 1 worker for page-data collection and static generation** (21
    pages). Runs on a 2-core builder — under-utilized.
 5. **Large build cache (292 MB).** Upload takes ~4s; `.next/cache` likely
@@ -126,15 +127,17 @@ Keep the existing `auth.config.ts` import and matcher config intact.
 ### V2 — Remove duplicate `prisma generate`
 
 **Observation.** `package.json` runs `prisma generate` in `postinstall`,
-AND Vercel's detected build command also runs `npx prisma generate && next build`.
+AND Vercel's auto-detected build command also ran `npx prisma generate && next build`.
 
-**Recommendation.** Keep `postinstall` (so `npm install` locally also
-regenerates), and remove the `npx prisma generate &&` prefix from the
-Vercel build command — or vice versa. Either direction saves ~200ms +
-output noise per build.
+**Status (2026-04-26).** Resolved. `vercel.json` now pins
+`buildCommand: "npm run build:vercel"` (= `prisma migrate deploy && next build`),
+which does not include `prisma generate`. The `postinstall` hook is the
+sole call site, eliminating the duplicate run. The new `build:vercel`
+script also applies pending Prisma migrations on every Vercel deploy
+against whichever `DATABASE_URL` is wired in for that environment
+(production vs. preview).
 
-**Critical files.** `package.json`, Vercel project → Build & Development
-Settings.
+**Critical files.** `package.json`, `vercel.json`.
 
 ---
 

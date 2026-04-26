@@ -18,7 +18,7 @@
 | R12 | Add `/api/health` endpoint                                                  | Reliability           | 🟡 Medium | 30 min   | ❌ Not Done |
 | R13 | Verify Vercel Cron `/api/cron/snapshot` fires daily in production           | Reliability           | 🔴 High   | 15 min   | ❌ Not Done |
 | R14 | Timeout + retry guards on Yahoo Finance / CoinGecko calls                   | Reliability           | 🔴 High   | 30–60 min| ✅ Done     |
-| R15 | Switch Prisma `db push` → `migrate deploy` (committed migrations)           | Reliability           | 🔴 High   | 2–3 hrs  | ❌ Not Done |
+| R15 | Switch Prisma `db push` → `migrate deploy` (committed migrations)           | Reliability           | 🔴 High   | 2–3 hrs  | 🟡 Partial — `prisma/migrations/` committed; `build:vercel` runs `prisma migrate deploy`; baselining of pre-existing prod/preview Neon branches via `prisma migrate resolve --applied` is a one-time op per DB |
 | R16 | Document Neon backup / PITR SLA in `README.md`                              | Reliability           | 🟡 Medium | 30 min   | ❌ Not Done |
 | R17 | Ship Sentry (or equivalent) for error aggregation + alerts                  | Observability         | 🔴 High   | 1–2 hrs  | ❌ Not Done |
 | R18 | Structured logging via `pino` with `userId` / `requestId` context           | Observability         | 🟡 Medium | 3–4 hrs  | ❌ Not Done |
@@ -223,11 +223,23 @@ Combines `SUGGESTIONS.md#33` and `#52`.
 
 #### R15 — Prisma migrations, not `db push`
 
-`CLAUDE.md` instructs `npx prisma db push` — fine for solo dev,
+`CLAUDE.md` originally instructed `npx prisma db push` — fine for solo dev,
 dangerous for production. Public launch requires a committed
 `prisma/migrations/` directory and a `prisma migrate deploy` step
 in CI/build so schema changes are reviewable, reversible, and
 auditable across environments.
+
+**Status (2026-04-26).** `prisma/migrations/` exists with one committed
+migration; the Vercel build (`vercel.json` → `npm run build:vercel`) now
+runs `prisma migrate deploy && next build`. Pre-existing Neon branches
+(production + the new shared `preview` branch) were created via
+`prisma db push` so their `_prisma_migrations` history is empty —
+baseline each one once with
+`npx prisma migrate resolve --applied 202604120001_add_hot_path_indexes`
+against the corresponding `DATABASE_URL` (use the **direct**, non-pooled
+Neon URL) before the next Vercel deploy. CI / local `npm run build` is
+intentionally left as plain `next build` so it does not require a
+database.
 
 #### R16 — Document Neon backup SLA
 

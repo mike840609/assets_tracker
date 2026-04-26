@@ -1,5 +1,5 @@
 {
-  "buildCommand": "next build",
+  "buildCommand": "npm run build:vercel",
   "regions": ["sin1"],
   "crons": [
     {
