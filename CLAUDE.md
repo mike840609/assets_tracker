@@ -182,7 +182,7 @@ AUTH_GOOGLE_SECRET  # Google OAuth client secret
 CRON_SECRET         # Bearer token for /api/cron/snapshot
 ```
 
-`DATABASE_URL` is scoped per Vercel environment — Production uses the prod Neon branch, Preview uses a separate shared `preview` Neon branch, so previews never touch live data. The `build` script in `package.json` runs `prisma migrate deploy && next build` so each deploy applies pending migrations to whichever DB is wired in for that environment.
+`DATABASE_URL` is scoped per Vercel environment — Production uses the prod Neon branch, Preview uses a separate shared `preview` Neon branch, so previews never touch live data. Vercel runs the `build:vercel` script (`prisma migrate deploy && next build`, wired via `vercel.json` → `buildCommand`) so each deploy applies pending migrations to whichever DB is wired in for that environment. CI/local `npm run build` stays as plain `next build` so it doesn't need a database.
 
 ### Long-form analysis docs (`docs/`)
 
