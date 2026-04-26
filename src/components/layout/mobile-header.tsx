@@ -12,7 +12,7 @@ export function MobileHeader() {
   return (
     <header className="md:hidden sticky top-0 left-0 right-0 z-50 glass backdrop-blur-md border-b border-border/50 px-4 py-3 flex items-center justify-between">
       <div className="flex items-center gap-2 min-w-0">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" className="h-6 w-6 shrink-0 drop-shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" className="h-6 w-6 shrink-0 drop-shadow-lg dark:drop-shadow-[0_3px_10px_rgba(52,211,153,0.25)]">
           <defs>
             <linearGradient id="mobile-icon-g" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#34d399"/>

@@ -29,7 +29,7 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
     <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar/80 backdrop-blur-md text-sidebar-foreground glass z-10 shrink-0">
       <div className="px-6 pt-6 pb-3 border-b border-border/50">
         <div className="flex items-center gap-3">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" className="h-8 w-8 shrink-0 drop-shadow-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" className="h-8 w-8 shrink-0 drop-shadow-lg dark:drop-shadow-[0_4px_12px_rgba(52,211,153,0.25)]">
             <defs>
               <linearGradient id="sidebar-icon-g" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stopColor="#34d399"/>
