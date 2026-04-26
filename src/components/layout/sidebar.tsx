@@ -27,9 +27,24 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
 
   return (
     <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar/80 backdrop-blur-md text-sidebar-foreground glass z-10 shrink-0">
-      <div className="p-6">
-        <h1 className="text-xl font-bold tracking-tight bg-gradient-to-br from-primary to-chart-3 bg-clip-text text-transparent">{t("app.name")}</h1>
-        <p className="text-sm text-muted-foreground mt-1 font-medium">{t("app.subtitle")}</p>
+      <div className="px-6 pt-6 pb-3 border-b border-border/50">
+        <div className="flex items-center gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" className="h-8 w-8 shrink-0 drop-shadow-lg dark:drop-shadow-[0_4px_12px_rgba(52,211,153,0.25)]">
+            <defs>
+              <linearGradient id="sidebar-icon-g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#34d399"/>
+                <stop offset="100%" stopColor="#065f46"/>
+              </linearGradient>
+            </defs>
+            <rect width="32" height="32" rx="9" fill="url(#sidebar-icon-g)"/>
+            <path d="M8 20 L13.5 13.5 L17.5 17.5 L24 10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M20 10 L24 10 L24 14" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight bg-gradient-to-br from-primary to-chart-3 bg-clip-text text-transparent">{t("app.name")}</h1>
+            <p className="text-xs text-muted-foreground mt-0.5 font-medium">{t("app.subtitle")}</p>
+          </div>
+        </div>
       </div>
       <nav className="flex-1 px-3 space-y-2 mt-4">
         {navItems.map((item) => {
