@@ -40,12 +40,17 @@ ANALYZE=true npm run build  # Build with @next/bundle-analyzer HTML reports
 npm run lint         # Run ESLint
 
 # Database
-npx prisma generate                                # Regenerate Prisma client after schema changes
+npx prisma generate                                # Regenerate Prisma client after schema changes (also runs automatically via `postinstall` after `npm install`)
 npx prisma migrate dev --name <description>        # Author a new migration locally (commits to prisma/migrations/)
 npx prisma migrate deploy                          # Apply pending migrations against $DATABASE_URL (run by build:vercel on Vercel)
 npx prisma migrate resolve --applied <migration>   # One-shot baseline: mark a migration as already-applied (e.g. when adopting migrations on a DB seeded via db push)
 npx prisma db push                                 # Quick prototype-only schema sync — bypasses migration history; commit a migrate dev before merging
 npx prisma studio                                  # Open Prisma Studio GUI
+
+# E2E tests (Playwright)
+npm run test:e2e         # Run Playwright suite headless
+npm run test:e2e:ui      # Open the Playwright UI runner
+npm run test:e2e:report  # Open the last HTML report
 ```
 
 ## Architecture
@@ -53,33 +58,39 @@ npx prisma studio                                  # Open Prisma Studio GUI
 ### Route Structure
 
 ```
-src/app/
-├── layout.tsx              # Root layout (fonts, global CSS)
-├── login/page.tsx          # Public login page
-├── (main)/                 # Auth-gated route group
-│   ├── layout.tsx          # Sidebar + mobile header shell
-│   ├── page.tsx            # Dashboard
-│   ├── accounts/page.tsx   # Accounts list
-│   ├── accounts/[id]/      # Account detail page
-│   └── settings/           # User settings
-└── api/
-    ├── auth/[...nextauth]/ # NextAuth handlers
-    ├── accounts/           # CRUD for accounts
-    ├── accounts/[id]/holdings/          # Holdings CRUD
-    ├── accounts/[id]/transactions/      # HoldingTransaction CRUD
-    ├── accounts/[id]/cash-transactions/ # CashTransaction CRUD
-    ├── exchange-rates/     # Fetch + refresh exchange rates
-    ├── prices/refresh/     # Manual price refresh trigger
-    ├── snapshots/          # Net worth snapshot history
-    ├── search/             # Holding symbol search (Yahoo Finance)
-    ├── settings/           # User settings API
-    └── cron/snapshot/      # Daily cron job (requires CRON_SECRET bearer token)
+src/
+├── app/
+│   ├── layout.tsx              # Root layout (fonts, global CSS)
+│   ├── login/page.tsx          # Public login page
+│   ├── privacy/, terms/        # Public legal pages
+│   ├── (main)/                 # Auth-gated route group
+│   │   ├── layout.tsx          # Sidebar + mobile header shell
+│   │   ├── page.tsx            # Dashboard
+│   │   ├── accounts/           # Accounts list + [id] detail
+│   │   ├── analysis/           # /analysis tab (see docs/ANALYSIS_ROADMAP.md)
+│   │   ├── history/            # Net worth history view
+│   │   └── settings/           # User settings
+│   └── api/
+│       ├── auth/[...nextauth]/ # NextAuth handlers
+│       ├── accounts/           # CRUD for accounts
+│       ├── accounts/[id]/holdings/          # Holdings CRUD
+│       ├── accounts/[id]/transactions/      # HoldingTransaction CRUD
+│       ├── accounts/[id]/cash-transactions/ # CashTransaction CRUD
+│       ├── exchange-rates/     # Fetch + refresh exchange rates
+│       ├── prices/refresh/     # Manual price refresh trigger
+│       ├── snapshots/          # Net worth snapshot history
+│       ├── search/             # Holding symbol search (Yahoo Finance)
+│       ├── settings/           # User settings API
+│       └── cron/snapshot/      # Daily cron job (requires CRON_SECRET bearer token)
+├── hooks/                      # Client hooks (use-chart-animation, use-count-up)
+└── proxy.ts                    # Server-side proxy module (used by service layer)
 ```
 
 ### Next.js 16 Breaking Changes
 
+> ⚠️ This is **not** the Next.js most training data describes. APIs, conventions, and file structure have shifted. Before writing code that touches a Next.js API, read the relevant page in `node_modules/next/dist/docs/` and heed deprecation notices — guessing from memory will produce broken code.
+
 - **`params` is a `Promise`** — page components receive `params: Promise<{ id: string }>` and must `await params` before accessing fields.
-- Read `node_modules/next/dist/docs/` for any Next.js APIs before using them — many APIs changed from earlier versions.
 
 ### Cache model (`cacheComponents: true`)
 
@@ -149,9 +160,29 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 - Two-pass algorithm: first pass collects missing rate pairs, second pass computes values after batch-fetching missing rates
 - `getNetWorthSummary(userId, baseCurrency)` returns fully computed `NetWorthSummary`
 
+**Other services in `src/lib/services/`:**
+- `snapshot-service.ts` — creates `NetWorthSnapshot` rows with the lossless per-account breakdown
+- `history-service.ts` — reads snapshots and renormalizes them on the fly into the user's current base currency
+- `analysis-service.ts` — backs the `/analysis` tab
+- `settings-service.ts` — user settings reads/writes
+- `balance.ts` — shared balance/value computation helpers
+
+### API utilities
+
+- `src/lib/api-handler.ts` + `src/lib/api-responses.ts` — standardized request handling and JSON response shapes for route handlers.
+- `src/lib/rate-limit.ts` — in-process rate limiter; wrap any new public-facing or cron-adjacent API route with it.
+- `src/lib/validators.ts` — Zod 4 schemas for all API input validation.
+
 ### Daily Snapshot Cron
 
-`GET /api/cron/snapshot` — requires `Authorization: Bearer <CRON_SECRET>` header. Refreshes all prices, then creates `NetWorthSnapshot` records for every user. Scheduled in `vercel.json` at `30 21 * * *` (21:30 UTC daily); `maxDuration` is 60s and the function region is pinned to `sin1` to match the Neon database region.
+`GET /api/cron/snapshot` — requires `Authorization: Bearer <CRON_SECRET>` header. Refreshes all prices, then creates `NetWorthSnapshot` records for every user. Scheduled in `vercel.json` at `30 21 * * *` (21:30 UTC daily); `maxDuration` is 60s and the function region is pinned to `sin1` to match the Neon database region. (Note: `README.md` still says "00:00 UTC" — `vercel.json` and this file are the source of truth.)
+
+### E2E Testing (Playwright)
+
+- Specs live in `tests/e2e/` (`smoke.spec.ts` is the entry; `global-setup.ts` / `global-teardown.ts` provision and tear down a dedicated test user so runs don't pollute real user data — see commit `3289e91`).
+- Stored auth state: `tests/e2e/.auth/user.json` (loaded by the `chromium` project).
+- The config auto-starts `npm run dev` with `VERCEL_ENV=preview` and `PREVIEW_AUTH_PASSWORD=<E2E_PASSWORD>` unless `PLAYWRIGHT_TEST_BASE_URL` is set; CI sets that var to skip the bootstrap and run against an existing deployment.
+- `fullyParallel: false` and `workers: 1` — the suite is intentionally serial; do not parallelize without revisiting the global setup.
 
 ### Component Organization
 
@@ -198,3 +229,4 @@ Before proposing changes, check whether the work is already tracked in one of th
 - `docs/ANALYSIS_ROADMAP.md` — `/analysis` tab feature roadmap
 - `docs/RELEASE_READINESS.md` — pre-market-launch blockers (R1–R26)
 - `docs/DOCS_REVIEW_SUGGESTIONS.md` — consolidated cross-doc recommendations
+- `docs/LOG.md` — running engineering log / decision journal
