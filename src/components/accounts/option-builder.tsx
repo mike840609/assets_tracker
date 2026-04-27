@@ -106,35 +106,30 @@ export function OptionBuilder({ loading, onSubmit, onCancel }: OptionBuilderProp
     }
   }, []);
 
-  // Lazy-load chain data when the user picks an expiration not yet fetched.
-  const underlyingRef = useRef(underlying);
-  underlyingRef.current = underlying;
-  useEffect(() => {
-    if (!chain || !expiration || chain.chains[expiration]) return;
+  async function loadExpirationChain(exp: string, currentChain: ChainResponse) {
+    if (!currentChain || currentChain.chains[exp]) return;
     setExpChainLoading(true);
-    const sym = underlyingRef.current;
-    fetch(`/api/options/chain?symbol=${encodeURIComponent(sym)}&date=${expiration}`)
-      .then((r) => r.json())
-      .then(({ data }: { data: ChainResponse }) => {
-        if (data.chains[expiration]) {
-          setChain((prev) =>
-            prev ? { ...prev, chains: { ...prev.chains, ...data.chains } } : null,
-          );
-        }
-      })
-      .catch((err) => console.error("Chain fetch error:", err))
-      .finally(() => setExpChainLoading(false));
-  }, [chain, expiration]);
+    try {
+      const sym = currentChain.underlying;
+      const r = await fetch(`/api/options/chain?symbol=${encodeURIComponent(sym)}&date=${exp}`);
+      const { data }: { data: ChainResponse } = await r.json();
+      if (data.chains[exp]) {
+        setChain((prev) =>
+          prev ? { ...prev, chains: { ...prev.chains, ...data.chains } } : null,
+        );
+      }
+    } catch (err) {
+      console.error("Chain fetch error:", err);
+    } finally {
+      setExpChainLoading(false);
+    }
+  }
 
   function handleUnderlyingPick(r: SearchResult) {
     setUnderlying(r.symbol);
     setStep("chain");
     void fetchChain(r.symbol);
   }
-
-  // Keep a ref to the current strike so the effect can read it without being a dep.
-  const strikeRef = useRef(strike);
-  strikeRef.current = strike;
 
   // When expiration or side changes, reset strike if the current one is no longer in the chain.
   useEffect(() => {
@@ -143,12 +138,13 @@ export function OptionBuilder({ loading, onSubmit, onCancel }: OptionBuilderProp
     if (!block) return;
     const arr = side === "CALL" ? block.calls : block.puts;
     if (arr.length === 0) return;
-    const stillValid = arr.some((c) => String(c.strike) === strikeRef.current);
+    const stillValid = arr.some((c) => String(c.strike) === strike);
     if (!stillValid) {
       const middle = arr[Math.floor(arr.length / 2)];
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStrike(String(middle.strike));
     }
-  }, [chain, expiration, side]); // deliberately excludes `strike` — read via ref above
+  }, [chain, expiration, side, strike]);
 
   const currentChainBlock = chain && expiration ? chain.chains[expiration] : undefined;
   const strikesForSide: ChainContract[] = currentChainBlock
@@ -299,7 +295,14 @@ export function OptionBuilder({ loading, onSubmit, onCancel }: OptionBuilderProp
           <>
             <div className="space-y-2">
               <Label>Expiration</Label>
-              <Select value={expiration} onValueChange={(v) => v && setExpiration(v)}>
+              <Select value={expiration} onValueChange={(v) => {
+                if (v) {
+                  setExpiration(v);
+                  if (chain && !chain.chains[v]) {
+                    void loadExpirationChain(v, chain);
+                  }
+                }
+              }}>
                 <SelectTrigger className="w-full">
                   <SelectValue>{expiration ? fmtExp(expiration) : "Select expiration"}</SelectValue>
                 </SelectTrigger>
