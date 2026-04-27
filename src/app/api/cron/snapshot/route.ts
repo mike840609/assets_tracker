@@ -12,6 +12,37 @@ export async function GET(request: Request) {
   }
 
   try {
+    // 0. Sweep expired option contracts so the snapshot doesn't include them
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const expiredOptions = await prisma.holding.findMany({
+      where: {
+        assetType: "OPTION",
+        expiration: { lt: today },
+        quantity: { gt: 0 },
+      },
+    });
+    if (expiredOptions.length > 0) {
+      console.log(`Cron: Closing ${expiredOptions.length} expired option contract(s)...`);
+      for (const h of expiredOptions) {
+        await prisma.$transaction([
+          prisma.holdingTransaction.create({
+            data: {
+              holdingId: h.id,
+              type: "SELL",
+              quantity: Number(h.quantity),
+              note: "Expired",
+            },
+          }),
+          prisma.holding.update({
+            where: { id: h.id },
+            data: { quantity: 0 },
+          }),
+        ]);
+      }
+      revalidateTag("accounts", "max");
+    }
+
     // 1. Refresh all prices first to ensure the snapshot is accurate
     console.log("Cron: Refreshing prices...");
     await refreshAllPrices();

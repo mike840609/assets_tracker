@@ -72,8 +72,9 @@ async function computeNetWorthSummary(
       const cached = priceMap[h.symbol];
       const currentPrice = cached?.price ?? null;
       const quantity = h.quantity;
+      const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
       const marketValue =
-        currentPrice !== null ? currentPrice * quantity : null;
+        currentPrice !== null ? currentPrice * quantity * multiplier : null;
       return {
         ...h,
         currentPrice,

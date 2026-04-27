@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatQuantity } from "@/lib/currencies";
+import { getOptionDisplay } from "@/lib/options";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { SerializedHolding } from "@/lib/types";
@@ -31,10 +32,16 @@ interface HoldingRowProps {
 export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, onDelete }: HoldingRowProps) {
   const t = useTranslations();
   const { privacyMode } = usePrivacyMode();
+  const optionDisplay = getOptionDisplay(h);
+  const symbolLabel = optionDisplay ? optionDisplay.short : h.symbol;
+  const nameLabel = optionDisplay ? optionDisplay.long : h.name;
+  const isOption = h.assetType === "OPTION";
   return (
     <TableRow key={h.id}>
-      <TableCell className="font-mono font-medium">{h.symbol}</TableCell>
-      <TableCell>{h.name}</TableCell>
+      <TableCell className="font-mono font-medium" title={isOption ? optionDisplay?.occ : undefined}>
+        {symbolLabel}
+      </TableCell>
+      <TableCell>{nameLabel}</TableCell>
       <TableCell>
         <Badge variant="secondary">{h.assetType}</Badge>
       </TableCell>
@@ -43,10 +50,11 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
       </TableCell>
       <TableCell className="text-right">
         {formatQuantity(h.quantity, h.assetType)}
+        {isOption && <span className="ml-1 text-muted-foreground text-xs">contracts</span>}
       </TableCell>
       <TableCell className="text-right">
         {privacyMode ? HIDDEN : h.currentPrice !== null
-          ? formatCurrency(h.currentPrice, h.currency || "USD")
+          ? <>{formatCurrency(h.currentPrice, h.currency || "USD")}{isOption && <span className="ml-1 text-muted-foreground text-xs">/share</span>}</>
           : "—"}
       </TableCell>
       <TableCell className="text-right font-medium">

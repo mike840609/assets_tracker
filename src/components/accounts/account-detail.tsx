@@ -76,7 +76,8 @@ export function AccountDetail({
     const price = priceMap[h.symbol] ?? null;
     const hc = h.currency || "USD";
     const rate = hc === account.currency ? 1 : ratesMap[`${hc}_${account.currency}`] ?? 1;
-    const marketValue = price !== null ? price * h.quantity * rate : null;
+    const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
+    const marketValue = price !== null ? price * h.quantity * multiplier * rate : null;
     return { ...h, currentPrice: price, marketValue };
   });
 

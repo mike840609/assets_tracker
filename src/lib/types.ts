@@ -50,7 +50,11 @@ export function serializeModel<
 
 export type SerializedAccount = Serialized<Account, "cashBalance", "createdAt" | "updatedAt">;
 
-export type SerializedHolding = Serialized<Holding, "quantity", "createdAt" | "updatedAt">;
+export type SerializedHolding = Serialized<
+  Holding,
+  "quantity" | "strike",
+  "createdAt" | "updatedAt" | "expiration"
+>;
 
 export type SerializedAccountWithHoldings = SerializedAccount & {
   holdings: SerializedHolding[];
@@ -108,10 +112,20 @@ export function serializeAccount(account: Account): SerializedAccount {
 }
 
 export function serializeHolding(holding: Holding): SerializedHolding {
-  return serializeModel(holding, {
-    decimals: ["quantity"] as const,
-    dates: ["createdAt", "updatedAt"] as const,
-  });
+  const result: Record<string, unknown> = {};
+  for (const key of Object.keys(holding) as (keyof Holding)[]) {
+    const value = holding[key];
+    if (value === null || value === undefined) {
+      result[key] = value;
+    } else if (key === "quantity" || key === "strike") {
+      result[key] = Number(value);
+    } else if (key === "createdAt" || key === "updatedAt" || key === "expiration") {
+      result[key] = (value as Date).toISOString();
+    } else {
+      result[key] = value;
+    }
+  }
+  return result as SerializedHolding;
 }
 
 export function serializeAccountWithHoldings(

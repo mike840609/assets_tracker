@@ -18,8 +18,11 @@ export const HOLDING_ASSET_TYPES = [
   "CRYPTO",
   "MUTUAL_FUND",
   "BOND",
+  "OPTION",
   "OTHER",
 ] as const;
+
+export const OPTION_TYPES = ["CALL", "PUT"] as const;
 
 export const HOLDING_TRANSACTION_TYPES = ["BUY", "SELL", "EDIT"] as const;
 

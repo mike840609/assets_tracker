@@ -12,9 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { HoldingSearch } from "./holding-search";
 import type { SearchResult } from "./holding-search";
+import { OptionBuilder } from "./option-builder";
 
 const ASSET_TYPES = [
   { value: "STOCK", label: "Stock" },
@@ -22,8 +24,11 @@ const ASSET_TYPES = [
   { value: "CRYPTO", label: "Crypto" },
   { value: "MUTUAL_FUND", label: "Mutual Fund" },
   { value: "BOND", label: "Bond" },
+  { value: "OPTION", label: "Option" },
   { value: "OTHER", label: "Other" },
 ];
+
+type Mode = "stock" | "option";
 
 export function HoldingForm({
   open,
@@ -39,6 +44,7 @@ export function HoldingForm({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"search" | "confirm">("search");
+  const [mode, setMode] = useState<Mode>("stock");
 
   // Selected holding state
   const [symbol, setSymbol] = useState("");
@@ -57,6 +63,7 @@ export function HoldingForm({
 
   function resetForm() {
     setStep("search");
+    setMode("stock");
     setSymbol("");
     setName("");
     setQuantity("");
@@ -69,21 +76,19 @@ export function HoldingForm({
     onClose();
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function postHolding(payload: {
+    symbol: string;
+    name: string;
+    quantity: number;
+    assetType: string;
+    currency: string;
+  }) {
     setLoading(true);
-
     try {
       const res = await fetch(`/api/accounts/${accountId}/holdings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          symbol,
-          name,
-          quantity: parseFloat(quantity),
-          assetType,
-          currency,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -91,7 +96,7 @@ export function HoldingForm({
         throw new Error(err.error?.message || "Failed");
       }
 
-      toast.success(`Added ${symbol}`);
+      toast.success(`Added ${payload.symbol}`);
       handleClose();
       if (onSuccess) onSuccess();
       startTransition(() => { router.refresh(); });
@@ -104,16 +109,46 @@ export function HoldingForm({
     }
   }
 
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await postHolding({
+      symbol,
+      name,
+      quantity: parseFloat(quantity),
+      assetType,
+      currency,
+    });
+  }
+
+  const dialogTitle = mode === "option"
+    ? "Add Option Contract"
+    : step === "search"
+      ? "Search Ticker"
+      : "Add Holding";
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {step === "search" ? "Search Ticker" : "Add Holding"}
-          </DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
         </DialogHeader>
 
-        {step === "search" ? (
+        {step === "search" && (
+          <Tabs value={mode} onValueChange={(v) => v && setMode(v as Mode)}>
+            <TabsList>
+              <TabsTrigger value="stock">Stock / ETF / Crypto</TabsTrigger>
+              <TabsTrigger value="option">Option</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+
+        {mode === "option" ? (
+          <OptionBuilder
+            loading={loading}
+            onSubmit={postHolding}
+            onCancel={handleClose}
+          />
+        ) : step === "search" ? (
           <div className="space-y-4">
             <HoldingSearch onSelect={selectResult} autoFocus />
 
