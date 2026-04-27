@@ -146,8 +146,7 @@
     "refreshPrices": "Refresh Prices",
     "refreshing": "Refreshing...",
     "refreshSuccess": "Updated {count} prices & exchange rates",
-    "refreshFailed": "Failed to refresh prices",
-    "cacheHint": "Prices are cached for ~5 minutes and auto-refreshed daily. Click \"Refresh Prices\" to fetch the latest now."
+    "refreshFailed": "Failed to refresh prices"
   },
   "trendChart": {
     "title": "Net Worth Trend",
