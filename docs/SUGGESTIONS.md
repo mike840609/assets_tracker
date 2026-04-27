@@ -111,7 +111,7 @@
 | 105 | Add concurrency limits to daily snapshot cron fan-out | Reliability / Performance | 🟡 Medium | 1-2 hrs | ❌ Not Done |
 | 106 | Move transactions API to cursor/keyset pagination | Performance | 🔴 High | 2-3 hrs | ❌ Not Done |
 | 107 | Cache `/api/search` symbol lookups with short TTL | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
-| 108 | Chunk and dedupe symbol batches in price refresh | Performance | 🟡 Medium | 1-2 hrs | ❌ Not Done |
+| 108 | Chunk and dedupe symbol batches in price refresh | Performance | 🟡 Medium | 1-2 hrs | 🟡 Partial — dedupe (`[...new Set(...)]` on stock + crypto arrays in `refreshAllPrices`) landed 2026-04-27; chunking by ~100–200 symbols still pending |
 | 109 | Add auth + ownership checks on cash-transactions routes | Security | 🔴 High | 1 hr | ❌ Not Done |
 | 110 | Verify holding ownership on PATCH/DELETE holdings | Security | 🔴 High | 1 hr | ❌ Not Done |
 | 111 | Don't leak raw exception messages from data-import | Security | 🟡 Medium | 15 min | ❌ Not Done |
@@ -1713,8 +1713,9 @@ As transaction history grows, high offsets force the database to scan/discard mo
 `refreshAllPrices` currently builds stock/crypto symbol arrays directly from holdings and sends each full list in one Yahoo call.
 With large portfolios, this can create oversized external calls and redundant fetches.
 
-- Deduplicate symbols before external fetch (`Set`) and chunk requests (e.g., 100–200 symbols per batch)
-- Parallelize chunk fetches with bounded concurrency to balance speed and upstream limits
+- ✅ Deduplicate symbols before external fetch (`Set`) — landed 2026-04-27 (commit `2b1f948`)
+- ❌ Chunk requests (e.g., 100–200 symbols per batch)
+- ❌ Parallelize chunk fetches with bounded concurrency to balance speed and upstream limits
 - Keep existing batched DB upsert path, but feed it a more controlled fetch pipeline
 - **Affected file**: `src/lib/services/price-service.ts`
 
