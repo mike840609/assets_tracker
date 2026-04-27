@@ -24,7 +24,6 @@ const ASSET_TYPES = [
   { value: "CRYPTO", label: "Crypto" },
   { value: "MUTUAL_FUND", label: "Mutual Fund" },
   { value: "BOND", label: "Bond" },
-  { value: "OPTION", label: "Option" },
   { value: "OTHER", label: "Other" },
 ];
 
@@ -43,32 +42,35 @@ export function HoldingForm({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"search" | "confirm">("search");
   const [mode, setMode] = useState<Mode>("stock");
 
-  // Selected holding state
   const [symbol, setSymbol] = useState("");
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [assetType, setAssetType] = useState("STOCK");
   const [currency, setCurrency] = useState("USD");
+  const [manualMode, setManualMode] = useState(false);
 
   function selectResult(result: SearchResult) {
     setSymbol(result.symbol);
     setName(result.name);
     setAssetType(result.type);
     setCurrency(result.currency);
-    setStep("confirm");
+    setManualMode(false);
+  }
+
+  function clearSelection() {
+    setSymbol("");
+    setName("");
+    setAssetType("STOCK");
+    setCurrency("USD");
+    setQuantity("");
+    setManualMode(false);
   }
 
   function resetForm() {
-    setStep("search");
+    clearSelection();
     setMode("stock");
-    setSymbol("");
-    setName("");
-    setQuantity("");
-    setAssetType("STOCK");
-    setCurrency("USD");
   }
 
   function handleClose() {
@@ -101,9 +103,7 @@ export function HoldingForm({
       if (onSuccess) onSuccess();
       startTransition(() => { router.refresh(); });
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to add holding"
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to add holding");
     } finally {
       setLoading(false);
     }
@@ -111,36 +111,28 @@ export function HoldingForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await postHolding({
-      symbol,
-      name,
-      quantity: parseFloat(quantity),
-      assetType,
-      currency,
-    });
+    await postHolding({ symbol, name, quantity: parseFloat(quantity), assetType, currency });
   }
 
-  const dialogTitle = mode === "option"
-    ? "Add Option Contract"
-    : step === "search"
-      ? "Search Ticker"
-      : "Add Holding";
+  const tickerSelected = !!symbol;
+  const canSubmit = (tickerSelected || (manualMode && symbol && name)) && !!quantity && parseFloat(quantity) > 0;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogTitle>
+            {mode === "option" ? "Add Option Contract" : "Add Holding"}
+          </DialogTitle>
         </DialogHeader>
 
-        {step === "search" && (
-          <Tabs value={mode} onValueChange={(v) => v && setMode(v as Mode)}>
-            <TabsList>
-              <TabsTrigger value="stock">Stock / ETF / Crypto</TabsTrigger>
-              <TabsTrigger value="option">Option</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        )}
+        {/* Mode tabs */}
+        <Tabs value={mode} onValueChange={(v) => { if (v) { setMode(v as Mode); clearSelection(); } }}>
+          <TabsList>
+            <TabsTrigger value="stock">Stock / ETF / Crypto</TabsTrigger>
+            <TabsTrigger value="option">Option</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {mode === "option" ? (
           <OptionBuilder
@@ -148,57 +140,29 @@ export function HoldingForm({
             onSubmit={postHolding}
             onCancel={handleClose}
           />
-        ) : step === "search" ? (
-          <div className="space-y-4">
-            <HoldingSearch onSelect={selectResult} autoFocus />
-
-            {/* Manual entry fallback */}
-            <div className="pt-2 border-t">
-              <p className="text-xs text-muted-foreground mb-3">
-                Can&apos;t find what you&apos;re looking for?{" "}
-                <button
-                  type="button"
-                  className="text-primary underline underline-offset-2 hover:text-primary/80"
-                  onClick={() => setStep("confirm")}
-                >
-                  Enter manually
-                </button>
-              </p>
-            </div>
-          </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Selected ticker confirmation */}
-            {symbol && name && (
+            {/* ── Ticker section ── */}
+            {tickerSelected ? (
               <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-3">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-bold">{symbol}</span>
                     <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                      {ASSET_TYPES.find((t) => t.value === assetType)?.label || assetType}
+                      {ASSET_TYPES.find((t) => t.value === assetType)?.label ?? assetType}
                     </Badge>
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                       {currency}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {name}
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{name}</p>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={resetForm}
-                >
+                <Button type="button" variant="ghost" size="sm" onClick={clearSelection}>
                   Change
                 </Button>
               </div>
-            )}
-
-            {/* Manual fields (shown if no ticker was selected via search) */}
-            {!symbol && (
-              <>
+            ) : manualMode ? (
+              <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Symbol</Label>
@@ -206,6 +170,7 @@ export function HoldingForm({
                       value={symbol}
                       onChange={(e) => setSymbol(e.target.value.toUpperCase())}
                       placeholder="e.g. AAPL"
+                      autoFocus
                       required
                     />
                   </div>
@@ -214,12 +179,10 @@ export function HoldingForm({
                     <select
                       value={assetType}
                       onChange={(e) => setAssetType(e.target.value)}
-                      className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
                       {ASSET_TYPES.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
+                        <option key={t.value} value={t.value}>{t.label}</option>
                       ))}
                     </select>
                   </div>
@@ -233,10 +196,35 @@ export function HoldingForm({
                     required
                   />
                 </div>
-              </>
+                <p className="text-xs text-muted-foreground">
+                  <button
+                    type="button"
+                    className="text-primary underline underline-offset-2 hover:text-primary/80"
+                    onClick={() => setManualMode(false)}
+                  >
+                    Search instead
+                  </button>
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <HoldingSearch onSelect={selectResult} autoFocus />
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    Can&apos;t find what you&apos;re looking for?{" "}
+                    <button
+                      type="button"
+                      className="text-primary underline underline-offset-2 hover:text-primary/80"
+                      onClick={() => setManualMode(true)}
+                    >
+                      Enter manually
+                    </button>
+                  </p>
+                </div>
+              </div>
             )}
 
-            {/* Number of shares — always shown */}
+            {/* ── Quantity ── */}
             <div className="space-y-2">
               <Label className="text-base font-medium">Number of Shares</Label>
               <Input
@@ -246,16 +234,17 @@ export function HoldingForm({
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder="e.g. 100"
                 required
-                autoFocus={!!symbol}
+                autoFocus={tickerSelected}
                 className="text-lg h-12"
               />
             </div>
 
+            {/* ── Actions ── */}
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading || !canSubmit}>
                 {loading ? "Adding..." : "Add Holding"}
               </Button>
             </div>

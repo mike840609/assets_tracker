@@ -57,26 +57,25 @@ type SubmitPayload = {
 
 interface OptionBuilderProps {
   loading: boolean;
-  onSubmit: (payload: SubmitPayload) => Promise<void>;
+  onSubmit?: (payload: SubmitPayload) => Promise<void>;
+  /** When provided, called instead of onSubmit — lets the parent handle submission (e.g. account selection). */
+  onConfigure?: (payload: SubmitPayload) => void;
   onCancel: () => void;
 }
 
-type Step = "underlying" | "chain" | "review";
-
-export function OptionBuilder({ loading, onSubmit, onCancel }: OptionBuilderProps) {
-  const [step, setStep] = useState<Step>("underlying");
+export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: OptionBuilderProps) {
   const [underlying, setUnderlying] = useState("");
   const [chain, setChain] = useState<ChainResponse | null>(null);
   const [chainLoading, setChainLoading] = useState(false);
   const [chainError, setChainError] = useState<string | null>(null);
+  const [expChainLoading, setExpChainLoading] = useState(false);
 
   const [expiration, setExpiration] = useState("");
   const [side, setSide] = useState<OptionSide>("CALL");
   const [strike, setStrike] = useState<string>("");
   const [quantity, setQuantity] = useState("");
 
-  const [expChainLoading, setExpChainLoading] = useState(false);
-
+  const [showSearch, setShowSearch] = useState(false);
   const [pasteMode, setPasteMode] = useState(false);
   const [pasteValue, setPasteValue] = useState("");
   const [pasteError, setPasteError] = useState<string | null>(null);
@@ -92,12 +91,11 @@ export function OptionBuilder({ loading, onSubmit, onCancel }: OptionBuilderProp
         setChainError(`No option chain available for ${symbol}`);
         return;
       }
-      // Pick the first expiration that already has chain data loaded
       const firstLoaded = data.expirations.find((exp) => data.chains[exp]);
       const firstExp = firstLoaded ?? data.expirations[0] ?? "";
       setExpiration(firstExp);
-      const firstChain = firstExp ? data.chains[firstExp] : undefined;
-      const firstStrike = firstChain?.calls[0]?.strike;
+      const firstChainBlock = firstExp ? data.chains[firstExp] : undefined;
+      const firstStrike = firstChainBlock?.calls[0]?.strike;
       setStrike(firstStrike !== undefined ? String(firstStrike) : "");
     } catch {
       setChainError(`Failed to load option chain for ${symbol}`);
@@ -106,60 +104,63 @@ export function OptionBuilder({ loading, onSubmit, onCancel }: OptionBuilderProp
     }
   }, []);
 
-  async function loadExpirationChain(exp: string, currentChain: ChainResponse) {
-    if (!currentChain || currentChain.chains[exp]) return;
+  // Lazy-load chain data when user picks an expiration not yet fetched.
+  const underlyingRef = useRef(underlying);
+  underlyingRef.current = underlying;
+  useEffect(() => {
+    if (!chain || !expiration || chain.chains[expiration]) return;
     setExpChainLoading(true);
-    try {
-      const sym = currentChain.underlying;
-      const r = await fetch(`/api/options/chain?symbol=${encodeURIComponent(sym)}&date=${exp}`);
-      const { data }: { data: ChainResponse } = await r.json();
-      if (data.chains[exp]) {
-        setChain((prev) =>
-          prev ? { ...prev, chains: { ...prev.chains, ...data.chains } } : null,
-        );
-      }
-    } catch (err) {
-      console.error("Chain fetch error:", err);
-    } finally {
-      setExpChainLoading(false);
-    }
-  }
+    const sym = underlyingRef.current;
+    fetch(`/api/options/chain?symbol=${encodeURIComponent(sym)}&date=${expiration}`)
+      .then((r) => r.json())
+      .then(({ data }: { data: ChainResponse }) => {
+        if (data.chains[expiration]) {
+          setChain((prev) =>
+            prev ? { ...prev, chains: { ...prev.chains, ...data.chains } } : null,
+          );
+        }
+      })
+      .catch((err) => console.error("Chain fetch error:", err))
+      .finally(() => setExpChainLoading(false));
+  }, [chain, expiration]);
 
-  function handleUnderlyingPick(r: SearchResult) {
-    setUnderlying(r.symbol);
-    setStep("chain");
-    void fetchChain(r.symbol);
-  }
-
-  // When expiration or side changes, reset strike if the current one is no longer in the chain.
+  // When expiration or side changes, reset strike if the current one is no longer valid.
+  const strikeRef = useRef(strike);
+  strikeRef.current = strike;
   useEffect(() => {
     if (!chain || !expiration) return;
     const block = chain.chains[expiration];
     if (!block) return;
     const arr = side === "CALL" ? block.calls : block.puts;
     if (arr.length === 0) return;
-    const stillValid = arr.some((c) => String(c.strike) === strike);
+    const stillValid = arr.some((c) => String(c.strike) === strikeRef.current);
     if (!stillValid) {
       const middle = arr[Math.floor(arr.length / 2)];
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStrike(String(middle.strike));
     }
-  }, [chain, expiration, side, strike]);
+  }, [chain, expiration, side]);
 
-  const currentChainBlock = chain && expiration ? chain.chains[expiration] : undefined;
-  const strikesForSide: ChainContract[] = currentChainBlock
-    ? side === "CALL"
-      ? currentChainBlock.calls
-      : currentChainBlock.puts
-    : [];
-  const selectedContract = strikesForSide.find((c) => String(c.strike) === strike);
-
-  function handleReview() {
-    if (!underlying || !expiration || !strike) return;
-    setStep("review");
+  function loadChain(sym: string) {
+    const cleaned = sym.trim().toUpperCase();
+    if (!cleaned || cleaned === chain?.underlying) return;
+    setUnderlying(cleaned);
+    void fetchChain(cleaned);
   }
 
-  function handlePaste(e: React.FormEvent) {
+  function handleUnderlyingKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      loadChain(underlying);
+    }
+  }
+
+  function handleUnderlyingSearch(r: SearchResult) {
+    setShowSearch(false);
+    setUnderlying(r.symbol);
+    void fetchChain(r.symbol);
+  }
+
+  function handlePaste(e: React.SyntheticEvent) {
     e.preventDefault();
     setPasteError(null);
     const trimmed = pasteValue.trim().toUpperCase();
@@ -185,235 +186,229 @@ export function OptionBuilder({ loading, onSubmit, onCancel }: OptionBuilderProp
         },
       });
       setPasteMode(false);
-      setStep("review");
+      setPasteValue("");
     } catch (err) {
       setPasteError(err instanceof Error ? err.message : "Invalid option symbol");
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function dispatchPayload(payload: SubmitPayload) {
+    if (onConfigure) {
+      onConfigure(payload);
+    } else if (onSubmit) {
+      void onSubmit(payload);
+    }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!underlying || !expiration) return;
+    if (!underlying || !expiration || !strike || !quantity) return;
     const strikeNum = Number(strike);
     if (!Number.isFinite(strikeNum) || strikeNum <= 0) return;
-    const occ = buildOccSymbol({
-      underlying,
-      expiration: new Date(`${expiration}T00:00:00.000Z`),
-      optionType: side,
-      strike: strikeNum,
-    });
-    const parsed = parseOccSymbol(occ);
     const qty = parseInt(quantity, 10);
     if (!Number.isFinite(qty) || qty <= 0) return;
-    await onSubmit({
-      symbol: occ,
-      name: formatOptionLabel(parsed),
-      quantity: qty,
-      assetType: "OPTION",
-      currency: "USD",
-    });
+    try {
+      const occ = buildOccSymbol({
+        underlying,
+        expiration: new Date(`${expiration}T00:00:00.000Z`),
+        optionType: side,
+        strike: strikeNum,
+      });
+      const parsed = parseOccSymbol(occ);
+      dispatchPayload({
+        symbol: occ,
+        name: formatOptionLabel(parsed),
+        quantity: qty,
+        assetType: "OPTION",
+        currency: "USD",
+      });
+    } catch {
+      // invalid inputs — buildOccSymbol threw
+    }
   }
 
-  if (step === "underlying") {
-    return (
-      <div className="space-y-4">
-        <HoldingSearch
-          onSelect={handleUnderlyingPick}
-          label="Search underlying stock or ETF"
-          placeholder="e.g. AAPL, SPY"
-          autoFocus
-        />
-        <div className="pt-2 border-t">
-          <p className="text-xs text-muted-foreground mb-3">
-            Already know the contract?{" "}
-            <button
-              type="button"
-              className="text-primary underline underline-offset-2 hover:text-primary/80"
-              onClick={() => setPasteMode(true)}
-            >
-              Paste OCC symbol
-            </button>
-          </p>
-          {pasteMode && (
-            <form onSubmit={handlePaste} className="space-y-2">
-              <Label>OCC symbol</Label>
-              <Input
-                value={pasteValue}
-                onChange={(e) => setPasteValue(e.target.value.toUpperCase())}
-                placeholder="e.g. AAPL250117C00150000"
-                autoFocus
-              />
-              {pasteError && (
-                <p className="text-xs text-destructive">{pasteError}</p>
-              )}
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setPasteMode(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" size="sm">
-                  Use
-                </Button>
-              </div>
-            </form>
-          )}
-        </div>
-        <div className="flex justify-end">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // Derived chain data for current expiration + side
+  const currentBlock = chain && expiration ? chain.chains[expiration] : undefined;
+  const strikesForSide: ChainContract[] = currentBlock
+    ? side === "CALL" ? currentBlock.calls : currentBlock.puts
+    : [];
+  const selectedContract = strikesForSide.find((c) => String(c.strike) === strike);
 
-  if (step === "chain") {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground">Underlying</p>
-            <p className="font-mono font-bold">{underlying}</p>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setStep("underlying");
-              setChain(null);
-            }}
-          >
-            Change
-          </Button>
-        </div>
-
-        {chainLoading ? (
-          <p className="text-sm text-muted-foreground">Loading option chain...</p>
-        ) : chainError ? (
-          <p className="text-sm text-destructive">{chainError}</p>
-        ) : chain && chain.expirations.length > 0 ? (
-          <>
-            <div className="space-y-2">
-              <Label>Expiration</Label>
-              <Select value={expiration} onValueChange={(v) => {
-                if (v) {
-                  setExpiration(v);
-                  if (chain && !chain.chains[v]) {
-                    void loadExpirationChain(v, chain);
-                  }
-                }
-              }}>
-                <SelectTrigger className="w-full">
-                  <SelectValue>{expiration ? fmtExp(expiration) : "Select expiration"}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {chain.expirations.map((exp) => (
-                    <SelectItem key={exp} value={exp}>
-                      {fmtExp(exp)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Tabs value={side} onValueChange={(v) => v && setSide(v as OptionSide)}>
-              <TabsList>
-                <TabsTrigger value="CALL">Call</TabsTrigger>
-                <TabsTrigger value="PUT">Put</TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            <div className="space-y-2">
-              <Label>Strike</Label>
-              {expChainLoading ? (
-                <p className="text-sm text-muted-foreground">Loading strikes...</p>
-              ) : strikesForSide.length === 0 ? (
-                <p className="text-sm text-destructive">
-                  No strikes available for this expiration.
-                </p>
-              ) : (
-                <Select value={strike} onValueChange={(v) => { if (v) setStrike(v); }}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue>
-                      {strike ? `$${strike}` : "Select strike"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {strikesForSide.map((c) => {
-                      const askLabel = c.ask !== null ? ` — ask $${c.ask.toFixed(2)}` : "";
-                      return (
-                        <SelectItem key={c.contractSymbol} value={String(c.strike)}>
-                          ${c.strike}{askLabel}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={handleReview}
-                disabled={!expiration || !strike || expChainLoading}
-              >
-                Continue
-              </Button>
-            </div>
-          </>
-        ) : null}
-      </div>
-    );
-  }
-
-  // review
+  // OCC preview
   const previewOcc = (() => {
+    if (!underlying || !expiration || !strike) return "";
+    const n = Number(strike);
+    if (!Number.isFinite(n) || n <= 0) return "";
     try {
       return buildOccSymbol({
         underlying,
         expiration: new Date(`${expiration}T00:00:00.000Z`),
         optionType: side,
-        strike: Number(strike),
+        strike: n,
       });
     } catch {
       return "";
     }
   })();
   const previewParsed = previewOcc ? tryParseOccSymbol(previewOcc) : null;
+
   const ask = selectedContract?.ask ?? null;
   const qtyNum = parseInt(quantity, 10);
-  const previewCost = ask !== null && Number.isFinite(qtyNum) && qtyNum > 0
-    ? ask * qtyNum * 100
-    : null;
+  const previewCost =
+    ask !== null && Number.isFinite(qtyNum) && qtyNum > 0
+      ? ask * qtyNum * 100
+      : null;
+
+  const canSubmit =
+    !loading &&
+    !!underlying &&
+    !!expiration &&
+    !!strike &&
+    !!quantity &&
+    parseInt(quantity, 10) > 0;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="rounded-lg border bg-muted/50 p-3">
-        <div className="flex items-center gap-2">
-          <span className="font-mono font-bold text-sm">
-            {previewParsed ? formatOptionShort(previewParsed) : previewOcc}
-          </span>
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-            Option
-          </Badge>
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-            USD
-          </Badge>
-        </div>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          {previewParsed ? formatOptionLabel(previewParsed) : ""}
-        </p>
-        <p className="text-[11px] font-mono text-muted-foreground mt-1">
-          {previewOcc}
-        </p>
+      {/* ── Underlying ── */}
+      <div className="space-y-2">
+        <Label>Underlying Symbol</Label>
+        {showSearch ? (
+          <div className="space-y-2">
+            <HoldingSearch
+              onSelect={handleUnderlyingSearch}
+              label="Search underlying stock or ETF"
+              placeholder="e.g. AAPL, SPY"
+              autoFocus
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSearch(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Input
+              value={underlying}
+              onChange={(e) =>
+                setUnderlying(e.target.value.toUpperCase().replace(/[^A-Z0-9.\-]/g, ""))
+              }
+              onKeyDown={handleUnderlyingKeyDown}
+              placeholder="e.g. AAPL, SPY"
+              autoFocus={!chain}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={() => loadChain(underlying)}
+              disabled={!underlying || chainLoading}
+            >
+              Load
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="shrink-0"
+              onClick={() => setShowSearch(true)}
+            >
+              Search
+            </Button>
+          </div>
+        )}
+
+        {chainLoading && (
+          <p className="text-xs text-muted-foreground">Loading option chain…</p>
+        )}
+        {chainError && (
+          <p className="text-xs text-destructive">{chainError}</p>
+        )}
       </div>
 
+      {/* ── Expiration dropdown (shown once chain is loaded) ── */}
+      {chain && chain.expirations.length > 0 && (
+        <div className="space-y-2">
+          <Label>Expiration</Label>
+          <Select value={expiration} onValueChange={(v) => v && setExpiration(v)}>
+            <SelectTrigger className="w-full">
+              <SelectValue>
+                {expiration ? fmtExp(expiration) : "Select expiration"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {chain.expirations.map((exp) => (
+                <SelectItem key={exp} value={exp}>
+                  {fmtExp(exp)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* ── Call / Put ── */}
       <div className="space-y-2">
-        <Label className="text-base font-medium">Number of contracts</Label>
+        <Label>Type</Label>
+        <Tabs value={side} onValueChange={(v) => v && setSide(v as OptionSide)}>
+          <TabsList>
+            <TabsTrigger value="CALL">Call</TabsTrigger>
+            <TabsTrigger value="PUT">Put</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {/* ── Strike dropdown (shown once expiration chain data is loaded) ── */}
+      {chain && expiration && (
+        <div className="space-y-2">
+          <Label>Strike</Label>
+          {expChainLoading ? (
+            <p className="text-sm text-muted-foreground">Loading strikes…</p>
+          ) : strikesForSide.length === 0 ? (
+            <p className="text-sm text-destructive">
+              No strikes available for this expiration.
+            </p>
+          ) : (
+            <Select
+              value={strike}
+              onValueChange={(v) => { if (v) setStrike(v); }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue>
+                  {strike ? `$${strike}` : "Select strike"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {strikesForSide.map((c) => {
+                  const askLabel =
+                    c.ask !== null ? ` — ask $${c.ask.toFixed(2)}` : "";
+                  return (
+                    <SelectItem key={c.contractSymbol} value={String(c.strike)}>
+                      ${c.strike}{askLabel}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      )}
+
+      {/* ── Placeholder when chain not yet loaded ── */}
+      {!chain && !chainLoading && (
+        <p className="text-xs text-muted-foreground">
+          Enter an underlying symbol above and click <strong>Load</strong> (or press Enter)
+          to see available expirations and strikes.
+        </p>
+      )}
+
+      {/* ── Quantity ── */}
+      <div className="space-y-2">
+        <Label className="text-base font-medium">Number of Contracts</Label>
         <Input
           type="number"
           step="1"
@@ -421,32 +416,80 @@ export function OptionBuilder({ loading, onSubmit, onCancel }: OptionBuilderProp
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           placeholder="e.g. 1"
-          required
-          autoFocus
           className="text-lg h-12"
         />
         <p className="text-xs text-muted-foreground">1 contract = 100 shares</p>
       </div>
 
-      {previewCost !== null && (
-        <p className="text-xs text-muted-foreground">
-          Estimated cost at ask: ${previewCost.toFixed(2)} ({qtyNum} × $
-          {ask?.toFixed(2)} × 100)
-        </p>
+      {/* ── Summary / cost preview ── */}
+      {previewParsed && (
+        <div className="rounded-md bg-muted/50 px-3 py-2 space-y-0.5">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {formatOptionShort(previewParsed)}
+            </span>
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+              Option
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">{formatOptionLabel(previewParsed)}</p>
+          <p className="text-[11px] font-mono text-muted-foreground">{previewOcc}</p>
+          {previewCost !== null && (
+            <p className="text-xs text-muted-foreground">
+              Est. cost at ask: ${previewCost.toFixed(2)} ({qtyNum} × $
+              {ask?.toFixed(2)} × 100)
+            </p>
+          )}
+        </div>
       )}
 
-      <div className="flex justify-between gap-2 pt-2">
-        <Button type="button" variant="ghost" size="sm" onClick={() => setStep("chain")}>
-          Back
+      {/* ── Paste OCC ── */}
+      <div className="pt-1 border-t">
+        <button
+          type="button"
+          className="text-xs text-primary underline underline-offset-2 hover:text-primary/80"
+          onClick={() => setPasteMode((v) => !v)}
+        >
+          Paste OCC symbol
+        </button>
+
+        {pasteMode && (
+          <div className="mt-2 space-y-2">
+            <Label>OCC symbol</Label>
+            <Input
+              value={pasteValue}
+              onChange={(e) => setPasteValue(e.target.value.toUpperCase())}
+              placeholder="e.g. AAPL250117C00150000"
+              autoFocus
+            />
+            {pasteError && (
+              <p className="text-xs text-destructive">{pasteError}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => { setPasteMode(false); setPasteValue(""); setPasteError(null); }}
+              >
+                Cancel
+              </Button>
+              <Button type="button" size="sm" onClick={handlePaste}>
+                Use
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Actions ── */}
+      <div className="flex justify-end gap-2 pt-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
         </Button>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? "Adding..." : "Add Option"}
-          </Button>
-        </div>
+        <Button type="submit" disabled={!canSubmit}>
+          {onConfigure ? "Next" : loading ? "Adding…" : "Add Option"}
+        </Button>
       </div>
     </form>
   );

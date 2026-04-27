@@ -210,6 +210,7 @@
     "titleSearch": "Search Ticker",
     "titleConfirm": "Add Holding",
     "titleAccount": "Select Account",
+    "titleOption": "Add Option Contract",
     "labelSearch": "Search by name or ticker symbol",
     "placeholderSearch": "e.g. Apple, TSMC, 2330, BTC...",
     "cantFind": "Can't find what you're looking for?",

@@ -210,6 +210,7 @@
     "titleSearch": "搜尋代號",
     "titleConfirm": "新增持倉",
     "titleAccount": "選擇帳戶",
+    "titleOption": "新增選擇權合約",
     "labelSearch": "依名稱或股票代號搜尋",
     "placeholderSearch": "例如：Apple、台積電、2330、BTC...",
     "cantFind": "找不到您要的？",
