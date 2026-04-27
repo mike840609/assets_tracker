@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw, Camera, Clock } from "lucide-react";
+import { RefreshCw, Camera, Clock, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
@@ -69,6 +69,14 @@ export function DashboardActions({
           <span className="inline-flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {t("pricesUpdated", { age: priceAge })}
+            <span
+              role="img"
+              aria-label={t("cacheHint")}
+              title={t("cacheHint")}
+              className="cursor-help text-muted-foreground/70"
+            >
+              <Info className="h-3 w-3" />
+            </span>
           </span>
         )}
         {snapshotAge && (

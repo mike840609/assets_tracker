@@ -16,7 +16,7 @@
 | R10 | Add support/contact email in footer + `/privacy`                            | Legal / Compliance    | 🟡 Medium | 15 min   | ❌ Not Done |
 | R11 | Add `error.tsx`, `global-error.tsx`, `not-found.tsx`                        | Reliability           | 🔴 High   | 1–2 hrs  | ❌ Not Done |
 | R12 | Add `/api/health` endpoint                                                  | Reliability           | 🟡 Medium | 30 min   | ❌ Not Done |
-| R13 | Verify Vercel Cron `/api/cron/snapshot` fires daily in production           | Reliability           | 🔴 High   | 15 min   | ❌ Not Done |
+| R13 | Verify Vercel Cron `/api/cron/snapshot` fires daily in production           | Reliability           | 🔴 High   | 15 min   | ✅ Done     |
 | R14 | Timeout + retry guards on Yahoo Finance / CoinGecko calls                   | Reliability           | 🔴 High   | 30–60 min| ✅ Done     |
 | R15 | Switch Prisma `db push` → `migrate deploy` (committed migrations)           | Reliability           | 🔴 High   | 2–3 hrs  | 🟡 Partial — `prisma/migrations/` committed; `build:vercel` runs `prisma migrate deploy`; baselining of pre-existing prod/preview Neon branches via `prisma migrate resolve --applied` is a one-time op per DB |
 | R16 | Document Neon backup / PITR SLA in `README.md`                              | Reliability           | 🟡 Medium | 30 min   | ❌ Not Done |

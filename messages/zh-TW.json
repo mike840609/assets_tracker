@@ -146,7 +146,8 @@
     "refreshPrices": "更新價格",
     "refreshing": "更新中...",
     "refreshSuccess": "已更新 {count} 個價格和匯率",
-    "refreshFailed": "更新價格失敗"
+    "refreshFailed": "更新價格失敗",
+    "cacheHint": "價格在 5 分鐘內走快取，每日自動更新一次。按「更新價格」可立即取得最新報價。"
   },
   "trendChart": {
     "title": "淨資產趨勢",

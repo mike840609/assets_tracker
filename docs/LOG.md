@@ -14,4 +14,6 @@
   - `refreshAllPrices()` now `[...new Set(...)]`-dedupes stock and crypto symbol arrays before the provider call (partial #108 — chunking by ~100/200 still pending).
   - Deferred: a Yahoo → FMP fallback chain. Plan in `/root/.claude/plans/since-the-yfinance-has-transient-sloth.md` is ready to drop in once `FMP_API_KEY` is provisioned.
 - 2026-04-27: [MOD]: #97 — Scope `refreshAllPrices` to active holdings only. The `prisma.holding.findMany` in `src/lib/services/price-service.ts` now filters `quantity: { gt: 0 }` + `account: { isActive: true }`, so the daily cron and manual `/api/prices/refresh` no longer waste Yahoo/CoinGecko calls on sold-out holdings or archived accounts.
+- 2026-04-27: [MOD]: R13 — Verified Vercel cron `/api/cron/snapshot` is firing daily in production; flipped status to ✅.
+- 2026-04-27: [ADD]: Cache-mechanism hint on dashboard. Added a small `Info` icon next to the existing "Prices updated {age}" label in `src/components/dashboard/dashboard-actions.tsx` with a `title` tooltip + `aria-label` explaining that prices are cached ~5 min and auto-refreshed daily; new `dashboardActions.cacheHint` string in `messages/en-US.json` + `messages/zh-TW.json`. Goal: surface the cache behavior without cluttering the dashboard chrome so users know why the displayed price may not be tick-accurate and how to force a live fetch.
 
