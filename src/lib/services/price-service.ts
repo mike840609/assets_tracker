@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 
 const FETCH_TIMEOUT_MS = 5_000;
 const RETRY_DELAYS_MS = [500, 1_500]; // 2 retries: 500 ms then 1.5 s
+// Cached prices younger than this are served without re-fetching from the
+// upstream provider — primary defense against yahoo-finance2 rate limits.
+const PRICE_CACHE_TTL_MS = 15 * 60 * 1_000;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -189,6 +192,67 @@ export async function getCachedPricesForSymbols(
   }));
 }
 
+// Freshness-aware fetch: returns cached prices for any symbol whose PriceCache
+// row is younger than PRICE_CACHE_TTL_MS, and only calls the upstream provider
+// for the stale/missing remainder. Upserts the freshly fetched rows.
+export async function getOrFetchPrices(
+  symbols: string[],
+  kind: "stock" | "crypto"
+): Promise<Map<string, { price: number; currency: string }>> {
+  const merged = new Map<string, { price: number; currency: string }>();
+  const unique = [...new Set(symbols)];
+  if (unique.length === 0) return merged;
+
+  const cached = await prisma.priceCache.findMany({
+    where: { symbol: { in: unique } },
+  });
+  const cutoff = Date.now() - PRICE_CACHE_TTL_MS;
+  const stale: string[] = [];
+  const seen = new Set<string>();
+
+  for (const row of cached) {
+    seen.add(row.symbol);
+    if (row.updatedAt.getTime() >= cutoff) {
+      merged.set(row.symbol, {
+        price: Number(row.price),
+        currency: row.currency,
+      });
+    } else {
+      stale.push(row.symbol);
+    }
+  }
+  for (const s of unique) if (!seen.has(s)) stale.push(s);
+
+  if (stale.length === 0) return merged;
+
+  let fresh: Map<string, { price: number; currency: string }>;
+  try {
+    fresh = kind === "crypto"
+      ? await fetchCryptoPrices(stale)
+      : await fetchStockPrices(stale);
+  } catch (error) {
+    console.error(
+      `getOrFetchPrices: provider fetch failed for ${stale.length} symbols`,
+      error
+    );
+    return merged;
+  }
+
+  for (const [symbol, value] of fresh) {
+    merged.set(symbol, value);
+    try {
+      await prisma.priceCache.upsert({
+        where: { symbol },
+        update: { price: value.price, currency: value.currency, updatedAt: new Date() },
+        create: { symbol, price: value.price, currency: value.currency },
+      });
+    } catch (error) {
+      console.error(`getOrFetchPrices: upsert failed for ${symbol}`, error);
+    }
+  }
+  return merged;
+}
+
 export async function refreshAllPrices(): Promise<{
   updated: number;
   errors: string[];
@@ -198,13 +262,17 @@ export async function refreshAllPrices(): Promise<{
     distinct: ["symbol"],
   });
 
-  const stockSymbols = holdings
-    .filter((h) => ["STOCK", "ETF", "MUTUAL_FUND", "BOND"].includes(h.assetType))
-    .map((h) => h.symbol);
+  const stockSymbols = [...new Set(
+    holdings
+      .filter((h) => ["STOCK", "ETF", "MUTUAL_FUND", "BOND"].includes(h.assetType))
+      .map((h) => h.symbol)
+  )];
 
-  const cryptoSymbols = holdings
-    .filter((h) => h.assetType === "CRYPTO")
-    .map((h) => h.symbol);
+  const cryptoSymbols = [...new Set(
+    holdings
+      .filter((h) => h.assetType === "CRYPTO")
+      .map((h) => h.symbol)
+  )];
 
   const errors: string[] = [];
   let updated = 0;
