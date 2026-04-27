@@ -62,7 +62,8 @@ function getAccountValue(
     const price = (priceMap || {})[h.symbol] ?? 0;
     const hc = h.currency || "USD";
     const rate = hc === account.currency ? 1 : ratesMap[`${hc}_${account.currency}`] ?? 1;
-    return sum + price * h.quantity * rate;
+    const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
+    return sum + price * h.quantity * multiplier * rate;
   }, 0);
   return account.cashBalance + holdingsValue;
 }
@@ -396,7 +397,8 @@ function AccountCardWithHoldings({
     const price = priceMap[h.symbol] ?? null;
     const hc = h.currency || "USD";
     const rate = hc === account.currency ? 1 : ratesMap[`${hc}_${account.currency}`] ?? 1;
-    const marketValue = price !== null ? price * h.quantity * rate : null;
+    const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
+    const marketValue = price !== null ? price * h.quantity * multiplier * rate : null;
     return { ...h, currentPrice: price, marketValue };
   });
 
