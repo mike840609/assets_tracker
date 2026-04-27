@@ -16,59 +16,69 @@ type ChainResponse = {
 };
 
 const EMPTY: ChainResponse = { underlying: "", expirations: [], chains: {} };
+const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const slim = (arr: any[] | undefined): ChainContract[] =>
+  (arr ?? []).map((c) => ({
+    contractSymbol: c.contractSymbol,
+    strike: Number(c.strike),
+    lastPrice: c.lastPrice ?? null,
+    bid: c.bid ?? null,
+    ask: c.ask ?? null,
+  }));
 
 export async function GET(request: Request) {
-  const limited = rateLimitCheckWithPrune(request, { limit: 30, prefix: "options-chain" });
+  const limited = rateLimitCheckWithPrune(request, { limit: 60, prefix: "options-chain" });
   if (limited) return limited;
 
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get("symbol")?.trim().toUpperCase();
   if (!symbol) return ok(EMPTY);
 
+  // Optional: fetch chain for a specific expiration (lazy-loading from the UI)
+  const dateParam = searchParams.get("date"); // YYYY-MM-DD
+
   try {
     const YahooFinance = (await import("yahoo-finance2")).default;
     const yf = new YahooFinance();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const initial: any = await yf.options(symbol);
-    const expirationDates: Date[] = initial.expirationDates ?? [];
-    const expirations = expirationDates.map((d) =>
-      new Date(d).toISOString().slice(0, 10),
-    );
+    const allDates: Date[] = initial.expirationDates ?? [];
+
+    // Filter to expirations within 2 years
+    const cutoff = new Date(Date.now() + TWO_YEARS_MS);
+    const targetDates = allDates.filter((d) => new Date(d) <= cutoff);
+    const expirations = targetDates.map((d) => new Date(d).toISOString().slice(0, 10));
 
     const chains: ChainResponse["chains"] = {};
-    const targets = expirationDates.slice(0, 6);
-    const detailed = await Promise.all(
-      targets.map(async (date) => {
+
+    if (dateParam && expirations.includes(dateParam)) {
+      // On-demand fetch for a specific expiration chosen by the user
+      const date = targetDates.find(
+        (d) => new Date(d).toISOString().slice(0, 10) === dateParam,
+      );
+      if (date) {
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const detail: any = await yf.options(symbol, { date });
-          return { date, detail };
+          const block = detail.options?.[0];
+          if (block) {
+            chains[dateParam] = { calls: slim(block.calls), puts: slim(block.puts) };
+          }
         } catch (err) {
-          console.error(`Options chain fetch failed for ${symbol} ${date}:`, err);
-          return null;
+          console.error(`Options chain fetch failed for ${symbol} ${dateParam}:`, err);
         }
-      }),
-    );
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const slim = (arr: any[] | undefined): ChainContract[] =>
-      (arr ?? []).map((c) => ({
-        contractSymbol: c.contractSymbol,
-        strike: Number(c.strike),
-        lastPrice: c.lastPrice ?? null,
-        bid: c.bid ?? null,
-        ask: c.ask ?? null,
-      }));
-
-    for (const item of detailed) {
-      if (!item) continue;
-      const exp = new Date(item.date).toISOString().slice(0, 10);
-      const block = item.detail.options?.[0];
-      if (!block) continue;
-      chains[exp] = {
-        calls: slim(block.calls),
-        puts: slim(block.puts),
-      };
+      }
+    } else {
+      // Initial load: use the chain that comes free in the initial call (nearest expiration)
+      for (const opt of (initial.options ?? [])) {
+        if (!opt?.expirationDate) continue;
+        const exp = new Date(opt.expirationDate).toISOString().slice(0, 10);
+        if (expirations.includes(exp)) {
+          chains[exp] = { calls: slim(opt.calls), puts: slim(opt.puts) };
+        }
+      }
     }
 
     return ok<ChainResponse>(
