@@ -100,7 +100,7 @@
 | 94 | Parallelize account detail page waterfall | Performance | 🟡 Medium | 15 min | ✅ Done |
 | 95 | Add `Cache-Control` headers to `GET /api/exchange-rates` | Performance | 🟢 Low | 15 min | ❌ Not Done |
 | 96 | Prefetch high-traffic routes in accounts list | Performance | 🟡 Medium | 15 min | ❌ Not Done |
-| 97 | Scope cron `refreshAllPrices` to per-user symbols | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
+| 97 | Scope cron `refreshAllPrices` to per-user symbols | Performance | 🟡 Medium | 1 hr | ✅ Done |
 | 98 | Lazy-load `AccountForm` / `QuickAddHolding` dialogs | Performance | 🟡 Medium | 30 min | ✅ Done |
 | 99 | Add `useMemo` to `getAccountValue` in `AccountsList` | Performance | 🟡 Medium | 15 min | ❌ Not Done |
 | 100 | Update Onboarding Empty State Text | UX | 🟢 Low | 15 min | ❌ Not Done |
@@ -1567,6 +1567,8 @@ This ensures the RSC payload is pre-fetched by the time the user clicks, making 
 
 
 ### 97. Scope Cron `refreshAllPrices` to Per-User Symbols
+
+**Status:** ✅ Done 2026-04-27. `refreshAllPrices` now filters `quantity: { gt: 0 }` + `account: { isActive: true }`.
 
 **File:** `src/lib/services/price-service.ts` (lines 107–110), `src/app/api/cron/snapshot/route.ts`
 

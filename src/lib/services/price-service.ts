@@ -258,6 +258,10 @@ export async function refreshAllPrices(): Promise<{
   errors: string[];
 }> {
   const holdings = await prisma.holding.findMany({
+    where: {
+      quantity: { gt: 0 },
+      account: { isActive: true },
+    },
     select: { symbol: true, assetType: true },
     distinct: ["symbol"],
   });

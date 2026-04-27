@@ -13,4 +13,5 @@
   - `POST /api/prices/refresh` rate-limited to 5/min/IP — closes the public-route gap left by R3 (which originally landed for `/api/search`, `/api/exchange-rates`, `/api/auth/*`).
   - `refreshAllPrices()` now `[...new Set(...)]`-dedupes stock and crypto symbol arrays before the provider call (partial #108 — chunking by ~100/200 still pending).
   - Deferred: a Yahoo → FMP fallback chain. Plan in `/root/.claude/plans/since-the-yfinance-has-transient-sloth.md` is ready to drop in once `FMP_API_KEY` is provisioned.
+- 2026-04-27: [MOD]: #97 — Scope `refreshAllPrices` to active holdings only. The `prisma.holding.findMany` in `src/lib/services/price-service.ts` now filters `quantity: { gt: 0 }` + `account: { isActive: true }`, so the daily cron and manual `/api/prices/refresh` no longer waste Yahoo/CoinGecko calls on sold-out holdings or archived accounts.
 
