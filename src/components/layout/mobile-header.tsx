@@ -4,13 +4,19 @@ import { Eye, EyeOff } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
+import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 
 export function MobileHeader() {
   const t = useTranslations("app");
   const { privacyMode, togglePrivacyMode } = usePrivacyMode();
+  const hidden = useHideOnScroll();
 
   return (
-    <header className="md:hidden sticky top-0 left-0 right-0 z-50 glass backdrop-blur-md border-b border-border/50 px-4 py-3 flex items-center justify-between">
+    <header className={cn(
+      "md:hidden sticky top-0 left-0 right-0 z-50 glass backdrop-blur-md border-b border-border/50 px-4 py-3 flex items-center justify-between transition-transform duration-300 ease-in-out",
+      hidden && "-translate-y-full"
+    )}>
       <div className="flex items-center gap-2 min-w-0">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" className="h-6 w-6 shrink-0 drop-shadow-lg dark:drop-shadow-[0_3px_10px_rgba(52,211,153,0.25)]">
           <defs>

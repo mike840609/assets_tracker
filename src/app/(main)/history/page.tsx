@@ -6,6 +6,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LazyTrendChart } from "@/components/dashboard/lazy-charts";
 import { HistoryTable } from "@/components/history/history-table";
+import { HistoryPullRefresh } from "@/components/history/history-pull-refresh";
 import { getNormalizedHistory } from "@/lib/services/history-service";
 import HistoryLoading from "./loading";
 
@@ -24,19 +25,21 @@ async function HistoryContent() {
 
   return (
     <NextIntlClientProvider messages={pickMessages(allMessages, CLIENT_NAMESPACES)}>
-      <div className="space-y-8 animate-in fade-in duration-500">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">
-          {t("title")}
-        </h2>
+      <HistoryPullRefresh>
+        <div className="space-y-8 animate-in fade-in duration-500">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">
+            {t("title")}
+          </h2>
 
-        <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
-          <LazyTrendChart baseCurrency={settings.baseCurrency} snapshots={snapshots} hideRangeFilter />
-        </div>
+          <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
+            <LazyTrendChart baseCurrency={settings.baseCurrency} snapshots={snapshots} hideRangeFilter />
+          </div>
 
-        <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
-          <HistoryTable snapshots={snapshots} baseCurrency={settings.baseCurrency} />
+          <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
+            <HistoryTable snapshots={snapshots} baseCurrency={settings.baseCurrency} />
+          </div>
         </div>
-      </div>
+      </HistoryPullRefresh>
     </NextIntlClientProvider>
   );
 }
