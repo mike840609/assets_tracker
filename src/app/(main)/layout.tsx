@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Sidebar, MobileNav } from "@/components/layout/sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
+import { MobileMainShell } from "@/components/layout/mobile-main-shell";
 import { PrivacyModeProvider } from "@/components/layout/privacy-mode-context";
 import { PullToRefreshProvider } from "@/components/layout/pull-to-refresh-context";
 import { getSession } from "@/lib/auth-session";
@@ -26,10 +27,10 @@ export default function MainLayout({
         <Suspense fallback={<Sidebar userImage={null} userName={null} />}>
           <SidebarWithSession />
         </Suspense>
-        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0 relative w-full">
+        <MobileMainShell>
           <MobileHeader />
           <div className="mx-auto w-full max-w-6xl p-4 md:p-6">{children}</div>
-        </main>
+        </MobileMainShell>
         <MobileNav />
       </PullToRefreshProvider>
     </PrivacyModeProvider>
