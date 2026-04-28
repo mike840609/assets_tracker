@@ -27,6 +27,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://assets-tracker-ct.vercel.app"),
   title: "Assets Tracker",
   description: "Track your net worth, assets, and investments",
+  appleWebApp: {
+    capable: true,
+    title: "Assets Tracker",
+    statusBarStyle: "default",
+  },
   openGraph: {
     title: "Assets Tracker",
     description: "Track your net worth, assets, and investments",
@@ -48,6 +53,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
 };
 
 /**
