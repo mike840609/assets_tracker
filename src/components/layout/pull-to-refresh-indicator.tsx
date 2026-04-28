@@ -1,12 +1,12 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { usePullToRefreshContext, HANG_OFFSET, THRESHOLD } from "./pull-to-refresh-context";
+import { usePullToRefreshContext, THRESHOLD } from "./pull-to-refresh-context";
 
-// Indicator pill: 36 × 36 px (h-9 w-9)
+// Indicator pill matches h-9 w-9 = 36 px
 const INDICATOR_SIZE = 36;
-// Vertical centre of the gap that the main shell opens above itself.
-const INDICATOR_REST_Y = (HANG_OFFSET - INDICATOR_SIZE) / 2; // 8 px
+// Gap between the bottom of the safe-area (notch) and the top of the pill.
+const INDICATOR_MARGIN = 8;
 
 // SVG arc geometry
 const VIEWBOX = 28;
@@ -14,31 +14,34 @@ const CENTER = VIEWBOX / 2; // 14
 const RADIUS = 11;
 const STROKE = 2.5;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS; // ≈ 69.1 px
-
-// The arc drawn while refreshing: a 270° (¾-circle) gap-less stroke that spins.
 const REFRESH_ARC = CIRCUMFERENCE * 0.75;
 const REFRESH_GAP = CIRCUMFERENCE * 0.25;
 
 export function PullToRefreshIndicator() {
-  const { pull, refreshing } = usePullToRefreshContext();
+  const { pull, refreshing, hangOffset, safeAreaTop } = usePullToRefreshContext();
   const progress = Math.min(pull / THRESHOLD, 1);
   const armed = pull >= THRESHOLD;
   const isPulling = pull > 0 && !refreshing;
 
-  // Stroke-dashoffset for the filling arc:
-  //   offset = CIRCUMFERENCE → nothing visible (progress 0)
-  //   offset = 0             → full circle   (progress 1)
   const dashOffset = CIRCUMFERENCE * (1 - progress);
 
-  // The main shell opens a gap of min(pull, HANG_OFFSET) px above itself.
-  // Centre the indicator inside that gap so it never overlaps the content.
-  const gap = Math.min(pull, HANG_OFFSET);
-  const translateY = refreshing
-    ? INDICATOR_REST_Y           // = (HANG_OFFSET - INDICATOR_SIZE) / 2 = 8 px
-    : gap / 2 - INDICATOR_SIZE / 2; // same formula → 8 px when gap=HANG_OFFSET ✓
+  // The pill should sit just below the safe-area (notch/status-bar).
+  // On flat devices: safeAreaTop=0, so restY = 0 + 8 = 8 px (unchanged).
+  // On notched iPhone (44 px): restY = 44 + 8 = 52 px — below the notch. ✓
+  const restY = safeAreaTop + INDICATOR_MARGIN;
 
-  // Scale reaches 1.0 once the gap is fully open (pull ≥ HANG_OFFSET).
-  const scale = refreshing ? 1 : 0.75 + 0.25 * (gap / HANG_OFFSET);
+  // Interpolate position as the gap opens:
+  //   gap=0          → fully hidden above viewport (−INDICATOR_SIZE)
+  //   gap=hangOffset → at restY
+  // This keeps the pill inside the visible gap at all pull distances.
+  const gap = Math.min(pull, hangOffset);
+  const t = hangOffset > 0 ? gap / hangOffset : 0;
+  const translateY = refreshing
+    ? restY
+    : -INDICATOR_SIZE + t * (restY + INDICATOR_SIZE);
+
+  // Scale reaches 1 once the gap is fully open.
+  const scale = refreshing ? 1 : 0.75 + 0.25 * t;
 
   return (
     <div
@@ -47,9 +50,7 @@ export function PullToRefreshIndicator() {
         "flex items-center justify-center",
         "h-9 w-9 rounded-full",
         "bg-background/90 border border-border/50 shadow-lg backdrop-blur-md",
-        // Only animate transform/opacity on release; follow finger with no lag.
         isPulling ? "transition-none" : "transition-[transform,opacity] duration-300 ease-out",
-        // Hide entirely when idle so it never blocks taps.
         !refreshing && pull === 0 && "opacity-0"
       )}
       style={{
@@ -59,20 +60,13 @@ export function PullToRefreshIndicator() {
       }}
       aria-hidden
     >
-      {/*
-       * Spinning wrapper: rotate the whole SVG continuously while the network
-       * request is in flight. A plain CSS `animate-spin` is used so the arc
-       * colour and position remain under our control.
-       */}
       <div className={refreshing ? "animate-spin" : undefined}>
         <svg
           viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
           width={VIEWBOX}
           height={VIEWBOX}
-          // Rotate -90° so the arc path starts at 12 o'clock instead of 3 o'clock.
           style={{ transform: "rotate(-90deg)" }}
         >
-          {/* Faint track ring — only shown while pulling to give context */}
           {!refreshing && (
             <circle
               cx={CENTER}
@@ -84,8 +78,6 @@ export function PullToRefreshIndicator() {
               className="text-border/50"
             />
           )}
-
-          {/* Main arc — fills progressively while pulling; spins while refreshing */}
           <circle
             cx={CENTER}
             cy={CENTER}
@@ -95,9 +87,7 @@ export function PullToRefreshIndicator() {
             strokeWidth={STROKE}
             strokeLinecap="round"
             strokeDasharray={
-              refreshing
-                ? `${REFRESH_ARC} ${REFRESH_GAP}`
-                : `${CIRCUMFERENCE}`
+              refreshing ? `${REFRESH_ARC} ${REFRESH_GAP}` : `${CIRCUMFERENCE}`
             }
             strokeDashoffset={refreshing ? 0 : dashOffset}
             className={cn(

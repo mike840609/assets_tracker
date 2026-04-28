@@ -51,6 +51,10 @@
 }
 
 :root {
+  /* Expose safe-area-inset-top as a CSS custom property so JS can read it
+     via getComputedStyle without needing a dummy DOM element. */
+  --sat: env(safe-area-inset-top, 0px);
+
   --background: oklch(0.99 0.003 260);
   --foreground: oklch(0.15 0.02 260);
   --card: oklch(1 0 0);

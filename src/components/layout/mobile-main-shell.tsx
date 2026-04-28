@@ -1,21 +1,17 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { usePullToRefreshContext, HANG_OFFSET } from "./pull-to-refresh-context";
+import { usePullToRefreshContext } from "./pull-to-refresh-context";
 
 export function MobileMainShell({ children }: { children: React.ReactNode }) {
-  const { pull, refreshing } = usePullToRefreshContext();
-  // true only while finger is actively dragging — follow without transition lag
+  const { pull, refreshing, hangOffset } = usePullToRefreshContext();
   const isPulling = pull > 0 && !refreshing;
-  const offset = refreshing ? HANG_OFFSET : Math.min(pull, HANG_OFFSET);
+  const offset = refreshing ? hangOffset : Math.min(pull, hangOffset);
 
   return (
     <main
       className={cn(
         "flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0 relative w-full",
-        // Prevent the browser's native pull-to-refresh / overscroll glow from
-        // interfering with our custom indicator. Also enables the rubber-band
-        // transform below to feel elastic rather than fighting the UA.
         "overscroll-y-contain",
         isPulling ? "transition-none" : "transition-transform duration-300"
       )}

@@ -20,7 +20,12 @@ interface Props {
 
 export function PullToRefresh({ onRefresh, children }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const { refreshing, setPull, setRefreshing } = usePullToRefreshContext();
+  const { refreshing, hangOffset, setPull, setRefreshing } = usePullToRefreshContext();
+
+  // Keep hangOffset in a ref so the touchEnd closure always sees the latest
+  // value without it appearing in the effect dependency array.
+  const hangOffsetRef = useRef(hangOffset);
+  useEffect(() => { hangOffsetRef.current = hangOffset; }, [hangOffset]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -79,7 +84,10 @@ export function PullToRefresh({ onRefresh, children }: Props) {
       active = false;
       if (currentPull >= THRESHOLD) {
         setRefreshing(true);
-        setPull(THRESHOLD);
+        // Set pull to hangOffset (not just THRESHOLD) so the indicator
+        // lands exactly at its resting position — especially important on
+        // notched devices where hangOffset > THRESHOLD.
+        setPull(hangOffsetRef.current);
         try {
           await onRefresh();
         } finally {
