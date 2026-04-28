@@ -68,7 +68,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
   const [chain, setChain] = useState<ChainResponse | null>(null);
   const [chainLoading, setChainLoading] = useState(false);
   const [chainError, setChainError] = useState<string | null>(null);
-  const [expChainLoading, setExpChainLoading] = useState(false);
+  const [failedExpirations, setFailedExpirations] = useState<Set<string>>(new Set());
 
   const [expiration, setExpiration] = useState("");
   const [side, setSide] = useState<OptionSide>("CALL");
@@ -105,28 +105,42 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
   }, []);
 
   // Lazy-load chain data when user picks an expiration not yet fetched.
-  const underlyingRef = useRef(underlying);
-  underlyingRef.current = underlying;
   useEffect(() => {
-    if (!chain || !expiration || chain.chains[expiration]) return;
-    setExpChainLoading(true);
-    const sym = underlyingRef.current;
-    fetch(`/api/options/chain?symbol=${encodeURIComponent(sym)}&date=${expiration}`)
+    if (!chain || !expiration) return;
+    if (chain.chains[expiration]) return;
+    if (failedExpirations.has(expiration)) return;
+    const sym = chain.underlying;
+    const exp = expiration;
+    fetch(`/api/options/chain?symbol=${encodeURIComponent(sym)}&date=${exp}`)
       .then((r) => r.json())
       .then(({ data }: { data: ChainResponse }) => {
-        if (data.chains[expiration]) {
+        if (data.chains[exp]) {
           setChain((prev) =>
             prev ? { ...prev, chains: { ...prev.chains, ...data.chains } } : null,
           );
+        } else {
+          setFailedExpirations((prev) => new Set(prev).add(exp));
         }
       })
-      .catch((err) => console.error("Chain fetch error:", err))
-      .finally(() => setExpChainLoading(false));
-  }, [chain, expiration]);
+      .catch((err) => {
+        console.error("Chain fetch error:", err);
+        setFailedExpirations((prev) => new Set(prev).add(exp));
+      });
+  }, [chain, expiration, failedExpirations]);
+
+  const expChainLoading =
+    !!chain &&
+    !!expiration &&
+    !chain.chains[expiration] &&
+    !failedExpirations.has(expiration);
+
+  // Read latest strike via a ref so the validation effect below doesn't re-run on every keystroke.
+  const strikeRef = useRef(strike);
+  useEffect(() => {
+    strikeRef.current = strike;
+  });
 
   // When expiration or side changes, reset strike if the current one is no longer valid.
-  const strikeRef = useRef(strike);
-  strikeRef.current = strike;
   useEffect(() => {
     if (!chain || !expiration) return;
     const block = chain.chains[expiration];
