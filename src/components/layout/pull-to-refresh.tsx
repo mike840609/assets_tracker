@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { RefreshCw } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef } from "react";
+import { usePullToRefreshContext } from "./pull-to-refresh-context";
 
 const THRESHOLD = 70;
 const MAX_PULL = 120;
@@ -14,8 +13,7 @@ interface Props {
 
 export function PullToRefresh({ onRefresh, children }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [pull, setPull] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
+  const { pull, refreshing, setPull, setRefreshing } = usePullToRefreshContext();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -89,38 +87,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
       wrapper.removeEventListener("touchend", onTouchEnd);
       wrapper.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [onRefresh, refreshing]);
+  }, [onRefresh, refreshing, setPull, setRefreshing]);
 
-  const progress = Math.min(pull / THRESHOLD, 1);
-  const armed = pull >= THRESHOLD;
-
-  return (
-    <div ref={wrapperRef} className="relative">
-      <div
-        className={cn(
-          "md:hidden pointer-events-none absolute left-1/2 -translate-x-1/2 z-20 flex items-center justify-center",
-          "h-9 w-9 rounded-full bg-background/90 border border-border/50 shadow-md backdrop-blur-md",
-          !refreshing && pull === 0 && "opacity-0",
-          refreshing ? "transition-transform duration-300" : "transition-none"
-        )}
-        style={{
-          top: 8,
-          transform: `translate(-50%, ${pull - 36}px)`,
-          opacity: refreshing ? 1 : progress,
-        }}
-        aria-hidden
-      >
-        <RefreshCw
-          className={cn(
-            "h-4 w-4 text-primary",
-            refreshing && "animate-spin",
-            !refreshing && armed && "text-primary",
-            !refreshing && !armed && "text-muted-foreground"
-          )}
-          style={!refreshing ? { transform: `rotate(${progress * 270}deg)` } : undefined}
-        />
-      </div>
-      {children}
-    </div>
-  );
+  return <div ref={wrapperRef}>{children}</div>;
 }
