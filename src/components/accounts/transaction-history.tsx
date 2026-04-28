@@ -6,14 +6,6 @@ import useSWRInfinite from "swr/infinite";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { formatQuantity } from "@/lib/currencies";
 import type { SerializedTransaction } from "@/lib/types";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
@@ -170,85 +162,91 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
     );
   }
 
+  const dateGroups = transactions.reduce<{ dateKey: string; items: SerializedTransaction[] }[]>((acc, tx) => {
+    const dateKey = new Date(tx.createdAt).toLocaleDateString(undefined, {
+      year: "numeric", month: "short", day: "numeric",
+    });
+    const last = acc[acc.length - 1];
+    if (last && last.dateKey === dateKey) {
+      last.items.push(tx);
+    } else {
+      acc.push({ dateKey, items: [tx] });
+    }
+    return acc;
+  }, []);
+
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <CardTitle className="text-base font-medium">{t("title")}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         {transactions.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">
             {t("empty")}
           </p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("colDate")}</TableHead>
-                <TableHead>{isBank ? "" : t("colSymbol")}</TableHead>
-                <TableHead>{t("colType")}</TableHead>
-                <TableHead className="text-right">{isBank ? t("colAmount") : t("colQuantity")}</TableHead>
-                <TableHead>{t("colNote")}</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transactions.map((tx) => {
-                const typeVariant = TYPE_VARIANTS[tx.type] ?? "secondary";
-                const typeKey = `type${tx.type.charAt(0) + tx.type.slice(1).toLowerCase()}` as Parameters<typeof t>[0];
-                const typeLabel = t.has(typeKey) ? t(typeKey) : tx.type;
-                return (
-                  <TableRow key={tx.id}>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(tx.createdAt).toLocaleDateString(undefined, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </TableCell>
-                    <TableCell className="font-mono font-medium">
-                      {(tx as SerializedTransaction & { isCash?: boolean }).isCash ? "" : (tx.holding?.symbol ?? "—")}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={typeVariant}>{typeLabel}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {tx.quantity > 0 ? "+" : ""}
-                      {formatQuantity(tx.quantity, tx.holding?.assetType ?? "")}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {tx.note || "—"}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 w-8 px-0 hover:bg-accent hover:text-accent-foreground">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditClick(tx)}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            {tCommon("edit")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => setDeletingTx(tx)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            {tCommon("delete")}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          dateGroups.map(({ dateKey, items }) => (
+            <div key={dateKey}>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 mb-2 px-1">
+                {dateKey}
+              </p>
+              <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
+                {items.map((tx, index) => {
+                  const typeVariant = TYPE_VARIANTS[tx.type] ?? "secondary";
+                  const typeKey = `type${tx.type.charAt(0) + tx.type.slice(1).toLowerCase()}` as Parameters<typeof t>[0];
+                  const typeLabel = t.has(typeKey) ? t(typeKey) : tx.type;
+                  const isCash = (tx as SerializedTransaction & { isCash?: boolean }).isCash;
+                  const symbol = isCash ? null : (tx.holding?.symbol ?? null);
+                  const qty = `${tx.quantity > 0 ? "+" : ""}${formatQuantity(tx.quantity, tx.holding?.assetType ?? "")}`;
+                  const time = new Date(tx.createdAt).toLocaleTimeString(undefined, {
+                    hour: "2-digit", minute: "2-digit",
+                  });
+                  return (
+                    <div key={tx.id}>
+                      {index > 0 && <div className="h-px bg-border/60 mx-4" />}
+                      <div className="flex items-center gap-3 px-4 py-3.5">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            {symbol && (
+                              <span className="font-mono font-semibold text-sm">{symbol}</span>
+                            )}
+                            <Badge variant={typeVariant} className="text-[10px] px-1.5 py-0 h-4 rounded-sm">
+                              {typeLabel}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {time}{tx.note ? ` · ${tx.note}` : ""}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-medium tabular-nums">{qty}</p>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditClick(tx)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              {tCommon("edit")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => setDeletingTx(tx)}>
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              {tCommon("delete")}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))
         )}
         {!isEmpty && !isReachingEnd && (
-          <div className="flex justify-center mt-6">
+          <div className="flex justify-center pt-2">
             <Button
               variant="secondary"
               onClick={() => setSize(size + 1)}
