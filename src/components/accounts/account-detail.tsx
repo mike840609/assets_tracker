@@ -3,18 +3,10 @@
 import { useState, useMemo, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 import { HoldingForm } from "./holding-form";
 import { EditHoldingDialog } from "./edit-holding-dialog";
@@ -28,19 +20,6 @@ import type { SerializedAccountWithHoldings, SerializedHolding } from "@/lib/typ
 
 type HoldingSortField = "symbol" | "name" | "assetType" | "currency" | "quantity" | "currentPrice" | "marketValue" | "percentage";
 type SortOrder = "asc" | "desc";
-
-function SortIcon({
-  field,
-  sortField,
-  sortDirection,
-}: {
-  field: HoldingSortField;
-  sortField: HoldingSortField;
-  sortDirection: SortOrder;
-}) {
-  if (sortField !== field) return <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-muted-foreground opacity-50" />;
-  return sortDirection === "asc" ? <ArrowUp className="ml-1 h-3.5 w-3.5" /> : <ArrowDown className="ml-1 h-3.5 w-3.5" />;
-}
 
 export function AccountDetail({
   account,
@@ -253,85 +232,61 @@ export function AccountDetail({
 
       {!isBank && (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base font-medium">{t("accountDetail.holdingsCount")}</CardTitle>
-            <Button size="sm" onClick={() => setShowHoldingForm(true)}>
-              {t("accountDetail.addHolding")}
-            </Button>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-medium">{t("accountDetail.holdingsCount")}</CardTitle>
+              <Button size="sm" onClick={() => setShowHoldingForm(true)}>
+                {t("accountDetail.addHolding")}
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {holdingsWithValue.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
                 {t("accountDetail.noHoldings")}
               </p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead
-                      className="cursor-pointer select-none hover:bg-accent/50"
-                      onClick={() => handleSort("symbol")}
-                    >
-                      <div className="flex items-center">{t("accountDetail.colSymbol")} <SortIcon field="symbol" sortField={sortField} sortDirection={sortDirection} /></div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer select-none hover:bg-accent/50"
-                      onClick={() => handleSort("name")}
-                    >
-                      <div className="flex items-center">{t("accountDetail.colName")} <SortIcon field="name" sortField={sortField} sortDirection={sortDirection} /></div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer select-none hover:bg-accent/50"
-                      onClick={() => handleSort("assetType")}
-                    >
-                      <div className="flex items-center">{t("accountDetail.colType")} <SortIcon field="assetType" sortField={sortField} sortDirection={sortDirection} /></div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer select-none hover:bg-accent/50"
-                      onClick={() => handleSort("currency")}
-                    >
-                      <div className="flex items-center">{t("accountDetail.colCurrency")} <SortIcon field="currency" sortField={sortField} sortDirection={sortDirection} /></div>
-                    </TableHead>
-                    <TableHead
-                      className="text-right cursor-pointer select-none hover:bg-accent/50"
-                      onClick={() => handleSort("quantity")}
-                    >
-                      <div className="flex items-center justify-end">{t("accountDetail.colQty")} <SortIcon field="quantity" sortField={sortField} sortDirection={sortDirection} /></div>
-                    </TableHead>
-                    <TableHead
-                      className="text-right cursor-pointer select-none hover:bg-accent/50"
-                      onClick={() => handleSort("currentPrice")}
-                    >
-                      <div className="flex items-center justify-end">{t("accountDetail.colPrice")} <SortIcon field="currentPrice" sortField={sortField} sortDirection={sortDirection} /></div>
-                    </TableHead>
-                    <TableHead
-                      className="text-right cursor-pointer select-none hover:bg-accent/50"
-                      onClick={() => handleSort("marketValue")}
-                    >
-                      <div className="flex items-center justify-end">{t("accountDetail.colValue")} <SortIcon field="marketValue" sortField={sortField} sortDirection={sortDirection} /></div>
-                    </TableHead>
-                    <TableHead
-                      className="text-right cursor-pointer select-none hover:bg-accent/50"
-                      onClick={() => handleSort("percentage")}
-                    >
-                      <div className="flex items-center justify-end">{t("accountDetail.colPercentage")} <SortIcon field="percentage" sortField={sortField} sortDirection={sortDirection} /></div>
-                    </TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedHoldings.map((h) => (
+              <>
+                {holdingsWithValue.length > 1 && (
+                  <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                    <span className="text-xs text-muted-foreground shrink-0">Sort:</span>
+                    {(
+                      [
+                        { field: "marketValue" as HoldingSortField, label: t("accountDetail.colValue") },
+                        { field: "symbol" as HoldingSortField, label: t("accountDetail.colSymbol") },
+                        { field: "percentage" as HoldingSortField, label: t("accountDetail.colPercentage") },
+                        { field: "quantity" as HoldingSortField, label: t("accountDetail.colQty") },
+                      ] as { field: HoldingSortField; label: string }[]
+                    ).map(({ field, label }) => (
+                      <button
+                        key={field}
+                        onClick={() => handleSort(field)}
+                        className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                          sortField === field
+                            ? "border-primary/40 bg-primary/10 text-primary font-medium"
+                            : "border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40"
+                        }`}
+                      >
+                        {label}{sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
+                {sortedHoldings.map((h, index) => (
+                  <div key={h.id}>
+                    {index > 0 && <div className="h-px bg-border/60 mx-4" />}
                     <HoldingRow
-                      key={h.id}
                       holding={h}
                       totalValue={totalHoldingsValue}
                       accountCurrency={account.currency}
                       onEdit={setEditingHolding}
                       onDelete={deleteHolding}
                     />
-                  ))}
-                </TableBody>
-              </Table>
+                  </div>
+                ))}
+              </div>
+              </>
             )}
           </CardContent>
         </Card>
