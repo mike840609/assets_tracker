@@ -10,6 +10,7 @@ import {
 } from "@/lib/services/history-service";
 import { pickMessages } from "@/lib/i18n-utils";
 import { AnalysisView } from "@/components/analysis/analysis-view";
+import { AnalysisPullRefresh } from "@/components/analysis/analysis-pull-refresh";
 import AnalysisLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["analysis", "categories"];
@@ -31,19 +32,21 @@ async function AnalysisContent() {
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
-      <div className="space-y-8 animate-in fade-in duration-500">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">
-          {t("title")}
-        </h2>
+      <AnalysisPullRefresh>
+        <div className="space-y-8 animate-in fade-in duration-500">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">
+            {t("title")}
+          </h2>
 
-        <AnalysisView
-          snapshots={snapshots}
-          cashFlowData={cashFlowData}
-          rawHistory={rawHistory}
-          baseCurrency={settings.baseCurrency}
-          locale={locale}
-        />
-      </div>
+          <AnalysisView
+            snapshots={snapshots}
+            cashFlowData={cashFlowData}
+            rawHistory={rawHistory}
+            baseCurrency={settings.baseCurrency}
+            locale={locale}
+          />
+        </div>
+      </AnalysisPullRefresh>
     </NextIntlClientProvider>
   );
 }

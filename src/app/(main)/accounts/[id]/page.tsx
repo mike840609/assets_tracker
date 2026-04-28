@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
+import { AccountsPullRefresh } from "@/components/accounts/accounts-pull-refresh";
 import { serializeAccountWithHoldings } from "@/lib/types";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
 import { getMessages } from "next-intl/server";
@@ -9,7 +10,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import AccountDetailLoading from "./loading";
 
-const CLIENT_NAMESPACES = ["accountDetail", "common", "categories", "transactionHistory"];
+const CLIENT_NAMESPACES = ["dashboardActions", "accountDetail", "common", "categories", "transactionHistory"];
 
 async function AccountDetailContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -64,9 +65,11 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
-      <div className="space-y-6">
-        <AccountDetail account={serialized} priceMap={priceMap} ratesMap={ratesMap} />
-      </div>
+      <AccountsPullRefresh>
+        <div className="space-y-6">
+          <AccountDetail account={serialized} priceMap={priceMap} ratesMap={ratesMap} />
+        </div>
+      </AccountsPullRefresh>
     </NextIntlClientProvider>
   );
 }
