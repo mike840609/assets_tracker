@@ -98,14 +98,14 @@ export function PullToRefresh({ onRefresh, children }: Props) {
     <div ref={wrapperRef} className="relative">
       <div
         className={cn(
-          "md:hidden pointer-events-none absolute left-1/2 -translate-x-1/2 z-20 flex items-center justify-center",
+          "md:hidden pointer-events-none fixed left-1/2 z-[60] flex items-center justify-center",
           "h-9 w-9 rounded-full bg-background/90 border border-border/50 shadow-md backdrop-blur-md",
           !refreshing && pull === 0 && "opacity-0",
           refreshing ? "transition-transform duration-300" : "transition-none"
         )}
         style={{
-          top: 8,
-          transform: `translate(-50%, ${pull - 36}px)`,
+          top: 0,
+          transform: `translate(-50%, ${pull - 44}px)`,
           opacity: refreshing ? 1 : progress,
         }}
         aria-hidden
