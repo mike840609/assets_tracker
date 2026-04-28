@@ -1,6 +1,5 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePullToRefreshContext, HANG_OFFSET } from "./pull-to-refresh-context";
 
@@ -8,11 +7,23 @@ const THRESHOLD = 70;
 // Vertical centre of the gap opened above the page (h-9 = 36px indicator)
 const INDICATOR_REST_Y = (HANG_OFFSET - 36) / 2; // 8px
 
+const SVG_SIZE = 24;
+const R = 9;
+const CX = SVG_SIZE / 2;
+const CY = SVG_SIZE / 2;
+const CIRCUMFERENCE = 2 * Math.PI * R; // ≈ 56.5
+
 export function PullToRefreshIndicator() {
   const { pull, refreshing } = usePullToRefreshContext();
   const progress = Math.min(pull / THRESHOLD, 1);
   const armed = pull >= THRESHOLD;
   const isPulling = pull > 0 && !refreshing;
+
+  // Arc fills from 0→full as the user pulls; spinner shows 75% arc while loading
+  const dashArray = refreshing
+    ? `${CIRCUMFERENCE * 0.75} ${CIRCUMFERENCE * 0.25}`
+    : String(CIRCUMFERENCE);
+  const dashOffset = refreshing ? 0 : CIRCUMFERENCE * (1 - progress);
 
   return (
     <div
@@ -31,15 +42,39 @@ export function PullToRefreshIndicator() {
       }}
       aria-hidden
     >
-      <RefreshCw
-        className={cn(
-          "h-4 w-4",
-          refreshing && "animate-spin text-primary",
-          !refreshing && armed && "text-primary",
-          !refreshing && !armed && "text-muted-foreground"
+      <svg
+        width={SVG_SIZE}
+        height={SVG_SIZE}
+        viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
+        className={cn(refreshing && "animate-spin")}
+      >
+        {/* Background track — only shown while pulling so the spinner looks clean */}
+        {!refreshing && (
+          <circle
+            cx={CX}
+            cy={CY}
+            r={R}
+            fill="none"
+            strokeWidth={2}
+            className="stroke-border/40"
+          />
         )}
-        style={!refreshing ? { transform: `rotate(${progress * 270}deg)` } : undefined}
-      />
+        {/* Filling arc (pull) / spinning arc (refresh) — starts at 12 o'clock */}
+        <circle
+          cx={CX}
+          cy={CY}
+          r={R}
+          fill="none"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeDasharray={dashArray}
+          strokeDashoffset={dashOffset}
+          transform={`rotate(-90 ${CX} ${CY})`}
+          className={cn(
+            armed || refreshing ? "stroke-primary" : "stroke-muted-foreground"
+          )}
+        />
+      </svg>
     </div>
   );
 }

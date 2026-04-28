@@ -29,6 +29,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
     let startY = 0;
     let active = false;
     let currentPull = 0;
+    let wasArmed = false;
 
     const onTouchStart = (e: TouchEvent) => {
       if (refreshing) return;
@@ -47,11 +48,17 @@ export function PullToRefresh({ onRefresh, children }: Props) {
       if (delta <= 0) {
         currentPull = 0;
         setPull(0);
+        wasArmed = false;
         return;
       }
       const damped = Math.min(delta * 0.5, MAX_PULL);
       currentPull = damped;
       if (!reduceMotion) setPull(damped);
+
+      // Haptic tick when crossing the threshold
+      const nowArmed = damped >= THRESHOLD;
+      if (nowArmed && !wasArmed) navigator.vibrate?.(10);
+      wasArmed = nowArmed;
     };
 
     const onTouchEnd = async () => {
@@ -60,6 +67,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
         return;
       }
       active = false;
+      wasArmed = false;
       if (currentPull >= THRESHOLD) {
         setRefreshing(true);
         setPull(THRESHOLD);
