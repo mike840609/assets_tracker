@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { ThemeColorSync } from "@/components/layout/theme-color-sync";
 import { CustomSpeedInsights } from "@/components/layout/speed-insights";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
@@ -41,6 +42,13 @@ export const metadata: Metadata = {
     description: "Track your net worth, assets, and investments",
     images: ["/twitter-image.png"],
   },
+  appleWebApp: {
+    capable: true,
+    title: "Assets Tracker",
+    // "black-translucent" lets the status bar overlay content; safe-area
+    // insets push content below it. Required for viewport-fit=cover PWA mode.
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
@@ -48,6 +56,14 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // viewport-fit=cover lets content extend behind the iPhone notch/Dynamic Island.
+  // pt-safe / pb-safe utilities then push content clear of those insets.
+  viewportFit: "cover",
+  themeColor: [
+    // Approximations of the CSS oklch() background colors (light / dark).
+    { media: "(prefers-color-scheme: light)", color: "#f8f9ff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0e1f24" },
+  ],
 };
 
 /**
@@ -101,6 +117,7 @@ export default function RootLayout({
           <Suspense fallback={<span />}>
             <LocaleProviders>{children}</LocaleProviders>
           </Suspense>
+          <ThemeColorSync />
           <Toaster />
           <Analytics />
           <CustomSpeedInsights />

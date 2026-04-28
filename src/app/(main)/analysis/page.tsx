@@ -10,6 +10,7 @@ import {
 } from "@/lib/services/history-service";
 import { pickMessages } from "@/lib/i18n-utils";
 import { AnalysisView } from "@/components/analysis/analysis-view";
+import { MobileLargeTitle } from "@/components/layout/mobile-large-title";
 import AnalysisLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["analysis", "categories"];
@@ -32,9 +33,7 @@ async function AnalysisContent() {
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
       <div className="space-y-8 animate-in fade-in duration-500">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">
-          {t("title")}
-        </h2>
+        <MobileLargeTitle title={t("title")} />
 
         <AnalysisView
           snapshots={snapshots}

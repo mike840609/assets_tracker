@@ -154,6 +154,19 @@
 
 /* Premium utilities */
 @layer utilities {
+  /* Safe-area padding utilities for notched iOS devices (requires viewport-fit=cover). */
+  .pt-safe {
+    /* On notched devices this is the status-bar/notch height (44px+); 0 on flat devices. */
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* Combines a base rem padding with the safe-area inset so content clears the notch. */
+  .pt-3-safe {
+    padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+  }
+
   /* .glass is intentionally blur-free for static layout elements.
      Fixed/sticky overlays (sidebar, mobile header, mobile nav) apply backdrop-blur inline. */
   .glass {
