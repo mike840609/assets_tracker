@@ -14,7 +14,7 @@ export function MobileHeader() {
 
   return (
     <header className={cn(
-      "md:hidden sticky top-0 left-0 right-0 z-50 glass backdrop-blur-md border-b border-border/50 px-4 py-3 flex items-center justify-between transition-transform duration-300 ease-in-out",
+      "md:hidden sticky top-0 left-0 right-0 z-50 glass backdrop-blur-md border-b border-border/50 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] flex items-center justify-between transition-transform duration-300 ease-in-out",
       hidden && "-translate-y-full"
     )}>
       <div className="flex items-center gap-2 min-w-0">
