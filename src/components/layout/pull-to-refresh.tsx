@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePullToRefreshContext } from "./pull-to-refresh-context";
+import { usePullToRefreshContext, THRESHOLD } from "./pull-to-refresh-context";
 
-const THRESHOLD = 70;
+// Maximum px the page visually shifts down while dragging.
 const MAX_PULL = 120;
+
+// Hyperbolic-tangent damping — gives a rubber-band feel that gets
+// progressively harder to pull rather than a hard linear cap.
+// At delta=0 → 0px, at delta≈140 → ~70px (threshold), asymptotes at MAX_PULL.
+function dampPull(delta: number): number {
+  return MAX_PULL * Math.tanh(delta / (MAX_PULL * 1.4));
+}
 
 interface Props {
   onRefresh: () => Promise<void> | void;
@@ -13,7 +20,7 @@ interface Props {
 
 export function PullToRefresh({ onRefresh, children }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const { pull, refreshing, setPull, setRefreshing } = usePullToRefreshContext();
+  const { refreshing, setPull, setRefreshing } = usePullToRefreshContext();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -29,6 +36,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
     let startY = 0;
     let active = false;
     let currentPull = 0;
+    let wasArmed = false; // tracks threshold crossing for one-shot haptic
 
     const onTouchStart = (e: TouchEvent) => {
       if (refreshing) return;
@@ -39,6 +47,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
       }
       startY = e.touches[0].clientY;
       active = true;
+      wasArmed = false;
     };
 
     const onTouchMove = (e: TouchEvent) => {
@@ -49,9 +58,17 @@ export function PullToRefresh({ onRefresh, children }: Props) {
         setPull(0);
         return;
       }
-      const damped = Math.min(delta * 0.5, MAX_PULL);
+      const damped = dampPull(delta);
       currentPull = damped;
+
       if (!reduceMotion) setPull(damped);
+
+      // One-shot haptic tick the moment the pull crosses the trigger threshold.
+      const isArmed = damped >= THRESHOLD;
+      if (isArmed && !wasArmed) {
+        navigator.vibrate?.(10);
+      }
+      wasArmed = isArmed;
     };
 
     const onTouchEnd = async () => {
@@ -74,6 +91,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
         setPull(0);
         currentPull = 0;
       }
+      wasArmed = false;
     };
 
     wrapper.addEventListener("touchstart", onTouchStart, { passive: true });

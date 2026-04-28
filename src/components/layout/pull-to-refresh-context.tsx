@@ -4,6 +4,8 @@ import { createContext, useContext, useState, type Dispatch, type SetStateAction
 
 // Space opened above the header for the refresh indicator (8px margin + h-9 indicator + 8px margin)
 export const HANG_OFFSET = 52;
+// Damped pull distance (px) that triggers a refresh when the finger lifts.
+export const THRESHOLD = 70;
 
 interface PullToRefreshContextValue {
   pull: number;
