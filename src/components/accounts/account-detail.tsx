@@ -233,34 +233,9 @@ export function AccountDetail({
       {!isBank && (
         <Card>
           <CardHeader className="pb-3">
-            <div className="flex items-center gap-3 flex-wrap">
-              <CardTitle className="text-base font-medium shrink-0">{t("accountDetail.holdingsCount")}</CardTitle>
-              {holdingsWithValue.length > 1 && (
-                <div className="flex items-center gap-1 flex-1">
-                  <span className="text-xs text-muted-foreground mr-1 shrink-0">Sort:</span>
-                  {(
-                    [
-                      { field: "marketValue" as HoldingSortField, label: t("accountDetail.colValue") },
-                      { field: "symbol" as HoldingSortField, label: t("accountDetail.colSymbol") },
-                      { field: "percentage" as HoldingSortField, label: t("accountDetail.colPercentage") },
-                      { field: "quantity" as HoldingSortField, label: t("accountDetail.colQty") },
-                    ] as { field: HoldingSortField; label: string }[]
-                  ).map(({ field, label }) => (
-                    <button
-                      key={field}
-                      onClick={() => handleSort(field)}
-                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                        sortField === field
-                          ? "border-primary/40 bg-primary/10 text-primary font-medium"
-                          : "border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40"
-                      }`}
-                    >
-                      {label}{sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <Button size="sm" className="ml-auto shrink-0" onClick={() => setShowHoldingForm(true)}>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-medium">{t("accountDetail.holdingsCount")}</CardTitle>
+              <Button size="sm" onClick={() => setShowHoldingForm(true)}>
                 {t("accountDetail.addHolding")}
               </Button>
             </div>
@@ -271,7 +246,33 @@ export function AccountDetail({
                 {t("accountDetail.noHoldings")}
               </p>
             ) : (
-              <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
+              <>
+                {holdingsWithValue.length > 1 && (
+                  <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                    <span className="text-xs text-muted-foreground shrink-0">Sort:</span>
+                    {(
+                      [
+                        { field: "marketValue" as HoldingSortField, label: t("accountDetail.colValue") },
+                        { field: "symbol" as HoldingSortField, label: t("accountDetail.colSymbol") },
+                        { field: "percentage" as HoldingSortField, label: t("accountDetail.colPercentage") },
+                        { field: "quantity" as HoldingSortField, label: t("accountDetail.colQty") },
+                      ] as { field: HoldingSortField; label: string }[]
+                    ).map(({ field, label }) => (
+                      <button
+                        key={field}
+                        onClick={() => handleSort(field)}
+                        className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                          sortField === field
+                            ? "border-primary/40 bg-primary/10 text-primary font-medium"
+                            : "border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40"
+                        }`}
+                      >
+                        {label}{sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
                 {sortedHoldings.map((h, index) => (
                   <div key={h.id}>
                     {index > 0 && <div className="h-px bg-border/60 mx-4" />}
@@ -285,6 +286,7 @@ export function AccountDetail({
                   </div>
                 ))}
               </div>
+              </>
             )}
           </CardContent>
         </Card>
