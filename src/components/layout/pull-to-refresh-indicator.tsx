@@ -30,13 +30,15 @@ export function PullToRefreshIndicator() {
   //   offset = 0             → full circle   (progress 1)
   const dashOffset = CIRCUMFERENCE * (1 - progress);
 
-  // Pill follows the finger while dragging; springs back/out with a transition.
+  // The main shell opens a gap of min(pull, HANG_OFFSET) px above itself.
+  // Centre the indicator inside that gap so it never overlaps the content.
+  const gap = Math.min(pull, HANG_OFFSET);
   const translateY = refreshing
-    ? INDICATOR_REST_Y
-    : pull - INDICATOR_SIZE - 8; // enters the viewport from above
+    ? INDICATOR_REST_Y           // = (HANG_OFFSET - INDICATOR_SIZE) / 2 = 8 px
+    : gap / 2 - INDICATOR_SIZE / 2; // same formula → 8 px when gap=HANG_OFFSET ✓
 
-  // Subtle scale-up as the user pulls — "materialises" the pill.
-  const scale = refreshing ? 1 : 0.75 + 0.25 * progress;
+  // Scale reaches 1.0 once the gap is fully open (pull ≥ HANG_OFFSET).
+  const scale = refreshing ? 1 : 0.75 + 0.25 * (gap / HANG_OFFSET);
 
   return (
     <div
