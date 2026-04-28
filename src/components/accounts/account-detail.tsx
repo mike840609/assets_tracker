@@ -233,37 +233,36 @@ export function AccountDetail({
       {!isBank && (
         <Card>
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <CardTitle className="text-base font-medium">{t("accountDetail.holdingsCount")}</CardTitle>
-              <div className="flex items-center gap-2">
-                {holdingsWithValue.length > 1 && (
-                  <div className="flex items-center gap-1">
-                    {(
-                      [
-                        { field: "marketValue" as HoldingSortField, label: t("accountDetail.colValue") },
-                        { field: "symbol" as HoldingSortField, label: t("accountDetail.colSymbol") },
-                        { field: "percentage" as HoldingSortField, label: t("accountDetail.colPercentage") },
-                        { field: "quantity" as HoldingSortField, label: t("accountDetail.colQty") },
-                      ] as { field: HoldingSortField; label: string }[]
-                    ).map(({ field, label }) => (
-                      <button
-                        key={field}
-                        onClick={() => handleSort(field)}
-                        className={`text-[10px] px-2 py-1 rounded-md transition-colors ${
-                          sortField === field
-                            ? "bg-primary/10 text-primary font-semibold"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                        }`}
-                      >
-                        {label}{sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <Button size="sm" onClick={() => setShowHoldingForm(true)}>
-                  {t("accountDetail.addHolding")}
-                </Button>
-              </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <CardTitle className="text-base font-medium shrink-0">{t("accountDetail.holdingsCount")}</CardTitle>
+              {holdingsWithValue.length > 1 && (
+                <div className="flex items-center gap-1 flex-1">
+                  <span className="text-xs text-muted-foreground mr-1 shrink-0">Sort:</span>
+                  {(
+                    [
+                      { field: "marketValue" as HoldingSortField, label: t("accountDetail.colValue") },
+                      { field: "symbol" as HoldingSortField, label: t("accountDetail.colSymbol") },
+                      { field: "percentage" as HoldingSortField, label: t("accountDetail.colPercentage") },
+                      { field: "quantity" as HoldingSortField, label: t("accountDetail.colQty") },
+                    ] as { field: HoldingSortField; label: string }[]
+                  ).map(({ field, label }) => (
+                    <button
+                      key={field}
+                      onClick={() => handleSort(field)}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                        sortField === field
+                          ? "border-primary/40 bg-primary/10 text-primary font-medium"
+                          : "border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40"
+                      }`}
+                    >
+                      {label}{sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <Button size="sm" className="ml-auto shrink-0" onClick={() => setShowHoldingForm(true)}>
+                {t("accountDetail.addHolding")}
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
