@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { getSession } from "@/lib/auth-session";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
+import { DashboardPullRefresh } from "@/components/dashboard/dashboard-pull-refresh";
 import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
@@ -28,15 +29,17 @@ async function DashboardPageContent() {
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
-      <div className="space-y-8 animate-in fade-in duration-500">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">
-            {t("title")}
-          </h2>
-        </div>
+      <DashboardPullRefresh>
+        <div className="space-y-8 animate-in fade-in duration-500">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">
+              {t("title")}
+            </h2>
+          </div>
 
-        <DashboardContent userId={userId} />
-      </div>
+          <DashboardContent userId={userId} />
+        </div>
+      </DashboardPullRefresh>
     </NextIntlClientProvider>
   );
 }

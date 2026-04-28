@@ -3,13 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { BarChart3, Copy, Eye, EyeOff, History, LayoutDashboard, Settings } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 
 export function Sidebar({ userImage, userName }: { userImage?: string | null; userName?: string | null }) {
   const pathname = usePathname();
@@ -117,7 +116,7 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
 export function MobileNav() {
   const pathname = usePathname();
   const t = useTranslations();
-  const [hidden, setHidden] = useState(false);
+  const hidden = useHideOnScroll();
 
   const navItems = [
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
@@ -126,41 +125,6 @@ export function MobileNav() {
     { label: t("nav.history"), href: "/history", icon: History },
     { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];
-
-  useEffect(() => {
-    const main = document.querySelector("main");
-    let lastY = 0;
-    let touchStartY = 0;
-
-    const getScrollY = () => Math.max(main?.scrollTop ?? 0, window.scrollY);
-
-    const onScroll = () => {
-      const y = getScrollY();
-      if (y > lastY && y > 64) setHidden(true);
-      else if (y < lastY) setHidden(false);
-      lastY = y;
-    };
-
-    const onTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY;
-    };
-    const onTouchMove = (e: TouchEvent) => {
-      const delta = touchStartY - e.touches[0].clientY;
-      if (delta > 10) setHidden(true);
-      else if (delta < -10) setHidden(false);
-    };
-
-    main?.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: true });
-    return () => {
-      main?.removeEventListener("scroll", onScroll);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-    };
-  }, []);
 
   return (
     <nav className={cn(
