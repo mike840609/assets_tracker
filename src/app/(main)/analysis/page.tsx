@@ -10,7 +10,7 @@ import {
 } from "@/lib/services/history-service";
 import { pickMessages } from "@/lib/i18n-utils";
 import { AnalysisView } from "@/components/analysis/analysis-view";
-import { AnalysisPullRefresh } from "@/components/analysis/analysis-pull-refresh";
+import { HistoryPullRefresh } from "@/components/history/history-pull-refresh";
 import AnalysisLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["analysis", "categories"];
@@ -32,7 +32,7 @@ async function AnalysisContent() {
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
-      <AnalysisPullRefresh>
+      <HistoryPullRefresh>
         <div className="space-y-8 animate-in fade-in duration-500">
           <h2 className="text-3xl font-bold tracking-tight text-foreground">
             {t("title")}
@@ -46,7 +46,7 @@ async function AnalysisContent() {
             locale={locale}
           />
         </div>
-      </AnalysisPullRefresh>
+      </HistoryPullRefresh>
     </NextIntlClientProvider>
   );
 }

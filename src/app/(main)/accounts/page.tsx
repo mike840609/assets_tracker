@@ -4,7 +4,7 @@ import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import { AccountsList } from "@/components/accounts/accounts-list";
-import { AccountsPullRefresh } from "@/components/accounts/accounts-pull-refresh";
+import { PricesPullRefresh } from "@/components/layout/prices-pull-refresh";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
@@ -76,12 +76,12 @@ async function AccountsContent() {
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
-      <AccountsPullRefresh>
+      <PricesPullRefresh>
         <div className="space-y-8 animate-in fade-in duration-500">
           <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("title")}</h2>
           <AccountsList accounts={accounts} priceMap={priceMap} ratesMap={ratesMap} baseCurrency={baseCurrency} />
         </div>
-      </AccountsPullRefresh>
+      </PricesPullRefresh>
     </NextIntlClientProvider>
   );
 }

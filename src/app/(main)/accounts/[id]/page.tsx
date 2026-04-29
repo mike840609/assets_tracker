@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
-import { AccountsPullRefresh } from "@/components/accounts/accounts-pull-refresh";
+import { PricesPullRefresh } from "@/components/layout/prices-pull-refresh";
 import { serializeAccountWithHoldings } from "@/lib/types";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
 import { getMessages } from "next-intl/server";
@@ -65,11 +65,11 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
-      <AccountsPullRefresh>
+      <PricesPullRefresh>
         <div className="space-y-6">
           <AccountDetail account={serialized} priceMap={priceMap} ratesMap={ratesMap} />
         </div>
-      </AccountsPullRefresh>
+      </PricesPullRefresh>
     </NextIntlClientProvider>
   );
 }
