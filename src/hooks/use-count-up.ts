@@ -8,8 +8,8 @@ export function useCountUp(end: number, duration: number = 1000) {
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) {
-      setCount(end);
-      return;
+      const id = window.requestAnimationFrame(() => setCount(end));
+      return () => cancelAnimationFrame(id);
     }
     let startTimestamp: number | null = null;
     const step = (timestamp: number) => {
