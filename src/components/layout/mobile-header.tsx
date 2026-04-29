@@ -6,6 +6,7 @@ import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
+import { haptic } from "@/lib/haptics";
 
 export function MobileHeader() {
   const t = useTranslations("app");
@@ -38,7 +39,7 @@ export function MobileHeader() {
       </div>
       <div className="flex items-center gap-1 scale-90 origin-right">
         <button
-          onClick={togglePrivacyMode}
+          onClick={() => { haptic(); togglePrivacyMode(); }}
           title={privacyMode ? "Show values" : "Hide values"}
           className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground transition-colors"
         >

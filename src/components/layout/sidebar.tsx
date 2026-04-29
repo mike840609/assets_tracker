@@ -9,6 +9,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
+import { haptic } from "@/lib/haptics";
 
 export function Sidebar({ userImage, userName }: { userImage?: string | null; userName?: string | null }) {
   const pathname = usePathname();
@@ -128,7 +129,7 @@ export function MobileNav() {
 
   return (
     <nav className={cn(
-      "md:hidden fixed bottom-0 left-0 right-0 z-50 glass backdrop-blur-md border-t border-border/50 flex justify-around py-3 pb-safe transition-transform duration-300 ease-in-out",
+      "md:hidden fixed bottom-0 left-0 right-0 z-50 glass backdrop-blur-md border-t border-border/50 flex justify-around items-end py-2 pb-safe transition-transform duration-300 motion-safe:[transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:ease-in-out",
       hidden && "translate-y-full"
     )}>
       {navItems.map((item) => {
@@ -141,18 +142,27 @@ export function MobileNav() {
           <Link
             key={item.href}
             href={item.href}
+            onClick={() => haptic()}
             className={cn(
-              "relative flex flex-col items-center gap-1.5 px-3 py-1 text-xs transition-colors group",
-              isActive
-                ? "text-primary font-medium"
-                : "text-muted-foreground hover:text-foreground"
+              "flex flex-col items-center gap-0.5 group",
+              isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
             )}
           >
-            {isActive && (
-              <div className="absolute inset-x-2 -top-3 h-0.5 bg-primary rounded-b-full shadow-[0_2px_8px_rgba(0,0,0,0.5)] shadow-primary/50 transition-all duration-200" />
-            )}
-            <Icon className={cn("h-5 w-5 transition-transform duration-200", isActive ? "scale-110" : "group-hover:scale-110")} />
-            <span>{item.label}</span>
+            <div className="relative flex items-center justify-center w-12 h-12">
+              {isActive && (
+                <div className="absolute inset-0 rounded-2xl bg-primary/10 transition-all duration-200 motion-safe:[transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none" />
+              )}
+              <Icon className={cn(
+                "relative z-10 h-5 w-5 transition-transform duration-200 motion-safe:[transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none",
+                isActive ? "scale-110" : "group-hover:scale-105"
+              )} />
+            </div>
+            <span className={cn(
+              "text-[10px] uppercase tracking-wide leading-none",
+              isActive ? "font-semibold" : "font-medium"
+            )}>
+              {item.label}
+            </span>
           </Link>
         );
       })}

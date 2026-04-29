@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import { startTransition, useEffect, useState } from "react";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { haptic } from "@/lib/haptics";
 
 const themes = [
   { value: "light", icon: Sun, label: "Light" },
@@ -32,7 +33,7 @@ export function ThemeToggle() {
       {themes.map(({ value, icon: Icon, label }) => (
         <button
           key={value}
-          onClick={() => startTransition(() => setTheme(value))}
+          onClick={() => { haptic(); startTransition(() => setTheme(value)); }}
           className={cn(
             "inline-flex items-center justify-center rounded-md p-1.5 text-sm transition-all duration-200",
             theme === value
