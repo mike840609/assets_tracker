@@ -6,8 +6,11 @@ on:
 jobs:
   e2e:
     name: Playwright smoke tests
-    # Vercel sets state=success when the preview is live and ready
-    if: github.event.deployment_status.state == 'success'
+    # Run only on preview deployments — production uses VERCEL_ENV=production
+    # which never renders the preview-credentials password form.
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment != 'Production'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
