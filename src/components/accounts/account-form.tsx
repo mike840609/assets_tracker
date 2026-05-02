@@ -88,9 +88,8 @@ export function AccountForm({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="fixed inset-x-0 bottom-0 top-auto translate-x-0 translate-y-0 max-h-[90vh] overflow-y-auto rounded-t-2xl rounded-b-none border-t pb-[calc(env(safe-area-inset-bottom)+1rem)] data-[ending-style]:translate-y-full sm:top-1/2 sm:bottom-auto sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:pb-6">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-muted" aria-hidden="true" />
           <DialogTitle>{t("accountForm.title")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
