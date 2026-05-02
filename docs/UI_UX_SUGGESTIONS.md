@@ -4,14 +4,14 @@ Recommendations for making the mobile experience feel like a native iOS app, plu
 
 ## Mobile / iOS-native feel (biggest wins first)
 
-### 1. Large-title navigation bar (iOS 11+ pattern) — ❌ Not Done
+### 1. Large-title navigation bar (iOS 11+ pattern) — ✅ Done
 
-`src/components/layout/mobile-header.tsx` is currently a small sticky bar with the logo. Replace it (per route) with the iOS pattern:
+`src/components/layout/mobile-header.tsx` + `src/components/layout/large-title-heading.tsx`
 
-- A *very big* page title (e.g. "Dashboard", "Accounts", "$1,234,567") that lives inline at the top of scroll content.
-- It collapses into a small centered title in the sticky bar as the user scrolls.
-
-Use `IntersectionObserver` on the big title to drive the swap. This single change is what most makes a web app "feel" iOS.
+- `LargeTitleHeading` replaces the page-level `<h2>` on all 5 main pages. It renders as `text-4xl` on mobile (≈36 px, close to iOS 34 pt) and the existing `text-3xl` on desktop.
+- An `IntersectionObserver` (with `-64px` top `rootMargin` to account for the sticky bar) drives `LargeTitleContext.isVisible`.
+- `MobileHeader` reads that flag: logo + app-name fade out and a small centred page title fades in as the user scrolls. The separator border appears only once the large title has collapsed (mirrors iOS behaviour).
+- `LargeTitleProvider` (in `(main)/layout.tsx`) resets `isVisible = true` on every route change so detail pages without a `LargeTitleHeading` always show the logo.
 
 ### 2. Inset-grouped lists, not tables — ✅ Done
 
@@ -96,7 +96,7 @@ When tapping an account in the list to open `/accounts/[id]`, do a slide-from-ri
 
 ## Suggested implementation order
 
-1. Large-title nav + status-bar `theme-color` + safe-area `pt-safe` on mobile header.
+1. ✅ Large-title nav + status-bar `theme-color` + safe-area `pt-safe` on mobile header.
 2. Bottom-sheet dialogs for forms.
 3. Inset-grouped account/holding lists with disclosure chevrons.
 4. Tab-bar pill background + filled-icon pattern.

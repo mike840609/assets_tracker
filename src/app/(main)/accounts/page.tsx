@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth-session";
 import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
+import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AccountsList } from "@/components/accounts/accounts-list";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
@@ -75,7 +76,7 @@ async function AccountsContent() {
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
       <div className="space-y-8 animate-in fade-in duration-500">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("title")}</h2>
+        <LargeTitleHeading>{t("title")}</LargeTitleHeading>
         <AccountsList accounts={accounts} priceMap={priceMap} ratesMap={ratesMap} baseCurrency={baseCurrency} />
       </div>
     </NextIntlClientProvider>

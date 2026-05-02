@@ -6,6 +6,7 @@ import { DashboardPullRefresh } from "@/components/dashboard/dashboard-pull-refr
 import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
+import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 
 const CLIENT_NAMESPACES = [
   "dashboardActions",
@@ -32,9 +33,7 @@ async function DashboardPageContent() {
       <DashboardPullRefresh>
         <div className="space-y-8 animate-in fade-in duration-500">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">
-              {t("title")}
-            </h2>
+            <LargeTitleHeading>{t("title")}</LargeTitleHeading>
           </div>
 
           <DashboardContent userId={userId} />

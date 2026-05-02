@@ -9,6 +9,7 @@ import {
   getMonthlyCashFlow,
 } from "@/lib/services/history-service";
 import { pickMessages } from "@/lib/i18n-utils";
+import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AnalysisView } from "@/components/analysis/analysis-view";
 import AnalysisLoading from "./loading";
 
@@ -32,9 +33,7 @@ async function AnalysisContent() {
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
       <div className="space-y-8 animate-in fade-in duration-500">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">
-          {t("title")}
-        </h2>
+        <LargeTitleHeading>{t("title")}</LargeTitleHeading>
 
         <AnalysisView
           snapshots={snapshots}
