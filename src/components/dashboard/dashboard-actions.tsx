@@ -6,6 +6,7 @@ import { RefreshCw, Camera, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
+import { hapticTick } from "@/lib/haptics";
 
 function getRelativeTime(dateString: string, locale: string) {
   const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
@@ -38,6 +39,7 @@ export function DashboardActions({
   const [refreshing, setRefreshing] = useState(false);
 
   async function handleRefreshPrices() {
+    hapticTick();
     setRefreshing(true);
     try {
       const [priceRes] = await Promise.all([

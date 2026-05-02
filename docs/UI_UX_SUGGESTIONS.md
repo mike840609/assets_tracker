@@ -42,11 +42,13 @@ The bottom nav at `src/components/layout/sidebar.tsx:129` is close. Two tweaks:
 
 > Active state currently uses a top indicator bar (`absolute inset-x-2 -top-3 h-0.5 bg-primary`, sidebar.tsx:152) rather than a pill background. Icon tap targets are ~20px (h-5 w-5), below the 48×48 recommendation.
 
-### 5. Haptics + spring motion — ❌ Not Done
+### 5. Haptics + spring motion — ✅ Done
 
 - On tap of nav items, refresh, privacy toggle, sheet open: call `navigator.vibrate?.(10)` for a soft tick.
 - Prefer spring curves (`cubic-bezier(0.34, 1.56, 0.64, 1)`) over linear `duration-200`.
 - The count-up on net worth is great; consider **ease-out cubic** so it decelerates the way iOS does.
+
+> `src/lib/haptics.ts` exposes `hapticTick()` (`navigator.vibrate?.(10)`). Called in: `togglePrivacyMode` (covers sidebar + mobile header), `MobileNav` link `onClick`, `handleRefreshPrices`, and pull-to-refresh threshold crossing. Spring curve (`--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1)`) and expo ease-out (`--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1)`) added to `@theme inline` in `globals.css`. Nav item, icon, and header transitions updated to use `ease-spring` / `ease-out-expo`. Count-up hook changed from `easeOutExpo` to `easeOutCubic` (`1 - (1 - t)³`).
 
 ### 6. Pull-to-refresh native feel — ⚠️ Partial
 
@@ -56,7 +58,7 @@ The bottom nav at `src/components/layout/sidebar.tsx:129` is close. Two tweaks:
 - Shows a circular progress that *fills* as you pull (not a spinner that appears at threshold).
 - Gives a haptic tick at threshold crossing.
 
-> Rubber-band damped pull (`Math.min(delta * 0.5, MAX_PULL)`) and fill-progress indicator are implemented. Haptic tick at threshold crossing (`navigator.vibrate`) is missing.
+> Rubber-band damped pull (`Math.min(delta * 0.5, MAX_PULL)`) and fill-progress indicator are implemented. Haptic tick at threshold crossing now implemented via `hapticTick()` in `pull-to-refresh.tsx`.
 
 ### 7. Status bar / safe areas / chrome — ⚠️ Partial
 

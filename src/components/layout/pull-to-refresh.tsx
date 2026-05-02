@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePullToRefreshContext } from "./pull-to-refresh-context";
+import { hapticTick } from "@/lib/haptics";
 
 const THRESHOLD = 70;
 const MAX_PULL = 120;
@@ -61,6 +62,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
       }
       active = false;
       if (currentPull >= THRESHOLD) {
+        hapticTick();
         setRefreshing(true);
         setPull(THRESHOLD);
         try {
