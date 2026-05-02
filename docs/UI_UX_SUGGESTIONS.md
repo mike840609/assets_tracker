@@ -91,8 +91,8 @@ When tapping an account in the list to open `/accounts/[id]`, do a slide-from-ri
 ## Cross-cutting
 
 - **Empty states with art** — ✅ Done: `src/components/dashboard/dashboard-content.tsx:212` has a wallet SVG illustration with `animate-bounce-slow` and a CTA button. Replicate the same pattern for empty accounts / empty history / empty transactions instead of bare text.
-- **Skeleton shimmer** — ❌ Not Done: replace `animate-pulse` with a left-to-right gradient shimmer; it reads as "loading data" rather than "broken layout."
-- **Color depth on the dashboard hero** — ❌ Not Done: there's already a gradient stripe at the bottom of the net-worth card (`src/components/dashboard/net-worth-card.tsx:43`); consider an *animated* mesh-gradient background tinted green/red based on day delta. Subtle but premium.
+- **Skeleton shimmer** — ✅ Done: dashboard skeleton placeholders now use a reusable `.skeleton-shimmer` utility with a left-to-right gradient sweep animation instead of `animate-pulse`.
+- **Color depth on the dashboard hero** — ✅ Done: the net-worth hero now renders an animated mesh overlay (`.hero-mesh-positive` / `.hero-mesh-negative`) tinted by day delta direction and layered behind card content.
 
 ## Suggested implementation order
 

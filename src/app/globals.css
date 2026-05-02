@@ -185,4 +185,65 @@
     @apply absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none
            dark:from-primary/8 dark:to-chart-3/5;
   }
+
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--muted) 88%, white 12%);
+  }
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in oklab, var(--background) 60%, white 40%) 50%,
+      transparent 100%
+    );
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  }
+
+  .hero-mesh-positive,
+  .hero-mesh-negative {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.24;
+    filter: saturate(1.08);
+    background-size: 160% 160%;
+    animation: hero-mesh-drift 14s ease-in-out infinite;
+  }
+
+  .hero-mesh-positive {
+    background-image:
+      radial-gradient(circle at 15% 25%, oklch(0.88 0.12 160 / 0.75), transparent 50%),
+      radial-gradient(circle at 80% 20%, oklch(0.72 0.16 165 / 0.45), transparent 46%),
+      radial-gradient(circle at 55% 80%, oklch(0.66 0.13 180 / 0.30), transparent 52%);
+  }
+
+  .hero-mesh-negative {
+    background-image:
+      radial-gradient(circle at 15% 25%, oklch(0.80 0.16 30 / 0.70), transparent 50%),
+      radial-gradient(circle at 80% 20%, oklch(0.66 0.19 25 / 0.45), transparent 46%),
+      radial-gradient(circle at 55% 80%, oklch(0.60 0.15 15 / 0.30), transparent 52%);
+  }
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes hero-mesh-drift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
