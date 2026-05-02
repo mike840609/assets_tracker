@@ -9,6 +9,7 @@ import {
   useState,
   startTransition,
 } from "react";
+import { hapticTick } from "@/lib/haptics";
 
 interface PrivacyModeContextType {
   privacyMode: boolean;
@@ -36,6 +37,7 @@ export function PrivacyModeProvider({ children }: { children: React.ReactNode })
   // dozens of currency cells across the tree re-render without blocking
   // the click → paint cycle (keeps INP under 200 ms).
   const togglePrivacyMode = useCallback(() => {
+    hapticTick();
     const next = localStorage.getItem("privacy-mode") !== "true";
     localStorage.setItem("privacy-mode", String(next));
     startTransition(() => setPrivacyMode(next));

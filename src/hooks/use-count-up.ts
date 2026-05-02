@@ -10,8 +10,8 @@ export function useCountUp(end: number, duration: number = 1000) {
     const step = (timestamp: number) => {
       if (!startTimestamp) startTimestamp = timestamp;
       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      // easeOutExpo
-      const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      // easeOutCubic — decelerates the way iOS does
+      const ease = 1 - Math.pow(1 - progress, 3);
       setCount(end * ease);
       if (progress < 1) {
         window.requestAnimationFrame(step);
