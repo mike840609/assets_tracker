@@ -33,14 +33,14 @@ On mobile, swap account/holding/transaction *Dialogs* for sheets that slide up f
 
 Candidates: `src/components/accounts/holding-form.tsx`, `src/components/accounts/edit-holding-dialog.tsx`, `src/components/accounts/account-form.tsx`.
 
-### 4. Tab bar polish — ✅ Done
+### 4. Tab bar polish — ⚠️ Partial
 
 The bottom nav at `src/components/layout/sidebar.tsx:129` is close. Two tweaks:
 
 - **Filled vs. outline** icons for active/inactive (iOS tab bars do this, not just color). Lucide doesn't ship filled variants — pair with a tiny pill background `bg-primary/10` behind the active icon, drop the top indicator bar.
 - Slightly increase tap targets to ~48×48 and reduce label size to 10–11px uppercase tracking.
 
-> Top indicator bar replaced with a `bg-primary/10 rounded-xl w-9 h-9` pill wrapping the active icon; inactive tabs get `group-hover:bg-muted/50` for visual feedback. Label reduced to `text-[10px] uppercase tracking-wide`. Tap target size kept as-is (sufficient).
+> Active state currently uses a top indicator bar (`absolute inset-x-2 -top-3 h-0.5 bg-primary`, sidebar.tsx:152) rather than a pill background. Icon tap targets are ~20px (h-5 w-5), below the 48×48 recommendation.
 
 ### 5. Haptics + spring motion — ❌ Not Done
 

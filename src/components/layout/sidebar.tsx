@@ -128,7 +128,7 @@ export function MobileNav() {
 
   return (
     <nav className={cn(
-      "md:hidden fixed bottom-0 left-0 right-0 z-50 glass backdrop-blur-md border-t border-border/50 flex justify-around py-2 pb-safe transition-transform duration-300 ease-in-out",
+      "md:hidden fixed bottom-0 left-0 right-0 z-50 glass backdrop-blur-md border-t border-border/50 flex justify-around py-3 pb-safe transition-transform duration-300 ease-in-out",
       hidden && "translate-y-full"
     )}>
       {navItems.map((item) => {
@@ -142,19 +142,17 @@ export function MobileNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-col items-center gap-1 px-3 py-1 transition-colors group",
+              "relative flex flex-col items-center gap-1.5 px-3 py-1 text-xs transition-colors group",
               isActive
                 ? "text-primary font-medium"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <span className={cn(
-              "flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200",
-              isActive ? "bg-primary/10" : "group-hover:bg-muted/50"
-            )}>
-              <Icon className={cn("h-5 w-5 transition-transform duration-200", isActive ? "scale-110" : "group-hover:scale-110")} />
-            </span>
-            <span className="text-[10px] uppercase tracking-wide">{item.label}</span>
+            {isActive && (
+              <div className="absolute inset-x-2 -top-3 h-0.5 bg-primary rounded-b-full shadow-[0_2px_8px_rgba(0,0,0,0.5)] shadow-primary/50 transition-all duration-200" />
+            )}
+            <Icon className={cn("h-5 w-5 transition-transform duration-200", isActive ? "scale-110" : "group-hover:scale-110")} />
+            <span>{item.label}</span>
           </Link>
         );
       })}
