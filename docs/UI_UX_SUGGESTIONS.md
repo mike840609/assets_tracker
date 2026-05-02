@@ -27,7 +27,7 @@ Candidates: `src/components/dashboard/accounts-summary.tsx`, `src/components/acc
 
 > `accounts-summary.tsx`: rounded-2xl cards, hairline dividers `h-px bg-border/60`, uppercase `tracking-widest` headers, ChevronRight icons. Container (`rounded-2xl overflow-hidden border border-border/40`) and hairline dividers also applied in `account-detail.tsx`. `holding-row.tsx` rows now have `hover:bg-muted/40 active:bg-muted/60 transition-colors` for consistent interactive feedback.
 
-### 3. Bottom sheets instead of centered dialogs — ❌ Not Done
+### 3. Bottom sheets instead of centered dialogs — ✅ Done
 
 On mobile, swap account/holding/transaction *Dialogs* for sheets that slide up from the bottom with a drag handle and swipe-to-dismiss. shadcn has a `Sheet` (Vaul) primitive — use `side="bottom"` with rounded top corners. This is the single most jarring "this is a website" moment in the current flow.
 
@@ -97,7 +97,7 @@ When tapping an account in the list to open `/accounts/[id]`, do a slide-from-ri
 ## Suggested implementation order
 
 1. ✅ Large-title nav + status-bar `theme-color` + safe-area `pt-safe` on mobile header.
-2. Bottom-sheet dialogs for forms.
+2. ✅ Bottom-sheet dialogs for forms.
 3. Inset-grouped account/holding lists with disclosure chevrons.
 4. Tab-bar pill background + filled-icon pattern.
 5. Swipe actions on holding rows.
