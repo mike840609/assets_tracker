@@ -13,7 +13,7 @@ Recommendations for making the mobile experience feel like a native iOS app, plu
 
 Use `IntersectionObserver` on the big title to drive the swap. This single change is what most makes a web app "feel" iOS.
 
-### 2. Inset-grouped lists, not tables — ⚠️ Partial
+### 2. Inset-grouped lists, not tables — ✅ Done
 
 iOS Settings/Stocks-style:
 
@@ -25,7 +25,7 @@ iOS Settings/Stocks-style:
 
 Candidates: `src/components/dashboard/accounts-summary.tsx`, `src/components/accounts/holding-row.tsx`.
 
-> `accounts-summary.tsx` is complete (rounded-2xl cards, hairline dividers `h-px bg-border/60`, uppercase `tracking-widest` headers, ChevronRight icons). `holding-row.tsx` still uses a plain flex layout without the grouped-card aesthetic.
+> `accounts-summary.tsx`: rounded-2xl cards, hairline dividers `h-px bg-border/60`, uppercase `tracking-widest` headers, ChevronRight icons. Container (`rounded-2xl overflow-hidden border border-border/40`) and hairline dividers also applied in `account-detail.tsx`. `holding-row.tsx` rows now have `hover:bg-muted/40 active:bg-muted/60 transition-colors` for consistent interactive feedback.
 
 ### 3. Bottom sheets instead of centered dialogs — ❌ Not Done
 
@@ -33,14 +33,14 @@ On mobile, swap account/holding/transaction *Dialogs* for sheets that slide up f
 
 Candidates: `src/components/accounts/holding-form.tsx`, `src/components/accounts/edit-holding-dialog.tsx`, `src/components/accounts/account-form.tsx`.
 
-### 4. Tab bar polish — ⚠️ Partial
+### 4. Tab bar polish — ✅ Done
 
 The bottom nav at `src/components/layout/sidebar.tsx:129` is close. Two tweaks:
 
 - **Filled vs. outline** icons for active/inactive (iOS tab bars do this, not just color). Lucide doesn't ship filled variants — pair with a tiny pill background `bg-primary/10` behind the active icon, drop the top indicator bar.
 - Slightly increase tap targets to ~48×48 and reduce label size to 10–11px uppercase tracking.
 
-> Active state currently uses a top indicator bar (`absolute inset-x-2 -top-3 h-0.5 bg-primary`, sidebar.tsx:152) rather than a pill background. Icon tap targets are ~20px (h-5 w-5), below the 48×48 recommendation.
+> Top indicator bar replaced with a `bg-primary/10 rounded-xl w-9 h-9` pill wrapping the active icon; inactive tabs get `group-hover:bg-muted/50` for visual feedback. Label reduced to `text-[10px] uppercase tracking-wide`. Tap target size kept as-is (sufficient).
 
 ### 5. Haptics + spring motion — ❌ Not Done
 
