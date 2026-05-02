@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,12 +15,14 @@ import { getOptionDisplay } from "@/lib/options";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { hapticTick } from "@/lib/haptics";
+import { registerSwipeRow, closeOtherSwipeRows } from "@/lib/swipe-row-registry";
 import type { SerializedHolding } from "@/lib/types";
 
 const HIDDEN = "***";
-const ACTION_WIDTH = 72; // px per action button
+const ACTION_WIDTH = 72;
 const REVEAL_WIDTH = ACTION_WIDTH * 2;
 const SNAP_THRESHOLD = REVEAL_WIDTH * 0.4;
+const FULL_SWIPE = REVEAL_WIDTH + 80; // past this → delete on release
 
 export interface HoldingWithPrice extends SerializedHolding {
   currentPrice: number | null;
@@ -45,11 +47,35 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
 
   const x = useMotionValue(0);
   const hasFiredHaptic = useRef(false);
+  const hasFiredDangerHaptic = useRef(false);
   const [isOpen, setIsOpen] = useState(false);
+  const closeRef = useRef<() => void>(() => {});
 
-  const actionsOpacity = useTransform(x, [-REVEAL_WIDTH, -REVEAL_WIDTH * 0.25, 0], [1, 0.85, 0]);
+  useEffect(() => {
+    function close() {
+      animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+      setIsOpen(false);
+      hasFiredHaptic.current = false;
+      hasFiredDangerHaptic.current = false;
+    }
+    closeRef.current = close;
+    return registerSwipeRow(close);
+  }, [x]);
+
+  // Reveal opacity: fades in as row slides open
+  const actionsOpacity = useTransform(x, [-REVEAL_WIDTH * 0.5, 0], [1, 0], { clamp: true });
+  // Icon scale: pops from 65% → 100% as row reveals
+  const iconScale = useTransform(x, [0, -REVEAL_WIDTH], [0.65, 1.0], { clamp: true });
+  // Edit button shrinks away in the danger zone
+  const editOpacity = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [1, 0], { clamp: true });
+  const editWidth = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [ACTION_WIDTH, 0], { clamp: true });
+  // Delete icon grows in the danger zone
+  const deleteIconScale = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [1.0, 1.3], { clamp: true });
+  // Red edge tint on the row itself
+  const dangerOpacity = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [0, 1], { clamp: true });
 
   function snapOpen() {
+    closeOtherSwipeRows(closeRef.current);
     animate(x, -REVEAL_WIDTH, { type: "spring", stiffness: 300, damping: 30 });
     setIsOpen(true);
   }
@@ -58,24 +84,37 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
     animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
     setIsOpen(false);
     hasFiredHaptic.current = false;
+    hasFiredDangerHaptic.current = false;
+  }
+
+  function handleDrag() {
+    const cur = x.get();
+    if (!hasFiredHaptic.current && cur < -SNAP_THRESHOLD) {
+      hapticTick();
+      hasFiredHaptic.current = true;
+    } else if (hasFiredHaptic.current && cur > -SNAP_THRESHOLD) {
+      hasFiredHaptic.current = false;
+    }
+    if (!hasFiredDangerHaptic.current && cur < -FULL_SWIPE) {
+      hapticTick();
+      hapticTick(); // double-tick signals danger zone
+      hasFiredDangerHaptic.current = true;
+    } else if (hasFiredDangerHaptic.current && cur > -FULL_SWIPE) {
+      hasFiredDangerHaptic.current = false;
+    }
   }
 
   function handleDragEnd() {
-    if (x.get() < -SNAP_THRESHOLD) {
+    const cur = x.get();
+    if (cur < -FULL_SWIPE) {
+      snapClose();
+      hapticTick();
+      onDelete(h.id);
+    } else if (cur < -SNAP_THRESHOLD) {
       snapOpen();
       hapticTick();
     } else {
       snapClose();
-    }
-  }
-
-  function handleDrag() {
-    const currentX = x.get();
-    if (!hasFiredHaptic.current && currentX < -SNAP_THRESHOLD) {
-      hapticTick();
-      hasFiredHaptic.current = true;
-    } else if (hasFiredHaptic.current && currentX > -SNAP_THRESHOLD) {
-      hasFiredHaptic.current = false;
     }
   }
 
@@ -87,36 +126,50 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
         style={{ opacity: actionsOpacity, width: REVEAL_WIDTH }}
         aria-hidden="true"
       >
-        <button
-          className="flex-1 flex flex-col items-center justify-center bg-blue-500 text-white text-xs font-medium gap-1 active:brightness-90 transition-[filter]"
+        <motion.button
+          className="flex items-center justify-center bg-blue-500 text-white text-xs font-medium overflow-hidden active:brightness-90 transition-[filter]"
+          style={{ opacity: editOpacity, width: editWidth, minWidth: 0 }}
           onClick={() => { snapClose(); onEdit(h); }}
           aria-label={t("common.edit")}
         >
-          <Pencil className="h-4 w-4" />
-          <span>{t("common.edit")}</span>
-        </button>
+          <motion.div className="flex flex-col items-center gap-1" style={{ scale: iconScale }}>
+            <Pencil className="h-4 w-4" />
+            <span>{t("common.edit")}</span>
+          </motion.div>
+        </motion.button>
         <button
-          className="flex-1 flex flex-col items-center justify-center bg-destructive text-destructive-foreground text-xs font-medium gap-1 active:brightness-90 transition-[filter]"
+          className="flex-1 flex items-center justify-center bg-destructive text-destructive-foreground text-xs font-medium active:brightness-90 transition-[filter]"
           onClick={() => { snapClose(); onDelete(h.id); }}
           aria-label={t("common.delete")}
         >
-          <Trash2 className="h-4 w-4" />
-          <span>{t("common.delete")}</span>
+          <motion.div className="flex flex-col items-center gap-1" style={{ scale: deleteIconScale }}>
+            <Trash2 className="h-4 w-4" />
+            <span>{t("common.delete")}</span>
+          </motion.div>
         </button>
       </motion.div>
 
-      {/* Draggable row content */}
+      {/* Draggable row */}
       <motion.div
         className="flex items-center gap-3 px-4 py-3.5 bg-card hover:bg-muted/40 active:bg-muted/60 transition-colors relative z-10"
         style={{ x }}
         drag="x"
         dragDirectionLock
-        dragConstraints={{ left: -REVEAL_WIDTH, right: 0 }}
-        dragElastic={{ left: 0.08, right: 0.15 }}
+        dragConstraints={{ left: -(FULL_SWIPE + 60), right: 0 }}
+        dragElastic={{ left: 0.12, right: 0.15 }}
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
         onClick={() => { if (isOpen) snapClose(); }}
       >
+        {/* Danger-zone red tint bleeds in from the right edge */}
+        <motion.div
+          className="absolute inset-y-0 right-0 w-28 pointer-events-none rounded-r-none"
+          style={{
+            opacity: dangerOpacity,
+            background: "linear-gradient(to left, oklch(0.55 0.22 27 / 0.35), transparent)",
+          }}
+        />
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span

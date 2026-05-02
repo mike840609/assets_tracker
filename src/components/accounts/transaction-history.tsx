@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { hapticTick } from "@/lib/haptics";
+import { registerSwipeRow, closeOtherSwipeRows } from "@/lib/swipe-row-registry";
 import {
   Dialog,
   DialogContent,
@@ -47,6 +48,7 @@ const TYPE_VARIANTS: Record<string, "default" | "secondary" | "destructive"> = {
 const ACTION_WIDTH = 72;
 const REVEAL_WIDTH = ACTION_WIDTH * 2;
 const SNAP_THRESHOLD = REVEAL_WIDTH * 0.4;
+const FULL_SWIPE = REVEAL_WIDTH + 80; // past this → trigger delete on release
 
 interface TxRowProps {
   tx: SerializedTransaction;
@@ -63,11 +65,30 @@ interface TxRowProps {
 function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit, onDelete, tCommon }: TxRowProps) {
   const x = useMotionValue(0);
   const hasFiredHaptic = useRef(false);
+  const hasFiredDangerHaptic = useRef(false);
   const [isOpen, setIsOpen] = useState(false);
+  const closeRef = useRef<() => void>(() => {});
 
-  const actionsOpacity = useTransform(x, [-REVEAL_WIDTH, -REVEAL_WIDTH * 0.25, 0], [1, 0.85, 0]);
+  useEffect(() => {
+    function close() {
+      animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+      setIsOpen(false);
+      hasFiredHaptic.current = false;
+      hasFiredDangerHaptic.current = false;
+    }
+    closeRef.current = close;
+    return registerSwipeRow(close);
+  }, [x]);
+
+  const actionsOpacity = useTransform(x, [-REVEAL_WIDTH * 0.5, 0], [1, 0], { clamp: true });
+  const iconScale = useTransform(x, [0, -REVEAL_WIDTH], [0.65, 1.0], { clamp: true });
+  const editOpacity = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [1, 0], { clamp: true });
+  const editWidth = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [ACTION_WIDTH, 0], { clamp: true });
+  const deleteIconScale = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [1.0, 1.3], { clamp: true });
+  const dangerOpacity = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [0, 1], { clamp: true });
 
   function snapOpen() {
+    closeOtherSwipeRows(closeRef.current);
     animate(x, -REVEAL_WIDTH, { type: "spring", stiffness: 300, damping: 30 });
     setIsOpen(true);
   }
@@ -76,24 +97,37 @@ function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit,
     animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
     setIsOpen(false);
     hasFiredHaptic.current = false;
+    hasFiredDangerHaptic.current = false;
+  }
+
+  function handleDrag() {
+    const cur = x.get();
+    if (!hasFiredHaptic.current && cur < -SNAP_THRESHOLD) {
+      hapticTick();
+      hasFiredHaptic.current = true;
+    } else if (hasFiredHaptic.current && cur > -SNAP_THRESHOLD) {
+      hasFiredHaptic.current = false;
+    }
+    if (!hasFiredDangerHaptic.current && cur < -FULL_SWIPE) {
+      hapticTick();
+      hapticTick();
+      hasFiredDangerHaptic.current = true;
+    } else if (hasFiredDangerHaptic.current && cur > -FULL_SWIPE) {
+      hasFiredDangerHaptic.current = false;
+    }
   }
 
   function handleDragEnd() {
-    if (x.get() < -SNAP_THRESHOLD) {
+    const cur = x.get();
+    if (cur < -FULL_SWIPE) {
+      snapClose();
+      hapticTick();
+      onDelete(); // opens the confirm dialog
+    } else if (cur < -SNAP_THRESHOLD) {
       snapOpen();
       hapticTick();
     } else {
       snapClose();
-    }
-  }
-
-  function handleDrag() {
-    const currentX = x.get();
-    if (!hasFiredHaptic.current && currentX < -SNAP_THRESHOLD) {
-      hapticTick();
-      hasFiredHaptic.current = true;
-    } else if (hasFiredHaptic.current && currentX > -SNAP_THRESHOLD) {
-      hasFiredHaptic.current = false;
     }
   }
 
@@ -105,21 +139,26 @@ function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit,
         style={{ opacity: actionsOpacity, width: REVEAL_WIDTH }}
         aria-hidden="true"
       >
-        <button
-          className="flex-1 flex flex-col items-center justify-center bg-blue-500 text-white text-xs font-medium gap-1 active:brightness-90 transition-[filter]"
+        <motion.button
+          className="flex items-center justify-center bg-blue-500 text-white text-xs font-medium overflow-hidden active:brightness-90 transition-[filter]"
+          style={{ opacity: editOpacity, width: editWidth, minWidth: 0 }}
           onClick={() => { snapClose(); onEdit(); }}
           aria-label={tCommon("edit")}
         >
-          <Pencil className="h-4 w-4" />
-          <span>{tCommon("edit")}</span>
-        </button>
+          <motion.div className="flex flex-col items-center gap-1" style={{ scale: iconScale }}>
+            <Pencil className="h-4 w-4" />
+            <span>{tCommon("edit")}</span>
+          </motion.div>
+        </motion.button>
         <button
-          className="flex-1 flex flex-col items-center justify-center bg-destructive text-destructive-foreground text-xs font-medium gap-1 active:brightness-90 transition-[filter]"
+          className="flex-1 flex items-center justify-center bg-destructive text-destructive-foreground text-xs font-medium active:brightness-90 transition-[filter]"
           onClick={() => { snapClose(); onDelete(); }}
           aria-label={tCommon("delete")}
         >
-          <Trash2 className="h-4 w-4" />
-          <span>{tCommon("delete")}</span>
+          <motion.div className="flex flex-col items-center gap-1" style={{ scale: deleteIconScale }}>
+            <Trash2 className="h-4 w-4" />
+            <span>{tCommon("delete")}</span>
+          </motion.div>
         </button>
       </motion.div>
 
@@ -129,12 +168,20 @@ function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit,
         style={{ x }}
         drag="x"
         dragDirectionLock
-        dragConstraints={{ left: -REVEAL_WIDTH, right: 0 }}
-        dragElastic={{ left: 0.08, right: 0.15 }}
+        dragConstraints={{ left: -(FULL_SWIPE + 60), right: 0 }}
+        dragElastic={{ left: 0.12, right: 0.15 }}
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
         onClick={() => { if (isOpen) snapClose(); }}
       >
+        {/* Danger-zone red tint bleeds in from the right edge */}
+        <motion.div
+          className="absolute inset-y-0 right-0 w-28 pointer-events-none"
+          style={{
+            opacity: dangerOpacity,
+            background: "linear-gradient(to left, oklch(0.55 0.22 27 / 0.35), transparent)",
+          }}
+        />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             {symbol && (
