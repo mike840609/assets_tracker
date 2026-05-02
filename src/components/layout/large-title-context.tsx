@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 
 interface LargeTitleContextValue {
@@ -14,17 +14,29 @@ const LargeTitleContext = createContext<LargeTitleContextValue>({
 });
 
 export function LargeTitleProvider({ children }: { children: React.ReactNode }) {
-  const [isVisible, setIsVisible] = useState(true);
   const pathname = usePathname();
 
-  // Reset to "expanded" on every route change so the header shows the logo
-  // even on pages that don't have a LargeTitleHeading.
-  useEffect(() => {
-    setIsVisible(true);
-  }, [pathname]);
+  // Co-locate the tracked pathname with isVisible so we can reset during render
+  // without a useEffect (avoids the react-hooks/set-state-in-effect lint error).
+  const [state, setState] = useState({ trackedPathname: pathname, isVisible: true });
+
+  // Derived-state-from-props pattern: update during render when the route changes.
+  // React processes this synchronously and re-renders once, without an extra paint.
+  if (state.trackedPathname !== pathname) {
+    setState({ trackedPathname: pathname, isVisible: true });
+  }
+
+  const setIsVisible = useCallback((v: boolean) => {
+    setState((prev) => ({ ...prev, isVisible: v }));
+  }, []);
+
+  const value = useMemo(
+    () => ({ isVisible: state.isVisible, setIsVisible }),
+    [state.isVisible, setIsVisible]
+  );
 
   return (
-    <LargeTitleContext.Provider value={{ isVisible, setIsVisible }}>
+    <LargeTitleContext.Provider value={value}>
       {children}
     </LargeTitleContext.Provider>
   );
