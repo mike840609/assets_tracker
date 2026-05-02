@@ -167,7 +167,7 @@ export function AccountsList({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           {accounts.length > 0 && (
             <>
@@ -183,16 +183,16 @@ export function AccountsList({
             </>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
           {isSelecting && (
             <Button variant="destructive" size="sm" onClick={deleteSelected} disabled={deleting}>
               {deleting ? t("accountsList.deleting") : t("accountsList.deleteButton", { count: selected.size })}
             </Button>
           )}
-          <Button variant="outline" onClick={() => setShowQuickAdd(true)}>
+          <Button variant="outline" onClick={() => setShowQuickAdd(true)} className="w-full sm:w-auto">
             {t("accountsList.addItem")}
           </Button>
-          <Button onClick={() => setShowForm(true)}>{t("accountsList.addAccount")}</Button>
+          <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">{t("accountsList.addAccount")}</Button>
         </div>
       </div>
 
@@ -418,7 +418,7 @@ function AccountCardWithHoldings({
                 <p className="font-semibold">{account.name}</p>
               </div>
               <div className="flex flex-col items-end">
-                <div className="flex items-center gap-2">
+                <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
                   <p className="text-lg font-bold tabular-nums text-foreground">
                     {privacyMode ? HIDDEN : formatCurrency(convertedValue, baseCurrency)}
                   </p>
