@@ -15,6 +15,7 @@ import { CURRENCIES } from "@/lib/currencies";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "@/i18n/config";
+import { softHapticTick } from "@/lib/haptics";
 
 export function SettingsForm({
   currentCurrency,
@@ -75,6 +76,7 @@ export function SettingsForm({
   }
 
   async function refreshPrices() {
+    softHapticTick();
     setRefreshing(true);
     try {
       const res = await fetch("/api/prices/refresh", { method: "POST" });
@@ -186,11 +188,12 @@ export function SettingsForm({
               </div>
               <Button
                 variant="outline"
-                onClick={() =>
+                onClick={() => {
+                  softHapticTick();
                   fetch("/api/exchange-rates/refresh", { method: "POST" })
                     .then(() => toast.success(t("toast.exchangeRatesRefreshed")))
-                    .catch(() => toast.error(t("toast.failed")))
-                }
+                    .catch(() => toast.error(t("toast.failed")));
+                }}
                 className="w-full sm:w-auto min-w-[150px]"
               >
                 {t("settings.btnRefresh")}

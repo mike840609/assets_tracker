@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import { useLargeTitle } from "./large-title-context";
 import { usePathname } from "next/navigation";
+import { softHapticTick } from "@/lib/haptics";
 
 function getPageTitle(pathname: string, nav: (k: string) => string): string {
   if (pathname === "/") return nav("dashboard");
@@ -33,7 +34,7 @@ export function MobileHeader() {
         "md:hidden sticky top-0 left-0 right-0 z-50 glass backdrop-blur-md",
         "px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))]",
         "flex items-center justify-between",
-        "border-b transition-[border-color,transform] duration-300 ease-in-out",
+        "border-b transition-[border-color,transform] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
         hidden ? "-translate-y-full" : "translate-y-0",
         // Separator only appears once the large title is behind the bar (iOS behaviour)
         isVisible ? "border-transparent" : "border-border/50"
@@ -101,7 +102,10 @@ export function MobileHeader() {
       {/* Right: controls — always visible */}
       <div className="flex items-center gap-1 scale-90 origin-right">
         <button
-          onClick={togglePrivacyMode}
+          onClick={() => {
+            softHapticTick();
+            togglePrivacyMode();
+          }}
           title={privacyMode ? "Show values" : "Hide values"}
           className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground transition-colors"
         >

@@ -42,11 +42,11 @@ The bottom nav at `src/components/layout/sidebar.tsx:129` is close. Two tweaks:
 
 > Active state currently uses a top indicator bar (`absolute inset-x-2 -top-3 h-0.5 bg-primary`, sidebar.tsx:152) rather than a pill background. Icon tap targets are ~20px (h-5 w-5), below the 48×48 recommendation.
 
-### 5. Haptics + spring motion — ❌ Not Done
+### 5. Haptics + spring motion — ✅ Done
 
-- On tap of nav items, refresh, privacy toggle, sheet open: call `navigator.vibrate?.(10)` for a soft tick.
-- Prefer spring curves (`cubic-bezier(0.34, 1.56, 0.64, 1)`) over linear `duration-200`.
-- The count-up on net worth is great; consider **ease-out cubic** so it decelerates the way iOS does.
+- Added a shared `softHapticTick()` utility (`src/lib/haptics.ts`) that wraps `navigator.vibrate?.(10)` safely.
+- Haptic ticks now fire on desktop/mobile nav taps, privacy toggles, and refresh actions in settings (`/api/prices/refresh`, `/api/exchange-rates/refresh`).
+- Updated key navigation/header transitions to spring-like easing (`ease-[cubic-bezier(0.34,1.56,0.64,1)]`) for more iOS-like motion.
 
 ### 6. Pull-to-refresh native feel — ⚠️ Partial
 
