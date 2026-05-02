@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, startTransition } from "react";
+import { useRef, useState, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import useSWRInfinite from "swr/infinite";
 import { useTranslations } from "next-intl";
+import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatQuantity } from "@/lib/currencies";
@@ -16,6 +17,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { hapticTick } from "@/lib/haptics";
+import { registerSwipeRow, closeOtherSwipeRows } from "@/lib/swipe-row-registry";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +44,182 @@ const TYPE_VARIANTS: Record<string, "default" | "secondary" | "destructive"> = {
   WITHDRAWAL: "destructive",
   EDIT: "secondary",
 };
+
+const ACTION_WIDTH = 72;
+const REVEAL_WIDTH = ACTION_WIDTH * 2;
+const SNAP_THRESHOLD = REVEAL_WIDTH * 0.4;
+const FULL_SWIPE = REVEAL_WIDTH + 80; // past this → trigger delete on release
+
+interface TxRowProps {
+  tx: SerializedTransaction;
+  typeLabel: string;
+  typeVariant: "default" | "secondary" | "destructive";
+  symbol: string | null;
+  qty: string;
+  time: string;
+  onEdit: () => void;
+  onDelete: () => void;
+  tCommon: ReturnType<typeof useTranslations>;
+}
+
+function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit, onDelete, tCommon }: TxRowProps) {
+  const x = useMotionValue(0);
+  const hasFiredHaptic = useRef(false);
+  const hasFiredDangerHaptic = useRef(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const closeRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    function close() {
+      animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+      setIsOpen(false);
+      hasFiredHaptic.current = false;
+      hasFiredDangerHaptic.current = false;
+    }
+    closeRef.current = close;
+    return registerSwipeRow(close);
+  }, [x]);
+
+  const actionsOpacity = useTransform(x, [-REVEAL_WIDTH * 0.5, 0], [1, 0], { clamp: true });
+  const iconScale = useTransform(x, [0, -REVEAL_WIDTH], [0.65, 1.0], { clamp: true });
+  const editOpacity = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [1, 0], { clamp: true });
+  const editWidth = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [ACTION_WIDTH, 0], { clamp: true });
+  const deleteIconScale = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [1.0, 1.3], { clamp: true });
+  const dangerOpacity = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [0, 1], { clamp: true });
+
+  function snapOpen() {
+    closeOtherSwipeRows(closeRef.current);
+    animate(x, -REVEAL_WIDTH, { type: "spring", stiffness: 300, damping: 30 });
+    setIsOpen(true);
+  }
+
+  function snapClose() {
+    animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+    setIsOpen(false);
+    hasFiredHaptic.current = false;
+    hasFiredDangerHaptic.current = false;
+  }
+
+  function handleDrag() {
+    const cur = x.get();
+    if (!hasFiredHaptic.current && cur < -SNAP_THRESHOLD) {
+      hapticTick();
+      hasFiredHaptic.current = true;
+    } else if (hasFiredHaptic.current && cur > -SNAP_THRESHOLD) {
+      hasFiredHaptic.current = false;
+    }
+    if (!hasFiredDangerHaptic.current && cur < -FULL_SWIPE) {
+      hapticTick();
+      hapticTick();
+      hasFiredDangerHaptic.current = true;
+    } else if (hasFiredDangerHaptic.current && cur > -FULL_SWIPE) {
+      hasFiredDangerHaptic.current = false;
+    }
+  }
+
+  function handleDragEnd() {
+    const cur = x.get();
+    if (cur < -FULL_SWIPE) {
+      snapClose();
+      hapticTick();
+      onDelete(); // opens the confirm dialog
+    } else if (cur < -SNAP_THRESHOLD) {
+      snapOpen();
+      hapticTick();
+    } else {
+      snapClose();
+    }
+  }
+
+  return (
+    <div className="relative overflow-hidden bg-card select-none">
+      {/* Action buttons revealed on left swipe */}
+      <motion.div
+        className="absolute inset-y-0 right-0 flex"
+        style={{ opacity: actionsOpacity, width: REVEAL_WIDTH }}
+        aria-hidden="true"
+      >
+        <motion.button
+          className="flex items-center justify-center bg-blue-500 text-white text-xs font-medium overflow-hidden active:brightness-90 transition-[filter]"
+          style={{ opacity: editOpacity, width: editWidth, minWidth: 0 }}
+          onClick={() => { snapClose(); onEdit(); }}
+          aria-label={tCommon("edit")}
+        >
+          <motion.div className="flex flex-col items-center gap-1" style={{ scale: iconScale }}>
+            <Pencil className="h-4 w-4" />
+            <span>{tCommon("edit")}</span>
+          </motion.div>
+        </motion.button>
+        <button
+          className="flex-1 flex items-center justify-center bg-destructive text-destructive-foreground text-xs font-medium active:brightness-90 transition-[filter]"
+          onClick={() => { snapClose(); onDelete(); }}
+          aria-label={tCommon("delete")}
+        >
+          <motion.div className="flex flex-col items-center gap-1" style={{ scale: deleteIconScale }}>
+            <Trash2 className="h-4 w-4" />
+            <span>{tCommon("delete")}</span>
+          </motion.div>
+        </button>
+      </motion.div>
+
+      {/* Draggable row content */}
+      <motion.div
+        className="flex items-center gap-3 px-4 py-3.5 bg-card hover:bg-muted/40 active:bg-muted/60 transition-colors relative z-10"
+        style={{ x }}
+        drag="x"
+        dragDirectionLock
+        dragConstraints={{ left: -(FULL_SWIPE + 60), right: 0 }}
+        dragElastic={{ left: 0.12, right: 0.15 }}
+        onDrag={handleDrag}
+        onDragEnd={handleDragEnd}
+        onClick={() => { if (isOpen) snapClose(); }}
+      >
+        {/* Danger-zone red tint bleeds in from the right edge */}
+        <motion.div
+          className="absolute inset-y-0 right-0 w-28 pointer-events-none"
+          style={{
+            opacity: dangerOpacity,
+            background: "linear-gradient(to left, oklch(0.55 0.22 27 / 0.35), transparent)",
+          }}
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            {symbol && (
+              <span className="font-mono font-semibold text-sm">{symbol}</span>
+            )}
+            <Badge variant={typeVariant} className="text-[10px] px-1.5 py-0 h-4 rounded-sm">
+              {typeLabel}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {time}{tx.note ? ` · ${tx.note}` : ""}
+          </p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="text-sm font-medium tabular-nums">{qty}</p>
+        </div>
+        {/* Desktop fallback: three-dot menu */}
+        <div className="hidden sm:block">
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onEdit}>
+                <Pencil className="mr-2 h-4 w-4" />
+                {tCommon("edit")}
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive" onClick={onDelete}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                {tCommon("delete")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
 export function TransactionHistory({ accountId, isBank, refreshTrigger }: { accountId: string; isBank?: boolean; refreshTrigger?: number }) {
   const router = useRouter();
@@ -205,39 +384,17 @@ export function TransactionHistory({ accountId, isBank, refreshTrigger }: { acco
                   return (
                     <div key={tx.id}>
                       {index > 0 && <div className="h-px bg-border/60 mx-4" />}
-                      <div className="flex items-center gap-3 px-4 py-3.5">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            {symbol && (
-                              <span className="font-mono font-semibold text-sm">{symbol}</span>
-                            )}
-                            <Badge variant={typeVariant} className="text-[10px] px-1.5 py-0 h-4 rounded-sm">
-                              {typeLabel}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {time}{tx.note ? ` · ${tx.note}` : ""}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-sm font-medium tabular-nums">{qty}</p>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditClick(tx)}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              {tCommon("edit")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => setDeletingTx(tx)}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              {tCommon("delete")}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                      <SwipeableTxRow
+                        tx={tx}
+                        typeLabel={typeLabel}
+                        typeVariant={typeVariant}
+                        symbol={symbol}
+                        qty={qty}
+                        time={time}
+                        onEdit={() => handleEditClick(tx)}
+                        onDelete={() => setDeletingTx(tx)}
+                        tCommon={tCommon}
+                      />
                     </div>
                   );
                 })}

@@ -73,9 +73,11 @@ The bottom nav at `src/components/layout/sidebar.tsx:129` is close. Two tweaks:
 - Add `-apple-system, "SF Pro Text", "SF Pro Display"` *before* Geist in the body font stack so when run as PWA on iOS it picks up SF and Dynamic Type.
 - Tighten letter-spacing (`-0.02em`) on the big net-worth number — that's the single most "Stocks-app" detail.
 
-### 9. Swipe actions — ❌ Not Done
+### 9. Swipe actions — ✅ Done
 
 On `src/components/accounts/holding-row.tsx`, support a left swipe revealing Edit (blue) / Delete (red) buttons — classic iOS list pattern. Library: `framer-motion`'s `drag="x"` with snap points, ~60 lines of code.
+
+> `framer-motion` added as a dependency. `HoldingRow` wraps its content in a `motion.div` with `drag="x"`, `dragDirectionLock`, and spring snap points. Left-swipe past 40 % of the reveal width (144 px total — two 72 px buttons) snaps open; release below threshold snaps closed. Action buttons (`bg-blue-500` Edit / `bg-destructive` Delete) are absolutely positioned behind the draggable content. A haptic tick fires at threshold crossing via `hapticTick()`. On desktop (≥ sm breakpoint), the three-dot `DropdownMenu` is preserved as a fallback so mouse users retain a non-drag path.
 
 ### 10. Disclosure transitions — ❌ Not Done
 
