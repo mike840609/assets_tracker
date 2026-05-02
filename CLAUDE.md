@@ -181,7 +181,7 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 
 - Specs live in `tests/e2e/` (`smoke.spec.ts` is the entry; `global-setup.ts` / `global-teardown.ts` provision and tear down a dedicated test user so runs don't pollute real user data — see commit `3289e91`).
 - Stored auth state: `tests/e2e/.auth/user.json` (loaded by the `chromium` project).
-- The config auto-starts `npm run dev` with `VERCEL_ENV=preview` and `PREVIEW_AUTH_PASSWORD=<E2E_PASSWORD>` unless `PLAYWRIGHT_TEST_BASE_URL` is set; CI sets that var to skip the bootstrap and run against an existing deployment.
+- The config auto-starts `npm run dev` with `PREVIEW_AUTH_PASSWORD=<E2E_PASSWORD>` unless `PLAYWRIGHT_TEST_BASE_URL` is set; CI sets that var to skip the bootstrap and run against an existing deployment.
 - `fullyParallel: false` and `workers: 1` — the suite is intentionally serial; do not parallelize without revisiting the global setup.
 
 ### Component Organization

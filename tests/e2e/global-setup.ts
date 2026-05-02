@@ -5,11 +5,10 @@ import fs from "fs"
 const authFile = path.join(__dirname, ".auth/user.json")
 
 /**
- * Logs in once via the preview-credentials endpoint and saves storage state.
+ * Logs in once via the test-credentials endpoint and saves storage state.
  * All smoke tests that need authentication reuse this saved state.
  *
  * Requirements on the server:
- *   VERCEL_ENV=preview
  *   PREVIEW_AUTH_PASSWORD=<same value as E2E_PASSWORD env var here>
  */
 async function globalSetup() {
@@ -23,8 +22,8 @@ async function globalSetup() {
 
   if (process.env.CI && !process.env.E2E_PASSWORD) {
     throw new Error(
-      "E2E_PASSWORD is empty. Set the GitHub Actions secret E2E_PASSWORD to the " +
-      "same value as PREVIEW_AUTH_PASSWORD on the Vercel deployment.",
+      "E2E_PASSWORD is empty. Set the GitHub Actions secret E2E_PASSWORD and pass it " +
+      "as PREVIEW_AUTH_PASSWORD to the dev server.",
     )
   }
 

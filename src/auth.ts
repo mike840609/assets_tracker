@@ -3,7 +3,7 @@ import Credentials from "next-auth/providers/credentials"
 import authConfig from "./auth.config"
 import { customPrismaAdapter } from "@/lib/auth-adapter"
 import { prisma } from "@/lib/prisma"
-import { PREVIEW_AUTH_PASSWORD, VERCEL_ENV } from "@/lib/env"
+import { PREVIEW_AUTH_PASSWORD } from "@/lib/env"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -15,7 +15,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
-        if (VERCEL_ENV !== "preview") return null
         const expected = PREVIEW_AUTH_PASSWORD
         if (!expected || credentials?.password !== expected) return null
         const E2E_TEST_EMAIL = "e2e-test@preview.local"

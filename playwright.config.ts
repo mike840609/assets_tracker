@@ -36,7 +36,6 @@ export default defineConfig({
           url: BASE_URL,
           reuseExistingServer: !process.env.CI,
           env: {
-            VERCEL_ENV: "preview",
             PREVIEW_AUTH_PASSWORD: E2E_PASSWORD,
           },
         },

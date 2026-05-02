@@ -9,7 +9,7 @@ import Link from "next/link"
 
 async function LoginContent() {
   const t = await getTranslations("login")
-  const isPreview = process.env.VERCEL_ENV === "preview"
+  const showCredentialsForm = !!process.env.PREVIEW_AUTH_PASSWORD
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center relative overflow-hidden bg-background">
@@ -70,11 +70,11 @@ async function LoginContent() {
           </div>
         </div>
 
-        {isPreview && (
+        {showCredentialsForm && (
           <>
             <div className="flex items-center gap-3 pt-2">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground font-medium">Preview Mode</span>
+              <span className="text-xs text-muted-foreground font-medium">Test Access</span>
               <div className="flex-1 h-px bg-border" />
             </div>
 
