@@ -36,6 +36,7 @@ test("1. unauthenticated visitor is redirected to /login and can sign in", async
   ).toBeVisible()
 
   // Sign in via preview-credentials (the OAuth stub for CI)
+  await page.waitForSelector('input[name="password"]', { timeout: 60_000 })
   await page.fill('input[name="password"]', process.env.E2E_PASSWORD ?? "e2e-smoke-test")
   await page.getByRole("button", { name: "Preview Login" }).click()
 

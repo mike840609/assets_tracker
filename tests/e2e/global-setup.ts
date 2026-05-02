@@ -34,8 +34,16 @@ async function globalSetup() {
 
   await page.goto(`${baseURL}/login`)
 
-  // Preview-mode password form (only shown when VERCEL_ENV=preview)
-  await page.waitForSelector('input[name="password"]', { timeout: 30_000 })
+  // Preview-mode password form (only rendered when VERCEL_ENV=preview)
+  // Allow 60 s to survive Vercel cold-start + PPR streaming latency.
+  const passwordInput = await page.waitForSelector('input[name="password"]', { timeout: 60_000 }).catch(() => null)
+  if (!passwordInput) {
+    throw new Error(
+      `Preview password form not found on ${baseURL}/login after 60 s. ` +
+      "Ensure the deployment has VERCEL_ENV=preview and PREVIEW_AUTH_PASSWORD set. " +
+      "Production deployments (VERCEL_ENV=production) never render this form.",
+    )
+  }
   await page.fill('input[name="password"]', password)
   await page.getByRole("button", { name: "Preview Login" }).click()
 
