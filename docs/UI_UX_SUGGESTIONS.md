@@ -103,3 +103,45 @@ When tapping an account in the list to open `/accounts/[id]`, do a slide-from-ri
 5. Swipe actions on holding rows.
 6. Command palette (desktop).
 7. Sidebar collapse + density toggle (desktop).
+
+## Additional suggestions (Codex review)
+
+### 11. Inline validation + numeric keyboard optimization on forms — ❌ Not Done
+
+Account/holding forms can reduce entry errors and speed by:
+
+- Setting `inputMode="decimal"` / `inputMode="numeric"` on amount, quantity, strike, and fee fields.
+- Validating on blur with short helper text below each field (instead of only toast-level error handling).
+- Preserving caret position and formatting only on blur for currency fields to avoid jumpy typing.
+
+Targets: `src/components/accounts/account-form.tsx`, `src/components/accounts/holding-form.tsx`, `src/components/accounts/quick-add-holding.tsx`, `src/components/accounts/inline-balance-editor.tsx`.
+
+### 12. Undo-first destructive actions — ❌ Not Done
+
+For delete/remove actions, prefer optimistic removal + "Undo" toast for 4–6 seconds before permanent delete. This is faster than confirmation modals and feels modern/mobile-native.
+
+Targets: holding/account/transaction delete flows in `src/components/accounts/*` and `src/components/history/history-table.tsx`.
+
+### 13. Stronger accessibility defaults (AA baseline) — ⚠️ Partial
+
+- Ensure icon-only controls (privacy, refresh, row actions) always have `aria-label`.
+- Add visible focus rings for keyboard users on custom clickable rows/cards (not only buttons/inputs).
+- Confirm chart color pairs remain distinguishable in dark mode and for color-vision deficiency.
+
+Targets: `src/components/layout/*`, `src/components/dashboard/*`, `src/components/analysis/*`.
+
+### 14. Reduce perceived latency with optimistic timestamps/data freshness hints — ❌ Not Done
+
+When price refresh or snapshot fetch runs, keep current numbers visible and show a subtle "Updated Xs ago" / "Refreshing…" badge near the hero card and analysis header. Avoid full-region loading state when data already exists.
+
+Targets: `src/components/dashboard/net-worth-card.tsx`, `src/components/dashboard/dashboard-actions.tsx`, `src/components/analysis/analysis-view.tsx`.
+
+### 15. Mobile chart interaction model — ❌ Not Done
+
+Most finance apps feel better when charts support:
+
+- Long-press crosshair with haptic tick when crossing key points.
+- Sticky value/date callout that follows the finger.
+- Range chips (1W / 1M / 3M / 1Y / All) with preserved selection per page.
+
+Targets: `src/components/dashboard/trend-chart.tsx`, `src/components/analysis/*chart*.tsx`.
