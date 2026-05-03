@@ -14,10 +14,12 @@ const envSchema = z
     CRON_SECRET: z.string().trim().min(1, "is required"),
     AUTH_REDIRECT_PROXY_URL: z.string().url("must be a valid URL").optional(),
     PREVIEW_AUTH_PASSWORD: z.string().trim().min(1, "must not be empty").optional(),
+    PREVIEW_AUTH_DISABLED: z.string().trim().optional(),
     VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
   })
   .superRefine((value, ctx) => {
-    if (value.VERCEL_ENV === "preview" && !value.PREVIEW_AUTH_PASSWORD) {
+    const previewAuthDisabled = ["1", "true", "yes", "on"].includes((value.PREVIEW_AUTH_DISABLED ?? "").toLowerCase())
+    if (value.VERCEL_ENV === "preview" && !previewAuthDisabled && !value.PREVIEW_AUTH_PASSWORD) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["PREVIEW_AUTH_PASSWORD"],
@@ -34,6 +36,7 @@ const parsedEnv = envSchema.safeParse({
   CRON_SECRET: process.env.CRON_SECRET,
   AUTH_REDIRECT_PROXY_URL: process.env.AUTH_REDIRECT_PROXY_URL,
   PREVIEW_AUTH_PASSWORD: process.env.PREVIEW_AUTH_PASSWORD,
+  PREVIEW_AUTH_DISABLED: process.env.PREVIEW_AUTH_DISABLED,
   VERCEL_ENV: process.env.VERCEL_ENV,
 })
 
@@ -58,5 +61,6 @@ export const {
   CRON_SECRET,
   AUTH_REDIRECT_PROXY_URL,
   PREVIEW_AUTH_PASSWORD,
+  PREVIEW_AUTH_DISABLED,
   VERCEL_ENV,
 } = env

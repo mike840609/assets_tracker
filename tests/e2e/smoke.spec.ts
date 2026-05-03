@@ -35,10 +35,15 @@ test("1. unauthenticated visitor is redirected to /login and can sign in", async
     page.getByRole("button", { name: /continue with google/i }),
   ).toBeVisible()
 
-  // Sign in via preview-credentials (the OAuth stub for CI)
-  await page.waitForSelector('input[name="password"]', { timeout: 60_000 })
-  await page.fill('input[name="password"]', process.env.E2E_PASSWORD ?? "e2e-smoke-test")
-  await page.getByRole("button", { name: "Preview Login" }).click()
+  // Sign in via preview-credentials (the OAuth stub for CI).
+  // Works for both password-gated and button-only preview mode.
+  const previewLoginButton = page.getByRole("button", { name: "Preview Login" })
+  await previewLoginButton.waitFor({ timeout: 60_000 })
+  const passwordInput = page.locator('input[name="password"]')
+  if (await passwordInput.count()) {
+    await passwordInput.fill(process.env.E2E_PASSWORD ?? "e2e-smoke-test")
+  }
+  await previewLoginButton.click()
 
   // After sign-in the user should land on the dashboard (root path)
   await page.waitForURL((url) => !url.pathname.includes("login"), {
