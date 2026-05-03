@@ -9,9 +9,9 @@ import Link from "next/link"
 
 async function LoginContent() {
   const t = await getTranslations("login")
-  const isPreview = process.env.VERCEL_ENV === "preview"
+  const isPreviewOrLocal = process.env.VERCEL_ENV === "preview" || process.env.VERCEL_ENV === "development" || !process.env.VERCEL_ENV
   const previewAuthDisabled = ["1", "true", "yes", "on"].includes((process.env.PREVIEW_AUTH_DISABLED ?? "").toLowerCase())
-  const showPreviewLogin = isPreview
+  const showPreviewLogin = isPreviewOrLocal
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center relative overflow-hidden bg-background">

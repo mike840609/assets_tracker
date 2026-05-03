@@ -6,19 +6,19 @@ import { prisma } from "@/lib/prisma"
 import { PREVIEW_AUTH_DISABLED, PREVIEW_AUTH_PASSWORD, VERCEL_ENV } from "@/lib/env"
 
 const previewAuthDisabled = ["1", "true", "yes", "on"].includes((PREVIEW_AUTH_DISABLED ?? "").toLowerCase())
-const isPreview = VERCEL_ENV === "preview"
+const isPreviewOrLocal = VERCEL_ENV === "preview" || VERCEL_ENV === "development" || !VERCEL_ENV
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: customPrismaAdapter as NextAuthConfig["adapter"],
   providers: [
     ...authConfig.providers,
-    ...(isPreview ? [Credentials({
+    ...(isPreviewOrLocal ? [Credentials({
       credentials: {
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
-        if (!isPreview) return null
+        if (!isPreviewOrLocal) return null
         if (!previewAuthDisabled) {
           const expected = PREVIEW_AUTH_PASSWORD
           if (!expected || credentials?.password !== expected) return null
