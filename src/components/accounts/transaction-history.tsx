@@ -135,12 +135,12 @@ function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit,
     <div className="relative overflow-hidden bg-card select-none">
       {/* Action buttons revealed on left swipe */}
       <motion.div
-        className="absolute inset-y-0 right-0 flex"
+        className="absolute inset-y-0 right-0 flex gap-2 px-2"
         style={{ opacity: actionsOpacity, width: REVEAL_WIDTH }}
         aria-hidden="true"
       >
         <motion.button
-          className="flex items-center justify-center bg-blue-500 text-white text-xs font-medium overflow-hidden active:brightness-90 transition-[filter]"
+          className="flex items-center justify-center bg-blue-500 text-white text-xs font-medium overflow-hidden rounded-2xl my-1.5 active:brightness-90 transition-[filter]"
           style={{ opacity: editOpacity, width: editWidth, minWidth: 0 }}
           onClick={() => { snapClose(); onEdit(); }}
           aria-label={tCommon("edit")}
@@ -151,7 +151,7 @@ function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit,
           </motion.div>
         </motion.button>
         <button
-          className="flex-1 flex items-center justify-center bg-destructive text-destructive-foreground text-xs font-medium active:brightness-90 transition-[filter]"
+          className="flex-1 flex items-center justify-center bg-destructive text-destructive-foreground text-xs font-medium rounded-2xl my-1.5 active:brightness-90 transition-[filter]"
           onClick={() => { snapClose(); onDelete(); }}
           aria-label={tCommon("delete")}
         >
