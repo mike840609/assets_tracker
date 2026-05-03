@@ -251,3 +251,53 @@
     background-position: 100% 50%;
   }
 }
+
+/* ─── View-transition slide animations (item 10) ─────────────────────────── */
+
+@keyframes vt-slide-in-from-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes vt-slide-out-to-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-30%); }
+}
+
+/* Incoming page starts at -30% (mirrors where the outgoing page ends) */
+@keyframes vt-slide-in-from-left {
+  from { transform: translateX(-30%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes vt-slide-out-to-right {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+
+/* Forward navigation: accounts list → account detail */
+html:active-view-transition-type(nav-forward)::view-transition-old(root) {
+  animation: 300ms var(--ease-out-expo) both vt-slide-out-to-left;
+}
+html:active-view-transition-type(nav-forward)::view-transition-new(root) {
+  animation: 300ms var(--ease-out-expo) both vt-slide-in-from-right;
+}
+
+/* Back navigation: account detail → accounts list */
+html:active-view-transition-type(nav-back)::view-transition-old(root) {
+  animation: 300ms var(--ease-out-expo) both vt-slide-out-to-right;
+}
+html:active-view-transition-type(nav-back)::view-transition-new(root) {
+  animation: 300ms var(--ease-out-expo) both vt-slide-in-from-left;
+}
+
+/* Accessibility: cross-fade only for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html:active-view-transition-type(nav-forward)::view-transition-old(root),
+  html:active-view-transition-type(nav-forward)::view-transition-new(root),
+  html:active-view-transition-type(nav-back)::view-transition-old(root),
+  html:active-view-transition-type(nav-back)::view-transition-new(root) {
+    animation-duration: 150ms;
+    transform: none;
+  }
+}

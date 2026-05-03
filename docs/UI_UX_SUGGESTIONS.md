@@ -79,9 +79,11 @@ On `src/components/accounts/holding-row.tsx`, support a left swipe revealing Edi
 
 > `framer-motion` added as a dependency. `HoldingRow` wraps its content in a `motion.div` with `drag="x"`, `dragDirectionLock`, and spring snap points. Left-swipe past 40 % of the reveal width (144 px total — two 72 px buttons) snaps open; release below threshold snaps closed. Action buttons (`bg-blue-500` Edit / `bg-destructive` Delete) are absolutely positioned behind the draggable content. A haptic tick fires at threshold crossing via `hapticTick()`. On desktop (≥ sm breakpoint), the three-dot `DropdownMenu` is preserved as a fallback so mouse users retain a non-drag path.
 
-### 10. Disclosure transitions — ❌ Not Done
+### 10. Disclosure transitions — ✅ Done
 
 When tapping an account in the list to open `/accounts/[id]`, do a slide-from-right transition (Next.js view transitions API works on Safari now). The default cross-fade feels webby.
+
+> `viewTransition: true` added to `next.config.ts` (top-level). Four `@keyframes` rules (`vt-slide-in-from-right`, `vt-slide-out-to-left`, `vt-slide-in-from-left`, `vt-slide-out-to-right`) added to `globals.css` using `html:active-view-transition-type()` selectors and the existing `--ease-out-expo` timing function at 300 ms. Outgoing page translates to −30 % (not −100 %) for the iOS-style parallax reveal. `transitionTypes={['nav-forward']}` added to account-card Links in `accounts-list.tsx` and `accounts-summary.tsx`; `transitionTypes={['nav-back']}` added to the breadcrumb back Link in `account-detail.tsx`. `prefers-reduced-motion` override removes translate and shortens to 150 ms cross-fade. Works in Chrome 125+ and Safari 18.2+; other browsers fall back to instant navigation.
 
 ## Desktop (smaller, but high leverage)
 

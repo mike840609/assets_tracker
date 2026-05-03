@@ -5,6 +5,7 @@ import bundleAnalyzer from "@next/bundle-analyzer";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  viewTransition: true,
   cacheComponents: true,
   images: {
     formats: ["image/avif", "image/webp"],

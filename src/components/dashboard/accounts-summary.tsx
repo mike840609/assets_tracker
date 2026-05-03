@@ -106,6 +106,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
               <Link
                 href={`/accounts/${account.id}`}
                 className="flex items-center gap-3 px-4 py-3.5 hover:bg-muted/40 active:bg-muted/60 transition-colors group"
+                transitionTypes={["nav-forward"]}
               >
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
