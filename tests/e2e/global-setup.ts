@@ -34,18 +34,19 @@ async function globalSetup() {
 
   await page.goto(`${baseURL}/login`)
 
-  // Preview-mode password form (only rendered when VERCEL_ENV=preview)
+  // Preview login supports two modes:
+  // 1) password-gated (input rendered)
+  // 2) button-only when PREVIEW_AUTH_DISABLED is enabled
   // Allow 60 s to survive Vercel cold-start + PPR streaming latency.
-  const passwordInput = await page.waitForSelector('input[name="password"]', { timeout: 60_000 }).catch(() => null)
-  if (!passwordInput) {
-    throw new Error(
-      `Preview password form not found on ${baseURL}/login after 60 s. ` +
-      "Ensure the deployment has VERCEL_ENV=preview and PREVIEW_AUTH_PASSWORD set. " +
-      "Production deployments (VERCEL_ENV=production) never render this form.",
-    )
+  const previewLoginButton = page.getByRole("button", { name: "Preview Login" })
+  await previewLoginButton.waitFor({ timeout: 60_000 })
+
+  const passwordInput = page.locator('input[name="password"]')
+  if (await passwordInput.count()) {
+    await passwordInput.fill(password)
   }
-  await page.fill('input[name="password"]', password)
-  await page.getByRole("button", { name: "Preview Login" }).click()
+
+  await previewLoginButton.click()
 
   // Wait until we leave /login (dashboard redirect)
   await page.waitForURL((url) => !url.pathname.includes("login"), { timeout: 30_000 })
