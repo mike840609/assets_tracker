@@ -11,7 +11,7 @@ async function LoginContent() {
   const t = await getTranslations("login")
   const isPreview = process.env.VERCEL_ENV === "preview"
   const previewAuthDisabled = ["1", "true", "yes", "on"].includes((process.env.PREVIEW_AUTH_DISABLED ?? "").toLowerCase())
-  const showPreviewPassword = isPreview && !previewAuthDisabled
+  const showPreviewLogin = isPreview
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center relative overflow-hidden bg-background">
@@ -72,7 +72,7 @@ async function LoginContent() {
           </div>
         </div>
 
-        {showPreviewPassword && (
+        {showPreviewLogin && (
           <>
             <div className="flex items-center gap-3 pt-2">
               <div className="flex-1 h-px bg-border" />
@@ -90,13 +90,15 @@ async function LoginContent() {
               }}
             >
               <div className="flex flex-col gap-3">
-                <input
-                  name="password"
-                  type="password"
-                  placeholder="Preview password"
-                  required
-                  className="h-12 w-full rounded-xl border border-border bg-input px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
+                {!previewAuthDisabled && (
+                  <input
+                    name="password"
+                    type="password"
+                    placeholder="Preview password"
+                    required
+                    className="h-12 w-full rounded-xl border border-border bg-input px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                )}
                 <Button
                   type="submit"
                   className="w-full h-12 text-[15px] font-medium tracking-wide bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 rounded-xl"
