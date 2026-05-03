@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw, Camera, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,13 @@ export function DashboardActions({
       setRefreshing(false);
     }
   }
+
+  useEffect(() => {
+    const handler = () => { void handleRefreshPrices(); };
+    window.addEventListener("prices:refresh", handler);
+    return () => window.removeEventListener("prices:refresh", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const priceAge = lastPriceUpdate
     ? getRelativeTime(lastPriceUpdate, locale)

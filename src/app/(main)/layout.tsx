@@ -6,6 +6,7 @@ import { PullToRefreshIndicator } from "@/components/layout/pull-to-refresh-indi
 import { PrivacyModeProvider } from "@/components/layout/privacy-mode-context";
 import { PullToRefreshProvider } from "@/components/layout/pull-to-refresh-context";
 import { LargeTitleProvider } from "@/components/layout/large-title-context";
+import { DesktopCommandPalette } from "@/components/layout/desktop-command-palette";
 import { getSession } from "@/lib/auth-session";
 
 async function SidebarWithSession() {
@@ -36,6 +37,7 @@ export default function MainLayout({
             <div className="mx-auto w-full max-w-6xl p-4 md:p-6">{children}</div>
           </MobileMainShell>
           <MobileNav />
+          <DesktopCommandPalette />
         </PullToRefreshProvider>
       </LargeTitleProvider>
     </PrivacyModeProvider>
