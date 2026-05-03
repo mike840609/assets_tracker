@@ -19,8 +19,8 @@ import { registerSwipeRow, closeOtherSwipeRows } from "@/lib/swipe-row-registry"
 import type { SerializedHolding } from "@/lib/types";
 
 const HIDDEN = "***";
-const ACTION_WIDTH = 72;
-const REVEAL_WIDTH = ACTION_WIDTH * 2;
+const ACTION_WIDTH = 60;
+const REVEAL_WIDTH = 144; // fixed: accommodates gap-2 + px-2 while keeping both action buttons equal width
 const SNAP_THRESHOLD = REVEAL_WIDTH * 0.4;
 const FULL_SWIPE = REVEAL_WIDTH + 80; // past this → delete on release
 
@@ -138,7 +138,7 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
           </motion.div>
         </motion.button>
         <button
-          className="flex-1 flex items-center justify-center bg-destructive text-destructive-foreground text-xs font-medium rounded-2xl my-1.5 active:brightness-90 transition-[filter]"
+          className="flex-1 flex items-center justify-center bg-destructive text-white text-xs font-medium rounded-2xl my-1.5 active:brightness-90 transition-[filter]"
           onClick={() => { snapClose(); onDelete(h.id); }}
           aria-label={t("common.delete")}
         >
