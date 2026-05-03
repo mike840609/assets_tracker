@@ -410,7 +410,7 @@ function AccountCardWithHoldings({
       >
         <Checkbox checked={isSelected} onCheckedChange={onToggle} />
       </div>
-      <Link href={`/accounts/${account.id}`}>
+      <Link href={`/accounts/${account.id}`} transitionTypes={["nav-forward"]}>
         <Card className={`hover:shadow-md transition-all cursor-pointer ${isSelected ? "ring-2 ring-primary" : ""}`}>
           <CardContent className="pt-5 pb-4">
             <div className="flex items-start justify-between">

@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
+    viewTransition: true,
     optimizePackageImports: [
       "recharts",
       "lucide-react",

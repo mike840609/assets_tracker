@@ -175,7 +175,7 @@ export function AccountDetail({
   return (
     <>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/accounts" className="hover:text-foreground">
+        <Link href="/accounts" className="hover:text-foreground" transitionTypes={["nav-back"]}>
           {t("accountDetail.breadcrumb")}
         </Link>
         <span>/</span>
