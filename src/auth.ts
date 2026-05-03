@@ -3,19 +3,21 @@ import Credentials from "next-auth/providers/credentials"
 import authConfig from "./auth.config"
 import { customPrismaAdapter } from "@/lib/auth-adapter"
 import { prisma } from "@/lib/prisma"
-import { PREVIEW_AUTH_PASSWORD, VERCEL_ENV } from "@/lib/env"
+import { PREVIEW_AUTH_DISABLED, PREVIEW_AUTH_PASSWORD, VERCEL_ENV } from "@/lib/env"
+
+const previewAuthEnabled = VERCEL_ENV === "preview" && PREVIEW_AUTH_DISABLED !== "true"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: customPrismaAdapter as NextAuthConfig["adapter"],
   providers: [
     ...authConfig.providers,
-    Credentials({
+    ...(previewAuthEnabled ? [Credentials({
       credentials: {
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
-        if (VERCEL_ENV !== "preview") return null
+        if (!previewAuthEnabled) return null
         const expected = PREVIEW_AUTH_PASSWORD
         if (!expected || credentials?.password !== expected) return null
         const E2E_TEST_EMAIL = "e2e-test@preview.local"
@@ -27,7 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!user) return null
         return { id: user.id, name: user.name, email: user.email, image: user.image }
       },
-    }),
+    })] : []),
   ],
   session: { strategy: "jwt" },
   callbacks: {

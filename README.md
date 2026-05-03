@@ -49,6 +49,7 @@ CRON_SECRET="your_secure_random_string"
 
 # Preview-only (required when VERCEL_ENV=preview):
 # PREVIEW_AUTH_PASSWORD="shared_password_to_gate_preview_access"
+# PREVIEW_AUTH_DISABLED="true"  # optional, disables preview password gate
 # AUTH_REDIRECT_PROXY_URL="https://stable-preview-host.vercel.app"  # optional, for Google OAuth on preview URLs
 ```
 
