@@ -1,44 +1,90 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { BarChart3, Copy, History, LayoutDashboard, RefreshCw, Settings, Shield } from "lucide-react";
-import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from "@/components/ui/command";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandShortcut,
+} from "@/components/ui/command";
 import { usePrivacyMode } from "./privacy-mode-context";
 
 export function DesktopCommandPalette() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
-    const t = useTranslations();
+  const t = useTranslations();
   const { togglePrivacyMode } = usePrivacyMode();
+  const pendingGoTo = useRef(false);
+
+  const navItems = useMemo(
+    () => [
+      { href: "/", label: t("nav.dashboard"), icon: LayoutDashboard, kbd: "1" },
+      { href: "/accounts", label: t("nav.accounts"), icon: Copy, kbd: "2" },
+      { href: "/analysis", label: t("nav.analysis"), icon: BarChart3, kbd: "3" },
+      { href: "/history", label: t("nav.history"), icon: History, kbd: "4" },
+      { href: "/settings", label: t("nav.settings"), icon: Settings, kbd: "5" },
+    ],
+    [t],
+  );
+
+  const triggerRefresh = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("prices:refresh"));
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("input,textarea,[contenteditable=true]")) return;
+
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen((v) => !v);
+        return;
       }
-      if ((e.target as HTMLElement | null)?.closest("input,textarea,[contenteditable=true]")) return;
-      if (e.key === "1") router.push("/");
-      if (e.key === "2") router.push("/accounts");
-      if (e.key === "3") router.push("/analysis");
-      if (e.key === "4") router.push("/history");
-      if (e.key === "5") router.push("/settings");
+
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        togglePrivacyMode();
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "r") {
+        e.preventDefault();
+        triggerRefresh();
+        return;
+      }
+
+      if (/^[1-5]$/.test(e.key)) {
+        const item = navItems[Number(e.key) - 1];
+        if (item) router.push(item.href);
+        return;
+      }
+
+      if (pendingGoTo.current) {
+        pendingGoTo.current = false;
+        if (e.key.toLowerCase() === "d") router.push("/");
+        if (e.key.toLowerCase() === "a") router.push("/accounts");
+        if (e.key.toLowerCase() === "h") router.push("/history");
+        return;
+      }
+
+      if (e.key.toLowerCase() === "g") {
+        pendingGoTo.current = true;
+        window.setTimeout(() => {
+          pendingGoTo.current = false;
+        }, 900);
+      }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [router]);
-
-
-  const navItems = useMemo(() => ([
-    { href: "/", label: t("nav.dashboard"), icon: LayoutDashboard, kbd: "1" },
-    { href: "/accounts", label: t("nav.accounts"), icon: Copy, kbd: "2" },
-    { href: "/analysis", label: t("nav.analysis"), icon: BarChart3, kbd: "3" },
-    { href: "/history", label: t("nav.history"), icon: History, kbd: "4" },
-    { href: "/settings", label: t("nav.settings"), icon: Settings, kbd: "5" },
-  ]), [t]);
+  }, [navItems, router, togglePrivacyMode, triggerRefresh]);
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
@@ -58,15 +104,25 @@ export function DesktopCommandPalette() {
           })}
         </CommandGroup>
         <CommandGroup heading="Actions">
-          <CommandItem onSelect={() => { togglePrivacyMode(); setOpen(false); }}>
+          <CommandItem
+            onSelect={() => {
+              togglePrivacyMode();
+              setOpen(false);
+            }}
+          >
             <Shield className="mr-2 h-4 w-4" />
             Toggle privacy mode
             <CommandShortcut>⌘⇧P</CommandShortcut>
           </CommandItem>
-          <CommandItem onSelect={() => { window.dispatchEvent(new CustomEvent("prices:refresh")); setOpen(false); }}>
+          <CommandItem
+            onSelect={() => {
+              triggerRefresh();
+              setOpen(false);
+            }}
+          >
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh prices
-            <CommandShortcut>⌘R</CommandShortcut>
+            <CommandShortcut>⌘⇧R</CommandShortcut>
           </CommandItem>
         </CommandGroup>
       </CommandList>
