@@ -5,7 +5,8 @@ import { customPrismaAdapter } from "@/lib/auth-adapter"
 import { prisma } from "@/lib/prisma"
 import { PREVIEW_AUTH_DISABLED, PREVIEW_AUTH_PASSWORD, VERCEL_ENV } from "@/lib/env"
 
-const previewAuthEnabled = VERCEL_ENV === "preview" && PREVIEW_AUTH_DISABLED !== "true"
+const previewAuthEnabled =
+  VERCEL_ENV === "preview" && !["1", "true", "yes", "on"].includes((PREVIEW_AUTH_DISABLED ?? "").toLowerCase())
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,

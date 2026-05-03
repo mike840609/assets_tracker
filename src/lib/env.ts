@@ -14,11 +14,11 @@ const envSchema = z
     CRON_SECRET: z.string().trim().min(1, "is required"),
     AUTH_REDIRECT_PROXY_URL: z.string().url("must be a valid URL").optional(),
     PREVIEW_AUTH_PASSWORD: z.string().trim().min(1, "must not be empty").optional(),
-    PREVIEW_AUTH_DISABLED: z.enum(["true", "false"]).optional(),
+    PREVIEW_AUTH_DISABLED: z.string().trim().optional(),
     VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
   })
   .superRefine((value, ctx) => {
-    const previewAuthDisabled = value.PREVIEW_AUTH_DISABLED === "true"
+    const previewAuthDisabled = ["1", "true", "yes", "on"].includes((value.PREVIEW_AUTH_DISABLED ?? "").toLowerCase())
     if (value.VERCEL_ENV === "preview" && !previewAuthDisabled && !value.PREVIEW_AUTH_PASSWORD) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
