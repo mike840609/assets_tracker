@@ -108,7 +108,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
               {index > 0 && <div className="h-px bg-border/60 mx-4" />}
               <Link
                 href={`/accounts/${account.id}`}
-                className={`flex items-center gap-3 px-4 ${isCompact ? "py-2" : "py-3.5"} hover:bg-muted/40 active:bg-muted/60 transition-colors group`}
+                className={`flex items-center gap-3 px-4 ${isCompact ? "py-1.5" : "py-3.5"} hover:bg-muted/40 active:bg-muted/60 transition-colors group`}
                 transitionTypes={["nav-forward"]}
               >
                 <div className="flex-1 min-w-0">
@@ -167,7 +167,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className={`${isCompact ? "space-y-3" : "space-y-6"} pt-4`}>
+      <CardContent className={`${isCompact ? "space-y-2" : "space-y-6"} pt-4`}>
         {assets.length > 0 && renderGroup(assets, true)}
         {liabilities.length > 0 && renderGroup(liabilities, false)}
       </CardContent>

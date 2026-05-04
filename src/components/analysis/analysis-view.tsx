@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useDensity } from "@/components/layout/density-context";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
 import type { RawHistoryData, SnapshotBreakdown } from "@/lib/services/history-service";
 import {
@@ -48,6 +49,8 @@ function rangeCutoff(months: number): Date {
 
 export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
+  const { density } = useDensity();
+  const isCompact = density === "compact";
   const [range, setRange] = useState<RangeLabel>("YTD");
 
   const rangeLabelKey: Record<RangeLabel, string> = {
@@ -170,7 +173,7 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
           {t("noData")}
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className={isCompact ? "space-y-3" : "space-y-6"}>
           <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
           <div className="premium-card">
             <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />

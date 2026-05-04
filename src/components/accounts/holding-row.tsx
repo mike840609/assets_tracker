@@ -154,7 +154,7 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
 
       {/* Draggable row */}
       <motion.div
-        className={`flex items-center gap-3 px-4 ${isCompact ? "py-2.5" : "py-3.5"} bg-card hover:bg-muted/40 active:bg-muted/60 transition-colors relative z-10`}
+        className={`flex items-center gap-3 px-4 ${isCompact ? "py-2" : "py-3.5"} bg-card hover:bg-muted/40 active:bg-muted/60 transition-colors relative z-10`}
         style={{ x }}
         drag="x"
         dragDirectionLock

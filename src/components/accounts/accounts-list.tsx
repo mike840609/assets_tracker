@@ -12,6 +12,7 @@ import { formatCurrency, formatQuantity } from "@/lib/currencies";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useDensity } from "@/components/layout/density-context";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
 
 const AccountForm = dynamic(
@@ -296,6 +297,8 @@ function CategorySection({
 }) {
   const t = useTranslations();
   const { privacyMode } = usePrivacyMode();
+  const { density } = useDensity();
+  const isCompact = density === "compact";
   const colors = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.OTHER;
   const icon = CATEGORY_ICONS[category] ?? "📁";
   const label = t(`categories.${category}`, { defaultValue: category });
@@ -316,7 +319,7 @@ function CategorySection({
     <div className={`rounded-xl border overflow-hidden transition-all duration-300 ${colors.border} ${isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"}`}>
       <button
         onClick={onToggleExpand}
-        className={`w-full text-left px-5 py-4 flex items-center justify-between transition-colors ${colors.bg} hover:brightness-95 dark:hover:brightness-110`}
+        className={`w-full text-left ${isCompact ? "px-4 py-2.5" : "px-5 py-4"} flex items-center justify-between transition-colors ${colors.bg} hover:brightness-95 dark:hover:brightness-110`}
       >
         <div className="flex items-center gap-3 min-w-0">
           <span className="text-2xl flex-shrink-0">{icon}</span>
@@ -350,7 +353,7 @@ function CategorySection({
 
       <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
         <div className="overflow-hidden">
-          <div className="px-4 py-4 space-y-3 bg-background/50">
+          <div className={`${isCompact ? "px-3 py-2.5 space-y-2" : "px-4 py-4 space-y-3"} bg-background/50`}>
             {accounts.map((account) => (
               <AccountCardWithHoldings
                 key={account.id}
@@ -388,6 +391,8 @@ function AccountCardWithHoldings({
   isSelecting: boolean;
 }) {
   const { privacyMode } = usePrivacyMode();
+  const { density } = useDensity();
+  const isCompact = density === "compact";
   const displayValue = getAccountValue(account, priceMap, ratesMap);
   const displayCurrency = account.currency;
   const rate = displayCurrency === baseCurrency ? 1 : (ratesMap[`${displayCurrency}_${baseCurrency}`] ?? 1);
@@ -412,7 +417,7 @@ function AccountCardWithHoldings({
       </div>
       <Link href={`/accounts/${account.id}`} transitionTypes={["nav-forward"]}>
         <Card className={`hover:shadow-md transition-all cursor-pointer ${isSelected ? "ring-2 ring-primary" : ""}`}>
-          <CardContent className="pt-5 pb-4">
+          <CardContent className={isCompact ? "pt-3 pb-2" : "pt-5 pb-4"}>
             <div className="flex items-start justify-between">
               <div className={isSelecting ? "pl-6" : "group-hover:pl-6 transition-all"}>
                 <p className="font-semibold">{account.name}</p>
