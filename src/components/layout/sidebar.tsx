@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { BarChart3, ChevronLeft, ChevronRight, Copy, Eye, EyeOff, History, LayoutDashboard, Settings } from "lucide-react";
+import { BarChart3, ChevronLeft, ChevronRight, Copy, Eye, EyeOff, History, LayoutDashboard, Search, Settings } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
@@ -85,7 +85,29 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
           )}
         </div>
       </div>
-      <nav className={cn("flex-1 space-y-2 mt-4", collapsed ? "px-2" : "px-3")}>
+      <div className={cn("pt-3", collapsed ? "px-2" : "px-3")}>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("command-palette:open"))}
+          title={`${t("commandPalette.searchHint")} (⌘K)`}
+          aria-label="Open command palette"
+          aria-keyshortcuts="Control+K Meta+K"
+          className={cn(
+            "w-full flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 text-muted-foreground text-sm transition-colors hover:bg-muted/60 hover:text-foreground hover:border-border",
+            collapsed ? "justify-center p-2" : "px-3 py-2"
+          )}
+        >
+          <Search className="h-4 w-4 shrink-0" />
+          {!collapsed && (
+            <>
+              <span className="flex-1 text-left">{t("commandPalette.searchHint")}</span>
+              <kbd className="text-xs bg-background/60 border border-border/50 rounded px-1.5 py-0.5 font-mono leading-none">
+                ⌘K
+              </kbd>
+            </>
+          )}
+        </button>
+      </div>
+      <nav className={cn("flex-1 space-y-2 mt-2", collapsed ? "px-2" : "px-3")}>
         {navItems.map((item) => {
           const isActive =
             item.href === "/"

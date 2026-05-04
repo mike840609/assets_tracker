@@ -11,6 +11,16 @@
     "history": "History",
     "settings": "Settings"
   },
+  "commandPalette": {
+    "placeholder": "Type a command or search…",
+    "noResults": "No results found.",
+    "groupNavigation": "Navigation",
+    "groupActions": "Actions",
+    "togglePrivacy": "Toggle privacy mode",
+    "refreshPrices": "Refresh prices",
+    "signOut": "Sign Out",
+    "searchHint": "Search..."
+  },
   "common": {
     "edit": "Edit",
     "delete": "Delete",

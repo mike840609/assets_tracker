@@ -11,6 +11,16 @@
     "history": "歷史紀錄",
     "settings": "設定"
   },
+  "commandPalette": {
+    "placeholder": "輸入指令或搜尋…",
+    "noResults": "找不到結果。",
+    "groupNavigation": "導覽",
+    "groupActions": "動作",
+    "togglePrivacy": "切換隱私模式",
+    "refreshPrices": "更新價格",
+    "signOut": "登出",
+    "searchHint": "搜尋..."
+  },
   "common": {
     "edit": "編輯",
     "delete": "刪除",
