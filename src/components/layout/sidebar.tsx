@@ -10,7 +10,7 @@ import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import { hapticTick } from "@/lib/haptics";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 const SIDEBAR_STORAGE_KEY = "asset-tracker:sidebar-collapsed";
 const SIDEBAR_SHORTCUT_HINT = "Ctrl+B (⌘B on Mac)";
@@ -20,7 +20,6 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
   const router = useRouter();
   const t = useTranslations();
   const { privacyMode, togglePrivacyMode } = usePrivacyMode();
-  const [isMac] = useState(() => typeof window !== "undefined" && navigator.userAgent.includes("Mac"));
   const collapsed = useSyncExternalStore(
     (onStoreChange) => {
       const handleChange = () => onStoreChange();
@@ -89,7 +88,7 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
       <div className={cn("pt-3", collapsed ? "px-2" : "px-3")}>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("command-palette:open"))}
-          title={`${t("commandPalette.searchHint")} (${isMac ? "⌘K" : "Ctrl+K"})`}
+          title={`${t("commandPalette.searchHint")} (⌘K)`}
           aria-label="Open command palette"
           aria-keyshortcuts="Control+K Meta+K"
           className={cn(
@@ -102,7 +101,7 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
             <>
               <span className="flex-1 text-left">{t("commandPalette.searchHint")}</span>
               <kbd className="text-xs bg-background/60 border border-border/50 rounded px-1.5 py-0.5 font-mono leading-none">
-                {isMac ? "⌘K" : "Ctrl+K"}
+                ⌘K
               </kbd>
             </>
           )}
