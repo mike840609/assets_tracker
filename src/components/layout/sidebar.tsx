@@ -10,7 +10,7 @@ import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import { hapticTick } from "@/lib/haptics";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const SIDEBAR_STORAGE_KEY = "asset-tracker:sidebar-collapsed";
 
@@ -19,20 +19,18 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
   const router = useRouter();
   const t = useTranslations();
   const { privacyMode, togglePrivacyMode } = usePrivacyMode();
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
+  const [collapsed, setCollapsed] = useState(false);
 
-    return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1";
-  });
+  useEffect(() => {
+    setCollapsed(window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1");
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? "1" : "0");
+  }, [collapsed]);
 
   const toggleCollapsed = () => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      window.localStorage.setItem(SIDEBAR_STORAGE_KEY, next ? "1" : "0");
-      return next;
-    });
+    setCollapsed((prev) => !prev);
   };
 
   const navItems = [
