@@ -50,6 +50,22 @@ export function HoldingForm({
   const [assetType, setAssetType] = useState("STOCK");
   const [currency, setCurrency] = useState("USD");
   const [manualMode, setManualMode] = useState(false);
+  const [quantityError, setQuantityError] = useState("");
+
+  function handleQuantityBlur() {
+    const val = quantity.replace(/,/g, "");
+    if (!val) {
+      setQuantityError("");
+      return;
+    }
+    const parsed = parseFloat(val);
+    if (isNaN(parsed) || parsed <= 0) {
+      setQuantityError("Invalid quantity");
+      return;
+    }
+    setQuantityError("");
+    setQuantity(new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(parsed));
+  }
 
   function selectResult(result: SearchResult) {
     setSymbol(result.symbol);
@@ -65,6 +81,7 @@ export function HoldingForm({
     setAssetType("STOCK");
     setCurrency("USD");
     setQuantity("");
+    setQuantityError("");
     setManualMode(false);
   }
 
@@ -111,11 +128,11 @@ export function HoldingForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await postHolding({ symbol, name, quantity: parseFloat(quantity), assetType, currency });
+    await postHolding({ symbol, name, quantity: parseFloat(quantity.replace(/,/g, "")), assetType, currency });
   }
 
   const tickerSelected = !!symbol;
-  const canSubmit = (tickerSelected || (manualMode && symbol && name)) && !!quantity && parseFloat(quantity) > 0;
+  const canSubmit = (tickerSelected || (manualMode && symbol && name)) && !!quantity && parseFloat(quantity.replace(/,/g, "")) > 0;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
@@ -228,15 +245,17 @@ export function HoldingForm({
             <div className="space-y-2">
               <Label className="text-base font-medium">Number of Shares</Label>
               <Input
-                type="number"
-                step="any"
+                type="text"
+                inputMode="decimal"
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
+                onChange={(e) => { setQuantity(e.target.value); setQuantityError(""); }}
+                onBlur={handleQuantityBlur}
                 placeholder="e.g. 100"
                 required
                 autoFocus={tickerSelected}
                 className="text-lg h-12"
               />
+              {quantityError && <p className="text-xs text-destructive">{quantityError}</p>}
             </div>
 
             {/* ── Actions ── */}

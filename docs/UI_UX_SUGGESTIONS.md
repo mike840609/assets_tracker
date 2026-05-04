@@ -114,7 +114,7 @@ When tapping an account in the list to open `/accounts/[id]`, do a slide-from-ri
 
 ## Additional suggestions (Codex review)
 
-### 11. Inline validation + numeric keyboard optimization on forms — ❌ Not Done
+### 11. Inline validation + numeric keyboard optimization on forms — ✅ Done
 
 Account/holding forms can reduce entry errors and speed by:
 
