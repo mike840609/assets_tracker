@@ -116,12 +116,40 @@ export function DesktopCommandPalette() {
   const privacyShortcut = isMac ? "⌘⇧P" : "Ctrl+⇧P";
   const refreshShortcut = isMac ? "⌘⇧R" : "Ctrl+⇧R";
   const sidebarShortcut = isMac ? "⌘B" : "Ctrl+B";
+  const paletteShortcut = isMac ? "⌘K" : "Ctrl+K";
+  const goShortcut = t("commandPalette.goSequence");
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput placeholder={t("commandPalette.placeholder")} />
-      <CommandList>
+      <CommandList className="max-h-[70vh]">
         <CommandEmpty>{t("commandPalette.noResults")}</CommandEmpty>
+        <CommandGroup heading={t("commandPalette.groupShortcuts")}>
+          <CommandItem value={`shortcut ${paletteShortcut} open command palette`}>
+            {t("commandPalette.openPalette")}
+            <CommandShortcut>{paletteShortcut}</CommandShortcut>
+          </CommandItem>
+          <CommandItem value={`shortcut ${privacyShortcut} toggle privacy`}>
+            {t("commandPalette.togglePrivacy")}
+            <CommandShortcut>{privacyShortcut}</CommandShortcut>
+          </CommandItem>
+          <CommandItem value={`shortcut ${refreshShortcut} refresh prices`}>
+            {t("commandPalette.refreshPrices")}
+            <CommandShortcut>{refreshShortcut}</CommandShortcut>
+          </CommandItem>
+          <CommandItem value={`shortcut ${sidebarShortcut} toggle sidebar`}>
+            {t("commandPalette.toggleSidebar")}
+            <CommandShortcut>{sidebarShortcut}</CommandShortcut>
+          </CommandItem>
+          <CommandItem value={`shortcut 1 2 3 4 5 navigation`}>
+            {t("commandPalette.navigateTabs")}
+            <CommandShortcut>1-5</CommandShortcut>
+          </CommandItem>
+          <CommandItem value={`shortcut ${goShortcut} go to`}>
+            {t("commandPalette.goToShortcut")}
+            <CommandShortcut>{goShortcut}</CommandShortcut>
+          </CommandItem>
+        </CommandGroup>
         <CommandGroup heading={t("commandPalette.groupNavigation")}>
           {navItems.map((item) => {
             const Icon = item.icon;
