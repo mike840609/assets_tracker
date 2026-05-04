@@ -128,20 +128,24 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
             >
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </button>
-            <button
-              onClick={togglePrivacyMode}
-              title={privacyMode ? "Show values" : "Hide values"}
-              aria-label={privacyMode ? "Show values" : "Hide values"}
-              className={cn(
-                "inline-flex items-center justify-center rounded-md p-1.5 text-sm transition-all duration-200 ease-spring",
-                privacyMode
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {privacyMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-            <ThemeToggle />
+            {!collapsed && (
+              <>
+                <button
+                  onClick={togglePrivacyMode}
+                  title={privacyMode ? "Show values" : "Hide values"}
+                  aria-label={privacyMode ? "Show values" : "Hide values"}
+                  className={cn(
+                    "inline-flex items-center justify-center rounded-md p-1.5 text-sm transition-all duration-200 ease-spring",
+                    privacyMode
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {privacyMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+                <ThemeToggle />
+              </>
+            )}
           </div>
         </div>
       </div>
