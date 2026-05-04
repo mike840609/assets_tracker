@@ -92,7 +92,7 @@ When tapping an account in the list to open `/accounts/[id]`, do a slide-from-ri
 - **Sticky table headers** — ⚠️ Partial: month headers are now sticky in `src/components/history/history-table.tsx`; `accounts-summary`/transaction history still need full sticky header treatment.
 - **Density toggle** — ❌ Not Done: (Comfortable / Compact) — the current 2xl rounded glass cards eat a lot of vertical space at desktop widths; power users want more density.
 - **Hover sparklines** — ❌ Not Done: on holding rows (last-30-day mini chart on hover) — pulls from `PriceCache` history if you start storing it.
-- **Sidebar collapse to icons-only** — ❌ Not Done: current sidebar at `src/components/layout/sidebar.tsx:28` is fixed `w-64`; a 60px collapsed mode reclaims meaningful canvas on 13" laptops.
+- **Sidebar collapse to icons-only** — ✅ Done: desktop sidebar now supports a persisted icons-only mode (`w-[72px]`) with a footer toggle control and localStorage preference (`asset-tracker:sidebar-collapsed`) in `src/components/layout/sidebar.tsx`.
 
 ## Cross-cutting
 
@@ -108,7 +108,7 @@ When tapping an account in the list to open `/accounts/[id]`, do a slide-from-ri
 4. Tab-bar pill background + filled-icon pattern.
 5. Swipe actions on holding rows.
 6. Command palette (desktop).
-7. Sidebar collapse + density toggle (desktop).
+7. ✅ Sidebar collapse + density toggle (desktop).
 
 ## Additional suggestions (Codex review)
 
