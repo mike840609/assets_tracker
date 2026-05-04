@@ -18,7 +18,8 @@
     "groupActions": "Actions",
     "togglePrivacy": "Toggle privacy mode",
     "refreshPrices": "Refresh prices",
-    "signOut": "Sign Out"
+    "signOut": "Sign Out",
+    "searchHint": "Search..."
   },
   "common": {
     "edit": "Edit",

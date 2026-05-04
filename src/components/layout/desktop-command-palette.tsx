@@ -93,9 +93,13 @@ export function DesktopCommandPalette() {
       }
     };
 
+    const onOpen = () => setOpen(true);
+
     window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("command-palette:open", onOpen);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("command-palette:open", onOpen);
       if (goToTimeoutRef.current !== null) window.clearTimeout(goToTimeoutRef.current);
     };
   }, [navItems, router, togglePrivacyMode, triggerRefresh]);

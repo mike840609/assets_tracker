@@ -18,7 +18,8 @@
     "groupActions": "動作",
     "togglePrivacy": "切換隱私模式",
     "refreshPrices": "更新價格",
-    "signOut": "登出"
+    "signOut": "登出",
+    "searchHint": "搜尋..."
   },
   "common": {
     "edit": "編輯",
