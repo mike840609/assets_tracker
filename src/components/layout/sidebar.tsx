@@ -49,8 +49,10 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
     };
 
     window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("sidebar:toggle", toggleCollapsed);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("sidebar:toggle", toggleCollapsed);
     };
   }, [toggleCollapsed]);
 

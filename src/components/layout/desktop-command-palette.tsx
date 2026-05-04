@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { BarChart3, Copy, History, LayoutDashboard, LogOut, RefreshCw, Settings, Shield } from "lucide-react";
+import { BarChart3, Copy, History, LayoutDashboard, LogOut, PanelLeftClose, RefreshCw, Settings, Shield } from "lucide-react";
 import { signOut } from "next-auth/react";
 import {
   CommandDialog,
@@ -39,6 +39,9 @@ export function DesktopCommandPalette() {
   const triggerRefresh = useCallback(() => {
     window.dispatchEvent(new CustomEvent("prices:refresh"));
   }, []);
+  const toggleSidebar = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("sidebar:toggle"));
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -62,6 +65,12 @@ export function DesktopCommandPalette() {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "r") {
         e.preventDefault();
         triggerRefresh();
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        toggleSidebar();
         return;
       }
 
@@ -102,16 +111,49 @@ export function DesktopCommandPalette() {
       window.removeEventListener("command-palette:open", onOpen);
       if (goToTimeoutRef.current !== null) window.clearTimeout(goToTimeoutRef.current);
     };
-  }, [navItems, router, togglePrivacyMode, triggerRefresh]);
+  }, [navItems, router, togglePrivacyMode, triggerRefresh, toggleSidebar]);
 
   const privacyShortcut = isMac ? "⌘⇧P" : "Ctrl+⇧P";
   const refreshShortcut = isMac ? "⌘⇧R" : "Ctrl+⇧R";
+  const sidebarShortcut = isMac ? "⌘B" : "Ctrl+B";
+  const paletteShortcut = isMac ? "⌘K" : "Ctrl+K";
+  const goShortcut = t("commandPalette.goSequence");
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog
+      open={open}
+      onOpenChange={setOpen}
+      className="top-[22%] translate-y-0"
+    >
       <CommandInput placeholder={t("commandPalette.placeholder")} />
-      <CommandList>
+      <CommandList className="max-h-[70vh]">
         <CommandEmpty>{t("commandPalette.noResults")}</CommandEmpty>
+        <CommandGroup heading={t("commandPalette.groupShortcuts")}>
+          <CommandItem value={`shortcut ${paletteShortcut} open command palette`}>
+            {t("commandPalette.openPalette")}
+            <CommandShortcut>{paletteShortcut}</CommandShortcut>
+          </CommandItem>
+          <CommandItem value={`shortcut ${privacyShortcut} toggle privacy`}>
+            {t("commandPalette.togglePrivacy")}
+            <CommandShortcut>{privacyShortcut}</CommandShortcut>
+          </CommandItem>
+          <CommandItem value={`shortcut ${refreshShortcut} refresh prices`}>
+            {t("commandPalette.refreshPrices")}
+            <CommandShortcut>{refreshShortcut}</CommandShortcut>
+          </CommandItem>
+          <CommandItem value={`shortcut ${sidebarShortcut} toggle sidebar`}>
+            {t("commandPalette.toggleSidebar")}
+            <CommandShortcut>{sidebarShortcut}</CommandShortcut>
+          </CommandItem>
+          <CommandItem value={`shortcut 1 2 3 4 5 navigation`}>
+            {t("commandPalette.navigateTabs")}
+            <CommandShortcut>1-5</CommandShortcut>
+          </CommandItem>
+          <CommandItem value={`shortcut ${goShortcut} go to`}>
+            {t("commandPalette.goToShortcut")}
+            <CommandShortcut>{goShortcut}</CommandShortcut>
+          </CommandItem>
+        </CommandGroup>
         <CommandGroup heading={t("commandPalette.groupNavigation")}>
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -134,6 +176,16 @@ export function DesktopCommandPalette() {
             <Shield className="mr-2 h-4 w-4" />
             {t("commandPalette.togglePrivacy")}
             <CommandShortcut>{privacyShortcut}</CommandShortcut>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => {
+              toggleSidebar();
+              setOpen(false);
+            }}
+          >
+            <PanelLeftClose className="mr-2 h-4 w-4" />
+            {t("commandPalette.toggleSidebar")}
+            <CommandShortcut>{sidebarShortcut}</CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={() => {
