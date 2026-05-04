@@ -87,9 +87,9 @@ When tapping an account in the list to open `/accounts/[id]`, do a slide-from-ri
 
 ## Desktop (smaller, but high leverage)
 
-- **Command palette (⌘K)** — ⚠️ Partial: `cmdk` is installed and `src/components/ui/command.tsx` exists, but no palette UI is wired up. Jump-to-account, privacy toggle, refresh prices, base-currency switch still need implementing.
-- **Keyboard shortcuts** — ❌ Not Done: `g d`, `g a`, `g h` Vim-style (or `1–5` for tab indices) for nav.
-- **Sticky table headers** — ❌ Not Done: needed in `accounts-summary` and transaction history when the list grows past ~10 rows.
+- **Command palette (⌘K)** — ✅ Done: global palette now mounted in `(main)/layout.tsx` via `src/components/layout/desktop-command-palette.tsx` with navigation, privacy toggle, and price refresh actions. Base-currency switch remains out of scope for now.
+- **Keyboard shortcuts** — ✅ Done: supports `1–5` route shortcuts plus Vim-style `g d`, `g a`, `g h`; also `⌘/Ctrl+K` palette open, `⌘/Ctrl+⇧P` privacy toggle, and `⌘/Ctrl+⇧R` refresh prices.
+- **Sticky table headers** — ⚠️ Partial: month headers are now sticky in `src/components/history/history-table.tsx`; `accounts-summary`/transaction history still need full sticky header treatment.
 - **Density toggle** — ❌ Not Done: (Comfortable / Compact) — the current 2xl rounded glass cards eat a lot of vertical space at desktop widths; power users want more density.
 - **Hover sparklines** — ❌ Not Done: on holding rows (last-30-day mini chart on hover) — pulls from `PriceCache` history if you start storing it.
 - **Sidebar collapse to icons-only** — ❌ Not Done: current sidebar at `src/components/layout/sidebar.tsx:28` is fixed `w-64`; a 60px collapsed mode reclaims meaningful canvas on 13" laptops.

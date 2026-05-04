@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw, Camera, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ export function DashboardActions({
   const locale = useLocale();
   const [refreshing, setRefreshing] = useState(false);
 
-  async function handleRefreshPrices() {
+  const handleRefreshPrices = useCallback(async () => {
     hapticTick();
     setRefreshing(true);
     try {
@@ -54,7 +54,13 @@ export function DashboardActions({
     } finally {
       setRefreshing(false);
     }
-  }
+  }, [router, t]);
+
+  useEffect(() => {
+    const handler = () => { void handleRefreshPrices(); };
+    window.addEventListener("prices:refresh", handler);
+    return () => window.removeEventListener("prices:refresh", handler);
+  }, [handleRefreshPrices]);
 
   const priceAge = lastPriceUpdate
     ? getRelativeTime(lastPriceUpdate, locale)

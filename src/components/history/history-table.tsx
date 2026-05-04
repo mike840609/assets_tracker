@@ -59,7 +59,7 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
           <div className="max-h-[480px] overflow-y-auto space-y-4 pr-1">
             {monthGroups.map(({ monthKey, label, items }) => (
               <div key={monthKey}>
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 mb-2 px-1">
+                <p className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 mb-2 px-1 py-1">
                   {label}
                 </p>
                 <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
