@@ -87,7 +87,7 @@ When tapping an account in the list to open `/accounts/[id]`, do a slide-from-ri
 
 ## Desktop (smaller, but high leverage)
 
-- **Command palette (⌘K)** — ✅ Done: global palette now mounted in `(main)/layout.tsx` via `src/components/layout/desktop-command-palette.tsx` with navigation, privacy toggle, and price refresh actions. Base-currency switch remains out of scope for now.
+- **Command palette (⌘K)** — ✅ Done: global palette mounted in `(main)/layout.tsx` via `src/components/layout/desktop-command-palette.tsx`. Covers navigation (1–5, g-chord), privacy toggle (⌘/Ctrl+⇧P), price refresh (⌘/Ctrl+⇧R), and sign out. All strings are fully i18n'd (`commandPalette` namespace in both locales). Shortcut hints adapt to Mac vs Windows/Linux. Base-currency switch remains out of scope.
 - **Keyboard shortcuts** — ✅ Done: supports `1–5` route shortcuts plus Vim-style `g d`, `g a`, `g h`; also `⌘/Ctrl+K` palette open, `⌘/Ctrl+⇧P` privacy toggle, and `⌘/Ctrl+⇧R` refresh prices.
 - **Sticky table headers** — ⚠️ Partial: month headers are now sticky in `src/components/history/history-table.tsx`; `accounts-summary`/transaction history still need full sticky header treatment.
 - **Density toggle** — ❌ Not Done: (Comfortable / Compact) — the current 2xl rounded glass cards eat a lot of vertical space at desktop widths; power users want more density.

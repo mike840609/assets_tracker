@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { BarChart3, Copy, History, LayoutDashboard, RefreshCw, Settings, Shield } from "lucide-react";
+import { BarChart3, Copy, History, LayoutDashboard, LogOut, RefreshCw, Settings, Shield } from "lucide-react";
+import { signOut } from "next-auth/react";
 import {
   CommandDialog,
   CommandEmpty,
@@ -17,11 +18,16 @@ import { usePrivacyMode } from "./privacy-mode-context";
 
 export function DesktopCommandPalette() {
   const [open, setOpen] = useState(false);
+  const [isMac, setIsMac] = useState(false);
   const router = useRouter();
   const t = useTranslations();
   const { togglePrivacyMode } = usePrivacyMode();
   const pendingGoTo = useRef(false);
   const goToTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setIsMac(navigator.userAgent.includes("Mac"));
+  }, []);
 
   const navItems = useMemo(
     () => [
@@ -98,16 +104,19 @@ export function DesktopCommandPalette() {
     };
   }, [navItems, router, togglePrivacyMode, triggerRefresh]);
 
+  const privacyShortcut = isMac ? "⌘⇧P" : "Ctrl+⇧P";
+  const refreshShortcut = isMac ? "⌘⇧R" : "Ctrl+⇧R";
+
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Type a command or search…" />
+      <CommandInput placeholder={t("commandPalette.placeholder")} />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
-        <CommandGroup heading="Navigation">
+        <CommandEmpty>{t("commandPalette.noResults")}</CommandEmpty>
+        <CommandGroup heading={t("commandPalette.groupNavigation")}>
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
-              <CommandItem key={item.href} onSelect={() => router.push(item.href)}>
+              <CommandItem key={item.href} onSelect={() => { router.push(item.href); setOpen(false); }}>
                 <Icon className="mr-2 h-4 w-4" />
                 {item.label}
                 <CommandShortcut>{item.kbd}</CommandShortcut>
@@ -115,7 +124,7 @@ export function DesktopCommandPalette() {
             );
           })}
         </CommandGroup>
-        <CommandGroup heading="Actions">
+        <CommandGroup heading={t("commandPalette.groupActions")}>
           <CommandItem
             onSelect={() => {
               togglePrivacyMode();
@@ -123,8 +132,8 @@ export function DesktopCommandPalette() {
             }}
           >
             <Shield className="mr-2 h-4 w-4" />
-            Toggle privacy mode
-            <CommandShortcut>⌘⇧P</CommandShortcut>
+            {t("commandPalette.togglePrivacy")}
+            <CommandShortcut>{privacyShortcut}</CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={() => {
@@ -133,8 +142,17 @@ export function DesktopCommandPalette() {
             }}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh prices
-            <CommandShortcut>⌘⇧R</CommandShortcut>
+            {t("commandPalette.refreshPrices")}
+            <CommandShortcut>{refreshShortcut}</CommandShortcut>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => {
+              setOpen(false);
+              signOut({ callbackUrl: "/login" });
+            }}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            {t("commandPalette.signOut")}
           </CommandItem>
         </CommandGroup>
       </CommandList>
