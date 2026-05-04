@@ -10,9 +10,10 @@ import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import { hapticTick } from "@/lib/haptics";
-import { useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 const SIDEBAR_STORAGE_KEY = "asset-tracker:sidebar-collapsed";
+const SIDEBAR_SHORTCUT_HINT = "Ctrl+B (⌘B on Mac)";
 
 export function Sidebar({ userImage, userName }: { userImage?: string | null; userName?: string | null }) {
   const pathname = usePathname();
@@ -33,11 +34,25 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
     () => false,
   );
 
-  const toggleCollapsed = () => {
+  const toggleCollapsed = useCallback(() => {
     const next = !collapsed;
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, next ? "1" : "0");
     window.dispatchEvent(new Event("sidebar-collapsed-change"));
-  };
+  }, [collapsed]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === "b" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        toggleCollapsed();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [toggleCollapsed]);
 
   const navItems = [
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
@@ -122,8 +137,9 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
           <div className="flex items-center gap-1">
             <button
               onClick={toggleCollapsed}
-              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title={`${collapsed ? "Expand sidebar" : "Collapse sidebar"} (${SIDEBAR_SHORTCUT_HINT})`}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-keyshortcuts="Control+B Meta+B"
               className="inline-flex items-center justify-center rounded-md p-1.5 text-sm text-muted-foreground hover:text-foreground transition-all duration-200 ease-spring"
             >
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
