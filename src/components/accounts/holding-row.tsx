@@ -14,6 +14,7 @@ import { formatCurrency, formatQuantity } from "@/lib/currencies";
 import { getOptionDisplay } from "@/lib/options";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useDensity } from "@/components/layout/density-context";
 import { hapticTick } from "@/lib/haptics";
 import { registerSwipeRow, closeOtherSwipeRows } from "@/lib/swipe-row-registry";
 import type { SerializedHolding } from "@/lib/types";
@@ -40,6 +41,8 @@ interface HoldingRowProps {
 export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, onDelete }: HoldingRowProps) {
   const t = useTranslations();
   const { privacyMode } = usePrivacyMode();
+  const { density } = useDensity();
+  const isCompact = density === "compact";
   const optionDisplay = getOptionDisplay(h);
   const symbolLabel = optionDisplay ? optionDisplay.short : h.symbol;
   const nameLabel = optionDisplay ? optionDisplay.long : h.name;
@@ -151,7 +154,7 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
 
       {/* Draggable row */}
       <motion.div
-        className="flex items-center gap-3 px-4 py-3.5 bg-card hover:bg-muted/40 active:bg-muted/60 transition-colors relative z-10"
+        className={`flex items-center gap-3 px-4 ${isCompact ? "py-2.5" : "py-3.5"} bg-card hover:bg-muted/40 active:bg-muted/60 transition-colors relative z-10`}
         style={{ x }}
         drag="x"
         dragDirectionLock

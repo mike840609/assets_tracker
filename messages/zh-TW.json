@@ -57,6 +57,10 @@
     "refreshExchangeRates": "更新匯率",
     "takeSnapshot": "建立淨資產快照",
     "creating": "建立中...",
+    "density": "顯示密度",
+    "densityDescription": "調整卡片與列的間距",
+    "densityComfortable": "舒適",
+    "densityCompact": "緊湊",
     "signOut": "登出",
     "signOutDesc": "安全地登出此裝置上的帳戶。",
     "dangerZone": "危險區域"
