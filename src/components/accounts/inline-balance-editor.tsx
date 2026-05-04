@@ -21,23 +21,48 @@ export function InlineBalanceEditor({
 }: InlineBalanceEditorProps) {
   const [editing, setEditing] = useState(false);
   const [balance, setBalance] = useState("");
+  const [error, setError] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const { privacyMode } = usePrivacyMode();
 
+  function handleBalanceBlur() {
+    const val = balance.replace(/,/g, "");
+    if (!val) {
+      setError("");
+      return;
+    }
+    const parsed = parseFloat(val);
+    if (isNaN(parsed)) {
+      setError("Invalid amount");
+      return;
+    }
+    setError("");
+    setBalance(new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(parsed));
+  }
+
   async function handleSave() {
-    if (balance.trim() === "") {
+    const val = balance.replace(/,/g, "");
+    if (val.trim() === "") {
       setEditing(false);
       setNote("");
+      setError("");
+      return;
+    }
+
+    const parsed = parseFloat(val);
+    if (isNaN(parsed)) {
+      setError("Invalid amount");
       return;
     }
 
     setSaving(true);
     try {
-      await onSave(parseFloat(balance) || 0, note || undefined);
+      await onSave(parsed, note || undefined);
       setEditing(false);
       setBalance("");
       setNote("");
+      setError("");
     } finally {
       setSaving(false);
     }
@@ -48,11 +73,12 @@ export function InlineBalanceEditor({
       <div className="flex flex-col gap-2 mt-1">
         <div className="flex gap-2">
           <Input
-            type="number"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
             placeholder={formatNumber(currentBalance, 0)}
             value={balance}
-            onChange={(e) => setBalance(e.target.value)}
+            onChange={(e) => { setBalance(e.target.value); setError(""); }}
+            onBlur={handleBalanceBlur}
             className="h-8 flex-1"
             autoFocus
           />
@@ -70,6 +96,7 @@ export function InlineBalanceEditor({
             Cancel
           </Button>
         </div>
+        {error && <p className="text-xs text-destructive">{error}</p>}
         <Input
           placeholder={notePlaceholder}
           value={note}

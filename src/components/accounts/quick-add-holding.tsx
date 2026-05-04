@@ -69,6 +69,22 @@ export function QuickAddHolding({
   const [currency, setCurrency] = useState(defaultCurrency);
   const [manualMode, setManualMode] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("");
+  const [quantityError, setQuantityError] = useState("");
+
+  function handleQuantityBlur() {
+    const val = quantity.replace(/,/g, "");
+    if (!val) {
+      setQuantityError("");
+      return;
+    }
+    const parsed = parseFloat(val);
+    if (isNaN(parsed) || parsed <= 0) {
+      setQuantityError(t("quickAddHolding.invalidQuantity", { defaultValue: "Invalid quantity" }));
+      return;
+    }
+    setQuantityError("");
+    setQuantity(new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(parsed));
+  }
 
   function selectResult(result: SearchResult) {
     setSymbol(result.symbol);
@@ -84,6 +100,7 @@ export function QuickAddHolding({
     setAssetType("STOCK");
     setCurrency(defaultCurrency);
     setQuantity("");
+    setQuantityError("");
     setManualMode(false);
   }
 
@@ -144,7 +161,7 @@ export function QuickAddHolding({
         body: JSON.stringify({
           symbol,
           name,
-          quantity: parseFloat(quantity),
+          quantity: parseFloat(quantity.replace(/,/g, "")),
           assetType,
           currency,
         }),
@@ -173,7 +190,7 @@ export function QuickAddHolding({
   const canProceed =
     (tickerSelected || (manualMode && symbol && name)) &&
     !!quantity &&
-    parseFloat(quantity) > 0;
+    parseFloat(quantity.replace(/,/g, "")) > 0;
 
   const matchingAccounts = getMatchingAccounts();
   const targetCategory = ASSET_TYPE_TO_CATEGORY[assetType] || "BROKERAGE";
@@ -324,14 +341,16 @@ export function QuickAddHolding({
                     {t("quickAddHolding.labelShares")}
                   </Label>
                   <Input
-                    type="number"
-                    step="any"
+                    type="text"
+                    inputMode="decimal"
                     value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
+                    onChange={(e) => { setQuantity(e.target.value); setQuantityError(""); }}
+                    onBlur={handleQuantityBlur}
                     placeholder={t("quickAddHolding.placeholderShares")}
                     autoFocus={tickerSelected}
                     className="text-lg h-12"
                   />
+                  {quantityError && <p className="text-xs text-destructive">{quantityError}</p>}
                 </div>
 
                 {/* ── Actions ── */}
@@ -371,7 +390,7 @@ export function QuickAddHolding({
               </div>
               <p className="text-sm text-muted-foreground mt-0.5">
                 {assetType === "OPTION"
-                  ? `${name} · ${quantity} contract${parseInt(quantity, 10) !== 1 ? "s" : ""}`
+                  ? `${name} · ${quantity} contract${parseFloat(quantity.replace(/,/g, "")) !== 1 ? "s" : ""}`
                   : t("quickAddHolding.sharesSummary", { name, quantity })}
               </p>
             </div>

@@ -74,6 +74,22 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
   const [side, setSide] = useState<OptionSide>("CALL");
   const [strike, setStrike] = useState<string>("");
   const [quantity, setQuantity] = useState("");
+  const [quantityError, setQuantityError] = useState("");
+
+  function handleQuantityBlur() {
+    const val = quantity.replace(/,/g, "");
+    if (!val) {
+      setQuantityError("");
+      return;
+    }
+    const parsed = parseInt(val, 10);
+    if (isNaN(parsed) || parsed <= 0) {
+      setQuantityError("Invalid quantity");
+      return;
+    }
+    setQuantityError("");
+    setQuantity(new Intl.NumberFormat("en-US").format(parsed));
+  }
 
   const [showSearch, setShowSearch] = useState(false);
   const [pasteMode, setPasteMode] = useState(false);
@@ -219,7 +235,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
     if (!underlying || !expiration || !strike || !quantity) return;
     const strikeNum = Number(strike);
     if (!Number.isFinite(strikeNum) || strikeNum <= 0) return;
-    const qty = parseInt(quantity, 10);
+    const qty = parseInt(quantity.replace(/,/g, ""), 10);
     if (!Number.isFinite(qty) || qty <= 0) return;
     try {
       const occ = buildOccSymbol({
@@ -267,7 +283,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
   const previewParsed = previewOcc ? tryParseOccSymbol(previewOcc) : null;
 
   const ask = selectedContract?.ask ?? null;
-  const qtyNum = parseInt(quantity, 10);
+  const qtyNum = parseInt(quantity.replace(/,/g, ""), 10);
   const previewCost =
     ask !== null && Number.isFinite(qtyNum) && qtyNum > 0
       ? ask * qtyNum * 100
@@ -279,7 +295,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
     !!expiration &&
     !!strike &&
     !!quantity &&
-    parseInt(quantity, 10) > 0;
+    parseInt(quantity.replace(/,/g, ""), 10) > 0;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -424,14 +440,15 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
       <div className="space-y-2">
         <Label className="text-base font-medium">Number of Contracts</Label>
         <Input
-          type="number"
-          step="1"
-          min="1"
+          type="text"
+          inputMode="numeric"
           value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
+          onChange={(e) => { setQuantity(e.target.value); setQuantityError(""); }}
+          onBlur={handleQuantityBlur}
           placeholder="e.g. 1"
           className="text-lg h-12"
         />
+        {quantityError && <p className="text-xs text-destructive">{quantityError}</p>}
         <p className="text-xs text-muted-foreground">1 contract = 100 shares</p>
       </div>
 

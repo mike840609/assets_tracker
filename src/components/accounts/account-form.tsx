@@ -51,6 +51,23 @@ export function AccountForm({
   const [category, setCategory] = useState("BANK");
   const [currency, setCurrency] = useState(defaultCurrency);
   const [cashBalance, setCashBalance] = useState("0");
+  const [cashBalanceError, setCashBalanceError] = useState("");
+
+  function handleCashBalanceBlur() {
+    const val = cashBalance.replace(/,/g, "");
+    if (!val) {
+      setCashBalance("0");
+      setCashBalanceError("");
+      return;
+    }
+    const parsed = parseFloat(val);
+    if (isNaN(parsed)) {
+      setCashBalanceError(t("accountForm.invalidAmount", { defaultValue: "Invalid amount" }));
+      return;
+    }
+    setCashBalanceError("");
+    setCashBalance(new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(parsed));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,7 +82,7 @@ export function AccountForm({
           type,
           category,
           currency,
-          cashBalance: parseFloat(cashBalance) || 0,
+          cashBalance: parseFloat(cashBalance.replace(/,/g, "")) || 0,
         }),
       });
 
@@ -178,11 +195,13 @@ export function AccountForm({
               <div className="space-y-2">
                 <Label>{t("accountForm.labelCashBalance")}</Label>
                 <Input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={cashBalance}
-                  onChange={(e) => setCashBalance(e.target.value)}
+                  onChange={(e) => { setCashBalance(e.target.value); setCashBalanceError(""); }}
+                  onBlur={handleCashBalanceBlur}
                 />
+                {cashBalanceError && <p className="text-xs text-destructive">{cashBalanceError}</p>}
               </div>
             </div>
           )}
