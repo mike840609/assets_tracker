@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useDensity } from "@/components/layout/density-context";
 import type { NetWorthSummary } from "@/lib/types";
 
 const HIDDEN = "***";
@@ -19,6 +20,8 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   const [sortDirection, setSortDirection] = useState<SortOrder>("desc");
   const t = useTranslations();
   const { privacyMode } = usePrivacyMode();
+  const { density } = useDensity();
+  const isCompact = density === "compact";
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -105,7 +108,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
               {index > 0 && <div className="h-px bg-border/60 mx-4" />}
               <Link
                 href={`/accounts/${account.id}`}
-                className="flex items-center gap-3 px-4 py-3.5 hover:bg-muted/40 active:bg-muted/60 transition-colors group"
+                className={`flex items-center gap-3 px-4 ${isCompact ? "py-1.5" : "py-3.5"} hover:bg-muted/40 active:bg-muted/60 transition-colors group`}
                 transitionTypes={["nav-forward"]}
               >
                 <div className="flex-1 min-w-0">
@@ -164,7 +167,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6 pt-4">
+      <CardContent className={`${isCompact ? "space-y-2" : "space-y-6"} pt-4`}>
         {assets.length > 0 && renderGroup(assets, true)}
         {liabilities.length > 0 && renderGroup(liabilities, false)}
       </CardContent>

@@ -57,6 +57,10 @@
     "refreshExchangeRates": "Refresh Exchange Rates",
     "takeSnapshot": "Take Net Worth Snapshot",
     "creating": "Creating...",
+    "density": "Display Density",
+    "densityDescription": "Control the spacing of cards and rows",
+    "densityComfortable": "Comfortable",
+    "densityCompact": "Compact",
     "signOut": "Sign Out",
     "signOutDesc": "Securely log out of your account on this device.",
     "dangerZone": "Danger Zone"

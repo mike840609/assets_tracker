@@ -15,6 +15,7 @@ import { CURRENCIES } from "@/lib/currencies";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "@/i18n/config";
+import { useDensity, type Density } from "@/components/layout/density-context";
 
 export function SettingsForm({
   currentCurrency,
@@ -33,6 +34,7 @@ export function SettingsForm({
       : DEFAULT_LOCALE;
   const [currency, setCurrency] = useState(currentCurrency);
   const [locale, setLocale] = useState<Locale>(resolvedActiveLocale);
+  const { density, setDensity } = useDensity();
   const [saving, setSaving] = useState(false);
   const [savingLocale, setSavingLocale] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -127,7 +129,7 @@ export function SettingsForm({
             </div>
 
             {/* Language Row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
               <div className="space-y-1">
                 <p className="text-sm font-medium">{t("settings.language")}</p>
                 <p className="text-sm text-muted-foreground">{t("settings.languageDescription")}</p>
@@ -151,6 +153,29 @@ export function SettingsForm({
                 >
                   {savingLocale ? t("settings.saving") : t("settings.save")}
                 </Button>
+              </div>
+            </div>
+
+            {/* Density Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t("settings.density")}</p>
+                <p className="text-sm text-muted-foreground">{t("settings.densityDescription")}</p>
+              </div>
+              <div className="flex items-center gap-1 rounded-lg border p-1 bg-muted/30">
+                {(["comfortable", "compact"] as Density[]).map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setDensity(d)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      density === d
+                        ? "bg-background shadow-sm text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {d === "comfortable" ? t("settings.densityComfortable") : t("settings.densityCompact")}
+                  </button>
+                ))}
               </div>
             </div>
           </CardContent>

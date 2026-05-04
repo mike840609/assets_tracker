@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector, Label } from "recharts";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useDensity } from "@/components/layout/density-context";
 import { formatCurrency } from "@/lib/currencies";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import type { NetWorthSummary } from "@/lib/types";
@@ -27,6 +28,8 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
   const t = useTranslations();
   const { privacyMode } = usePrivacyMode();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
+  const { density } = useDensity();
+  const isCompact = density === "compact";
   useEffect(() => startTransition(() => setMounted(true)), []);
 
   const data = useMemo(() => {
@@ -170,7 +173,7 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                   return (
                     <div
                       key={item.name}
-                      className={`group flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer transition-all duration-200 ${
+                      className={`group flex items-center gap-2 ${isCompact ? "px-2 py-1" : "px-2.5 py-1.5"} rounded-lg cursor-pointer transition-all duration-200 ${
                         isActive
                           ? "bg-accent/80 shadow-sm scale-[1.01]"
                           : "hover:bg-accent/50"

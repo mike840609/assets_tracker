@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useDensity } from "@/components/layout/density-context";
 import { useCountUp } from "@/hooks/use-count-up";
 import type { NetWorthSummary } from "@/lib/types";
 import { TrendingUp, TrendingDown, Layers, Wallet } from "lucide-react";
@@ -20,6 +21,8 @@ export function NetWorthCard({
   const { totalAssets, totalLiabilities, netWorth, baseCurrency } = summary;
   const t = useTranslations("netWorthCard");
   const { privacyMode } = usePrivacyMode();
+  const { density } = useDensity();
+  const isCompact = density === "compact";
 
   const animatedNetWorth = useCountUp(netWorth, 1200);
   const animatedAssets = useCountUp(totalAssets, 1000);
@@ -38,12 +41,12 @@ export function NetWorthCard({
   const meshClass = delta === null ? "" : isPositive ? "hero-mesh-positive" : "hero-mesh-negative";
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both">
+    <div className={`grid grid-cols-2 lg:grid-cols-3 ${isCompact ? "gap-2 sm:gap-3" : "gap-3 sm:gap-6"} animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both`}>
       {/* Primary Hero Metric: Net Worth */}
       <Card className="col-span-2 lg:col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative group min-w-0">
         {meshClass && <div className={meshClass} />}
         <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-primary to-primary/50 opacity-100 transition-opacity" />
-        <CardContent className="p-4 sm:p-6 h-full flex flex-col justify-center min-w-0 relative z-10">
+        <CardContent className={`${isCompact ? "p-2.5 sm:p-3" : "p-4 sm:p-6"} h-full flex flex-col justify-center min-w-0 relative z-10`}>
           <div className="flex items-center gap-2.5 mb-1.5 whitespace-nowrap overflow-hidden">
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
               <Layers className="h-4 w-4" />
@@ -72,7 +75,7 @@ export function NetWorthCard({
 
       {/* Secondary Metrics: Assets */}
       <Card className="col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 min-w-0">
-        <CardContent className="p-4 sm:p-6 h-full flex flex-col justify-center min-w-0">
+        <CardContent className={`${isCompact ? "p-2.5 sm:p-3" : "p-4 sm:p-6"} h-full flex flex-col justify-center min-w-0`}>
           <div className="flex items-center gap-1.5 sm:gap-2 mb-1 whitespace-nowrap overflow-hidden">
             <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0" />
             <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
@@ -89,7 +92,7 @@ export function NetWorthCard({
       
       {/* Secondary Metrics: Liabilities */}
       <Card className="col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 min-w-0">
-        <CardContent className="p-4 sm:p-6 h-full flex flex-col justify-center min-w-0">
+        <CardContent className={`${isCompact ? "p-2.5 sm:p-3" : "p-4 sm:p-6"} h-full flex flex-col justify-center min-w-0`}>
           <div className="flex items-center gap-1.5 sm:gap-2 mb-1 whitespace-nowrap overflow-hidden">
             <TrendingDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive shrink-0" />
             <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">

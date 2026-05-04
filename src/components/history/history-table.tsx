@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useDensity } from "@/components/layout/density-context";
 
 type SnapshotRow = {
   id: string;
@@ -23,6 +24,8 @@ type Props = {
 export function HistoryTable({ snapshots, baseCurrency }: Props) {
   const t = useTranslations("history");
   const { privacyMode } = usePrivacyMode();
+  const { density } = useDensity();
+  const isCompact = density === "compact";
 
   const monthGroups = useMemo(() => {
     const rows = [...snapshots].reverse().map((snap, idx, arr) => ({
@@ -72,7 +75,7 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                     return (
                       <div key={row.id}>
                         {index > 0 && <div className="h-px bg-border/60 mx-4" />}
-                        <div className="flex items-center gap-3 px-4 py-3.5">
+                        <div className={`flex items-center gap-3 px-4 ${isCompact ? "py-2" : "py-3.5"}`}>
                           <div className="w-16 shrink-0">
                             <p className="text-sm font-medium">{dayLabel}</p>
                           </div>

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useDensity } from "@/components/layout/density-context";
 import type { AnalysisKpis } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 
@@ -59,6 +60,8 @@ function signed(n: number, currency: string): string {
 export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
+  const { density } = useDensity();
+  const isCompact = density === "compact";
   const dash = "—";
   const hidden = "***";
 
@@ -72,7 +75,7 @@ export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
     : kpis.ytdPct === null ? undefined : `${kpis.ytdPct >= 0 ? "+" : ""}${kpis.ytdPct.toFixed(1)}%`;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className={`grid ${isCompact ? "gap-2" : "gap-4"} sm:grid-cols-2 lg:grid-cols-4`}>
       <Tile
         title={t("bestMonth")}
         value={bestValue}

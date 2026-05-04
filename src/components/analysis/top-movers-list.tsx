@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useDensity } from "@/components/layout/density-context";
 import type { TopMover } from "@/lib/services/analysis-service";
 
 interface Props {
@@ -15,6 +16,8 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const tCat = useTranslations("categories");
   const { privacyMode } = usePrivacyMode();
+  const { density } = useDensity();
+  const isCompact = density === "compact";
 
   return (
     <Card>
@@ -61,7 +64,7 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
                       key={m.accountId}
                       className="border-b border-border/40 last:border-0 hover:bg-muted/30 transition-colors"
                     >
-                      <td className="py-2.5 pr-4">
+                      <td className={`${isCompact ? "py-1.5" : "py-2.5"} pr-4`}>
                         <div className="font-medium leading-tight">{m.accountName}</div>
                         <div className="text-xs text-muted-foreground">
                           {tCat(m.category as Parameters<typeof tCat>[0], {
@@ -69,13 +72,13 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
                           })}
                         </div>
                       </td>
-                      <td className="py-2.5 text-right tabular-nums text-muted-foreground">
+                      <td className={`${isCompact ? "py-1.5" : "py-2.5"} text-right tabular-nums text-muted-foreground`}>
                         {privacyMode ? "***" : formatCurrency(m.startValue, baseCurrency)}
                       </td>
-                      <td className="py-2.5 text-right tabular-nums">
+                      <td className={`${isCompact ? "py-1.5" : "py-2.5"} text-right tabular-nums`}>
                         {privacyMode ? "***" : formatCurrency(m.endValue, baseCurrency)}
                       </td>
-                      <td className={`py-2.5 text-right tabular-nums font-medium ${changeColor}`}>
+                      <td className={`${isCompact ? "py-1.5" : "py-2.5"} text-right tabular-nums font-medium ${changeColor}`}>
                         <div>
                           {privacyMode ? "***" : (
                             <>
