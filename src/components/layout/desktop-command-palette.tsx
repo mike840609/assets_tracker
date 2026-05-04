@@ -120,7 +120,11 @@ export function DesktopCommandPalette() {
   const goShortcut = t("commandPalette.goSequence");
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog
+      open={open}
+      onOpenChange={setOpen}
+      className="top-[22%] translate-y-0"
+    >
       <CommandInput placeholder={t("commandPalette.placeholder")} />
       <CommandList className="max-h-[70vh]">
         <CommandEmpty>{t("commandPalette.noResults")}</CommandEmpty>
