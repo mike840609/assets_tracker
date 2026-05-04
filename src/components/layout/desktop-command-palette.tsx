@@ -21,6 +21,7 @@ export function DesktopCommandPalette() {
   const t = useTranslations();
   const { togglePrivacyMode } = usePrivacyMode();
   const pendingGoTo = useRef(false);
+  const goToTimeoutRef = useRef<number | null>(null);
 
   const navItems = useMemo(
     () => [
@@ -39,6 +40,8 @@ export function DesktopCommandPalette() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (!window.matchMedia("(min-width: 768px)").matches) return;
+
       const target = e.target as HTMLElement | null;
       if (target?.closest("input,textarea,[contenteditable=true]")) return;
 
@@ -62,7 +65,10 @@ export function DesktopCommandPalette() {
 
       if (/^[1-5]$/.test(e.key)) {
         const item = navItems[Number(e.key) - 1];
-        if (item) router.push(item.href);
+        if (item) {
+          router.push(item.href);
+          setOpen(false);
+        }
         return;
       }
 
@@ -71,19 +77,25 @@ export function DesktopCommandPalette() {
         if (e.key.toLowerCase() === "d") router.push("/");
         if (e.key.toLowerCase() === "a") router.push("/accounts");
         if (e.key.toLowerCase() === "h") router.push("/history");
+        setOpen(false);
         return;
       }
 
       if (e.key.toLowerCase() === "g") {
         pendingGoTo.current = true;
-        window.setTimeout(() => {
+        if (goToTimeoutRef.current !== null) window.clearTimeout(goToTimeoutRef.current);
+        goToTimeoutRef.current = window.setTimeout(() => {
           pendingGoTo.current = false;
+          goToTimeoutRef.current = null;
         }, 900);
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      if (goToTimeoutRef.current !== null) window.clearTimeout(goToTimeoutRef.current);
+    };
   }, [navItems, router, togglePrivacyMode, triggerRefresh]);
 
   return (
