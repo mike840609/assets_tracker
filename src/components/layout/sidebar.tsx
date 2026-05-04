@@ -10,7 +10,7 @@ import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import { hapticTick } from "@/lib/haptics";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 const SIDEBAR_STORAGE_KEY = "asset-tracker:sidebar-collapsed";
 
@@ -19,18 +19,24 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
   const router = useRouter();
   const t = useTranslations();
   const { privacyMode, togglePrivacyMode } = usePrivacyMode();
-  const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    setCollapsed(window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1");
-  }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? "1" : "0");
-  }, [collapsed]);
+  const collapsed = useSyncExternalStore(
+    (onStoreChange) => {
+      const handleChange = () => onStoreChange();
+      window.addEventListener("storage", handleChange);
+      window.addEventListener("sidebar-collapsed-change", handleChange);
+      return () => {
+        window.removeEventListener("storage", handleChange);
+        window.removeEventListener("sidebar-collapsed-change", handleChange);
+      };
+    },
+    () => window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1",
+    () => false,
+  );
 
   const toggleCollapsed = () => {
-    setCollapsed((prev) => !prev);
+    const next = !collapsed;
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, next ? "1" : "0");
+    window.dispatchEvent(new Event("sidebar-collapsed-change"));
   };
 
   const navItems = [
