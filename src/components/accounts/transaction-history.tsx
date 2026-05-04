@@ -221,7 +221,7 @@ function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit,
   );
 }
 
-export function TransactionHistory({ accountId, isBank, refreshTrigger }: { accountId: string; isBank?: boolean; refreshTrigger?: number }) {
+export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger }: { accountId: string; isBank?: boolean; refreshTrigger?: number }) {
   const router = useRouter();
   const t = useTranslations("transactionHistory");
   const tCommon = useTranslations("common");

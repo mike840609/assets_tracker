@@ -18,16 +18,12 @@ import { usePrivacyMode } from "./privacy-mode-context";
 
 export function DesktopCommandPalette() {
   const [open, setOpen] = useState(false);
-  const [isMac, setIsMac] = useState(false);
+  const [isMac] = useState(() => typeof window !== "undefined" && navigator.userAgent.includes("Mac"));
   const router = useRouter();
   const t = useTranslations();
   const { togglePrivacyMode } = usePrivacyMode();
   const pendingGoTo = useRef(false);
   const goToTimeoutRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    setIsMac(navigator.userAgent.includes("Mac"));
-  }, []);
 
   const navItems = useMemo(
     () => [

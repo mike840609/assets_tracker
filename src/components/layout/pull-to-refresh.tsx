@@ -14,7 +14,7 @@ interface Props {
 
 export function PullToRefresh({ onRefresh, children }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const { pull, refreshing, setPull, setRefreshing } = usePullToRefreshContext();
+  const { pull: _pull, refreshing, setPull, setRefreshing } = usePullToRefreshContext();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
