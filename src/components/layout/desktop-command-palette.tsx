@@ -45,6 +45,9 @@ export function DesktopCommandPalette() {
   const triggerNewItem = useCallback(() => {
     window.dispatchEvent(new CustomEvent("new-item"));
   }, []);
+  const triggerAddItem = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("add-item"));
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -59,13 +62,13 @@ export function DesktopCommandPalette() {
         return;
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "y") {
+      if ((e.metaKey || e.ctrlKey) && e.code === "Semicolon") {
         e.preventDefault();
         togglePrivacyMode();
         return;
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "u") {
+      if ((e.metaKey || e.ctrlKey) && e.code === "Quote") {
         e.preventDefault();
         triggerRefresh();
         return;
@@ -84,6 +87,11 @@ export function DesktopCommandPalette() {
 
       if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
         triggerNewItem();
+        return;
+      }
+
+      if (e.key.toLowerCase() === "i" && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+        triggerAddItem();
         return;
       }
 
@@ -126,10 +134,10 @@ export function DesktopCommandPalette() {
       window.removeEventListener("command-palette:open", onOpen);
       if (goToTimeoutRef.current !== null) window.clearTimeout(goToTimeoutRef.current);
     };
-  }, [navItems, router, togglePrivacyMode, triggerRefresh, toggleSidebar, triggerNewItem]);
+  }, [navItems, router, togglePrivacyMode, triggerRefresh, toggleSidebar, triggerNewItem, triggerAddItem]);
 
-  const privacyShortcut = isMac ? "⌘⇧Y" : "Ctrl+⇧Y";
-  const refreshShortcut = isMac ? "⌘⇧U" : "Ctrl+⇧U";
+  const privacyShortcut = isMac ? "⌘;" : "Ctrl+;";
+  const refreshShortcut = isMac ? "⌘'" : "Ctrl+'";
   const sidebarShortcut = isMac ? "⌘\\" : "Ctrl+\\";
   const paletteShortcut = isMac ? "⌘K" : "Ctrl+K";
   const goShortcut = t("commandPalette.goSequence");
@@ -148,17 +156,9 @@ export function DesktopCommandPalette() {
             {t("commandPalette.openPalette")}
             <CommandShortcut>{paletteShortcut}</CommandShortcut>
           </CommandItem>
-          <CommandItem value={`shortcut ${privacyShortcut} toggle privacy`}>
-            {t("commandPalette.togglePrivacy")}
-            <CommandShortcut>{privacyShortcut}</CommandShortcut>
-          </CommandItem>
-          <CommandItem value={`shortcut ${refreshShortcut} refresh prices`}>
-            {t("commandPalette.refreshPrices")}
-            <CommandShortcut>{refreshShortcut}</CommandShortcut>
-          </CommandItem>
-          <CommandItem value={`shortcut ${sidebarShortcut} toggle sidebar`}>
-            {t("commandPalette.toggleSidebar")}
-            <CommandShortcut>{sidebarShortcut}</CommandShortcut>
+          <CommandItem value="shortcut ? open shortcuts help">
+            {t("commandPalette.openPalette")}
+            <CommandShortcut>?</CommandShortcut>
           </CommandItem>
           <CommandItem value={`shortcut 1 2 3 4 5 navigation`}>
             {t("commandPalette.navigateTabs")}
@@ -167,14 +167,6 @@ export function DesktopCommandPalette() {
           <CommandItem value={`shortcut ${goShortcut} go to`}>
             {t("commandPalette.goToShortcut")}
             <CommandShortcut>{goShortcut}</CommandShortcut>
-          </CommandItem>
-          <CommandItem value="shortcut ? open shortcuts help">
-            {t("commandPalette.openPalette")}
-            <CommandShortcut>?</CommandShortcut>
-          </CommandItem>
-          <CommandItem value="shortcut n new account holding">
-            {t("commandPalette.createNew")}
-            <CommandShortcut>N</CommandShortcut>
           </CommandItem>
         </CommandGroup>
         <CommandGroup heading={t("commandPalette.groupNavigation")}>
@@ -229,6 +221,16 @@ export function DesktopCommandPalette() {
             <Plus className="mr-2 h-4 w-4" />
             {t("commandPalette.createNew")}
             <CommandShortcut>N</CommandShortcut>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => {
+              triggerAddItem();
+              setOpen(false);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {t("commandPalette.addItem")}
+            <CommandShortcut>I</CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={() => {

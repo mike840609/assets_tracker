@@ -24,7 +24,8 @@
     "goSequence": "先按 g 再按 d/a/n/h/s",
     "togglePrivacy": "切換隱私模式",
     "refreshPrices": "更新價格",
-    "createNew": "新增帳戶或持倉",
+    "createNew": "新增帳戶或持倉（僅限帳戶頁面）",
+    "addItem": "新增項目 / 持倉（僅限帳戶頁面）",
     "signOut": "登出",
     "searchHint": "搜尋..."
   },

@@ -90,6 +90,12 @@ export function AccountsList({
     window.addEventListener("new-item", handler);
     return () => window.removeEventListener("new-item", handler);
   }, []);
+
+  useEffect(() => {
+    const handler = () => setShowQuickAdd(true);
+    window.addEventListener("add-item", handler);
+    return () => window.removeEventListener("add-item", handler);
+  }, []);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => {

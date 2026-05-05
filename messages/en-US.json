@@ -24,7 +24,8 @@
     "goSequence": "g then d/a/n/h/s",
     "togglePrivacy": "Toggle privacy mode",
     "refreshPrices": "Refresh prices",
-    "createNew": "New account or holding",
+    "createNew": "New account or holding (Accounts page only)",
+    "addItem": "Add item / holding (Accounts page only)",
     "signOut": "Sign Out",
     "searchHint": "Search..."
   },
