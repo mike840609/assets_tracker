@@ -117,9 +117,8 @@ export function EditHoldingDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogContent className="fixed inset-x-0 bottom-0 top-auto translate-x-0 translate-y-0 rounded-t-2xl rounded-b-none border-t pb-[calc(env(safe-area-inset-bottom)+1rem)] data-[ending-style]:translate-y-full sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:pb-6">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-muted" aria-hidden="true" />
           <DialogTitle>Edit Holding</DialogTitle>
         </DialogHeader>
 
