@@ -56,7 +56,7 @@ export function DesktopCommandPalette() {
         return;
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "p") {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "y") {
         e.preventDefault();
         togglePrivacyMode();
         return;
@@ -113,7 +113,7 @@ export function DesktopCommandPalette() {
     };
   }, [navItems, router, togglePrivacyMode, triggerRefresh, toggleSidebar]);
 
-  const privacyShortcut = isMac ? "⌘⇧P" : "Ctrl+⇧P";
+  const privacyShortcut = isMac ? "⌘⇧Y" : "Ctrl+⇧Y";
   const refreshShortcut = isMac ? "⌘⇧R" : "Ctrl+⇧R";
   const sidebarShortcut = isMac ? "⌘B" : "Ctrl+B";
   const paletteShortcut = isMac ? "⌘K" : "Ctrl+K";
