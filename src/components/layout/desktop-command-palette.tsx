@@ -62,13 +62,13 @@ export function DesktopCommandPalette() {
         return;
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key === ";") {
+      if ((e.metaKey || e.ctrlKey) && e.code === "Semicolon") {
         e.preventDefault();
         togglePrivacyMode();
         return;
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key === "'") {
+      if ((e.metaKey || e.ctrlKey) && e.code === "Quote") {
         e.preventDefault();
         triggerRefresh();
         return;
