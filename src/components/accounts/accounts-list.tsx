@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -84,6 +84,12 @@ export function AccountsList({
   const t = useTranslations();
   const [showForm, setShowForm] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setShowForm(true);
+    window.addEventListener("new-item", handler);
+    return () => window.removeEventListener("new-item", handler);
+  }, []);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => {

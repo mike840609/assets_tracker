@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, startTransition } from "react";
+import { useState, useMemo, startTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +34,12 @@ export function AccountDetail({
   const t = useTranslations();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showHoldingForm, setShowHoldingForm] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setShowHoldingForm(true);
+    window.addEventListener("new-item", handler);
+    return () => window.removeEventListener("new-item", handler);
+  }, []);
   const [editingHolding, setEditingHolding] = useState<SerializedHolding | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(account.name);
