@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document catalogs **critical topics not covered (or under-covered) by the existing docs** in `docs/`. It is the result of a cross-doc audit performed on **2026-05-05** against:
+This document catalogs **critical topics not covered (or under-covered) by the existing docs** in `docs/`. It is the result of a cross-doc audit performed on **2026-05-05** (first pass C1–C9, second pass C10–C14 same day) against:
 
 - `docs/ANALYSIS_ROADMAP.md`
 - `docs/BUNDLE_ANALYSIS.md`
@@ -29,6 +29,11 @@ Each existing doc is strong inside its lane (perf, bundles, features, UX). The g
 | C7 | `docs/A11Y.md` — accessibility baseline     | Scattered across SUGGESTIONS #43/44/48/57/70 + UI_UX #13; no checklist | 🟡 Med   | 0.5 day    | ❌ Not Done |
 | C8 | `docs/DATA_MODEL.md` — ERD + invariants     | Decimal/serialization rules + lossless conversion only in code        | 🟡 Med   | 0.5 day    | ❌ Not Done |
 | C9 | `CLAUDE.md` index missing `UI_UX_SUGGESTIONS.md` | Doc is orphaned from the canonical index                          | 🟢 Low   | 5 min      | ❌ Not Done |
+| C10 | `docs/FEATURES.md` — recently shipped UX surfaces  | Privacy mode, command palette, swipe actions, pull-to-refresh, view transitions ship without canonical reference | 🟡 Med   | 0.5 day    | ❌ Not Done |
+| C11 | `docs/KEYBOARD_SHORTCUTS.md` — power-user reference | ⌘K, ⌘B, ⌘⇧Y (privacy), ⌘⇧R (refresh) etc. only discoverable via git log | 🟢 Low   | 1 hr       | ❌ Not Done |
+| C12 | `docs/CI_CD.md` — pipeline runbook                 | `.github/workflows/ci.yml` exists but no doc on required checks, preview gates, branch protection, local repro | 🟡 Med   | 0.5 day    | ❌ Not Done |
+| C13 | `docs/PERFORMANCE_BUDGETS.md` — numeric targets     | LCP/INP/CLS targets and bundle KB ceilings live in prose across 3 docs; nothing CI-enforceable | 🟡 Med   | 0.5 day    | ❌ Not Done |
+| C14 | `docs/NEON_OPERATIONS.md` — pooler + migrations     | Pooled `DATABASE_URL` vs `DIRECT_URL`, region pinning (`sin1`), `migrate dev` vs `db push` etiquette only in LOG entries | 🟡 Med   | 0.5 day    | ❌ Not Done |
 
 ## Methodology
 
@@ -166,6 +171,81 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 
 > - `docs/UI_UX_SUGGESTIONS.md` — mobile-first iOS patterns + desktop polish (large-title nav, sheets, swipe actions, command palette, density toggle)
 
+### C10 — `docs/FEATURES.md` (recently shipped UX surfaces)
+
+**Observation.** The last ~30 commits shipped a wave of user-facing features that have **zero canonical doc**: privacy mode (commit `dd8ae61` and predecessors — masks holdings/net-worth, persisted in `localStorage`), command palette (`8955c24`, `ae815b1`), swipe actions (`34862d1`, `7ef1f41`, `140a8ad` — left-swipe edit/delete with `framer-motion`, full-swipe danger zone, haptics), pull-to-refresh (`5d04fe7`), View Transitions API (`252807d`), inline validation + numeric `inputmode` (`5705819`). `LOG.md` notes them in passing; `UI_UX_SUGGESTIONS.md` flips them to ✅ Done. Neither is a reference.
+
+**What's missing.**
+- One-row-per-feature reference: what it does, how to invoke, persistence surface, accessibility considerations, desktop fallback.
+- Specifically for **privacy mode**: what data is masked (holding values, account balances, net-worth), what is *not* (chart shapes, percentages?), toggle persistence (per-device, per-user), screen-reader announcement on toggle, screen-recording use case.
+- Specifically for **swipe actions**: the one-row-at-a-time registry pattern, danger-zone threshold, undo path (or lack), how to add a swipe action to a new list.
+- Specifically for **view transitions**: which routes opt in, `transitionTypes` map, `prefers-reduced-motion` fallback.
+
+**Why now.** Without a feature reference, the team is the only source of truth on behavior — every new contributor or support question requires re-reading commits. Privacy mode in particular is a trust-bearing feature on a financial app; its semantics need to be written down.
+
+---
+
+### C11 — `docs/KEYBOARD_SHORTCUTS.md` (power-user reference)
+
+**Observation.** Recent commits added shortcuts that only the author knows: `⌘K` (palette), `⌘B` (sidebar collapse — `6bb6547`), `⌘⇧Y` (privacy mode — `dd8ae61`, changed from `⌘⇧P` because of browser conflict), `⌘⇧R` (price refresh). Mac vs Windows variants and i18n'd labels are handled in code but undocumented.
+
+**What's missing.**
+- Printable cheat-sheet table: action → Mac → Win/Linux → scope (global / list-row / form).
+- Discoverability: where the in-app `?` help should live (R22 hooks here).
+- "How to add a new palette action" pointer to the registry file.
+- Conflict policy (why `⌘⇧P` was abandoned — `dd8ae61` — should be captured so the next person doesn't reintroduce it).
+
+**Why now.** Shortcuts are a power-user retention lever. They are also the most common support question on any keyboard-driven SaaS.
+
+---
+
+### C12 — `docs/CI_CD.md` (pipeline runbook)
+
+**Observation.** `R20` is ✅ Done — `.github/workflows/ci.yml` runs `npm ci → prisma generate → lint → tsc → next build`. `R21` (E2E in CI) is the next step. No doc owns: which checks are required to merge, branch-protection rules, preview-deploy gates, how Vercel's `build:vercel` interacts with Neon previews, or how to reproduce a CI failure locally.
+
+**What's missing.**
+- Required-check list and how to update it.
+- Preview-deploy lifecycle: branch push → Neon preview branch (if any) → Vercel preview → E2E (when R21 lands) → merge.
+- Local repro recipe (the same commands CI runs, in order).
+- "What to do when CI fails" troubleshooting matrix (lint vs tsc vs build vs migrate).
+
+**Why now.** With C5 (`CONTRIBUTING.md`) and C3 (`TESTING.md`) lining up, the CI doc is the missing third leg of the contribution-flow tripod.
+
+---
+
+### C13 — `docs/PERFORMANCE_BUDGETS.md` (numeric targets)
+
+**Observation.** Numbers are scattered: `BUNDLE_ANALYSIS.md` references baseline KB sizes, `VERCEL_ANALYSIS.md` V23–V24 cite Core Web Vitals, `LOG.md` records ad-hoc wins. Nothing is a budget, nothing is enforced.
+
+**What's missing.**
+- Concrete ceilings the team commits to (illustrative — pick real numbers):
+  - LCP ≤ 2.5s p75 mobile, INP ≤ 200ms p75, CLS ≤ 0.10.
+  - Client-route JS ≤ 150 KB gzip first-load.
+  - Server route p95 ≤ 400ms (excluding cold start).
+  - Snapshot-cron p95 ≤ 30s for 1k users.
+- Enforcement plan: bundle-size assertion in CI (e.g., `size-limit`), Vercel Speed Insights threshold alerts, Sentry performance alerts (depends on C2).
+- Process for raising a budget (who approves, what evidence is required).
+
+**Why now.** Without numbers, "performance" is opinion. With numbers, regressions are visible in PR diff. Pairs naturally with C2 observability.
+
+---
+
+### C14 — `docs/NEON_OPERATIONS.md` (pooler + migrations runbook)
+
+**Observation.** `LOG.md` 2026-04-26 introduces the `DIRECT_URL` (for migrations) vs pooled `DATABASE_URL` (for runtime) split. `VERCEL_ANALYSIS.md` V5 pins the function region to `sin1` to match Neon. `CLAUDE.md` summarizes the Prisma adapter. No doc unifies the day-2 Neon story.
+
+**What's missing.**
+- Pooled vs direct connection: which env var goes where, what breaks when they're swapped.
+- Region pinning rationale (`sin1`) and what to change if the Neon region moves.
+- Cold-start expectations on Vercel serverless + the warming strategy (if any).
+- Migration etiquette: when `prisma migrate dev` is mandatory vs when `db push` is acceptable in prototyping; how to recover if `db push` drift hits a merged migration.
+- Neon branch strategy: production / preview / per-PR branches (overlap with C12), promotion path from preview to production.
+- Pooler saturation symptoms (timeouts, `too many connections`) and the runbook to mitigate.
+
+**Why now.** Neon-on-Vercel is the production baseline; an outage here takes the whole app down. The information exists in code and LOG entries — it just needs to be one click away. Distinct from C4 (which covers PITR / restore / GDPR export); this is *connectivity and migration ops*.
+
+---
+
 ## Recommended Sequencing
 
 The four 🔴 High items map cleanly onto a one-week pre-launch hardening sprint:
@@ -176,6 +256,12 @@ The four 🔴 High items map cleanly onto a one-week pre-launch hardening sprint
 4. **Day 4** — C4 `DISASTER_RECOVERY.md` (closes R16, unblocks GDPR R12).
 5. **Day 5** — C5–C9 in parallel; ship index fix to `CLAUDE.md` first (5 min).
 
+The 🟡 Medium second-pass items (C10–C14) form a follow-on "developer ergonomics" sprint that depends on the hardening week landing first:
+
+6. **Day 6** — C12 `CI_CD.md` + C14 `NEON_OPERATIONS.md` (locks down the runtime + pipeline; pairs with C5 contributor onboarding).
+7. **Day 7** — C13 `PERFORMANCE_BUDGETS.md` (depends on C2 observability for measurement).
+8. **Day 8** — C10 `FEATURES.md` + C11 `KEYBOARD_SHORTCUTS.md` (user-facing reference; can be authored by anyone with codebase familiarity).
+
 ## Cross-References
 
 - Closing C1 also closes/advances: R5, R6, R8, V3, V7, V11, D1.
@@ -183,5 +269,9 @@ The four 🔴 High items map cleanly onto a one-week pre-launch hardening sprint
 - Closing C3 also closes/advances: D4, SUGGESTIONS #26.
 - Closing C4 also closes/advances: R16, R12.
 - Closing C7 also closes/advances: D6, SUGGESTIONS #43/44/48/57/70, UI_UX #13.
+- Closing C11 also closes/advances: R22 (in-app help), UI_UX command-palette entry.
+- Closing C12 also closes/advances: R20, R21 (E2E in CI), and unblocks C5 contributor flow.
+- Closing C13 also closes/advances: V23, V24, BUNDLE_ANALYSIS baseline tracking.
+- Closing C14 also closes/advances: V5, the LOG.md 2026-04-26 `DIRECT_URL` note.
 
 Owner: TBD. Review on every release-readiness pass; flip to ✅ as each gap doc lands.
