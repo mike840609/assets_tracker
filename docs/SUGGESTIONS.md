@@ -29,14 +29,14 @@
 | 23 | Two-Factor Authentication (2FA) | Security | 🔴 High | 4-6 hrs | ❌ Not Done |
 | 24 | Plaid / Brokerage API Sync | Feature | 🔴 High | 10+ hrs | ❌ Not Done |
 | 25 | Customizable Dashboard Widgets | UX | 🟢 Low | 3-5 hrs | ❌ Not Done |
-| 26 | Add test coverage (Vitest + Playwright) | Testing | 🔴 High | 8-12 hrs | ❌ Not Done |
+| 26 | Add test coverage (Vitest + Playwright) | Testing | 🔴 High | 8-12 hrs | ✅ Done |
 | 27 | Add error boundary pages (error.tsx / not-found.tsx) | Reliability | 🔴 High | 1-2 hrs | ❌ Not Done |
 | 28 | Fix missing auth checks on API routes | Security | 🔴 High | 30 min | ❌ Not Done |
 | 29 | Validate environment variables at startup | DX / Reliability | 🔴 High | 1 hr | ✅ Done |
 | 30 | Add structured logging (Pino) | Observability | 🟡 Medium | 3-4 hrs | ❌ Not Done |
-| 31 | Add API rate limiting | Security | 🟡 Medium | 2-3 hrs | ❌ Not Done |
+| 31 | Add API rate limiting | Security | 🟡 Medium | 2-3 hrs | ✅ Done |
 | 32 | Validate query parameters with Zod | Security | 🟡 Medium | 1 hr | ❌ Not Done |
-| 33 | Add timeout guards to price service | Reliability | 🟡 Medium | 30 min | ❌ Not Done |
+| 33 | Add timeout guards to price service | Reliability | 🟡 Medium | 30 min | ✅ Done |
 | 34 | Add .env.example file | DX | 🟢 Low | 15 min | ✅ Done |
 | 35 | Utilize snapshot breakdown data in history service | Feature | 🟡 Medium | 2-3 hrs | ❌ Not Done |
 | 36 | Non-destructive data import (merge strategy) | Reliability | 🟡 Medium | 3-4 hrs | ❌ Not Done |
@@ -48,18 +48,18 @@
 | 42 | Add `select` to reduce over-fetching in API routes | Performance | 🟢 Low | 1 hr | ❌ Not Done |
 | 43 | Add aria-labels to icon-only buttons | Accessibility | 🔴 High | 1 hr | ❌ Not Done |
 | 44 | Fix color-only differentiation for assets/liabilities | Accessibility | 🔴 High | 1 hr | ❌ Not Done |
-| 45 | Add inline form validation errors | UX | 🟡 Medium | 2-3 hrs | ❌ Not Done |
+| 45 | Add inline form validation errors | UX | 🟡 Medium | 2-3 hrs | ✅ Done |
 | 46 | Improve empty states with clear CTAs | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
 | 47 | Add account search/filter | UX | 🟡 Medium | 1-2 hrs | ❌ Not Done |
 | 48 | Add table accessibility attributes | Accessibility | 🟡 Medium | 1 hr | ❌ Not Done |
 | 49 | Use native `confirm()` → proper confirmation dialogs | UX | 🟢 Low | 2 hrs | ❌ Not Done |
 | 50 | Add auth/ownership checks to holding mutation routes | Security | 🔴 High | 1-2 hrs | ❌ Not Done |
 | 51 | Validate snapshots query parameters with Zod | Reliability | 🔴 High | 30-60 min | ❌ Not Done |
-| 52 | Add timeout guards to external pricing calls | Reliability | 🔴 High | 30-60 min | ❌ Not Done |
+| 52 | Add timeout guards to external pricing calls | Reliability | 🔴 High | 30-60 min | ✅ Done |
 | 53 | Make data import merge-first (non-destructive) by default | Reliability | 🔴 High | 3-4 hrs | ❌ Not Done |
 | 54 | Add startup environment validation module (`env.ts`) | DX / Reliability | 🔴 High | 1 hr | ✅ Done |
 | 55 | Replace console logs with structured logging | Observability | 🟡 Medium | 2-4 hrs | ❌ Not Done |
-| 56 | Add baseline automated tests (unit/API/E2E smoke) | Testing | 🔴 High | 1-2 days | ❌ Not Done |
+| 56 | Add baseline automated tests (unit/API/E2E smoke) | Testing | 🔴 High | 1-2 days | ✅ Done |
 | 57 | Improve accessibility semantics on controls/tables | Accessibility | 🟡 Medium | 2-3 hrs | ❌ Not Done |
 | 58 | Add composite database indexes for hot query paths | Performance | 🔴 High | 1-2 hrs | ✅ Done |
 | 59 | Filter `PriceCache` query in `getNetWorthSummary` | Performance | 🔴 High | 15 min | ✅ Done |
@@ -116,7 +116,7 @@
 | 110 | Verify holding ownership on PATCH/DELETE holdings | Security | 🔴 High | 1 hr | ❌ Not Done |
 | 111 | Don't leak raw exception messages from data-import | Security | 🟡 Medium | 15 min | ❌ Not Done |
 | 112 | Timing-safe compare for `CRON_SECRET` | Security | 🟡 Medium | 15 min | ❌ Not Done |
-| 113 | Add baseline security headers (CSP, XFO, etc.) | Security | 🔴 High | 1-2 hrs | ❌ Not Done |
+| 113 | Add baseline security headers (CSP, XFO, etc.) | Security | 🔴 High | 1-2 hrs | ✅ Done |
 | 114 | Explicit NextAuth cookie / session options | Security | 🟡 Medium | 30 min | ❌ Not Done |
 | 115 | Keyboard accessibility for `InlineBalanceEditor` | Accessibility | 🟡 Medium | 30 min | ❌ Not Done |
 | 116 | Keyboard + `aria-sort` on `AccountDetail` sortable headers | Accessibility | 🟡 Medium | 30 min | ❌ Not Done |
@@ -149,11 +149,11 @@
 
 50. **Add auth/ownership checks on holding mutations** (`POST/PATCH/DELETE /api/accounts/[id]/holdings`) to enforce defense-in-depth and prevent cross-account writes if middleware changes.
 51. **Validate `/api/snapshots` query params with Zod** (`from`, `to`, `currency`) and return `400` for invalid values.
-52. **Add timeout guards in `price-service.ts`** for Yahoo and CoinGecko calls to avoid long-hanging refresh operations.
+52. ✅ **Add timeout guards in `price-service.ts`** for Yahoo and CoinGecko calls to avoid long-hanging refresh operations.
 53. **Change import default to merge/upsert strategy** in `POST /api/settings/data`; keep destructive replace as explicit opt-in.
 54. ✅ **Add startup env validation** via `src/lib/env.ts` instead of direct non-null assertions on `process.env`.
 55. **Adopt structured logging** (e.g., Pino) to replace scattered `console.*` for production debugging/monitoring.
-56. **Establish baseline automated tests** (unit + API integration + one E2E smoke path).
+56. ✅ **Establish baseline automated tests** (unit + API integration + one E2E smoke path).
 57. **Improve accessibility semantics** on icon-only controls and sortable tables (`aria-label`, `aria-expanded`, `aria-sort`, keyboard handlers).
 103. **Scope `/api/exchange-rates/refresh` to the authenticated user**. The current implementation uses `setting.findFirst()` and all account currencies globally, which can pick another user's base currency and trigger unnecessary cross-tenant work.
 104. ✅ **Fail fast when `CRON_SECRET` is missing** in `/api/cron/snapshot`. Current string comparison allows `Authorization: Bearer undefined` when secret is not configured.
@@ -230,6 +230,13 @@ The codebase has **zero test files** and no testing dependencies installed. This
 - **Affected files**: `package.json`, new `vitest.config.ts`, new `playwright.config.ts`, new `tests/` directory
 
 
+**Implementation (2026-04-25):**
+- Playwright E2E suite added (`playwright.config.ts`, `tests/e2e/global-setup.ts`, `tests/e2e/global-teardown.ts`, `tests/e2e/smoke.spec.ts`).
+- Covers: unauthenticated redirect → login, account + holding creation, dashboard net-worth card + trend chart.
+- Auth stubbed via preview-credentials provider; dedicated test user provisioned/torn-down in global setup to avoid polluting real user data.
+- CI workflow (`.github/workflows/e2e.yml`) runs against Vercel preview URLs; `PLAYWRIGHT_TEST_BASE_URL` bypasses local server bootstrap.
+- `fullyParallel: false`, `workers: 1` — suite intentionally serial.
+
 ### 27. Add Error Boundary Pages (error.tsx / not-found.tsx)
 Every route group has `loading.tsx` skeleton files, but there are **zero `error.tsx` or `not-found.tsx` files**. Unhandled runtime errors or 404s show the default Next.js error page instead of a branded recovery UI.
 
@@ -279,6 +286,11 @@ No API endpoints have rate limiting. A malicious or misconfigured client could s
 - Use a lightweight in-memory approach (e.g., `Map`-based token bucket) or `upstash/ratelimit` for serverless-friendly limiting
 - **Affected files**: new rate limit utility, API route files listed above
 
+**Implementation (2026-04-25):**
+- `src/lib/rate-limit.ts` — sliding-window in-process rate limiter (Map-based, no external dependency).
+- Applied to: `/api/search` (60 req/min), `/api/exchange-rates` (30 req/min), `/api/auth/*` (20 req/min via proxy middleware).
+- Returns `429 Too Many Requests` with `Retry-After` header on limit exceeded.
+
 ### 32. Validate Query Parameters with Zod
 Date range query parameters in `/api/snapshots` and history-related endpoints are parsed with raw `new Date()` without Zod validation. Invalid or malformed date strings could produce `NaN` dates and cause silent data corruption or unexpected query results.
 
@@ -294,6 +306,11 @@ Date range query parameters in `/api/snapshots` and history-related endpoints ar
 - Match the 2000ms pattern already used in the exchange rate service
 - **Affected files**: `src/lib/services/price-service.ts`
 
+
+**Implementation (2026-04-25):**
+- 5 s fetch timeout + 2-retry exponential backoff (500 ms → 1.5 s) added to Yahoo Finance and CoinGecko calls in `src/lib/services/price-service.ts`.
+- Per-symbol fallback isolation: Yahoo Finance batch failure falls back to CoinGecko per symbol rather than aborting the whole refresh.
+- Covers items 33 and 52 (both tracked independently but implemented together).
 
 ### 34. Add .env.example File
 No `.env.example` file exists. New developers must read `CLAUDE.md` to discover required environment variables. A standard `.env.example` with placeholder values and comments improves onboarding.
@@ -445,6 +462,12 @@ Affected forms:
 - Keep the toast as a fallback for unexpected server errors, but field-level errors should be inline
 - **Affected files**: `src/components/accounts/account-form.tsx`, `src/components/accounts/holding-form.tsx`, `src/components/accounts/edit-holding-dialog.tsx`
 
+
+**Implementation (2026-05-05):**
+- `inputMode="decimal"` / `inputMode="numeric"` on amount, quantity, strike, and contract fields to trigger native numeric keypads on mobile.
+- On-blur validation with inline helper text below each field (replaces toast-only errors).
+- `Intl.NumberFormat`-formatted values shown on blur; raw value restored on focus to avoid jumpy typing.
+- Affected: `account-form.tsx`, `holding-form.tsx`, `quick-add-holding.tsx`, `inline-balance-editor.tsx`, `option-builder.tsx`.
 
 ### 46. Improve Empty States with Clear CTAs
 Several views show minimal "no data" messages without guiding the user on what to do next.
@@ -1826,6 +1849,15 @@ A missing CSP in a Next.js 16 app is the single largest untapped XSS mitigation.
 
 - **Affected file:** `next.config.ts`
 
+
+**Implementation (2026-04-25):**
+- `headers()` block added to `next.config.ts` applying on all routes (`source: "/(.*)"`) with:
+  - `X-Frame-Options: DENY`
+  - `X-Content-Type-Options: nosniff`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+  - `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
+- Full CSP with `nonce`-based `script-src strict-dynamic` deferred (requires RSC nonce plumbing).
 
 ### 114. Explicit NextAuth Cookie / Session Options
 
