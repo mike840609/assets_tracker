@@ -180,14 +180,6 @@ export function DesktopCommandPalette() {
             {t("commandPalette.openPalette")}
             <CommandShortcut>?</CommandShortcut>
           </CommandItem>
-          <CommandItem value="shortcut n new account holding">
-            {t("commandPalette.createNew")}
-            <CommandShortcut>N</CommandShortcut>
-          </CommandItem>
-          <CommandItem value="shortcut i add item holding quick add">
-            {t("commandPalette.addItem")}
-            <CommandShortcut>I</CommandShortcut>
-          </CommandItem>
         </CommandGroup>
         <CommandGroup heading={t("commandPalette.groupNavigation")}>
           {navItems.map((item) => {
