@@ -156,17 +156,9 @@ export function DesktopCommandPalette() {
             {t("commandPalette.openPalette")}
             <CommandShortcut>{paletteShortcut}</CommandShortcut>
           </CommandItem>
-          <CommandItem value={`shortcut ${privacyShortcut} toggle privacy`}>
-            {t("commandPalette.togglePrivacy")}
-            <CommandShortcut>{privacyShortcut}</CommandShortcut>
-          </CommandItem>
-          <CommandItem value={`shortcut ${refreshShortcut} refresh prices`}>
-            {t("commandPalette.refreshPrices")}
-            <CommandShortcut>{refreshShortcut}</CommandShortcut>
-          </CommandItem>
-          <CommandItem value={`shortcut ${sidebarShortcut} toggle sidebar`}>
-            {t("commandPalette.toggleSidebar")}
-            <CommandShortcut>{sidebarShortcut}</CommandShortcut>
+          <CommandItem value="shortcut ? open shortcuts help">
+            {t("commandPalette.openPalette")}
+            <CommandShortcut>?</CommandShortcut>
           </CommandItem>
           <CommandItem value={`shortcut 1 2 3 4 5 navigation`}>
             {t("commandPalette.navigateTabs")}
@@ -175,10 +167,6 @@ export function DesktopCommandPalette() {
           <CommandItem value={`shortcut ${goShortcut} go to`}>
             {t("commandPalette.goToShortcut")}
             <CommandShortcut>{goShortcut}</CommandShortcut>
-          </CommandItem>
-          <CommandItem value="shortcut ? open shortcuts help">
-            {t("commandPalette.openPalette")}
-            <CommandShortcut>?</CommandShortcut>
           </CommandItem>
         </CommandGroup>
         <CommandGroup heading={t("commandPalette.groupNavigation")}>
