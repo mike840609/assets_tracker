@@ -21,9 +21,10 @@
     "openPalette": "Open command palette",
     "navigateTabs": "Go to main tabs",
     "goToShortcut": "Quick go-to sequence",
-    "goSequence": "g then d/a/h",
+    "goSequence": "g then d/a/n/h/s",
     "togglePrivacy": "Toggle privacy mode",
     "refreshPrices": "Refresh prices",
+    "createNew": "New account or holding",
     "signOut": "Sign Out",
     "searchHint": "Search..."
   },

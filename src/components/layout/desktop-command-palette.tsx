@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { BarChart3, Copy, History, LayoutDashboard, LogOut, PanelLeftClose, RefreshCw, Settings, Shield } from "lucide-react";
+import { BarChart3, Copy, History, LayoutDashboard, LogOut, PanelLeftClose, Plus, RefreshCw, Settings, Shield } from "lucide-react";
 import { signOut } from "next-auth/react";
 import {
   CommandDialog,
@@ -42,6 +42,9 @@ export function DesktopCommandPalette() {
   const toggleSidebar = useCallback(() => {
     window.dispatchEvent(new CustomEvent("sidebar:toggle"));
   }, []);
+  const triggerNewItem = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("new-item"));
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -74,6 +77,16 @@ export function DesktopCommandPalette() {
         return;
       }
 
+      if (e.key === "?") {
+        setOpen((v) => !v);
+        return;
+      }
+
+      if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+        triggerNewItem();
+        return;
+      }
+
       if (/^[1-5]$/.test(e.key)) {
         const item = navItems[Number(e.key) - 1];
         if (item) {
@@ -87,7 +100,9 @@ export function DesktopCommandPalette() {
         pendingGoTo.current = false;
         if (e.key.toLowerCase() === "d") router.push("/");
         if (e.key.toLowerCase() === "a") router.push("/accounts");
+        if (e.key.toLowerCase() === "n") router.push("/analysis");
         if (e.key.toLowerCase() === "h") router.push("/history");
+        if (e.key.toLowerCase() === "s") router.push("/settings");
         setOpen(false);
         return;
       }
@@ -111,7 +126,7 @@ export function DesktopCommandPalette() {
       window.removeEventListener("command-palette:open", onOpen);
       if (goToTimeoutRef.current !== null) window.clearTimeout(goToTimeoutRef.current);
     };
-  }, [navItems, router, togglePrivacyMode, triggerRefresh, toggleSidebar]);
+  }, [navItems, router, togglePrivacyMode, triggerRefresh, toggleSidebar, triggerNewItem]);
 
   const privacyShortcut = isMac ? "⌘⇧Y" : "Ctrl+⇧Y";
   const refreshShortcut = isMac ? "⌘⇧U" : "Ctrl+⇧U";
@@ -152,6 +167,14 @@ export function DesktopCommandPalette() {
           <CommandItem value={`shortcut ${goShortcut} go to`}>
             {t("commandPalette.goToShortcut")}
             <CommandShortcut>{goShortcut}</CommandShortcut>
+          </CommandItem>
+          <CommandItem value="shortcut ? open shortcuts help">
+            {t("commandPalette.openPalette")}
+            <CommandShortcut>?</CommandShortcut>
+          </CommandItem>
+          <CommandItem value="shortcut n new account holding">
+            {t("commandPalette.createNew")}
+            <CommandShortcut>N</CommandShortcut>
           </CommandItem>
         </CommandGroup>
         <CommandGroup heading={t("commandPalette.groupNavigation")}>
@@ -196,6 +219,16 @@ export function DesktopCommandPalette() {
             <RefreshCw className="mr-2 h-4 w-4" />
             {t("commandPalette.refreshPrices")}
             <CommandShortcut>{refreshShortcut}</CommandShortcut>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => {
+              triggerNewItem();
+              setOpen(false);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {t("commandPalette.createNew")}
+            <CommandShortcut>N</CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={() => {
