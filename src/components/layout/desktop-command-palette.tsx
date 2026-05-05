@@ -62,13 +62,13 @@ export function DesktopCommandPalette() {
         return;
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "r") {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "u") {
         e.preventDefault();
         triggerRefresh();
         return;
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+      if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
         e.preventDefault();
         toggleSidebar();
         return;
@@ -114,8 +114,8 @@ export function DesktopCommandPalette() {
   }, [navItems, router, togglePrivacyMode, triggerRefresh, toggleSidebar]);
 
   const privacyShortcut = isMac ? "⌘⇧Y" : "Ctrl+⇧Y";
-  const refreshShortcut = isMac ? "⌘⇧R" : "Ctrl+⇧R";
-  const sidebarShortcut = isMac ? "⌘B" : "Ctrl+B";
+  const refreshShortcut = isMac ? "⌘⇧U" : "Ctrl+⇧U";
+  const sidebarShortcut = isMac ? "⌘\\" : "Ctrl+\\";
   const paletteShortcut = isMac ? "⌘K" : "Ctrl+K";
   const goShortcut = t("commandPalette.goSequence");
 

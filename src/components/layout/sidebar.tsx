@@ -13,7 +13,7 @@ import { hapticTick } from "@/lib/haptics";
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 const SIDEBAR_STORAGE_KEY = "asset-tracker:sidebar-collapsed";
-const SIDEBAR_SHORTCUT_HINT = "Ctrl+B (⌘B on Mac)";
+const SIDEBAR_SHORTCUT_HINT = "Ctrl+\\ (⌘\\ on Mac)";
 
 export function Sidebar({ userImage, userName }: { userImage?: string | null; userName?: string | null }) {
   const pathname = usePathname();
@@ -42,7 +42,7 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === "b" && (event.ctrlKey || event.metaKey)) {
+      if (event.key === "\\" && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
         toggleCollapsed();
       }
@@ -163,7 +163,7 @@ export function Sidebar({ userImage, userName }: { userImage?: string | null; us
               onClick={toggleCollapsed}
               title={`${collapsed ? "Expand sidebar" : "Collapse sidebar"} (${SIDEBAR_SHORTCUT_HINT})`}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              aria-keyshortcuts="Control+B Meta+B"
+              aria-keyshortcuts="Control+\\ Meta+\\"
               className="inline-flex items-center justify-center rounded-md p-1.5 text-sm text-muted-foreground hover:text-foreground transition-all duration-200 ease-spring"
             >
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
