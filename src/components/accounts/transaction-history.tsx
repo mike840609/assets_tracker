@@ -230,6 +230,21 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
   // Dialog state
   const [editingTx, setEditingTx] = useState<SerializedTransaction | null>(null);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
+  const pendingTxDeletes = useRef<Set<string>>(new Set());
+
+  // Commit any in-flight transaction deletes if the user refreshes/navigates before the toast expires.
+  useEffect(() => {
+    function flush() {
+      for (const id of pendingTxDeletes.current) {
+        fetch(`/api/accounts/${accountId}/transactions/${id}`, {
+          method: "DELETE",
+          keepalive: true,
+        });
+      }
+    }
+    window.addEventListener("beforeunload", flush);
+    return () => window.removeEventListener("beforeunload", flush);
+  }, [accountId]);
 
   // Form state
   const [editType, setEditType] = useState("BUY");
@@ -314,15 +329,20 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
     const message = symbol ? t("deleteSuccessSymbol", { symbol }) : t("deleteSuccess");
 
     setPendingDeleteIds((prev) => new Set(prev).add(tx.id));
+    pendingTxDeletes.current.add(tx.id);
     showUndoDeleteToast({
       message,
       undoLabel: tCommon("undo"),
-      onUndo: () => setPendingDeleteIds((prev) => {
-        const next = new Set(prev);
-        next.delete(tx.id);
-        return next;
-      }),
+      onUndo: () => {
+        pendingTxDeletes.current.delete(tx.id);
+        setPendingDeleteIds((prev) => {
+          const next = new Set(prev);
+          next.delete(tx.id);
+          return next;
+        });
+      },
       onCommit: async () => {
+        pendingTxDeletes.current.delete(tx.id);
         try {
           const res = await fetch(`/api/accounts/${accountId}/transactions/${tx.id}`, {
             method: "DELETE",

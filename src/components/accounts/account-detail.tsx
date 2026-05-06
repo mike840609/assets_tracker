@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, startTransition, useEffect } from "react";
+import { useState, useMemo, startTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +49,23 @@ export function AccountDetail({
   const [sortField, setSortField] = useState<HoldingSortField>("marketValue");
   const [sortDirection, setSortDirection] = useState<SortOrder>("desc");
   const [optimisticHiddenIds, setOptimisticHiddenIds] = useState<Set<string>>(new Set());
+  const pendingHoldingDeletes = useRef<Set<string>>(new Set());
+
+  // Commit any in-flight holding deletes if the user refreshes/navigates before the toast expires.
+  useEffect(() => {
+    function flush() {
+      for (const id of pendingHoldingDeletes.current) {
+        fetch(`/api/accounts/${account.id}/holdings`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+          keepalive: true,
+        });
+      }
+    }
+    window.addEventListener("beforeunload", flush);
+    return () => window.removeEventListener("beforeunload", flush);
+  }, [account.id]);
 
   const handleSort = (field: HoldingSortField) => {
     if (sortField === field) {
@@ -172,15 +189,20 @@ export function AccountDetail({
 
   function deleteHolding(holdingId: string) {
     setOptimisticHiddenIds((prev) => new Set(prev).add(holdingId));
+    pendingHoldingDeletes.current.add(holdingId);
     showUndoDeleteToast({
       message: t("accountDetail.holdingRemoved"),
       undoLabel: t("common.undo"),
-      onUndo: () => setOptimisticHiddenIds((prev) => {
-        const next = new Set(prev);
-        next.delete(holdingId);
-        return next;
-      }),
+      onUndo: () => {
+        pendingHoldingDeletes.current.delete(holdingId);
+        setOptimisticHiddenIds((prev) => {
+          const next = new Set(prev);
+          next.delete(holdingId);
+          return next;
+        });
+      },
       onCommit: async () => {
+        pendingHoldingDeletes.current.delete(holdingId);
         try {
           await fetch(`/api/accounts/${account.id}/holdings`, {
             method: "DELETE",
