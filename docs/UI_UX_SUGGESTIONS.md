@@ -68,10 +68,12 @@ The bottom nav at `src/components/layout/sidebar.tsx:129` is close. Two tweaks:
 
 > `apple-mobile-web-app-capable` (`appleWebApp: { capable: true }`) and `viewport-fit: "cover"` are set in `layout.tsx`. Safe-area env vars applied on mobile header. Missing: `theme-color` meta tag and iOS splash screen configuration.
 
-### 8. iOS typography — ❌ Not Done
+### 8. iOS typography — ✅ Done
 
 - Add `-apple-system, "SF Pro Text", "SF Pro Display"` *before* Geist in the body font stack so when run as PWA on iOS it picks up SF and Dynamic Type.
 - Tighten letter-spacing (`-0.02em`) on the big net-worth number — that's the single most "Stocks-app" detail.
+
+> Geist is now loaded under the `--font-geist` CSS variable (renamed from `--font-sans` in `layout.tsx`). The `@theme inline` block in `globals.css` builds `--font-sans` as `-apple-system, "SF Pro Text", "SF Pro Display", var(--font-geist), system-ui, sans-serif` — iOS PWA mode picks up SF Pro; all other platforms fall through to Geist. The mono stack follows the same pattern with `--font-geist-mono`. The net-worth hero `<p>` in `net-worth-card.tsx` now applies `letter-spacing: -0.02em` via an inline style (Tailwind's `tracking-tight` is only `−0.025em` coarsely; the inline value pins it precisely as the Stocks-app detail requires).
 
 ### 9. Swipe actions — ✅ Done
 

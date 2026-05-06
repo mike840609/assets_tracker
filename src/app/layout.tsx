@@ -12,14 +12,14 @@ import "./globals.css";
 
 const geist = localFont({
   src: "./fonts/geist-latin.woff2",
-  variable: "--font-sans",
+  variable: "--font-geist",
   display: "swap",
   preload: true,
 });
 
 const geistMono = localFont({
   src: "./fonts/geist-mono-latin.woff2",
-  variable: "--font-mono",
+  variable: "--font-geist-mono",
   display: "swap",
 });
 
