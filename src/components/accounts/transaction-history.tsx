@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { showUndoDeleteToast } from "@/lib/undo-delete";
 
 const TYPE_VARIANTS: Record<string, "default" | "secondary" | "destructive"> = {
   BUY: "default",
@@ -228,7 +229,22 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
 
   // Dialog state
   const [editingTx, setEditingTx] = useState<SerializedTransaction | null>(null);
-  const [deletingTx, setDeletingTx] = useState<SerializedTransaction | null>(null);
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
+  const pendingTxDeletes = useRef<Set<string>>(new Set());
+
+  // Commit any in-flight transaction deletes if the user refreshes/navigates before the toast expires.
+  useEffect(() => {
+    function flush() {
+      for (const id of pendingTxDeletes.current) {
+        fetch(`/api/accounts/${accountId}/transactions/${id}`, {
+          method: "DELETE",
+          keepalive: true,
+        });
+      }
+    }
+    window.addEventListener("beforeunload", flush);
+    return () => window.removeEventListener("beforeunload", flush);
+  }, [accountId]);
 
   // Form state
   const [editType, setEditType] = useState("BUY");
@@ -307,25 +323,45 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
     }
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!deletingTx) return;
-    setIsSubmitting(true);
-    try {
-      const res = await fetch(`/api/accounts/${accountId}/transactions/${deletingTx.id}`, {
-        method: "DELETE",
-      });
+  const handleDeleteTx = (tx: SerializedTransaction) => {
+    const isCash = (tx as SerializedTransaction & { isCash?: boolean }).isCash;
+    const symbol = isCash ? null : (tx.holding?.symbol ?? null);
+    const message = symbol ? t("deleteSuccessSymbol", { symbol }) : t("deleteSuccess");
 
-      if (!res.ok) throw new Error("Failed to delete transaction");
-
-      toast.success(t("deleteSuccess"));
-      setDeletingTx(null);
-      mutate();
-      startTransition(() => { router.refresh(); }); // Refresh holdings on parent page
-    } catch {
-      toast.error(t("deleteFailed"));
-    } finally {
-      setIsSubmitting(false);
-    }
+    setPendingDeleteIds((prev) => new Set(prev).add(tx.id));
+    pendingTxDeletes.current.add(tx.id);
+    showUndoDeleteToast({
+      message,
+      undoLabel: tCommon("undo"),
+      onUndo: () => {
+        pendingTxDeletes.current.delete(tx.id);
+        setPendingDeleteIds((prev) => {
+          const next = new Set(prev);
+          next.delete(tx.id);
+          return next;
+        });
+      },
+      onCommit: async () => {
+        pendingTxDeletes.current.delete(tx.id);
+        try {
+          const res = await fetch(`/api/accounts/${accountId}/transactions/${tx.id}`, {
+            method: "DELETE",
+          });
+          if (!res.ok) throw new Error("Failed to delete transaction");
+          // Keep tx.id in pendingDeleteIds until mutate() delivers fresh SWR pages —
+          // removing it early can cause a flash from stale cache data.
+          mutate();
+          startTransition(() => { router.refresh(); });
+        } catch {
+          toast.error(t("deleteFailed"));
+          setPendingDeleteIds((prev) => {
+            const next = new Set(prev);
+            next.delete(tx.id);
+            return next;
+          });
+        }
+      },
+    });
   };
 
   if (isLoadingInitialData) {
@@ -381,6 +417,7 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
                   const time = new Date(tx.createdAt).toLocaleTimeString(undefined, {
                     hour: "2-digit", minute: "2-digit",
                   });
+                  if (pendingDeleteIds.has(tx.id)) return null;
                   return (
                     <div key={tx.id}>
                       {index > 0 && <div className="h-px bg-border/60 mx-4" />}
@@ -392,7 +429,7 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
                         qty={qty}
                         time={time}
                         onEdit={() => handleEditClick(tx)}
-                        onDelete={() => setDeletingTx(tx)}
+                        onDelete={() => handleDeleteTx(tx)}
                         tCommon={tCommon}
                       />
                     </div>
@@ -486,29 +523,6 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!deletingTx} onOpenChange={(open) => !open && setDeletingTx(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("deleteTitle")}</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p>
-              {(deletingTx as SerializedTransaction & { isCash?: boolean })?.isCash
-                ? t("deleteConfirm")
-                : t("deleteConfirmSymbol", { symbol: deletingTx?.holding?.symbol ?? "" })}
-            </p>
-            {!(deletingTx as SerializedTransaction & { isCash?: boolean })?.isCash && (
-              <p className="text-sm text-muted-foreground mt-2">{t("deleteWarning")}</p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletingTx(null)}>{tCommon("cancel")}</Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isSubmitting}>
-              {isSubmitting ? tCommon("deleting") : tCommon("delete")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 }

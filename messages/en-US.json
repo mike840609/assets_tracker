@@ -37,7 +37,8 @@
     "saving": "Saving...",
     "deleting": "Deleting...",
     "asset": "Asset",
-    "liability": "Liability"
+    "liability": "Liability",
+    "undo": "Undo"
   },
   "categories": {
     "BANK": "Bank",
@@ -436,6 +437,7 @@
     "updateSuccess": "Transaction updated",
     "updateFailed": "Failed to update transaction",
     "deleteSuccess": "Transaction deleted",
+    "deleteSuccessSymbol": "{symbol} transaction deleted",
     "deleteFailed": "Failed to delete transaction"
   }
 }

@@ -124,11 +124,13 @@ Account/holding forms can reduce entry errors and speed by:
 
 Targets: `src/components/accounts/account-form.tsx`, `src/components/accounts/holding-form.tsx`, `src/components/accounts/quick-add-holding.tsx`, `src/components/accounts/inline-balance-editor.tsx`.
 
-### 12. Undo-first destructive actions — ❌ Not Done
+### 12. Undo-first destructive actions — ✅ Done
 
 For delete/remove actions, prefer optimistic removal + "Undo" toast for 4–6 seconds before permanent delete. This is faster than confirmation modals and feels modern/mobile-native.
 
 Targets: holding/account/transaction delete flows in `src/components/accounts/*` and `src/components/history/history-table.tsx`.
+
+> `src/lib/undo-delete.ts` exposes `showUndoDeleteToast()` — items are removed optimistically from local state; the actual DELETE fires only when the 5 s Sonner toast auto-closes or is dismissed without clicking Undo. Holdings: filtered via `optimisticHiddenIds` Set in `account-detail.tsx`; delete can be undone, or commits via `DELETE /api/accounts/{id}/holdings`. Account: `deleting=true` disables the page button immediately while the toast runs; commit does `DELETE /api/accounts/{id}` then navigates to `/accounts`; the old native `confirm()` dialog is gone. Transactions: `pendingDeleteIds` Set hides rows in `transaction-history.tsx`; the previous confirmation Dialog is removed; `handleDeleteTx` calls `showUndoDeleteToast` for both swipe and dropdown triggers. `history-table.tsx` has no delete actions and was not changed.
 
 ### 13. Stronger accessibility defaults (AA baseline) — ⚠️ Partial
 
