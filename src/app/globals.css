@@ -149,7 +149,8 @@
       radial-gradient(ellipse 60% 40% at 100% 80%, oklch(0.74 0.17 270 / 0.05), transparent);
   }
   html {
-    @apply font-sans scroll-smooth;
+    @apply scroll-smooth;
+    font-family: -apple-system, "SF Pro Text", "SF Pro Display", var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   }
   .recharts-wrapper * {
     outline: none !important;
