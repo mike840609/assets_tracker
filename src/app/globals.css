@@ -135,6 +135,8 @@
   }
   body {
     @apply bg-background text-foreground min-h-screen text-base;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+      var(--font-sans), ui-sans-serif, system-ui, sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   /* Static ambient gradients — no runtime color computation */

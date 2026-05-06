@@ -68,10 +68,12 @@ The bottom nav at `src/components/layout/sidebar.tsx:129` is close. Two tweaks:
 
 > `apple-mobile-web-app-capable` (`appleWebApp: { capable: true }`) and `viewport-fit: "cover"` are set in `layout.tsx`. Safe-area env vars applied on mobile header. Missing: `theme-color` meta tag and iOS splash screen configuration.
 
-### 8. iOS typography — ❌ Not Done
+### 8. iOS typography — ✅ Done
 
 - Add `-apple-system, "SF Pro Text", "SF Pro Display"` *before* Geist in the body font stack so when run as PWA on iOS it picks up SF and Dynamic Type.
 - Tighten letter-spacing (`-0.02em`) on the big net-worth number — that's the single most "Stocks-app" detail.
+
+> `src/app/globals.css`: `body` rule now sets an explicit `font-family` that begins with `-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display"` and falls through to `var(--font-sans)` (Geist) on non-Apple platforms. `src/components/dashboard/net-worth-card.tsx`: net-worth number changed from `tracking-tight` (−0.025 em) to `tracking-[-0.02em]` matching the iOS Stocks app detail.
 
 ### 9. Swipe actions — ✅ Done
 
