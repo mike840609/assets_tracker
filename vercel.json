@@ -1,4 +1,5 @@
 {
+  "ignoreCommand": "git diff HEAD^ HEAD --name-only | grep -qvE '(\\.md$|^docs/)'",
   "buildCommand": "npm run build:vercel",
   "regions": ["sin1"],
   "crons": [
