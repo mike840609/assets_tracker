@@ -17,6 +17,7 @@ import type { HoldingWithPrice } from "./holding-row";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { SerializedAccountWithHoldings, SerializedHolding } from "@/lib/types";
+import { showUndoDeleteToast } from "@/lib/undo-delete";
 
 type HoldingSortField = "symbol" | "name" | "assetType" | "currency" | "quantity" | "currentPrice" | "marketValue" | "percentage";
 type SortOrder = "asc" | "desc";
@@ -47,6 +48,7 @@ export function AccountDetail({
   const [savingName, setSavingName] = useState(false);
   const [sortField, setSortField] = useState<HoldingSortField>("marketValue");
   const [sortDirection, setSortDirection] = useState<SortOrder>("desc");
+  const [optimisticHiddenIds, setOptimisticHiddenIds] = useState<Set<string>>(new Set());
 
   const handleSort = (field: HoldingSortField) => {
     if (sortField === field) {
@@ -150,32 +152,58 @@ export function AccountDetail({
     }
   }
 
-  async function deleteAccount() {
-    if (!confirm(t("accountDetail.deleteConfirm"))) return;
+  function deleteAccount() {
     setDeleting(true);
-    try {
-      await fetch(`/api/accounts/${account.id}`, { method: "DELETE" });
-      toast.success(t("accountDetail.accountDeleted"));
-      startTransition(() => { router.push("/accounts"); });
-    } catch {
-      toast.error(t("accountDetail.deleteFailed"));
-      setDeleting(false);
-    }
+    showUndoDeleteToast({
+      message: t("accountDetail.accountDeleted"),
+      undoLabel: t("common.undo"),
+      onUndo: () => setDeleting(false),
+      onCommit: async () => {
+        try {
+          await fetch(`/api/accounts/${account.id}`, { method: "DELETE" });
+          startTransition(() => { router.push("/accounts"); });
+        } catch {
+          toast.error(t("accountDetail.deleteFailed"));
+          setDeleting(false);
+        }
+      },
+    });
   }
 
-  async function deleteHolding(holdingId: string) {
-    try {
-      await fetch(`/api/accounts/${account.id}/holdings`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: holdingId }),
-      });
-      toast.success(t("accountDetail.holdingRemoved"));
-      setRefreshTrigger((prev) => prev + 1);
-      startTransition(() => { router.refresh(); });
-    } catch {
-      toast.error(t("accountDetail.holdingDeleteFailed"));
-    }
+  function deleteHolding(holdingId: string) {
+    setOptimisticHiddenIds((prev) => new Set(prev).add(holdingId));
+    showUndoDeleteToast({
+      message: t("accountDetail.holdingRemoved"),
+      undoLabel: t("common.undo"),
+      onUndo: () => setOptimisticHiddenIds((prev) => {
+        const next = new Set(prev);
+        next.delete(holdingId);
+        return next;
+      }),
+      onCommit: async () => {
+        try {
+          await fetch(`/api/accounts/${account.id}/holdings`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: holdingId }),
+          });
+          setOptimisticHiddenIds((prev) => {
+            const next = new Set(prev);
+            next.delete(holdingId);
+            return next;
+          });
+          setRefreshTrigger((prev) => prev + 1);
+          startTransition(() => { router.refresh(); });
+        } catch {
+          toast.error(t("accountDetail.holdingDeleteFailed"));
+          setOptimisticHiddenIds((prev) => {
+            const next = new Set(prev);
+            next.delete(holdingId);
+            return next;
+          });
+        }
+      },
+    });
   }
 
   return (
@@ -279,7 +307,7 @@ export function AccountDetail({
                   </div>
                 )}
                 <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
-                {sortedHoldings.map((h, index) => (
+                {sortedHoldings.filter((h) => !optimisticHiddenIds.has(h.id)).map((h, index) => (
                   <div key={h.id}>
                     {index > 0 && <div className="h-px bg-border/60 mx-4" />}
                     <HoldingRow

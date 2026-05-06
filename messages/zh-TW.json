@@ -37,7 +37,8 @@
     "saving": "儲存中...",
     "deleting": "刪除中...",
     "asset": "資產",
-    "liability": "負債"
+    "liability": "負債",
+    "undo": "復原"
   },
   "categories": {
     "BANK": "銀行",
@@ -436,6 +437,7 @@
     "updateSuccess": "交易已更新",
     "updateFailed": "更新交易失敗",
     "deleteSuccess": "交易已刪除",
+    "deleteSuccessSymbol": "{symbol} 交易已刪除",
     "deleteFailed": "刪除交易失敗"
   }
 }
