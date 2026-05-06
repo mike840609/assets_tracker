@@ -187,11 +187,8 @@ export function AccountDetail({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id: holdingId }),
           });
-          setOptimisticHiddenIds((prev) => {
-            const next = new Set(prev);
-            next.delete(holdingId);
-            return next;
-          });
+          // Keep holdingId in optimisticHiddenIds until router.refresh() delivers
+          // fresh props — removing it early can cause a flash from stale data.
           setRefreshTrigger((prev) => prev + 1);
           startTransition(() => { router.refresh(); });
         } catch {

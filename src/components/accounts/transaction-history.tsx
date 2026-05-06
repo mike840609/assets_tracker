@@ -328,11 +328,8 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
             method: "DELETE",
           });
           if (!res.ok) throw new Error("Failed to delete transaction");
-          setPendingDeleteIds((prev) => {
-            const next = new Set(prev);
-            next.delete(tx.id);
-            return next;
-          });
+          // Keep tx.id in pendingDeleteIds until mutate() delivers fresh SWR pages —
+          // removing it early can cause a flash from stale cache data.
           mutate();
           startTransition(() => { router.refresh(); });
         } catch {
