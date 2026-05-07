@@ -8,6 +8,7 @@
     "build:vercel": "node scripts/vercel-build.mjs",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "postinstall": "prisma generate",

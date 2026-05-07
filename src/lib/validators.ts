@@ -104,7 +104,7 @@ export const updateCashTransactionSchema = z.object({
   createdAt: z.string().optional(),
 });
 
-const decimalSchema = z.union([z.number(), z.string(), z.any()]);
+const decimalSchema = z.union([z.number(), z.string()]);
 
 export const dataImportSchema = z.object({
   version: z.string(),
@@ -168,7 +168,16 @@ export const dataImportSchema = z.object({
         totalLiabilities: decimalSchema,
         netWorth: decimalSchema,
         baseCurrency: z.string().length(3),
-        breakdown: z.any().optional().nullable(),
+        breakdown: z
+          .array(
+            z.object({
+              accountId: z.string(),
+              value: decimalSchema,
+              currency: z.string().length(3),
+            }),
+          )
+          .optional()
+          .nullable(),
         createdAt: z.string().optional(),
       }),
     )

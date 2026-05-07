@@ -1,5 +1,14 @@
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { ok } from "@/lib/api-responses";
+import { ok, failure, validationError } from "@/lib/api-responses";
+import { withAuth } from "@/lib/api-handler";
+
+const paginationQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+type IdCtx = { params: Promise<{ id: string }> };
 
 interface UnifiedRow {
   id: string;
@@ -11,12 +20,22 @@ interface UnifiedRow {
   holdingId: string | null;
 }
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withAuth<IdCtx>(async (request, { params }, userId) => {
   const { id } = await params;
-  const { searchParams } = new URL(request.url);
 
-  const page = Math.max(1, Number(searchParams.get("page") || "1"));
-  const limit = Math.max(1, Math.min(100, Number(searchParams.get("limit") || "20")));
+  // Verify the account belongs to the authenticated user (R5 ownership check)
+  const account = await prisma.account.findUnique({ where: { id, userId } });
+  if (!account) return failure("Not found", 404);
+
+  // Q11 — Zod-validated pagination params (prevents NaN OFFSET in raw SQL)
+  const { searchParams } = new URL(request.url);
+  const parsed = paginationQuery.safeParse({
+    page: searchParams.get("page") ?? undefined,
+    limit: searchParams.get("limit") ?? undefined,
+  });
+  if (!parsed.success) return validationError(parsed.error);
+
+  const { page, limit } = parsed.data;
   const offset = (page - 1) * limit;
 
   // Single UNION ALL query with DB-level ORDER BY + LIMIT/OFFSET
@@ -73,4 +92,4 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }));
 
   return ok(result);
-}
+});

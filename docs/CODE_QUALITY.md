@@ -91,14 +91,9 @@ Concrete, file-cited engineering hygiene gaps. Items can be picked up one at a t
   - For `auth-adapter.ts`: type against `@auth/prisma-adapter`'s exported `Adapter` type.
 - **Effort:** Medium.
 
-#### Q9 — Replace `z.any()` in validators ❌
+#### Q9 — Replace `z.any()` in validators ✅
 
-- **Where:** `src/lib/validators.ts:104` (`decimalSchema = z.union([z.number(), z.string(), z.any()])`) and `:149` (`breakdown: z.any().optional().nullable()`).
-- **Why:** `z.any()` opts out of validation entirely — a malformed import payload reaches Prisma untouched.
-- **Proposed action:**
-  - `decimalSchema`: drop `z.any()`, keep `z.union([z.number(), z.string()])`.
-  - `breakdown`: model the snapshot breakdown explicitly (`z.array(z.object({ accountId, value, currency, ... }))`) — the shape is already documented by `snapshot-service.ts`.
-- **Effort:** Small.
+- **Fix applied:** Dropped `z.any()` from `decimalSchema` (now `z.union([z.number(), z.string()])`). Typed `breakdown` as `z.array(z.object({ accountId, value, currency })).optional().nullable()`. _(Done 2026-05-08)_
 
 #### Q10 — Enable `noUncheckedIndexedAccess` ❌
 
@@ -111,19 +106,15 @@ Concrete, file-cited engineering hygiene gaps. Items can be picked up one at a t
 
 ### API Validation Gaps (Q11–Q13)
 
-#### Q11 — Validate pagination params on the transactions route ❌
+#### Q11 — Validate pagination params on the transactions route ✅
 
-- **Where:** `src/app/api/accounts/[id]/transactions/route.ts:21-22`.
-- **Why:** `Number(searchParams.get("page") || "1")` returns `NaN` when the caller passes `?page=foo`. `Math.max(1, NaN) === NaN`, which flows into the raw SQL `LIMIT ${limit} OFFSET ${offset}` on `:38-39` — the query fails with a runtime error instead of a 400.
-- **Proposed action:** Add a Zod schema `paginationQuery = z.object({ page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(100).default(20) })`. Return `validationError(...)` on failure.
-- **Effort:** Small.
+- **Where:** `src/app/api/accounts/[id]/transactions/route.ts`.
+- **Fix applied:** Added `paginationQuery = z.object({ page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(100).default(20) })`. Returns `validationError(...)` on failure. _(Done 2026-05-08)_
 
-#### Q12 — Rate-limit and auth-gate the manual exchange-rates refresh ❌
+#### Q12 — Rate-limit and auth-gate the manual exchange-rates refresh ✅
 
-- **Where:** `src/app/api/exchange-rates/refresh/route.ts:6` (POST handler).
-- **Why:** This route triggers external API calls to `frankfurter.app` and `open.er-api.com`. The sibling GET route already uses `rateLimitCheckWithPrune`; the POST does not. It also does not invoke `withAuth`.
-- **Proposed action:** Wrap the handler with `withAuth(...)` and add `rateLimitCheckWithPrune(request, { limit: 5, prefix: "exchange-rates-refresh" })` at the top.
-- **Effort:** Small.
+- **Where:** `src/app/api/exchange-rates/refresh/route.ts`.
+- **Fix applied:** Wrapped with `withAuth(...)`, added `rateLimitCheckWithPrune(request, { limit: 5, prefix: "exchange-rates-refresh" })`, and scoped `setting.findFirst` + `account.findMany` to the authenticated `userId`. _(Done 2026-05-08)_
 
 #### Q13 — Audit other handlers for unwrapped `Number(...)` and untyped `params` ❌
 
@@ -150,12 +141,9 @@ Concrete, file-cited engineering hygiene gaps. Items can be picked up one at a t
 - **Proposed action:** `husky init`, then add a `pre-commit` hook running `npx lint-staged`. Configure lint-staged to run `eslint --fix` + `prettier --write` on staged `*.{ts,tsx,js,mjs}`. Keep it fast — no typecheck or tests at pre-commit.
 - **Effort:** Small.
 
-#### Q16 — Add a `typecheck` script ❌
+#### Q16 — Add a `typecheck` script ✅
 
-- **Where:** `package.json:5-15` (no `typecheck` entry).
-- **Why:** Today the only way to verify TS without a full Next.js build is `npx tsc --noEmit` from memory.
-- **Proposed action:** Add `"typecheck": "tsc --noEmit"`. Update `.github/workflows/ci.yml` to call it as a separate step.
-- **Effort:** Trivial.
+- **Fix applied:** Added `"typecheck": "tsc --noEmit"` to `package.json`. Updated `.github/workflows/ci.yml` to call `npm run typecheck`. _(Done 2026-05-08)_
 
 #### Q17 — Dependabot or Renovate ❌
 
