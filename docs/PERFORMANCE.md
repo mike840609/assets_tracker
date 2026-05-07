@@ -283,6 +283,7 @@ Status: proposed · Owner: chuntsai · Last updated: 2026-05-07
 This plan continues from the Rendering Strategy items, VERCEL_ANALYSIS V1–V33 (in Infrastructure section), and RELEASE_READINESS R1–R26. New items use the **PE#** prefix. Items are sequenced by dependency, not raw impact: Phase 0 instrumentation lands first because every later phase needs measurement to validate.
 
 **Evidence collected:**
+
 - Build duration: 53s end-to-end (compile 27.5s + TS 10.5s + page gen 0.6s + deploy 12s) + cache upload 31s. Build cache 297 MB.
 - **Zero runtime logs in production for the past 7 days at any level** — confirms a critical observability gap.
 - `Detected .env file` warning on every Vercel build.
@@ -293,6 +294,7 @@ This plan continues from the Rendering Strategy items, VERCEL_ANALYSIS V1–V33 
 Without this phase, every later impact claim is a guess. Vercel runtime logs have been empty for 7 days; Speed Insights has no budgets; there is no DB or upstream timing.
 
 #### PE1 — Structured server logger
+
 - **Problem:** 22 raw `console.{log,error,warn}` calls across `src/`; no severity, no correlation. Production runtime logs silent for 7 days.
 - **Approach:** `src/lib/logger.ts` exporting `log = { info, warn, error, debug }` emitting one JSON line per call (`ts, level, msg, requestId, route, userId?, durationMs?, ...meta`). Replace the 22 raw call sites; add ESLint `no-console` rule outside `lib/logger.ts`.
 - **Files:** `src/lib/logger.ts` (new), `src/app/api/**/route.ts`, `src/lib/services/*.ts`, `eslint.config.mjs`.
@@ -301,6 +303,7 @@ Without this phase, every later impact claim is a guess. Vercel runtime logs hav
 - **Cross-refs:** closes R17, R18; supersedes V12.
 
 #### PE2 — `instrumentation.ts` with DB + upstream timing
+
 - **Problem:** no `src/instrumentation.ts`. Cannot answer "is Yahoo slow today" or "is `getCachedNetWorthSummary` cache-missing every render."
 - **Approach:** `register()` wraps Prisma client with `$extends` middleware logging `{model, action, durationMs}` for queries >100ms. Add `withTiming(label, fn)` helper; wrap Yahoo and CoinGecko calls.
 - **Files:** `src/instrumentation.ts` (new), `src/lib/prisma.ts`, `src/lib/services/price-service.ts`, `src/lib/services/exchange-rate-service.ts`.
@@ -308,12 +311,14 @@ Without this phase, every later impact claim is a guess. Vercel runtime logs hav
 - **Validation:** log search `durationMs > 200` returns a non-empty list of slow queries.
 
 #### PE3 — Web Vitals budgets in code
+
 - **Problem:** Speed Insights mounted but no budget enforcement; CWV regressions ship silently.
 - **Approach:** extend `src/components/layout/speed-insights.tsx` to import `web-vitals` and POST exceedances (LCP > 2500ms, CLS > 0.1, INP > 200ms) to `/api/_metrics/vitals` → `logger.warn`.
 - **Files:** `src/components/layout/speed-insights.tsx`, `src/app/api/_metrics/vitals/route.ts` (new), `docs/PERFORMANCE_BUDGETS.md` (new).
 - **Effort:** S. **Impact:** any CWV regression now logs a structured warning.
 
 #### PE4 — Bundle analyzer baseline + `npm run analyze`
+
 - **Problem:** `next.config.ts` already wires `@next/bundle-analyzer`, but `package.json` has no `analyze` script. V22/V33 open.
 - **Approach:** add `"analyze": "ANALYZE=true next build"` to `package.json`. Run once and commit `docs/bundle-baseline-2026-05.md`.
 - **Files:** `package.json`, `docs/bundle-baseline-2026-05.md` (new), `.github/workflows/ci.yml`.
@@ -325,6 +330,7 @@ Without this phase, every later impact claim is a guess. Vercel runtime logs hav
 ### Phase 1 — Quick wins backed by evidence
 
 #### PE5 — Cache `/api/exchange-rates` and `/api/search` upstream calls
+
 - **Problem:** `src/app/api/exchange-rates/route.ts` does `prisma.exchangeRate.findMany()` on every miss; `/api/search/route.ts` calls Yahoo on every miss. V17/V20 open.
 - **Approach:** wrap DB read in `unstable_cache` with `tags: ["exchange-rates"]`. For `/api/search`, wrap Yahoo call with `unstable_cache` keyed by normalized query string, `revalidate: 3600`, `tags: ["search"]`.
 - **Files:** `src/app/api/exchange-rates/route.ts`, `src/app/api/search/route.ts`.
@@ -332,24 +338,28 @@ Without this phase, every later impact claim is a guess. Vercel runtime logs hav
 - **Cross-refs:** closes V17, V20.
 
 #### PE6 — Dynamic-import three heavy client islands
+
 - **Problem:** `transaction-history.tsx` (528 LoC + Framer Motion + SWRInfinite), `holding-form.tsx` ship in `/accounts/[id]` initial bundle even though gated by tab/dialog clicks.
 - **Approach:** `dynamic(() => import(...).then(m => m.TransactionHistory), { ssr: false, loading: () => <TransactionHistorySkeleton /> })` for `TransactionHistory` and `HoldingForm` in `account-detail.tsx`.
 - **Files:** `src/components/accounts/account-detail.tsx`, `src/components/accounts/transaction-history.tsx`, `src/components/accounts/holding-form.tsx`.
 - **Effort:** S. **Impact:** estimated `/accounts/[id]` initial JS −60 to −90 KB gz.
 
 #### PE7 — Compress OG and Twitter card images
+
 - **Problem:** `public/opengraph-image.png` and `public/twitter-image.png` are 567 KB each (~1.1 MB combined). Should be < 100 KB.
 - **Approach:** re-export as WebP@80 or recompress as PNG via `pngquant --quality=70-85`.
 - **Files:** `public/opengraph-image.png`, `public/twitter-image.png` (replace).
 - **Effort:** S. **Impact:** −1 MB from public assets footprint.
 
 #### PE8 — Resolve `.env` warning during Vercel build
+
 - **Problem:** every Vercel build prints `Detected .env file, it is strongly recommended to use Vercel's env handling.`
 - **Approach:** add `.vercelignore` with `.env\n.env.*\n!.env.example`.
 - **Files:** `.vercelignore` (new).
 - **Effort:** S. **Impact:** removes warning + defensive against shipping secrets.
 
 #### PE9 — Stable currency/number formatters
+
 - **Problem:** `src/lib/currencies.ts:37` and `:51` create a new `Intl.NumberFormat` on every call. Called from Recharts tooltips that re-render on hover.
 - **Approach:** memoise per-(currency, compact, decimals) tuple inside `currencies.ts`.
 - **Files:** `src/lib/currencies.ts`, `src/components/accounts/quick-add-holding.tsx`, `src/components/accounts/holding-form.tsx`, `src/components/accounts/option-builder.tsx`, `src/components/accounts/account-form.tsx`, `src/components/accounts/inline-balance-editor.tsx`.
@@ -357,6 +367,7 @@ Without this phase, every later impact claim is a guess. Vercel runtime logs hav
 - **Cross-refs:** closes S#91.
 
 #### PE10 — Tighten settings-service cache scope
+
 - **Problem:** `src/lib/services/settings-service.ts:17` uses conservative `cacheLife("minutes")` for a setting that only changes via explicit POST.
 - **Approach:** change to `cacheLife("hours")`. Move the create fallback to a dedicated server action `ensureSettings(userId)` that runs once at signup time.
 - **Files:** `src/lib/services/settings-service.ts`, `src/auth.ts`.
@@ -369,6 +380,7 @@ Without this phase, every later impact claim is a guess. Vercel runtime logs hav
 These need PE2 timing data to prioritise within the phase.
 
 #### PE11 — `revalidateTag` audit
+
 - **Problem:** POST `/api/accounts/[id]/transactions` does not call `revalidateTag(\`net-worth:${userId}\`)`. V21 open.
 - **Approach:** build `docs/CACHE_INVALIDATION_MATRIX.md`. Patch all missing tag calls on transaction and cash-transaction routes.
 - **Files:** `src/app/api/accounts/[id]/transactions/route.ts`, `.../[transactionId]/route.ts`, `.../cash-transactions/route.ts`, `docs/CACHE_INVALIDATION_MATRIX.md` (new).
@@ -376,12 +388,14 @@ These need PE2 timing data to prioritise within the phase.
 - **Cross-refs:** closes V21.
 
 #### PE12 — Add `select` clauses to over-fetching reads
+
 - **Problem:** `net-worth-service.ts:24` (`include: { holdings }` returns every column), `:47` (`priceCache.findMany` returns full row), and cash-transaction read in `history-service.ts:249`.
 - **Approach:** explicit `select` clauses returning only consumed fields.
 - **Files:** `src/lib/services/net-worth-service.ts`, `src/lib/services/history-service.ts`, `src/app/(main)/accounts/[id]/page.tsx`.
 - **Effort:** M. **Impact:** wire-bytes from Neon −30–60% for the dashboard query.
 
 #### PE13 — Cursor pagination for transactions
+
 - **Problem:** `src/app/api/accounts/[id]/transactions/route.ts:23` uses `OFFSET`. Postgres scans rows up to the offset, so page 50 is 50× slower than page 1. S#106 open.
 - **Approach:** replace `page/limit` with `cursor` (opaque base64 of `{createdAt, id}`); raw SQL `WHERE (createdAt, id) < (cursor.createdAt, cursor.id)`.
 - **Files:** route handler + `transaction-history.tsx`.
@@ -389,6 +403,7 @@ These need PE2 timing data to prioritise within the phase.
 - **Cross-refs:** closes S#106.
 
 #### PE14 — Dedupe `/accounts/[id]` reads with the dashboard cache
+
 - **Problem:** `src/app/(main)/accounts/[id]/page.tsx:21` does its own `prisma.account.findUnique`, bypassing the cached `fetchUserAccountsWithHoldings(userId)`. V16 open.
 - **Approach:** refactor `AccountDetailContent` to call `fetchUserAccountsWithHoldings(session.user.id)` and `.find(a => a.id === id)`.
 - **Files:** `src/app/(main)/accounts/[id]/page.tsx`, `src/lib/services/price-service.ts`, `src/lib/services/net-worth-service.ts`.
@@ -396,6 +411,7 @@ These need PE2 timing data to prioritise within the phase.
 - **Cross-refs:** closes V16.
 
 #### PE15 — Mobile CWV verification pass
+
 - **Problem:** recently shipped iOS bottom-sheet modals, swipe-to-edit gestures, and pull-to-refresh have no measured CWV impact. V23 chart-card height reservation also open.
 - **Approach:** Add Playwright iPhone-15 viewport project. Reserve heights on chart cards. Audit `mobile-header.tsx` and `pull-to-refresh.tsx` for layout shifts.
 - **Files:** `playwright.config.ts`, `src/components/dashboard/lazy-charts.tsx`, `src/components/layout/mobile-header.tsx`, `src/components/layout/pull-to-refresh.tsx`.
@@ -407,20 +423,24 @@ These need PE2 timing data to prioritise within the phase.
 ### Phase 3 — Stretch / nice-to-have
 
 #### PE16 — Build cache audit (297 MB → target < 150 MB)
+
 - **Problem:** `cache upload 31s` of the 53s build. V15 open. Likely culprits: `.next/cache/webpack/`, `node_modules/.prisma/`, Playwright browsers.
 - **Effort:** L (investigative). **Impact:** −5–10 s deploy time.
 
 #### PE17 — ISR for `/privacy` and `/terms`
+
 - **Problem:** static legal pages currently render on every request.
 - **Approach:** `export const revalidate = 86400` in both pages.
 - **Files:** `src/app/privacy/page.tsx`, `src/app/terms/page.tsx`.
 - **Effort:** S. **Impact:** TTFB ~5 ms on warm cache.
 
 #### PE18 — Edge-runtime evaluation for `/api/search` and `/api/exchange-rates`
+
 - **Problem:** both routes are pure-read after PE5 caching lands. Blocked by `cacheComponents: true` constraint.
 - **Effort:** L (uncertain payoff). **Impact:** 50–150 ms TTFB win for non-AP users.
 
 #### PE19 — Migrate-region note (informational, no code change)
+
 - **Problem:** build runs in `iad1` but `prisma migrate deploy` connects to Neon in `ap-southeast-1` — cross-region round-trip on every migration.
 - **Approach:** document the trade-off in `docs/DEPLOYMENT_NOTES.md`.
 - **Effort:** S (doc only).

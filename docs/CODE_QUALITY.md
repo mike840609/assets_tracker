@@ -138,7 +138,7 @@ Concrete, file-cited engineering hygiene gaps. Items can be picked up one at a t
 
 #### Q14 — Add Prettier ⚠️
 
-- **Where:** `.prettierrc.json` exists and `prettier` is in `devDependencies` — config and dep are done. Missing: no `format` / `format:check` scripts in `package.json`, no `eslint-config-prettier`, and no `format:check` step in `.github/workflows/ci.yml`. *(Audited 2026-05-08)*
+- **Where:** `.prettierrc.json` exists and `prettier` is in `devDependencies` — config and dep are done. Missing: no `format` / `format:check` scripts in `package.json`, no `eslint-config-prettier`, and no `format:check` step in `.github/workflows/ci.yml`. _(Audited 2026-05-08)_
 - **Why:** Without the CI gate, the formatter has no teeth — PRs can still land with divergent whitespace.
 - **Proposed action:** Add `"format": "prettier --write ."` and `"format:check": "prettier --check ."` to `package.json`; add `eslint-config-prettier` to turn off conflicting ESLint rules; add `format:check` as a CI step in `.github/workflows/ci.yml`.
 - **Effort:** Trivial (config is already done; just wire the scripts and CI step).
@@ -255,16 +255,14 @@ Cross-doc audit performed on **2026-05-05**. Each existing doc is strong inside 
 ### Recommended Sequencing
 
 **Week 1 — Pre-launch hardening sprint:**
+
 1. **Day 1** — C1 `SECURITY.md` (also unblocks D1 ownership rollout).
 2. **Day 2** — C3 `TESTING.md` + first Vitest run (unblocks C1's auth/ownership contract tests).
 3. **Day 3** — C2 `OBSERVABILITY.md` (Sentry + pino + `/api/health`, closes R17/R18/R19/D10).
 4. **Day 4** — C4 `DISASTER_RECOVERY.md` (closes R16, unblocks GDPR R12).
 5. **Day 5** — C5–C9 in parallel; update CLAUDE.md index first (5 min).
 
-**Week 2 — Developer ergonomics sprint:**
-6. **Day 6** — C12 `CI_CD.md` + C14 `NEON_OPERATIONS.md`.
-7. **Day 7** — C13 `PERFORMANCE_BUDGETS.md` (depends on C2 observability for measurement).
-8. **Day 8** — C10 `FEATURES.md` + C11 `KEYBOARD_SHORTCUTS.md`.
+**Week 2 — Developer ergonomics sprint:** 6. **Day 6** — C12 `CI_CD.md` + C14 `NEON_OPERATIONS.md`. 7. **Day 7** — C13 `PERFORMANCE_BUDGETS.md` (depends on C2 observability for measurement). 8. **Day 8** — C10 `FEATURES.md` + C11 `KEYBOARD_SHORTCUTS.md`.
 
 ---
 
