@@ -40,7 +40,7 @@ export const getAllExchangeRates = cache(async (): Promise<Map<string, number>> 
 export function resolveRate(
   rateMap: Map<string, number>,
   from: string,
-  to: string
+  to: string,
 ): number | undefined {
   if (from === to) return 1;
   const direct = rateMap.get(`${from}_${to}`);
@@ -65,16 +65,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T
  * Fetch exchange rates from external APIs with a timeout guard.
  * Returns {} if all sources fail or timeout.
  */
-export async function fetchExchangeRates(
-  base: string
-): Promise<Record<string, number>> {
+export async function fetchExchangeRates(base: string): Promise<Record<string, number>> {
   const doFetch = async (): Promise<Record<string, number>> => {
     // Try frankfurter.app first (ECB data, reliable but limited currencies)
     try {
-      const res = await fetch(
-        `https://api.frankfurter.app/latest?from=${base}`,
-        { next: { revalidate: 3600 } }
-      );
+      const res = await fetch(`https://api.frankfurter.app/latest?from=${base}`, {
+        next: { revalidate: 3600 },
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.rates && Object.keys(data.rates).length > 0) {
@@ -87,14 +84,13 @@ export async function fetchExchangeRates(
 
     // Fallback: open.er-api.com (supports 150+ currencies including TWD)
     try {
-      const res = await fetch(
-        `https://open.er-api.com/v6/latest/${base}`,
-        { next: { revalidate: 3600 } }
-      );
+      const res = await fetch(`https://open.er-api.com/v6/latest/${base}`, {
+        next: { revalidate: 3600 },
+      });
       const data = await res.json();
       if (data.result === "success" && data.rates) {
         const rates = Object.fromEntries(
-          Object.entries(data.rates as Record<string, number>).filter(([key]) => key !== base)
+          Object.entries(data.rates as Record<string, number>).filter(([key]) => key !== base),
         );
         return rates;
       }
@@ -136,7 +132,9 @@ export async function refreshExchangeRates(baseCurrency: string): Promise<number
   if (entries.length === 0) return 0;
 
   // Batch upserts concurrently (instead of sequential loop)
-  await Promise.all(entries.map(([toCurrency, rate]) => persistExchangeRate(baseCurrency, toCurrency, rate)));
+  await Promise.all(
+    entries.map(([toCurrency, rate]) => persistExchangeRate(baseCurrency, toCurrency, rate)),
+  );
 
   return entries.length;
 }
@@ -149,7 +147,7 @@ export async function refreshExchangeRates(baseCurrency: string): Promise<number
  */
 export const getExchangeRate = cache(async function getExchangeRate(
   from: string,
-  to: string
+  to: string,
 ): Promise<number> {
   if (from === to) return 1;
 
@@ -199,7 +197,7 @@ export const getExchangeRate = cache(async function getExchangeRate(
 export async function resolveMissingRates(
   missingPairs: Array<[string, string]>,
   ratesMap: Record<string, number>,
-  timeoutMs: number = RATE_FETCH_TIMEOUT_MS
+  timeoutMs: number = RATE_FETCH_TIMEOUT_MS,
 ): Promise<void> {
   if (missingPairs.length === 0) return;
 
@@ -228,7 +226,7 @@ export async function resolveMissingRates(
           void persistExchangeRate(from, to, rates[to]);
         }
       }
-    })
+    }),
   );
 
   await withTimeout(resolveAll, timeoutMs, undefined);

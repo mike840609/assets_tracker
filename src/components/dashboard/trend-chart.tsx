@@ -68,7 +68,15 @@ const ranges = [
   { label: "All", days: Infinity },
 ];
 
-export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = false }: { snapshots: SnapshotData[]; baseCurrency?: string; hideRangeFilter?: boolean }) {
+export function TrendChart({
+  snapshots,
+  baseCurrency = "USD",
+  hideRangeFilter = false,
+}: {
+  snapshots: SnapshotData[];
+  baseCurrency?: string;
+  hideRangeFilter?: boolean;
+}) {
   const [range, setRange] = useState("All");
   const [mounted, setMounted] = useState(false);
   const t = useTranslations("trendChart");
@@ -115,51 +123,48 @@ export function TrendChart({ snapshots, baseCurrency = "USD", hideRangeFilter = 
         ) : !mounted ? (
           <div className="h-[250px]" />
         ) : (
-          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}>
-          <ResponsiveContainer width="100%" height={250}>
-            <AreaChart data={filtered}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 12 }}
-                tickFormatter={(v) => {
-                  const d = new Date(v);
-                  return `${d.getMonth() + 1}/${d.getDate()}`;
-                }}
-              />
-              <YAxis
-                tick={{ fontSize: 12 }}
-                tickFormatter={(v) =>
-                  privacyMode
-                    ? ""
-                    : v >= 1000000
-                      ? `${(v / 1000000).toFixed(1)}M`
-                      : v >= 1000
-                        ? `${(v / 1000).toFixed(0)}K`
-                        : v.toString()
-                }
-              />
-              <Tooltip
-                content={
-                  <TrendTooltip
-                    baseCurrency={baseCurrency}
-                    privacyMode={privacyMode}
-                  />
-                }
-              />
-              <Area
-                type="monotone"
-                dataKey="netWorth"
-                stroke="var(--primary)"
-                fill="var(--primary)"
-                fillOpacity={0.1}
-                strokeWidth={2}
-                name={t("seriesName")}
-                isAnimationActive={isAnimationActive}
-                onAnimationEnd={onAnimationEnd}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div
+            className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+          >
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={filtered}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(v) => {
+                    const d = new Date(v);
+                    return `${d.getMonth() + 1}/${d.getDate()}`;
+                  }}
+                />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(v) =>
+                    privacyMode
+                      ? ""
+                      : v >= 1000000
+                        ? `${(v / 1000000).toFixed(1)}M`
+                        : v >= 1000
+                          ? `${(v / 1000).toFixed(0)}K`
+                          : v.toString()
+                  }
+                />
+                <Tooltip
+                  content={<TrendTooltip baseCurrency={baseCurrency} privacyMode={privacyMode} />}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="netWorth"
+                  stroke="var(--primary)"
+                  fill="var(--primary)"
+                  fillOpacity={0.1}
+                  strokeWidth={2}
+                  name={t("seriesName")}
+                  isAnimationActive={isAnimationActive}
+                  onAnimationEnd={onAnimationEnd}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         )}
       </CardContent>

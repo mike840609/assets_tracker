@@ -29,7 +29,7 @@ Candidates: `src/components/dashboard/accounts-summary.tsx`, `src/components/acc
 
 ### 3. Bottom sheets instead of centered dialogs — ✅ Done
 
-On mobile, swap account/holding/transaction *Dialogs* for sheets that slide up from the bottom with a drag handle and swipe-to-dismiss. shadcn has a `Sheet` (Vaul) primitive — use `side="bottom"` with rounded top corners. This is the single most jarring "this is a website" moment in the current flow.
+On mobile, swap account/holding/transaction _Dialogs_ for sheets that slide up from the bottom with a drag handle and swipe-to-dismiss. shadcn has a `Sheet` (Vaul) primitive — use `side="bottom"` with rounded top corners. This is the single most jarring "this is a website" moment in the current flow.
 
 Candidates: `src/components/accounts/holding-form.tsx`, `src/components/accounts/edit-holding-dialog.tsx`, `src/components/accounts/account-form.tsx`.
 
@@ -55,7 +55,7 @@ The bottom nav at `src/components/layout/sidebar.tsx:129` is close. Two tweaks:
 `src/components/dashboard/dashboard-pull-refresh.tsx` exists — make sure it:
 
 - Has a real rubber-band overscroll on iOS (`overscroll-behavior: contain` on the scroll container, plus a transform-based offset).
-- Shows a circular progress that *fills* as you pull (not a spinner that appears at threshold).
+- Shows a circular progress that _fills_ as you pull (not a spinner that appears at threshold).
 - Gives a haptic tick at threshold crossing.
 
 > Rubber-band damped pull (`Math.min(delta * 0.5, MAX_PULL)`) and fill-progress indicator are implemented. Haptic tick at threshold crossing now implemented via `hapticTick()` in `pull-to-refresh.tsx`.
@@ -70,7 +70,7 @@ The bottom nav at `src/components/layout/sidebar.tsx:129` is close. Two tweaks:
 
 ### 8. iOS typography — ✅ Done
 
-- Add `-apple-system, "SF Pro Text", "SF Pro Display"` *before* Geist in the body font stack so when run as PWA on iOS it picks up SF and Dynamic Type.
+- Add `-apple-system, "SF Pro Text", "SF Pro Display"` _before_ Geist in the body font stack so when run as PWA on iOS it picks up SF and Dynamic Type.
 - Tighten letter-spacing (`-0.02em`) on the big net-worth number — that's the single most "Stocks-app" detail.
 
 > Geist is now loaded under the `--font-geist` CSS variable (renamed from `--font-sans` in `layout.tsx`). The `@theme inline` block in `globals.css` builds `--font-sans` as `-apple-system, "SF Pro Text", "SF Pro Display", var(--font-geist), system-ui, sans-serif` — iOS PWA mode picks up SF Pro; all other platforms fall through to Geist. The mono stack follows the same pattern with `--font-geist-mono`. The net-worth hero `<p>` in `net-worth-card.tsx` now applies `letter-spacing: -0.02em` via an inline style (Tailwind's `tracking-tight` is only `−0.025em` coarsely; the inline value pins it precisely as the Stocks-app detail requires).

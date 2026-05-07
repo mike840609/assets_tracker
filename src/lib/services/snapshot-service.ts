@@ -7,10 +7,7 @@ export async function createSnapshot(userId: string, baseCurrency: string) {
   today.setHours(0, 0, 0, 0);
 
   const breakdown = Object.fromEntries(
-    summary.accounts.map((a) => [
-      a.id,
-      { value: a.totalValue, currency: a.currency },
-    ])
+    summary.accounts.map((a) => [a.id, { value: a.totalValue, currency: a.currency }]),
   );
 
   const snapshot = await prisma.netWorthSnapshot.upsert({

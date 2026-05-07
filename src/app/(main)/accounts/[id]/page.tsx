@@ -3,7 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
 import { serializeAccountWithHoldings } from "@/lib/types";
-import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
+import {
+  getAllExchangeRates,
+  resolveRate,
+  resolveMissingRates,
+} from "@/lib/services/exchange-rate-service";
 import { getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
@@ -34,9 +38,7 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
     messagesP,
   ]);
 
-  const priceMap = Object.fromEntries(
-    cachedPrices.map((p) => [p.symbol, Number(p.price)])
-  );
+  const priceMap = Object.fromEntries(cachedPrices.map((p) => [p.symbol, Number(p.price)]));
 
   const serialized = serializeAccountWithHoldings(account);
 
@@ -71,11 +73,7 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
   );
 }
 
-export default function AccountDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function AccountDetailPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <Suspense fallback={<AccountDetailLoading />}>
       <AccountDetailContent params={params} />

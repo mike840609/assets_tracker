@@ -32,14 +32,10 @@ export function LargeTitleProvider({ children }: { children: React.ReactNode }) 
 
   const value = useMemo(
     () => ({ isVisible: state.isVisible, setIsVisible }),
-    [state.isVisible, setIsVisible]
+    [state.isVisible, setIsVisible],
   );
 
-  return (
-    <LargeTitleContext.Provider value={value}>
-      {children}
-    </LargeTitleContext.Provider>
-  );
+  return <LargeTitleContext.Provider value={value}>{children}</LargeTitleContext.Provider>;
 }
 
 export function useLargeTitle() {

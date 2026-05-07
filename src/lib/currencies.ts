@@ -28,11 +28,7 @@ export function getCurrencySymbol(code: string): string {
   return currency?.symbol ?? code;
 }
 
-export function formatCurrency(
-  amount: number,
-  currencyCode: string,
-  compact = false
-): string {
+export function formatCurrency(amount: number, currencyCode: string, compact = false): string {
   try {
     const formatter = new Intl.NumberFormat("en-US", {
       style: "currency",

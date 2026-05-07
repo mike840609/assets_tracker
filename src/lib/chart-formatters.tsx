@@ -13,7 +13,7 @@ export function createPieTooltipFormatter(currency: string) {
   return (
     value: number | string | ReadonlyArray<number | string> | undefined,
     name: string | number | undefined,
-    props: { payload?: { percentage?: string } }
+    props: { payload?: { percentage?: string } },
   ): [string, string | number] => {
     const formatted = formatCurrency(Number(value ?? 0), currency);
     const pct = props?.payload?.percentage ?? "0";

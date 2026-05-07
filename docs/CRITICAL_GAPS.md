@@ -18,22 +18,22 @@ Each existing doc is strong inside its lane (perf, bundles, features, UX). The g
 
 ## Gap Summary
 
-| #  | Missing Doc / Topic                        | Risk if launched without it                                          | Impact   | Effort     | Status      |
-| -- | ------------------------------------------ | --------------------------------------------------------------------- | -------- | ---------- | ----------- |
-| C1 | `docs/SECURITY.md` — security posture       | Ownership-bypass, secret leakage, no rotation policy, no audit log    | 🔴 High  | 1 day      | ❌ Not Done |
-| C2 | `docs/OBSERVABILITY.md` — Sentry + logging  | Zero error context post-launch; cron failures invisible               | 🔴 High  | 1 day      | ❌ Not Done |
-| C3 | `docs/TESTING.md` — testing strategy        | Net-worth / FX / P&L math has zero unit tests                         | 🔴 High  | 1 day      | ❌ Not Done |
-| C4 | `docs/DISASTER_RECOVERY.md` — Neon + export | No restore runbook; user data export not specified for GDPR           | 🔴 High  | 0.5 day    | ❌ Not Done |
-| C5 | `CONTRIBUTING.md` — onboarding guide        | New contributors lack code-style / commit / PR / test expectations    | 🟡 Med   | 0.5 day    | ❌ Not Done |
-| C6 | `docs/API_REFERENCE.md` — route contract    | No formal request/response schema; integrations (Plaid R23) blocked   | 🟡 Med   | 1 day      | ❌ Not Done |
-| C7 | `docs/A11Y.md` — accessibility baseline     | Scattered across SUGGESTIONS #43/44/48/57/70 + UI_UX #13; no checklist | 🟡 Med   | 0.5 day    | ❌ Not Done |
-| C8 | `docs/DATA_MODEL.md` — ERD + invariants     | Decimal/serialization rules + lossless conversion only in code        | 🟡 Med   | 0.5 day    | ❌ Not Done |
-| C9 | `CLAUDE.md` index missing `UI_UX_SUGGESTIONS.md` | Doc is orphaned from the canonical index                          | 🟢 Low   | 5 min      | ❌ Not Done |
-| C10 | `docs/FEATURES.md` — recently shipped UX surfaces  | Privacy mode, command palette, swipe actions, pull-to-refresh, view transitions ship without canonical reference | 🟡 Med   | 0.5 day    | ❌ Not Done |
-| C11 | `docs/KEYBOARD_SHORTCUTS.md` — power-user reference | ⌘K, ⌘B, ⌘⇧Y (privacy), ⌘⇧R (refresh) etc. only discoverable via git log | 🟢 Low   | 1 hr       | ❌ Not Done |
-| C12 | `docs/CI_CD.md` — pipeline runbook                 | `.github/workflows/ci.yml` exists but no doc on required checks, preview gates, branch protection, local repro | 🟡 Med   | 0.5 day    | ❌ Not Done |
-| C13 | `docs/PERFORMANCE_BUDGETS.md` — numeric targets     | LCP/INP/CLS targets and bundle KB ceilings live in prose across 3 docs; nothing CI-enforceable | 🟡 Med   | 0.5 day    | ❌ Not Done |
-| C14 | `docs/NEON_OPERATIONS.md` — pooler + migrations     | Pooled `DATABASE_URL` vs `DIRECT_URL`, region pinning (`sin1`), `migrate dev` vs `db push` etiquette only in LOG entries | 🟡 Med   | 0.5 day    | ❌ Not Done |
+| #   | Missing Doc / Topic                                 | Risk if launched without it                                                                                              | Impact  | Effort  | Status      |
+| --- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------- | ------- | ----------- |
+| C1  | `docs/SECURITY.md` — security posture               | Ownership-bypass, secret leakage, no rotation policy, no audit log                                                       | 🔴 High | 1 day   | ❌ Not Done |
+| C2  | `docs/OBSERVABILITY.md` — Sentry + logging          | Zero error context post-launch; cron failures invisible                                                                  | 🔴 High | 1 day   | ❌ Not Done |
+| C3  | `docs/TESTING.md` — testing strategy                | Net-worth / FX / P&L math has zero unit tests                                                                            | 🔴 High | 1 day   | ❌ Not Done |
+| C4  | `docs/DISASTER_RECOVERY.md` — Neon + export         | No restore runbook; user data export not specified for GDPR                                                              | 🔴 High | 0.5 day | ❌ Not Done |
+| C5  | `CONTRIBUTING.md` — onboarding guide                | New contributors lack code-style / commit / PR / test expectations                                                       | 🟡 Med  | 0.5 day | ❌ Not Done |
+| C6  | `docs/API_REFERENCE.md` — route contract            | No formal request/response schema; integrations (Plaid R23) blocked                                                      | 🟡 Med  | 1 day   | ❌ Not Done |
+| C7  | `docs/A11Y.md` — accessibility baseline             | Scattered across SUGGESTIONS #43/44/48/57/70 + UI_UX #13; no checklist                                                   | 🟡 Med  | 0.5 day | ❌ Not Done |
+| C8  | `docs/DATA_MODEL.md` — ERD + invariants             | Decimal/serialization rules + lossless conversion only in code                                                           | 🟡 Med  | 0.5 day | ❌ Not Done |
+| C9  | `CLAUDE.md` index missing `UI_UX_SUGGESTIONS.md`    | Doc is orphaned from the canonical index                                                                                 | 🟢 Low  | 5 min   | ❌ Not Done |
+| C10 | `docs/FEATURES.md` — recently shipped UX surfaces   | Privacy mode, command palette, swipe actions, pull-to-refresh, view transitions ship without canonical reference         | 🟡 Med  | 0.5 day | ❌ Not Done |
+| C11 | `docs/KEYBOARD_SHORTCUTS.md` — power-user reference | ⌘K, ⌘B, ⌘⇧Y (privacy), ⌘⇧R (refresh) etc. only discoverable via git log                                                  | 🟢 Low  | 1 hr    | ❌ Not Done |
+| C12 | `docs/CI_CD.md` — pipeline runbook                  | `.github/workflows/ci.yml` exists but no doc on required checks, preview gates, branch protection, local repro           | 🟡 Med  | 0.5 day | ❌ Not Done |
+| C13 | `docs/PERFORMANCE_BUDGETS.md` — numeric targets     | LCP/INP/CLS targets and bundle KB ceilings live in prose across 3 docs; nothing CI-enforceable                           | 🟡 Med  | 0.5 day | ❌ Not Done |
+| C14 | `docs/NEON_OPERATIONS.md` — pooler + migrations     | Pooled `DATABASE_URL` vs `DIRECT_URL`, region pinning (`sin1`), `migrate dev` vs `db push` etiquette only in LOG entries | 🟡 Med  | 0.5 day | ❌ Not Done |
 
 ## Methodology
 
@@ -50,6 +50,7 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 **Observation.** Security items are spread thinly: `RELEASE_READINESS.md` R5/R6/R8 (auth/ownership, headers, CSP), `VERCEL_ANALYSIS.md` V3/V7/V11 (rate limiting, headers), `SUGGESTIONS.md` (2FA #38). No doc owns the holistic posture.
 
 **What's missing.**
+
 - Threat model for a personal-finance SaaS (account takeover, IDOR, secret leak, supply chain).
 - Secrets management runbook: `AUTH_SECRET`, `CRON_SECRET`, `AUTH_GOOGLE_*`, `DATABASE_URL` rotation cadence + procedure.
 - Ownership-check pattern (D1 / R5) with a canonical helper signature and example.
@@ -68,6 +69,7 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 **Observation.** R17 ("Ship Sentry"), R18 ("pino structured logging"), R19 ("on-call playbook"), V12 (structured logging), D10 (observability baseline) are all ❌ Not Done and live in different docs.
 
 **What's missing.**
+
 - Sentry SDK setup for Next.js 16 RSC + Edge middleware (split package list).
 - DSN provisioning + per-environment sample rates.
 - pino logger config (request id, user id redaction, JSON shape).
@@ -86,6 +88,7 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 **Observation.** Only Playwright E2E exists (`tests/e2e/smoke.spec.ts`). `SUGGESTIONS.md` #26 says "add test coverage" but no plan. D4 says "minimum baseline tests" but unspecified. `ANALYSIS_ROADMAP.md` calls for service-level unit tests but the repo has none.
 
 **What's missing.**
+
 - Testing pyramid: unit (Vitest), integration (Vitest + test DB), E2E (existing Playwright).
 - Vitest config + first-test scaffold.
 - Service-layer test patterns for the pure-math hot zones:
@@ -106,6 +109,7 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 **Observation.** R16 ("Document Neon backup SLA") is ❌ Not Done. No doc covers restore procedures, user data export, or accidental-deletion recovery.
 
 **What's missing.**
+
 - Neon PITR window (default 7d) and the upgrade path if longer retention is needed.
 - Restore runbook: branch from PITR → smoke test → cutover.
 - Per-user data export endpoint (also blocks GDPR / R12 right-to-export).
@@ -122,6 +126,7 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 **Observation.** `.github/PULL_REQUEST_TEMPLATE.md` exists but no `CONTRIBUTING.md`. `CLAUDE.md` and `AGENTS.md` cover project conventions but assume Next.js 16 fluency.
 
 **What's missing.**
+
 - Local-dev bootstrap (Neon branch creation, seeding, `.env` template).
 - Code style + commit message format (the repo's git log shows a consistent style worth codifying).
 - PR review checklist (tests added, docs updated, migration committed, no `db push` drift).
@@ -134,6 +139,7 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 **Observation.** Route layout is in `CLAUDE.md` but no formal request/response schema. Validators exist in `src/lib/validators.ts` but aren't surfaced as a contract.
 
 **What's missing.**
+
 - One row per route: method, path, auth requirement, Zod schema link, response shape, rate-limit class.
 - Optional OpenAPI generation from Zod (e.g., `zod-to-openapi`) — preconditions Plaid integration (R23).
 
@@ -144,6 +150,7 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 **Observation.** A11y items are scattered: `SUGGESTIONS.md` #43, #44, #48, #57, #70; `UI_UX_SUGGESTIONS.md` #13 (partial); D6 in `DOCS_REVIEW_SUGGESTIONS.md`. No baseline.
 
 **What's missing.**
+
 - WCAG 2.1 AA target with the rules we're committing to.
 - Component-level checklist (form labels, focus rings, keyboard traps in dialogs/sheets, non-color status cues).
 - Testing approach (axe-core in Playwright, manual VoiceOver/NVDA passes for critical flows).
@@ -156,6 +163,7 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 **Observation.** `prisma/schema.prisma` is the source of truth, and `CLAUDE.md` documents the serializer rules (Decimal/Date), but there's no ERD or invariants doc.
 
 **What's missing.**
+
 - ERD diagram (Mermaid).
 - Invariants: every monetary value is `Decimal`, every cross-currency value is computed lazily and cached in `PriceCache` / `ExchangeRate`, every snapshot is lossless via `breakdown`.
 - Serialization contract (`serializeAccount` / `serializeHolding` / `serializeAccountWithHoldings`) and **why spreading Prisma instances is forbidden**.
@@ -176,8 +184,9 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 **Observation.** The last ~30 commits shipped a wave of user-facing features that have **zero canonical doc**: privacy mode (commit `dd8ae61` and predecessors — masks holdings/net-worth, persisted in `localStorage`), command palette (`8955c24`, `ae815b1`), swipe actions (`34862d1`, `7ef1f41`, `140a8ad` — left-swipe edit/delete with `framer-motion`, full-swipe danger zone, haptics), pull-to-refresh (`5d04fe7`), View Transitions API (`252807d`), inline validation + numeric `inputmode` (`5705819`). `LOG.md` notes them in passing; `UI_UX_SUGGESTIONS.md` flips them to ✅ Done. Neither is a reference.
 
 **What's missing.**
+
 - One-row-per-feature reference: what it does, how to invoke, persistence surface, accessibility considerations, desktop fallback.
-- Specifically for **privacy mode**: what data is masked (holding values, account balances, net-worth), what is *not* (chart shapes, percentages?), toggle persistence (per-device, per-user), screen-reader announcement on toggle, screen-recording use case.
+- Specifically for **privacy mode**: what data is masked (holding values, account balances, net-worth), what is _not_ (chart shapes, percentages?), toggle persistence (per-device, per-user), screen-reader announcement on toggle, screen-recording use case.
 - Specifically for **swipe actions**: the one-row-at-a-time registry pattern, danger-zone threshold, undo path (or lack), how to add a swipe action to a new list.
 - Specifically for **view transitions**: which routes opt in, `transitionTypes` map, `prefers-reduced-motion` fallback.
 
@@ -190,6 +199,7 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 **Observation.** Recent commits added shortcuts that only the author knows: `⌘K` (palette), `⌘B` (sidebar collapse — `6bb6547`), `⌘⇧Y` (privacy mode — `dd8ae61`, changed from `⌘⇧P` because of browser conflict), `⌘⇧R` (price refresh). Mac vs Windows variants and i18n'd labels are handled in code but undocumented.
 
 **What's missing.**
+
 - Printable cheat-sheet table: action → Mac → Win/Linux → scope (global / list-row / form).
 - Discoverability: where the in-app `?` help should live (R22 hooks here).
 - "How to add a new palette action" pointer to the registry file.
@@ -204,6 +214,7 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 **Observation.** `R20` is ✅ Done — `.github/workflows/ci.yml` runs `npm ci → prisma generate → lint → tsc → next build`. `R21` (E2E in CI) is the next step. No doc owns: which checks are required to merge, branch-protection rules, preview-deploy gates, how Vercel's `build:vercel` interacts with Neon previews, or how to reproduce a CI failure locally.
 
 **What's missing.**
+
 - Required-check list and how to update it.
 - Preview-deploy lifecycle: branch push → Neon preview branch (if any) → Vercel preview → E2E (when R21 lands) → merge.
 - Local repro recipe (the same commands CI runs, in order).
@@ -218,6 +229,7 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 **Observation.** Numbers are scattered: `BUNDLE_ANALYSIS.md` references baseline KB sizes, `VERCEL_ANALYSIS.md` V23–V24 cite Core Web Vitals, `LOG.md` records ad-hoc wins. Nothing is a budget, nothing is enforced.
 
 **What's missing.**
+
 - Concrete ceilings the team commits to (illustrative — pick real numbers):
   - LCP ≤ 2.5s p75 mobile, INP ≤ 200ms p75, CLS ≤ 0.10.
   - Client-route JS ≤ 150 KB gzip first-load.
@@ -235,6 +247,7 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 **Observation.** `LOG.md` 2026-04-26 introduces the `DIRECT_URL` (for migrations) vs pooled `DATABASE_URL` (for runtime) split. `VERCEL_ANALYSIS.md` V5 pins the function region to `sin1` to match Neon. `CLAUDE.md` summarizes the Prisma adapter. No doc unifies the day-2 Neon story.
 
 **What's missing.**
+
 - Pooled vs direct connection: which env var goes where, what breaks when they're swapped.
 - Region pinning rationale (`sin1`) and what to change if the Neon region moves.
 - Cold-start expectations on Vercel serverless + the warming strategy (if any).
@@ -242,7 +255,7 @@ Same prioritization as `DOCS_REVIEW_SUGGESTIONS.md`:
 - Neon branch strategy: production / preview / per-PR branches (overlap with C12), promotion path from preview to production.
 - Pooler saturation symptoms (timeouts, `too many connections`) and the runbook to mitigate.
 
-**Why now.** Neon-on-Vercel is the production baseline; an outage here takes the whole app down. The information exists in code and LOG entries — it just needs to be one click away. Distinct from C4 (which covers PITR / restore / GDPR export); this is *connectivity and migration ops*.
+**Why now.** Neon-on-Vercel is the production baseline; an outage here takes the whole app down. The information exists in code and LOG entries — it just needs to be one click away. Distinct from C4 (which covers PITR / restore / GDPR export); this is _connectivity and migration ops_.
 
 ---
 

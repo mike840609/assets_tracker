@@ -96,10 +96,8 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
   // Collect unique categories present in the data, preserving insertion order.
   const categories = Array.from(
     new Set(
-      data.flatMap((d) =>
-        Object.keys(d).filter((k) => k !== "monthKey" && Number(d[k]) > 0)
-      )
-    )
+      data.flatMap((d) => Object.keys(d).filter((k) => k !== "monthKey" && Number(d[k]) > 0)),
+    ),
   );
 
   const chartData = data.map((d) => ({
@@ -110,7 +108,9 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
   return (
     <Card className="border-0 bg-transparent shadow-none">
       <CardHeader className="pb-2 px-2 sm:px-4">
-        <CardTitle className="text-base font-medium text-foreground">{t("categoryTrend")}</CardTitle>
+        <CardTitle className="text-base font-medium text-foreground">
+          {t("categoryTrend")}
+        </CardTitle>
         <p className="text-xs text-muted-foreground">{t("categoryTrendSubtitle")}</p>
       </CardHeader>
       <CardContent className="px-2 sm:px-4 pb-4">
@@ -121,17 +121,19 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
         ) : !mounted ? (
           <div className="h-[280px]" />
         ) : (
-          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}>
+          <div
+            className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+          >
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={chartData} margin={{ top: 10, right: 4, left: 0, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="label" 
+                <XAxis
+                  dataKey="label"
                   padding={{ left: 16, right: 16 }}
-                  tick={{ fontSize: 12 }} 
-                  angle={-45} 
-                  textAnchor="end" 
-                  height={60} 
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
                 />
                 <YAxis
                   width={50}

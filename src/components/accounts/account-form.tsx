@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -123,13 +118,12 @@ export function AccountForm({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>{t("accountForm.labelType")}</Label>
-              <Select
-                value={type}
-                onValueChange={(v) => v && setType(v as "ASSET" | "LIABILITY")}
-              >
+              <Select value={type} onValueChange={(v) => v && setType(v as "ASSET" | "LIABILITY")}>
                 <SelectTrigger>
                   <SelectValue>
-                    {type === "ASSET" ? t("accountForm.optionAsset") : t("accountForm.optionLiability")}
+                    {type === "ASSET"
+                      ? t("accountForm.optionAsset")
+                      : t("accountForm.optionLiability")}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -162,7 +156,10 @@ export function AccountForm({
               <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
                 <SelectTrigger>
                   <SelectValue>
-                    {(() => { const c = CURRENCIES.find((c) => c.code === currency); return c ? `${c.code} (${c.symbol})` : currency; })()}
+                    {(() => {
+                      const c = CURRENCIES.find((c) => c.code === currency);
+                      return c ? `${c.code} (${c.symbol})` : currency;
+                    })()}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -198,7 +195,10 @@ export function AccountForm({
                   type="text"
                   inputMode="decimal"
                   value={cashBalance}
-                  onChange={(e) => { setCashBalance(e.target.value); setCashBalanceError(""); }}
+                  onChange={(e) => {
+                    setCashBalance(e.target.value);
+                    setCashBalanceError("");
+                  }}
                   onBlur={handleCashBalanceBlur}
                 />
                 {cashBalanceError && <p className="text-xs text-destructive">{cashBalanceError}</p>}

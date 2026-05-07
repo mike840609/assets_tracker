@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { failure } from "@/lib/api-responses";
 
 export function withAuth<Ctx = unknown>(
-  handler: (req: Request, ctx: Ctx, userId: string) => Promise<Response>
+  handler: (req: Request, ctx: Ctx, userId: string) => Promise<Response>,
 ) {
   return async (req: Request, ctx: Ctx): Promise<Response> => {
     const session = await auth();

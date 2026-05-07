@@ -4,7 +4,10 @@ import { NetWorthCard } from "@/components/dashboard/net-worth-card";
 import { LazyAllocationChart, LazyCurrencyExposureChart } from "@/components/dashboard/lazy-charts";
 import { AccountsSummary } from "@/components/dashboard/accounts-summary";
 import { DashboardActions } from "@/components/dashboard/dashboard-actions";
-import { getCachedNetWorthSummary, fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
+import {
+  getCachedNetWorthSummary,
+  fetchUserAccountsWithHoldings,
+} from "@/lib/services/net-worth-service";
 import { getAllExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
@@ -17,7 +20,7 @@ const fetchPreviousSnapshot = cache((userId: string) =>
     where: { userId },
     orderBy: { date: "desc" },
     select: { date: true, netWorth: true, baseCurrency: true, createdAt: true },
-  })
+  }),
 );
 
 const CARD_CLASS = "premium-card";
@@ -99,8 +102,7 @@ async function DashboardActionsSection({
     }),
   ]);
 
-  const latestSnapshotDate =
-    previousSnapshot?.createdAt?.toISOString() ?? null;
+  const latestSnapshotDate = previousSnapshot?.createdAt?.toISOString() ?? null;
 
   return (
     <DashboardActions
@@ -115,13 +117,7 @@ async function DashboardActionsSection({
  * Net worth cards — the LCP element on the dashboard.
  * Fetches the cached summary and recent snapshots for the delta display.
  */
-async function NetWorthSection({
-  userId,
-  baseCurrency,
-}: {
-  userId: string;
-  baseCurrency: string;
-}) {
+async function NetWorthSection({ userId, baseCurrency }: { userId: string; baseCurrency: string }) {
   const [summary, previousSnapshot] = await Promise.all([
     getCachedNetWorthSummary(userId, baseCurrency),
     fetchPreviousSnapshot(userId),
@@ -147,13 +143,7 @@ async function NetWorthSection({
  * Allocation + currency exposure charts.
  * Shares the same cached summary as NetWorthSection (data-cache dedup).
  */
-async function ChartsSection({
-  userId,
-  baseCurrency,
-}: {
-  userId: string;
-  baseCurrency: string;
-}) {
+async function ChartsSection({ userId, baseCurrency }: { userId: string; baseCurrency: string }) {
   const summary = await getCachedNetWorthSummary(userId, baseCurrency);
   if (summary.accounts.length === 0) return null;
 
@@ -243,11 +233,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
   return (
     <>
       {/* Actions stream first — lightweight metadata, no summary needed */}
-      <Suspense
-        fallback={
-          <div className="h-10 w-full bg-muted animate-pulse rounded-lg" />
-        }
-      >
+      <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded-lg" />}>
         <DashboardActionsSection userId={userId} baseCurrency={baseCurrency} />
       </Suspense>
 
@@ -259,11 +245,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
       {/* Charts grid — trend chart + allocation + currency exposure */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both delay-150">
         <div className={`${CARD_CLASS} lg:col-span-2 xl:col-span-1`}>
-          <Suspense
-            fallback={
-              <div className="h-[350px] animate-pulse bg-muted rounded-lg" />
-            }
-          >
+          <Suspense fallback={<div className="h-[350px] animate-pulse bg-muted rounded-lg" />}>
             <TrendChartSection userId={userId} baseCurrency={baseCurrency} />
           </Suspense>
         </div>

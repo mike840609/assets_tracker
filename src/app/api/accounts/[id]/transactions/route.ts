@@ -11,10 +11,7 @@ interface UnifiedRow {
   holdingId: string | null;
 }
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { searchParams } = new URL(request.url);
 
@@ -40,27 +37,39 @@ export async function GET(
   `;
 
   // Hydrate holding details only for the holding transactions on this page
-  const holdingIds = [...new Set(rows.filter(r => r.holdingId).map(r => r.holdingId as string))];
+  const holdingIds = [
+    ...new Set(rows.filter((r) => r.holdingId).map((r) => r.holdingId as string)),
+  ];
 
-  const holdingsMap = new Map<string, { symbol: string; name: string | null; currency: string; assetType: string }>();
+  const holdingsMap = new Map<
+    string,
+    { symbol: string; name: string | null; currency: string; assetType: string }
+  >();
   if (holdingIds.length > 0) {
     const holdings = await prisma.holding.findMany({
       where: { id: { in: holdingIds } },
       select: { id: true, symbol: true, name: true, currency: true, assetType: true },
     });
     for (const h of holdings) {
-      holdingsMap.set(h.id, { symbol: h.symbol, name: h.name, currency: h.currency, assetType: h.assetType });
+      holdingsMap.set(h.id, {
+        symbol: h.symbol,
+        name: h.name,
+        currency: h.currency,
+        assetType: h.assetType,
+      });
     }
   }
 
-  const result = rows.map(row => ({
+  const result = rows.map((row) => ({
     id: row.id,
     isCash: row.isCash,
     type: row.type,
     quantity: row.quantity,
     note: row.note,
     createdAt: row.createdAt,
-    ...(row.holdingId ? { holdingId: row.holdingId, holding: holdingsMap.get(row.holdingId) ?? null } : {}),
+    ...(row.holdingId
+      ? { holdingId: row.holdingId, holding: holdingsMap.get(row.holdingId) ?? null }
+      : {}),
   }));
 
   return ok(result);

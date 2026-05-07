@@ -31,7 +31,11 @@ async function HistoryContent() {
           <LargeTitleHeading>{t("title")}</LargeTitleHeading>
 
           <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
-            <LazyTrendChart baseCurrency={settings.baseCurrency} snapshots={snapshots} hideRangeFilter />
+            <LazyTrendChart
+              baseCurrency={settings.baseCurrency}
+              snapshots={snapshots}
+              hideRangeFilter
+            />
           </div>
 
           <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">

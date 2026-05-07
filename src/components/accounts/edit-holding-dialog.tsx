@@ -2,12 +2,7 @@
 
 import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,7 +38,9 @@ export function EditHoldingDialog({
   const [loading, setLoading] = useState(false);
   const [quantity, setQuantity] = useState(String(holding.quantity));
   const [name, setName] = useState(holding.name);
-  const [assetType, setAssetType] = useState<"STOCK" | "ETF" | "CRYPTO" | "MUTUAL_FUND" | "BOND" | "OTHER" | "OPTION">(holding.assetType);
+  const [assetType, setAssetType] = useState<
+    "STOCK" | "ETF" | "CRYPTO" | "MUTUAL_FUND" | "BOND" | "OTHER" | "OPTION"
+  >(holding.assetType);
   const isOption = holding.assetType === "OPTION";
   const optionDisplay = getOptionDisplay(holding);
 
@@ -67,7 +64,9 @@ export function EditHoldingDialog({
     const parsedQty = parseFloat(quantity);
     const minAllowed = isOption ? 0 : Number.MIN_VALUE;
     if (isNaN(parsedQty) || parsedQty < minAllowed) {
-      toast.error(isOption ? "Quantity must be 0 or greater" : "Quantity must be a positive number");
+      toast.error(
+        isOption ? "Quantity must be 0 or greater" : "Quantity must be a positive number",
+      );
       setLoading(false);
       return;
     }
@@ -105,11 +104,11 @@ export function EditHoldingDialog({
       toast.success("Holding updated");
       onClose();
       if (onSuccess) onSuccess();
-      startTransition(() => { router.refresh(); });
+      startTransition(() => {
+        router.refresh();
+      });
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update holding"
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to update holding");
     } finally {
       setLoading(false);
     }
@@ -135,9 +134,7 @@ export function EditHoldingDialog({
                 </Badge>
               </div>
               {optionDisplay && (
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {optionDisplay.long}
-                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">{optionDisplay.long}</p>
               )}
             </div>
             <Button
@@ -198,9 +195,7 @@ export function EditHoldingDialog({
               className="text-lg h-12"
             />
             {isOption && (
-              <p className="text-xs text-muted-foreground">
-                Set to 0 to close the position.
-              </p>
+              <p className="text-xs text-muted-foreground">Set to 0 to close the position.</p>
             )}
           </div>
 

@@ -20,7 +20,7 @@ export function PullToRefreshIndicator() {
         "md:hidden pointer-events-none fixed left-1/2 z-[60] flex items-center justify-center",
         "h-9 w-9 rounded-full bg-background/90 border border-border/50 shadow-md backdrop-blur-md",
         !refreshing && pull === 0 && "opacity-0",
-        isPulling ? "transition-none" : "transition-[transform,opacity] duration-300"
+        isPulling ? "transition-none" : "transition-[transform,opacity] duration-300",
       )}
       style={{
         top: 0,
@@ -36,7 +36,7 @@ export function PullToRefreshIndicator() {
           "h-4 w-4",
           refreshing && "animate-spin text-primary",
           !refreshing && armed && "text-primary",
-          !refreshing && !armed && "text-muted-foreground"
+          !refreshing && !armed && "text-muted-foreground",
         )}
         style={!refreshing ? { transform: `rotate(${progress * 270}deg)` } : undefined}
       />

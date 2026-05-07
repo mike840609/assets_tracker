@@ -37,7 +37,7 @@ export function ThemeToggle() {
             "inline-flex items-center justify-center rounded-md p-1.5 text-sm transition-all duration-200",
             theme === value
               ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
           title={label}
         >

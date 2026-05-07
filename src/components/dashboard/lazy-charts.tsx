@@ -16,17 +16,17 @@ function ChartSkeleton() {
   );
 }
 
-export const LazyTrendChart = dynamic(
-  () => import("./trend-chart").then((m) => m.TrendChart),
-  { ssr: false, loading: () => <ChartSkeleton /> }
-);
+export const LazyTrendChart = dynamic(() => import("./trend-chart").then((m) => m.TrendChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton />,
+});
 
 export const LazyAllocationChart = dynamic(
   () => import("./allocation-chart").then((m) => m.AllocationChart),
-  { loading: () => <ChartSkeleton /> }
+  { loading: () => <ChartSkeleton /> },
 );
 
 export const LazyCurrencyExposureChart = dynamic(
   () => import("./currency-exposure-chart").then((m) => m.CurrencyExposureChart),
-  { loading: () => <ChartSkeleton /> }
+  { loading: () => <ChartSkeleton /> },
 );

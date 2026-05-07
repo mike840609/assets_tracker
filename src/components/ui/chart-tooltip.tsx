@@ -26,7 +26,9 @@ export function ChartTooltipRow({
         )}
         <span className="text-muted-foreground truncate">{label}</span>
       </div>
-      <span className={`font-medium tabular-nums whitespace-nowrap ${valueClassName || "text-foreground"}`}>
+      <span
+        className={`font-medium tabular-nums whitespace-nowrap ${valueClassName || "text-foreground"}`}
+      >
         {value}
       </span>
     </div>
@@ -53,9 +55,7 @@ export function ChartTooltipContainer({
           {title}
         </div>
       )}
-      <div className="space-y-1">
-        {children}
-      </div>
+      <div className="space-y-1">{children}</div>
     </div>
   );
 }

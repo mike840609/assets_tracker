@@ -34,9 +34,13 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
 
   const getPercentage = (account: (typeof summary.accounts)[number]) => {
     if (account.type === "ASSET") {
-      return summary.totalAssets > 0 ? (account.totalValueInBaseCurrency / summary.totalAssets) * 100 : 0;
+      return summary.totalAssets > 0
+        ? (account.totalValueInBaseCurrency / summary.totalAssets) * 100
+        : 0;
     } else {
-      return summary.totalLiabilities > 0 ? (account.totalValueInBaseCurrency / summary.totalLiabilities) * 100 : 0;
+      return summary.totalLiabilities > 0
+        ? (account.totalValueInBaseCurrency / summary.totalLiabilities) * 100
+        : 0;
     }
   };
 
@@ -55,8 +59,12 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
         } else if (sortField === "percentage") {
           const getPct = (acc: typeof a) =>
             acc.type === "ASSET"
-              ? summary.totalAssets > 0 ? (acc.totalValueInBaseCurrency / summary.totalAssets) * 100 : 0
-              : summary.totalLiabilities > 0 ? (acc.totalValueInBaseCurrency / summary.totalLiabilities) * 100 : 0;
+              ? summary.totalAssets > 0
+                ? (acc.totalValueInBaseCurrency / summary.totalAssets) * 100
+                : 0
+              : summary.totalLiabilities > 0
+                ? (acc.totalValueInBaseCurrency / summary.totalLiabilities) * 100
+                : 0;
           comparison = getPct(a) - getPct(b);
         }
         return sortDirection === "asc" ? comparison : -comparison;
@@ -98,7 +106,9 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
 
     return (
       <div>
-        <p className={`text-xs font-semibold uppercase tracking-widest mb-2 px-1 flex items-center gap-1.5 opacity-70 ${accentClass}`}>
+        <p
+          className={`text-xs font-semibold uppercase tracking-widest mb-2 px-1 flex items-center gap-1.5 opacity-70 ${accentClass}`}
+        >
           <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
           {label}
         </p>
@@ -122,7 +132,9 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
                 <div className="flex items-center gap-2 shrink-0">
                   <div className="text-right">
                     <p className="text-sm font-medium tabular-nums">
-                      {privacyMode ? HIDDEN : formatCurrency(account.totalValueInBaseCurrency, summary.baseCurrency)}
+                      {privacyMode
+                        ? HIDDEN
+                        : formatCurrency(account.totalValueInBaseCurrency, summary.baseCurrency)}
                     </p>
                     <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
                       {privacyMode ? "—" : `${getPercentage(account).toFixed(1)}%`}
@@ -135,7 +147,9 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
           ))}
           <div className="h-px bg-border/60" />
           <div className="flex items-center justify-between px-4 py-3 bg-muted/20">
-            <span className="text-xs font-medium text-muted-foreground">{t("accountsSummary.total")}</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              {t("accountsSummary.total")}
+            </span>
             <span className={`text-sm font-semibold tabular-nums ${totalAccentClass}`}>
               {privacyMode ? HIDDEN : formatCurrency(totalDisplay, summary.baseCurrency)}
             </span>
@@ -149,7 +163,9 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
     <Card className="border-0 shadow-none bg-transparent">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-4">
-          <CardTitle className="text-lg font-semibold tracking-tight">{t("accountsSummary.title")}</CardTitle>
+          <CardTitle className="text-lg font-semibold tracking-tight">
+            {t("accountsSummary.title")}
+          </CardTitle>
           <div className="flex items-center gap-1 flex-shrink-0">
             {sortOptions.map(({ field, label }) => (
               <button
@@ -161,7 +177,8 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
-                {label}{sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
+                {label}
+                {sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
               </button>
             ))}
           </div>

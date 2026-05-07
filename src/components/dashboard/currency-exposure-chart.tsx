@@ -10,15 +10,15 @@ import { useChartAnimation } from "@/hooks/use-chart-animation";
 import type { NetWorthSummary } from "@/lib/types";
 
 const COLORS = [
-  "oklch(0.65 0.18 270)",  // Indigo
-  "oklch(0.72 0.17 310)",  // Fuchsia
-  "oklch(0.78 0.16 65)",   // Amber
-  "oklch(0.72 0.19 155)",  // Emerald
-  "oklch(0.70 0.15 220)",  // Sky blue
-  "oklch(0.68 0.14 25)",   // Coral
-  "oklch(0.75 0.12 180)",  // Teal
-  "oklch(0.60 0.16 330)",  // Rose
-  "oklch(0.80 0.14 100)",  // Lime
+  "oklch(0.65 0.18 270)", // Indigo
+  "oklch(0.72 0.17 310)", // Fuchsia
+  "oklch(0.78 0.16 65)", // Amber
+  "oklch(0.72 0.19 155)", // Emerald
+  "oklch(0.70 0.15 220)", // Sky blue
+  "oklch(0.68 0.14 25)", // Coral
+  "oklch(0.75 0.12 180)", // Teal
+  "oklch(0.60 0.16 330)", // Rose
+  "oklch(0.80 0.14 100)", // Lime
 ];
 
 export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary }) {
@@ -45,7 +45,16 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
 
   /* Custom shape function that expands the hovered slice */
   const renderShape = useCallback(
-    (props: { cx: number; cy: number; innerRadius: number; outerRadius: number; startAngle: number; endAngle: number; fill?: string; index: number }) => {
+    (props: {
+      cx: number;
+      cy: number;
+      innerRadius: number;
+      outerRadius: number;
+      startAngle: number;
+      endAngle: number;
+      fill?: string;
+      index: number;
+    }) => {
       const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, index } = props;
       const isActive = index === activeIndex;
       return (
@@ -67,7 +76,7 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
         />
       );
     },
-    [activeIndex]
+    [activeIndex],
   );
 
   return (
@@ -83,7 +92,9 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
         ) : !mounted ? (
           <div className="h-[280px]" />
         ) : (
-          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}>
+          <div
+            className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+          >
             {/* Chart on top, Legend below */}
             <div className="flex flex-col items-center">
               {/* Donut chart */}
@@ -92,7 +103,14 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                   <PieChart>
                     <defs>
                       {COLORS.map((color, index) => (
-                        <linearGradient key={`grad-${index}`} id={`expo-grad-${index}`} x1="0" y1="0" x2="1" y2="1">
+                        <linearGradient
+                          key={`grad-${index}`}
+                          id={`expo-grad-${index}`}
+                          x1="0"
+                          y1="0"
+                          x2="1"
+                          y2="1"
+                        >
                           <stop offset="0%" stopColor={color} stopOpacity={0.95} />
                           <stop offset="100%" stopColor={color} stopOpacity={0.65} />
                         </linearGradient>
@@ -118,12 +136,15 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                           if (viewBox && "cx" in viewBox && "cy" in viewBox) {
                             const activeItem = activeIndex >= 0 ? data[activeIndex] : null;
                             const displayPct = activeItem ? `${activeItem.percentage}%` : "100%";
-                            const displayLabel = activeItem
-                              ? activeItem.name
-                              : t("total");
+                            const displayLabel = activeItem ? activeItem.name : t("total");
 
                             return (
-                              <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                              <text
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
                                 <tspan
                                   x={viewBox.cx}
                                   y={(viewBox.cy || 0) - 6}
@@ -138,7 +159,9 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                                   className="fill-muted-foreground"
                                   style={{ fontSize: "10px" }}
                                 >
-                                  {displayLabel.length > 10 ? displayLabel.slice(0, 10) + "…" : displayLabel}
+                                  {displayLabel.length > 10
+                                    ? displayLabel.slice(0, 10) + "…"
+                                    : displayLabel}
                                 </tspan>
                               </text>
                             );
@@ -164,9 +187,7 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                     <div
                       key={item.name}
                       className={`group flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer transition-all duration-200 ${
-                        isActive
-                          ? "bg-accent/80 shadow-sm scale-[1.01]"
-                          : "hover:bg-accent/50"
+                        isActive ? "bg-accent/80 shadow-sm scale-[1.01]" : "hover:bg-accent/50"
                       }`}
                       onMouseEnter={() => setActiveIndex(index)}
                       onMouseLeave={() => setActiveIndex(-1)}
@@ -182,11 +203,13 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                         <span className="text-xs tabular-nums text-muted-foreground font-medium">
                           {privacyMode ? "••••" : formatCurrency(item.value, summary.baseCurrency)}
                         </span>
-                        <span className={`text-[11px] tabular-nums font-semibold px-1.5 py-0.5 rounded-full transition-colors duration-200 ${
-                          isActive
-                            ? "bg-foreground/10 text-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}>
+                        <span
+                          className={`text-[11px] tabular-nums font-semibold px-1.5 py-0.5 rounded-full transition-colors duration-200 ${
+                            isActive
+                              ? "bg-foreground/10 text-foreground"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
                           {item.percentage}%
                         </span>
                       </div>

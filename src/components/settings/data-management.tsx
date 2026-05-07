@@ -3,7 +3,13 @@
 import { useState, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { DownloadIcon, UploadIcon, Loader2Icon, AlertTriangleIcon, CheckCircleIcon } from "lucide-react";
+import {
+  DownloadIcon,
+  UploadIcon,
+  Loader2Icon,
+  AlertTriangleIcon,
+  CheckCircleIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -115,9 +121,7 @@ export function DataManagement() {
 
   return (
     <div className="space-y-3 w-full">
-      <h3 className="text-lg font-semibold text-foreground">
-        {t("title")}
-      </h3>
+      <h3 className="text-lg font-semibold text-foreground">{t("title")}</h3>
       <Card className="overflow-hidden p-0">
         <CardContent className="p-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
@@ -139,13 +143,11 @@ export function DataManagement() {
               {t("export")}
             </Button>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
             <div className="flex-1 space-y-1">
               <p className="text-sm font-medium">{t("import")}</p>
-              <p className="text-sm text-muted-foreground">
-                {t("importDescription")}
-              </p>
+              <p className="text-sm text-muted-foreground">{t("importDescription")}</p>
             </div>
             <div className="flex flex-col gap-2 w-full sm:w-auto">
               <input
@@ -202,8 +204,8 @@ export function DataManagement() {
         </DialogContent>
       </Dialog>
 
-      <Dialog 
-        open={showErrorDialog} 
+      <Dialog
+        open={showErrorDialog}
         onOpenChange={(open) => {
           setShowErrorDialog(open);
           if (!open) setImportError(null);
@@ -247,10 +249,7 @@ export function DataManagement() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              className="w-full"
-              onClick={() => window.location.reload()}
-            >
+            <Button className="w-full" onClick={() => window.location.reload()}>
               OK
             </Button>
           </DialogFooter>

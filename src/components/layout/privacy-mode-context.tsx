@@ -48,11 +48,7 @@ export function PrivacyModeProvider({ children }: { children: React.ReactNode })
     [mounted, privacyMode, togglePrivacyMode],
   );
 
-  return (
-    <PrivacyModeContext.Provider value={value}>
-      {children}
-    </PrivacyModeContext.Provider>
-  );
+  return <PrivacyModeContext.Provider value={value}>{children}</PrivacyModeContext.Provider>;
 }
 
 export function usePrivacyMode() {

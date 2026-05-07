@@ -38,7 +38,13 @@ interface HoldingRowProps {
   onDelete: (holdingId: string) => void;
 }
 
-export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, onDelete }: HoldingRowProps) {
+export function HoldingRow({
+  holding: h,
+  totalValue,
+  accountCurrency,
+  onEdit,
+  onDelete,
+}: HoldingRowProps) {
   const t = useTranslations();
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
@@ -71,9 +77,13 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
   const iconScale = useTransform(x, [0, -REVEAL_WIDTH], [0.65, 1.0], { clamp: true });
   // Edit button shrinks away in the danger zone
   const editOpacity = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [1, 0], { clamp: true });
-  const editWidth = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [ACTION_WIDTH, 0], { clamp: true });
+  const editWidth = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [ACTION_WIDTH, 0], {
+    clamp: true,
+  });
   // Delete icon grows in the danger zone
-  const deleteIconScale = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [1.0, 1.3], { clamp: true });
+  const deleteIconScale = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [1.0, 1.3], {
+    clamp: true,
+  });
   // Red edge tint on the row itself
   const dangerOpacity = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [0, 1], { clamp: true });
 
@@ -132,7 +142,10 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
         <motion.button
           className="flex items-center justify-center bg-blue-500 text-white text-xs font-medium overflow-hidden rounded-2xl my-1.5 active:brightness-90 transition-[filter]"
           style={{ opacity: editOpacity, width: editWidth, minWidth: 0 }}
-          onClick={() => { snapClose(); onEdit(h); }}
+          onClick={() => {
+            snapClose();
+            onEdit(h);
+          }}
           aria-label={t("common.edit")}
         >
           <motion.div className="flex flex-col items-center gap-1" style={{ scale: iconScale }}>
@@ -142,10 +155,16 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
         </motion.button>
         <button
           className="flex-1 flex items-center justify-center bg-destructive text-white text-xs font-medium rounded-2xl my-1.5 active:brightness-90 transition-[filter]"
-          onClick={() => { snapClose(); onDelete(h.id); }}
+          onClick={() => {
+            snapClose();
+            onDelete(h.id);
+          }}
           aria-label={t("common.delete")}
         >
-          <motion.div className="flex flex-col items-center gap-1" style={{ scale: deleteIconScale }}>
+          <motion.div
+            className="flex flex-col items-center gap-1"
+            style={{ scale: deleteIconScale }}
+          >
             <Trash2 className="h-4 w-4" />
             <span>{t("common.delete")}</span>
           </motion.div>
@@ -162,7 +181,9 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
         dragElastic={{ left: 0.12, right: 0.15 }}
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
-        onClick={() => { if (isOpen) snapClose(); }}
+        onClick={() => {
+          if (isOpen) snapClose();
+        }}
       >
         {/* Danger-zone red tint bleeds in from the right edge */}
         <motion.div
@@ -223,9 +244,7 @@ export function HoldingRow({ holding: h, totalValue, accountCurrency, onEdit, on
               <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(h)}>
-                {t("common.edit")}
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(h)}>{t("common.edit")}</DropdownMenuItem>
               <DropdownMenuItem className="text-destructive" onClick={() => onDelete(h.id)}>
                 {t("common.delete")}
               </DropdownMenuItem>

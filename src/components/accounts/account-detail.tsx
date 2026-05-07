@@ -19,7 +19,15 @@ import { useTranslations } from "next-intl";
 import type { SerializedAccountWithHoldings, SerializedHolding } from "@/lib/types";
 import { showUndoDeleteToast } from "@/lib/undo-delete";
 
-type HoldingSortField = "symbol" | "name" | "assetType" | "currency" | "quantity" | "currentPrice" | "marketValue" | "percentage";
+type HoldingSortField =
+  | "symbol"
+  | "name"
+  | "assetType"
+  | "currency"
+  | "quantity"
+  | "currentPrice"
+  | "marketValue"
+  | "percentage";
 type SortOrder = "asc" | "desc";
 
 export function AccountDetail({
@@ -72,23 +80,24 @@ export function AccountDetail({
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection(field === "name" || field === "symbol" || field === "assetType" || field === "currency" ? "asc" : "desc");
+      setSortDirection(
+        field === "name" || field === "symbol" || field === "assetType" || field === "currency"
+          ? "asc"
+          : "desc",
+      );
     }
   };
 
   const holdingsWithValue: HoldingWithPrice[] = account.holdings.map((h) => {
     const price = priceMap[h.symbol] ?? null;
     const hc = h.currency || "USD";
-    const rate = hc === account.currency ? 1 : ratesMap[`${hc}_${account.currency}`] ?? 1;
+    const rate = hc === account.currency ? 1 : (ratesMap[`${hc}_${account.currency}`] ?? 1);
     const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
     const marketValue = price !== null ? price * h.quantity * multiplier * rate : null;
     return { ...h, currentPrice: price, marketValue };
   });
 
-  const totalHoldingsValue = holdingsWithValue.reduce(
-    (sum, h) => sum + (h.marketValue ?? 0),
-    0
-  );
+  const totalHoldingsValue = holdingsWithValue.reduce((sum, h) => sum + (h.marketValue ?? 0), 0);
 
   const sortedHoldings = useMemo(() => {
     return [...holdingsWithValue].sort((a, b) => {
@@ -121,7 +130,6 @@ export function AccountDetail({
     });
   }, [holdingsWithValue, sortField, sortDirection]);
 
-
   const isBank = account.category === "BANK";
 
   async function saveBalance(newBalance: number, note?: string) {
@@ -132,7 +140,9 @@ export function AccountDetail({
     });
     setRefreshTrigger((prev) => prev + 1);
     toast.success(t("accountDetail.balanceUpdated"));
-    startTransition(() => { router.refresh(); });
+    startTransition(() => {
+      router.refresh();
+    });
   }
 
   async function handleNameSave() {
@@ -157,11 +167,11 @@ export function AccountDetail({
 
       toast.success(t("accountDetail.accountUpdated"));
       setIsEditingName(false);
-      startTransition(() => { router.refresh(); });
+      startTransition(() => {
+        router.refresh();
+      });
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t("accountDetail.updateFailed")
-      );
+      toast.error(error instanceof Error ? error.message : t("accountDetail.updateFailed"));
       setTempName(account.name);
       setIsEditingName(false);
     } finally {
@@ -178,7 +188,9 @@ export function AccountDetail({
       onCommit: async () => {
         try {
           await fetch(`/api/accounts/${account.id}`, { method: "DELETE" });
-          startTransition(() => { router.push("/accounts"); });
+          startTransition(() => {
+            router.push("/accounts");
+          });
         } catch {
           toast.error(t("accountDetail.deleteFailed"));
           setDeleting(false);
@@ -212,7 +224,9 @@ export function AccountDetail({
           // Keep holdingId in optimisticHiddenIds until router.refresh() delivers
           // fresh props — removing it early can cause a flash from stale data.
           setRefreshTrigger((prev) => prev + 1);
-          startTransition(() => { router.refresh(); });
+          startTransition(() => {
+            router.refresh();
+          });
         } catch {
           toast.error(t("accountDetail.holdingDeleteFailed"));
           setOptimisticHiddenIds((prev) => {
@@ -268,7 +282,8 @@ export function AccountDetail({
               {t(`common.${account.type.toLowerCase()}`, { defaultValue: account.type })}
             </Badge>
             <span className="text-muted-foreground">
-              {t(`categories.${account.category}`, { defaultValue: account.category })} · {account.currency}
+              {t(`categories.${account.category}`, { defaultValue: account.category })} ·{" "}
+              {account.currency}
             </span>
           </div>
         </div>
@@ -287,7 +302,9 @@ export function AccountDetail({
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-medium">{t("accountDetail.holdingsCount")}</CardTitle>
+              <CardTitle className="text-base font-medium">
+                {t("accountDetail.holdingsCount")}
+              </CardTitle>
               <Button size="sm" onClick={() => setShowHoldingForm(true)}>
                 {t("accountDetail.addHolding")}
               </Button>
@@ -305,9 +322,18 @@ export function AccountDetail({
                     <span className="text-xs text-muted-foreground shrink-0">Sort:</span>
                     {(
                       [
-                        { field: "marketValue" as HoldingSortField, label: t("accountDetail.colValue") },
-                        { field: "symbol" as HoldingSortField, label: t("accountDetail.colSymbol") },
-                        { field: "percentage" as HoldingSortField, label: t("accountDetail.colPercentage") },
+                        {
+                          field: "marketValue" as HoldingSortField,
+                          label: t("accountDetail.colValue"),
+                        },
+                        {
+                          field: "symbol" as HoldingSortField,
+                          label: t("accountDetail.colSymbol"),
+                        },
+                        {
+                          field: "percentage" as HoldingSortField,
+                          label: t("accountDetail.colPercentage"),
+                        },
                         { field: "quantity" as HoldingSortField, label: t("accountDetail.colQty") },
                       ] as { field: HoldingSortField; label: string }[]
                     ).map(({ field, label }) => (
@@ -320,25 +346,28 @@ export function AccountDetail({
                             : "border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40"
                         }`}
                       >
-                        {label}{sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
+                        {label}
+                        {sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
                       </button>
                     ))}
                   </div>
                 )}
                 <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
-                {sortedHoldings.filter((h) => !optimisticHiddenIds.has(h.id)).map((h, index) => (
-                  <div key={h.id}>
-                    {index > 0 && <div className="h-px bg-border/60 mx-4" />}
-                    <HoldingRow
-                      holding={h}
-                      totalValue={totalHoldingsValue}
-                      accountCurrency={account.currency}
-                      onEdit={setEditingHolding}
-                      onDelete={deleteHolding}
-                    />
-                  </div>
-                ))}
-              </div>
+                  {sortedHoldings
+                    .filter((h) => !optimisticHiddenIds.has(h.id))
+                    .map((h, index) => (
+                      <div key={h.id}>
+                        {index > 0 && <div className="h-px bg-border/60 mx-4" />}
+                        <HoldingRow
+                          holding={h}
+                          totalValue={totalHoldingsValue}
+                          accountCurrency={account.currency}
+                          onEdit={setEditingHolding}
+                          onDelete={deleteHolding}
+                        />
+                      </div>
+                    ))}
+                </div>
               </>
             )}
           </CardContent>

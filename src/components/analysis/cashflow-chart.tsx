@@ -73,7 +73,9 @@ function CashFlowTooltip({
             b.marketPerformance >= 0 ? "text-[var(--chart-1)]" : "text-destructive"
           }`}
         >
-          {privacyMode ? "***" : `${marketSign}${formatCurrency(b.marketPerformance, baseCurrency)}`}
+          {privacyMode
+            ? "***"
+            : `${marketSign}${formatCurrency(b.marketPerformance, baseCurrency)}`}
         </span>
       </div>
       <div className="flex justify-between gap-4 border-t border-border/60 pt-1">
@@ -83,7 +85,9 @@ function CashFlowTooltip({
             b.deltaNetWorth >= 0 ? "text-[var(--chart-1)]" : "text-destructive"
           }`}
         >
-          {privacyMode ? "***" : (
+          {privacyMode ? (
+            "***"
+          ) : (
             <>
               {b.deltaNetWorth >= 0 ? "+" : ""}
               {formatCurrency(b.deltaNetWorth, baseCurrency)}
@@ -122,11 +126,19 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
         ) : !mounted ? (
           <div className="h-[280px]" />
         ) : (
-          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}>
+          <div
+            className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+          >
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={buckets} margin={{ top: 10, right: 4, left: 0, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="label" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
                 <YAxis
                   width={50}
                   tick={{ fontSize: 12 }}
@@ -134,10 +146,17 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
                 />
                 <Tooltip
                   cursor={{ fill: "var(--muted)", opacity: 0.3 }}
-                  content={<CashFlowTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />}
+                  content={
+                    <CashFlowTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />
+                  }
                 />
                 {/* Contributions bar */}
-                <Bar dataKey="contributions" name={t("seriesContributions")} stackId="a" radius={[0, 0, 0, 0]}>
+                <Bar
+                  dataKey="contributions"
+                  name={t("seriesContributions")}
+                  stackId="a"
+                  radius={[0, 0, 0, 0]}
+                >
                   {buckets.map((b) => (
                     <Cell
                       key={`contrib-${b.monthKey}`}
@@ -147,7 +166,12 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
                   ))}
                 </Bar>
                 {/* Market performance bar */}
-                <Bar dataKey="marketPerformance" name={t("seriesMarket")} stackId="a" radius={[4, 4, 0, 0]}>
+                <Bar
+                  dataKey="marketPerformance"
+                  name={t("seriesMarket")}
+                  stackId="a"
+                  radius={[4, 4, 0, 0]}
+                >
                   {buckets.map((b) => (
                     <Cell
                       key={`market-${b.monthKey}`}

@@ -15,13 +15,9 @@ import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
 
-const AccountForm = dynamic(
-  () => import("./account-form").then((m) => m.AccountForm)
-);
+const AccountForm = dynamic(() => import("./account-form").then((m) => m.AccountForm));
 
-const QuickAddHolding = dynamic(
-  () => import("./quick-add-holding").then((m) => m.QuickAddHolding)
-);
+const QuickAddHolding = dynamic(() => import("./quick-add-holding").then((m) => m.QuickAddHolding));
 
 const HIDDEN = "***";
 
@@ -38,31 +34,74 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  BANK: { bg: "bg-blue-50 dark:bg-blue-950/60", border: "border-blue-200 dark:border-blue-800/40", text: "text-blue-700 dark:text-blue-300" },
-  BROKERAGE: { bg: "bg-emerald-50 dark:bg-emerald-950/60", border: "border-emerald-200 dark:border-emerald-800/40", text: "text-emerald-700 dark:text-emerald-300" },
-  CRYPTO_WALLET: { bg: "bg-amber-50 dark:bg-amber-950/60", border: "border-amber-200 dark:border-amber-800/40", text: "text-amber-700 dark:text-amber-300" },
-  PROPERTY: { bg: "bg-violet-50 dark:bg-violet-950/60", border: "border-violet-200 dark:border-violet-800/40", text: "text-violet-700 dark:text-violet-300" },
-  VEHICLE: { bg: "bg-slate-50 dark:bg-slate-950/60", border: "border-slate-200 dark:border-slate-800/40", text: "text-slate-700 dark:text-slate-300" },
-  CREDIT_CARD: { bg: "bg-red-50 dark:bg-red-950/60", border: "border-red-200 dark:border-red-800/40", text: "text-red-700 dark:text-red-300" },
-  LOAN: { bg: "bg-orange-50 dark:bg-orange-950/60", border: "border-orange-200 dark:border-orange-800/40", text: "text-orange-700 dark:text-orange-300" },
-  MORTGAGE: { bg: "bg-pink-50 dark:bg-pink-950/60", border: "border-pink-200 dark:border-pink-800/40", text: "text-pink-700 dark:text-pink-300" },
-  OTHER: { bg: "bg-gray-50 dark:bg-gray-950/60", border: "border-gray-200 dark:border-gray-800/40", text: "text-gray-700 dark:text-gray-300" },
+  BANK: {
+    bg: "bg-blue-50 dark:bg-blue-950/60",
+    border: "border-blue-200 dark:border-blue-800/40",
+    text: "text-blue-700 dark:text-blue-300",
+  },
+  BROKERAGE: {
+    bg: "bg-emerald-50 dark:bg-emerald-950/60",
+    border: "border-emerald-200 dark:border-emerald-800/40",
+    text: "text-emerald-700 dark:text-emerald-300",
+  },
+  CRYPTO_WALLET: {
+    bg: "bg-amber-50 dark:bg-amber-950/60",
+    border: "border-amber-200 dark:border-amber-800/40",
+    text: "text-amber-700 dark:text-amber-300",
+  },
+  PROPERTY: {
+    bg: "bg-violet-50 dark:bg-violet-950/60",
+    border: "border-violet-200 dark:border-violet-800/40",
+    text: "text-violet-700 dark:text-violet-300",
+  },
+  VEHICLE: {
+    bg: "bg-slate-50 dark:bg-slate-950/60",
+    border: "border-slate-200 dark:border-slate-800/40",
+    text: "text-slate-700 dark:text-slate-300",
+  },
+  CREDIT_CARD: {
+    bg: "bg-red-50 dark:bg-red-950/60",
+    border: "border-red-200 dark:border-red-800/40",
+    text: "text-red-700 dark:text-red-300",
+  },
+  LOAN: {
+    bg: "bg-orange-50 dark:bg-orange-950/60",
+    border: "border-orange-200 dark:border-orange-800/40",
+    text: "text-orange-700 dark:text-orange-300",
+  },
+  MORTGAGE: {
+    bg: "bg-pink-50 dark:bg-pink-950/60",
+    border: "border-pink-200 dark:border-pink-800/40",
+    text: "text-pink-700 dark:text-pink-300",
+  },
+  OTHER: {
+    bg: "bg-gray-50 dark:bg-gray-950/60",
+    border: "border-gray-200 dark:border-gray-800/40",
+    text: "text-gray-700 dark:text-gray-300",
+  },
 };
 
 const CATEGORY_ORDER = [
-  "BANK", "BROKERAGE", "CRYPTO_WALLET", "PROPERTY", "VEHICLE",
-  "CREDIT_CARD", "LOAN", "MORTGAGE", "OTHER",
+  "BANK",
+  "BROKERAGE",
+  "CRYPTO_WALLET",
+  "PROPERTY",
+  "VEHICLE",
+  "CREDIT_CARD",
+  "LOAN",
+  "MORTGAGE",
+  "OTHER",
 ];
 
 function getAccountValue(
   account: SerializedAccountWithHoldings,
   priceMap: Record<string, number>,
-  ratesMap: Record<string, number>
+  ratesMap: Record<string, number>,
 ): number {
   const holdingsValue = account.holdings.reduce((sum, h) => {
     const price = (priceMap || {})[h.symbol] ?? 0;
     const hc = h.currency || "USD";
-    const rate = hc === account.currency ? 1 : ratesMap[`${hc}_${account.currency}`] ?? 1;
+    const rate = hc === account.currency ? 1 : (ratesMap[`${hc}_${account.currency}`] ?? 1);
     const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
     return sum + price * h.quantity * multiplier * rate;
   }, 0);
@@ -113,8 +152,10 @@ export function AccountsList({
       if (!grouped[account.category]) grouped[account.category] = [];
       grouped[account.category].push(account);
     }
-    return CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0)
-      .map((cat) => ({ category: cat, accounts: grouped[cat] }));
+    return CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0).map((cat) => ({
+      category: cat,
+      accounts: grouped[cat],
+    }));
   }, [assets]);
 
   const liabilitiesByCategory = useMemo(() => {
@@ -123,8 +164,10 @@ export function AccountsList({
       if (!grouped[account.category]) grouped[account.category] = [];
       grouped[account.category].push(account);
     }
-    return CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0)
-      .map((cat) => ({ category: cat, accounts: grouped[cat] }));
+    return CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0).map((cat) => ({
+      category: cat,
+      accounts: grouped[cat],
+    }));
   }, [liabilities]);
 
   function toggleCategory(type: string, category: string) {
@@ -199,7 +242,9 @@ export function AccountsList({
         <div className="flex items-center gap-2">
           {isSelecting && (
             <Button variant="destructive" size="sm" onClick={deleteSelected} disabled={deleting}>
-              {deleting ? t("accountsList.deleting") : t("accountsList.deleteButton", { count: selected.size })}
+              {deleting
+                ? t("accountsList.deleting")
+                : t("accountsList.deleteButton", { count: selected.size })}
             </Button>
           )}
           <Button variant="outline" onClick={() => setShowQuickAdd(true)}>
@@ -210,9 +255,7 @@ export function AccountsList({
       </div>
 
       {accounts.length === 0 && (
-        <p className="text-center text-muted-foreground py-12">
-          {t("accountsList.noAccounts")}
-        </p>
+        <p className="text-center text-muted-foreground py-12">{t("accountsList.noAccounts")}</p>
       )}
 
       {assetsByCategory.length > 0 && (
@@ -319,7 +362,10 @@ function CategorySection({
     let total = 0;
     for (const account of accounts) {
       const value = getAccountValue(account, priceMap, ratesMap);
-      const rate = account.currency === baseCurrency ? 1 : ratesMap[`${account.currency}_${baseCurrency}`] ?? 1;
+      const rate =
+        account.currency === baseCurrency
+          ? 1
+          : (ratesMap[`${account.currency}_${baseCurrency}`] ?? 1);
       total += value * rate;
     }
     return total;
@@ -328,7 +374,9 @@ function CategorySection({
   const totalHoldings = accounts.reduce((sum, a) => sum + a.holdings.length, 0);
 
   return (
-    <div className={`rounded-xl border overflow-hidden transition-all duration-300 ${colors.border} ${isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"}`}>
+    <div
+      className={`rounded-xl border overflow-hidden transition-all duration-300 ${colors.border} ${isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"}`}
+    >
       <button
         onClick={onToggleExpand}
         className={`w-full text-left ${isCompact ? "px-4 py-2.5" : "px-5 py-4"} flex items-center justify-between transition-colors ${colors.bg} hover:brightness-95 dark:hover:brightness-110`}
@@ -340,7 +388,10 @@ function CategorySection({
             <p className="text-xs text-muted-foreground mt-0.5">
               {t("accountsList.nAccounts", { count: accounts.length })}
               {totalHoldings > 0 && category !== "BANK" && (
-                <span>{" · "}{t("accountsList.nHoldings", { count: totalHoldings })}</span>
+                <span>
+                  {" · "}
+                  {t("accountsList.nHoldings", { count: totalHoldings })}
+                </span>
               )}
             </p>
           </div>
@@ -363,9 +414,13 @@ function CategorySection({
         </div>
       </button>
 
-      <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+      <div
+        className={`grid transition-all duration-300 ease-in-out ${isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+      >
         <div className="overflow-hidden">
-          <div className={`${isCompact ? "px-3 py-2.5 space-y-2" : "px-4 py-4 space-y-3"} bg-background/50`}>
+          <div
+            className={`${isCompact ? "px-3 py-2.5 space-y-2" : "px-4 py-4 space-y-3"} bg-background/50`}
+          >
             {accounts.map((account) => (
               <AccountCardWithHoldings
                 key={account.id}
@@ -407,13 +462,14 @@ function AccountCardWithHoldings({
   const isCompact = density === "compact";
   const displayValue = getAccountValue(account, priceMap, ratesMap);
   const displayCurrency = account.currency;
-  const rate = displayCurrency === baseCurrency ? 1 : (ratesMap[`${displayCurrency}_${baseCurrency}`] ?? 1);
+  const rate =
+    displayCurrency === baseCurrency ? 1 : (ratesMap[`${displayCurrency}_${baseCurrency}`] ?? 1);
   const convertedValue = displayValue * rate;
 
   const holdingsWithValue = account.holdings.map((h) => {
     const price = priceMap[h.symbol] ?? null;
     const hc = h.currency || "USD";
-    const rate = hc === account.currency ? 1 : ratesMap[`${hc}_${account.currency}`] ?? 1;
+    const rate = hc === account.currency ? 1 : (ratesMap[`${hc}_${account.currency}`] ?? 1);
     const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
     const marketValue = price !== null ? price * h.quantity * multiplier * rate : null;
     return { ...h, currentPrice: price, marketValue };
@@ -428,7 +484,9 @@ function AccountCardWithHoldings({
         <Checkbox checked={isSelected} onCheckedChange={onToggle} />
       </div>
       <Link href={`/accounts/${account.id}`} transitionTypes={["nav-forward"]}>
-        <Card className={`hover:shadow-md transition-all cursor-pointer ${isSelected ? "ring-2 ring-primary" : ""}`}>
+        <Card
+          className={`hover:shadow-md transition-all cursor-pointer ${isSelected ? "ring-2 ring-primary" : ""}`}
+        >
           <CardContent className={isCompact ? "pt-3 pb-2" : "pt-5 pb-4"}>
             <div className="flex items-start justify-between">
               <div className={isSelecting ? "pl-6" : "group-hover:pl-6 transition-all"}>
@@ -439,14 +497,21 @@ function AccountCardWithHoldings({
                   <p className="text-lg font-bold tabular-nums text-foreground">
                     {privacyMode ? HIDDEN : formatCurrency(convertedValue, baseCurrency)}
                   </p>
-                  <Badge variant="secondary" className="bg-foreground text-background hover:bg-foreground/90">{baseCurrency}</Badge>
+                  <Badge
+                    variant="secondary"
+                    className="bg-foreground text-background hover:bg-foreground/90"
+                  >
+                    {baseCurrency}
+                  </Badge>
                 </div>
                 {displayCurrency !== baseCurrency && (
                   <div className="flex items-center gap-2 mt-1">
                     <p className="text-sm font-medium text-muted-foreground tabular-nums">
                       {privacyMode ? HIDDEN : formatCurrency(displayValue, displayCurrency)}
                     </p>
-                    <span className="text-xs font-semibold text-muted-foreground uppercase">{displayCurrency}</span>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">
+                      {displayCurrency}
+                    </span>
                   </div>
                 )}
               </div>
@@ -456,9 +521,14 @@ function AccountCardWithHoldings({
               <div className={`mt-3 ${isSelecting ? "pl-6" : "group-hover:pl-6 transition-all"}`}>
                 <div className="space-y-1.5">
                   {holdingsWithValue.map((h) => (
-                    <div key={h.id} className="flex items-center justify-between py-1.5 border-t border-border/40 first:border-t-0">
+                    <div
+                      key={h.id}
+                      className="flex items-center justify-between py-1.5 border-t border-border/40 first:border-t-0"
+                    >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs font-mono font-medium text-muted-foreground w-16 flex-shrink-0 truncate">{h.symbol}</span>
+                        <span className="text-xs font-mono font-medium text-muted-foreground w-16 flex-shrink-0 truncate">
+                          {h.symbol}
+                        </span>
                         <span className="text-sm truncate">{h.name}</span>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 text-right">
@@ -466,7 +536,11 @@ function AccountCardWithHoldings({
                           {formatQuantity(h.quantity, h.assetType)}
                         </span>
                         <span className="text-sm font-medium tabular-nums w-20 text-right">
-                          {privacyMode ? HIDDEN : h.marketValue !== null ? formatCurrency(h.marketValue, account.currency) : "—"}
+                          {privacyMode
+                            ? HIDDEN
+                            : h.marketValue !== null
+                              ? formatCurrency(h.marketValue, account.currency)
+                              : "—"}
                         </span>
                       </div>
                     </div>

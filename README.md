@@ -109,12 +109,16 @@ Vercel preview deployments use a **separate Neon branch** so they never touch pr
 Tracking net worth across multiple currencies and time periods is complex. This project uses a **Lossless Snapshot** architecture to ensure your history remains accurate even if you change your base currency.
 
 ### 1. Snapshot Creation (`snapshot-service.ts`)
+
 When a snapshot is taken (manually or via Cron), the system:
+
 - Calculates your current net worth in your current **Base Currency**.
 - Stores a **Lossless Breakdown** in a JSON field, recording every account's **original balance** and **original currency**.
 
 ### 2. History Normalization (`history-service.ts`)
+
 When you view your history chart or table, the system:
+
 - Fetches all historical snapshots for your user ID.
 - Identifies your current preferred **Base Currency** from settings.
 - **On-the-fly Conversion**: For each snapshot, it converts every account balance from its original currency to your current base currency using the **latest available exchange rates**.

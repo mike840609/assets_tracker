@@ -17,14 +17,17 @@ const eslintConfig = defineConfig([
   // Allow _-prefixed variables to be unused (standard convention for intentionally unused bindings)
   {
     rules: {
-      "@typescript-eslint/no-unused-vars": ["warn", {
-        vars: "all",
-        args: "after-used",
-        varsIgnorePattern: "^_",
-        argsIgnorePattern: "^_",
-        destructuredArrayIgnorePattern: "^_",
-        caughtErrorsIgnorePattern: "^_",
-      }],
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          vars: "all",
+          args: "after-used",
+          varsIgnorePattern: "^_",
+          argsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
     },
   },
   // Disable ESLint rules that conflict with Prettier; must be last.

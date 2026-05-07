@@ -36,12 +36,8 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
               <thead>
                 <tr className="border-b border-border/60 text-muted-foreground text-xs">
                   <th className="pb-2 text-left font-medium">{t("topMoversAccount")}</th>
-                  <th className="pb-2 text-right font-medium tabular-nums">
-                    {t("tooltipStart")}
-                  </th>
-                  <th className="pb-2 text-right font-medium tabular-nums">
-                    {t("tooltipEnd")}
-                  </th>
+                  <th className="pb-2 text-right font-medium tabular-nums">{t("tooltipStart")}</th>
+                  <th className="pb-2 text-right font-medium tabular-nums">{t("tooltipEnd")}</th>
                   <th className="pb-2 text-right font-medium tabular-nums">
                     {t("topMoversChange")}
                   </th>
@@ -50,9 +46,7 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
               <tbody>
                 {movers.map((m) => {
                   const isPositive = m.absoluteChange >= 0;
-                  const changeColor = isPositive
-                    ? "text-[var(--chart-1)]"
-                    : "text-destructive";
+                  const changeColor = isPositive ? "text-[var(--chart-1)]" : "text-destructive";
                   const sign = isPositive ? "+" : "";
                   const pct =
                     m.percentChange === null
@@ -72,15 +66,21 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
                           })}
                         </div>
                       </td>
-                      <td className={`${isCompact ? "py-1.5" : "py-2.5"} text-right tabular-nums text-muted-foreground`}>
+                      <td
+                        className={`${isCompact ? "py-1.5" : "py-2.5"} text-right tabular-nums text-muted-foreground`}
+                      >
                         {privacyMode ? "***" : formatCurrency(m.startValue, baseCurrency)}
                       </td>
                       <td className={`${isCompact ? "py-1.5" : "py-2.5"} text-right tabular-nums`}>
                         {privacyMode ? "***" : formatCurrency(m.endValue, baseCurrency)}
                       </td>
-                      <td className={`${isCompact ? "py-1.5" : "py-2.5"} text-right tabular-nums font-medium ${changeColor}`}>
+                      <td
+                        className={`${isCompact ? "py-1.5" : "py-2.5"} text-right tabular-nums font-medium ${changeColor}`}
+                      >
                         <div>
-                          {privacyMode ? "***" : (
+                          {privacyMode ? (
+                            "***"
+                          ) : (
                             <>
                               {sign}
                               {formatCurrency(m.absoluteChange, baseCurrency)}

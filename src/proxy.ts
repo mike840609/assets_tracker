@@ -8,7 +8,10 @@ const { auth } = NextAuth(authConfig);
 // R3 — Inline rate limiter for /api/auth/* (20 req/min per IP).
 // Inlined here because Edge middleware runs in its own isolated module graph.
 // ---------------------------------------------------------------------------
-interface _RLEntry { count: number; resetAt: number }
+interface _RLEntry {
+  count: number;
+  resetAt: number;
+}
 const _authRLStore = new Map<string, _RLEntry>();
 
 function _authRateLimit(request: Request): Response | null {
@@ -26,16 +29,13 @@ function _authRateLimit(request: Request): Response | null {
   entry.count += 1;
   if (entry.count > limit) {
     const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-    return new Response(
-      JSON.stringify({ error: { message: "Too many requests" } }),
-      {
-        status: 429,
-        headers: {
-          "Content-Type": "application/json",
-          "Retry-After": String(retryAfter),
-        },
-      }
-    );
+    return new Response(JSON.stringify({ error: { message: "Too many requests" } }), {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json",
+        "Retry-After": String(retryAfter),
+      },
+    });
   }
   return null;
 }
@@ -78,5 +78,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!api/cron|_next/static|_next/image|favicon.ico|apple-icon|icon|opengraph-image|twitter-image).*)"],
+  matcher: [
+    "/((?!api/cron|_next/static|_next/image|favicon.ico|apple-icon|icon|opengraph-image|twitter-image).*)",
+  ],
 };

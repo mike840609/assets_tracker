@@ -46,7 +46,10 @@ export default function AccountsLoading() {
                   {i !== 0 && (
                     <div className="mt-3 space-y-2">
                       {[...Array(2)].map((_, k) => (
-                        <div key={k} className="flex justify-between py-1.5 border-t border-border/30 first:border-0">
+                        <div
+                          key={k}
+                          className="flex justify-between py-1.5 border-t border-border/30 first:border-0"
+                        >
                           <div className="h-3.5 w-28 rounded bg-muted/40" />
                           <div className="h-3.5 w-16 rounded bg-muted/40" />
                         </div>

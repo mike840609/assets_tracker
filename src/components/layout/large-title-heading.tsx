@@ -30,10 +30,10 @@ export function LargeTitleHeading({ children, className }: Props) {
     // rootMargin shrinks the effective viewport from the top by 64 px so the
     // element is considered "not visible" the moment it slides behind the
     // ~56 px sticky header (plus a small buffer).
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsVisible(entry.isIntersecting),
-      { rootMargin: "-64px 0px 0px 0px", threshold: 0 }
-    );
+    const observer = new IntersectionObserver(([entry]) => setIsVisible(entry.isIntersecting), {
+      rootMargin: "-64px 0px 0px 0px",
+      threshold: 0,
+    });
 
     observer.observe(el);
     return () => observer.disconnect();
@@ -45,7 +45,7 @@ export function LargeTitleHeading({ children, className }: Props) {
       className={cn(
         // mobile: iOS-style large title; desktop: existing size
         "text-4xl md:text-3xl font-bold tracking-tight text-foreground",
-        className
+        className,
       )}
     >
       {children}

@@ -1,7 +1,7 @@
-import { defineConfig, devices } from "@playwright/test"
+import { defineConfig, devices } from "@playwright/test";
 
-const BASE_URL = process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://localhost:3000"
-const E2E_PASSWORD = process.env.E2E_PASSWORD ?? "e2e-smoke-test"
+const BASE_URL = process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://localhost:3000";
+const E2E_PASSWORD = process.env.E2E_PASSWORD ?? "e2e-smoke-test";
 
 export default defineConfig({
   globalSetup: "./tests/e2e/global-setup",
@@ -41,4 +41,4 @@ export default defineConfig({
           },
         },
       }),
-})
+});

@@ -11,10 +11,12 @@ import { hapticTick } from "@/lib/haptics";
 function getRelativeTime(dateString: string, locale: string) {
   const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   // Parse as local noon to avoid UTC-midnight causing off-by-one-day in non-UTC timezones
-  const localDate = dateString.includes("T") ? new Date(dateString) : new Date(`${dateString}T12:00:00`);
+  const localDate = dateString.includes("T")
+    ? new Date(dateString)
+    : new Date(`${dateString}T12:00:00`);
   const diffInSeconds = Math.round((localDate.getTime() - Date.now()) / 1000);
   const absDiff = Math.abs(diffInSeconds);
-  
+
   if (absDiff < 60) return rtf.format(Math.sign(diffInSeconds) * absDiff, "second");
   if (absDiff < 3600) return rtf.format(Math.round(diffInSeconds / 60), "minute");
   if (absDiff < 86400) return rtf.format(Math.round(diffInSeconds / 3600), "hour");
@@ -29,10 +31,7 @@ interface DashboardActionsProps {
   lastSnapshotDate?: string | null;
 }
 
-export function DashboardActions({
-  lastPriceUpdate,
-  lastSnapshotDate,
-}: DashboardActionsProps) {
+export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: DashboardActionsProps) {
   const router = useRouter();
   const t = useTranslations("dashboardActions");
   const locale = useLocale();
@@ -57,18 +56,16 @@ export function DashboardActions({
   }, [router, t]);
 
   useEffect(() => {
-    const handler = () => { void handleRefreshPrices(); };
+    const handler = () => {
+      void handleRefreshPrices();
+    };
     window.addEventListener("prices:refresh", handler);
     return () => window.removeEventListener("prices:refresh", handler);
   }, [handleRefreshPrices]);
 
-  const priceAge = lastPriceUpdate
-    ? getRelativeTime(lastPriceUpdate, locale)
-    : null;
+  const priceAge = lastPriceUpdate ? getRelativeTime(lastPriceUpdate, locale) : null;
 
-  const snapshotAge = lastSnapshotDate
-    ? getRelativeTime(lastSnapshotDate, locale)
-    : null;
+  const snapshotAge = lastSnapshotDate ? getRelativeTime(lastSnapshotDate, locale) : null;
 
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">

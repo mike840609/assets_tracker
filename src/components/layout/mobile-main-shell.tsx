@@ -13,7 +13,7 @@ export function MobileMainShell({ children }: { children: React.ReactNode }) {
     <main
       className={cn(
         "flex-1 overflow-y-auto overflow-x-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 relative w-full",
-        isPulling ? "transition-none" : "transition-transform duration-300"
+        isPulling ? "transition-none" : "transition-transform duration-300",
       )}
       style={offset > 0 ? { transform: `translateY(${offset}px)` } : undefined}
     >

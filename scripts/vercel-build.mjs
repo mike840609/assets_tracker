@@ -1,9 +1,9 @@
-import { spawnSync } from 'node:child_process';
+import { spawnSync } from "node:child_process";
 
 function run(command, args, { allowFailure = false } = {}) {
   const result = spawnSync(command, args, {
-    stdio: 'inherit',
-    shell: process.platform === 'win32',
+    stdio: "inherit",
+    shell: process.platform === "win32",
     env: process.env,
   });
 
@@ -18,15 +18,15 @@ function run(command, args, { allowFailure = false } = {}) {
   return result.status ?? 1;
 }
 
-const shouldAttemptMigrate = process.env.SKIP_PRISMA_MIGRATE_DEPLOY !== '1';
+const shouldAttemptMigrate = process.env.SKIP_PRISMA_MIGRATE_DEPLOY !== "1";
 
 if (shouldAttemptMigrate) {
-  const migrateStatus = run('prisma', ['migrate', 'deploy'], { allowFailure: true });
+  const migrateStatus = run("prisma", ["migrate", "deploy"], { allowFailure: true });
 
   if (migrateStatus !== 0) {
-    console.warn('\n[build:vercel] prisma migrate deploy failed; continuing with Next.js build.');
-    console.warn('[build:vercel] Set SKIP_PRISMA_MIGRATE_DEPLOY=1 to skip migration entirely.\n');
+    console.warn("\n[build:vercel] prisma migrate deploy failed; continuing with Next.js build.");
+    console.warn("[build:vercel] Set SKIP_PRISMA_MIGRATE_DEPLOY=1 to skip migration entirely.\n");
   }
 }
 
-run('next', ['build']);
+run("next", ["build"]);

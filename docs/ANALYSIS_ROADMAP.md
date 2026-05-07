@@ -4,14 +4,14 @@ Roadmap for the `/analysis` tab introduced in `feat: add Analysis tab with month
 
 ## Legend
 
-| Symbol | Meaning |
-| --- | --- |
-| 🔴 | High impact |
-| 🟡 | Medium impact |
-| 🟢 | Low impact |
-| ✅ | Shipped |
-| 🚧 | In progress |
-| ❌ | Not started |
+| Symbol | Meaning       |
+| ------ | ------------- |
+| 🔴     | High impact   |
+| 🟡     | Medium impact |
+| 🟢     | Low impact    |
+| ✅     | Shipped       |
+| 🚧     | In progress   |
+| ❌     | Not started   |
 
 ---
 
@@ -19,14 +19,14 @@ Roadmap for the `/analysis` tab introduced in `feat: add Analysis tab with month
 
 The foundation: turn existing `NetWorthSnapshot` data into month-over-month insight.
 
-| # | Feature | Impact | Status |
-| --- | --- | --- | --- |
-| 1 | `/analysis` route wired into sidebar + mobile nav | 🔴 | ✅ |
-| 2 | Monthly Net Worth Change bar chart (green/red per sign) | 🔴 | ✅ |
-| 3 | Assets vs. Liabilities by Month grouped bar chart | 🟡 | ✅ |
-| 4 | KPI tiles: Best / Worst / Avg monthly Δ, YTD growth | 🟡 | ✅ |
-| 5 | Range selector (6M / 1Y / 2Y / All), default 1Y | 🟡 | ✅ |
-| 6 | i18n for en-US and zh-TW | 🟢 | ✅ |
+| #   | Feature                                                 | Impact | Status |
+| --- | ------------------------------------------------------- | ------ | ------ |
+| 1   | `/analysis` route wired into sidebar + mobile nav       | 🔴     | ✅     |
+| 2   | Monthly Net Worth Change bar chart (green/red per sign) | 🔴     | ✅     |
+| 3   | Assets vs. Liabilities by Month grouped bar chart       | 🟡     | ✅     |
+| 4   | KPI tiles: Best / Worst / Avg monthly Δ, YTD growth     | 🟡     | ✅     |
+| 5   | Range selector (6M / 1Y / 2Y / All), default 1Y         | 🟡     | ✅     |
+| 6   | i18n for en-US and zh-TW                                | 🟢     | ✅     |
 
 **Reusable primitives created**: `aggregateMonthlyChange()` and `computeKpis()` in `src/lib/services/analysis-service.ts`, the `MonthlyBucket` type, `formatMonthLabel()`. Phase 2 items should extend these rather than re-roll their own aggregation.
 
@@ -50,7 +50,7 @@ Split each month's Δ net worth into **contributions** (money the user actually 
   - New service fn `getMonthlyCashFlow(userId, baseCurrency, from, to)` in `analysis-service.ts` that queries both transaction tables grouped by month and converts each line to `baseCurrency` via `resolveRate()`.
   - New client component `src/components/analysis/cashflow-chart.tsx`.
   - Add to `AnalysisView` below the existing two charts.
-- **Risks**: historical transactions predate the current base currency — need to pull the FX rate *at transaction time* (not today's rate). Start with today's rate for v1 and document the drift, then layer in historical rates later.
+- **Risks**: historical transactions predate the current base currency — need to pull the FX rate _at transaction time_ (not today's rate). Start with today's rate for v1 and document the drift, then layer in historical rates later.
 - **i18n keys**: `analysis.cashFlow`, `analysis.seriesContributions`, `analysis.seriesMarket`.
 
 ### 2.2 Category Trend Over Time — 🟡 ✅
@@ -93,6 +93,7 @@ Let users pick arbitrary `from` / `to` dates instead of fixed 6M / 1Y / 2Y / All
 ### 3.2 Yearly Summary & YoY Comparison — 🟡
 
 A second sub-view (tab switcher inside `/analysis`) that:
+
 - Aggregates by year instead of month.
 - Shows year-over-year % growth.
 - Side-by-side bar comparison: "this year vs. last year, same months so far".
@@ -129,6 +130,7 @@ Line chart extending into the future based on trailing-12-month average contribu
 ### 4.2 Goal Tracking (FIRE / Milestones) — 🟡
 
 Users set a target net worth (e.g., $1M) and an optional date. Show:
+
 - Progress bar on the Analysis tab.
 - Projected hit date vs. target date.
 - Required monthly contribution to hit the target on time.

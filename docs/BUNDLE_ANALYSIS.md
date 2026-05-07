@@ -4,27 +4,28 @@
 
 We leveraged `@next/bundle-analyzer` to inspect the client, server, and edge bundles produced by the Next.js Turbopack/Webpack build. Below is a breakdown of actionable suggestions designed to reduce initial bundle delivery size and improve load performance (specifically aiming to improve LCP, FCP, and TTFB).
 
-| # | Suggestion | Category | Impact | Effort | Status |
-|---|-----------|----------|--------|--------|--------|
-| B1 | Ensure `@prisma/client` and `@neondatabase/serverless` are strictly server-only | Bundle Size | 🔴 High | 15 min | ❌ Not Done |
-| B2 | Dynamic Import `AllocationChart` & `CurrencyExposureChart` | Bundle Size | 🔴 High | 30 min | ❌ Not Done |
-| B3 | Inspect `date-fns` usage for tree-shaking | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
-| B4 | Audit `lucide-react` usage | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
-| B5 | Monitor `recharts` library payload | Bundle Size | 🟡 Medium | 45 min | ❌ Not Done |
-| B6 | Lazy-load `sonner` Toaster | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
-| B7 | Restrict `zod` to Server Actions/API routes | Bundle Size | 🔴 High | 1 hr | ❌ Not Done |
-| B8 | Opt-out `yahoo-finance2` from client bundle via `server-only` | Bundle Size | 🔴 High | 15 min | ❌ Not Done |
-| B9 | Evaluate `next-intl` dictionary loading per route | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
-| B10 | Migrate `swr` fetching to RSCs (Server Components) | Bundle Size | 🟡 Medium | 1 hr | ❌ Not Done |
-| B11 | Lazy-load `cmdk` (Command Palette) | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
-| B12 | Audit `@base-ui/react` tree-shaking | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
-| B13 | Profile `tw-animate-css` payload | Bundle Size | 🟢 Low | 15 min | ❌ Not Done |
-| B14 | Optimize Root Layout Font preloading | Performance | 🟡 Medium | 15 min | ❌ Not Done |
-| B15 | Defer Vercel Analytics/Speed Insights | Performance | 🟢 Low | 10 min | ❌ Not Done |
+| #   | Suggestion                                                                      | Category    | Impact    | Effort | Status      |
+| --- | ------------------------------------------------------------------------------- | ----------- | --------- | ------ | ----------- |
+| B1  | Ensure `@prisma/client` and `@neondatabase/serverless` are strictly server-only | Bundle Size | 🔴 High   | 15 min | ❌ Not Done |
+| B2  | Dynamic Import `AllocationChart` & `CurrencyExposureChart`                      | Bundle Size | 🔴 High   | 30 min | ❌ Not Done |
+| B3  | Inspect `date-fns` usage for tree-shaking                                       | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
+| B4  | Audit `lucide-react` usage                                                      | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
+| B5  | Monitor `recharts` library payload                                              | Bundle Size | 🟡 Medium | 45 min | ❌ Not Done |
+| B6  | Lazy-load `sonner` Toaster                                                      | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
+| B7  | Restrict `zod` to Server Actions/API routes                                     | Bundle Size | 🔴 High   | 1 hr   | ❌ Not Done |
+| B8  | Opt-out `yahoo-finance2` from client bundle via `server-only`                   | Bundle Size | 🔴 High   | 15 min | ❌ Not Done |
+| B9  | Evaluate `next-intl` dictionary loading per route                               | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
+| B10 | Migrate `swr` fetching to RSCs (Server Components)                              | Bundle Size | 🟡 Medium | 1 hr   | ❌ Not Done |
+| B11 | Lazy-load `cmdk` (Command Palette)                                              | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
+| B12 | Audit `@base-ui/react` tree-shaking                                             | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
+| B13 | Profile `tw-animate-css` payload                                                | Bundle Size | 🟢 Low    | 15 min | ❌ Not Done |
+| B14 | Optimize Root Layout Font preloading                                            | Performance | 🟡 Medium | 15 min | ❌ Not Done |
+| B15 | Defer Vercel Analytics/Speed Insights                                           | Performance | 🟢 Low    | 10 min | ❌ Not Done |
 
 ## Methodology
 
 Findings sourced from running `@next/bundle-analyzer` against the project locally on **2026-04-20**:
+
 - Client bundle (`.next/analyze/client.html`) ~609 KB compiled.
 - NodeJS bundle (`.next/analyze/nodejs.html`) ~866 KB compiled.
 - Edge bundle (`.next/analyze/edge.html`) ~290 KB compiled.
@@ -38,6 +39,7 @@ Findings sourced from running `@next/bundle-analyzer` against the project locall
 **Recommendation.** Use the `server-only` package to explicitly reject imports of `prisma` utilities from client components. Create a hard barrier to ensure these never slip into the `.next/analyze/client.html` bundle.
 
 **Critical files:**
+
 - `src/lib/prisma.ts`
 - Missing `npm i server-only`
 
@@ -45,12 +47,13 @@ Findings sourced from running `@next/bundle-analyzer` against the project locall
 
 ### B2 — Dynamic-import Sibling Dashboard Charts
 
-**Observation.** While `TrendChart` is dynamically imported in `src/components/dashboard/lazy-charts.tsx`, the `AllocationChart` and `CurrencyExposureChart` widgets might be eagerly loaded into the initial dashboard payload. This drags down FCP / LCP for the dashboard. 
+**Observation.** While `TrendChart` is dynamically imported in `src/components/dashboard/lazy-charts.tsx`, the `AllocationChart` and `CurrencyExposureChart` widgets might be eagerly loaded into the initial dashboard payload. This drags down FCP / LCP for the dashboard.
 
-**Recommendation.** 
+**Recommendation.**
 Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding loading `recharts` overhead before it's needed or while off-screen.
 
 **Critical files:**
+
 - `src/components/dashboard/dashboard-content.tsx`
 - `src/components/dashboard/lazy-charts.tsx`
 
@@ -63,6 +66,7 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 **Recommendation.** Review all date manipulations. Next.js 16 should resolve this out of the box with `optimizePackageImports`, but verifying the emitted node limits is recommended. Replace with lighter alternatives like `Intl.DateTimeFormat` natively if the load remains significant.
 
 **Critical files:**
+
 - Files under `src/components/**` importing `date-fns`.
 
 ---
@@ -74,6 +78,7 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 **Recommendation.** Double check the `.next/analyze/client.html` bundle tree visually to confirm `lucide-react` leaf nodes are the only things being compiled into the Webpack chunks.
 
 **Critical files:**
+
 - `next.config.ts`
 
 ---
@@ -82,9 +87,10 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 
 **Observation.** Recharts generally adds a large (~120-150KB) chunk size to whatever client-side boundary involves it. By making it dynamically imported (B2), this chunk should sit separately (`chunk-...`). However, its presence still affects TTI (Time to Interactive).
 
-**Recommendation.** Verify whether the charts are strictly necessary on mobile breakpoints or if they can be conditionally loaded/rendered based on viewport. 
+**Recommendation.** Verify whether the charts are strictly necessary on mobile breakpoints or if they can be conditionally loaded/rendered based on viewport.
 
 **Critical files:**
+
 - `src/components/dashboard/lazy-charts.tsx`
 
 ---
@@ -96,6 +102,7 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 **Recommendation.** Use Next.js `next/dynamic` to dynamically import the `<Toaster />` component so it does not block the main thread and is only fetched when the client-side app eventually needs to use it.
 
 **Critical files:**
+
 - `src/app/layout.tsx`
 
 ---
@@ -107,6 +114,7 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 **Recommendation.** Shift all form validation and schema parsing to Next.js Server Actions using `zod`, completely dropping the library from the client-side chunk. If client validation is absolutely required to prevent network trips, consider evaluating leaner libraries (e.g. `valibot`).
 
 **Critical files:**
+
 - `src/components/**/holding-form.tsx` (and other forms)
 - `package.json`
 
@@ -119,6 +127,7 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 **Recommendation.** Verify that the `price-service.ts` or components leveraging `yahoo-finance2` are strictly marked with `'server-only'` to guarantee that no Next.js boundary leaks this entire SDK and its node-fetch fallbacks into the client chunk.
 
 **Critical files:**
+
 - `src/lib/services/price-service.ts`
 
 ---
@@ -130,6 +139,7 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 **Recommendation.** Ensure the setup uses Server Components to parse and pass only the needed translation chunks to Client Components, rather than wrapping the entire app in `NextIntlClientProvider` with the complete JSON object loaded in the namespace.
 
 **Critical files:**
+
 - `src/app/layout.tsx`
 - `src/i18n/request.ts`
 
@@ -142,6 +152,7 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 **Recommendation.** Take advantage of Next.js 16 Server Components and `use cache`. Moving data-fetching from the client (`useSWR`) to a server `await fetch(...)` natively eliminates the client-side library chunk completely while providing faster TTFB and SEO tracking natively.
 
 **Critical files:**
+
 - Client components currently using SWR Hooks
 
 ---
@@ -153,6 +164,7 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 **Recommendation.** Use a dynamic import for the Command Palette component. Only load the `cmdk` library when the user performs the trigger or hovers over a search UI element.
 
 **Critical files:**
+
 - Search or Shortcut handler components.
 
 ---
@@ -164,6 +176,7 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 **Recommendation.** Inspect the client bundle to ensure only the primitives actually used (Select, Dialog, Popover) appear in the output. If a single `index.ts` in a UI folder is re-exporting everything, it may defeat tree-shaking in some build configurations.
 
 **Critical files:**
+
 - `src/components/ui/*`
 
 ---
@@ -183,6 +196,7 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 **Recommendation.** Ensure Geist or other custom fonts are subsetted to only the characters needed for the initial render and that only the `400/700` weights are preloaded.
 
 **Critical files:**
+
 - `src/app/layout.tsx`
 
 ---
@@ -194,4 +208,5 @@ Convert static imports to `next/dynamic` ones with suspense fallbacks, avoiding 
 **Recommendation.** While the Vercel components handle this well, verify that they aren't executing before the main application logic becomes interactive. Using `next/script` with `strategy="afterInteractive"` or `lazyOnload` for non-critical telemetry can help clear the thread for the initial render.
 
 **Critical files:**
+
 - `src/app/layout.tsx`

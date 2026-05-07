@@ -8,19 +8,11 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   images: {
     formats: ["image/avif", "image/webp"],
-    remotePatterns: [
-      { protocol: "https", hostname: "lh3.googleusercontent.com" },
-    ],
+    remotePatterns: [{ protocol: "https", hostname: "lh3.googleusercontent.com" }],
   },
   experimental: {
     viewTransition: true,
-    optimizePackageImports: [
-      "recharts",
-      "lucide-react",
-      "date-fns",
-      "next-intl",
-      "@prisma/client",
-    ],
+    optimizePackageImports: ["recharts", "lucide-react", "date-fns", "next-intl", "@prisma/client"],
   },
   serverExternalPackages: ["ws", "@neondatabase/serverless"],
   headers: async () => [

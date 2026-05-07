@@ -38,9 +38,7 @@ function Tile({
         <div className={`text-2xl font-semibold tracking-tight tabular-nums ${valueClass}`}>
           {value}
         </div>
-        {subtitle && (
-          <div className="text-xs text-muted-foreground tabular-nums">{subtitle}</div>
-        )}
+        {subtitle && <div className="text-xs text-muted-foreground tabular-nums">{subtitle}</div>}
       </CardContent>
     </Card>
   );
@@ -65,14 +63,32 @@ export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
   const dash = "—";
   const hidden = "***";
 
-  const bestValue = privacyMode ? hidden : kpis.best ? signed(kpis.best.deltaNetWorth, baseCurrency) : dash;
-  const bestSub = privacyMode ? undefined : kpis.best ? formatMonthLabel(kpis.best.monthKey, locale) : undefined;
-  const worstValue = privacyMode ? hidden : kpis.worst ? signed(kpis.worst.deltaNetWorth, baseCurrency) : dash;
-  const worstSub = privacyMode ? undefined : kpis.worst ? formatMonthLabel(kpis.worst.monthKey, locale) : undefined;
+  const bestValue = privacyMode
+    ? hidden
+    : kpis.best
+      ? signed(kpis.best.deltaNetWorth, baseCurrency)
+      : dash;
+  const bestSub = privacyMode
+    ? undefined
+    : kpis.best
+      ? formatMonthLabel(kpis.best.monthKey, locale)
+      : undefined;
+  const worstValue = privacyMode
+    ? hidden
+    : kpis.worst
+      ? signed(kpis.worst.deltaNetWorth, baseCurrency)
+      : dash;
+  const worstSub = privacyMode
+    ? undefined
+    : kpis.worst
+      ? formatMonthLabel(kpis.worst.monthKey, locale)
+      : undefined;
 
   const ytdSub = privacyMode
     ? undefined
-    : kpis.ytdPct === null ? undefined : `${kpis.ytdPct >= 0 ? "+" : ""}${kpis.ytdPct.toFixed(1)}%`;
+    : kpis.ytdPct === null
+      ? undefined
+      : `${kpis.ytdPct >= 0 ? "+" : ""}${kpis.ytdPct.toFixed(1)}%`;
 
   return (
     <div className={`grid ${isCompact ? "gap-2" : "gap-4"} sm:grid-cols-2 lg:grid-cols-4`}>

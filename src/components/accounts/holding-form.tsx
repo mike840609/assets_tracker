@@ -2,12 +2,7 @@
 
 import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -118,7 +113,9 @@ export function HoldingForm({
       toast.success(`Added ${payload.symbol}`);
       handleClose();
       if (onSuccess) onSuccess();
-      startTransition(() => { router.refresh(); });
+      startTransition(() => {
+        router.refresh();
+      });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to add holding");
     } finally {
@@ -128,23 +125,38 @@ export function HoldingForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await postHolding({ symbol, name, quantity: parseFloat(quantity.replace(/,/g, "")), assetType, currency });
+    await postHolding({
+      symbol,
+      name,
+      quantity: parseFloat(quantity.replace(/,/g, "")),
+      assetType,
+      currency,
+    });
   }
 
   const tickerSelected = !!symbol;
-  const canSubmit = (tickerSelected || (manualMode && symbol && name)) && !!quantity && parseFloat(quantity.replace(/,/g, "")) > 0;
+  const canSubmit =
+    (tickerSelected || (manualMode && symbol && name)) &&
+    !!quantity &&
+    parseFloat(quantity.replace(/,/g, "")) > 0;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {mode === "option" ? "Add Option Contract" : "Add Holding"}
-          </DialogTitle>
+          <DialogTitle>{mode === "option" ? "Add Option Contract" : "Add Holding"}</DialogTitle>
         </DialogHeader>
 
         {/* Mode tabs */}
-        <Tabs value={mode} onValueChange={(v) => { if (v) { setMode(v as Mode); clearSelection(); } }}>
+        <Tabs
+          value={mode}
+          onValueChange={(v) => {
+            if (v) {
+              setMode(v as Mode);
+              clearSelection();
+            }
+          }}
+        >
           <TabsList>
             <TabsTrigger value="stock">Stock / ETF / Crypto</TabsTrigger>
             <TabsTrigger value="option">Option</TabsTrigger>
@@ -152,11 +164,7 @@ export function HoldingForm({
         </Tabs>
 
         {mode === "option" ? (
-          <OptionBuilder
-            loading={loading}
-            onSubmit={postHolding}
-            onCancel={handleClose}
-          />
+          <OptionBuilder loading={loading} onSubmit={postHolding} onCancel={handleClose} />
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* ── Ticker section ── */}
@@ -199,7 +207,9 @@ export function HoldingForm({
                       className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
                       {ASSET_TYPES.map((t) => (
-                        <option key={t.value} value={t.value}>{t.label}</option>
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -248,7 +258,10 @@ export function HoldingForm({
                 type="text"
                 inputMode="decimal"
                 value={quantity}
-                onChange={(e) => { setQuantity(e.target.value); setQuantityError(""); }}
+                onChange={(e) => {
+                  setQuantity(e.target.value);
+                  setQuantityError("");
+                }}
                 onBlur={handleQuantityBlur}
                 placeholder="e.g. 100"
                 required

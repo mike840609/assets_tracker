@@ -11,9 +11,7 @@ export async function POST() {
     select: { currency: true },
     distinct: ["currency"],
   });
-  const otherCurrencies = accounts
-    .map((a) => a.currency)
-    .filter((c) => c !== baseCurrency);
+  const otherCurrencies = accounts.map((a) => a.currency).filter((c) => c !== baseCurrency);
 
   const results = await Promise.all([
     refreshExchangeRates(baseCurrency),
