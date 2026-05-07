@@ -94,9 +94,7 @@ export function SettingsForm({
     <div className="space-y-8 w-full">
       {/* PREFERENCES SECTION */}
       <section className="space-y-3">
-        <h3 className="text-lg font-semibold text-foreground">
-          {t("settings.preferencesTitle")}
-        </h3>
+        <h3 className="text-lg font-semibold text-foreground">{t("settings.preferencesTitle")}</h3>
         <Card className="overflow-hidden p-0">
           <CardContent className="p-0">
             {/* Currency Row */}
@@ -173,7 +171,9 @@ export function SettingsForm({
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {d === "comfortable" ? t("settings.densityComfortable") : t("settings.densityCompact")}
+                    {d === "comfortable"
+                      ? t("settings.densityComfortable")
+                      : t("settings.densityCompact")}
                   </button>
                 ))}
               </div>

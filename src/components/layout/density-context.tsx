@@ -46,11 +46,7 @@ export function DensityProvider({ children }: { children: React.ReactNode }) {
     [mounted, density, setDensity],
   );
 
-  return (
-    <DensityContext.Provider value={value}>
-      {children}
-    </DensityContext.Provider>
-  );
+  return <DensityContext.Provider value={value}>{children}</DensityContext.Provider>;
 }
 
 export function useDensity() {

@@ -63,7 +63,7 @@ const COINGECKO_IDS: Record<string, string> = {
 };
 
 async function fetchYahooQuotes(
-  symbols: string[]
+  symbols: string[],
 ): Promise<Map<string, { price: number; currency: string }>> {
   const results = new Map<string, { price: number; currency: string }>();
   if (symbols.length === 0) return results;
@@ -76,12 +76,9 @@ async function fetchYahooQuotes(
       Promise.race([
         yahooFinance.quote(syms),
         new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error("Yahoo Finance request timed out")),
-            FETCH_TIMEOUT_MS
-          )
+          setTimeout(() => reject(new Error("Yahoo Finance request timed out")), FETCH_TIMEOUT_MS),
         ),
-      ])
+      ]),
     );
     for (const q of Array.isArray(quotes) ? quotes : [quotes]) {
       if (q?.regularMarketPrice && q.symbol) {
@@ -105,7 +102,7 @@ async function fetchYahooQuotes(
         } catch (err) {
           console.error(`Yahoo Finance fetch failed for ${symbol}:`, err);
         }
-      })
+      }),
     );
   }
 
@@ -113,7 +110,7 @@ async function fetchYahooQuotes(
 }
 
 export async function fetchStockPrices(
-  symbols: string[]
+  symbols: string[],
 ): Promise<Map<string, { price: number; currency: string }>> {
   return fetchYahooQuotes(symbols);
 }
@@ -124,7 +121,7 @@ function stripCurrencySuffix(symbol: string): string {
 }
 
 export async function fetchCryptoPrices(
-  symbols: string[]
+  symbols: string[],
 ): Promise<Map<string, { price: number; currency: string }>> {
   if (symbols.length === 0) return new Map();
 
@@ -173,7 +170,7 @@ export async function fetchCryptoPrices(
 }
 
 export async function getCachedPricesForSymbols(
-  symbols: string[]
+  symbols: string[],
 ): Promise<{ symbol: string; price: number; currency: string }[]> {
   "use cache";
   cacheTag("prices");
@@ -202,9 +199,7 @@ export async function refreshAllPrices(): Promise<{
     .filter((h) => ["STOCK", "ETF", "MUTUAL_FUND", "BOND", "OPTION"].includes(h.assetType))
     .map((h) => h.symbol);
 
-  const cryptoSymbols = holdings
-    .filter((h) => h.assetType === "CRYPTO")
-    .map((h) => h.symbol);
+  const cryptoSymbols = holdings.filter((h) => h.assetType === "CRYPTO").map((h) => h.symbol);
 
   const errors: string[] = [];
   let updated = 0;
@@ -226,7 +221,7 @@ export async function refreshAllPrices(): Promise<{
         where: { symbol },
         update: { price, currency, updatedAt: new Date() },
         create: { symbol, price, currency },
-      })
+      }),
     );
     try {
       await prisma.$transaction(upserts);

@@ -61,7 +61,7 @@ export async function GET(request: Request) {
         const baseCurrency = user.appSettings?.baseCurrency ?? "USD";
         console.log(`Cron: Creating snapshot for user ${user.id} (${baseCurrency})...`);
         return createSnapshot(user.id, baseCurrency);
-      })
+      }),
     );
 
     // 4. Invalidate snapshot/history caches now that new rows exist

@@ -77,7 +77,10 @@ export function InlineBalanceEditor({
             inputMode="decimal"
             placeholder={formatNumber(currentBalance, 0)}
             value={balance}
-            onChange={(e) => { setBalance(e.target.value); setError(""); }}
+            onChange={(e) => {
+              setBalance(e.target.value);
+              setError("");
+            }}
             onBlur={handleBalanceBlur}
             className="h-8 flex-1"
             autoFocus

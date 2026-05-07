@@ -89,7 +89,7 @@ export async function getNormalizedHistory(
 export async function getFullNormalizedHistory(
   userId: string,
   targetBaseCurrency: string,
-  options?: { from?: Date; to?: Date }
+  options?: { from?: Date; to?: Date },
 ): Promise<NormalizedSnapshot[]> {
   if (options?.from || options?.to) {
     return fetchFullHistoryRange(userId, targetBaseCurrency, options);
@@ -195,10 +195,7 @@ export async function getRawHistoryWithBreakdown(
 
   // Dedupe by date (same pattern as normalizeSnapshots): prefer the snapshot
   // whose baseCurrency matches the target; otherwise keep the last one seen.
-  const dedupedMap = new Map<
-    string,
-    { breakdown: unknown; baseCurrency: string }
-  >();
+  const dedupedMap = new Map<string, { breakdown: unknown; baseCurrency: string }>();
   for (const s of snapshotsRaw) {
     const dateStr = s.date.toISOString().split("T")[0];
     const existing = dedupedMap.get(dateStr);
@@ -225,7 +222,9 @@ export async function getRawHistoryWithBreakdown(
       return { date, accountValues };
     });
 
-  const accounts: AccountMeta[] = (accountsRaw as { id: string; name: string; category: string }[]).map((a) => ({
+  const accounts: AccountMeta[] = (
+    accountsRaw as { id: string; name: string; category: string }[]
+  ).map((a) => ({
     id: a.id,
     name: a.name,
     category: a.category,

@@ -47,18 +47,13 @@ export interface AnalysisKpis {
  * snapshot (usually zero) — callers that want to hide "incomplete" first
  * buckets can filter them out.
  */
-export function aggregateMonthlyChange(
-  snapshots: NormalizedSnapshot[]
-): MonthlyBucket[] {
+export function aggregateMonthlyChange(snapshots: NormalizedSnapshot[]): MonthlyBucket[] {
   if (snapshots.length === 0) return [];
 
   // Group snapshots by YYYY-MM. The input is already sorted ascending by date
   // (see history-service.normalizeSnapshots), so `last` ends up being the
   // actual month-end snapshot and `first` the month-start.
-  const groups = new Map<
-    string,
-    { first: NormalizedSnapshot; last: NormalizedSnapshot }
-  >();
+  const groups = new Map<string, { first: NormalizedSnapshot; last: NormalizedSnapshot }>();
 
   for (const s of snapshots) {
     const monthKey = s.date.slice(0, 7); // "YYYY-MM"
@@ -77,9 +72,7 @@ export function aggregateMonthlyChange(
     const key = sortedKeys[i];
     const group = groups.get(key)!;
     const prevKey = sortedKeys[i - 1];
-    const startNetWorth = prevKey
-      ? groups.get(prevKey)!.last.netWorth
-      : group.first.netWorth;
+    const startNetWorth = prevKey ? groups.get(prevKey)!.last.netWorth : group.first.netWorth;
     const endNetWorth = group.last.netWorth;
     const deltaNetWorth = endNetWorth - startNetWorth;
     const deltaPct = startNetWorth === 0 ? null : (deltaNetWorth / startNetWorth) * 100;
@@ -112,7 +105,7 @@ export function aggregateMonthlyChange(
 export function fillMonthRange(
   buckets: MonthlyBucket[],
   rangeStart: Date,
-  rangeEnd: Date
+  rangeEnd: Date,
 ): MonthlyBucket[] {
   const byKey = new Map(buckets.map((b) => [b.monthKey, b]));
   const result: MonthlyBucket[] = [];
@@ -133,7 +126,7 @@ export function fillMonthRange(
         deltaNetWorth: 0,
         deltaPct: null,
         isEmpty: true,
-      }
+      },
     );
     if (monthKey === endKey) break;
     cursor.setUTCMonth(cursor.getUTCMonth() + 1);
@@ -150,7 +143,7 @@ export function fillMonthRange(
  */
 export function computeKpis(
   buckets: MonthlyBucket[],
-  snapshots: NormalizedSnapshot[]
+  snapshots: NormalizedSnapshot[],
 ): AnalysisKpis {
   const realBuckets = buckets.filter((b) => !b.isEmpty);
   if (realBuckets.length === 0) {
@@ -317,7 +310,7 @@ export function aggregateCategoryHistory(
       const point: CategoryDataPoint = { monthKey };
       for (const account of accounts) {
         const val = snap.accountValues[account.id] ?? 0;
-        point[account.category] = (Number(point[account.category] ?? 0)) + val;
+        point[account.category] = Number(point[account.category] ?? 0) + val;
       }
       return point;
     });

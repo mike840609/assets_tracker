@@ -35,7 +35,10 @@ export default function DashboardLoading() {
       <div className="rounded-xl border border-border/50 bg-card p-6 space-y-3">
         <div className="h-4 w-28 rounded bg-muted" />
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="flex justify-between items-center py-3 border-b border-border/30 last:border-0">
+          <div
+            key={i}
+            className="flex justify-between items-center py-3 border-b border-border/30 last:border-0"
+          >
             <div className="h-4 w-36 rounded bg-muted/50" />
             <div className="h-4 w-20 rounded bg-muted/50" />
           </div>

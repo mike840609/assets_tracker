@@ -25,7 +25,11 @@ export function showUndoDeleteToast({
     },
     // Both callbacks fire on close; the undone flag prevents double-commit
     // when Sonner auto-closes after the action button is clicked.
-    onAutoClose: () => { if (!undone) onCommit(); },
-    onDismiss:   () => { if (!undone) onCommit(); },
+    onAutoClose: () => {
+      if (!undone) onCommit();
+    },
+    onDismiss: () => {
+      if (!undone) onCommit();
+    },
   });
 }

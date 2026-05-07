@@ -23,10 +23,7 @@ async function DashboardPageContent() {
   const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
-  const [t, messages] = await Promise.all([
-    getTranslations("dashboard"),
-    getMessages(),
-  ]);
+  const [t, messages] = await Promise.all([getTranslations("dashboard"), getMessages()]);
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>

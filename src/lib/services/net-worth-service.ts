@@ -2,10 +2,13 @@ import { cache } from "react";
 import { cacheLife, cacheTag, unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "./exchange-rate-service";
-import {
-  serializeAccountWithHoldings,
+import { serializeAccountWithHoldings } from "@/lib/types";
+import type {
+  AccountWithValue,
+  NetWorthSummary,
+  HoldingWithPrice,
+  SerializedAccountWithHoldings,
 } from "@/lib/types";
-import type { AccountWithValue, NetWorthSummary, HoldingWithPrice, SerializedAccountWithHoldings } from "@/lib/types";
 
 /**
  * Structural account + holdings fetcher.
@@ -16,7 +19,9 @@ import type { AccountWithValue, NetWorthSummary, HoldingWithPrice, SerializedAcc
  * dynamic. React cache() dedupes concurrent calls within a single
  * render.
  */
-async function fetchUserAccountsWithHoldingsInner(userId: string): Promise<SerializedAccountWithHoldings[]> {
+async function fetchUserAccountsWithHoldingsInner(
+  userId: string,
+): Promise<SerializedAccountWithHoldings[]> {
   "use cache";
   cacheTag("accounts");
   cacheTag(`accounts:${userId}`);
@@ -32,7 +37,7 @@ export const fetchUserAccountsWithHoldings = cache(fetchUserAccountsWithHoldings
 
 async function computeNetWorthSummary(
   userId: string,
-  baseCurrency: string
+  baseCurrency: string,
 ): Promise<NetWorthSummary> {
   // Load accounts and exchange rates in parallel.
   // Both are React-cached, so if DashboardContent already fired these
@@ -49,7 +54,7 @@ async function computeNetWorthSummary(
   });
 
   const priceMap = Object.fromEntries(
-    prices.map((p) => [p.symbol, { price: Number(p.price), currency: p.currency }])
+    prices.map((p) => [p.symbol, { price: Number(p.price), currency: p.currency }]),
   );
 
   let totalAssets = 0;
@@ -73,8 +78,7 @@ async function computeNetWorthSummary(
       const currentPrice = cached?.price ?? null;
       const quantity = h.quantity;
       const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
-      const marketValue =
-        currentPrice !== null ? currentPrice * quantity * multiplier : null;
+      const marketValue = currentPrice !== null ? currentPrice * quantity * multiplier : null;
       return {
         ...h,
         currentPrice,
@@ -127,7 +131,10 @@ async function computeNetWorthSummary(
 
   for (let i = 0; i < accounts.length; i++) {
     const account = accounts[i];
-    const awv = accountsWithValue[i] as AccountWithValue & { _cashBalance: number; _currency: string };
+    const awv = accountsWithValue[i] as AccountWithValue & {
+      _cashBalance: number;
+      _currency: string;
+    };
     const rate = getRate(account.currency, baseCurrency);
     const cashBalance = awv._cashBalance;
 

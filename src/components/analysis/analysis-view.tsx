@@ -107,10 +107,7 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
     return fillMonthRange(real, rangeStart, rangeEnd);
   }, [filteredSnapshots, rangeStart, rangeEnd]);
 
-  const kpis = useMemo(
-    () => computeKpis(buckets, snapshots),
-    [buckets, snapshots]
-  );
+  const kpis = useMemo(() => computeKpis(buckets, snapshots), [buckets, snapshots]);
 
   // Cash flow: filter contributions to range, then merge with buckets
   const cashFlowBuckets = useMemo(() => {
@@ -140,7 +137,7 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
 
   const topMovers = useMemo(
     () => computeTopMovers(filteredRawSnapshots, rawHistory.accounts),
-    [filteredRawSnapshots, rawHistory.accounts]
+    [filteredRawSnapshots, rawHistory.accounts],
   );
 
   const hasData = snapshots.length > 0;

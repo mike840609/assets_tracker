@@ -3,7 +3,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { BarChart3, Copy, History, LayoutDashboard, LogOut, PanelLeftClose, Plus, RefreshCw, Settings, Shield } from "lucide-react";
+import {
+  BarChart3,
+  Copy,
+  History,
+  LayoutDashboard,
+  LogOut,
+  PanelLeftClose,
+  Plus,
+  RefreshCw,
+  Settings,
+  Shield,
+} from "lucide-react";
 import { signOut } from "next-auth/react";
 import {
   CommandDialog,
@@ -18,7 +29,9 @@ import { usePrivacyMode } from "./privacy-mode-context";
 
 export function DesktopCommandPalette() {
   const [open, setOpen] = useState(false);
-  const [isMac] = useState(() => typeof window !== "undefined" && navigator.userAgent.includes("Mac"));
+  const [isMac] = useState(
+    () => typeof window !== "undefined" && navigator.userAgent.includes("Mac"),
+  );
   const router = useRouter();
   const t = useTranslations();
   const { togglePrivacyMode } = usePrivacyMode();
@@ -134,7 +147,15 @@ export function DesktopCommandPalette() {
       window.removeEventListener("command-palette:open", onOpen);
       if (goToTimeoutRef.current !== null) window.clearTimeout(goToTimeoutRef.current);
     };
-  }, [navItems, router, togglePrivacyMode, triggerRefresh, toggleSidebar, triggerNewItem, triggerAddItem]);
+  }, [
+    navItems,
+    router,
+    togglePrivacyMode,
+    triggerRefresh,
+    toggleSidebar,
+    triggerNewItem,
+    triggerAddItem,
+  ]);
 
   const privacyShortcut = isMac ? "⌘;" : "Ctrl+;";
   const refreshShortcut = isMac ? "⌘'" : "Ctrl+'";
@@ -143,11 +164,7 @@ export function DesktopCommandPalette() {
   const goShortcut = t("commandPalette.goSequence");
 
   return (
-    <CommandDialog
-      open={open}
-      onOpenChange={setOpen}
-      className="top-[22%] translate-y-0"
-    >
+    <CommandDialog open={open} onOpenChange={setOpen} className="top-[22%] translate-y-0">
       <CommandInput placeholder={t("commandPalette.placeholder")} />
       <CommandList className="max-h-[70vh]">
         <CommandEmpty>{t("commandPalette.noResults")}</CommandEmpty>
@@ -173,7 +190,13 @@ export function DesktopCommandPalette() {
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
-              <CommandItem key={item.href} onSelect={() => { router.push(item.href); setOpen(false); }}>
+              <CommandItem
+                key={item.href}
+                onSelect={() => {
+                  router.push(item.href);
+                  setOpen(false);
+                }}
+              >
                 <Icon className="mr-2 h-4 w-4" />
                 {item.label}
                 <CommandShortcut>{item.kbd}</CommandShortcut>

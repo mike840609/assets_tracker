@@ -13,10 +13,7 @@ import { getSession } from "@/lib/auth-session";
 async function SidebarWithSession() {
   const session = await getSession();
   return (
-    <Sidebar
-      userImage={session?.user?.image ?? null}
-      userName={session?.user?.name ?? null}
-    />
+    <Sidebar userImage={session?.user?.image ?? null} userName={session?.user?.name ?? null} />
   );
 }
 

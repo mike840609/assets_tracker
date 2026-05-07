@@ -3,12 +3,7 @@
 import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,9 +22,7 @@ import type { SerializedAccountWithHoldings } from "@/lib/types";
 import { HoldingSearch } from "./holding-search";
 import type { SearchResult } from "./holding-search";
 
-const OptionBuilder = dynamic(
-  () => import("./option-builder").then((m) => m.OptionBuilder)
-);
+const OptionBuilder = dynamic(() => import("./option-builder").then((m) => m.OptionBuilder));
 
 const ASSET_TYPE_KEYS = ["STOCK", "ETF", "CRYPTO", "MUTUAL_FUND", "BOND", "OTHER"] as const;
 
@@ -137,7 +130,7 @@ export function QuickAddHolding({
         const targetCategory = ASSET_TYPE_TO_CATEGORY[assetType] || "BROKERAGE";
         const defaultName = t(
           `quickAddHolding.defaultAccountNames.${targetCategory}` as Parameters<typeof t>[0],
-          { defaultValue: "Brokerage" }
+          { defaultValue: "Brokerage" },
         );
         const res = await fetch("/api/accounts", {
           method: "POST",
@@ -172,13 +165,17 @@ export function QuickAddHolding({
         try {
           const err = await res.json();
           message = err.error?.message || message;
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
         throw new Error(message);
       }
 
       toast.success(t("quickAddHolding.addedSymbol", { symbol }));
       handleClose();
-      startTransition(() => { router.refresh(); });
+      startTransition(() => {
+        router.refresh();
+      });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("quickAddHolding.addFailed"));
     } finally {
@@ -194,20 +191,21 @@ export function QuickAddHolding({
 
   const matchingAccounts = getMatchingAccounts();
   const targetCategory = ASSET_TYPE_TO_CATEGORY[assetType] || "BROKERAGE";
-  const categoryLabel = t(
-    `categories.${targetCategory}` as Parameters<typeof t>[0],
-    { defaultValue: targetCategory }
-  );
+  const categoryLabel = t(`categories.${targetCategory}` as Parameters<typeof t>[0], {
+    defaultValue: targetCategory,
+  });
   const defaultAccountName = t(
     `quickAddHolding.defaultAccountNames.${targetCategory}` as Parameters<typeof t>[0],
-    { defaultValue: "Brokerage" }
+    { defaultValue: "Brokerage" },
   );
 
   const dialogTitle =
     step === "account"
       ? t("quickAddHolding.titleAccount")
       : mode === "option"
-        ? t("quickAddHolding.titleOption" as Parameters<typeof t>[0], { defaultValue: "Add Option Contract" })
+        ? t("quickAddHolding.titleOption" as Parameters<typeof t>[0], {
+            defaultValue: "Add Option Contract",
+          })
         : t("quickAddHolding.titleSearch");
 
   return (
@@ -221,7 +219,15 @@ export function QuickAddHolding({
         {step === "form" && (
           <div className="space-y-4">
             {/* Mode tabs */}
-            <Tabs value={mode} onValueChange={(v) => { if (v) { setMode(v as Mode); clearSelection(); } }}>
+            <Tabs
+              value={mode}
+              onValueChange={(v) => {
+                if (v) {
+                  setMode(v as Mode);
+                  clearSelection();
+                }
+              }}
+            >
               <TabsList>
                 <TabsTrigger value="stock">Stock / ETF / Crypto</TabsTrigger>
                 <TabsTrigger value="option">Option</TabsTrigger>
@@ -250,10 +256,9 @@ export function QuickAddHolding({
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold">{symbol}</span>
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                          {t(
-                            `quickAddHolding.assetTypes.${assetType}` as Parameters<typeof t>[0],
-                            { defaultValue: assetType }
-                          )}
+                          {t(`quickAddHolding.assetTypes.${assetType}` as Parameters<typeof t>[0], {
+                            defaultValue: assetType,
+                          })}
                         </Badge>
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                           {currency}
@@ -344,7 +349,10 @@ export function QuickAddHolding({
                     type="text"
                     inputMode="decimal"
                     value={quantity}
-                    onChange={(e) => { setQuantity(e.target.value); setQuantityError(""); }}
+                    onChange={(e) => {
+                      setQuantity(e.target.value);
+                      setQuantityError("");
+                    }}
                     onBlur={handleQuantityBlur}
                     placeholder={t("quickAddHolding.placeholderShares")}
                     autoFocus={tickerSelected}
@@ -358,11 +366,7 @@ export function QuickAddHolding({
                   <Button type="button" variant="outline" onClick={handleClose}>
                     {t("quickAddHolding.cancel")}
                   </Button>
-                  <Button
-                    type="button"
-                    disabled={!canProceed}
-                    onClick={() => proceedToAccount()}
-                  >
+                  <Button type="button" disabled={!canProceed} onClick={() => proceedToAccount()}>
                     {t("quickAddHolding.next")}
                   </Button>
                 </div>
@@ -379,10 +383,9 @@ export function QuickAddHolding({
               <div className="flex items-center gap-2">
                 <span className="font-mono font-bold">{symbol}</span>
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                  {t(
-                    `quickAddHolding.assetTypes.${assetType}` as Parameters<typeof t>[0],
-                    { defaultValue: assetType }
-                  )}
+                  {t(`quickAddHolding.assetTypes.${assetType}` as Parameters<typeof t>[0], {
+                    defaultValue: assetType,
+                  })}
                 </Badge>
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                   {currency}
@@ -410,10 +413,9 @@ export function QuickAddHolding({
                 <div className="rounded-lg border bg-muted/50 p-3">
                   <p className="font-medium">{matchingAccounts[0].name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {t(
-                      `categories.${matchingAccounts[0].category}` as Parameters<typeof t>[0],
-                      { defaultValue: matchingAccounts[0].category }
-                    )}
+                    {t(`categories.${matchingAccounts[0].category}` as Parameters<typeof t>[0], {
+                      defaultValue: matchingAccounts[0].category,
+                    })}
                   </p>
                 </div>
               </div>
@@ -444,11 +446,7 @@ export function QuickAddHolding({
             )}
 
             <div className="flex justify-between pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setStep("form")}
-              >
+              <Button type="button" variant="ghost" onClick={() => setStep("form")}>
                 {t("quickAddHolding.back")}
               </Button>
               <div className="flex gap-2">

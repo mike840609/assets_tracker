@@ -40,10 +40,7 @@ function getClientIp(request: Request): string {
  *
  * @returns A 429 Response if the limit is exceeded, otherwise `null`.
  */
-export function rateLimitCheck(
-  request: Request,
-  options: RateLimitOptions
-): Response | null {
+export function rateLimitCheck(request: Request, options: RateLimitOptions): Response | null {
   const { limit, windowMs = 60_000, prefix = "rl" } = options;
   const ip = getClientIp(request);
   const key = `${prefix}:${ip}`;
@@ -61,19 +58,16 @@ export function rateLimitCheck(
 
   if (entry.count > limit) {
     const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-    return new Response(
-      JSON.stringify({ error: { message: "Too many requests" } }),
-      {
-        status: 429,
-        headers: {
-          "Content-Type": "application/json",
-          "Retry-After": String(retryAfter),
-          "X-RateLimit-Limit": String(limit),
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Reset": String(Math.ceil(entry.resetAt / 1000)),
-        },
-      }
-    );
+    return new Response(JSON.stringify({ error: { message: "Too many requests" } }), {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json",
+        "Retry-After": String(retryAfter),
+        "X-RateLimit-Limit": String(limit),
+        "X-RateLimit-Remaining": "0",
+        "X-RateLimit-Reset": String(Math.ceil(entry.resetAt / 1000)),
+      },
+    });
   }
 
   return null;
@@ -97,7 +91,7 @@ function maybePrune() {
 const _originalCheck = rateLimitCheck;
 export function rateLimitCheckWithPrune(
   request: Request,
-  options: RateLimitOptions
+  options: RateLimitOptions,
 ): Response | null {
   maybePrune();
   return _originalCheck(request, options);

@@ -5,18 +5,17 @@ import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AccountsList } from "@/components/accounts/accounts-list";
-import { getAllExchangeRates, resolveRate, resolveMissingRates } from "@/lib/services/exchange-rate-service";
+import {
+  getAllExchangeRates,
+  resolveRate,
+  resolveMissingRates,
+} from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
 import { getCachedPricesForSymbols } from "@/lib/services/price-service";
 import AccountsLoading from "./loading";
 
-const CLIENT_NAMESPACES = [
-  "accountsList",
-  "accountForm",
-  "quickAddHolding",
-  "categories",
-];
+const CLIENT_NAMESPACES = ["accountsList", "accountForm", "quickAddHolding", "categories"];
 
 async function AccountsContent() {
   const session = await getSession();
@@ -37,7 +36,7 @@ async function AccountsContent() {
   const allSymbols = [...new Set(accounts.flatMap((a) => a.holdings.map((h) => h.symbol)))];
   const cachedPrices = await getCachedPricesForSymbols(allSymbols);
   const priceMap: Record<string, number> = Object.fromEntries(
-    cachedPrices.map((p) => [p.symbol, p.price])
+    cachedPrices.map((p) => [p.symbol, p.price]),
   );
 
   // Build rates map from the bulk-loaded rates (no sequential DB calls!)
@@ -77,7 +76,12 @@ async function AccountsContent() {
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
       <div className="space-y-8 animate-in fade-in duration-500">
         <LargeTitleHeading>{t("title")}</LargeTitleHeading>
-        <AccountsList accounts={accounts} priceMap={priceMap} ratesMap={ratesMap} baseCurrency={baseCurrency} />
+        <AccountsList
+          accounts={accounts}
+          priceMap={priceMap}
+          ratesMap={ratesMap}
+          baseCurrency={baseCurrency}
+        />
       </div>
     </NextIntlClientProvider>
   );

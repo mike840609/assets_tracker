@@ -145,10 +145,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
   }, [chain, expiration, failedExpirations]);
 
   const expChainLoading =
-    !!chain &&
-    !!expiration &&
-    !chain.chains[expiration] &&
-    !failedExpirations.has(expiration);
+    !!chain && !!expiration && !chain.chains[expiration] && !failedExpirations.has(expiration);
 
   // Read latest strike via a ref so the validation effect below doesn't re-run on every keystroke.
   const strikeRef = useRef(strike);
@@ -206,12 +203,30 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
         expirations: [expIso],
         chains: {
           [expIso]: {
-            calls: parsed.optionType === "CALL"
-              ? [{ contractSymbol: trimmed, strike: parsed.strike, lastPrice: null, bid: null, ask: null }]
-              : [],
-            puts: parsed.optionType === "PUT"
-              ? [{ contractSymbol: trimmed, strike: parsed.strike, lastPrice: null, bid: null, ask: null }]
-              : [],
+            calls:
+              parsed.optionType === "CALL"
+                ? [
+                    {
+                      contractSymbol: trimmed,
+                      strike: parsed.strike,
+                      lastPrice: null,
+                      bid: null,
+                      ask: null,
+                    },
+                  ]
+                : [],
+            puts:
+              parsed.optionType === "PUT"
+                ? [
+                    {
+                      contractSymbol: trimmed,
+                      strike: parsed.strike,
+                      lastPrice: null,
+                      bid: null,
+                      ask: null,
+                    },
+                  ]
+                : [],
           },
         },
       });
@@ -260,7 +275,9 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
   // Derived chain data for current expiration + side
   const currentBlock = chain && expiration ? chain.chains[expiration] : undefined;
   const strikesForSide: ChainContract[] = currentBlock
-    ? side === "CALL" ? currentBlock.calls : currentBlock.puts
+    ? side === "CALL"
+      ? currentBlock.calls
+      : currentBlock.puts
     : [];
   const selectedContract = strikesForSide.find((c) => String(c.strike) === strike);
 
@@ -285,9 +302,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
   const ask = selectedContract?.ask ?? null;
   const qtyNum = parseInt(quantity.replace(/,/g, ""), 10);
   const previewCost =
-    ask !== null && Number.isFinite(qtyNum) && qtyNum > 0
-      ? ask * qtyNum * 100
-      : null;
+    ask !== null && Number.isFinite(qtyNum) && qtyNum > 0 ? ask * qtyNum * 100 : null;
 
   const canSubmit =
     !loading &&
@@ -310,12 +325,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
               placeholder="e.g. AAPL, SPY"
               autoFocus
             />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowSearch(false)}
-            >
+            <Button type="button" variant="ghost" size="sm" onClick={() => setShowSearch(false)}>
               Cancel
             </Button>
           </div>
@@ -352,12 +362,8 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
           </div>
         )}
 
-        {chainLoading && (
-          <p className="text-xs text-muted-foreground">Loading option chain…</p>
-        )}
-        {chainError && (
-          <p className="text-xs text-destructive">{chainError}</p>
-        )}
+        {chainLoading && <p className="text-xs text-muted-foreground">Loading option chain…</p>}
+        {chainError && <p className="text-xs text-destructive">{chainError}</p>}
       </div>
 
       {/* ── Expiration dropdown (shown once chain is loaded) ── */}
@@ -366,9 +372,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
           <Label>Expiration</Label>
           <Select value={expiration} onValueChange={(v) => v && setExpiration(v)}>
             <SelectTrigger className="w-full">
-              <SelectValue>
-                {expiration ? fmtExp(expiration) : "Select expiration"}
-              </SelectValue>
+              <SelectValue>{expiration ? fmtExp(expiration) : "Select expiration"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {chain.expirations.map((exp) => (
@@ -399,26 +403,24 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
           {expChainLoading ? (
             <p className="text-sm text-muted-foreground">Loading strikes…</p>
           ) : strikesForSide.length === 0 ? (
-            <p className="text-sm text-destructive">
-              No strikes available for this expiration.
-            </p>
+            <p className="text-sm text-destructive">No strikes available for this expiration.</p>
           ) : (
             <Select
               value={strike}
-              onValueChange={(v) => { if (v) setStrike(v); }}
+              onValueChange={(v) => {
+                if (v) setStrike(v);
+              }}
             >
               <SelectTrigger className="w-full">
-                <SelectValue>
-                  {strike ? `$${strike}` : "Select strike"}
-                </SelectValue>
+                <SelectValue>{strike ? `$${strike}` : "Select strike"}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {strikesForSide.map((c) => {
-                  const askLabel =
-                    c.ask !== null ? ` — ask $${c.ask.toFixed(2)}` : "";
+                  const askLabel = c.ask !== null ? ` — ask $${c.ask.toFixed(2)}` : "";
                   return (
                     <SelectItem key={c.contractSymbol} value={String(c.strike)}>
-                      ${c.strike}{askLabel}
+                      ${c.strike}
+                      {askLabel}
                     </SelectItem>
                   );
                 })}
@@ -431,8 +433,8 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
       {/* ── Placeholder when chain not yet loaded ── */}
       {!chain && !chainLoading && (
         <p className="text-xs text-muted-foreground">
-          Enter an underlying symbol above and click <strong>Load</strong> (or press Enter)
-          to see available expirations and strikes.
+          Enter an underlying symbol above and click <strong>Load</strong> (or press Enter) to see
+          available expirations and strikes.
         </p>
       )}
 
@@ -443,7 +445,10 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
           type="text"
           inputMode="numeric"
           value={quantity}
-          onChange={(e) => { setQuantity(e.target.value); setQuantityError(""); }}
+          onChange={(e) => {
+            setQuantity(e.target.value);
+            setQuantityError("");
+          }}
           onBlur={handleQuantityBlur}
           placeholder="e.g. 1"
           className="text-lg h-12"
@@ -456,9 +461,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
       {previewParsed && (
         <div className="rounded-md bg-muted/50 px-3 py-2 space-y-0.5">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">
-              {formatOptionShort(previewParsed)}
-            </span>
+            <span className="text-sm font-medium">{formatOptionShort(previewParsed)}</span>
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
               Option
             </Badge>
@@ -467,8 +470,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
           <p className="text-[11px] font-mono text-muted-foreground">{previewOcc}</p>
           {previewCost !== null && (
             <p className="text-xs text-muted-foreground">
-              Est. cost at ask: ${previewCost.toFixed(2)} ({qtyNum} × $
-              {ask?.toFixed(2)} × 100)
+              Est. cost at ask: ${previewCost.toFixed(2)} ({qtyNum} × ${ask?.toFixed(2)} × 100)
             </p>
           )}
         </div>
@@ -493,15 +495,17 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
               placeholder="e.g. AAPL250117C00150000"
               autoFocus
             />
-            {pasteError && (
-              <p className="text-xs text-destructive">{pasteError}</p>
-            )}
+            {pasteError && <p className="text-xs text-destructive">{pasteError}</p>}
             <div className="flex justify-end gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => { setPasteMode(false); setPasteValue(""); setPasteError(null); }}
+                onClick={() => {
+                  setPasteMode(false);
+                  setPasteValue("");
+                  setPasteError(null);
+                }}
               >
                 Cancel
               </Button>

@@ -90,7 +90,9 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
   return (
     <Card className="border-0 bg-transparent shadow-none">
       <CardHeader className="pb-2 px-2 sm:px-4">
-        <CardTitle className="text-base font-medium text-foreground">{t("assetsVsLiabilities")}</CardTitle>
+        <CardTitle className="text-base font-medium text-foreground">
+          {t("assetsVsLiabilities")}
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-2 sm:px-4 pb-4">
         {data.length === 0 ? (
@@ -100,11 +102,19 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
         ) : !mounted ? (
           <div className="h-[280px]" />
         ) : (
-          <div className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}>
+          <div
+            className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+          >
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="label" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
                 <YAxis
                   width={50}
                   tick={{ fontSize: 12 }}
@@ -120,7 +130,9 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                 />
                 <Tooltip
                   cursor={{ fill: "var(--muted)", opacity: 0.3 }}
-                  content={<AssetsTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />}
+                  content={
+                    <AssetsTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />
+                  }
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar

@@ -15,7 +15,11 @@ interface AccountStatCardsProps {
   onSaveBalance: (newBalance: number, note?: string) => Promise<void>;
 }
 
-export function AccountStatCards({ account, totalHoldingsValue, onSaveBalance }: AccountStatCardsProps) {
+export function AccountStatCards({
+  account,
+  totalHoldingsValue,
+  onSaveBalance,
+}: AccountStatCardsProps) {
   const t = useTranslations();
   const { privacyMode } = usePrivacyMode();
   const isBrokerage = account.category === "BROKERAGE" || account.category === "CRYPTO_WALLET";

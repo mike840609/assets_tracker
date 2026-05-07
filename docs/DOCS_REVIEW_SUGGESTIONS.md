@@ -3,6 +3,7 @@
 ## Overview
 
 This document consolidates the highest-value recommendations across:
+
 - `docs/SUGGESTIONS.md`
 - `docs/VERCEL_ANALYSIS.md`
 - `docs/BUNDLE_ANALYSIS.md`
@@ -10,22 +11,23 @@ This document consolidates the highest-value recommendations across:
 
 It is intended to be an execution-oriented backlog with dependency-aware ordering.
 
-| # | Suggestion | Category | Impact | Effort | Status |
-|---|-----------|----------|--------|--------|--------|
-| D1 | Enforce auth + ownership checks on all sensitive API routes | Security | 🔴 High | 1-2 hrs | ❌ Not Done |
-| D2 | Harden cron path (`CRON_SECRET` guard, timing-safe compare, controlled fan-out concurrency) | Security / Reliability | 🔴 High | 1-2 hrs | ❌ Not Done |
-| D3 | Add startup environment validation (`src/lib/env.ts`) | Reliability / DX | 🔴 High | 1 hr | ✅ Done |
-| D4 | Add baseline tests (service-layer + API auth checks + 1 E2E smoke) | Testing | 🔴 High | 1-2 days | ❌ Not Done |
-| D5 | Complete caching hygiene (`Cache-Control`, `revalidateTag` coverage audit) | Performance | 🟡 Medium | 1-2 hrs | ❌ Not Done |
-| D6 | Finish accessibility quick wins (`aria-label`, keyboard semantics, non-color cues) | Accessibility | 🔴 High | 2-3 hrs | ❌ Not Done |
-| D7 | Close hot-path performance items (cursor pagination, `/api/search` TTL cache, symbol dedupe/chunking) | Performance | 🔴 High | 2-4 hrs | ❌ Not Done |
-| D8 | Build Analysis Phase 2.1 — cash flow decomposition | Feature | 🔴 High | 1-2 sprints | ❌ Not Done |
-| D9 | Build Analysis Phase 2.2 — category trend from snapshot `breakdown` | Feature | 🟡 Medium | 1 sprint | ❌ Not Done |
-| D10 | Establish observability baseline (`/api/health`, structured logging, bundle baseline tracking) | Observability | 🟡 Medium | 2-4 hrs | ❌ Not Done |
+| #   | Suggestion                                                                                            | Category               | Impact    | Effort      | Status      |
+| --- | ----------------------------------------------------------------------------------------------------- | ---------------------- | --------- | ----------- | ----------- |
+| D1  | Enforce auth + ownership checks on all sensitive API routes                                           | Security               | 🔴 High   | 1-2 hrs     | ❌ Not Done |
+| D2  | Harden cron path (`CRON_SECRET` guard, timing-safe compare, controlled fan-out concurrency)           | Security / Reliability | 🔴 High   | 1-2 hrs     | ❌ Not Done |
+| D3  | Add startup environment validation (`src/lib/env.ts`)                                                 | Reliability / DX       | 🔴 High   | 1 hr        | ✅ Done     |
+| D4  | Add baseline tests (service-layer + API auth checks + 1 E2E smoke)                                    | Testing                | 🔴 High   | 1-2 days    | ❌ Not Done |
+| D5  | Complete caching hygiene (`Cache-Control`, `revalidateTag` coverage audit)                            | Performance            | 🟡 Medium | 1-2 hrs     | ❌ Not Done |
+| D6  | Finish accessibility quick wins (`aria-label`, keyboard semantics, non-color cues)                    | Accessibility          | 🔴 High   | 2-3 hrs     | ❌ Not Done |
+| D7  | Close hot-path performance items (cursor pagination, `/api/search` TTL cache, symbol dedupe/chunking) | Performance            | 🔴 High   | 2-4 hrs     | ❌ Not Done |
+| D8  | Build Analysis Phase 2.1 — cash flow decomposition                                                    | Feature                | 🔴 High   | 1-2 sprints | ❌ Not Done |
+| D9  | Build Analysis Phase 2.2 — category trend from snapshot `breakdown`                                   | Feature                | 🟡 Medium | 1 sprint    | ❌ Not Done |
+| D10 | Establish observability baseline (`/api/health`, structured logging, bundle baseline tracking)        | Observability          | 🟡 Medium | 2-4 hrs     | ❌ Not Done |
 
 ## Methodology
 
 Prioritization order uses three rules:
+
 1. **Risk first**: security and reliability findings before feature expansion.
 2. **Unblockers second**: work that enables multiple follow-up improvements.
 3. **Fast wins third**: low/medium effort items with immediate production impact.
@@ -49,6 +51,7 @@ Review date: **2026-04-20**.
 **Observation.** Docs call out missing/misconfigured cron-secret guard rails and scalability risk from unconstrained fan-out.
 
 **Recommendation.**
+
 - Fail fast when `CRON_SECRET` is missing.
 - Use timing-safe comparison for auth header checks.
 - Batch/chunk user fan-out to avoid uncontrolled burst load.
@@ -72,6 +75,7 @@ Review date: **2026-04-20**.
 **Observation.** Docs repeatedly identify low test coverage as a blocker for safe refactors.
 
 **Recommendation.** Add minimum viable coverage in this order:
+
 1. Unit tests for service-layer financial math and aggregations.
 2. API integration tests focused on auth/ownership and input validation.
 3. One E2E smoke path covering login → account/holding flow.
@@ -85,6 +89,7 @@ Review date: **2026-04-20**.
 **Observation.** Some read routes still lack explicit cache headers; mutation routes may miss consistent tag invalidation.
 
 **Recommendation.**
+
 - Add `Cache-Control` on read-only APIs where appropriate.
 - Audit and standardize `revalidateTag(...)` after mutations.
 
@@ -97,6 +102,7 @@ Review date: **2026-04-20**.
 **Observation.** Accessibility items are open across controls, charts, and sortable table interactions.
 
 **Recommendation.**
+
 - Add `aria-label` on icon-only controls.
 - Add keyboard + semantic sort support (`aria-sort`) for sortable tables.
 - Add non-color differentiation for key chart series and states.
@@ -110,6 +116,7 @@ Review date: **2026-04-20**.
 **Observation.** Existing findings highlight scaling bottlenecks in transaction pagination and external data-fetch paths.
 
 **Recommendation.**
+
 - Move transactions to cursor/keyset pagination.
 - Add short-lived cache to `/api/search` lookups.
 - Dedupe/chunk symbol batches in price refresh paths.
@@ -144,6 +151,7 @@ Review date: **2026-04-20**.
 **Observation.** Docs note missing health endpoint and inconsistent structured diagnostics.
 
 **Recommendation.**
+
 - Add `/api/health` readiness endpoint.
 - Replace ad-hoc console logging with structured logging.
 - Maintain bundle/perf baseline checks as part of release workflow.
@@ -155,22 +163,26 @@ Review date: **2026-04-20**.
 ## Suggested Delivery Plan
 
 ### Sprint A — Stability & Security
+
 - D1 auth/ownership hardening
 - D2 cron hardening and fan-out limits
 - D3 startup env validation
 - D4 minimum test baseline
 
 ### Sprint B — Performance & Accessibility
+
 - D5 cache headers + invalidation audit
 - D6 accessibility quick wins
 - D7 hot-path performance fixes
 
 ### Sprint C — Product & Observability
+
 - D8 cash-flow decomposition
 - D9 category trend
 - D10 observability baseline hardening
 
 ## Optional Quick Wins (same day)
+
 - Add `Cache-Control` to remaining read-only APIs.
 - Add `/api/health` endpoint.
 - Add `aria-label` on icon-only controls.

@@ -55,9 +55,7 @@ export async function GET(request: Request) {
 
     if (dateParam && expirations.includes(dateParam)) {
       // On-demand fetch for a specific expiration chosen by the user
-      const date = targetDates.find(
-        (d) => new Date(d).toISOString().slice(0, 10) === dateParam,
-      );
+      const date = targetDates.find((d) => new Date(d).toISOString().slice(0, 10) === dateParam);
       if (date) {
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -72,7 +70,7 @@ export async function GET(request: Request) {
       }
     } else {
       // Initial load: use the chain that comes free in the initial call (nearest expiration)
-      for (const opt of (initial.options ?? [])) {
+      for (const opt of initial.options ?? []) {
         if (!opt?.expirationDate) continue;
         const exp = new Date(opt.expirationDate).toISOString().slice(0, 10);
         if (expirations.includes(exp)) {

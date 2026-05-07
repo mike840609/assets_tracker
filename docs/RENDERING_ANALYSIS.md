@@ -4,20 +4,20 @@
 
 The user asked for ISR suggestions. The correct Next.js 16 answer is to walk the rendering ladder **SSG → PPR → ISR** and only use ISR where the first two don't apply. This doc is the rendering-strategy slice that complements `BUNDLE_ANALYSIS.md` and `VERCEL_ANALYSIS.md` — the items here are additive to V17, V18, V20, V21, V26, V27 (not duplicates).
 
-| # | Suggestion | Category | Impact | Effort | Status |
-|---|-----------|----------|--------|--------|--------|
-| S1 | `/login` → SSG (`force-static`) | SSG · Public page | 🟡 Medium | 10 min | 🚫 Blocked — `force-static` incompatible with `nextConfig.cacheComponents`; PPR shell serves as fallback |
-| S2 | `/privacy` → SSG (`force-static`) | SSG · Public page | 🟡 Medium | 10 min | 🚫 Blocked — same constraint as S1 |
-| P1 | Verify build output classifies `/`, `/accounts`, `/accounts/[id]`, `/history`, `/analysis`, `/settings` as `◐` | PPR · Verification | 🟡 Medium | 20 min | ✅ Done |
-| P2 | Move `/accounts` list reads into the cached `fetchUserAccountsWithHoldings` helper | PPR · Route coverage | 🟡 Medium | 45 min | ✅ Done |
-| I1 | ISR on `GET /api/exchange-rates` (`revalidate` + `Cache-Control`) | ISR · Route handler | 🔴 High | 15 min | 🚫 Blocked — route-segment `revalidate` conflicts with `nextConfig.cacheComponents`; `Cache-Control` shipped |
-| I2 | ISR on `GET /api/search` (`revalidate` + `Cache-Control`) | ISR · Route handler | 🔴 High | 15 min | 🚫 Blocked — same constraint as I1; `Cache-Control` shipped |
-| I3 | `fetch({ next: { revalidate, tags } })` on CoinGecko fallback | ISR · Upstream fetch | 🟡 Medium | 15 min | ✅ Done (PR 4) |
-| I4 | Route-segment `revalidate` backstop on PPR routes | ISR · Backstop | 🟢 Low | 15 min | 🚫 Blocked — route-segment `revalidate` is incompatible with `nextConfig.cacheComponents` |
-| I5 | Document the `fetch({ next: { revalidate } })` pattern on upstream FX APIs | ISR · Reference | 🟢 Low | 10 min | ✅ Done (PR 4) |
-| X1 | Verify / trim `revalidateTag(tag, "max")` second argument | Prereq · Correctness | 🔴 High | 15 min | ✅ Done |
-| X2 | Add `revalidateTag("snapshots")` after cron snapshot creation | Prereq · Invalidation | 🔴 High | 10 min | ✅ Done |
-| X3 | Commit the `next build` classification snippet to this doc | Verification | 🟢 Low | 10 min | ❌ Not Done |
+| #   | Suggestion                                                                                                     | Category              | Impact    | Effort | Status                                                                                                       |
+| --- | -------------------------------------------------------------------------------------------------------------- | --------------------- | --------- | ------ | ------------------------------------------------------------------------------------------------------------ |
+| S1  | `/login` → SSG (`force-static`)                                                                                | SSG · Public page     | 🟡 Medium | 10 min | 🚫 Blocked — `force-static` incompatible with `nextConfig.cacheComponents`; PPR shell serves as fallback     |
+| S2  | `/privacy` → SSG (`force-static`)                                                                              | SSG · Public page     | 🟡 Medium | 10 min | 🚫 Blocked — same constraint as S1                                                                           |
+| P1  | Verify build output classifies `/`, `/accounts`, `/accounts/[id]`, `/history`, `/analysis`, `/settings` as `◐` | PPR · Verification    | 🟡 Medium | 20 min | ✅ Done                                                                                                      |
+| P2  | Move `/accounts` list reads into the cached `fetchUserAccountsWithHoldings` helper                             | PPR · Route coverage  | 🟡 Medium | 45 min | ✅ Done                                                                                                      |
+| I1  | ISR on `GET /api/exchange-rates` (`revalidate` + `Cache-Control`)                                              | ISR · Route handler   | 🔴 High   | 15 min | 🚫 Blocked — route-segment `revalidate` conflicts with `nextConfig.cacheComponents`; `Cache-Control` shipped |
+| I2  | ISR on `GET /api/search` (`revalidate` + `Cache-Control`)                                                      | ISR · Route handler   | 🔴 High   | 15 min | 🚫 Blocked — same constraint as I1; `Cache-Control` shipped                                                  |
+| I3  | `fetch({ next: { revalidate, tags } })` on CoinGecko fallback                                                  | ISR · Upstream fetch  | 🟡 Medium | 15 min | ✅ Done (PR 4)                                                                                               |
+| I4  | Route-segment `revalidate` backstop on PPR routes                                                              | ISR · Backstop        | 🟢 Low    | 15 min | 🚫 Blocked — route-segment `revalidate` is incompatible with `nextConfig.cacheComponents`                    |
+| I5  | Document the `fetch({ next: { revalidate } })` pattern on upstream FX APIs                                     | ISR · Reference       | 🟢 Low    | 10 min | ✅ Done (PR 4)                                                                                               |
+| X1  | Verify / trim `revalidateTag(tag, "max")` second argument                                                      | Prereq · Correctness  | 🔴 High   | 15 min | ✅ Done                                                                                                      |
+| X2  | Add `revalidateTag("snapshots")` after cron snapshot creation                                                  | Prereq · Invalidation | 🔴 High   | 10 min | ✅ Done                                                                                                      |
+| X3  | Commit the `next build` classification snippet to this doc                                                     | Verification          | 🟢 Low    | 10 min | ❌ Not Done                                                                                                  |
 
 ## Methodology
 
@@ -143,8 +143,7 @@ export async function GET() {
   const rates = await prisma.exchangeRate.findMany();
   return NextResponse.json(rates, {
     headers: {
-      "Cache-Control":
-        "public, s-maxage=3600, stale-while-revalidate=86400",
+      "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
     },
   });
 }
@@ -169,8 +168,7 @@ export async function GET(request: Request) {
   // …existing logic…
   return NextResponse.json(quotes, {
     headers: {
-      "Cache-Control":
-        "public, s-maxage=3600, stale-while-revalidate=86400",
+      "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
     },
   });
 }
@@ -277,7 +275,7 @@ The stable Next.js 16 `revalidateTag` signature is `(tag: string): void`. Any se
 revalidateTag("net-worth");
 ```
 
-If it *does* map to a `cacheLife` profile in an experimental build, add a one-line comment documenting what `"max"` means and why it's used, so readers don't have to re-derive it. Marked 🔴 High because the tag-invalidation correctness of I1, I3, I4, X2 all assume these calls fire as intended.
+If it _does_ map to a `cacheLife` profile in an experimental build, add a one-line comment documenting what `"max"` means and why it's used, so readers don't have to re-derive it. Marked 🔴 High because the tag-invalidation correctness of I1, I3, I4, X2 all assume these calls fire as intended.
 
 **Critical files.** `src/app/api/cron/snapshot/route.ts`, `src/app/api/exchange-rates/refresh/route.ts`, `src/app/api/prices/refresh/route.ts`.
 
@@ -344,9 +342,8 @@ Suggested PR grouping:
 - **PR 2 (SSG):** S1 + S2 — trivial, high-confidence.
 - **PR 3 (PPR):** P1 verification + P2 refactor — these want to land together so P1's `next build` output already reflects P2.
 - **PR 4 (ISR):** I1 + I2 + I3 + I5 — all route/fetch-level caching.
-<<<<<<< HEAD
-- **PR 5 (verification):** X3 now; keep I4 queued until `cacheComponents` allows route-segment `revalidate` again.
-=======
+  <<<<<<< HEAD
+- # **PR 5 (verification):** X3 now; keep I4 queued until `cacheComponents` allows route-segment `revalidate` again.
 - **PR 5 (backstop + verification):** I4 + X3 — ship after PR 4 has baked for a few days.
 
 ---
@@ -407,8 +404,10 @@ Route (app)
 ### P2 — `/accounts` cached helpers
 
 Replaced inline Prisma calls in `src/app/(main)/accounts/page.tsx`:
+
 - `prisma.account.findMany(…)` → `fetchUserAccountsWithHoldings(userId)` (existing `"use cache"` helper from `net-worth-service.ts`)
 - `prisma.priceCache.findMany(…)` → `getCachedPricesForSymbols(symbols)` (new `"use cache"` helper added to `price-service.ts`)
 
 The `getCachedPricesForSymbols` helper uses `cacheTag("prices")` + `cacheLife("minutes")` and returns plain `{ symbol, price, currency }` objects (Decimal converted to number) so the result survives cache serialization.
->>>>>>> b46d2af (Implement PR3: PPR verification (P1) + /accounts cached helpers (P2))
+
+> > > > > > > b46d2af (Implement PR3: PPR verification (P1) + /accounts cached helpers (P2))

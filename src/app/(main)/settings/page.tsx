@@ -32,9 +32,7 @@ async function SettingsContent() {
           <LargeTitleHeading>{t("title")}</LargeTitleHeading>
           <div className="bg-muted/50 p-4 rounded-lg border w-full">
             <h3 className="font-semibold text-sm mb-1">{t("appPhilosophy")}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {t("appDescription")}
-            </p>
+            <p className="text-sm text-muted-foreground leading-relaxed">{t("appDescription")}</p>
           </div>
         </div>
 

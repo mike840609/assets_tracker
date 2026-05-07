@@ -12,18 +12,18 @@ A personal net-worth / asset tracking application built with **Next.js 16** (App
 
 ## Tech Stack
 
-| Layer          | Technology                                      |
-| -------------- | ----------------------------------------------- |
-| Framework      | Next.js 16.2 (App Router, React 19, RSC)        |
-| Language       | TypeScript 5, strict mode                       |
-| Database       | PostgreSQL via Prisma 7 (`@prisma/client`)      |
-| Styling        | Tailwind CSS 4 + shadcn/ui v4 (base-nova style) |
-| Auth           | NextAuth.js v5 (Google OAuth, JWT sessions)     |
-| UI Icons       | Lucide React                                    |
-| Charts         | Recharts 3                                      |
-| Price Data     | Yahoo Finance 2 (primary) + CoinGecko (fallback)|
-| Validation     | Zod 4                                           |
-| Fonts          | Geist Sans / Geist Mono via `next/font/google`  |
+| Layer      | Technology                                       |
+| ---------- | ------------------------------------------------ |
+| Framework  | Next.js 16.2 (App Router, React 19, RSC)         |
+| Language   | TypeScript 5, strict mode                        |
+| Database   | PostgreSQL via Prisma 7 (`@prisma/client`)       |
+| Styling    | Tailwind CSS 4 + shadcn/ui v4 (base-nova style)  |
+| Auth       | NextAuth.js v5 (Google OAuth, JWT sessions)      |
+| UI Icons   | Lucide React                                     |
+| Charts     | Recharts 3                                       |
+| Price Data | Yahoo Finance 2 (primary) + CoinGecko (fallback) |
+| Validation | Zod 4                                            |
+| Fonts      | Geist Sans / Geist Mono via `next/font/google`   |
 
 ## Commands
 
@@ -129,6 +129,7 @@ In-app calculation types build on these: `HoldingWithPrice`, `AccountWithValue`,
 ### i18n (next-intl)
 
 Supported locales: `en-US` (default), `zh-TW`. Message files live in `messages/`. Locale is resolved from:
+
 1. `NEXT_LOCALE` cookie (set by settings UI)
 2. `Accept-Language` request header
 
@@ -146,21 +147,25 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 ### Price & Exchange Rate Pipeline
 
 **Price fetching** (`src/lib/services/price-service.ts`):
+
 - Stocks/ETFs/bonds: Yahoo Finance 2
 - Crypto: Yahoo Finance 2 first, then CoinGecko API (free tier, no key) as fallback
 - Prices are cached in the `PriceCache` table (keyed by symbol)
 
 **Exchange rates** (`src/lib/services/exchange-rate-service.ts`):
+
 - Stored in `ExchangeRate` table
 - `getAllExchangeRates()` bulk-loads all rates into a Map
 - `resolveRate()` handles identity (same currency) and inverse rates
 - Missing rates are fetched lazily and saved
 
 **Net worth calculation** (`src/lib/services/net-worth-service.ts`):
+
 - Two-pass algorithm: first pass collects missing rate pairs, second pass computes values after batch-fetching missing rates
 - `getNetWorthSummary(userId, baseCurrency)` returns fully computed `NetWorthSummary`
 
 **Other services in `src/lib/services/`:**
+
 - `snapshot-service.ts` — creates `NetWorthSnapshot` rows with the lossless per-account breakdown
 - `history-service.ts` — reads snapshots and renormalizes them on the fly into the user's current base currency
 - `analysis-service.ts` — backs the `/analysis` tab

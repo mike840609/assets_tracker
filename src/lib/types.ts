@@ -10,11 +10,7 @@ import type { Account, Holding, HoldingTransaction } from "@/generated/prisma/cl
  * - Date fields   → string (ISO)
  * - All other fields pass through unchanged
  */
-export type Serialized<
-  T,
-  DecimalKeys extends keyof T = never,
-  DateKeys extends keyof T = never,
-> = {
+export type Serialized<T, DecimalKeys extends keyof T = never, DateKeys extends keyof T = never> = {
   [K in keyof T]: K extends DecimalKeys ? number : K extends DateKeys ? string : T[K];
 };
 
@@ -23,11 +19,7 @@ export type Serialized<
  * Coerces Decimal fields via Number() and Date fields via .toISOString().
  * Safe to pass from Server Components to Client Components.
  */
-export function serializeModel<
-  T extends object,
-  D extends keyof T,
-  Dt extends keyof T,
->(
+export function serializeModel<T extends object, D extends keyof T, Dt extends keyof T>(
   obj: T,
   opts: { decimals: readonly D[]; dates: readonly Dt[] },
 ): Serialized<T, D, Dt> {
@@ -129,7 +121,7 @@ export function serializeHolding(holding: Holding): SerializedHolding {
 }
 
 export function serializeAccountWithHoldings(
-  account: Account & { holdings: Holding[] }
+  account: Account & { holdings: Holding[] },
 ): SerializedAccountWithHoldings {
   return {
     ...serializeAccount(account),

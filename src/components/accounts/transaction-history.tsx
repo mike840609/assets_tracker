@@ -63,7 +63,17 @@ interface TxRowProps {
   tCommon: ReturnType<typeof useTranslations>;
 }
 
-function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit, onDelete, tCommon }: TxRowProps) {
+function SwipeableTxRow({
+  tx,
+  typeLabel,
+  typeVariant,
+  symbol,
+  qty,
+  time,
+  onEdit,
+  onDelete,
+  tCommon,
+}: TxRowProps) {
   const x = useMotionValue(0);
   const hasFiredHaptic = useRef(false);
   const hasFiredDangerHaptic = useRef(false);
@@ -84,8 +94,12 @@ function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit,
   const actionsOpacity = useTransform(x, [-REVEAL_WIDTH * 0.5, 0], [1, 0], { clamp: true });
   const iconScale = useTransform(x, [0, -REVEAL_WIDTH], [0.65, 1.0], { clamp: true });
   const editOpacity = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [1, 0], { clamp: true });
-  const editWidth = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [ACTION_WIDTH, 0], { clamp: true });
-  const deleteIconScale = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [1.0, 1.3], { clamp: true });
+  const editWidth = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [ACTION_WIDTH, 0], {
+    clamp: true,
+  });
+  const deleteIconScale = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [1.0, 1.3], {
+    clamp: true,
+  });
   const dangerOpacity = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [0, 1], { clamp: true });
 
   function snapOpen() {
@@ -143,7 +157,10 @@ function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit,
         <motion.button
           className="flex items-center justify-center bg-blue-500 text-white text-xs font-medium overflow-hidden rounded-2xl my-1.5 active:brightness-90 transition-[filter]"
           style={{ opacity: editOpacity, width: editWidth, minWidth: 0 }}
-          onClick={() => { snapClose(); onEdit(); }}
+          onClick={() => {
+            snapClose();
+            onEdit();
+          }}
           aria-label={tCommon("edit")}
         >
           <motion.div className="flex flex-col items-center gap-1" style={{ scale: iconScale }}>
@@ -153,10 +170,16 @@ function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit,
         </motion.button>
         <button
           className="flex-1 flex items-center justify-center bg-destructive text-white text-xs font-medium rounded-2xl my-1.5 active:brightness-90 transition-[filter]"
-          onClick={() => { snapClose(); onDelete(); }}
+          onClick={() => {
+            snapClose();
+            onDelete();
+          }}
           aria-label={tCommon("delete")}
         >
-          <motion.div className="flex flex-col items-center gap-1" style={{ scale: deleteIconScale }}>
+          <motion.div
+            className="flex flex-col items-center gap-1"
+            style={{ scale: deleteIconScale }}
+          >
             <Trash2 className="h-4 w-4" />
             <span>{tCommon("delete")}</span>
           </motion.div>
@@ -173,7 +196,9 @@ function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit,
         dragElastic={{ left: 0.12, right: 0.15 }}
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
-        onClick={() => { if (isOpen) snapClose(); }}
+        onClick={() => {
+          if (isOpen) snapClose();
+        }}
       >
         {/* Danger-zone red tint bleeds in from the right edge */}
         <motion.div
@@ -185,15 +210,14 @@ function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit,
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            {symbol && (
-              <span className="font-mono font-semibold text-sm">{symbol}</span>
-            )}
+            {symbol && <span className="font-mono font-semibold text-sm">{symbol}</span>}
             <Badge variant={typeVariant} className="text-[10px] px-1.5 py-0 h-4 rounded-sm">
               {typeLabel}
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {time}{tx.note ? ` · ${tx.note}` : ""}
+            {time}
+            {tx.note ? ` · ${tx.note}` : ""}
           </p>
         </div>
         <div className="text-right shrink-0">
@@ -222,7 +246,15 @@ function SwipeableTxRow({ tx, typeLabel, typeVariant, symbol, qty, time, onEdit,
   );
 }
 
-export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger }: { accountId: string; isBank?: boolean; refreshTrigger?: number }) {
+export function TransactionHistory({
+  accountId,
+  isBank: _isBank,
+  refreshTrigger,
+}: {
+  accountId: string;
+  isBank?: boolean;
+  refreshTrigger?: number;
+}) {
   const router = useRouter();
   const t = useTranslations("transactionHistory");
   const tCommon = useTranslations("common");
@@ -253,7 +285,10 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
   const [editDate, setEditDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetcher = (url: string) => fetch(url).then((res) => res.json()).then((r) => r.data);
+  const fetcher = (url: string) =>
+    fetch(url)
+      .then((res) => res.json())
+      .then((r) => r.data);
 
   const getKey = (pageIndex: number, previousPageData: SerializedTransaction[]) => {
     if (previousPageData && !previousPageData.length) return null; // reached the end
@@ -263,14 +298,15 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
   const { data, size, setSize, isValidating, mutate } = useSWRInfinite(getKey, fetcher);
 
   const transactions = data
-    ? data.flat().map((t: { quantity: string | number } & Record<string, unknown>) => ({
+    ? (data.flat().map((t: { quantity: string | number } & Record<string, unknown>) => ({
         ...t,
         quantity: Number(t.quantity),
-      })) as SerializedTransaction[]
+      })) as SerializedTransaction[])
     : [];
 
   const isLoadingInitialData = !data && isValidating;
-  const isLoadingMore = isLoadingInitialData || (size > 0 && data && typeof data[size - 1] === "undefined");
+  const isLoadingMore =
+    isLoadingInitialData || (size > 0 && data && typeof data[size - 1] === "undefined");
   const isEmpty = data?.[0]?.length === 0;
   const isReachingEnd = isEmpty || (data && data[data.length - 1]?.length < 20);
 
@@ -285,7 +321,7 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
     setEditType(t.type);
     setEditQuantity(String(t.quantity));
     setEditNote(t.note || "");
-    
+
     // Format date for datetime-local input
     const date = new Date(t.createdAt);
     // Convert to local datetime string format YYYY-MM-DDThh:mm
@@ -315,7 +351,9 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
       toast.success(t("updateSuccess"));
       setEditingTx(null);
       mutate();
-      startTransition(() => { router.refresh(); }); // Refresh holdings on parent page
+      startTransition(() => {
+        router.refresh();
+      }); // Refresh holdings on parent page
     } catch {
       toast.error(t("updateFailed"));
     } finally {
@@ -351,7 +389,9 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
           // Keep tx.id in pendingDeleteIds until mutate() delivers fresh SWR pages —
           // removing it early can cause a flash from stale cache data.
           mutate();
-          startTransition(() => { router.refresh(); });
+          startTransition(() => {
+            router.refresh();
+          });
         } catch {
           toast.error(t("deleteFailed"));
           setPendingDeleteIds((prev) => {
@@ -377,18 +417,23 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
     );
   }
 
-  const dateGroups = transactions.reduce<{ dateKey: string; items: SerializedTransaction[] }[]>((acc, tx) => {
-    const dateKey = new Date(tx.createdAt).toLocaleDateString(undefined, {
-      year: "numeric", month: "short", day: "numeric",
-    });
-    const last = acc[acc.length - 1];
-    if (last && last.dateKey === dateKey) {
-      last.items.push(tx);
-    } else {
-      acc.push({ dateKey, items: [tx] });
-    }
-    return acc;
-  }, []);
+  const dateGroups = transactions.reduce<{ dateKey: string; items: SerializedTransaction[] }[]>(
+    (acc, tx) => {
+      const dateKey = new Date(tx.createdAt).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+      const last = acc[acc.length - 1];
+      if (last && last.dateKey === dateKey) {
+        last.items.push(tx);
+      } else {
+        acc.push({ dateKey, items: [tx] });
+      }
+      return acc;
+    },
+    [],
+  );
 
   return (
     <Card>
@@ -397,9 +442,7 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
       </CardHeader>
       <CardContent className="space-y-4">
         {transactions.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">
-            {t("empty")}
-          </p>
+          <p className="text-muted-foreground text-center py-8">{t("empty")}</p>
         ) : (
           dateGroups.map(({ dateKey, items }) => (
             <div key={dateKey}>
@@ -409,13 +452,17 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
               <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
                 {items.map((tx, index) => {
                   const typeVariant = TYPE_VARIANTS[tx.type] ?? "secondary";
-                  const typeKey = `type${tx.type.charAt(0) + tx.type.slice(1).toLowerCase()}` as Parameters<typeof t>[0];
+                  const typeKey =
+                    `type${tx.type.charAt(0) + tx.type.slice(1).toLowerCase()}` as Parameters<
+                      typeof t
+                    >[0];
                   const typeLabel = t.has(typeKey) ? t(typeKey) : tx.type;
                   const isCash = (tx as SerializedTransaction & { isCash?: boolean }).isCash;
                   const symbol = isCash ? null : (tx.holding?.symbol ?? null);
                   const qty = `${tx.quantity > 0 ? "+" : ""}${formatQuantity(tx.quantity, tx.holding?.assetType ?? "")}`;
                   const time = new Date(tx.createdAt).toLocaleTimeString(undefined, {
-                    hour: "2-digit", minute: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
                   });
                   if (pendingDeleteIds.has(tx.id)) return null;
                   return (
@@ -441,11 +488,7 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
         )}
         {!isEmpty && !isReachingEnd && (
           <div className="flex justify-center pt-2">
-            <Button
-              variant="secondary"
-              onClick={() => setSize(size + 1)}
-              disabled={isLoadingMore}
-            >
+            <Button variant="secondary" onClick={() => setSize(size + 1)} disabled={isLoadingMore}>
               {isLoadingMore ? t("loading") : t("loadMore")}
             </Button>
           </div>
@@ -459,7 +502,9 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="type" className="text-right">{t("labelType")}</Label>
+              <Label htmlFor="type" className="text-right">
+                {t("labelType")}
+              </Label>
               <div className="col-span-3">
                 <Select value={editType} onValueChange={(v) => v && setEditType(v)}>
                   <SelectTrigger id="type">
@@ -484,7 +529,9 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="quantity" className="text-right">{t("labelQuantity")}</Label>
+              <Label htmlFor="quantity" className="text-right">
+                {t("labelQuantity")}
+              </Label>
               <Input
                 id="quantity"
                 type="number"
@@ -495,7 +542,9 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="date" className="text-right">{t("labelDate")}</Label>
+              <Label htmlFor="date" className="text-right">
+                {t("labelDate")}
+              </Label>
               <Input
                 id="date"
                 type="datetime-local"
@@ -505,7 +554,9 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="note" className="text-right">{t("labelNote")}</Label>
+              <Label htmlFor="note" className="text-right">
+                {t("labelNote")}
+              </Label>
               <Input
                 id="note"
                 value={editNote}
@@ -515,14 +566,15 @@ export function TransactionHistory({ accountId, isBank: _isBank, refreshTrigger 
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingTx(null)}>{tCommon("cancel")}</Button>
+            <Button variant="outline" onClick={() => setEditingTx(null)}>
+              {tCommon("cancel")}
+            </Button>
             <Button onClick={handleEditSave} disabled={isSubmitting}>
               {isSubmitting ? tCommon("saving") : tCommon("save")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </Card>
   );
 }

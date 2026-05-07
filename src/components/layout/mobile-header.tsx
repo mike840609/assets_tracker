@@ -36,14 +36,14 @@ export function MobileHeader() {
         "border-b transition-[border-color,transform] duration-300 ease-out-expo",
         hidden ? "-translate-y-full" : "translate-y-0",
         // Separator only appears once the large title is behind the bar (iOS behaviour)
-        isVisible ? "border-transparent" : "border-border/50"
+        isVisible ? "border-transparent" : "border-border/50",
       )}
     >
       {/* Left: logo + app name — fades away when the large title scrolls out */}
       <div
         className={cn(
           "flex items-center gap-2 min-w-0 transition-all duration-300 ease-out-expo",
-          !isVisible && "opacity-0 pointer-events-none -translate-y-1 scale-95"
+          !isVisible && "opacity-0 pointer-events-none -translate-y-1 scale-95",
         )}
       >
         <svg
@@ -90,9 +90,7 @@ export function MobileHeader() {
         className={cn(
           "absolute left-1/2 -translate-x-1/2 text-[15px] font-semibold text-foreground",
           "transition-all duration-300 ease-out-expo pointer-events-none select-none",
-          isVisible
-            ? "opacity-0 translate-y-2"
-            : "opacity-100 translate-y-0"
+          isVisible ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0",
         )}
       >
         {pageTitle}

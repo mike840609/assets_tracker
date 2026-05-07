@@ -5,7 +5,7 @@ import { ok, failure, validationError } from "@/lib/api-responses";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string; transactionId: string }> }
+  { params }: { params: Promise<{ id: string; transactionId: string }> },
 ) {
   const { id: accountId, transactionId } = await params;
   const body = await request.json();
@@ -104,7 +104,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string; transactionId: string }> }
+  { params }: { params: Promise<{ id: string; transactionId: string }> },
 ) {
   const { id: accountId, transactionId } = await params;
 

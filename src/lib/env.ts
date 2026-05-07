@@ -1,5 +1,5 @@
-import "server-only"
-import { z } from "zod"
+import "server-only";
+import { z } from "zod";
 
 const envSchema = z
   .object({
@@ -7,7 +7,10 @@ const envSchema = z
       .string()
       .trim()
       .min(1, "is required")
-      .refine((value) => /^postgres(ql)?:\/\//.test(value), "must be a valid PostgreSQL connection string"),
+      .refine(
+        (value) => /^postgres(ql)?:\/\//.test(value),
+        "must be a valid PostgreSQL connection string",
+      ),
     AUTH_SECRET: z.string().trim().min(1, "is required"),
     AUTH_GOOGLE_ID: z.string().trim().min(1, "is required"),
     AUTH_GOOGLE_SECRET: z.string().trim().min(1, "is required"),
@@ -18,15 +21,17 @@ const envSchema = z
     VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
   })
   .superRefine((value, ctx) => {
-    const previewAuthDisabled = ["1", "true", "yes", "on"].includes((value.PREVIEW_AUTH_DISABLED ?? "").toLowerCase())
+    const previewAuthDisabled = ["1", "true", "yes", "on"].includes(
+      (value.PREVIEW_AUTH_DISABLED ?? "").toLowerCase(),
+    );
     if (value.VERCEL_ENV === "preview" && !previewAuthDisabled && !value.PREVIEW_AUTH_PASSWORD) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["PREVIEW_AUTH_PASSWORD"],
-        message: "is required when VERCEL_ENV is \"preview\"",
-      })
+        message: 'is required when VERCEL_ENV is "preview"',
+      });
     }
-  })
+  });
 
 const parsedEnv = envSchema.safeParse({
   DATABASE_URL: process.env.DATABASE_URL,
@@ -38,20 +43,20 @@ const parsedEnv = envSchema.safeParse({
   PREVIEW_AUTH_PASSWORD: process.env.PREVIEW_AUTH_PASSWORD,
   PREVIEW_AUTH_DISABLED: process.env.PREVIEW_AUTH_DISABLED,
   VERCEL_ENV: process.env.VERCEL_ENV,
-})
+});
 
 if (!parsedEnv.success) {
   const issues = parsedEnv.error.issues
     .map((issue) => {
-      const key = issue.path.join(".") || "(unknown)"
-      return `- ${key}: ${issue.message}`
+      const key = issue.path.join(".") || "(unknown)";
+      return `- ${key}: ${issue.message}`;
     })
-    .join("\n")
+    .join("\n");
 
-  throw new Error(`Invalid environment variables:\n${issues}`)
+  throw new Error(`Invalid environment variables:\n${issues}`);
 }
 
-export const env = parsedEnv.data
+export const env = parsedEnv.data;
 
 export const {
   DATABASE_URL,
@@ -63,4 +68,4 @@ export const {
   PREVIEW_AUTH_PASSWORD,
   PREVIEW_AUTH_DISABLED,
   VERCEL_ENV,
-} = env
+} = env;

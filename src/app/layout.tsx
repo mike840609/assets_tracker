@@ -91,12 +91,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://open.er-api.com" />
       </head>
       <body className="h-full flex flex-col md:flex-row overflow-hidden bg-background text-foreground">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {/*
            * LocaleProviders reads the NEXT_LOCALE cookie — a runtime API.
            * Suspense keeps this cookie read out of the prerender pass so

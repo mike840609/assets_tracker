@@ -22,7 +22,10 @@ export interface ParsedOption {
 }
 
 export class OptionError extends Error {
-  constructor(public code: string, message: string) {
+  constructor(
+    public code: string,
+    message: string,
+  ) {
     super(message);
     this.name = "OptionError";
   }
@@ -122,7 +125,20 @@ export function buildOccSymbol(args: {
   return `${root}${yy}${mm}${dd}${cp}${strike}`;
 }
 
-const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_ABBR = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 export function formatOptionLabel(p: ParsedOption): string {
   const month = MONTH_ABBR[p.expiration.getUTCMonth()];

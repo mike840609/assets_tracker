@@ -2,41 +2,41 @@
 
 ## Overview
 
-| # | Suggestion | Category | Impact | Effort | Status |
-|---|-----------|----------|--------|--------|--------|
-| V1 | Rename `src/middleware.ts` → `src/proxy.ts` (Next.js 16 convention) | Deprecation | 🟢 Low | 10 min | ❌ Not Done |
-| V2 | Remove duplicate `prisma generate` (postinstall + build) | Build Perf | 🟢 Low | 5 min | ✅ Done |
-| V3 | Upgrade `prisma` + `@prisma/client` 7.6.0 → 7.7.0 | Maintenance | 🟢 Low | 10 min | ❌ Not Done |
-| V4 | Set `maxDuration: 60` for `/api/cron/snapshot` in `vercel.json` | Reliability | 🔴 High | 10 min | ✅ Done |
-| V5 | Pin `regions` in `vercel.json` to match Neon region (`sin1`) | Performance | 🟡 Medium | 15 min | ✅ Done |
-| V6 | Hover/viewport prefetch in sidebar (replace eager all-routes prefetch) | Performance | 🟡 Medium | 30 min | ✅ Done |
-| V7 | Suppress yahoo-finance2 consent notices in `price-service.ts` | Observability | 🟢 Low | 15 min | ❌ Not Done |
-| V8 | Evaluate edge runtime for `/api/search` + `/api/exchange-rates` | Performance | 🟡 Medium | 1-2 hrs | ⚠️ Blocked (see notes) |
-| V9 | Verify `@vercel/speed-insights` + `@vercel/analytics` are mounted | Observability | 🟢 Low | 15 min | ✅ Done |
-| V10 | Add `/api/health` endpoint | Observability | 🟡 Medium | 30 min | ❌ Not Done |
-| V11 | Verify Vercel Cron `/api/cron/snapshot` is firing daily | Reliability | 🔴 High | 15 min | ❌ Not Done |
-| V12 | Structured error logging in `price-service.ts` | Observability | 🟡 Medium | 1 hr | ❌ Not Done |
-| V13 | Add baseline security headers (HSTS, X-CTO, XFO, Referrer-Policy, Permissions-Policy) | Security | 🔴 High | 1 hr | ❌ Not Done |
-| V14 | Add CSP (Report-Only first, then enforce) | Security | 🔴 High | 2-3 hrs | ❌ Not Done |
-| V15 | Audit & shrink `.next/cache` (currently 292 MB) | Build Perf | 🟢 Low | 1 hr | ❌ Not Done |
-| V16 | React `cache()` wrap for `/accounts/[id]` reads + audit `<Link prefetch>` to stop 5–8× burst | Performance | 🔴 High | 45 min | ❌ Not Done |
-| V17 | `Cache-Control` + `"use cache"` / `cacheTag("exchange-rates")` on `/api/exchange-rates` | Performance | 🟡 Medium | 20 min | ❌ Not Done |
-| V18 | Opt `/analysis` and `/history` into PPR with `"use cache"` + `cacheTag` | Performance | 🟡 Medium | 1 hr | ❌ Not Done |
-| V19 | Dynamic-import `AllocationChart` + `CurrencyExposureChart` like `TrendChart` | Bundle | 🟡 Medium | 30 min | ❌ Not Done |
-| V20 | `Cache-Control: public, max-age=31536000, immutable` for `/public/*` | Performance | 🟢 Low | 15 min | ❌ Not Done |
-| V21 | Audit `revalidateTag` after `POST /accounts`, `/holdings`, `/transactions` | Performance | 🟡 Medium | 1–2 hrs | ❌ Not Done |
-| V22 | Add `@next/bundle-analyzer` + baseline dashboard RSC payload | Observability | 🟢 Low | 30 min | ❌ Not Done |
-| V23 | Reserve `min-h` / `aspect-ratio` on chart cards (CLS fix) | Speed Insights · CLS | 🔴 High | 30 min | ❌ Not Done |
-| V24 | Preload Geist Sans `.woff2` + `content-visibility: auto` on below-fold cards | Speed Insights · LCP/FCP | 🟡 Medium | 45 min | ✅ Done |
-| V25 | `startTransition` + memoize privacy/theme-toggle consumers | Speed Insights · INP | 🟡 Medium | 1 hr | ✅ Done |
-| V26 | Extend V18's PPR pattern to `/settings` and `/` (per-user cache key) | Speed Insights · TTFB | 🟡 Medium | 1–2 hrs | ✅ Done |
-| V27 | Convert `/`, `/accounts`, `/analysis`, `/history`, `/settings` from `ƒ` → `◐` by adding the Next.js 16 `"use cache"` directive to service-layer reads (executes what V18+V26 proposed but didn't land in the route classifier) | Speed Insights · TTFB | 🔴 High | 1–2 hrs | ✅ Done |
-| V28 | `<link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin="anonymous">` for Analytics + Speed Insights | Speed Insights · LCP/FCP | 🟢 Low | 5 min | ✅ Done |
-| V29 | Re-enable SSR for `AllocationChart` + `CurrencyExposureChart` (drop `ssr: false`) so the chart card shell + localized title ship in server HTML instead of waiting for hydration | Speed Insights · LCP | 🟡 Medium | 30 min | ✅ Done |
-| V30 | Wrap `router.refresh()` + inline-edit state setters in `startTransition` across `transaction-history.tsx`, `edit-holding-dialog.tsx`, `quick-add-holding.tsx`, `holding-form.tsx` (extend V25 beyond privacy/theme toggles) | Speed Insights · INP | 🟡 Medium | 45 min | ✅ Done |
-| V31 | Add `next.config.ts` `images.formats = ["image/avif", "image/webp"]` + `remotePatterns` for `lh3.googleusercontent.com` so any avatar render is optimized | Speed Insights · LCP | 🟢 Low | 15 min | ✅ Done |
-| V32 | Configure `<SpeedInsights beforeSend={…}>` to drop `/login` + `/privacy` from telemetry (score quality + cost) | Observability | 🟢 Low | 15 min | ✅ Done |
-| V33 | Ship `@next/bundle-analyzer` (supersedes V22) — prerequisite for measuring any further client-JS Speed Insights wins | Observability | 🟢 Low | 30 min | ❌ Not Done |
+| #   | Suggestion                                                                                                                                                                                                                     | Category                 | Impact    | Effort  | Status                 |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ | --------- | ------- | ---------------------- |
+| V1  | Rename `src/middleware.ts` → `src/proxy.ts` (Next.js 16 convention)                                                                                                                                                            | Deprecation              | 🟢 Low    | 10 min  | ❌ Not Done            |
+| V2  | Remove duplicate `prisma generate` (postinstall + build)                                                                                                                                                                       | Build Perf               | 🟢 Low    | 5 min   | ✅ Done                |
+| V3  | Upgrade `prisma` + `@prisma/client` 7.6.0 → 7.7.0                                                                                                                                                                              | Maintenance              | 🟢 Low    | 10 min  | ❌ Not Done            |
+| V4  | Set `maxDuration: 60` for `/api/cron/snapshot` in `vercel.json`                                                                                                                                                                | Reliability              | 🔴 High   | 10 min  | ✅ Done                |
+| V5  | Pin `regions` in `vercel.json` to match Neon region (`sin1`)                                                                                                                                                                   | Performance              | 🟡 Medium | 15 min  | ✅ Done                |
+| V6  | Hover/viewport prefetch in sidebar (replace eager all-routes prefetch)                                                                                                                                                         | Performance              | 🟡 Medium | 30 min  | ✅ Done                |
+| V7  | Suppress yahoo-finance2 consent notices in `price-service.ts`                                                                                                                                                                  | Observability            | 🟢 Low    | 15 min  | ❌ Not Done            |
+| V8  | Evaluate edge runtime for `/api/search` + `/api/exchange-rates`                                                                                                                                                                | Performance              | 🟡 Medium | 1-2 hrs | ⚠️ Blocked (see notes) |
+| V9  | Verify `@vercel/speed-insights` + `@vercel/analytics` are mounted                                                                                                                                                              | Observability            | 🟢 Low    | 15 min  | ✅ Done                |
+| V10 | Add `/api/health` endpoint                                                                                                                                                                                                     | Observability            | 🟡 Medium | 30 min  | ❌ Not Done            |
+| V11 | Verify Vercel Cron `/api/cron/snapshot` is firing daily                                                                                                                                                                        | Reliability              | 🔴 High   | 15 min  | ❌ Not Done            |
+| V12 | Structured error logging in `price-service.ts`                                                                                                                                                                                 | Observability            | 🟡 Medium | 1 hr    | ❌ Not Done            |
+| V13 | Add baseline security headers (HSTS, X-CTO, XFO, Referrer-Policy, Permissions-Policy)                                                                                                                                          | Security                 | 🔴 High   | 1 hr    | ❌ Not Done            |
+| V14 | Add CSP (Report-Only first, then enforce)                                                                                                                                                                                      | Security                 | 🔴 High   | 2-3 hrs | ❌ Not Done            |
+| V15 | Audit & shrink `.next/cache` (currently 292 MB)                                                                                                                                                                                | Build Perf               | 🟢 Low    | 1 hr    | ❌ Not Done            |
+| V16 | React `cache()` wrap for `/accounts/[id]` reads + audit `<Link prefetch>` to stop 5–8× burst                                                                                                                                   | Performance              | 🔴 High   | 45 min  | ❌ Not Done            |
+| V17 | `Cache-Control` + `"use cache"` / `cacheTag("exchange-rates")` on `/api/exchange-rates`                                                                                                                                        | Performance              | 🟡 Medium | 20 min  | ❌ Not Done            |
+| V18 | Opt `/analysis` and `/history` into PPR with `"use cache"` + `cacheTag`                                                                                                                                                        | Performance              | 🟡 Medium | 1 hr    | ❌ Not Done            |
+| V19 | Dynamic-import `AllocationChart` + `CurrencyExposureChart` like `TrendChart`                                                                                                                                                   | Bundle                   | 🟡 Medium | 30 min  | ❌ Not Done            |
+| V20 | `Cache-Control: public, max-age=31536000, immutable` for `/public/*`                                                                                                                                                           | Performance              | 🟢 Low    | 15 min  | ❌ Not Done            |
+| V21 | Audit `revalidateTag` after `POST /accounts`, `/holdings`, `/transactions`                                                                                                                                                     | Performance              | 🟡 Medium | 1–2 hrs | ❌ Not Done            |
+| V22 | Add `@next/bundle-analyzer` + baseline dashboard RSC payload                                                                                                                                                                   | Observability            | 🟢 Low    | 30 min  | ❌ Not Done            |
+| V23 | Reserve `min-h` / `aspect-ratio` on chart cards (CLS fix)                                                                                                                                                                      | Speed Insights · CLS     | 🔴 High   | 30 min  | ❌ Not Done            |
+| V24 | Preload Geist Sans `.woff2` + `content-visibility: auto` on below-fold cards                                                                                                                                                   | Speed Insights · LCP/FCP | 🟡 Medium | 45 min  | ✅ Done                |
+| V25 | `startTransition` + memoize privacy/theme-toggle consumers                                                                                                                                                                     | Speed Insights · INP     | 🟡 Medium | 1 hr    | ✅ Done                |
+| V26 | Extend V18's PPR pattern to `/settings` and `/` (per-user cache key)                                                                                                                                                           | Speed Insights · TTFB    | 🟡 Medium | 1–2 hrs | ✅ Done                |
+| V27 | Convert `/`, `/accounts`, `/analysis`, `/history`, `/settings` from `ƒ` → `◐` by adding the Next.js 16 `"use cache"` directive to service-layer reads (executes what V18+V26 proposed but didn't land in the route classifier) | Speed Insights · TTFB    | 🔴 High   | 1–2 hrs | ✅ Done                |
+| V28 | `<link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin="anonymous">` for Analytics + Speed Insights                                                                                                          | Speed Insights · LCP/FCP | 🟢 Low    | 5 min   | ✅ Done                |
+| V29 | Re-enable SSR for `AllocationChart` + `CurrencyExposureChart` (drop `ssr: false`) so the chart card shell + localized title ship in server HTML instead of waiting for hydration                                               | Speed Insights · LCP     | 🟡 Medium | 30 min  | ✅ Done                |
+| V30 | Wrap `router.refresh()` + inline-edit state setters in `startTransition` across `transaction-history.tsx`, `edit-holding-dialog.tsx`, `quick-add-holding.tsx`, `holding-form.tsx` (extend V25 beyond privacy/theme toggles)    | Speed Insights · INP     | 🟡 Medium | 45 min  | ✅ Done                |
+| V31 | Add `next.config.ts` `images.formats = ["image/avif", "image/webp"]` + `remotePatterns` for `lh3.googleusercontent.com` so any avatar render is optimized                                                                      | Speed Insights · LCP     | 🟢 Low    | 15 min  | ✅ Done                |
+| V32 | Configure `<SpeedInsights beforeSend={…}>` to drop `/login` + `/privacy` from telemetry (score quality + cost)                                                                                                                 | Observability            | 🟢 Low    | 15 min  | ✅ Done                |
+| V33 | Ship `@next/bundle-analyzer` (supersedes V22) — prerequisite for measuring any further client-JS Speed Insights wins                                                                                                           | Observability            | 🟢 Low    | 30 min  | ❌ Not Done            |
 
 ## Methodology
 
@@ -313,16 +313,14 @@ exists.
 ```ts
 export const runtime = "nodejs";
 export async function GET() {
-  const [db] = await Promise.allSettled([
-    prisma.$queryRaw`SELECT 1`,
-  ]);
+  const [db] = await Promise.allSettled([prisma.$queryRaw`SELECT 1`]);
   return Response.json(
     {
       ok: db.status === "fulfilled",
       db: db.status,
       time: new Date().toISOString(),
     },
-    { status: db.status === "fulfilled" ? 200 : 503 }
+    { status: db.status === "fulfilled" ? 200 : 503 },
   );
 }
 ```
@@ -344,7 +342,7 @@ Jobs, confirm the last execution timestamp. If empty:
 2. Check the handler returns 200 in `get_runtime_logs` filtered by path
    `/api/cron/snapshot`.
 3. Trigger manually: `curl -H "Authorization: Bearer $CRON_SECRET"
-   https://asset-tracker-ct.vercel.app/api/cron/snapshot`.
+https://asset-tracker-ct.vercel.app/api/cron/snapshot`.
 
 **Critical files.** `src/app/api/cron/snapshot/route.ts` (no code change
 expected; verification only)
@@ -362,13 +360,15 @@ failures don't surface symbol, provider, or userId context.
 try {
   const quote = await yahooFinance.quote(symbol);
 } catch (err) {
-  console.error(JSON.stringify({
-    scope: "price-service",
-    provider: "yahoo",
-    symbol,
-    userId,
-    error: err instanceof Error ? err.message : String(err),
-  }));
+  console.error(
+    JSON.stringify({
+      scope: "price-service",
+      provider: "yahoo",
+      symbol,
+      userId,
+      error: err instanceof Error ? err.message : String(err),
+    }),
+  );
   throw err;
 }
 ```
@@ -543,8 +543,7 @@ requests should be served from the CDN.
 ```ts
 return NextResponse.json(rates, {
   headers: {
-    "Cache-Control":
-      "public, s-maxage=3600, stale-while-revalidate=86400",
+    "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
   },
 });
 ```
@@ -619,13 +618,11 @@ subtree is in the initial dashboard RSC payload / client JS.
 **Recommendation.** Extend the existing `lazy-charts` pattern:
 
 ```ts
-export const LazyAllocationChart = dynamic(
-  () => import("./allocation-chart").then((m) => m.AllocationChart),
+export const LazyAllocationChart = dynamic(() =>
+  import("./allocation-chart").then((m) => m.AllocationChart),
 );
-export const LazyCurrencyExposureChart = dynamic(
-  () => import("./currency-exposure-chart").then(
-    (m) => m.CurrencyExposureChart,
-  ),
+export const LazyCurrencyExposureChart = dynamic(() =>
+  import("./currency-exposure-chart").then((m) => m.CurrencyExposureChart),
 );
 ```
 
@@ -676,12 +673,12 @@ cascade-invalidate unrelated cached reads once V18/V26 land.
 `revalidatePath`, `revalidateTag`, `router.refresh`. Map each mutation
 to the **narrowest** tag(s) it should invalidate:
 
-| Mutation | Correct tag(s) |
-|----------|----------------|
-| `POST /api/accounts` | `accounts:${userId}`, `net-worth:${userId}` |
-| `POST /api/accounts/[id]/holdings` | `account:${id}`, `net-worth:${userId}` |
-| `POST /api/prices/refresh` | `prices` |
-| `POST /api/cron/snapshot` | `history:${userId}` (per user), `net-worth:${userId}` |
+| Mutation                           | Correct tag(s)                                        |
+| ---------------------------------- | ----------------------------------------------------- |
+| `POST /api/accounts`               | `accounts:${userId}`, `net-worth:${userId}`           |
+| `POST /api/accounts/[id]/holdings` | `account:${id}`, `net-worth:${userId}`                |
+| `POST /api/prices/refresh`         | `prices`                                              |
+| `POST /api/cron/snapshot`          | `history:${userId}` (per user), `net-worth:${userId}` |
 
 Land V18 first so there are actual tagged reads to invalidate.
 
@@ -779,8 +776,7 @@ privacy or theme. On a 50+ holding account, this pushes INP past the
 ```ts
 import { startTransition } from "react";
 // …
-const togglePrivacyMode = () =>
-  startTransition(() => setPrivacyMode((v) => !v));
+const togglePrivacyMode = () => startTransition(() => setPrivacyMode((v) => !v));
 ```
 
 Also wrap currency-formatting cells in `React.memo` and pass a stable
@@ -941,12 +937,13 @@ export const LazyCurrencyExposureChart = dynamic(
 ```
 
 With SSR enabled the server renders the real `Card` + `CardHeader`
-+ localized title in HTML. The chart's internal
-`mounted`-gated `<ResponsiveContainer>` still waits for the client,
-but the visible card title ships immediately — shifting the LCP
-candidate to a server-rendered element. `TrendChart` stays
-`ssr: false` because its line-chart animation logic has historically
-collided with hydration.
+
+- localized title in HTML. The chart's internal
+  `mounted`-gated `<ResponsiveContainer>` still waits for the client,
+  but the visible card title ships immediately — shifting the LCP
+  candidate to a server-rendered element. `TrendChart` stays
+  `ssr: false` because its line-chart animation logic has historically
+  collided with hydration.
 
 **Critical files.** `src/components/dashboard/lazy-charts.tsx`.
 

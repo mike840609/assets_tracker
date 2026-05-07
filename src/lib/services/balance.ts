@@ -11,7 +11,7 @@ type CashTxInput = { type: CashTransactionType; amount: number };
  */
 export function calculateBalanceDelta(
   oldTx: CashTxInput | null,
-  newTx: CashTxInput | null
+  newTx: CashTxInput | null,
 ): number {
   const toSign = (tx: CashTxInput): number => {
     if (tx.type === "DEPOSIT") return tx.amount;
