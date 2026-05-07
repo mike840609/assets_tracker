@@ -227,11 +227,9 @@ CRON_SECRET         # Bearer token for /api/cron/snapshot
 
 Before proposing changes, check whether the work is already tracked in one of these — items are status-marked and cross-referenced:
 
+- `docs/PERFORMANCE.md` — bundle optimization (B1–B15), rendering strategy (S/P/I/X), enhancement roadmap (PE1–PE19)
+- `docs/INFRASTRUCTURE.md` — Vercel platform (V1–V33), launch readiness (R1–R26)
+- `docs/UI_UX.md` — UI/UX improvements (1–15), `/analysis` tab feature roadmap (Phases 1–4)
+- `docs/CODE_QUALITY.md` — engineering hygiene (Q1–Q20), documentation gaps (C1–C14), cross-doc synthesis (D1–D10)
 - `docs/SUGGESTIONS.md` — master backlog (110+ items, ✅/❌ tracked)
-- `docs/VERCEL_ANALYSIS.md` — Vercel-side perf + security items (V1–V33)
-- `docs/BUNDLE_ANALYSIS.md` — bundle-size reduction work
-- `docs/RENDERING_ANALYSIS.md` — SSG → PPR → ISR strategy
-- `docs/ANALYSIS_ROADMAP.md` — `/analysis` tab feature roadmap
-- `docs/RELEASE_READINESS.md` — pre-market-launch blockers (R1–R26)
-- `docs/DOCS_REVIEW_SUGGESTIONS.md` — consolidated cross-doc recommendations
 - `docs/LOG.md` — running engineering log / decision journal
