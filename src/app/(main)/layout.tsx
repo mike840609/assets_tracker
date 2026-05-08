@@ -7,7 +7,15 @@ import { PrivacyModeProvider } from "@/components/layout/privacy-mode-context";
 import { DensityProvider } from "@/components/layout/density-context";
 import { PullToRefreshProvider } from "@/components/layout/pull-to-refresh-context";
 import { LargeTitleProvider } from "@/components/layout/large-title-context";
-import { DesktopCommandPalette } from "@/components/layout/desktop-command-palette";
+import dynamic from "next/dynamic";
+
+const DesktopCommandPalette = dynamic(
+  () =>
+    import("@/components/layout/desktop-command-palette").then(
+      (m) => m.DesktopCommandPalette,
+    ),
+  { ssr: false },
+);
 import { getSession } from "@/lib/auth-session";
 
 async function SidebarWithSession() {
