@@ -3,10 +3,7 @@
 import dynamic from "next/dynamic";
 
 const DesktopCommandPalette = dynamic(
-  () =>
-    import("@/components/layout/desktop-command-palette").then(
-      (m) => m.DesktopCommandPalette,
-    ),
+  () => import("@/components/layout/desktop-command-palette").then((m) => m.DesktopCommandPalette),
   { ssr: false },
 );
 

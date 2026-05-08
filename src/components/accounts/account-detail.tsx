@@ -11,10 +11,10 @@ import { Input } from "@/components/ui/input";
 import dynamic from "next/dynamic";
 import { EditHoldingDialog } from "./edit-holding-dialog";
 
-const HoldingForm = dynamic(
-  () => import("./holding-form").then((m) => m.HoldingForm),
-  { ssr: false, loading: () => null },
-);
+const HoldingForm = dynamic(() => import("./holding-form").then((m) => m.HoldingForm), {
+  ssr: false,
+  loading: () => null,
+});
 
 const TransactionHistory = dynamic(
   () => import("./transaction-history").then((m) => m.TransactionHistory),
