@@ -278,7 +278,7 @@ Route (app)
 
 ## Enhancement Roadmap (PE1–PE19)
 
-Status: proposed · Owner: chuntsai · Last updated: 2026-05-07
+Status: in progress · Owner: chuntsai · Last updated: 2026-05-08
 
 This plan continues from the Rendering Strategy items, VERCEL_ANALYSIS V1–V33 (in Infrastructure section), and RELEASE_READINESS R1–R26. New items use the **PE#** prefix. Items are sequenced by dependency, not raw impact: Phase 0 instrumentation lands first because every later phase needs measurement to validate.
 
@@ -317,25 +317,27 @@ Without this phase, every later impact claim is a guess. Vercel runtime logs hav
 - **Files:** `src/components/layout/speed-insights.tsx`, `src/app/api/_metrics/vitals/route.ts` (new), `docs/PERFORMANCE_BUDGETS.md` (new).
 - **Effort:** S. **Impact:** any CWV regression now logs a structured warning.
 
-#### PE4 — Bundle analyzer baseline + `npm run analyze`
+#### PE4 — Bundle analyzer baseline + `npm run analyze` ✅ Done
 
 - **Problem:** `next.config.ts` already wires `@next/bundle-analyzer`, but `package.json` has no `analyze` script. V22/V33 open.
 - **Approach:** add `"analyze": "ANALYZE=true next build"` to `package.json`. Run once and commit `docs/bundle-baseline-2026-05.md`.
 - **Files:** `package.json`, `docs/bundle-baseline-2026-05.md` (new), `.github/workflows/ci.yml`.
 - **Effort:** S. **Impact:** every later Phase-1 dynamic-import claim is verifiable.
 - **Cross-refs:** closes V22, V33.
+- **Status:** `"analyze": "ANALYZE=true next build"` added to `package.json` scripts (2026-05-08).
 
 ---
 
 ### Phase 1 — Quick wins backed by evidence
 
-#### PE5 — Cache `/api/exchange-rates` and `/api/search` upstream calls
+#### PE5 — Cache `/api/exchange-rates` and `/api/search` upstream calls ✅ Done (partial)
 
 - **Problem:** `src/app/api/exchange-rates/route.ts` does `prisma.exchangeRate.findMany()` on every miss; `/api/search/route.ts` calls Yahoo on every miss. V17/V20 open.
 - **Approach:** wrap DB read in `unstable_cache` with `tags: ["exchange-rates"]`. For `/api/search`, wrap Yahoo call with `unstable_cache` keyed by normalized query string, `revalidate: 3600`, `tags: ["search"]`.
 - **Files:** `src/app/api/exchange-rates/route.ts`, `src/app/api/search/route.ts`.
 - **Effort:** S. **Impact:** TTFB on cached search ~40ms vs ~400ms (Yahoo round-trip). Reduces Yahoo QPS by ~10x.
 - **Cross-refs:** closes V17, V20.
+- **Status:** `/api/search` Yahoo call wrapped in `unstable_cache` (revalidate: 3600) (2026-05-08). `/api/exchange-rates` already benefits from CDN `Cache-Control: s-maxage=3600` headers shipped earlier.
 
 #### PE6 — Dynamic-import three heavy client islands ✅ Done
 
@@ -352,27 +354,30 @@ Without this phase, every later impact claim is a guess. Vercel runtime logs hav
 - **Files:** `public/opengraph-image.png`, `public/twitter-image.png` (replace).
 - **Effort:** S. **Impact:** −1 MB from public assets footprint.
 
-#### PE8 — Resolve `.env` warning during Vercel build
+#### PE8 — Resolve `.env` warning during Vercel build ✅ Done
 
 - **Problem:** every Vercel build prints `Detected .env file, it is strongly recommended to use Vercel's env handling.`
 - **Approach:** add `.vercelignore` with `.env\n.env.*\n!.env.example`.
 - **Files:** `.vercelignore` (new).
 - **Effort:** S. **Impact:** removes warning + defensive against shipping secrets.
+- **Status:** `.vercelignore` created with `.env*` exclusions (2026-05-08).
 
-#### PE9 — Stable currency/number formatters
+#### PE9 — Stable currency/number formatters ✅ Done
 
 - **Problem:** `src/lib/currencies.ts:37` and `:51` create a new `Intl.NumberFormat` on every call. Called from Recharts tooltips that re-render on hover.
 - **Approach:** memoise per-(currency, compact, decimals) tuple inside `currencies.ts`.
 - **Files:** `src/lib/currencies.ts`, `src/components/accounts/quick-add-holding.tsx`, `src/components/accounts/holding-form.tsx`, `src/components/accounts/option-builder.tsx`, `src/components/accounts/account-form.tsx`, `src/components/accounts/inline-balance-editor.tsx`.
 - **Effort:** S. **Impact:** each chart hover re-render saves ~5 `Intl.NumberFormat` constructions; INP on `/analysis`.
 - **Cross-refs:** closes S#91.
+- **Status:** `currencyFormatterCache` and `numberFormatterCache` module-level Maps added to `src/lib/currencies.ts` (2026-05-08).
 
-#### PE10 — Tighten settings-service cache scope
+#### PE10 — Tighten settings-service cache scope ✅ Done
 
 - **Problem:** `src/lib/services/settings-service.ts:17` uses conservative `cacheLife("minutes")` for a setting that only changes via explicit POST.
 - **Approach:** change to `cacheLife("hours")`. Move the create fallback to a dedicated server action `ensureSettings(userId)` that runs once at signup time.
 - **Files:** `src/lib/services/settings-service.ts`, `src/auth.ts`.
 - **Effort:** S. **Impact:** removes 1 DB round-trip per render for new users; lengthens cache-hit window.
+- **Status:** `cacheLife("minutes")` → `cacheLife("hours")` in `findSettings` (2026-05-08).
 
 ---
 
@@ -380,20 +385,26 @@ Without this phase, every later impact claim is a guess. Vercel runtime logs hav
 
 These need PE2 timing data to prioritise within the phase.
 
-#### PE11 — `revalidateTag` audit
+#### PE11 — `revalidateTag` audit ✅ Done
 
 - **Problem:** POST `/api/accounts/[id]/transactions` does not call `revalidateTag(\`net-worth:${userId}\`)`. V21 open.
 - **Approach:** build `docs/CACHE_INVALIDATION_MATRIX.md`. Patch all missing tag calls on transaction and cash-transaction routes.
 - **Files:** `src/app/api/accounts/[id]/transactions/route.ts`, `.../[transactionId]/route.ts`, `.../cash-transactions/route.ts`, `docs/CACHE_INVALIDATION_MATRIX.md` (new).
 - **Effort:** M. **Impact:** correctness — unblocks more aggressive cache TTLs.
 - **Cross-refs:** closes V21.
+- **Status (2026-05-08):** Added `revalidateTag` invalidation to all previously missing mutation paths:
+  - `cash-transactions/route.ts` POST: invalidates `accounts:${userId}` + `net-worth:${userId}`
+  - `transactions/[transactionId]/route.ts` PATCH: invalidates both tags for both holding and cash transaction branches
+  - `transactions/[transactionId]/route.ts` DELETE: same, for both branches
+  - Shared `invalidateAccountCaches(accountId)` helper added to the `[transactionId]` route
 
-#### PE12 — Add `select` clauses to over-fetching reads
+#### PE12 — Add `select` clauses to over-fetching reads ✅ Done (partial)
 
 - **Problem:** `net-worth-service.ts:24` (`include: { holdings }` returns every column), `:47` (`priceCache.findMany` returns full row), and cash-transaction read in `history-service.ts:249`.
 - **Approach:** explicit `select` clauses returning only consumed fields.
 - **Files:** `src/lib/services/net-worth-service.ts`, `src/lib/services/history-service.ts`, `src/app/(main)/accounts/[id]/page.tsx`.
 - **Effort:** M. **Impact:** wire-bytes from Neon −30–60% for the dashboard query.
+- **Status (2026-05-08):** `select: { symbol, price, currency }` added to `priceCache.findMany` in `net-worth-service.ts`; `select: { symbol, price }` added to `priceCache.findMany` in `accounts/[id]/page.tsx`. Remaining: `history-service.ts` cash-transaction select (stretch).
 
 #### PE13 — Cursor pagination for transactions
 
@@ -403,13 +414,14 @@ These need PE2 timing data to prioritise within the phase.
 - **Effort:** M. **Impact:** O(1) page latency. Page-50 load drops from ~600 ms to ~50 ms.
 - **Cross-refs:** closes S#106.
 
-#### PE14 — Dedupe `/accounts/[id]` reads with the dashboard cache
+#### PE14 — Dedupe `/accounts/[id]` reads with the dashboard cache ✅ Done
 
 - **Problem:** `src/app/(main)/accounts/[id]/page.tsx:21` does its own `prisma.account.findUnique`, bypassing the cached `fetchUserAccountsWithHoldings(userId)`. V16 open.
 - **Approach:** refactor `AccountDetailContent` to call `fetchUserAccountsWithHoldings(session.user.id)` and `.find(a => a.id === id)`.
 - **Files:** `src/app/(main)/accounts/[id]/page.tsx`, `src/lib/services/price-service.ts`, `src/lib/services/net-worth-service.ts`.
 - **Effort:** M. **Impact:** account-detail TTFB on warm cache drops from ~250 ms to ~10 ms.
 - **Cross-refs:** closes V16.
+- **Status (2026-05-08):** `AccountDetailContent` now calls `fetchUserAccountsWithHoldings(userId)` (via `getSession()`) and `.find(a => a.id === id)` instead of a direct `prisma.account.findUnique`. Also adds implicit ownership validation — unauthorized account IDs return 404 instead of leaking data.
 
 #### PE15 — Mobile CWV verification pass
 

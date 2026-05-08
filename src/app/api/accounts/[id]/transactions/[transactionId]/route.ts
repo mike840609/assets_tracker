@@ -1,7 +1,16 @@
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { updateTransactionSchema, updateCashTransactionSchema } from "@/lib/validators";
 import { calculateBalanceDelta } from "@/lib/services/balance";
 import { ok, failure, validationError } from "@/lib/api-responses";
+
+async function invalidateAccountCaches(accountId: string) {
+  const account = await prisma.account.findUnique({ where: { id: accountId }, select: { userId: true } });
+  if (account) {
+    revalidateTag(`accounts:${account.userId}`, "max");
+    revalidateTag(`net-worth:${account.userId}`, "max");
+  }
+}
 
 export async function PATCH(
   request: Request,
@@ -47,6 +56,7 @@ export async function PATCH(
       },
     });
 
+    await invalidateAccountCaches(accountId);
     return ok(updatedTx);
   }
 
@@ -96,6 +106,7 @@ export async function PATCH(
       },
     });
 
+    await invalidateAccountCaches(accountId);
     return ok(updatedTx);
   }
 
@@ -125,6 +136,7 @@ export async function DELETE(
     });
 
     await prisma.holdingTransaction.delete({ where: { id: transactionId } });
+    await invalidateAccountCaches(accountId);
     return ok({ ok: true });
   }
 
@@ -145,6 +157,7 @@ export async function DELETE(
     });
 
     await prisma.cashTransaction.delete({ where: { id: transactionId } });
+    await invalidateAccountCaches(accountId);
     return ok({ ok: true });
   }
 

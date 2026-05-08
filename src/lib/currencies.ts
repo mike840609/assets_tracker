@@ -28,15 +28,24 @@ export function getCurrencySymbol(code: string): string {
   return currency?.symbol ?? code;
 }
 
+const currencyFormatterCache = new Map<string, Intl.NumberFormat>();
+const numberFormatterCache = new Map<string, Intl.NumberFormat>();
+
 export function formatCurrency(amount: number, currencyCode: string, compact = false): string {
   try {
-    const formatter = new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currencyCode,
-      notation: compact && Math.abs(amount) >= 10000 ? "compact" : "standard",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
+    const notation = compact && Math.abs(amount) >= 10000 ? "compact" : "standard";
+    const key = `${currencyCode}:${notation}`;
+    let formatter = currencyFormatterCache.get(key);
+    if (!formatter) {
+      formatter = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: currencyCode,
+        notation,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      });
+      currencyFormatterCache.set(key, formatter);
+    }
     return formatter.format(amount);
   } catch {
     return `${currencyCode} ${Math.round(amount)}`;
@@ -44,10 +53,15 @@ export function formatCurrency(amount: number, currencyCode: string, compact = f
 }
 
 export function formatNumber(amount: number, decimals = 2): string {
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(amount);
+  let formatter = numberFormatterCache.get(String(decimals));
+  if (!formatter) {
+    formatter = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+    numberFormatterCache.set(String(decimals), formatter);
+  }
+  return formatter.format(amount);
 }
 
 export function formatQuantity(qty: number, assetType: string): string {

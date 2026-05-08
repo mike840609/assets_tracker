@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, startTransition } from "react";
+import { useState, useEffect, useMemo, useCallback, startTransition } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   XAxis,
@@ -86,6 +86,23 @@ export function TrendChart({
 
   const selectedRange = ranges.find((r) => r.label === range)!;
 
+  const xTickFormatter = useCallback((v: string) => {
+    const d = new Date(v);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }, []);
+
+  const yTickFormatter = useCallback(
+    (v: number) =>
+      privacyMode
+        ? ""
+        : v >= 1000000
+          ? `${(v / 1000000).toFixed(1)}M`
+          : v >= 1000
+            ? `${(v / 1000).toFixed(0)}K`
+            : v.toString(),
+    [privacyMode],
+  );
+
   const filtered = useMemo(() => {
     if (hideRangeFilter || selectedRange.days === Infinity) return snapshots;
     const cutoff = new Date();
@@ -132,22 +149,11 @@ export function TrendChart({
                 <XAxis
                   dataKey="date"
                   tick={{ fontSize: 12 }}
-                  tickFormatter={(v) => {
-                    const d = new Date(v);
-                    return `${d.getMonth() + 1}/${d.getDate()}`;
-                  }}
+                  tickFormatter={xTickFormatter}
                 />
                 <YAxis
                   tick={{ fontSize: 12 }}
-                  tickFormatter={(v) =>
-                    privacyMode
-                      ? ""
-                      : v >= 1000000
-                        ? `${(v / 1000000).toFixed(1)}M`
-                        : v >= 1000
-                          ? `${(v / 1000).toFixed(0)}K`
-                          : v.toString()
-                  }
+                  tickFormatter={yTickFormatter}
                 />
                 <Tooltip
                   content={<TrendTooltip baseCurrency={baseCurrency} privacyMode={privacyMode} />}

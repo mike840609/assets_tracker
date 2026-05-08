@@ -18,7 +18,7 @@ async function findSettings(userId: string) {
   "use cache";
   cacheTag("settings");
   cacheTag(`settings:${userId}`);
-  cacheLife("minutes");
+  cacheLife("hours");
   return prisma.setting.findUnique({ where: { userId } });
 }
 
