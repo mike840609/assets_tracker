@@ -8,9 +8,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-import { HoldingForm } from "./holding-form";
+import dynamic from "next/dynamic";
 import { EditHoldingDialog } from "./edit-holding-dialog";
-import { TransactionHistory } from "./transaction-history";
+
+const HoldingForm = dynamic(() => import("./holding-form").then((m) => m.HoldingForm), {
+  ssr: false,
+  loading: () => null,
+});
+
+const TransactionHistory = dynamic(
+  () => import("./transaction-history").then((m) => m.TransactionHistory),
+  {
+    ssr: false,
+    loading: () => <div className="h-32 bg-muted animate-pulse rounded-lg" />,
+  },
+);
 import { AccountStatCards } from "./account-stat-cards";
 import { HoldingRow } from "./holding-row";
 import type { HoldingWithPrice } from "./holding-row";

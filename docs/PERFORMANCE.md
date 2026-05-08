@@ -10,17 +10,17 @@ Findings from running `@next/bundle-analyzer` locally on **2026-04-20**. Baselin
 
 | #   | Suggestion                                                                      | Category    | Impact    | Effort | Status      |
 | --- | ------------------------------------------------------------------------------- | ----------- | --------- | ------ | ----------- |
-| B1  | Ensure `@prisma/client` and `@neondatabase/serverless` are strictly server-only | Bundle Size | 🔴 High   | 15 min | ❌ Not Done |
+| B1  | Ensure `@prisma/client` and `@neondatabase/serverless` are strictly server-only | Bundle Size | 🔴 High   | 15 min | ✅ Done     |
 | B2  | Dynamic Import `AllocationChart` & `CurrencyExposureChart`                      | Bundle Size | 🔴 High   | 30 min | ✅ Done     |
 | B3  | Inspect `date-fns` usage for tree-shaking                                       | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
 | B4  | Audit `lucide-react` usage                                                      | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
 | B5  | Monitor `recharts` library payload                                              | Bundle Size | 🟡 Medium | 45 min | ❌ Not Done |
-| B6  | Lazy-load `sonner` Toaster                                                      | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
+| B6  | Lazy-load `sonner` Toaster                                                      | Bundle Size | 🟡 Medium | 15 min | ✅ Done     |
 | B7  | Restrict `zod` to Server Actions/API routes                                     | Bundle Size | 🔴 High   | 1 hr   | ❌ Not Done |
-| B8  | Opt-out `yahoo-finance2` from client bundle via `server-only`                   | Bundle Size | 🔴 High   | 15 min | ❌ Not Done |
+| B8  | Opt-out `yahoo-finance2` from client bundle via `server-only`                   | Bundle Size | 🔴 High   | 15 min | ✅ Done     |
 | B9  | Evaluate `next-intl` dictionary loading per route                               | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
 | B10 | Migrate `swr` fetching to RSCs (Server Components)                              | Bundle Size | 🟡 Medium | 1 hr   | ❌ Not Done |
-| B11 | Lazy-load `cmdk` (Command Palette)                                              | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
+| B11 | Lazy-load `cmdk` (Command Palette)                                              | Bundle Size | 🟡 Medium | 15 min | ✅ Done     |
 | B12 | Audit `@base-ui/react` tree-shaking                                             | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
 | B13 | Profile `tw-animate-css` payload                                                | Bundle Size | 🟢 Low    | 15 min | ❌ Not Done |
 | B14 | Optimize Root Layout Font preloading                                            | Performance | 🟡 Medium | 15 min | ⚠️ Partial  |
@@ -337,12 +337,13 @@ Without this phase, every later impact claim is a guess. Vercel runtime logs hav
 - **Effort:** S. **Impact:** TTFB on cached search ~40ms vs ~400ms (Yahoo round-trip). Reduces Yahoo QPS by ~10x.
 - **Cross-refs:** closes V17, V20.
 
-#### PE6 — Dynamic-import three heavy client islands
+#### PE6 — Dynamic-import three heavy client islands ✅ Done
 
 - **Problem:** `transaction-history.tsx` (528 LoC + Framer Motion + SWRInfinite), `holding-form.tsx` ship in `/accounts/[id]` initial bundle even though gated by tab/dialog clicks.
 - **Approach:** `dynamic(() => import(...).then(m => m.TransactionHistory), { ssr: false, loading: () => <TransactionHistorySkeleton /> })` for `TransactionHistory` and `HoldingForm` in `account-detail.tsx`.
 - **Files:** `src/components/accounts/account-detail.tsx`, `src/components/accounts/transaction-history.tsx`, `src/components/accounts/holding-form.tsx`.
 - **Effort:** S. **Impact:** estimated `/accounts/[id]` initial JS −60 to −90 KB gz.
+- **Status:** Implemented — `HoldingForm` and `TransactionHistory` are now dynamically imported with `ssr: false` in `account-detail.tsx`.
 
 #### PE7 — Compress OG and Twitter card images
 

@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import localFont from "next/font/local";
-import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { LazyToaster } from "@/components/layout/lazy-toaster";
 import { CustomSpeedInsights } from "@/components/layout/speed-insights";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
@@ -102,7 +102,7 @@ export default function RootLayout({
           <Suspense fallback={<span />}>
             <LocaleProviders>{children}</LocaleProviders>
           </Suspense>
-          <Toaster />
+          <LazyToaster />
           <Analytics />
           <CustomSpeedInsights />
         </ThemeProvider>
