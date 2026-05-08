@@ -146,15 +146,8 @@ export function TrendChart({
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={filtered}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 12 }}
-                  tickFormatter={xTickFormatter}
-                />
-                <YAxis
-                  tick={{ fontSize: 12 }}
-                  tickFormatter={yTickFormatter}
-                />
+                <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={xTickFormatter} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={yTickFormatter} />
                 <Tooltip
                   content={<TrendTooltip baseCurrency={baseCurrency} privacyMode={privacyMode} />}
                 />

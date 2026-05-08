@@ -5,7 +5,10 @@ import { calculateBalanceDelta } from "@/lib/services/balance";
 import { ok, failure, validationError } from "@/lib/api-responses";
 
 async function invalidateAccountCaches(accountId: string) {
-  const account = await prisma.account.findUnique({ where: { id: accountId }, select: { userId: true } });
+  const account = await prisma.account.findUnique({
+    where: { id: accountId },
+    select: { userId: true },
+  });
   if (account) {
     revalidateTag(`accounts:${account.userId}`, "max");
     revalidateTag(`net-worth:${account.userId}`, "max");
