@@ -143,19 +143,15 @@ Concrete, file-cited engineering hygiene gaps. Items can be picked up one at a t
 - **Proposed action:** Add `"format": "prettier --write ."` and `"format:check": "prettier --check ."` to `package.json`; add `eslint-config-prettier` to turn off conflicting ESLint rules; add `format:check` as a CI step in `.github/workflows/ci.yml`.
 - **Effort:** Trivial (config is already done; just wire the scripts and CI step).
 
-#### Q15 — Husky + lint-staged for pre-commit ❌
+#### Q15 — Husky + lint-staged for pre-commit ✅ Done
 
-- **Where:** No `.husky/`, no `lint-staged` config in `package.json`.
-- **Why:** CI catches lint failures eventually; pre-commit catches them in <2 s. Especially valuable once Q14 (Prettier) lands.
-- **Proposed action:** `husky init`, then add a `pre-commit` hook running `npx lint-staged`. Configure lint-staged to run `eslint --fix` + `prettier --write` on staged `*.{ts,tsx,js,mjs}`. Keep it fast — no typecheck or tests at pre-commit.
-- **Effort:** Small.
+- **Where:** `.husky/pre-commit` + `lint-staged` config in `package.json`.
+- **What landed:** Husky v9 `pre-commit` hook runs `npx lint-staged`; lint-staged runs `eslint --fix` + `prettier --write` on staged `*.{ts,tsx,js,mjs}` and `prettier --write` on `*.{json,css,md}`. A `pre-push` hook runs `npm run typecheck` before every push.
 
-#### Q16 — Add a `typecheck` script ❌
+#### Q16 — Add a `typecheck` script ✅ Done
 
-- **Where:** `package.json:5-15` (no `typecheck` entry).
-- **Why:** Today the only way to verify TS without a full Next.js build is `npx tsc --noEmit` from memory.
-- **Proposed action:** Add `"typecheck": "tsc --noEmit"`. Update `.github/workflows/ci.yml` to call it as a separate step.
-- **Effort:** Trivial.
+- **Where:** `package.json` `scripts`.
+- **What landed:** `"typecheck": "tsc --noEmit"` added; `"check": "npm run format:check && npm run lint && npm run typecheck && npm run build"` mirrors the full CI pipeline locally; `ci.yml` updated to call `npm run typecheck`.
 
 #### Q17 — Dependabot or Renovate ❌
 
