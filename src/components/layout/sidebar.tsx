@@ -272,9 +272,10 @@ export function MobileNav() {
             href={item.href}
             onClick={hapticTick}
             className={cn(
-              "relative flex flex-col items-center gap-1.5 px-3 py-1 text-xs transition-colors group",
+              "relative flex min-h-12 min-w-12 flex-col items-center justify-center gap-1 px-3 py-1 text-[11px] uppercase tracking-wide transition-colors group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground",
             )}
+            aria-label={item.label}
           >
             {isActive && (
               <div className="absolute inset-x-2 -top-3 h-0.5 bg-primary rounded-b-full shadow-[0_2px_8px_rgba(0,0,0,0.5)] shadow-primary/50 transition-all duration-200" />

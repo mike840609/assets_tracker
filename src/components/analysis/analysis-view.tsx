@@ -153,10 +153,11 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
               key={r.label}
               type="button"
               onClick={() => setRange(r.label)}
+              aria-pressed={range === r.label}
               className={`px-2 py-1 text-xs rounded-md transition-colors ${
                 range === r.label
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted"
+                  ? "bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  : "text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               }`}
             >
               {t(rangeLabelKey[r.label] as Parameters<typeof t>[0])}

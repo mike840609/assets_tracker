@@ -101,7 +101,8 @@ export function MobileHeader() {
         <button
           onClick={togglePrivacyMode}
           title={privacyMode ? "Show values" : "Hide values"}
-          className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+          aria-label={privacyMode ? "Show values" : "Hide values"}
+          className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           {privacyMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
