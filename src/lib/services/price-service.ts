@@ -93,7 +93,9 @@ async function fetchYahooQuotes(
   };
 
   try {
-    await withTiming("price.yahoo.fetch", () => fetchSymbols(symbols), { symbolCount: symbols.length });
+    await withTiming("price.yahoo.fetch", () => fetchSymbols(symbols), {
+      symbolCount: symbols.length,
+    });
   } catch (batchErr) {
     // Batch failed after retries — fall back to per-symbol to isolate bad tickers
     log.error("price.yahoo.batch_failed", { error: String(batchErr) });

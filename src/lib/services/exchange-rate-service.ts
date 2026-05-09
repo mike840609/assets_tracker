@@ -70,15 +70,19 @@ export async function fetchExchangeRates(base: string): Promise<Record<string, n
   const doFetch = async (): Promise<Record<string, number>> => {
     // Try frankfurter.app first (ECB data, reliable but limited currencies)
     try {
-      const rates = await withTiming("rates.frankfurter.fetch", async () => {
-        const res = await fetch(`https://api.frankfurter.app/latest?from=${base}`, {
-          next: { revalidate: 3600 },
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (!data.rates || Object.keys(data.rates).length === 0) throw new Error("empty rates");
-        return data.rates as Record<string, number>;
-      }, { base });
+      const rates = await withTiming(
+        "rates.frankfurter.fetch",
+        async () => {
+          const res = await fetch(`https://api.frankfurter.app/latest?from=${base}`, {
+            next: { revalidate: 3600 },
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (!data.rates || Object.keys(data.rates).length === 0) throw new Error("empty rates");
+          return data.rates as Record<string, number>;
+        },
+        { base },
+      );
       return rates;
     } catch {
       // Fall through to backup
@@ -86,16 +90,20 @@ export async function fetchExchangeRates(base: string): Promise<Record<string, n
 
     // Fallback: open.er-api.com (supports 150+ currencies including TWD)
     try {
-      const rates = await withTiming("rates.er_api.fetch", async () => {
-        const res = await fetch(`https://open.er-api.com/v6/latest/${base}`, {
-          next: { revalidate: 3600 },
-        });
-        const data = await res.json();
-        if (data.result !== "success" || !data.rates) throw new Error("bad response");
-        return Object.fromEntries(
-          Object.entries(data.rates as Record<string, number>).filter(([key]) => key !== base),
-        );
-      }, { base });
+      const rates = await withTiming(
+        "rates.er_api.fetch",
+        async () => {
+          const res = await fetch(`https://open.er-api.com/v6/latest/${base}`, {
+            next: { revalidate: 3600 },
+          });
+          const data = await res.json();
+          if (data.result !== "success" || !data.rates) throw new Error("bad response");
+          return Object.fromEntries(
+            Object.entries(data.rates as Record<string, number>).filter(([key]) => key !== base),
+          );
+        },
+        { base },
+      );
       return rates;
     } catch (error) {
       log.error("rates.fetch.failed", { base, error: String(error) });

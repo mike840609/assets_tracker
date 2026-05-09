@@ -301,7 +301,11 @@ export function TransactionHistory({
           : `/api/accounts/${accountId}/transactions?limit=20`;
         const res = await fetch(url);
         const json = (await res.json()) as {
-          data: { transactions: (SerializedTransaction & { quantity: string | number })[]; nextCursor?: string; hasMore: boolean };
+          data: {
+            transactions: (SerializedTransaction & { quantity: string | number })[];
+            nextCursor?: string;
+            hasMore: boolean;
+          };
         };
         const page = json.data;
         const normalized = page.transactions.map((t) => ({

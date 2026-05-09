@@ -155,7 +155,12 @@ test("3. dashboard renders the net-worth card and trend chart section", async ({
   });
 
   // Trend-chart section heading
-  await expect(page.getByRole("main").getByText(/net worth trend/i).first()).toBeVisible({
+  await expect(
+    page
+      .getByRole("main")
+      .getByText(/net worth trend/i)
+      .first(),
+  ).toBeVisible({
     timeout: 15_000,
   });
 });

@@ -8,22 +8,22 @@ This file consolidates three former docs: `BUNDLE_ANALYSIS.md` (B1–B15), `REND
 
 Findings from running `@next/bundle-analyzer` locally on **2026-04-20**. Baselines: client bundle ~609 KB compiled, NodeJS bundle ~866 KB compiled, edge bundle ~290 KB compiled.
 
-| #   | Suggestion                                                                      | Category    | Impact    | Effort | Status      |
-| --- | ------------------------------------------------------------------------------- | ----------- | --------- | ------ | ----------- |
-| B1  | Ensure `@prisma/client` and `@neondatabase/serverless` are strictly server-only | Bundle Size | 🔴 High   | 15 min | ✅ Done     |
-| B2  | Dynamic Import `AllocationChart` & `CurrencyExposureChart`                      | Bundle Size | 🔴 High   | 30 min | ✅ Done     |
-| B3  | Inspect `date-fns` usage for tree-shaking                                       | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
-| B4  | Audit `lucide-react` usage                                                      | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
-| B5  | Monitor `recharts` library payload                                              | Bundle Size | 🟡 Medium | 45 min | ❌ Not Done |
-| B6  | Lazy-load `sonner` Toaster                                                      | Bundle Size | 🟡 Medium | 15 min | ✅ Done     |
-| B7  | Restrict `zod` to Server Actions/API routes                                     | Bundle Size | 🔴 High   | 1 hr   | ✅ Done — all zod imports are already server-only (`validators.ts`, `api-responses.ts`, `env.ts`) |
-| B8  | Opt-out `yahoo-finance2` from client bundle via `server-only`                   | Bundle Size | 🔴 High   | 15 min | ✅ Done     |
-| B9  | Evaluate `next-intl` dictionary loading per route                               | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
-| B10 | Migrate `swr` fetching to RSCs (Server Components)                              | Bundle Size | 🟡 Medium | 1 hr   | ✅ Done — `swr` removed; `transaction-history.tsx` replaced with native fetch + cursor pagination (PE13) |
-| B11 | Lazy-load `cmdk` (Command Palette)                                              | Bundle Size | 🟡 Medium | 15 min | ✅ Done     |
-| B12 | Audit `@base-ui/react` tree-shaking                                             | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
-| B13 | Profile `tw-animate-css` payload                                                | Bundle Size | 🟢 Low    | 15 min | ✅ Done — `tw-animate-css` is a build-time Tailwind CSS 4 plugin with no JS runtime; zero client bundle impact |
-| B14 | Optimize Root Layout Font preloading                                            | Performance | 🟡 Medium | 15 min | ⚠️ Partial  |
+| #   | Suggestion                                                                      | Category    | Impact    | Effort | Status                                                                                                          |
+| --- | ------------------------------------------------------------------------------- | ----------- | --------- | ------ | --------------------------------------------------------------------------------------------------------------- |
+| B1  | Ensure `@prisma/client` and `@neondatabase/serverless` are strictly server-only | Bundle Size | 🔴 High   | 15 min | ✅ Done                                                                                                         |
+| B2  | Dynamic Import `AllocationChart` & `CurrencyExposureChart`                      | Bundle Size | 🔴 High   | 30 min | ✅ Done                                                                                                         |
+| B3  | Inspect `date-fns` usage for tree-shaking                                       | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done                                                                                                     |
+| B4  | Audit `lucide-react` usage                                                      | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done                                                                                                     |
+| B5  | Monitor `recharts` library payload                                              | Bundle Size | 🟡 Medium | 45 min | ❌ Not Done                                                                                                     |
+| B6  | Lazy-load `sonner` Toaster                                                      | Bundle Size | 🟡 Medium | 15 min | ✅ Done                                                                                                         |
+| B7  | Restrict `zod` to Server Actions/API routes                                     | Bundle Size | 🔴 High   | 1 hr   | ✅ Done — all zod imports are already server-only (`validators.ts`, `api-responses.ts`, `env.ts`)               |
+| B8  | Opt-out `yahoo-finance2` from client bundle via `server-only`                   | Bundle Size | 🔴 High   | 15 min | ✅ Done                                                                                                         |
+| B9  | Evaluate `next-intl` dictionary loading per route                               | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done                                                                                                     |
+| B10 | Migrate `swr` fetching to RSCs (Server Components)                              | Bundle Size | 🟡 Medium | 1 hr   | ✅ Done — `swr` removed; `transaction-history.tsx` replaced with native fetch + cursor pagination (PE13)        |
+| B11 | Lazy-load `cmdk` (Command Palette)                                              | Bundle Size | 🟡 Medium | 15 min | ✅ Done                                                                                                         |
+| B12 | Audit `@base-ui/react` tree-shaking                                             | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done                                                                                                     |
+| B13 | Profile `tw-animate-css` payload                                                | Bundle Size | 🟢 Low    | 15 min | ✅ Done — `tw-animate-css` is a build-time Tailwind CSS 4 plugin with no JS runtime; zero client bundle impact  |
+| B14 | Optimize Root Layout Font preloading                                            | Performance | 🟡 Medium | 15 min | ⚠️ Partial                                                                                                      |
 | B15 | Defer Vercel Analytics/Speed Insights                                           | Performance | 🟢 Low    | 10 min | ✅ Done — `@vercel/analytics/next` and `@vercel/speed-insights/next` use `afterInteractive` strategy internally |
 
 ### B1 — Strict Server-Only Boundaries

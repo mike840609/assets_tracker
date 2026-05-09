@@ -18,11 +18,7 @@ export const log = {
   debug: (msg: string, meta?: Meta) => emit("debug", msg, meta),
 };
 
-export async function withTiming<T>(
-  label: string,
-  fn: () => Promise<T>,
-  meta?: Meta,
-): Promise<T> {
+export async function withTiming<T>(label: string, fn: () => Promise<T>, meta?: Meta): Promise<T> {
   const start = Date.now();
   try {
     const result = await fn();

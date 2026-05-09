@@ -12,9 +12,7 @@ for (const filename of images) {
   const inputPath = join(publicDir, filename);
   const tmpPath = inputPath + ".tmp";
 
-  await sharp(inputPath)
-    .png({ quality: 70, compressionLevel: 9, palette: true })
-    .toFile(tmpPath);
+  await sharp(inputPath).png({ quality: 70, compressionLevel: 9, palette: true }).toFile(tmpPath);
 
   await rename(tmpPath, inputPath);
 

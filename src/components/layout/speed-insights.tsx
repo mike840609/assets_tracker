@@ -16,9 +16,15 @@ function postVital(name: string, value: number, rating: string) {
 
 export function CustomSpeedInsights() {
   useEffect(() => {
-    onLCP((m) => { if (m.value > BUDGETS.LCP) postVital("LCP", m.value, m.rating); });
-    onCLS((m) => { if (m.value > BUDGETS.CLS) postVital("CLS", m.value, m.rating); });
-    onINP((m) => { if (m.value > BUDGETS.INP) postVital("INP", m.value, m.rating); });
+    onLCP((m) => {
+      if (m.value > BUDGETS.LCP) postVital("LCP", m.value, m.rating);
+    });
+    onCLS((m) => {
+      if (m.value > BUDGETS.CLS) postVital("CLS", m.value, m.rating);
+    });
+    onINP((m) => {
+      if (m.value > BUDGETS.INP) postVital("INP", m.value, m.rating);
+    });
   }, []);
 
   return (
