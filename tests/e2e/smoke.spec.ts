@@ -142,16 +142,19 @@ test("3. dashboard renders the net-worth card and trend chart section", async ({
   await page.goto("/");
   await waitForPageReady(page);
 
-  // Net-worth card: the label is a <p>, not a heading element
-  await expect(page.getByText(/net worth/i).first()).toBeVisible({ timeout: 15_000 });
+  // Net-worth card: the label is a <p>, not a heading element.
+  // Scope to <main> to avoid matching hidden sidebar navigation items.
+  await expect(page.getByRole("main").getByText(/net worth/i).first()).toBeVisible({
+    timeout: 15_000,
+  });
 
   // Total-assets sub-card label
-  await expect(page.getByText(/total assets/i).first()).toBeVisible({
+  await expect(page.getByRole("main").getByText(/total assets/i).first()).toBeVisible({
     timeout: 15_000,
   });
 
   // Trend-chart section heading
-  await expect(page.getByText(/net worth trend/i).first()).toBeVisible({
+  await expect(page.getByRole("main").getByText(/net worth trend/i).first()).toBeVisible({
     timeout: 15_000,
   });
 });
