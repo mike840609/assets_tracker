@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
-import { serializeAccountWithHoldings } from "@/lib/types";
+import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
+import { getSession } from "@/lib/auth-session";
 import {
   getAllExchangeRates,
   resolveRate,
@@ -21,26 +22,27 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
   // Kick off independent queries before awaiting the account
   const ratesP = getAllExchangeRates();
   const messagesP = getMessages();
+  const sessionP = getSession();
 
-  const account = await prisma.account.findUnique({
-    where: { id },
-    include: { holdings: { where: { quantity: { gt: 0 } } } },
+  const [session, allRatesMap, messages] = await Promise.all([sessionP, ratesP, messagesP]);
+
+  const userId = session?.user?.id;
+  if (!userId) notFound();
+
+  // Use the "use cache" layer — warm-cache hit (e.g. after dashboard load) avoids DB round-trip
+  // Also validates ownership: only accounts belonging to userId are returned
+  const accounts = await fetchUserAccountsWithHoldings(userId);
+  const serialized = accounts.find((a) => a.id === id);
+  if (!serialized) notFound();
+
+  const symbols = serialized.holdings.map((h) => h.symbol);
+
+  const cachedPrices = await prisma.priceCache.findMany({
+    where: { symbol: { in: symbols } },
+    select: { symbol: true, price: true },
   });
 
-  if (!account) notFound();
-
-  const symbols = account.holdings.map((h) => h.symbol);
-
-  // cachedPrices needs symbols from account; ratesP and messagesP are already in-flight
-  const [allRatesMap, cachedPrices, messages] = await Promise.all([
-    ratesP,
-    prisma.priceCache.findMany({ where: { symbol: { in: symbols } } }),
-    messagesP,
-  ]);
-
   const priceMap = Object.fromEntries(cachedPrices.map((p) => [p.symbol, Number(p.price)]));
-
-  const serialized = serializeAccountWithHoldings(account);
 
   // Build rates map from bulk-loaded data
   const ratesMap: Record<string, number> = {};

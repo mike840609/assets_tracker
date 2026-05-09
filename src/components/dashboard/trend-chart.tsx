@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, startTransition } from "react";
+import { useState, useEffect, useMemo, useCallback, startTransition } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   XAxis,
@@ -86,6 +86,23 @@ export function TrendChart({
 
   const selectedRange = ranges.find((r) => r.label === range)!;
 
+  const xTickFormatter = useCallback((v: string) => {
+    const d = new Date(v);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }, []);
+
+  const yTickFormatter = useCallback(
+    (v: number) =>
+      privacyMode
+        ? ""
+        : v >= 1000000
+          ? `${(v / 1000000).toFixed(1)}M`
+          : v >= 1000
+            ? `${(v / 1000).toFixed(0)}K`
+            : v.toString(),
+    [privacyMode],
+  );
+
   const filtered = useMemo(() => {
     if (hideRangeFilter || selectedRange.days === Infinity) return snapshots;
     const cutoff = new Date();
@@ -129,26 +146,8 @@ export function TrendChart({
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={filtered}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 12 }}
-                  tickFormatter={(v) => {
-                    const d = new Date(v);
-                    return `${d.getMonth() + 1}/${d.getDate()}`;
-                  }}
-                />
-                <YAxis
-                  tick={{ fontSize: 12 }}
-                  tickFormatter={(v) =>
-                    privacyMode
-                      ? ""
-                      : v >= 1000000
-                        ? `${(v / 1000000).toFixed(1)}M`
-                        : v >= 1000
-                          ? `${(v / 1000).toFixed(0)}K`
-                          : v.toString()
-                  }
-                />
+                <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={xTickFormatter} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={yTickFormatter} />
                 <Tooltip
                   content={<TrendTooltip baseCurrency={baseCurrency} privacyMode={privacyMode} />}
                 />

@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createCashTransactionSchema } from "@/lib/validators";
 import { calculateBalanceDelta } from "@/lib/services/balance";
@@ -23,6 +24,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     where: { id },
     data: { cashBalance: { increment: delta } },
   });
+
+  revalidateTag(`accounts:${account.userId}`, "max");
+  revalidateTag(`net-worth:${account.userId}`, "max");
 
   return ok(transaction, { status: 201 });
 }

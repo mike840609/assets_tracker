@@ -94,7 +94,7 @@
 | 88  | Skip fresh pairs in `/api/exchange-rates/refresh`          | Performance                | 🟡 Medium | 30 min    | ❌ Not Done |
 | 89  | Parallelize initial queries in exchange-rate refresh       | Performance                | 🟢 Low    | 10 min    | ❌ Not Done |
 | 90  | Memoize derived data in chart components                   | Performance                | 🟡 Medium | 30 min    | ✅ Done     |
-| 91  | Stabilize inline `tickFormatter`s in `TrendChart`          | Performance                | 🟢 Low    | 15 min    | ❌ Not Done |
+| 91  | Stabilize inline `tickFormatter`s in `TrendChart`          | Performance                | 🟢 Low    | 15 min    | ✅ Done     |
 | 92  | Batch `PriceCache` upserts via `$transaction`              | Performance                | 🔴 High   | 30 min    | ✅ Done     |
 | 93  | Deduplicate `recentSnapshots` query in dashboard sections  | Performance                | 🟡 Medium | 15 min    | ✅ Done     |
 | 94  | Parallelize account detail page waterfall                  | Performance                | 🟡 Medium | 15 min    | ✅ Done     |

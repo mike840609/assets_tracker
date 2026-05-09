@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { ok } from "@/lib/api-responses";
 import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
 
@@ -71,6 +72,38 @@ function inferCurrency(symbol: string, exchange: string): string {
   return exchangeCurrencyMap[exchange] || "USD";
 }
 
+const cachedYahooSearch = unstable_cache(
+  async (query: string): Promise<SearchResult[]> => {
+    try {
+      const YahooFinance = (await import("yahoo-finance2")).default;
+      const yahooFinance = new YahooFinance();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result: any = await yahooFinance.search(query, {
+        quotesCount: 10,
+        newsCount: 0,
+      });
+
+      return (result.quotes || [])
+        .filter((q: Record<string, unknown>) => {
+          const qt = q.quoteType as string | undefined;
+          return qt && ["EQUITY", "ETF", "CRYPTOCURRENCY", "MUTUALFUND"].includes(qt);
+        })
+        .map((q: Record<string, unknown>) => ({
+          symbol: q.symbol as string,
+          name: (q.longname as string) || (q.shortname as string) || (q.symbol as string),
+          exchange: (q.exchDisp as string) || (q.exchange as string) || "",
+          type: mapQuoteType(q.quoteType as string),
+          currency: inferCurrency(q.symbol as string, (q.exchange as string) || ""),
+        }));
+    } catch (error) {
+      console.error("Search failed:", error);
+      return [];
+    }
+  },
+  ["yahoo-search"],
+  { revalidate: 3600 },
+);
+
 export async function GET(request: Request) {
   const limited = rateLimitCheckWithPrune(request, { limit: 60, prefix: "search" });
   if (limited) return limited;
@@ -82,39 +115,10 @@ export async function GET(request: Request) {
     return ok([] as SearchResult[]);
   }
 
-  try {
-    const YahooFinance = (await import("yahoo-finance2")).default;
-    const yahooFinance = new YahooFinance();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: any = await yahooFinance.search(query, {
-      quotesCount: 10,
-      newsCount: 0,
-    });
-
-    const quotes: SearchResult[] = (result.quotes || [])
-      .filter((q: Record<string, unknown>) => {
-        const qt = q.quoteType as string | undefined;
-        return qt && ["EQUITY", "ETF", "CRYPTOCURRENCY", "MUTUALFUND"].includes(qt);
-      })
-      .map((q: Record<string, unknown>) => ({
-        symbol: q.symbol as string,
-        name: (q.longname as string) || (q.shortname as string) || (q.symbol as string),
-        exchange: (q.exchDisp as string) || (q.exchange as string) || "",
-        type: mapQuoteType(q.quoteType as string),
-        currency: inferCurrency(q.symbol as string, (q.exchange as string) || ""),
-      }));
-
-    return ok(quotes, {
-      headers: {
-        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
-      },
-    });
-  } catch (error) {
-    console.error("Search failed:", error);
-    return ok([] as SearchResult[], {
-      headers: {
-        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
-      },
-    });
-  }
+  const results = await cachedYahooSearch(query);
+  return ok(results, {
+    headers: {
+      "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+    },
+  });
 }
