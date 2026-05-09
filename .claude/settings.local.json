@@ -21,7 +21,8 @@
       "Bash(git commit:*)",
       "Bash(npm ci *)",
       "Bash(npx tsc *)",
-      "Bash(DATABASE_URL=\"postgresql://ci:ci@localhost:5432/ci\" AUTH_SECRET=\"ci-secret-placeholder-not-real\" AUTH_GOOGLE_ID=\"ci-google-id\" AUTH_GOOGLE_SECRET=\"ci-google-secret\" CRON_SECRET=\"ci-cron-secret\" npm run build)"
+      "Bash(DATABASE_URL=\"postgresql://ci:ci@localhost:5432/ci\" AUTH_SECRET=\"ci-secret-placeholder-not-real\" AUTH_GOOGLE_ID=\"ci-google-id\" AUTH_GOOGLE_SECRET=\"ci-google-secret\" CRON_SECRET=\"ci-cron-secret\" npm run build)",
+      "Bash(mkdir -p /home/user/asset_tracker/.husky)"
     ]
   }
 }

@@ -21,8 +21,13 @@
     "test:e2e:report": "playwright show-report"
   },
   "lint-staged": {
-    "**/*.{ts,tsx,mjs,js}": ["eslint --fix", "prettier --write"],
-    "**/*.{json,css,md}": ["prettier --write"]
+    "**/*.{ts,tsx,mjs,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "**/*.{json,css,md}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
