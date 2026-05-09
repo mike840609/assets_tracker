@@ -290,7 +290,6 @@ If/when dividend tracking lands (SUGGESTIONS.md #17), add a monthly dividend bar
 5. **Phase 3.2 — Yearly/YoY** (cheap once the date picker exists)
 6. **Phase 3.3 — Export**, then Phase 4 items by user demand.
 
-
 ---
 
 ## UI/UX Enhancement Addendum (2026-05-09)
@@ -302,6 +301,7 @@ This addendum captures a focused codebase review and complements the recommendat
 _Date: 2026-05-09_
 
 This document summarizes practical UI/UX improvements based on the current implementation patterns in:
+
 - `src/components/layout/*`
 - `src/components/dashboard/*`
 - `src/components/accounts/*`
@@ -311,34 +311,38 @@ This document summarizes practical UI/UX improvements based on the current imple
 
 ## Enhancement Summary Table
 
-| # | Item | Impact | Status |
-|---|---|---|---|
-| 1 | Improve mobile bottom navigation ergonomics | High | Proposed |
-| 2 | Add data-freshness and loading confidence cues | High | Proposed |
-| 3 | Strengthen table/list scannability with sticky sub-headers | Medium | Proposed |
-| 4 | Expand accessibility baseline for keyboard and screen readers | High | Proposed |
-| 5 | Improve empty states with role-specific onboarding paths | Medium | Proposed |
-| 6 | Introduce chart interaction consistency on mobile | Medium | Proposed |
-| 7 | Add micro-feedback for destructive and delayed operations | Medium | Proposed |
-| 8 | Harmonize motion timings and reduce mixed animation feel | Low/Medium | Proposed |
+| #   | Item                                                          | Impact     | Status   |
+| --- | ------------------------------------------------------------- | ---------- | -------- |
+| 1   | Improve mobile bottom navigation ergonomics                   | High       | Proposed |
+| 2   | Add data-freshness and loading confidence cues                | High       | Proposed |
+| 3   | Strengthen table/list scannability with sticky sub-headers    | Medium     | Proposed |
+| 4   | Expand accessibility baseline for keyboard and screen readers | High       | Proposed |
+| 5   | Improve empty states with role-specific onboarding paths      | Medium     | Proposed |
+| 6   | Introduce chart interaction consistency on mobile             | Medium     | Proposed |
+| 7   | Add micro-feedback for destructive and delayed operations     | Medium     | Proposed |
+| 8   | Harmonize motion timings and reduce mixed animation feel      | Low/Medium | Proposed |
 
 ---
 
 ## 1) Improve mobile bottom navigation ergonomics (High)
 
 **What I observed**
+
 - Mobile nav uses a thin top active indicator and relatively tight per-item spacing.
 - Tap targets appear visually smaller than native-app comfort zones.
 
 **Suggestion**
+
 - Increase interactive hit area to at least 44x44 px (ideally 48x48).
 - Replace the top hairline active indicator with a background pill on active items.
 - Use slightly smaller labels and stronger active/inactive contrast.
 
 **Why this helps**
+
 - Reduces tap errors and makes the app feel more native on iOS/Android.
 
 **Implementation ideas**
+
 - Update `MobileNav` item container classes in `src/components/layout/sidebar.tsx`.
 - Add active `bg-primary/10` + rounded-full/rounded-xl style around icon+label.
 - Keep haptic tap behavior, but only trigger on non-active transitions.
@@ -348,19 +352,23 @@ This document summarizes practical UI/UX improvements based on the current imple
 ## 2) Add data-freshness and loading confidence cues (High)
 
 **What I observed**
+
 - Dashboard actions already receive last price update and snapshot timestamps.
 - Users may still be unsure whether shown values are stale while refresh runs.
 
 **Suggestion**
+
 - Show a compact freshness badge near top actions and net-worth area:
   - “Updated 18s ago”
   - “Refreshing prices…” while in-flight
   - “Snapshot pending” if snapshot is behind latest prices
 
 **Why this helps**
+
 - Builds trust in financial values and lowers perceived latency.
 
 **Implementation ideas**
+
 - Extend `src/components/dashboard/dashboard-actions.tsx` display state machine.
 - Mirror a lightweight status chip in `src/components/dashboard/net-worth-card.tsx`.
 
@@ -369,16 +377,20 @@ This document summarizes practical UI/UX improvements based on the current imple
 ## 3) Strengthen table/list scannability with sticky sub-headers (Medium)
 
 **What I observed**
+
 - History has sticky monthly headings, but other long lists rely mostly on cards/rows.
 
 **Suggestion**
+
 - Add sticky contextual headers for long sections in account detail and transaction areas.
 - For holdings, keep sort controls visible while scrolling.
 
 **Why this helps**
+
 - Improves orientation in dense financial datasets.
 
 **Implementation ideas**
+
 - Add sticky row wrappers and subtle blur backgrounds similar to history table patterns.
 - Apply in `src/components/accounts/account-detail.tsx` and `src/components/accounts/transaction-history.tsx`.
 
@@ -387,17 +399,21 @@ This document summarizes practical UI/UX improvements based on the current imple
 ## 4) Expand accessibility baseline for keyboard and screen readers (High)
 
 **What I observed**
+
 - Many controls are already labeled, but clickable cards/rows and chart interactions can still be improved.
 
 **Suggestion**
+
 - Ensure all non-button clickable containers are keyboard reachable with visible focus.
 - Add explicit focus rings to row links/actions where custom styling hides defaults.
 - Provide chart summaries (sr-only text) describing trend direction and key values.
 
 **Why this helps**
+
 - Better WCAG alignment and improved usability for keyboard/screen-reader users.
 
 **Implementation ideas**
+
 - Audit `tabIndex`, `role`, `aria-label`, `aria-describedby` across layout/dashboard/accounts components.
 - Add `focus-visible:ring-*` patterns to interactive wrappers.
 
@@ -406,9 +422,11 @@ This document summarizes practical UI/UX improvements based on the current imple
 ## 5) Improve empty states with role-specific onboarding paths (Medium)
 
 **What I observed**
+
 - Dashboard empty state is visually pleasant and includes a CTA.
 
 **Suggestion**
+
 - Add optional quick-start choices:
   - “Add first account”
   - “Import sample portfolio”
@@ -416,9 +434,11 @@ This document summarizes practical UI/UX improvements based on the current imple
 - Include a short 2–3 bullet “what happens next” explanation.
 
 **Why this helps**
+
 - Reduces first-use friction and increases conversion from empty to active state.
 
 **Implementation ideas**
+
 - Extend empty block in `src/components/dashboard/dashboard-content.tsx`.
 - Reuse existing button system and i18n keys in `messages/*`.
 
@@ -427,9 +447,11 @@ This document summarizes practical UI/UX improvements based on the current imple
 ## 6) Introduce chart interaction consistency on mobile (Medium)
 
 **What I observed**
+
 - Charts are feature-rich, but mobile interactions can feel inconsistent across chart types.
 
 **Suggestion**
+
 - Standardize a shared mobile chart behavior:
   - Long-press crosshair
   - Sticky value/date tooltip
@@ -437,9 +459,11 @@ This document summarizes practical UI/UX improvements based on the current imple
   - Persist selected time range per page
 
 **Why this helps**
+
 - Makes analysis workflows predictable and app-like.
 
 **Implementation ideas**
+
 - Extract shared interaction hooks/utilities under `src/hooks/` and reuse in dashboard/analysis chart components.
 
 ---
@@ -447,18 +471,22 @@ This document summarizes practical UI/UX improvements based on the current imple
 ## 7) Add micro-feedback for destructive and delayed operations (Medium)
 
 **What I observed**
+
 - Undo delete is implemented well.
 - Some async updates still rely mainly on toast + refresh.
 
 **Suggestion**
+
 - Add inline pending states directly on affected rows/cards:
   - Dim row + spinner while commit pending
   - “Undo available” badge while toast timer active
 
 **Why this helps**
+
 - Keeps feedback near the interaction source and reduces uncertainty.
 
 **Implementation ideas**
+
 - In `account-detail` optimistic delete paths, expose pending metadata to `HoldingRow` rendering.
 
 ---
@@ -466,17 +494,21 @@ This document summarizes practical UI/UX improvements based on the current imple
 ## 8) Harmonize motion timings and reduce “mixed animation feel” (Low/Medium)
 
 **What I observed**
+
 - Spring/ease utilities are present, but different sections still mix animation styles.
 
 **Suggestion**
+
 - Define a compact motion token system:
   - fast (120–160ms), normal (180–240ms), emphasized spring
 - Apply by interaction type (tap, panel open, route transition, background load).
 
 **Why this helps**
+
 - More coherent visual rhythm and less cognitive load.
 
 **Implementation ideas**
+
 - Centralize timing classes in `globals.css` utility layer and refactor frequently used components.
 
 ---
