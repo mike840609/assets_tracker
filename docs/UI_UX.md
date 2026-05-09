@@ -131,13 +131,15 @@ For delete/remove actions, prefer optimistic removal + "Undo" toast for 4–6 se
 
 > `src/lib/undo-delete.ts` exposes `showUndoDeleteToast()` — items are removed optimistically from local state; the actual DELETE fires only when the 5 s Sonner toast auto-closes or is dismissed without clicking Undo. Holdings, accounts, and transactions all use this pattern.
 
-#### 13. Stronger accessibility defaults (AA baseline) — ⚠️ Partial
+#### 13. Stronger accessibility defaults (AA baseline) — ✅ Done
 
 - Ensure icon-only controls (privacy, refresh, row actions) always have `aria-label`.
 - Add visible focus rings for keyboard users on custom clickable rows/cards.
 - Confirm chart color pairs remain distinguishable in dark mode and for color-vision deficiency.
 
 Targets: `src/components/layout/*`, `src/components/dashboard/*`, `src/components/analysis/*`.
+
+> Icon-only controls now include explicit accessible names (e.g., the mobile header privacy toggle `aria-label`). Keyboard users now get visible focus indicators on high-traffic interactive elements: mobile bottom-nav links, account summary row links, dashboard/analysis range chips, and sorting toggles. Filter/range chip and sort controls now expose pressed state via `aria-pressed` for clearer screen-reader announcements.
 
 #### 14. Reduce perceived latency with optimistic timestamps/data freshness hints — ❌ Not Done
 
