@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { ok } from "@/lib/api-responses";
 import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
+import { log } from "@/lib/logger";
 
 type SearchResult = {
   symbol: string;
@@ -96,7 +97,7 @@ const cachedYahooSearch = unstable_cache(
           currency: inferCurrency(q.symbol as string, (q.exchange as string) || ""),
         }));
     } catch (error) {
-      console.error("Search failed:", error);
+      log.error("search.failed", { error: String(error) });
       return [];
     }
   },

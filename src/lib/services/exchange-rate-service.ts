@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { log, withTiming } from "@/lib/logger";
 
 /** How long to wait (ms) before giving up on external rate APIs */
 const RATE_FETCH_TIMEOUT_MS = 1200;
@@ -69,33 +70,35 @@ export async function fetchExchangeRates(base: string): Promise<Record<string, n
   const doFetch = async (): Promise<Record<string, number>> => {
     // Try frankfurter.app first (ECB data, reliable but limited currencies)
     try {
-      const res = await fetch(`https://api.frankfurter.app/latest?from=${base}`, {
-        next: { revalidate: 3600 },
-      });
-      if (res.ok) {
+      const rates = await withTiming("rates.frankfurter.fetch", async () => {
+        const res = await fetch(`https://api.frankfurter.app/latest?from=${base}`, {
+          next: { revalidate: 3600 },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (data.rates && Object.keys(data.rates).length > 0) {
-          return data.rates;
-        }
-      }
+        if (!data.rates || Object.keys(data.rates).length === 0) throw new Error("empty rates");
+        return data.rates as Record<string, number>;
+      }, { base });
+      return rates;
     } catch {
       // Fall through to backup
     }
 
     // Fallback: open.er-api.com (supports 150+ currencies including TWD)
     try {
-      const res = await fetch(`https://open.er-api.com/v6/latest/${base}`, {
-        next: { revalidate: 3600 },
-      });
-      const data = await res.json();
-      if (data.result === "success" && data.rates) {
-        const rates = Object.fromEntries(
+      const rates = await withTiming("rates.er_api.fetch", async () => {
+        const res = await fetch(`https://open.er-api.com/v6/latest/${base}`, {
+          next: { revalidate: 3600 },
+        });
+        const data = await res.json();
+        if (data.result !== "success" || !data.rates) throw new Error("bad response");
+        return Object.fromEntries(
           Object.entries(data.rates as Record<string, number>).filter(([key]) => key !== base),
         );
-        return rates;
-      }
+      }, { base });
+      return rates;
     } catch (error) {
-      console.error("Failed to fetch exchange rates:", error);
+      log.error("rates.fetch.failed", { base, error: String(error) });
     }
 
     return {};
@@ -117,7 +120,7 @@ async function persistExchangeRate(from: string, to: string, rate: number): Prom
       create: { id, fromCurrency: from, toCurrency: to, rate },
     });
   } catch (error) {
-    console.warn(`Failed to persist exchange rate ${from}->${to}`, error);
+    log.warn("rates.persist.failed", { from, to, error: String(error) });
   }
 }
 
@@ -183,7 +186,7 @@ export const getExchangeRate = cache(async function getExchangeRate(
 
   const rate = await withTimeout(fetchAndStore(), RATE_FETCH_TIMEOUT_MS, 1);
   if (rate === 1 && from !== to) {
-    console.warn(`Exchange rate ${from} → ${to} timed out or unavailable, defaulting to 1`);
+    log.warn("rates.timeout", { from, to });
   }
   return rate;
 });
@@ -235,7 +238,7 @@ export async function resolveMissingRates(
   for (const key of uniquePairs) {
     if (ratesMap[key] === undefined) {
       ratesMap[key] = 1;
-      console.warn(`Exchange rate ${key} unresolved after timeout, defaulting to 1`);
+      log.warn("rates.unresolved", { key });
     }
   }
 }

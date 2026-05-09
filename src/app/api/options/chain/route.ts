@@ -1,5 +1,6 @@
 import { ok } from "@/lib/api-responses";
 import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
+import { log } from "@/lib/logger";
 
 type ChainContract = {
   contractSymbol: string;
@@ -65,7 +66,7 @@ export async function GET(request: Request) {
             chains[dateParam] = { calls: slim(block.calls), puts: slim(block.puts) };
           }
         } catch (err) {
-          console.error(`Options chain fetch failed for ${symbol} ${dateParam}:`, err);
+          log.error("options.chain.date.failed", { symbol, date: dateParam, error: String(err) });
         }
       }
     } else {
@@ -88,7 +89,7 @@ export async function GET(request: Request) {
       },
     );
   } catch (error) {
-    console.error(`Options chain fetch failed for ${symbol}:`, error);
+    log.error("options.chain.failed", { symbol, error: String(error) });
     return ok({ ...EMPTY, underlying: symbol });
   }
 }

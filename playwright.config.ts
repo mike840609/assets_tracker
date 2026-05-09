@@ -27,6 +27,13 @@ export default defineConfig({
         storageState: "tests/e2e/.auth/user.json",
       },
     },
+    {
+      name: "Mobile Chrome",
+      use: {
+        ...devices["Pixel 7"],
+        storageState: "tests/e2e/.auth/user.json",
+      },
+    },
   ],
   ...(process.env.PLAYWRIGHT_TEST_BASE_URL
     ? {}

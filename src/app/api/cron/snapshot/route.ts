@@ -4,6 +4,7 @@ import { createSnapshot } from "@/lib/services/snapshot-service";
 import { refreshAllPrices } from "@/lib/services/price-service";
 import { ok, failure } from "@/lib/api-responses";
 import { CRON_SECRET } from "@/lib/env";
+import { log } from "@/lib/logger";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
       },
     });
     if (expiredOptions.length > 0) {
-      console.log(`Cron: Closing ${expiredOptions.length} expired option contract(s)...`);
+      log.info("cron.options.expire", { count: expiredOptions.length });
       for (const h of expiredOptions) {
         await prisma.$transaction([
           prisma.holdingTransaction.create({
@@ -44,7 +45,7 @@ export async function GET(request: Request) {
     }
 
     // 1. Refresh all prices first to ensure the snapshot is accurate
-    console.log("Cron: Refreshing prices...");
+    log.info("cron.prices.refresh");
     await refreshAllPrices();
     // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
     revalidateTag("net-worth", "max");
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
     const snapshots = await Promise.all(
       users.map((user) => {
         const baseCurrency = user.appSettings?.baseCurrency ?? "USD";
-        console.log(`Cron: Creating snapshot for user ${user.id} (${baseCurrency})...`);
+        log.info("cron.snapshot.create", { userId: user.id, baseCurrency });
         return createSnapshot(user.id, baseCurrency);
       }),
     );
@@ -76,7 +77,7 @@ export async function GET(request: Request) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Cron snapshot failed:", error);
+    log.error("cron.snapshot.failed", { error: String(error) });
     return failure("Internal Server Error", 500);
   }
 }

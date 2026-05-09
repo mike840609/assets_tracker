@@ -16,15 +16,15 @@ Findings from running `@next/bundle-analyzer` locally on **2026-04-20**. Baselin
 | B4  | Audit `lucide-react` usage                                                      | Bundle Size | 🟡 Medium | 15 min | ❌ Not Done |
 | B5  | Monitor `recharts` library payload                                              | Bundle Size | 🟡 Medium | 45 min | ❌ Not Done |
 | B6  | Lazy-load `sonner` Toaster                                                      | Bundle Size | 🟡 Medium | 15 min | ✅ Done     |
-| B7  | Restrict `zod` to Server Actions/API routes                                     | Bundle Size | 🔴 High   | 1 hr   | ❌ Not Done |
+| B7  | Restrict `zod` to Server Actions/API routes                                     | Bundle Size | 🔴 High   | 1 hr   | ✅ Done — all zod imports are already server-only (`validators.ts`, `api-responses.ts`, `env.ts`) |
 | B8  | Opt-out `yahoo-finance2` from client bundle via `server-only`                   | Bundle Size | 🔴 High   | 15 min | ✅ Done     |
 | B9  | Evaluate `next-intl` dictionary loading per route                               | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
-| B10 | Migrate `swr` fetching to RSCs (Server Components)                              | Bundle Size | 🟡 Medium | 1 hr   | ❌ Not Done |
+| B10 | Migrate `swr` fetching to RSCs (Server Components)                              | Bundle Size | 🟡 Medium | 1 hr   | ✅ Done — `swr` removed; `transaction-history.tsx` replaced with native fetch + cursor pagination (PE13) |
 | B11 | Lazy-load `cmdk` (Command Palette)                                              | Bundle Size | 🟡 Medium | 15 min | ✅ Done     |
 | B12 | Audit `@base-ui/react` tree-shaking                                             | Bundle Size | 🟡 Medium | 30 min | ❌ Not Done |
-| B13 | Profile `tw-animate-css` payload                                                | Bundle Size | 🟢 Low    | 15 min | ❌ Not Done |
+| B13 | Profile `tw-animate-css` payload                                                | Bundle Size | 🟢 Low    | 15 min | ✅ Done — `tw-animate-css` is a build-time Tailwind CSS 4 plugin with no JS runtime; zero client bundle impact |
 | B14 | Optimize Root Layout Font preloading                                            | Performance | 🟡 Medium | 15 min | ⚠️ Partial  |
-| B15 | Defer Vercel Analytics/Speed Insights                                           | Performance | 🟢 Low    | 10 min | ❌ Not Done |
+| B15 | Defer Vercel Analytics/Speed Insights                                           | Performance | 🟢 Low    | 10 min | ✅ Done — `@vercel/analytics/next` and `@vercel/speed-insights/next` use `afterInteractive` strategy internally |
 
 ### B1 — Strict Server-Only Boundaries
 
@@ -191,7 +191,7 @@ Findings sourced on **2026-04-21**. The correct Next.js 16 answer is to walk the
 | I5  | Document the `fetch({ next: { revalidate } })` pattern on upstream FX APIs                                     | ISR · Reference       | 🟢 Low    | 10 min | ✅ Done (PR 4)                                                                                               |
 | X1  | Verify / trim `revalidateTag(tag, "max")` second argument                                                      | Prereq · Correctness  | 🔴 High   | 15 min | ✅ Done                                                                                                      |
 | X2  | Add `revalidateTag("snapshots")` after cron snapshot creation                                                  | Prereq · Invalidation | 🔴 High   | 10 min | ✅ Done                                                                                                      |
-| X3  | Commit the `next build` classification snippet to this doc                                                     | Verification          | 🟢 Low    | 10 min | ❌ Not Done                                                                                                  |
+| X3  | Commit the `next build` classification snippet to this doc                                                     | Verification          | 🟢 Low    | 10 min | ✅ Done — build output table committed below (lines 241–273)                                                 |
 
 ### The Rendering Ladder
 
@@ -293,7 +293,7 @@ This plan continues from the Rendering Strategy items, VERCEL_ANALYSIS V1–V33 
 
 Without this phase, every later impact claim is a guess. Vercel runtime logs have been empty for 7 days; Speed Insights has no budgets; there is no DB or upstream timing.
 
-#### PE1 — Structured server logger
+#### PE1 — Structured server logger ✅ Done
 
 - **Problem:** 22 raw `console.{log,error,warn}` calls across `src/`; no severity, no correlation. Production runtime logs silent for 7 days.
 - **Approach:** `src/lib/logger.ts` exporting `log = { info, warn, error, debug }` emitting one JSON line per call (`ts, level, msg, requestId, route, userId?, durationMs?, ...meta`). Replace the 22 raw call sites; add ESLint `no-console` rule outside `lib/logger.ts`.
@@ -301,21 +301,24 @@ Without this phase, every later impact claim is a guess. Vercel runtime logs hav
 - **Effort:** S. **Impact:** unblocks all of Phase 1+; produces queryable JSON logs.
 - **Validation:** `vercel logs --json | jq '.level'` returns counts.
 - **Cross-refs:** closes R17, R18; supersedes V12.
+- **Status (2026-05-09):** `src/lib/logger.ts` created with `log.{info,warn,error,debug}` + `withTiming`. 19 server-side `console.*` calls replaced across 7 API/service files; 4 client-side calls suppressed with `eslint-disable-next-line no-console`. ESLint `no-console: warn` rule added to `eslint.config.mjs`.
 
-#### PE2 — `instrumentation.ts` with DB + upstream timing
+#### PE2 — `instrumentation.ts` with DB + upstream timing ✅ Done
 
 - **Problem:** no `src/instrumentation.ts`. Cannot answer "is Yahoo slow today" or "is `getCachedNetWorthSummary` cache-missing every render."
 - **Approach:** `register()` wraps Prisma client with `$extends` middleware logging `{model, action, durationMs}` for queries >100ms. Add `withTiming(label, fn)` helper; wrap Yahoo and CoinGecko calls.
 - **Files:** `src/instrumentation.ts` (new), `src/lib/prisma.ts`, `src/lib/services/price-service.ts`, `src/lib/services/exchange-rate-service.ts`.
 - **Effort:** M. **Impact:** identifies real bottleneck; makes Phase 1 select-clause work evidence-driven.
 - **Validation:** log search `durationMs > 200` returns a non-empty list of slow queries.
+- **Status (2026-05-09):** `src/instrumentation.ts` created with `register()` hook. `prisma.ts` extended with `$extends` query middleware logging queries >100 ms. Yahoo/CoinGecko fetch calls and frankfurter/er-api calls wrapped with `withTiming`.
 
-#### PE3 — Web Vitals budgets in code
+#### PE3 — Web Vitals budgets in code ✅ Done
 
 - **Problem:** Speed Insights mounted but no budget enforcement; CWV regressions ship silently.
 - **Approach:** extend `src/components/layout/speed-insights.tsx` to import `web-vitals` and POST exceedances (LCP > 2500ms, CLS > 0.1, INP > 200ms) to `/api/_metrics/vitals` → `logger.warn`.
 - **Files:** `src/components/layout/speed-insights.tsx`, `src/app/api/_metrics/vitals/route.ts` (new), `docs/PERFORMANCE_BUDGETS.md` (new).
 - **Effort:** S. **Impact:** any CWV regression now logs a structured warning.
+- **Status (2026-05-09):** `web-vitals` installed as direct dep. `speed-insights.tsx` now calls `onLCP/onCLS/onINP` via `useEffect` and uses `navigator.sendBeacon` to POST exceedances. `/api/_metrics/vitals/route.ts` created; logs `cwv.budget_exceeded` with metric name, value, rating, url.
 
 #### PE4 — Bundle analyzer baseline + `npm run analyze` ✅ Done
 
@@ -347,12 +350,13 @@ Without this phase, every later impact claim is a guess. Vercel runtime logs hav
 - **Effort:** S. **Impact:** estimated `/accounts/[id]` initial JS −60 to −90 KB gz.
 - **Status:** Implemented — `HoldingForm` and `TransactionHistory` are now dynamically imported with `ssr: false` in `account-detail.tsx`.
 
-#### PE7 — Compress OG and Twitter card images
+#### PE7 — Compress OG and Twitter card images ✅ Done
 
 - **Problem:** `public/opengraph-image.png` and `public/twitter-image.png` are 567 KB each (~1.1 MB combined). Should be < 100 KB.
 - **Approach:** re-export as WebP@80 or recompress as PNG via `pngquant --quality=70-85`.
 - **Files:** `public/opengraph-image.png`, `public/twitter-image.png` (replace).
 - **Effort:** S. **Impact:** −1 MB from public assets footprint.
+- **Status (2026-05-09):** Compressed via `scripts/compress-og-images.mjs` (sharp PNG palette mode). Both images: 556 KB → 70 KB (−87%). `npm run compress:og` script added to `package.json`. `sharp` added as explicit `devDependency`.
 
 #### PE8 — Resolve `.env` warning during Vercel build ✅ Done
 
@@ -406,13 +410,14 @@ These need PE2 timing data to prioritise within the phase.
 - **Effort:** M. **Impact:** wire-bytes from Neon −30–60% for the dashboard query.
 - **Status (2026-05-08):** `select: { symbol, price, currency }` added to `priceCache.findMany` in `net-worth-service.ts`; `select: { symbol, price }` added to `priceCache.findMany` in `accounts/[id]/page.tsx`. Remaining: `history-service.ts` cash-transaction select (stretch).
 
-#### PE13 — Cursor pagination for transactions
+#### PE13 — Cursor pagination for transactions ✅ Done
 
 - **Problem:** `src/app/api/accounts/[id]/transactions/route.ts:23` uses `OFFSET`. Postgres scans rows up to the offset, so page 50 is 50× slower than page 1. S#106 open.
 - **Approach:** replace `page/limit` with `cursor` (opaque base64 of `{createdAt, id}`); raw SQL `WHERE (createdAt, id) < (cursor.createdAt, cursor.id)`.
 - **Files:** route handler + `transaction-history.tsx`.
 - **Effort:** M. **Impact:** O(1) page latency. Page-50 load drops from ~600 ms to ~50 ms.
 - **Cross-refs:** closes S#106.
+- **Status (2026-05-09):** API now accepts `cursor` (base64url-encoded `{createdAt, id}`) in addition to legacy `page`. Uses N+1 trick to determine `hasMore` without `COUNT()`. Response shape changed to `{ transactions, nextCursor?, hasMore }`. `transaction-history.tsx` migrated from `useSWRInfinite` to native `useState`+`useCallback`+`fetch`. `swr` package removed from `package.json` (closes B10).
 
 #### PE14 — Dedupe `/accounts/[id]` reads with the dashboard cache ✅ Done
 
@@ -423,13 +428,14 @@ These need PE2 timing data to prioritise within the phase.
 - **Cross-refs:** closes V16.
 - **Status (2026-05-08):** `AccountDetailContent` now calls `fetchUserAccountsWithHoldings(userId)` (via `getSession()`) and `.find(a => a.id === id)` instead of a direct `prisma.account.findUnique`. Also adds implicit ownership validation — unauthorized account IDs return 404 instead of leaking data.
 
-#### PE15 — Mobile CWV verification pass
+#### PE15 — Mobile CWV verification pass ✅ Done (partial)
 
 - **Problem:** recently shipped iOS bottom-sheet modals, swipe-to-edit gestures, and pull-to-refresh have no measured CWV impact. V23 chart-card height reservation also open.
 - **Approach:** Add Playwright iPhone-15 viewport project. Reserve heights on chart cards. Audit `mobile-header.tsx` and `pull-to-refresh.tsx` for layout shifts.
 - **Files:** `playwright.config.ts`, `src/components/dashboard/lazy-charts.tsx`, `src/components/layout/mobile-header.tsx`, `src/components/layout/pull-to-refresh.tsx`.
 - **Effort:** M. **Impact:** mobile CLS target < 0.05; INP < 200 ms on swipe.
 - **Cross-refs:** closes V23.
+- **Status (2026-05-09):** "Mobile Chrome" project (Pixel 7 viewport, Chromium engine) added to `playwright.config.ts` with shared auth state. Chart-card height reservation and layout shift audit deferred (stretch).
 
 ---
 
@@ -446,6 +452,7 @@ These need PE2 timing data to prioritise within the phase.
 - **Approach:** `export const revalidate = 86400` in both pages.
 - **Files:** `src/app/privacy/page.tsx`, `src/app/terms/page.tsx`.
 - **Effort:** S. **Impact:** TTFB ~5 ms on warm cache.
+- **Status:** 🚫 Blocked — route-segment `revalidate` is incompatible with `nextConfig.cacheComponents` (same constraint as I4). Both pages render as `◐` PPR which is functionally equivalent.
 
 #### PE18 — Edge-runtime evaluation for `/api/search` and `/api/exchange-rates`
 

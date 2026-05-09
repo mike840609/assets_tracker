@@ -14,6 +14,13 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // Disallow raw console calls — use src/lib/logger.ts instead (server) or eslint-disable for client components
+  {
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    rules: {
+      "no-console": "warn",
+    },
+  },
   // Allow _-prefixed variables to be unused (standard convention for intentionally unused bindings)
   {
     rules: {
