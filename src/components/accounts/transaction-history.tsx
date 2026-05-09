@@ -1,8 +1,7 @@
 "use client";
 
-import { useRef, useState, useEffect, startTransition } from "react";
+import { useRef, useState, useEffect, useCallback, startTransition } from "react";
 import { useRouter } from "next/navigation";
-import useSWRInfinite from "swr/infinite";
 import { useTranslations } from "next-intl";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -285,36 +284,60 @@ export function TransactionHistory({
   const [editDate, setEditDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetcher = (url: string) =>
-    fetch(url)
-      .then((res) => res.json())
-      .then((r) => r.data);
+  const [transactions, setTransactions] = useState<SerializedTransaction[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const getKey = (pageIndex: number, previousPageData: SerializedTransaction[]) => {
-    if (previousPageData && !previousPageData.length) return null; // reached the end
-    return `/api/accounts/${accountId}/transactions?page=${pageIndex + 1}&limit=20`;
-  };
+  const loadMore = useCallback(
+    async (cursor?: string) => {
+      const isInitial = cursor === undefined;
+      if (isInitial) setIsLoadingInitialData(true);
+      else setIsLoadingMore(true);
+      try {
+        const url = cursor
+          ? `/api/accounts/${accountId}/transactions?cursor=${cursor}&limit=20`
+          : `/api/accounts/${accountId}/transactions?limit=20`;
+        const res = await fetch(url);
+        const json = (await res.json()) as {
+          data: {
+            transactions: (SerializedTransaction & { quantity: string | number })[];
+            nextCursor?: string;
+            hasMore: boolean;
+          };
+        };
+        const page = json.data;
+        const normalized = page.transactions.map((t) => ({
+          ...t,
+          quantity: Number(t.quantity),
+        })) as SerializedTransaction[];
+        if (isInitial) {
+          setTransactions(normalized);
+        } else {
+          setTransactions((prev) => [...prev, ...normalized]);
+        }
+        setNextCursor(page.nextCursor ?? null);
+        setHasMore(page.hasMore);
+      } finally {
+        if (isInitial) setIsLoadingInitialData(false);
+        else setIsLoadingMore(false);
+      }
+    },
+    [accountId],
+  );
 
-  const { data, size, setSize, isValidating, mutate } = useSWRInfinite(getKey, fetcher);
-
-  const transactions = data
-    ? (data.flat().map((t: { quantity: string | number } & Record<string, unknown>) => ({
-        ...t,
-        quantity: Number(t.quantity),
-      })) as SerializedTransaction[])
-    : [];
-
-  const isLoadingInitialData = !data && isValidating;
-  const isLoadingMore =
-    isLoadingInitialData || (size > 0 && data && typeof data[size - 1] === "undefined");
-  const isEmpty = data?.[0]?.length === 0;
-  const isReachingEnd = isEmpty || (data && data[data.length - 1]?.length < 20);
-
+  // Initial load
   useEffect(() => {
-    if (refreshTrigger) {
-      mutate();
-    }
-  }, [refreshTrigger, mutate]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadMore();
+  }, [loadMore]);
+
+  // Re-load from start when refreshTrigger changes (after mutations)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (refreshTrigger) void loadMore();
+  }, [refreshTrigger, loadMore]);
 
   const handleEditClick = (t: SerializedTransaction) => {
     setEditingTx(t);
@@ -350,7 +373,7 @@ export function TransactionHistory({
 
       toast.success(t("updateSuccess"));
       setEditingTx(null);
-      mutate();
+      void loadMore();
       startTransition(() => {
         router.refresh();
       }); // Refresh holdings on parent page
@@ -386,9 +409,7 @@ export function TransactionHistory({
             method: "DELETE",
           });
           if (!res.ok) throw new Error("Failed to delete transaction");
-          // Keep tx.id in pendingDeleteIds until mutate() delivers fresh SWR pages —
-          // removing it early can cause a flash from stale cache data.
-          mutate();
+          void loadMore();
           startTransition(() => {
             router.refresh();
           });
@@ -486,9 +507,13 @@ export function TransactionHistory({
             </div>
           ))
         )}
-        {!isEmpty && !isReachingEnd && (
+        {hasMore && (
           <div className="flex justify-center pt-2">
-            <Button variant="secondary" onClick={() => setSize(size + 1)} disabled={isLoadingMore}>
+            <Button
+              variant="secondary"
+              onClick={() => nextCursor && void loadMore(nextCursor)}
+              disabled={isLoadingMore}
+            >
               {isLoadingMore ? t("loading") : t("loadMore")}
             </Button>
           </div>

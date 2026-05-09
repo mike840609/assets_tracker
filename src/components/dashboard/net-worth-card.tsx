@@ -42,6 +42,7 @@ export function NetWorthCard({
 
   return (
     <div
+      data-testid="net-worth-card"
       className={`grid grid-cols-2 lg:grid-cols-3 ${isCompact ? "gap-2 sm:gap-3" : "gap-3 sm:gap-6"} animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both`}
     >
       {/* Primary Hero Metric: Net Worth */}

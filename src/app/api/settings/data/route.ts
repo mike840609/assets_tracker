@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { dataImportSchema } from "@/lib/validators";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
+import { log } from "@/lib/logger";
 
 export const GET = withAuth(async (_req, _ctx, userId) => {
   try {
@@ -38,7 +39,7 @@ export const GET = withAuth(async (_req, _ctx, userId) => {
       },
     });
   } catch (error) {
-    console.error("Export error:", error);
+    log.error("export.failed", { error: String(error) });
     return failure("Failed to export data", 500);
   }
 });
@@ -49,7 +50,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
     const parsed = dataImportSchema.safeParse(body);
 
     if (!parsed.success) {
-      console.error("Validation error:", parsed.error.format());
+      log.error("import.validation", { issues: parsed.error.format() });
       return validationError(parsed.error);
     }
 
@@ -161,7 +162,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
 
     return ok({ ok: true });
   } catch (error) {
-    console.error("Import error:", error);
+    log.error("import.failed", { error: String(error) });
     return failure(error instanceof Error ? error.message : "Failed to import data", 500);
   }
 });

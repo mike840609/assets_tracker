@@ -11,30 +11,75 @@ interface UnifiedRow {
   holdingId: string | null;
 }
 
+function encodeCursor(row: { createdAt: Date; id: string }): string {
+  return Buffer.from(
+    JSON.stringify({ createdAt: row.createdAt.toISOString(), id: row.id }),
+  ).toString("base64url");
+}
+
+function decodeCursor(cursor: string): { createdAt: Date; id: string } {
+  const parsed = JSON.parse(Buffer.from(cursor, "base64url").toString()) as {
+    createdAt: string;
+    id: string;
+  };
+  return { createdAt: new Date(parsed.createdAt), id: parsed.id };
+}
+
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { searchParams } = new URL(request.url);
 
-  const page = Math.max(1, Number(searchParams.get("page") || "1"));
   const limit = Math.max(1, Math.min(100, Number(searchParams.get("limit") || "20")));
-  const offset = (page - 1) * limit;
+  const cursorParam = searchParams.get("cursor");
 
-  // Single UNION ALL query with DB-level ORDER BY + LIMIT/OFFSET
-  const rows = await prisma.$queryRaw<UnifiedRow[]>`
-    SELECT id, false AS "isCash", type::text, quantity, note, "createdAt", "holdingId"
-    FROM "HoldingTransaction"
-    WHERE "holdingId" IN (SELECT id FROM "Holding" WHERE "accountId" = ${id})
+  let rows: UnifiedRow[];
 
-    UNION ALL
+  if (cursorParam) {
+    // Cursor-based keyset pagination — O(1) regardless of position
+    const { createdAt: cursorDate, id: cursorId } = decodeCursor(cursorParam);
 
-    SELECT id, true AS "isCash", type::text, amount AS quantity, note, "createdAt", NULL AS "holdingId"
-    FROM "CashTransaction"
-    WHERE "accountId" = ${id}
+    rows = await prisma.$queryRaw<UnifiedRow[]>`
+      SELECT id, false AS "isCash", type::text, quantity, note, "createdAt", "holdingId"
+      FROM "HoldingTransaction"
+      WHERE "holdingId" IN (SELECT id FROM "Holding" WHERE "accountId" = ${id})
+        AND ("createdAt", id) < (${cursorDate}::timestamptz, ${cursorId}::text)
 
-    ORDER BY "createdAt" DESC
-    LIMIT ${limit}
-    OFFSET ${offset}
-  `;
+      UNION ALL
+
+      SELECT id, true AS "isCash", type::text, amount AS quantity, note, "createdAt", NULL AS "holdingId"
+      FROM "CashTransaction"
+      WHERE "accountId" = ${id}
+        AND ("createdAt", id) < (${cursorDate}::timestamptz, ${cursorId}::text)
+
+      ORDER BY "createdAt" DESC, id DESC
+      LIMIT ${limit + 1}
+    `;
+  } else {
+    // Initial load or legacy page-param fallback
+    const page = Math.max(1, Number(searchParams.get("page") || "1"));
+    const offset = (page - 1) * limit;
+
+    rows = await prisma.$queryRaw<UnifiedRow[]>`
+      SELECT id, false AS "isCash", type::text, quantity, note, "createdAt", "holdingId"
+      FROM "HoldingTransaction"
+      WHERE "holdingId" IN (SELECT id FROM "Holding" WHERE "accountId" = ${id})
+
+      UNION ALL
+
+      SELECT id, true AS "isCash", type::text, amount AS quantity, note, "createdAt", NULL AS "holdingId"
+      FROM "CashTransaction"
+      WHERE "accountId" = ${id}
+
+      ORDER BY "createdAt" DESC, id DESC
+      LIMIT ${limit + 1}
+      OFFSET ${offset}
+    `;
+  }
+
+  // N+1 trick: fetching limit+1 tells us if there are more rows without a COUNT()
+  const hasMore = rows.length > limit;
+  if (hasMore) rows = rows.slice(0, limit);
+  const nextCursor = hasMore ? encodeCursor(rows[rows.length - 1]) : undefined;
 
   // Hydrate holding details only for the holding transactions on this page
   const holdingIds = [
@@ -60,7 +105,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
   }
 
-  const result = rows.map((row) => ({
+  const transactions = rows.map((row) => ({
     id: row.id,
     isCash: row.isCash,
     type: row.type,
@@ -72,5 +117,5 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       : {}),
   }));
 
-  return ok(result);
+  return ok({ transactions, nextCursor, hasMore });
 }

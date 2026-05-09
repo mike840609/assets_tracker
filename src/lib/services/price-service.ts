@@ -1,6 +1,7 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { log, withTiming } from "@/lib/logger";
 
 const FETCH_TIMEOUT_MS = 5_000;
 const RETRY_DELAYS_MS = [500, 1_500]; // 2 retries: 500 ms then 1.5 s
@@ -92,16 +93,18 @@ async function fetchYahooQuotes(
   };
 
   try {
-    await fetchSymbols(symbols);
+    await withTiming("price.yahoo.fetch", () => fetchSymbols(symbols), {
+      symbolCount: symbols.length,
+    });
   } catch (batchErr) {
     // Batch failed after retries — fall back to per-symbol to isolate bad tickers
-    console.error("Yahoo Finance batch fetch failed, retrying per-symbol:", batchErr);
+    log.error("price.yahoo.batch_failed", { error: String(batchErr) });
     await Promise.allSettled(
       symbols.map(async (symbol) => {
         try {
           await fetchSymbols([symbol]);
         } catch (err) {
-          console.error(`Yahoo Finance fetch failed for ${symbol}:`, err);
+          log.error("price.yahoo.symbol_failed", { symbol, error: String(err) });
         }
       }),
     );
@@ -142,27 +145,32 @@ export async function fetchCryptoPrices(
     if (ids.length > 0) {
       const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=usd`;
       try {
-        const data = await withRetry(async () => {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-          try {
-            const res = await fetch(url, {
-              signal: controller.signal,
-              next: { revalidate: 60, tags: ["prices:crypto"] },
-            } as RequestInit);
-            if (!res.ok) throw new Error(`CoinGecko returned HTTP ${res.status}`);
-            return res.json() as Promise<Record<string, { usd: number }>>;
-          } finally {
-            clearTimeout(timeoutId);
-          }
-        });
+        const data = await withTiming(
+          "price.coingecko.fetch",
+          () =>
+            withRetry(async () => {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+              try {
+                const res = await fetch(url, {
+                  signal: controller.signal,
+                  next: { revalidate: 60, tags: ["prices:crypto"] },
+                } as RequestInit);
+                if (!res.ok) throw new Error(`CoinGecko returned HTTP ${res.status}`);
+                return res.json() as Promise<Record<string, { usd: number }>>;
+              } finally {
+                clearTimeout(timeoutId);
+              }
+            }),
+          { idCount: ids.length },
+        );
         for (const { original, geckoId } of symbolMap) {
           if (data[geckoId]?.usd) {
             results.set(original, { price: data[geckoId].usd, currency: "USD" });
           }
         }
       } catch (error) {
-        console.error("CoinGecko fallback failed:", error);
+        log.error("price.coingecko.failed", { error: String(error) });
       }
     }
   }

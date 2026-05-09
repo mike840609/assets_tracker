@@ -139,6 +139,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
         }
       })
       .catch((err) => {
+        // eslint-disable-next-line no-console
         console.error("Chain fetch error:", err);
         setFailedExpirations((prev) => new Set(prev).add(exp));
       });

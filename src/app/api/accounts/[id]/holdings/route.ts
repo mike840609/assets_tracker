@@ -5,6 +5,7 @@ import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-servic
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 import { parseOccSymbol, formatOptionLabel, OptionError } from "@/lib/options";
+import { log } from "@/lib/logger";
 
 type IdCtx = { params: Promise<{ id: string }> };
 
@@ -120,7 +121,7 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
     }
   } catch (error) {
     // Non-blocking: if price fetch fails, holding is still created
-    console.error(`Failed to fetch price for ${holding.symbol}:`, error);
+    log.error("holdings.price_fetch.failed", { symbol: holding.symbol, error: String(error) });
   }
 
   invalidateUserCaches(userId);

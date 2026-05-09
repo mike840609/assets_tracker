@@ -49,6 +49,7 @@ export function DataManagement() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
       toast.error(t("exportFailed"));
     } finally {
@@ -104,6 +105,7 @@ export function DataManagement() {
           setShowSuccessDialog(true);
           setIsImporting(false);
         } catch (err: unknown) {
+          // eslint-disable-next-line no-console
           console.error(err);
           setImportError((err instanceof Error ? err.message : null) || t("importFailed"));
           setShowErrorDialog(true);
@@ -112,6 +114,7 @@ export function DataManagement() {
       };
       reader.readAsText(selectedFile);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
       setImportError(t("importFailed"));
       setShowErrorDialog(true);
