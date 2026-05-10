@@ -17,7 +17,7 @@ When implementing features, follow these steps:
 
 4. Ensure the code passes all checks defined in .github/workflows/ci.yml (e.g., format check, lint, typecheck, build).
 
-5. Make a PR to the master branch.
+5. Leverage `gh` command to make a PR to the master branch.
 
 ## Change log Format
 
