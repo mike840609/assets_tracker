@@ -283,7 +283,7 @@ If/when dividend tracking lands (SUGGESTIONS.md #17), add a monthly dividend bar
 
 ---
 
-### Suggested order of attack
+### Suggested implementation order
 
 1. **Phase 2.1 — Cash Flow Decomposition** (highest user value, no new models)
 2. **Phase 2.2 — Category Trend** (unblocks an already-collected data field)
@@ -294,244 +294,337 @@ If/when dividend tracking lands (SUGGESTIONS.md #17), add a monthly dividend bar
 
 ---
 
-## UI/UX Enhancement Addendum (2026-05-09)
+## UI/UX Enhancement Addendum (2026-05-10)
 
-This addendum captures a focused codebase review and complements the recommendations above.
+_Updated: 2026-05-10 — Full codebase review across layout, dashboard, accounts, analysis, history, and settings components._
 
-# UI/UX Enhancement Suggestions (Codebase Review)
-
-_Date: 2026-05-09_
-
-This document summarizes practical UI/UX improvements based on the current implementation patterns in:
-
-- `src/components/layout/*`
-- `src/components/dashboard/*`
-- `src/components/accounts/*`
-- `src/components/history/*`
+This addendum captures a deep codebase review and complements the recommendations above. Every item references specific files, patterns, and gaps discovered during analysis.
 
 ---
 
 ## Enhancement Summary Table
 
-| #   | Item                                                          | Impact     | Status   |
-| --- | ------------------------------------------------------------- | ---------- | -------- |
-| 1   | Improve mobile bottom navigation ergonomics                   | High       | Proposed |
-| 2   | Add data-freshness and loading confidence cues                | High       | Proposed |
-| 3   | Strengthen table/list scannability with sticky sub-headers    | Medium     | Proposed |
-| 4   | Expand accessibility baseline for keyboard and screen readers | High       | Proposed |
-| 5   | Improve empty states with role-specific onboarding paths      | Medium     | Proposed |
-| 6   | Introduce chart interaction consistency on mobile             | Medium     | Proposed |
-| 7   | Add micro-feedback for destructive and delayed operations     | Medium     | Proposed |
-| 8   | Harmonize motion timings and reduce mixed animation feel      | Low/Medium | Proposed |
+| #   | Item                                                                            | Impact     | Status   |
+| --- | ------------------------------------------------------------------------------- | ---------- | -------- |
+| 1   | Mobile bottom nav: larger tap targets + pill active state                       | High       | Proposed |
+| 2   | Missing `theme-color` meta tag + iOS splash screens                             | High       | Proposed |
+| 3   | Data-freshness live badge on dashboard hero                                     | High       | Proposed |
+| 4   | Accessibility audit: missing `aria-label`, focus rings, sr-only chart summaries | High       | Proposed |
+| 5   | Extract duplicated swipe-row logic into shared component                        | Medium     | Proposed |
+| 6   | Sticky sort/filter bar in account detail holdings list                          | Medium     | Proposed |
+| 7   | Unified motion token system in `globals.css`                                    | Medium     | Proposed |
+| 8   | Richer empty states with multi-action onboarding                                | Medium     | Proposed |
+| 9   | Mobile chart interaction model (crosshair, haptics, range persistence)          | Medium     | Proposed |
+| 10  | Bulk-delete UX: replace `confirm()` with undo-toast pattern                     | Medium     | Proposed |
+| 11  | Transaction edit dialog → bottom sheet on mobile                                | Medium     | Proposed |
+| 12  | Search dropdown keyboard navigation + loading skeleton                          | Low/Medium | Proposed |
 
 ---
 
-## 1) Improve mobile bottom navigation ergonomics (High)
+## 1) Mobile bottom nav: larger tap targets + pill active state (High)
 
 **What I observed**
 
-- Mobile nav uses a thin top active indicator and relatively tight per-item spacing.
-- Tap targets appear visually smaller than native-app comfort zones.
+`sidebar.tsx` `MobileNav` (line 246–293):
+
+- Each nav item uses `px-3 py-1` with `h-5 w-5` icons → effective tap area ~32×32 px, well below iOS 44×44 minimum.
+- Active state uses a thin top hairline bar (`absolute inset-x-2 -top-3 h-0.5 bg-primary`, line 280) rather than the iOS-standard pill background.
+- `hapticTick` fires on every tap (line 273 `onClick={hapticTick}`) including re-tapping the already-active tab.
 
 **Suggestion**
 
-- Increase interactive hit area to at least 44x44 px (ideally 48x48).
-- Replace the top hairline active indicator with a background pill on active items.
-- Use slightly smaller labels and stronger active/inactive contrast.
+- Increase item container to `min-h-[48px] min-w-[48px]` with `px-4 py-2`.
+- Replace the top bar with `bg-primary/10 rounded-xl` pill behind active icon+label.
+- Reduce label to `text-[10px] uppercase tracking-wider` for native feel.
+- Gate haptic: `onClick={() => { if (!isActive) hapticTick(); }}`.
 
-**Why this helps**
-
-- Reduces tap errors and makes the app feel more native on iOS/Android.
-
-**Implementation ideas**
-
-- Update `MobileNav` item container classes in `src/components/layout/sidebar.tsx`.
-- Add active `bg-primary/10` + rounded-full/rounded-xl style around icon+label.
-- Keep haptic tap behavior, but only trigger on non-active transitions.
+**Target files**: `src/components/layout/sidebar.tsx:266–291`
 
 ---
 
-## 2) Add data-freshness and loading confidence cues (High)
+## 2) Missing `theme-color` meta tag + iOS splash screens (High)
 
 **What I observed**
 
-- Dashboard actions already receive last price update and snapshot timestamps.
-- Users may still be unsure whether shown values are stale while refresh runs.
+`layout.tsx` (line 26–57):
+
+- `appleWebApp.capable = true` and `viewport.viewportFit = "cover"` are set ✅.
+- **No `theme-color` meta** — iOS Safari shows a white/black status bar instead of matching the app's emerald/dark palette.
+- **No `apple-touch-startup-image`** splash screens configured — PWA launch shows a blank white screen.
+- `html` tag is hardcoded `lang="en"` (line 82) even though the app supports `zh-TW`.
 
 **Suggestion**
 
-- Show a compact freshness badge near top actions and net-worth area:
-  - “Updated 18s ago”
-  - “Refreshing prices…” while in-flight
-  - “Snapshot pending” if snapshot is behind latest prices
+- Add `themeColor` to the `Metadata` export (Next.js supports `themeColor` with media queries):
+  ```ts
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f9fafb" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f1a1a" },
+  ],
+  ```
+- Generate iOS splash images and add them via `icons` / `apple-touch-startup-image` link tags.
+- Dynamically set `<html lang={locale}>` from the resolved locale.
 
-**Why this helps**
-
-- Builds trust in financial values and lowers perceived latency.
-
-**Implementation ideas**
-
-- Extend `src/components/dashboard/dashboard-actions.tsx` display state machine.
-- Mirror a lightweight status chip in `src/components/dashboard/net-worth-card.tsx`.
+**Target files**: `src/app/layout.tsx:26–57`, `src/app/layout.tsx:81–82`
 
 ---
 
-## 3) Strengthen table/list scannability with sticky sub-headers (Medium)
+## 3) Data-freshness live badge on dashboard hero (High)
 
 **What I observed**
 
-- History has sticky monthly headings, but other long lists rely mostly on cards/rows.
+`dashboard-actions.tsx` (line 70–106):
+
+- Already shows `priceAge` and `snapshotAge` as static text at the top of the dashboard.
+- The `refreshing` state drives a spinner on the button but **nothing changes on the net-worth card itself** — the hero numbers stay frozen with no visual hint that they're stale or refreshing.
+- `getRelativeTime()` is called once at render; it does **not auto-update** (no interval), so "18 seconds ago" becomes stale quickly.
 
 **Suggestion**
 
-- Add sticky contextual headers for long sections in account detail and transaction areas.
-- For holdings, keep sort controls visible while scrolling.
+- Add a small pulsing dot or `Refreshing…` badge overlay on `net-worth-card.tsx` during `refreshing` state (lift state via context or event).
+- Auto-tick the relative-time string every 30s using `setInterval` + `useState` counter.
+- Show a subtle skeleton shimmer on the hero card numbers during refresh for perceived progress.
 
-**Why this helps**
-
-- Improves orientation in dense financial datasets.
-
-**Implementation ideas**
-
-- Add sticky row wrappers and subtle blur backgrounds similar to history table patterns.
-- Apply in `src/components/accounts/account-detail.tsx` and `src/components/accounts/transaction-history.tsx`.
+**Target files**: `src/components/dashboard/dashboard-actions.tsx`, `src/components/dashboard/net-worth-card.tsx`
 
 ---
 
-## 4) Expand accessibility baseline for keyboard and screen readers (High)
+## 4) Accessibility audit: missing labels, focus rings, chart sr-only summaries (High)
 
 **What I observed**
 
-- Many controls are already labeled, but clickable cards/rows and chart interactions can still be improved.
+- **`mobile-header.tsx` line 101–106**: Privacy toggle button has `title` but **no `aria-label`** attribute.
+- **`accounts-summary.tsx` line 171–183**: Sort buttons have no `aria-label` or `aria-pressed` state.
+- **`account-detail.tsx` line 285–290**: Account name `<h2>` is clickable to edit but has no `role="button"` or keyboard handler for Enter (only `onClick`).
+- **`holding-row.tsx` line 243**: `DropdownMenuTrigger` has no `aria-label` — screen readers will announce nothing.
+- **`allocation-chart.tsx`, `trend-chart.tsx`**: No `aria-label` on the chart container and no sr-only text summary of the trend direction.
+- **`category-trend-chart.tsx`, `cashflow-chart.tsx`**: Same chart accessibility gap.
+- **Focus rings**: Many interactive elements use `transition-colors` but no `focus-visible:ring-2 focus-visible:ring-primary/50` for keyboard users.
 
 **Suggestion**
 
-- Ensure all non-button clickable containers are keyboard reachable with visible focus.
-- Add explicit focus rings to row links/actions where custom styling hides defaults.
-- Provide chart summaries (sr-only text) describing trend direction and key values.
+- Add `aria-label` to all icon-only buttons and interactive triggers across layout/\*.
+- Add `role="button"` + `tabIndex={0}` + `onKeyDown` (Enter/Space) to clickable non-button elements (editable headings, legend items).
+- Add sr-only chart summary `<p>` elements near each chart, e.g. `"Net worth trend: up 4.2% over 12 months"`.
+- Add `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` to sort buttons, nav items, and card links.
 
-**Why this helps**
-
-- Better WCAG alignment and improved usability for keyboard/screen-reader users.
-
-**Implementation ideas**
-
-- Audit `tabIndex`, `role`, `aria-label`, `aria-describedby` across layout/dashboard/accounts components.
-- Add `focus-visible:ring-*` patterns to interactive wrappers.
+**Target files**: `sidebar.tsx`, `mobile-header.tsx`, `accounts-summary.tsx`, `account-detail.tsx`, `holding-row.tsx`, `allocation-chart.tsx`, `trend-chart.tsx`, `analysis/*`
 
 ---
 
-## 5) Improve empty states with role-specific onboarding paths (Medium)
+## 5) Extract duplicated swipe-row logic into shared component (Medium)
 
 **What I observed**
 
-- Dashboard empty state is visually pleasant and includes a CTA.
+`holding-row.tsx` (line 57–132) and `transaction-history.tsx` (line 76–146) contain **nearly identical** swipe-to-reveal logic:
+
+- Same `useMotionValue`, `useTransform` setup with identical constants (`REVEAL_WIDTH=144`, `SNAP_THRESHOLD`, `FULL_SWIPE`).
+- Same `handleDrag()`, `handleDragEnd()`, `snapOpen()`, `snapClose()` functions.
+- Same danger-zone tint, edit/delete button layout, and haptic feedback pattern.
+- ~70 lines of duplicated motion code per component.
 
 **Suggestion**
 
-- Add optional quick-start choices:
-  - “Add first account”
-  - “Import sample portfolio”
-  - “Connect bank (coming soon)”
-- Include a short 2–3 bullet “what happens next” explanation.
+- Extract a `<SwipeableRow>` component into `src/components/ui/swipeable-row.tsx` that accepts:
+  - `actions: { label, icon, color, onClick }[]`
+  - `onFullSwipe?: () => void`
+  - `children: ReactNode`
+- Both `HoldingRow` and `SwipeableTxRow` become thin wrappers rendering content inside `<SwipeableRow>`.
+- Share `REVEAL_WIDTH`, `SNAP_THRESHOLD`, `FULL_SWIPE` constants from the shared module.
 
-**Why this helps**
-
-- Reduces first-use friction and increases conversion from empty to active state.
-
-**Implementation ideas**
-
-- Extend empty block in `src/components/dashboard/dashboard-content.tsx`.
-- Reuse existing button system and i18n keys in `messages/*`.
+**Target files**: `src/components/accounts/holding-row.tsx`, `src/components/accounts/transaction-history.tsx` → new `src/components/ui/swipeable-row.tsx`
 
 ---
 
-## 6) Introduce chart interaction consistency on mobile (Medium)
+## 6) Sticky sort/filter bar in account detail holdings list (Medium)
 
 **What I observed**
 
-- Charts are feature-rich, but mobile interactions can feel inconsistent across chart types.
+`account-detail.tsx` (line 332–366):
+
+- Sort controls (Value / Symbol / % / Qty buttons) are rendered inside `<CardContent>` with no sticky positioning.
+- When scrolling a long holdings list, the sort controls scroll away — user loses context.
+- History table already uses `sticky top-0 z-10 bg-background/90 backdrop-blur-sm` on month headers (line 65 of `history-table.tsx`) — this pattern should be reused.
 
 **Suggestion**
 
-- Standardize a shared mobile chart behavior:
-  - Long-press crosshair
-  - Sticky value/date tooltip
-  - Haptic tick at key thresholds
-  - Persist selected time range per page
+- Wrap the sort-controls `<div>` with `sticky top-0 z-10 bg-background/90 backdrop-blur-sm py-2` so it pins while scrolling the holdings list.
+- Add a subtle `border-b border-border/40` on scroll for a separator effect.
 
-**Why this helps**
-
-- Makes analysis workflows predictable and app-like.
-
-**Implementation ideas**
-
-- Extract shared interaction hooks/utilities under `src/hooks/` and reuse in dashboard/analysis chart components.
+**Target files**: `src/components/accounts/account-detail.tsx:332–366`
 
 ---
 
-## 7) Add micro-feedback for destructive and delayed operations (Medium)
+## 7) Unified motion token system in `globals.css` (Medium)
 
 **What I observed**
 
-- Undo delete is implemented well.
-- Some async updates still rely mainly on toast + refresh.
+`globals.css` defines two timing functions (line 9–10):
+
+```css
+--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+```
+
+But across components, animation timings are inconsistent:
+
+- `sidebar.tsx`: `duration-200 ease-spring` (nav items), `duration-300 ease-out` (sidebar width).
+- `mobile-header.tsx`: `duration-300 ease-out-expo` (header transform).
+- `net-worth-card.tsx`: `duration-300` + `duration-500` (card entrance) — uses browser default ease.
+- `dashboard-content.tsx`: `duration-500`, `duration-700`, `duration-1000` (staggered entrance) — linear-feeling.
+- `accounts-list.tsx`: `duration-300 ease-in-out` (category expand).
+- `holding-row.tsx`: framer-motion spring `stiffness: 300, damping: 30` — different spring than CSS `--ease-spring`.
 
 **Suggestion**
 
-- Add inline pending states directly on affected rows/cards:
-  - Dim row + spinner while commit pending
-  - “Undo available” badge while toast timer active
+- Define a motion token system in `@theme inline`:
+  ```css
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --ease-micro: cubic-bezier(0.25, 0.1, 0.25, 1); /* subtle taps */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* bouncy reveals */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1); /* entrances */
+  ```
+- Create utility classes: `.motion-fast`, `.motion-normal`, `.motion-slow` combining duration + easing.
+- Standardize framer-motion springs to a shared config object in `src/lib/motion.ts`.
 
-**Why this helps**
-
-- Keeps feedback near the interaction source and reduces uncertainty.
-
-**Implementation ideas**
-
-- In `account-detail` optimistic delete paths, expose pending metadata to `HoldingRow` rendering.
+**Target files**: `src/app/globals.css`, all component files using `duration-*` / `ease-*`
 
 ---
 
-## 8) Harmonize motion timings and reduce “mixed animation feel” (Low/Medium)
+## 8) Richer empty states with multi-action onboarding (Medium)
 
 **What I observed**
 
-- Spring/ease utilities are present, but different sections still mix animation styles.
+`dashboard-content.tsx` (line 199–231):
+
+- Empty state has a wallet SVG + single "Add Account" CTA button → good but minimal.
+- No explanation of what happens after adding an account (price tracking, snapshots, analysis).
+- `accounts-list.tsx` (line 257–259): empty state is a plain `<p>` with no illustration or guidance.
+- `analysis-view.tsx` (line 168–171): empty state is a dashed-border box with `{t("noData")}` — no actionable guidance.
 
 **Suggestion**
 
-- Define a compact motion token system:
-  - fast (120–160ms), normal (180–240ms), emphasized spring
-- Apply by interaction type (tap, panel open, route transition, background load).
+- Dashboard empty state: add 2–3 quick-start cards below the CTA:
+  - "Add a bank account" → pre-fills `category: BANK`
+  - "Add a brokerage" → pre-fills `category: BROKERAGE`
+  - "Quick-add a holding" → opens quick-add sheet
+- Accounts list: match dashboard empty state with illustration + CTA.
+- Analysis view: show a friendly message like "Add your first snapshot to unlock insights" with a link to `/accounts`.
 
-**Why this helps**
+**Target files**: `src/components/dashboard/dashboard-content.tsx:199–231`, `src/components/accounts/accounts-list.tsx:257–259`, `src/components/analysis/analysis-view.tsx:168–171`
 
-- More coherent visual rhythm and less cognitive load.
+---
 
-**Implementation ideas**
+## 9) Mobile chart interaction model (Medium)
 
-- Centralize timing classes in `globals.css` utility layer and refactor frequently used components.
+**What I observed**
+
+`trend-chart.tsx` (line 147–166):
+
+- Uses Recharts `<Tooltip>` with default hover behavior — on mobile this requires a tap (no crosshair, no sticky follow).
+- Range selection (`1M/3M/6M/1Y/All`) is local `useState` — lost on navigation (line 80 `useState("All")`).
+- `analysis-view.tsx` has its own range selector (line 54 `useState<RangeLabel>("YTD")`) — also not persisted.
+- No haptic feedback on chart data point crossing.
+- `allocation-chart.tsx` has `onMouseEnter`/`onMouseLeave` for hover (line 53–54) — these don't work well on touch.
+
+**Suggestion**
+
+- Create `src/hooks/use-chart-crosshair.ts` with touch event handling:
+  - Long-press activates crosshair mode.
+  - `onTouchMove` finds nearest data point and triggers `hapticTick()` on threshold crossing.
+  - Shows a sticky value/date tooltip pinned near the finger.
+- Create `src/hooks/use-persisted-range.ts` wrapping `useState` + `sessionStorage` to remember selected range per page key.
+- For pie/donut charts: replace `onMouseEnter`/`Leave` with `onTouchStart`/`onTouchEnd` handlers.
+
+**Target files**: `src/components/dashboard/trend-chart.tsx`, `src/components/analysis/analysis-view.tsx`, `src/components/dashboard/allocation-chart.tsx`, new hooks in `src/hooks/`
+
+---
+
+## 10) Bulk-delete UX: replace `confirm()` with undo-toast pattern (Medium)
+
+**What I observed**
+
+`accounts-list.tsx` (line 200–220):
+
+- Bulk delete uses `window.confirm()` — a jarring browser-native dialog that breaks the premium feel.
+- Single-item deletes elsewhere (holdings, transactions, accounts) already use the well-implemented `showUndoDeleteToast()` pattern from `src/lib/undo-delete.ts`.
+- The inconsistency means bulk delete is the only destructive action without undo.
+
+**Suggestion**
+
+- Replace `confirm()` with optimistic removal + undo toast, matching the pattern in `account-detail.tsx:214–252`.
+- Show a toast: "Deleted {n} accounts — Undo" with 5s timer.
+- Optimistically hide selected accounts from the list; restore on undo.
+
+**Target files**: `src/components/accounts/accounts-list.tsx:200–220`
+
+---
+
+## 11) Transaction edit dialog → bottom sheet on mobile (Medium)
+
+**What I observed**
+
+`transaction-history.tsx` (line 523–602):
+
+- Transaction edit uses a standard `<Dialog>` (shadcn `DialogContent`), which renders as a centered modal.
+- The existing UI/UX doc (item 3) notes bottom sheets were implemented for account/holding forms ✅, but the **transaction edit dialog was missed**.
+- On mobile, the centered dialog is jarring compared to the bottom-sheet pattern used elsewhere.
+
+**Suggestion**
+
+- Wrap the transaction edit form in a responsive `Sheet` (Vaul) on mobile (`side="bottom"` with rounded top corners + drag handle), keeping the `Dialog` on desktop.
+- Follow the same pattern used in `holding-form.tsx` and `account-form.tsx`.
+
+**Target files**: `src/components/accounts/transaction-history.tsx:523–602`
+
+---
+
+## 12) Search dropdown keyboard navigation + loading skeleton (Low/Medium)
+
+**What I observed**
+
+`holding-search.tsx` (line 76–125):
+
+- Search results dropdown has no keyboard navigation — user cannot arrow-key through results or press Enter to select.
+- While `searching` is true (line 87–91), only a small spinner appears — no skeleton rows to indicate incoming content.
+- Click-outside dismissal uses `mousedown` (line 37–43) but no `Escape` key handler.
+
+**Suggestion**
+
+- Add `onKeyDown` handler on the input: Arrow Up/Down to move a `highlightedIndex`, Enter to select, Escape to close.
+- Add `aria-activedescendant`, `role="listbox"` on the dropdown, and `role="option"` + `aria-selected` on each result.
+- Replace the spinner-only state with 3–4 skeleton rows (`h-10 bg-muted animate-pulse rounded`) inside the dropdown.
+- Add `Escape` key handler to close the dropdown.
+
+**Target files**: `src/components/accounts/holding-search.tsx`
 
 ---
 
 ## Recommended rollout order
 
-1. Mobile nav tap-target + active-state refresh.
-2. Data freshness indicators on dashboard.
-3. Accessibility/focus audit across interactive rows/cards.
-4. Sticky contextual headers in account/history-heavy flows.
-5. Empty-state onboarding enhancements.
-6. Chart-interaction standardization.
-7. Inline pending-state feedback for async destructive actions.
-8. Motion token cleanup pass.
+1. **Accessibility audit** (#4) — highest impact, low effort per fix, addresses WCAG compliance.
+2. **Mobile nav tap targets + pill** (#1) — fixes the most common touch interaction.
+3. **Theme-color meta + lang attr** (#2) — two-line fix with high perceived quality lift.
+4. **Data-freshness badge** (#3) — builds trust in a financial app.
+5. **Extract swipe-row** (#5) — reduces maintenance burden before adding more swipeable surfaces.
+6. **Bulk-delete undo pattern** (#10) — consistency fix, reuses existing `showUndoDeleteToast`.
+7. **Transaction dialog → sheet** (#11) — consistency with existing form patterns.
+8. **Sticky sort bar** (#6) — small CSS-only change.
+9. **Motion tokens** (#7) — foundation for coherent animation across all components.
+10. **Empty state onboarding** (#8) — improves first-run experience.
+11. **Chart interaction model** (#9) — larger effort, high reward for mobile engagement.
+12. **Search keyboard nav** (#12) — polish for power users.
 
 ---
 
 ## Success metrics to track
 
-- **Task completion**: time to add first account/holding.
-- **Error reduction**: accidental taps in mobile nav.
-- **Engagement**: chart interaction frequency and range-switch usage.
-- **Trust signal**: reduced manual refresh frequency after freshness badges.
-- **Accessibility**: keyboard-only task completion rate.
+- **Task completion**: time to add first account/holding (especially first-run).
+- **Error reduction**: accidental taps in mobile nav (measure via analytics tap events).
+- **Engagement**: chart interaction frequency, range-switch usage, crosshair activations.
+- **Trust signal**: reduced manual refresh frequency after freshness badges ship.
+- **Accessibility**: keyboard-only task completion rate, Lighthouse accessibility score.
+- **PWA install rate**: track `beforeinstallprompt` events after splash/theme-color fix.
+- **Code health**: LOC reduction after swipe-row extraction, animation inconsistency count.
