@@ -8,13 +8,13 @@ import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import { hapticTick } from "@/lib/haptics";
 
-function getRelativeTime(dateString: string, locale: string) {
+function getRelativeTime(dateString: string, locale: string, now: number) {
   const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   // Parse as local noon to avoid UTC-midnight causing off-by-one-day in non-UTC timezones
   const localDate = dateString.includes("T")
     ? new Date(dateString)
     : new Date(`${dateString}T12:00:00`);
-  const diffInSeconds = Math.round((localDate.getTime() - Date.now()) / 1000);
+  const diffInSeconds = Math.round((localDate.getTime() - now) / 1000);
   const absDiff = Math.abs(diffInSeconds);
 
   if (absDiff < 60) return rtf.format(Math.sign(diffInSeconds) * absDiff, "second");
@@ -36,6 +36,7 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
   const t = useTranslations("dashboardActions");
   const locale = useLocale();
   const [refreshing, setRefreshing] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
   const handleRefreshPrices = useCallback(async () => {
     hapticTick();
@@ -63,21 +64,29 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
     return () => window.removeEventListener("prices:refresh", handler);
   }, [handleRefreshPrices]);
 
-  const priceAge = lastPriceUpdate ? getRelativeTime(lastPriceUpdate, locale) : null;
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
-  const snapshotAge = lastSnapshotDate ? getRelativeTime(lastSnapshotDate, locale) : null;
+  const priceAge = lastPriceUpdate ? getRelativeTime(lastPriceUpdate, locale, now) : null;
+
+  const snapshotAge = lastSnapshotDate ? getRelativeTime(lastSnapshotDate, locale, now) : null;
 
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+      <div
+        className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
+        aria-live="polite"
+      >
         {priceAge && (
-          <span className="inline-flex items-center gap-1">
+          <span className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/5 px-2.5 py-1 text-primary">
             <Clock className="h-3 w-3" />
             {t("pricesUpdated", { age: priceAge })}
           </span>
         )}
         {snapshotAge && (
-          <span className="inline-flex items-center gap-1">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-muted/30 px-2.5 py-1">
             <Camera className="h-3 w-3" />
             {t("snapshot", { age: snapshotAge })}
           </span>
