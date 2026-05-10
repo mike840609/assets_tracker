@@ -1,8 +1,7 @@
 import { Suspense } from "react";
-import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
-import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
+import { getAccountDetail, getAccountPriceMap } from "@/lib/services/account-service";
 import { getSession } from "@/lib/auth-session";
 import {
   getAllExchangeRates,
@@ -29,20 +28,11 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
   const userId = session?.user?.id;
   if (!userId) notFound();
 
-  // Use the "use cache" layer — warm-cache hit (e.g. after dashboard load) avoids DB round-trip
-  // Also validates ownership: only accounts belonging to userId are returned
-  const accounts = await fetchUserAccountsWithHoldings(userId);
-  const serialized = accounts.find((a) => a.id === id);
+  const serialized = await getAccountDetail(userId, id);
   if (!serialized) notFound();
 
   const symbols = serialized.holdings.map((h) => h.symbol);
-
-  const cachedPrices = await prisma.priceCache.findMany({
-    where: { symbol: { in: symbols } },
-    select: { symbol: true, price: true },
-  });
-
-  const priceMap = Object.fromEntries(cachedPrices.map((p) => [p.symbol, Number(p.price)]));
+  const priceMap = await getAccountPriceMap(symbols);
 
   // Build rates map from bulk-loaded data
   const ratesMap: Record<string, number> = {};

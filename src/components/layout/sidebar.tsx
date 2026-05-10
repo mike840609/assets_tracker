@@ -270,6 +270,7 @@ export function MobileNav() {
           <Link
             key={item.href}
             href={item.href}
+            prefetch={false}
             onClick={() => {
               if (!isActive) hapticTick();
             }}
