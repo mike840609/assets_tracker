@@ -13,15 +13,17 @@ export function useChartCrosshair() {
       if (state?.activeTooltipIndex !== undefined) {
         lastIndexRef.current = String(state.activeTooltipIndex);
       }
-    if (pressTimerRef.current) {
-      clearTimeout(pressTimerRef.current);
-    }
-    // Long press to activate crosshair mode
-    pressTimerRef.current = setTimeout(() => {
-      setIsActive(true);
-      hapticTick();
-    }, 400);
-  }, []);
+      if (pressTimerRef.current) {
+        clearTimeout(pressTimerRef.current);
+      }
+      // Long press to activate crosshair mode
+      pressTimerRef.current = setTimeout(() => {
+        setIsActive(true);
+        hapticTick();
+      }, 400);
+    },
+    [],
+  );
 
   const onTouchMove = useCallback(
     (state: { activeTooltipIndex?: number | string | null } | null | undefined) => {
