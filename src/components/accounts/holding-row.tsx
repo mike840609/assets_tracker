@@ -47,7 +47,6 @@ export function HoldingRow({
   const nameLabel = optionDisplay ? optionDisplay.long : h.name;
   const isOption = h.assetType === "OPTION";
 
-
   return (
     <SwipeableRow
       actions={[

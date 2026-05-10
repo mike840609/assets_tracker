@@ -50,7 +50,7 @@ export function SwipeableRow({
 
   const actionsOpacity = useTransform(x, [-REVEAL_WIDTH * 0.5, 0], [1, 0], { clamp: true });
   const iconScale = useTransform(x, [0, -REVEAL_WIDTH], [0.65, 1.0], { clamp: true });
-  
+
   // Specific transforms for when we have exactly 2 actions (edit/delete pattern)
   const editOpacity = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [1, 0], { clamp: true });
   const editWidth = useTransform(x, [-REVEAL_WIDTH, -FULL_SWIPE], [ACTION_WIDTH, 0], {
@@ -122,7 +122,7 @@ export function SwipeableRow({
           const buttonStyle = isFirstOfTwo
             ? { opacity: editOpacity, width: editWidth, minWidth: 0 }
             : {};
-            
+
           const innerStyle = isLastOfTwo ? { scale: deleteIconScale } : { scale: iconScale };
 
           return (

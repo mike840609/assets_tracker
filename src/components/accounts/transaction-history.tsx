@@ -43,8 +43,6 @@ const TYPE_VARIANTS: Record<string, "default" | "secondary" | "destructive"> = {
   EDIT: "secondary",
 };
 
-
-
 interface TxRowProps {
   tx: SerializedTransaction;
   typeLabel: string;
@@ -68,8 +66,6 @@ function SwipeableTxRow({
   onDelete,
   tCommon,
 }: TxRowProps) {
-
-
   return (
     <SwipeableRow
       actions={[
