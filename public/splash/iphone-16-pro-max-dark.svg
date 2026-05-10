@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="2868" viewBox="0 0 1320 2868">
+  <rect width="1320" height="2868" fill="#0d1f1e"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#065f46"/>
+    </linearGradient>
+  </defs>
+  <rect x="554.5" y="1328.5" width="211" height="211" rx="42" fill="url(#g)"/>
+  <g transform="translate(554.5, 1328.5)">
+    <svg width="211" height="211" viewBox="0 0 32 32" fill="none">
+      <path d="M8 20 L13.5 13.5 L17.5 17.5 L24 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M20 10 L24 10 L24 14" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </g>
+  <text x="660" y="1613.35" text-anchor="middle" font-family="-apple-system, SF Pro Display, system-ui, sans-serif" font-size="38" font-weight="600" fill="rgba(255,255,255,0.85)">Assets Tracker</text>
+</svg>
