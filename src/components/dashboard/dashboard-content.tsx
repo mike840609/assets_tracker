@@ -199,7 +199,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
   if (accountCount === 0) {
     const t = await getTranslations("dashboard");
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-6 text-center animate-in fade-in zoom-in-95 duration-500">
+      <div className="flex flex-col items-center justify-center py-24 gap-6 text-center animate-in fade-in zoom-in-95 motion-normal">
         <div className="rounded-full bg-primary/10 p-8 shadow-sm">
           <svg
             className="h-12 w-12 text-primary animate-bounce-slow"
@@ -243,7 +243,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
       </Suspense>
 
       {/* Charts grid — trend chart + allocation + currency exposure */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both delay-150">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start animate-in fade-in slide-in-from-bottom-8 motion-slow fill-mode-both delay-150">
         <div className={`${CARD_CLASS} lg:col-span-2 xl:col-span-1`}>
           <Suspense fallback={<div className="h-[350px] animate-pulse bg-muted rounded-lg" />}>
             <TrendChartSection userId={userId} baseCurrency={baseCurrency} />
@@ -255,7 +255,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
       </div>
 
       {/* Accounts summary table */}
-      <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000 fill-mode-both delay-300">
+      <div className="animate-in fade-in slide-in-from-bottom-12 motion-slow fill-mode-both delay-300">
         <Suspense fallback={<AccountsSummarySkeleton />}>
           <AccountsSummarySection userId={userId} baseCurrency={baseCurrency} />
         </Suspense>

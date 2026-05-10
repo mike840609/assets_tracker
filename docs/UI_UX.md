@@ -312,7 +312,7 @@ This addendum captures a deep codebase review and complements the recommendation
 | 4   | Accessibility audit: missing `aria-label`, focus rings, sr-only chart summaries | High       | ⚠️ Partial |
 | 5   | Extract duplicated swipe-row logic into shared component                        | Medium     | ✅ Done    |
 | 6   | Sticky sort/filter bar in account detail holdings list                          | Medium     | Proposed   |
-| 7   | Unified motion token system in `globals.css`                                    | Medium     | Proposed   |
+| 7   | Unified motion token system in `globals.css`                                    | Medium     | ✅ Done    |
 | 8   | Richer empty states with multi-action onboarding                                | Medium     | Proposed   |
 | 9   | Mobile chart interaction model (crosshair, haptics, range persistence)          | Medium     | Proposed   |
 | 10  | Bulk-delete UX: replace `confirm()` with undo-toast pattern                     | Medium     | Proposed   |

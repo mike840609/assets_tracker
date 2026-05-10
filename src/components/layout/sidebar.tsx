@@ -84,7 +84,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col border-r bg-sidebar/80 backdrop-blur-md text-sidebar-foreground glass z-10 shrink-0 transition-[width] duration-200 ease-spring",
+        "hidden md:flex flex-col border-r bg-sidebar/80 backdrop-blur-md text-sidebar-foreground glass z-10 shrink-0 transition-[width] motion-normal",
         collapsed ? "w-[72px]" : "w-64",
       )}
     >
@@ -165,7 +165,7 @@ export function Sidebar({
               onFocus={() => router.prefetch(item.href)}
               title={collapsed ? item.label : undefined}
               className={cn(
-                "group relative flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-200 ease-spring",
+                "group relative flex items-center rounded-lg py-2.5 text-sm font-medium transition-all motion-fast",
                 collapsed ? "justify-center px-2" : "gap-3 px-3",
                 isActive
                   ? "text-primary shadow-sm"
@@ -173,14 +173,14 @@ export function Sidebar({
               )}
             >
               {isActive && (
-                <div className="absolute inset-0 rounded-lg bg-primary/10 border border-primary/20 transition-all duration-200 ease-spring" />
+                <div className="absolute inset-0 rounded-lg bg-primary/10 border border-primary/20 transition-all motion-fast" />
               )}
               {!isActive && (
-                <div className="absolute inset-0 rounded-lg bg-sidebar-accent/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 -z-10" />
+                <div className="absolute inset-0 rounded-lg bg-sidebar-accent/50 opacity-0 group-hover:opacity-100 transition-opacity motion-fast -z-10" />
               )}
               <Icon
                 className={cn(
-                  "z-10 h-5 w-5 transition-transform duration-200 ease-spring",
+                  "z-10 h-5 w-5 transition-transform motion-fast",
                   isActive ? "scale-110" : "group-hover:scale-110",
                 )}
               />
@@ -210,7 +210,7 @@ export function Sidebar({
               title={`${collapsed ? "Expand sidebar" : "Collapse sidebar"} (${SIDEBAR_SHORTCUT_HINT})`}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               aria-keyshortcuts="Control+\\ Meta+\\"
-              className="inline-flex items-center justify-center rounded-md p-1.5 text-sm text-muted-foreground hover:text-foreground transition-all duration-200 ease-spring"
+              className="inline-flex items-center justify-center rounded-md p-1.5 text-sm text-muted-foreground hover:text-foreground transition-all motion-fast"
             >
               {collapsed ? (
                 <ChevronRight className="h-4 w-4" />
@@ -225,7 +225,7 @@ export function Sidebar({
                   title={privacyMode ? "Show values" : "Hide values"}
                   aria-label={privacyMode ? "Show values" : "Hide values"}
                   className={cn(
-                    "inline-flex items-center justify-center rounded-md p-1.5 text-sm transition-all duration-200 ease-spring",
+                    "inline-flex items-center justify-center rounded-md p-1.5 text-sm transition-all motion-fast",
                     privacyMode
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground",
@@ -259,7 +259,7 @@ export function MobileNav() {
   return (
     <nav
       className={cn(
-        "md:hidden fixed bottom-0 left-0 right-0 z-50 glass backdrop-blur-md border-t border-border/50 flex justify-around py-3 pb-safe transition-transform duration-300 ease-out-expo",
+        "md:hidden fixed bottom-0 left-0 right-0 z-50 glass backdrop-blur-md border-t border-border/50 flex justify-around py-3 pb-safe transition-transform motion-normal",
         hidden && "translate-y-full",
       )}
     >
@@ -284,7 +284,7 @@ export function MobileNav() {
           >
             <Icon
               className={cn(
-                "h-5 w-5 transition-transform duration-200 ease-spring",
+                "h-5 w-5 transition-transform motion-fast",
                 isActive ? "scale-110" : "group-hover:scale-110",
               )}
             />
