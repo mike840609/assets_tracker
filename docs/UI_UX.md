@@ -310,7 +310,7 @@ This addendum captures a deep codebase review and complements the recommendation
 | 2   | Missing `theme-color` meta tag + iOS splash screens                             | High       | ✅ Done  |
 | 3   | Data-freshness live badge on dashboard hero                                     | High       | Proposed |
 | 4   | Accessibility audit: missing `aria-label`, focus rings, sr-only chart summaries | High       | Proposed |
-| 5   | Extract duplicated swipe-row logic into shared component                        | Medium     | Proposed |
+| 5   | Extract duplicated swipe-row logic into shared component                        | Medium     | ✅ Done  |
 | 6   | Sticky sort/filter bar in account detail holdings list                          | Medium     | Proposed |
 | 7   | Unified motion token system in `globals.css`                                    | Medium     | Proposed |
 | 8   | Richer empty states with multi-action onboarding                                | Medium     | Proposed |
@@ -414,7 +414,7 @@ This addendum captures a deep codebase review and complements the recommendation
 
 ---
 
-## 5) Extract duplicated swipe-row logic into shared component (Medium)
+## 5) Extract duplicated swipe-row logic into shared component (Medium) — ✅ Done
 
 **What I observed**
 
@@ -435,6 +435,8 @@ This addendum captures a deep codebase review and complements the recommendation
 - Share `REVEAL_WIDTH`, `SNAP_THRESHOLD`, `FULL_SWIPE` constants from the shared module.
 
 **Target files**: `src/components/accounts/holding-row.tsx`, `src/components/accounts/transaction-history.tsx` → new `src/components/ui/swipeable-row.tsx`
+
+> **Implemented**: Extracted the duplicate framer-motion swipe-to-reveal logic into a new `<SwipeableRow>` component in `src/components/ui/swipeable-row.tsx`. Both `HoldingRow` and `SwipeableTxRow` now pass `actions` as props instead of re-implementing `useMotionValue` and `useTransform`. All motion primitives and constants (`REVEAL_WIDTH`, `SNAP_THRESHOLD`, `FULL_SWIPE`) are now localized to `SwipeableRow`.
 
 ---
 
