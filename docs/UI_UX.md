@@ -304,20 +304,20 @@ This addendum captures a deep codebase review and complements the recommendation
 
 ## Enhancement Summary Table
 
-| #   | Item                                                                            | Impact     | Status   |
-| --- | ------------------------------------------------------------------------------- | ---------- | -------- |
-| 1   | Mobile bottom nav: larger tap targets + pill active state                       | High       | ✅ Done  |
-| 2   | Missing `theme-color` meta tag + iOS splash screens                             | High       | ✅ Done  |
-| 3   | Data-freshness live badge on dashboard hero                                     | High       | ✅ Done  |
+| #   | Item                                                                            | Impact     | Status     |
+| --- | ------------------------------------------------------------------------------- | ---------- | ---------- |
+| 1   | Mobile bottom nav: larger tap targets + pill active state                       | High       | ✅ Done    |
+| 2   | Missing `theme-color` meta tag + iOS splash screens                             | High       | ✅ Done    |
+| 3   | Data-freshness live badge on dashboard hero                                     | High       | ✅ Done    |
 | 4   | Accessibility audit: missing `aria-label`, focus rings, sr-only chart summaries | High       | ⚠️ Partial |
-| 5   | Extract duplicated swipe-row logic into shared component                        | Medium     | Proposed |
-| 6   | Sticky sort/filter bar in account detail holdings list                          | Medium     | Proposed |
-| 7   | Unified motion token system in `globals.css`                                    | Medium     | Proposed |
-| 8   | Richer empty states with multi-action onboarding                                | Medium     | Proposed |
-| 9   | Mobile chart interaction model (crosshair, haptics, range persistence)          | Medium     | Proposed |
-| 10  | Bulk-delete UX: replace `confirm()` with undo-toast pattern                     | Medium     | Proposed |
-| 11  | Transaction edit dialog → bottom sheet on mobile                                | Medium     | Proposed |
-| 12  | Search dropdown keyboard navigation + loading skeleton                          | Low/Medium | Proposed |
+| 5   | Extract duplicated swipe-row logic into shared component                        | Medium     | Proposed   |
+| 6   | Sticky sort/filter bar in account detail holdings list                          | Medium     | Proposed   |
+| 7   | Unified motion token system in `globals.css`                                    | Medium     | Proposed   |
+| 8   | Richer empty states with multi-action onboarding                                | Medium     | Proposed   |
+| 9   | Mobile chart interaction model (crosshair, haptics, range persistence)          | Medium     | Proposed   |
+| 10  | Bulk-delete UX: replace `confirm()` with undo-toast pattern                     | Medium     | Proposed   |
+| 11  | Transaction edit dialog → bottom sheet on mobile                                | Medium     | Proposed   |
+| 12  | Search dropdown keyboard navigation + loading skeleton                          | Low/Medium | Proposed   |
 
 ---
 
