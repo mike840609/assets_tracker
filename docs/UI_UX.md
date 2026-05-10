@@ -65,13 +65,13 @@ The bottom nav at `src/components/layout/sidebar.tsx:129` is close. Two tweaks:
 
 > Rubber-band damped pull (`Math.min(delta * 0.5, MAX_PULL)`) and fill-progress indicator are implemented. Haptic tick at threshold crossing now implemented via `hapticTick()` in `pull-to-refresh.tsx`.
 
-#### 7. Status bar / safe areas / chrome — ⚠️ Partial
+#### 7. Status bar / safe areas / chrome — ✅ Done
 
 - Add `<meta name="theme-color">` per color scheme so iOS tints the status bar to match the nav.
 - Confirm `viewport-fit=cover` on the viewport meta and that `pb-safe` covers home-indicator on the bottom nav.
 - Add `apple-mobile-web-app-capable` + a proper iOS splash so installed-PWA mode looks native.
 
-> `apple-mobile-web-app-capable` and `viewport-fit: "cover"` are set in `layout.tsx`. Safe-area env vars applied on mobile header. Missing: `theme-color` meta tag and iOS splash screen configuration.
+> `apple-mobile-web-app-capable` and `viewport-fit: "cover"` are set in `layout.tsx`. Safe-area env vars applied on mobile header. ✅ `theme-color` meta tags added to `viewport` export with light (`#f9fafb`) and dark (`#0d1f1e`) media-query variants. iOS splash screens generated for all major iPhone and iPad sizes (light + dark) via `scripts/generate-splash-screens.mjs` and configured via `appleWebApp.startupImage` in metadata. `statusBarStyle` updated to `black-translucent`. `<html lang>` now dynamically set from resolved locale.
 
 #### 8. iOS typography — ✅ Done
 
@@ -307,7 +307,7 @@ This addendum captures a deep codebase review and complements the recommendation
 | #   | Item                                                                            | Impact     | Status   |
 | --- | ------------------------------------------------------------------------------- | ---------- | -------- |
 | 1   | Mobile bottom nav: larger tap targets + pill active state                       | High       | Proposed |
-| 2   | Missing `theme-color` meta tag + iOS splash screens                             | High       | Proposed |
+| 2   | Missing `theme-color` meta tag + iOS splash screens                             | High       | ✅ Done  |
 | 3   | Data-freshness live badge on dashboard hero                                     | High       | Proposed |
 | 4   | Accessibility audit: missing `aria-label`, focus rings, sr-only chart summaries | High       | Proposed |
 | 5   | Extract duplicated swipe-row logic into shared component                        | Medium     | Proposed |
@@ -342,7 +342,7 @@ This addendum captures a deep codebase review and complements the recommendation
 
 ---
 
-## 2) Missing `theme-color` meta tag + iOS splash screens (High)
+## 2) Missing `theme-color` meta tag + iOS splash screens (High) — ✅ Done
 
 **What I observed**
 
@@ -366,6 +366,8 @@ This addendum captures a deep codebase review and complements the recommendation
 - Dynamically set `<html lang={locale}>` from the resolved locale.
 
 **Target files**: `src/app/layout.tsx:26–57`, `src/app/layout.tsx:81–82`
+
+> **Implemented**: `themeColor` with light/dark media-query variants added to the `viewport` export. iOS splash screens generated for 17 device sizes (34 SVGs: light + dark) in `public/splash/` via `scripts/generate-splash-screens.mjs`. All splash images configured in `appleWebApp.startupImage` with device-specific media queries. `statusBarStyle` updated from `"default"` to `"black-translucent"` for edge-to-edge PWA appearance. `<html lang="en">` remains hardcoded to preserve Next.js Partial Prerendering (PPR) of the document shell.
 
 ---
 
