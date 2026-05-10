@@ -302,20 +302,20 @@ This addendum captures a deep codebase review and complements the recommendation
 
 ## Enhancement Summary Table
 
-| #   | Item                                                          | Impact     | Status   |
-| --- | ------------------------------------------------------------- | ---------- | -------- |
-| 1   | Mobile bottom nav: larger tap targets + pill active state     | High       | Proposed |
-| 2   | Missing `theme-color` meta tag + iOS splash screens           | High       | Proposed |
-| 3   | Data-freshness live badge on dashboard hero                   | High       | Proposed |
-| 4   | Accessibility audit: missing `aria-label`, focus rings, sr-only chart summaries | High | Proposed |
-| 5   | Extract duplicated swipe-row logic into shared component      | Medium     | Proposed |
-| 6   | Sticky sort/filter bar in account detail holdings list        | Medium     | Proposed |
-| 7   | Unified motion token system in `globals.css`                  | Medium     | Proposed |
-| 8   | Richer empty states with multi-action onboarding              | Medium     | Proposed |
-| 9   | Mobile chart interaction model (crosshair, haptics, range persistence) | Medium | Proposed |
-| 10  | Bulk-delete UX: replace `confirm()` with undo-toast pattern   | Medium     | Proposed |
-| 11  | Transaction edit dialog → bottom sheet on mobile              | Medium     | Proposed |
-| 12  | Search dropdown keyboard navigation + loading skeleton        | Low/Medium | Proposed |
+| #   | Item                                                                            | Impact     | Status   |
+| --- | ------------------------------------------------------------------------------- | ---------- | -------- |
+| 1   | Mobile bottom nav: larger tap targets + pill active state                       | High       | Proposed |
+| 2   | Missing `theme-color` meta tag + iOS splash screens                             | High       | Proposed |
+| 3   | Data-freshness live badge on dashboard hero                                     | High       | Proposed |
+| 4   | Accessibility audit: missing `aria-label`, focus rings, sr-only chart summaries | High       | Proposed |
+| 5   | Extract duplicated swipe-row logic into shared component                        | Medium     | Proposed |
+| 6   | Sticky sort/filter bar in account detail holdings list                          | Medium     | Proposed |
+| 7   | Unified motion token system in `globals.css`                                    | Medium     | Proposed |
+| 8   | Richer empty states with multi-action onboarding                                | Medium     | Proposed |
+| 9   | Mobile chart interaction model (crosshair, haptics, range persistence)          | Medium     | Proposed |
+| 10  | Bulk-delete UX: replace `confirm()` with undo-toast pattern                     | Medium     | Proposed |
+| 11  | Transaction edit dialog → bottom sheet on mobile                                | Medium     | Proposed |
+| 12  | Search dropdown keyboard navigation + loading skeleton                          | Low/Medium | Proposed |
 
 ---
 
@@ -324,6 +324,7 @@ This addendum captures a deep codebase review and complements the recommendation
 **What I observed**
 
 `sidebar.tsx` `MobileNav` (line 246–293):
+
 - Each nav item uses `px-3 py-1` with `h-5 w-5` icons → effective tap area ~32×32 px, well below iOS 44×44 minimum.
 - Active state uses a thin top hairline bar (`absolute inset-x-2 -top-3 h-0.5 bg-primary`, line 280) rather than the iOS-standard pill background.
 - `hapticTick` fires on every tap (line 273 `onClick={hapticTick}`) including re-tapping the already-active tab.
@@ -344,6 +345,7 @@ This addendum captures a deep codebase review and complements the recommendation
 **What I observed**
 
 `layout.tsx` (line 26–57):
+
 - `appleWebApp.capable = true` and `viewport.viewportFit = "cover"` are set ✅.
 - **No `theme-color` meta** — iOS Safari shows a white/black status bar instead of matching the app's emerald/dark palette.
 - **No `apple-touch-startup-image`** splash screens configured — PWA launch shows a blank white screen.
@@ -370,6 +372,7 @@ This addendum captures a deep codebase review and complements the recommendation
 **What I observed**
 
 `dashboard-actions.tsx` (line 70–106):
+
 - Already shows `priceAge` and `snapshotAge` as static text at the top of the dashboard.
 - The `refreshing` state drives a spinner on the button but **nothing changes on the net-worth card itself** — the hero numbers stay frozen with no visual hint that they're stale or refreshing.
 - `getRelativeTime()` is called once at render; it does **not auto-update** (no interval), so "18 seconds ago" becomes stale quickly.
@@ -398,7 +401,7 @@ This addendum captures a deep codebase review and complements the recommendation
 
 **Suggestion**
 
-- Add `aria-label` to all icon-only buttons and interactive triggers across layout/*.
+- Add `aria-label` to all icon-only buttons and interactive triggers across layout/\*.
 - Add `role="button"` + `tabIndex={0}` + `onKeyDown` (Enter/Space) to clickable non-button elements (editable headings, legend items).
 - Add sr-only chart summary `<p>` elements near each chart, e.g. `"Net worth trend: up 4.2% over 12 months"`.
 - Add `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` to sort buttons, nav items, and card links.
@@ -412,6 +415,7 @@ This addendum captures a deep codebase review and complements the recommendation
 **What I observed**
 
 `holding-row.tsx` (line 57–132) and `transaction-history.tsx` (line 76–146) contain **nearly identical** swipe-to-reveal logic:
+
 - Same `useMotionValue`, `useTransform` setup with identical constants (`REVEAL_WIDTH=144`, `SNAP_THRESHOLD`, `FULL_SWIPE`).
 - Same `handleDrag()`, `handleDragEnd()`, `snapOpen()`, `snapClose()` functions.
 - Same danger-zone tint, edit/delete button layout, and haptic feedback pattern.
@@ -435,6 +439,7 @@ This addendum captures a deep codebase review and complements the recommendation
 **What I observed**
 
 `account-detail.tsx` (line 332–366):
+
 - Sort controls (Value / Symbol / % / Qty buttons) are rendered inside `<CardContent>` with no sticky positioning.
 - When scrolling a long holdings list, the sort controls scroll away — user loses context.
 - History table already uses `sticky top-0 z-10 bg-background/90 backdrop-blur-sm` on month headers (line 65 of `history-table.tsx`) — this pattern should be reused.
@@ -453,12 +458,14 @@ This addendum captures a deep codebase review and complements the recommendation
 **What I observed**
 
 `globals.css` defines two timing functions (line 9–10):
+
 ```css
 --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 ```
 
 But across components, animation timings are inconsistent:
+
 - `sidebar.tsx`: `duration-200 ease-spring` (nav items), `duration-300 ease-out` (sidebar width).
 - `mobile-header.tsx`: `duration-300 ease-out-expo` (header transform).
 - `net-worth-card.tsx`: `duration-300` + `duration-500` (card entrance) — uses browser default ease.
@@ -473,9 +480,9 @@ But across components, animation timings are inconsistent:
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 400ms;
-  --ease-micro: cubic-bezier(0.25, 0.1, 0.25, 1);      /* subtle taps */
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);     /* bouncy reveals */
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);       /* entrances */
+  --ease-micro: cubic-bezier(0.25, 0.1, 0.25, 1); /* subtle taps */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* bouncy reveals */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1); /* entrances */
   ```
 - Create utility classes: `.motion-fast`, `.motion-normal`, `.motion-slow` combining duration + easing.
 - Standardize framer-motion springs to a shared config object in `src/lib/motion.ts`.
@@ -489,6 +496,7 @@ But across components, animation timings are inconsistent:
 **What I observed**
 
 `dashboard-content.tsx` (line 199–231):
+
 - Empty state has a wallet SVG + single "Add Account" CTA button → good but minimal.
 - No explanation of what happens after adding an account (price tracking, snapshots, analysis).
 - `accounts-list.tsx` (line 257–259): empty state is a plain `<p>` with no illustration or guidance.
@@ -512,6 +520,7 @@ But across components, animation timings are inconsistent:
 **What I observed**
 
 `trend-chart.tsx` (line 147–166):
+
 - Uses Recharts `<Tooltip>` with default hover behavior — on mobile this requires a tap (no crosshair, no sticky follow).
 - Range selection (`1M/3M/6M/1Y/All`) is local `useState` — lost on navigation (line 80 `useState("All")`).
 - `analysis-view.tsx` has its own range selector (line 54 `useState<RangeLabel>("YTD")`) — also not persisted.
@@ -536,6 +545,7 @@ But across components, animation timings are inconsistent:
 **What I observed**
 
 `accounts-list.tsx` (line 200–220):
+
 - Bulk delete uses `window.confirm()` — a jarring browser-native dialog that breaks the premium feel.
 - Single-item deletes elsewhere (holdings, transactions, accounts) already use the well-implemented `showUndoDeleteToast()` pattern from `src/lib/undo-delete.ts`.
 - The inconsistency means bulk delete is the only destructive action without undo.
@@ -555,6 +565,7 @@ But across components, animation timings are inconsistent:
 **What I observed**
 
 `transaction-history.tsx` (line 523–602):
+
 - Transaction edit uses a standard `<Dialog>` (shadcn `DialogContent`), which renders as a centered modal.
 - The existing UI/UX doc (item 3) notes bottom sheets were implemented for account/holding forms ✅, but the **transaction edit dialog was missed**.
 - On mobile, the centered dialog is jarring compared to the bottom-sheet pattern used elsewhere.
@@ -573,6 +584,7 @@ But across components, animation timings are inconsistent:
 **What I observed**
 
 `holding-search.tsx` (line 76–125):
+
 - Search results dropdown has no keyboard navigation — user cannot arrow-key through results or press Enter to select.
 - While `searching` is true (line 87–91), only a small spinner appears — no skeleton rows to indicate incoming content.
 - Click-outside dismissal uses `mousedown` (line 37–43) but no `Escape` key handler.
