@@ -16,6 +16,8 @@ import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
+import { usePersistedRange } from "@/hooks/use-persisted-range";
+import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
 
 type SnapshotData = {
   date: string;
@@ -77,11 +79,12 @@ export function TrendChart({
   baseCurrency?: string;
   hideRangeFilter?: boolean;
 }) {
-  const [range, setRange] = useState("All");
+  const [range, setRange] = usePersistedRange<string>("trend-chart", "All");
   const [mounted, setMounted] = useState(false);
   const t = useTranslations("trendChart");
   const { privacyMode } = usePrivacyMode();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
+  const { handlers: crosshairHandlers } = useChartCrosshair();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
   const selectedRange = ranges.find((r) => r.label === range)!;
@@ -145,7 +148,7 @@ export function TrendChart({
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={filtered}>
+              <AreaChart data={filtered} {...crosshairHandlers}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={xTickFormatter} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={yTickFormatter} />

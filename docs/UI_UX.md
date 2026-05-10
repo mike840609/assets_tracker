@@ -147,7 +147,7 @@ When price refresh or snapshot fetch runs, keep current numbers visible and show
 
 Targets: `src/components/dashboard/net-worth-card.tsx`, `src/components/dashboard/dashboard-actions.tsx`, `src/components/analysis/analysis-view.tsx`.
 
-#### 15. Mobile chart interaction model — ❌ Not Done
+#### 15. Mobile chart interaction model — ✅ Done
 
 Most finance apps feel better when charts support:
 
@@ -156,6 +156,8 @@ Most finance apps feel better when charts support:
 - Range chips (1W / 1M / 3M / 1Y / All) with preserved selection per page.
 
 Targets: `src/components/dashboard/trend-chart.tsx`, `src/components/analysis/*chart*.tsx`.
+
+> Implemented `useChartCrosshair` for mobile chart interaction with haptics and sticky tooltips, and `usePersistedRange` to persist range selections across navigation.
 
 ---
 
@@ -314,7 +316,7 @@ This addendum captures a deep codebase review and complements the recommendation
 | 6   | Sticky sort/filter bar in account detail holdings list                          | Medium     | Proposed   |
 | 7   | Unified motion token system in `globals.css`                                    | Medium     | ✅ Done    |
 | 8   | Richer empty states with multi-action onboarding                                | Medium     | Proposed   |
-| 9   | Mobile chart interaction model (crosshair, haptics, range persistence)          | Medium     | Proposed   |
+| 9   | Mobile chart interaction model (crosshair, haptics, range persistence)          | Medium     | ✅ Done    |
 | 10  | Bulk-delete UX: replace `confirm()` with undo-toast pattern                     | Medium     | Proposed   |
 | 11  | Transaction edit dialog → bottom sheet on mobile                                | Medium     | Proposed   |
 | 12  | Search dropdown keyboard navigation + loading skeleton                          | Low/Medium | Proposed   |
@@ -525,7 +527,7 @@ But across components, animation timings are inconsistent:
 
 ---
 
-## 9) Mobile chart interaction model (Medium)
+## 9) Mobile chart interaction model (Medium) — ✅ Done
 
 **What I observed**
 
@@ -547,6 +549,8 @@ But across components, animation timings are inconsistent:
 - For pie/donut charts: replace `onMouseEnter`/`Leave` with `onTouchStart`/`onTouchEnd` handlers.
 
 **Target files**: `src/components/dashboard/trend-chart.tsx`, `src/components/analysis/analysis-view.tsx`, `src/components/dashboard/allocation-chart.tsx`, new hooks in `src/hooks/`
+
+> **Implemented**: Added `usePersistedRange` to persist selected ranges across navigations in `trend-chart` and `analysis-view`. Added `useChartCrosshair` to inject touch event handlers into all Area/Bar/Line charts, providing haptic ticks on crosshair movement. Added `onTouchStart` and `onTouchEnd` to `allocation-chart` Pie segments to trigger the hover state correctly on mobile touch.
 
 ---
 

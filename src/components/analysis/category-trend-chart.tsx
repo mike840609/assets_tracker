@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
 import type { CategoryDataPoint } from "@/lib/services/analysis-service";
 
 const CATEGORY_COLORS = [
@@ -91,6 +92,7 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
   const tCat = useTranslations("categories");
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
+  const { handlers: crosshairHandlers } = useChartCrosshair();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
   // Collect unique categories present in the data, preserving insertion order.
@@ -125,7 +127,11 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={chartData} margin={{ top: 10, right: 4, left: 0, bottom: 20 }}>
+              <LineChart
+                data={chartData}
+                margin={{ top: 10, right: 4, left: 0, bottom: 20 }}
+                {...crosshairHandlers}
+              >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="label"

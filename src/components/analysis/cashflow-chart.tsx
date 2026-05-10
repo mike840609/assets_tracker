@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { CashFlowBucket } from "@/lib/services/analysis-service";
+import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
 
 interface Props {
   buckets: CashFlowBucket[];
@@ -110,6 +111,7 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
+  const { handlers: crosshairHandlers } = useChartCrosshair();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
   return (
@@ -130,7 +132,11 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={buckets} margin={{ top: 10, right: 4, left: 0, bottom: 20 }}>
+              <BarChart
+                data={buckets}
+                margin={{ top: 10, right: 4, left: 0, bottom: 20 }}
+                {...crosshairHandlers}
+              >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="label"
