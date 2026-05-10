@@ -270,16 +270,18 @@ export function MobileNav() {
           <Link
             key={item.href}
             href={item.href}
-            onClick={hapticTick}
+            onClick={() => {
+              if (!isActive) hapticTick();
+            }}
             className={cn(
-              "relative flex min-h-12 min-w-12 flex-col items-center justify-center gap-1 px-3 py-1 text-[11px] uppercase tracking-wide transition-colors group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground",
+              "relative flex min-h-12 min-w-12 flex-col items-center justify-center gap-1 px-4 py-2 text-[10px] uppercase tracking-wider transition-all group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              isActive
+                ? "text-primary font-semibold bg-primary/10 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.2)]"
+                : "text-muted-foreground hover:text-foreground",
             )}
             aria-label={item.label}
+            aria-current={isActive ? "page" : undefined}
           >
-            {isActive && (
-              <div className="absolute inset-x-2 -top-3 h-0.5 bg-primary rounded-b-full shadow-[0_2px_8px_rgba(0,0,0,0.5)] shadow-primary/50 transition-all duration-200" />
-            )}
             <Icon
               className={cn(
                 "h-5 w-5 transition-transform duration-200 ease-spring",

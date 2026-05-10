@@ -306,10 +306,10 @@ This addendum captures a deep codebase review and complements the recommendation
 
 | #   | Item                                                                            | Impact     | Status   |
 | --- | ------------------------------------------------------------------------------- | ---------- | -------- |
-| 1   | Mobile bottom nav: larger tap targets + pill active state                       | High       | Proposed |
+| 1   | Mobile bottom nav: larger tap targets + pill active state                       | High       | ✅ Done  |
 | 2   | Missing `theme-color` meta tag + iOS splash screens                             | High       | ✅ Done  |
-| 3   | Data-freshness live badge on dashboard hero                                     | High       | Proposed |
-| 4   | Accessibility audit: missing `aria-label`, focus rings, sr-only chart summaries | High       | Proposed |
+| 3   | Data-freshness live badge on dashboard hero                                     | High       | ✅ Done  |
+| 4   | Accessibility audit: missing `aria-label`, focus rings, sr-only chart summaries | High       | ⚠️ Partial |
 | 5   | Extract duplicated swipe-row logic into shared component                        | Medium     | Proposed |
 | 6   | Sticky sort/filter bar in account detail holdings list                          | Medium     | Proposed |
 | 7   | Unified motion token system in `globals.css`                                    | Medium     | Proposed |
@@ -321,7 +321,7 @@ This addendum captures a deep codebase review and complements the recommendation
 
 ---
 
-## 1) Mobile bottom nav: larger tap targets + pill active state (High)
+## 1) Mobile bottom nav: larger tap targets + pill active state (High) — ✅ Done
 
 **What I observed**
 
@@ -339,6 +339,8 @@ This addendum captures a deep codebase review and complements the recommendation
 - Gate haptic: `onClick={() => { if (!isActive) hapticTick(); }}`.
 
 **Target files**: `src/components/layout/sidebar.tsx:266–291`
+
+> **Implemented**: Mobile nav items now use larger `px-4 py-2` spacing with `min-h-12 min-w-12`, active tabs use an iOS-style rounded pill (`bg-primary/10`) instead of the top indicator bar, labels are tightened to `text-[10px] uppercase tracking-wider`, and haptics are gated so they only fire when switching to a different tab. `aria-current="page"` is also set for the active destination.
 
 ---
 
@@ -371,7 +373,7 @@ This addendum captures a deep codebase review and complements the recommendation
 
 ---
 
-## 3) Data-freshness live badge on dashboard hero (High)
+## 3) Data-freshness live badge on dashboard hero (High) — ✅ Done
 
 **What I observed**
 
@@ -389,9 +391,11 @@ This addendum captures a deep codebase review and complements the recommendation
 
 **Target files**: `src/components/dashboard/dashboard-actions.tsx`, `src/components/dashboard/net-worth-card.tsx`
 
+> **Implemented**: Dashboard freshness chips are now rendered as visible badges, include `aria-live="polite"` for assistive updates, and relative timestamps auto-refresh every 30 seconds via a timer so "updated X ago" remains accurate during a long session.
+
 ---
 
-## 4) Accessibility audit: missing labels, focus rings, chart sr-only summaries (High)
+## 4) Accessibility audit: missing labels, focus rings, chart sr-only summaries (High) — ⚠️ Partial
 
 **What I observed**
 
