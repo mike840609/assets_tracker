@@ -33,7 +33,7 @@ export function MobileHeader() {
         "md:hidden sticky top-0 left-0 right-0 z-50 glass backdrop-blur-md",
         "px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))]",
         "flex items-center justify-between",
-        "border-b transition-[border-color,transform] duration-300 ease-out-expo",
+        "border-b transition-[border-color,transform] motion-normal",
         hidden ? "-translate-y-full" : "translate-y-0",
         // Separator only appears once the large title is behind the bar (iOS behaviour)
         isVisible ? "border-transparent" : "border-border/50",
@@ -42,7 +42,7 @@ export function MobileHeader() {
       {/* Left: logo + app name — fades away when the large title scrolls out */}
       <div
         className={cn(
-          "flex items-center gap-2 min-w-0 transition-all duration-300 ease-out-expo",
+          "flex items-center gap-2 min-w-0 transition-all motion-normal",
           !isVisible && "opacity-0 pointer-events-none -translate-y-1 scale-95",
         )}
       >
@@ -89,7 +89,7 @@ export function MobileHeader() {
         aria-hidden={isVisible}
         className={cn(
           "absolute left-1/2 -translate-x-1/2 text-[15px] font-semibold text-foreground",
-          "transition-all duration-300 ease-out-expo pointer-events-none select-none",
+          "transition-all motion-normal pointer-events-none select-none",
           isVisible ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0",
         )}
       >

@@ -43,10 +43,10 @@ export function NetWorthCard({
   return (
     <div
       data-testid="net-worth-card"
-      className={`grid grid-cols-2 lg:grid-cols-3 ${isCompact ? "gap-2 sm:gap-3" : "gap-3 sm:gap-6"} animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both`}
+      className={`grid grid-cols-2 lg:grid-cols-3 ${isCompact ? "gap-2 sm:gap-3" : "gap-3 sm:gap-6"} animate-in fade-in slide-in-from-bottom-4 motion-normal fill-mode-both`}
     >
       {/* Primary Hero Metric: Net Worth */}
-      <Card className="col-span-2 lg:col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative group min-w-0">
+      <Card className="col-span-2 lg:col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all motion-normal hover:-translate-y-1 relative group min-w-0">
         {meshClass && <div className={meshClass} />}
         <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-primary to-primary/50 opacity-100 transition-opacity" />
         <CardContent
@@ -90,7 +90,7 @@ export function NetWorthCard({
       </Card>
 
       {/* Secondary Metrics: Assets */}
-      <Card className="col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 min-w-0">
+      <Card className="col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all motion-normal hover:-translate-y-1 min-w-0">
         <CardContent
           className={`${isCompact ? "p-2.5 sm:p-3" : "p-4 sm:p-6"} h-full flex flex-col justify-center min-w-0`}
         >
@@ -109,7 +109,7 @@ export function NetWorthCard({
       </Card>
 
       {/* Secondary Metrics: Liabilities */}
-      <Card className="col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 min-w-0">
+      <Card className="col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all motion-normal hover:-translate-y-1 min-w-0">
         <CardContent
           className={`${isCompact ? "p-2.5 sm:p-3" : "p-4 sm:p-6"} h-full flex flex-col justify-center min-w-0`}
         >

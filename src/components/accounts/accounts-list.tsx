@@ -375,7 +375,7 @@ function CategorySection({
 
   return (
     <div
-      className={`rounded-xl border overflow-hidden transition-all duration-300 ${colors.border} ${isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"}`}
+      className={`rounded-xl border overflow-hidden transition-all motion-normal ${colors.border} ${isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"}`}
     >
       <button
         onClick={onToggleExpand}
@@ -403,7 +403,7 @@ function CategorySection({
             </p>
           </div>
           <svg
-            className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
+            className={`w-5 h-5 text-muted-foreground transition-transform motion-normal ${isExpanded ? "rotate-180" : ""}`}
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={2}
@@ -415,7 +415,7 @@ function CategorySection({
       </button>
 
       <div
-        className={`grid transition-all duration-300 ease-in-out ${isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+        className={`grid transition-all motion-normal ${isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
       >
         <div className="overflow-hidden">
           <div

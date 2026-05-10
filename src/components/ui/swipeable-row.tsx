@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { hapticTick } from "@/lib/haptics";
 import { registerSwipeRow, closeOtherSwipeRows } from "@/lib/swipe-row-registry";
+import { springConfig } from "@/lib/motion";
 import { LucideIcon } from "lucide-react";
 
 export const REVEAL_WIDTH = 144;
@@ -39,7 +40,7 @@ export function SwipeableRow({
 
   useEffect(() => {
     function close() {
-      animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+      animate(x, 0, springConfig);
       setIsOpen(false);
       hasFiredHaptic.current = false;
       hasFiredDangerHaptic.current = false;
@@ -63,12 +64,12 @@ export function SwipeableRow({
 
   function snapOpen() {
     closeOtherSwipeRows(closeRef.current);
-    animate(x, -REVEAL_WIDTH, { type: "spring", stiffness: 300, damping: 30 });
+    animate(x, -REVEAL_WIDTH, springConfig);
     setIsOpen(true);
   }
 
   function snapClose() {
-    animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+    animate(x, 0, springConfig);
     setIsOpen(false);
     hasFiredHaptic.current = false;
     hasFiredDangerHaptic.current = false;
