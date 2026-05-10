@@ -118,6 +118,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
               {index > 0 && <div className="h-px bg-border/60 mx-4" />}
               <Link
                 href={`/accounts/${account.id}`}
+                prefetch={false}
                 className={`flex items-center gap-3 px-4 ${isCompact ? "py-1.5" : "py-3.5"} hover:bg-muted/40 active:bg-muted/60 transition-colors group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset`}
                 transitionTypes={["nav-forward"]}
               >
