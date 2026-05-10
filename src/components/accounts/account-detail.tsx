@@ -330,7 +330,7 @@ export function AccountDetail({
             ) : (
               <>
                 {holdingsWithValue.length > 1 && (
-                  <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                  <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm py-2 border-b border-border/40 flex items-center gap-1.5 mb-2 flex-wrap -mx-6 px-6">
                     <span className="text-xs text-muted-foreground shrink-0">Sort:</span>
                     {(
                       [
