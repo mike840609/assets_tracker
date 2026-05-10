@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useDensity } from "@/components/layout/density-context";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
 import type { RawHistoryData, SnapshotBreakdown } from "@/lib/services/history-service";
@@ -51,7 +52,7 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
   const t = useTranslations("analysis");
   const { density } = useDensity();
   const isCompact = density === "compact";
-  const [range, setRange] = useState<RangeLabel>("YTD");
+  const [range, setRange] = usePersistedRange<RangeLabel>("analysis-view", "YTD");
 
   const rangeLabelKey: Record<RangeLabel, string> = {
     YTD: "rangeYTD",

@@ -19,6 +19,7 @@ import { useChartAnimation } from "@/hooks/use-chart-animation";
 import type { MonthlyBucket } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
+import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
 
 interface Props {
   buckets: MonthlyBucket[];
@@ -78,6 +79,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
   const { isAnimationActive } = useChartAnimation();
+  const { handlers: crosshairHandlers } = useChartCrosshair();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
   const data = buckets.map((b) => ({
@@ -106,7 +108,11 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={data} margin={{ top: 10, right: 4, left: 0, bottom: 20 }}>
+              <BarChart
+                data={data}
+                margin={{ top: 10, right: 4, left: 0, bottom: 20 }}
+                {...crosshairHandlers}
+              >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="label"

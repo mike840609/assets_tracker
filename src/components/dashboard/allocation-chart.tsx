@@ -140,6 +140,8 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                       onAnimationEnd={onAnimationEnd}
                       onMouseEnter={handleMouseEnter}
                       onMouseLeave={handleMouseLeave}
+                      onTouchStart={handleMouseEnter}
+                      onTouchEnd={handleMouseLeave}
                       stroke="none"
                       shape={renderShape}
                     >
@@ -205,6 +207,8 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                       }`}
                       onMouseEnter={() => setActiveIndex(index)}
                       onMouseLeave={() => setActiveIndex(-1)}
+                      onTouchStart={() => setActiveIndex(index)}
+                      onTouchEnd={() => setActiveIndex(-1)}
                     >
                       <div
                         className={`w-2.5 h-2.5 rounded-full shrink-0 transition-transform duration-200 ${isActive ? "scale-125" : ""}`}
