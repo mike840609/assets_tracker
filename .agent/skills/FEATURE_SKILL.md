@@ -9,12 +9,12 @@ When impelemnt features, follow these steps
 
 ## How to use it
 
-1. Check the items in the docs folder, if find the imeplemt items, 
+1. Check the items in the docs folder, if find the imeplemt items,
 2. implement the items and update the related doc to mark as done, the code foramt should refer to .prettierrc.json.
 
-3. add a line in the LOG.md in the same doc folder, and follow the change log format to add a line in the LOG.md, 
+3. add a line in the LOG.md in the same doc folder, and follow the change log format to add a line in the LOG.md,
 
-4. make a pr to master branch  
+4. make a pr to master branch
 
 ## Change log Format
 

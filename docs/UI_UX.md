@@ -367,7 +367,7 @@ This addendum captures a deep codebase review and complements the recommendation
 
 **Target files**: `src/app/layout.tsx:26–57`, `src/app/layout.tsx:81–82`
 
-> **Implemented**: `themeColor` with light/dark media-query variants added to the `viewport` export. iOS splash screens generated for 17 device sizes (34 SVGs: light + dark) in `public/splash/` via `scripts/generate-splash-screens.mjs`. All splash images configured in `appleWebApp.startupImage` with device-specific media queries. `statusBarStyle` updated from `"default"` to `"black-translucent"` for edge-to-edge PWA appearance. `<html lang>` is now dynamically set from the resolved `next-intl` locale.
+> **Implemented**: `themeColor` with light/dark media-query variants added to the `viewport` export. iOS splash screens generated for 17 device sizes (34 SVGs: light + dark) in `public/splash/` via `scripts/generate-splash-screens.mjs`. All splash images configured in `appleWebApp.startupImage` with device-specific media queries. `statusBarStyle` updated from `"default"` to `"black-translucent"` for edge-to-edge PWA appearance. `<html lang="en">` remains hardcoded to preserve Next.js Partial Prerendering (PPR) of the document shell.
 
 ---
 
