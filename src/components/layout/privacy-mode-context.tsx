@@ -7,14 +7,14 @@ const PRIVACY_KEY = "privacy-mode";
 
 function subscribe(callback: () => void) {
   if (typeof window === "undefined") return () => {};
-  
+
   const handleStorage = (e: StorageEvent) => {
     if (e.key === PRIVACY_KEY) callback();
   };
-  
+
   window.addEventListener("storage", handleStorage);
   window.addEventListener("privacy-mode-change", callback);
-  
+
   return () => {
     window.removeEventListener("storage", handleStorage);
     window.removeEventListener("privacy-mode-change", callback);
@@ -42,8 +42,8 @@ export function usePrivacyMode() {
     hapticTick();
     const next = window.localStorage.getItem(PRIVACY_KEY) !== "true";
     window.localStorage.setItem(PRIVACY_KEY, String(next));
-    
-    // Flip the visible state in a transition so the dozens of currency cells 
+
+    // Flip the visible state in a transition so the dozens of currency cells
     // across the tree re-render without blocking the click -> paint cycle.
     startTransition(() => {
       window.dispatchEvent(new Event("privacy-mode-change"));
