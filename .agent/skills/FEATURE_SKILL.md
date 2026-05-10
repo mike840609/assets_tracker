@@ -1,20 +1,23 @@
 ---
 name: implement the feature skill
-description: Implements features. Use when this when i ask to implement a feature
+description: Implements features. Use this when I ask you to implement a feature.
 ---
 
 # Feature Implementation Skill
 
-When impelemnt features, follow these steps
+When implementing features, follow these steps:
 
 ## How to use it
 
-1. Check the items in the docs folder, if find the imeplemt items,
-2. implement the items and update the related doc to mark as done, the code foramt should refer to .prettierrc.json.
+1. Check the items in the docs folder. If you find items to implement.
 
-3. add a line in the LOG.md in the same doc folder, and follow the change log format to add a line in the LOG.md,
+2. Implement the items and update the related doc to mark them as done. The code format should follow .prettierrc.json.
 
-4. make a pr to master branch
+3. Add a line in the LOG.md in the same doc folder. Follow the change log format when adding a line to LOG.md.
+
+4. Ensure the code passes all checks defined in .github/workflows/ci.yml (e.g., format check, lint, typecheck, build).
+
+5. Leverage `gh` command to make a PR to the master branch.
 
 ## Change log Format
 
