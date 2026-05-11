@@ -76,18 +76,18 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
       <div
-        className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
+        className="flex flex-nowrap items-center gap-1.5 sm:gap-x-4 text-xs text-muted-foreground overflow-hidden min-w-0"
         aria-live="polite"
       >
         {priceAge && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/5 px-2.5 py-1 text-primary">
-            <Clock className="h-3 w-3" />
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/25 bg-primary/5 px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-primary whitespace-nowrap">
+            <Clock className="h-3 w-3 shrink-0" />
             {t("pricesUpdated", { age: priceAge })}
           </span>
         )}
         {snapshotAge && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-muted/30 px-2.5 py-1">
-            <Camera className="h-3 w-3" />
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/70 bg-muted/30 px-1.5 py-0.5 sm:px-2.5 sm:py-1 whitespace-nowrap">
+            <Camera className="h-3 w-3 shrink-0" />
             {t("snapshot", { age: snapshotAge })}
           </span>
         )}
