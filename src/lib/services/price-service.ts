@@ -1,6 +1,6 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { Prisma } from "@/generated/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { log, withTiming } from "@/lib/logger";
 
@@ -225,8 +225,9 @@ export async function refreshAllPrices(): Promise<{
   if (entries.length === 0) return { updated: 0, errors: [] };
 
   try {
-    const rows = entries.map(([symbol, { price, currency }]) =>
-      Prisma.sql`(${symbol}, ${price.toString()}::numeric, ${currency}, NOW())`,
+    const rows = entries.map(
+      ([symbol, { price, currency }]) =>
+        Prisma.sql`(${symbol}, ${price.toString()}::numeric, ${currency}, NOW())`,
     );
     await prisma.$executeRaw`
       INSERT INTO "PriceCache" (symbol, price, currency, "updatedAt")
