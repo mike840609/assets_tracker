@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, startTransition } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Sector, Label } from "recharts";
+import { PieChart, Pie, Cell, Sector, Label } from "recharts";
+import { useContainerWidth } from "@/hooks/use-container-size";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
@@ -22,12 +23,12 @@ const COLORS = [
 ];
 
 export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary }) {
-  const [mounted, setMounted] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const containerWidth = useContainerWidth(containerRef);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const t = useTranslations("currencyExposure");
   const { privacyMode } = usePrivacyMode();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
-  useEffect(() => startTransition(() => setMounted(true)), []);
 
   const data = useMemo(() => {
     const total = summary.currencyExposure.reduce((acc, curr) => acc + curr.value, 0);
@@ -89,18 +90,17 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
           <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noExposure")}
           </div>
-        ) : !mounted ? (
-          <div className="h-[280px]" />
         ) : (
           <div
+            ref={containerRef}
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             {/* Chart on top, Legend below */}
             <div className="flex flex-col items-center">
               {/* Donut chart */}
               <div className="w-full h-[180px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                {containerWidth > 0 && (
+                  <PieChart width={containerWidth} height={180}>
                     <defs>
                       {COLORS.map((color, index) => (
                         <linearGradient
@@ -176,7 +176,7 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                       ))}
                     </Pie>
                   </PieChart>
-                </ResponsiveContainer>
+                )}
               </div>
 
               {/* Custom legend below */}

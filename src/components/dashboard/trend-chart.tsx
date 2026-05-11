@@ -1,16 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, startTransition } from "react";
+import { useMemo, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Area,
-  AreaChart,
-} from "recharts";
+import { XAxis, YAxis, CartesianGrid, Tooltip, Area, AreaChart } from "recharts";
+import { useContainerWidth } from "@/hooks/use-container-size";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
@@ -79,13 +72,13 @@ export function TrendChart({
   baseCurrency?: string;
   hideRangeFilter?: boolean;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const containerWidth = useContainerWidth(containerRef);
   const [range, setRange] = usePersistedRange<string>("trend-chart", "All");
-  const [mounted, setMounted] = useState(false);
   const t = useTranslations("trendChart");
   const { privacyMode } = usePrivacyMode();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   const { handlers: crosshairHandlers } = useChartCrosshair();
-  useEffect(() => startTransition(() => setMounted(true)), []);
 
   const selectedRange = ranges.find((r) => r.label === range)!;
 
@@ -141,14 +134,13 @@ export function TrendChart({
           <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noData")}
           </div>
-        ) : !mounted ? (
-          <div className="h-[250px]" />
         ) : (
           <div
-            className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+            ref={containerRef}
+            className={`relative h-[250px] transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
-            <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={filtered} {...crosshairHandlers}>
+            {containerWidth > 0 && (
+              <AreaChart width={containerWidth} height={250} data={filtered} {...crosshairHandlers}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={xTickFormatter} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={yTickFormatter} />
@@ -167,7 +159,7 @@ export function TrendChart({
                   onAnimationEnd={onAnimationEnd}
                 />
               </AreaChart>
-            </ResponsiveContainer>
+            )}
           </div>
         )}
       </CardContent>
