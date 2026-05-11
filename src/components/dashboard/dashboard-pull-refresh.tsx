@@ -18,6 +18,7 @@ export function DashboardPullRefresh({ children }: { children: React.ReactNode }
       ]);
       const { data: priceData } = await priceRes.json();
       toast.success(t("refreshSuccess", { count: priceData.updated }));
+      window.dispatchEvent(new CustomEvent("prices:refreshed"));
       router.refresh();
     } catch {
       toast.error(t("refreshFailed"));

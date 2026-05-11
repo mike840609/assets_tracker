@@ -37,6 +37,7 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
   const locale = useLocale();
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [clientRefreshAt, setClientRefreshAt] = useState<string | null>(null);
 
   const handleRefreshPrices = useCallback(async () => {
     hapticTick();
@@ -48,6 +49,8 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
       ]);
       const { data: priceData } = await priceRes.json();
       toast.success(t("refreshSuccess", { count: priceData.updated }));
+      setClientRefreshAt(new Date().toISOString());
+      window.dispatchEvent(new CustomEvent("prices:refreshed"));
       router.refresh();
     } catch {
       toast.error(t("refreshFailed"));
@@ -64,20 +67,34 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
     return () => window.removeEventListener("prices:refresh", handler);
   }, [handleRefreshPrices]);
 
+  // Pull-to-refresh runs its own fetch and dispatches "prices:refreshed" when done.
+  // Stamp clientRefreshAt so the badge shows the user's action time even when the
+  // server-side updatedAt didn't move (e.g. refreshAllPrices returned `updated: 0`).
+  useEffect(() => {
+    const handler = () => setClientRefreshAt(new Date().toISOString());
+    window.addEventListener("prices:refreshed", handler);
+    return () => window.removeEventListener("prices:refreshed", handler);
+  }, []);
+
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
   }, []);
 
-  // When the server delivers a fresh lastPriceUpdate (e.g. after pull-to-refresh),
-  // reset now so the badge shows "just now" instead of "in X seconds".
+  // Whenever the displayed timestamp changes (server prop or client stamp), sync
+  // `now` so the badge formats against a fresh wall-clock instead of a stale one.
   // setTimeout keeps setNow out of the synchronous effect body (lint requirement).
+  const effectiveLastUpdate =
+    clientRefreshAt && (!lastPriceUpdate || clientRefreshAt > lastPriceUpdate)
+      ? clientRefreshAt
+      : lastPriceUpdate;
+
   useEffect(() => {
     const t = setTimeout(() => setNow(Date.now()), 0);
     return () => clearTimeout(t);
-  }, [lastPriceUpdate]);
+  }, [effectiveLastUpdate]);
 
-  const priceAge = lastPriceUpdate ? getRelativeTime(lastPriceUpdate, locale, now) : null;
+  const priceAge = effectiveLastUpdate ? getRelativeTime(effectiveLastUpdate, locale, now) : null;
 
   const snapshotAge = lastSnapshotDate ? getRelativeTime(lastSnapshotDate, locale, now) : null;
 
