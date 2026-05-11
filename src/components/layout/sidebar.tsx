@@ -266,9 +266,6 @@ export function MobileNav() {
         hidden && "translate-y-full",
       )}
     >
-      {isPending && (
-        <div className="absolute inset-x-0 top-0 h-0.5 bg-primary animate-pulse rounded-full" />
-      )}
       {navItems.map((item) => {
         const isActive = isPending
           ? item.href === "/"
