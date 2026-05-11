@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { cacheLife, cacheTag } from "next/cache";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { log, withTiming } from "@/lib/logger";
 
@@ -144,10 +145,16 @@ export async function refreshExchangeRates(baseCurrency: string): Promise<number
 
   if (entries.length === 0) return 0;
 
-  // Batch upserts concurrently (instead of sequential loop)
-  await Promise.all(
-    entries.map(([toCurrency, rate]) => persistExchangeRate(baseCurrency, toCurrency, rate)),
+  const rows = entries.map(([toCurrency, rate]) =>
+    Prisma.sql`(${`${baseCurrency}_${toCurrency}`}, ${baseCurrency}, ${toCurrency}, ${rate.toString()}::numeric, NOW())`,
   );
+  await prisma.$executeRaw`
+    INSERT INTO "ExchangeRate" (id, "fromCurrency", "toCurrency", rate, "updatedAt")
+    VALUES ${Prisma.join(rows)}
+    ON CONFLICT (id) DO UPDATE SET
+      rate       = EXCLUDED.rate,
+      "updatedAt" = NOW()
+  `;
 
   return entries.length;
 }
