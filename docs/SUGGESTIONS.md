@@ -201,7 +201,7 @@
    (`src/lib/services/history-service.ts:63-67`). A new deposit / withdrawal
    therefore won't surface on `/analysis` or `/history` until the 5-min
    `cacheLife("minutes")` window expires. Fix: add
-   `` revalidateTag(`history:${account.userId}`, "max") `` to both routes
+   ``revalidateTag(`history:${account.userId}`, "max")`` to both routes
    (holdings routes already do this — see
    `src/app/api/accounts/[id]/holdings/route.ts:12-17`). Closes item 146.
 
