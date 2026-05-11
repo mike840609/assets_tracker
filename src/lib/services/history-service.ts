@@ -1,7 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAllExchangeRates, resolveRate } from "./exchange-rate-service";
-import type { Decimal } from "@/generated/prisma/runtime/library";
+import type { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 import type { MonthlyContribution } from "./analysis-service";
 
 export interface NormalizedSnapshot {
