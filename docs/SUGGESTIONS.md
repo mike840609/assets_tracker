@@ -147,6 +147,124 @@
 | 141 | Make import merge-first and hide raw server errors          | Data Safety / Security     | 🔴 High   | 2-4 hrs   | ❌ Not Done |
 | 142 | Add API auth/ownership tests to CI                          | Testing / Security         | 🔴 High   | 1 day     | ❌ Not Done |
 | 143 | Add `/api/_metrics/vitals` proxy/rate-limit policy          | Observability              | 🟡 Medium | 30 min    | ❌ Not Done |
+| 144 | Return 401 JSON (not HTML redirect) for unauth `/api/*`     | Security / DX              | 🔴 High   | 30 min    | ❌ Not Done |
+| 145 | Decide `/api/_metrics/vitals` public vs. auth (explicit)    | Observability              | 🟡 Medium | 30 min    | ❌ Not Done |
+| 146 | Invalidate `history:${userId}` on cash-tx mutations         | Performance / Correctness  | 🟡 Medium | 10 min    | ❌ Not Done |
+| 147 | Add `Content-Security-Policy` header in `next.config.ts`    | Security                   | 🔴 High   | 1-2 hrs   | ❌ Not Done |
+| 148 | Batch cron expired-options sweep into one `$transaction`    | Performance / Reliability  | 🟡 Medium | 30 min    | ❌ Not Done |
+| 149 | Lock down `updateHoldingSchema` (no `assetType` mutation)   | Correctness                | 🟡 Medium | 15 min    | ❌ Not Done |
+| 150 | Surface `refreshAllPrices` `errors[]` in dashboard toast    | UX / Reliability           | 🟡 Medium | 30 min    | ❌ Not Done |
+| 151 | Replace `: any` casts in API routes with typed responses    | Code Quality               | 🟢 Low    | 1-2 hrs   | ❌ Not Done |
+
+---
+
+## 2026-05-11 Crucial Codebase Review
+
+> Code-verified items from a fresh audit of the codebase after the 2026-05-10
+> review. Each finding cites the file and line range it was confirmed in, and
+> ends with "Closes item N." or "Pairs with item N." where it relates to the
+> table above.
+
+1. **Return 401 JSON (not a 307 redirect) for unauthenticated `/api/*` calls.**
+   `src/proxy.ts:55-58` returns `Response.redirect("/login")` for every
+   non-public path, including JSON API routes. Two concrete consequences:
+   (a) `navigator.sendBeacon("/api/_metrics/vitals", …)` fired from `login`,
+   `privacy`, or `terms` (see `src/components/layout/speed-insights.tsx:11-15`)
+   follows the 307 to an HTML page and is silently dropped — so the cold-start
+   pages most likely to breach LCP / CLS budgets never report; (b) client-side
+   `fetch` calls on session-expired pages get HTML when they expect JSON, and
+   `res.status === 401` branches in client error paths never trigger. Fix: in
+   `proxy.ts`, when `req.nextUrl.pathname.startsWith("/api/")` and
+   `!isLoggedIn`, return a JSON 401 (`new Response(JSON.stringify({error:{message:"Unauthorized"}}), { status: 401, headers: { "Content-Type": "application/json" } })`)
+   instead of the redirect; `/api/auth/*` and `/api/cron/*` already bypass.
+   Pairs with item 145. Closes item 144.
+
+2. **Pick an explicit boundary for `/api/_metrics/vitals`.** Item 143 is still
+   open. With #1 applied, vitals from `login`/`privacy`/`terms` will get JSON
+   401 instead of an HTML redirect, but `sendBeacon` still drops on 401.
+   Decide one of: (a) add `/api/_metrics/vitals` to the public-route allowlist
+   in `src/proxy.ts:53` and to the matcher in line 81, keep
+   `rateLimitCheckWithPrune` (`{ limit: 30, prefix: "vitals" }`), and validate
+   the body with a Zod schema matching the `{ name, value, rating, url }`
+   shape used in `src/app/api/_metrics/vitals/route.ts:7-12`; or (b) accept
+   that unauthenticated pages don't report vitals and document it in
+   `docs/PERFORMANCE.md`. Closes item 143 + item 145.
+
+3. **Invalidate `history:${userId}` on cash-transaction mutations.**
+   `src/app/api/accounts/[id]/cash-transactions/route.ts:28-29` and the cash-tx
+   branches of `src/app/api/accounts/[id]/transactions/[transactionId]/route.ts:13-15`
+   only invalidate `accounts:${userId}` and `net-worth:${userId}`. But the
+   Analysis tab's `getMonthlyCashFlow`
+   (`src/lib/services/history-service.ts:243-272`) reads `cashTransaction` rows
+   and is cached under `history:${userId}` via the neighbouring history reads;
+   the History page also caches under the same tag
+   (`src/lib/services/history-service.ts:63-67`). A new deposit / withdrawal
+   therefore won't surface on `/analysis` or `/history` until the 5-min
+   `cacheLife("minutes")` window expires. Fix: add
+   `` revalidateTag(`history:${account.userId}`, "max") `` to both routes
+   (holdings routes already do this — see
+   `src/app/api/accounts/[id]/holdings/route.ts:12-17`). Closes item 146.
+
+4. **Add a `Content-Security-Policy` header.** `next.config.ts:23-46` ships
+   HSTS / X-Frame-Options / X-Content-Type-Options / Referrer-Policy /
+   Permissions-Policy, but no CSP — item 113 only marked "baseline" done.
+   Rollout: (1) ship `Content-Security-Policy-Report-Only` with a draft
+   `default-src 'self'; img-src 'self' https://lh3.googleusercontent.com data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; font-src 'self' data:; connect-src 'self' https://vitals.vercel-insights.com https://*.vercel-insights.com; frame-ancestors 'none'; base-uri 'self'`
+   and watch the browser console / `/api/_metrics/vitals` for breakages from
+   Recharts / framer-motion / `next/script`; (2) flip to enforcing
+   `Content-Security-Policy` once clean. Closes item 147.
+
+5. **Batch the cron expired-options sweep into one round-trip.**
+   `src/app/api/cron/snapshot/route.ts:28-43` loops over every expired option
+   and fires `prisma.$transaction([create, update])` per holding. At, say, 10
+   active option traders × ~5 expirations per cron window, that's ~50
+   sequential round-trips inside a 60s `maxDuration`. Fix: collapse to one
+   transaction —
+   `prisma.holdingTransaction.createMany({ data: expiredOptions.map(...) })`
+   plus
+   `prisma.holding.updateMany({ where: { id: { in: ids } }, data: { quantity: 0 } })`,
+   wrapped together. Combine with item 105 (snapshot fan-out concurrency).
+   Closes item 148.
+
+6. **Drop `assetType` from `updateHoldingSchema`.**
+   `src/lib/validators.ts:67-78` declares
+   `assetType: z.enum(HOLDING_ASSET_TYPES).optional()` on the update schema,
+   so a client can PATCH a STOCK to an OPTION without supplying `strike`,
+   `expiration`, or `contractMultiplier`. `net-worth-service.ts:81` then reads
+   `h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1` and silently
+   applies a 100× multiplier on a still-share-priced position. No UI flow
+   mutates `assetType` today; delete + re-create covers the rename path.
+   Closes item 149.
+
+7. **Surface `refreshAllPrices` `errors[]` to the user.**
+   `src/lib/services/price-service.ts:198-245` returns `{ updated, errors[] }`;
+   `src/app/api/prices/refresh/route.ts:5-11` forwards it via `ok(result)`,
+   but the dashboard refresh handler (`src/components/dashboard/dashboard-actions.tsx`)
+   treats the response as boolean success. When Yahoo or CoinGecko fails for
+   a handful of symbols (partial outage / new ticker), the toast says
+   "Updated" and the user is unaware that part of their net worth is stale.
+   Fix: read `result.errors.length` in the handler and, if non-zero, emit a
+   second `toast.warning(t("dashboard.partialRefresh", { count }))` and add
+   the i18n string to both locales. Closes item 150.
+
+8. **Replace remaining `: any` casts in API routes with typed responses.**
+   Eight `eslint-disable` comments still cover `: any` casts:
+   `src/app/api/options/chain/route.ts:22,46,62` (yahoo-finance2 `options()`
+   response), `src/app/api/search/route.ts:81` (yahoo-finance2 `search()`
+   response), `src/app/api/settings/data/route.ts:115,131,146` (import row
+   mapping). For yahoo calls, define narrow local interfaces (only the fields
+   the route actually reads); for the import routes, the Zod schema already
+   validates the shape — extract the inferred type via
+   `z.infer<typeof dataImportSchema>` so the `.map((t) => …)` callbacks lose
+   their `any` and the disable comments can go. Closes item 151.
+
+**Next.js 16 note:** Findings 3 and 4 both interact with `cacheComponents: true`
+in `next.config.ts:9`. Keep `revalidateTag(…, "max")` consistent with the
+existing holding/cash mutation routes, and verify any new headers configured
+in `next.config.ts` apply to the cached HTML routes by hitting
+`/dashboard` and `/accounts` with `curl -I` after the change — Next.js renders
+headers from `headers()` against the prerendered shell, not just the dynamic
+islands.
 
 ---
 
