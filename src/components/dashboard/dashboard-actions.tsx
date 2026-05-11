@@ -69,6 +69,14 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
     return () => window.clearInterval(timer);
   }, []);
 
+  // When the server delivers a fresh lastPriceUpdate (e.g. after pull-to-refresh),
+  // reset now so the badge shows "just now" instead of "in X seconds".
+  // setTimeout keeps setNow out of the synchronous effect body (lint requirement).
+  useEffect(() => {
+    const t = setTimeout(() => setNow(Date.now()), 0);
+    return () => clearTimeout(t);
+  }, [lastPriceUpdate]);
+
   const priceAge = lastPriceUpdate ? getRelativeTime(lastPriceUpdate, locale, now) : null;
 
   const snapshotAge = lastSnapshotDate ? getRelativeTime(lastSnapshotDate, locale, now) : null;
