@@ -1,6 +1,5 @@
 import { cache } from "react";
 import { cacheLife, cacheTag } from "next/cache";
-import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { log, withTiming } from "@/lib/logger";
 
@@ -145,16 +144,21 @@ export async function refreshExchangeRates(baseCurrency: string): Promise<number
 
   if (entries.length === 0) return 0;
 
-  const rows = entries.map(([toCurrency, rate]) =>
-    Prisma.sql`(${`${baseCurrency}_${toCurrency}`}, ${baseCurrency}, ${toCurrency}, ${rate.toString()}::numeric, NOW())`,
+  const params: unknown[] = [];
+  const placeholders = entries.map(([toCurrency, rate]) => {
+    const id = `${baseCurrency}_${toCurrency}`;
+    const base = params.length;
+    params.push(id, baseCurrency, toCurrency, String(rate));
+    return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}::numeric, NOW())`;
+  });
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "ExchangeRate" (id, "fromCurrency", "toCurrency", rate, "updatedAt")
+     VALUES ${placeholders.join(", ")}
+     ON CONFLICT (id) DO UPDATE SET
+       rate        = EXCLUDED.rate,
+       "updatedAt" = NOW()`,
+    ...params,
   );
-  await prisma.$executeRaw`
-    INSERT INTO "ExchangeRate" (id, "fromCurrency", "toCurrency", rate, "updatedAt")
-    VALUES ${Prisma.join(rows)}
-    ON CONFLICT (id) DO UPDATE SET
-      rate       = EXCLUDED.rate,
-      "updatedAt" = NOW()
-  `;
 
   return entries.length;
 }

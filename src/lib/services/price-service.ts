@@ -1,6 +1,5 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { log, withTiming } from "@/lib/logger";
 
@@ -225,18 +224,21 @@ export async function refreshAllPrices(): Promise<{
   if (entries.length === 0) return { updated: 0, errors: [] };
 
   try {
-    const rows = entries.map(
-      ([symbol, { price, currency }]) =>
-        Prisma.sql`(${symbol}, ${price.toString()}::numeric, ${currency}, NOW())`,
+    const params: unknown[] = [];
+    const placeholders = entries.map(([symbol, { price, currency }]) => {
+      const base = params.length;
+      params.push(symbol, String(price), currency);
+      return `($${base + 1}, $${base + 2}::numeric, $${base + 3}, NOW())`;
+    });
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "PriceCache" (symbol, price, currency, "updatedAt")
+       VALUES ${placeholders.join(", ")}
+       ON CONFLICT (symbol) DO UPDATE SET
+         price       = EXCLUDED.price,
+         currency    = EXCLUDED.currency,
+         "updatedAt" = NOW()`,
+      ...params,
     );
-    await prisma.$executeRaw`
-      INSERT INTO "PriceCache" (symbol, price, currency, "updatedAt")
-      VALUES ${Prisma.join(rows)}
-      ON CONFLICT (symbol) DO UPDATE SET
-        price      = EXCLUDED.price,
-        currency   = EXCLUDED.currency,
-        "updatedAt" = NOW()
-    `;
     updated = entries.length;
   } catch (error) {
     errors.push(`Bulk upsert failed: ${String(error)}`);
