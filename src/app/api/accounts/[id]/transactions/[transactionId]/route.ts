@@ -12,6 +12,7 @@ async function invalidateAccountCaches(accountId: string) {
   if (account) {
     revalidateTag(`accounts:${account.userId}`, "max");
     revalidateTag(`net-worth:${account.userId}`, "max");
+    revalidateTag(`history:${account.userId}`, "max");
   }
 }
 

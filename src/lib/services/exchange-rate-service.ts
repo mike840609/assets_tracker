@@ -15,7 +15,9 @@ async function getCachedExchangeRates(): Promise<Record<string, number>> {
   "use cache";
   cacheTag("exchange-rates");
   cacheLife("minutes");
-  const rates = await prisma.exchangeRate.findMany();
+  const rates = await prisma.exchangeRate.findMany({
+    select: { fromCurrency: true, toCurrency: true, rate: true },
+  });
   const map: Record<string, number> = {};
   for (const r of rates) {
     map[`${r.fromCurrency}_${r.toCurrency}`] = Number(r.rate);
