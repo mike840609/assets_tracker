@@ -164,7 +164,9 @@
   },
   "dashboardActions": {
     "pricesUpdated": "價格更新於 {age}",
+    "pricesUpdatedMobile": "{age}",
     "snapshot": "快照於 {age}",
+    "snapshotMobile": "{age}",
     "noPriceData": "尚無價格資料",
     "refreshPrices": "更新價格",
     "refreshing": "更新中...",

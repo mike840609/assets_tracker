@@ -76,19 +76,21 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
       <div
-        className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
+        className="flex flex-nowrap items-center gap-1.5 sm:gap-x-4 text-xs text-muted-foreground overflow-hidden min-w-0"
         aria-live="polite"
       >
         {priceAge && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/5 px-2.5 py-1 text-primary">
-            <Clock className="h-3 w-3" />
-            {t("pricesUpdated", { age: priceAge })}
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/25 bg-primary/5 px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-primary whitespace-nowrap">
+            <Clock className="h-3 w-3 shrink-0" />
+            <span className="sm:hidden">{t("pricesUpdatedMobile", { age: priceAge })}</span>
+            <span className="hidden sm:inline">{t("pricesUpdated", { age: priceAge })}</span>
           </span>
         )}
         {snapshotAge && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-muted/30 px-2.5 py-1">
-            <Camera className="h-3 w-3" />
-            {t("snapshot", { age: snapshotAge })}
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/70 bg-muted/30 px-1.5 py-0.5 sm:px-2.5 sm:py-1 whitespace-nowrap">
+            <Camera className="h-3 w-3 shrink-0" />
+            <span className="sm:hidden">{t("snapshotMobile", { age: snapshotAge })}</span>
+            <span className="hidden sm:inline">{t("snapshot", { age: snapshotAge })}</span>
           </span>
         )}
         {!priceAge && !snapshotAge && (
