@@ -164,7 +164,9 @@
   },
   "dashboardActions": {
     "pricesUpdated": "Prices updated {age}",
+    "pricesUpdatedMobile": "{age}",
     "snapshot": "Snapshot {age}",
+    "snapshotMobile": "{age}",
     "noPriceData": "No price data yet",
     "refreshPrices": "Refresh Prices",
     "refreshing": "Refreshing...",
