@@ -1,5 +1,7 @@
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { ok } from "@/lib/api-responses";
+import { withAuth } from "@/lib/api-handler";
+import { ok, failure } from "@/lib/api-responses";
 
 interface UnifiedRow {
   id: string;
@@ -11,22 +13,36 @@ interface UnifiedRow {
   holdingId: string | null;
 }
 
+const cursorSchema = z.object({
+  createdAt: z.string().datetime(),
+  id: z.string().min(1),
+});
+
 function encodeCursor(row: { createdAt: Date; id: string }): string {
   return Buffer.from(
     JSON.stringify({ createdAt: row.createdAt.toISOString(), id: row.id }),
   ).toString("base64url");
 }
 
-function decodeCursor(cursor: string): { createdAt: Date; id: string } {
-  const parsed = JSON.parse(Buffer.from(cursor, "base64url").toString()) as {
-    createdAt: string;
-    id: string;
-  };
-  return { createdAt: new Date(parsed.createdAt), id: parsed.id };
+function decodeCursor(cursor: string): { createdAt: Date; id: string } | null {
+  try {
+    const raw = JSON.parse(Buffer.from(cursor, "base64url").toString());
+    const parsed = cursorSchema.parse(raw);
+    return { createdAt: new Date(parsed.createdAt), id: parsed.id };
+  } catch {
+    return null;
+  }
 }
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withAuth(async (request, { params }: { params: Promise<{ id: string }> }, userId) => {
   const { id } = await params;
+
+  const account = await prisma.account.findUnique({
+    where: { id, userId },
+    select: { id: true },
+  });
+  if (!account) return failure("Not found", 404);
+
   const { searchParams } = new URL(request.url);
 
   const limit = Math.max(1, Math.min(100, Number(searchParams.get("limit") || "20")));
@@ -36,7 +52,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   if (cursorParam) {
     // Cursor-based keyset pagination — O(1) regardless of position
-    const { createdAt: cursorDate, id: cursorId } = decodeCursor(cursorParam);
+    const decoded = decodeCursor(cursorParam);
+    if (!decoded) return failure("Invalid cursor", 400);
+    const { createdAt: cursorDate, id: cursorId } = decoded;
 
     rows = await prisma.$queryRaw<UnifiedRow[]>`
       SELECT id, false AS "isCash", type::text, quantity, note, "createdAt", "holdingId"
@@ -118,4 +136,4 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }));
 
   return ok({ transactions, nextCursor, hasMore });
-}
+});

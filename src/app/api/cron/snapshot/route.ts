@@ -25,22 +25,24 @@ export async function GET(request: Request) {
     });
     if (expiredOptions.length > 0) {
       log.info("cron.options.expire", { count: expiredOptions.length });
-      for (const h of expiredOptions) {
-        await prisma.$transaction([
-          prisma.holdingTransaction.create({
-            data: {
-              holdingId: h.id,
-              type: "SELL",
-              quantity: Number(h.quantity),
-              note: "Expired",
-            },
-          }),
-          prisma.holding.update({
-            where: { id: h.id },
-            data: { quantity: 0 },
-          }),
-        ]);
-      }
+      await Promise.all(
+        expiredOptions.map((h) =>
+          prisma.$transaction([
+            prisma.holdingTransaction.create({
+              data: {
+                holdingId: h.id,
+                type: "SELL",
+                quantity: Number(h.quantity),
+                note: "Expired",
+              },
+            }),
+            prisma.holding.update({
+              where: { id: h.id },
+              data: { quantity: 0 },
+            }),
+          ]),
+        ),
+      );
       revalidateTag("accounts", "max");
     }
 

@@ -1,7 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAllExchangeRates, resolveRate } from "./exchange-rate-service";
-import type { NetWorthSnapshot } from "@/generated/prisma/client";
+import type { Decimal } from "@/generated/prisma/runtime/library";
 import type { MonthlyContribution } from "./analysis-service";
 
 export interface NormalizedSnapshot {
@@ -16,13 +16,22 @@ export interface NormalizedSnapshot {
 /** Default history window: last 90 days. Keeps the query fast for the dashboard. */
 const DEFAULT_HISTORY_DAYS = 90;
 
+interface SnapshotRow {
+  id: string;
+  date: Date;
+  netWorth: Decimal;
+  totalAssets: Decimal;
+  totalLiabilities: Decimal;
+  baseCurrency: string;
+}
+
 /**
  * Pure transformation: convert and dedupe raw snapshots into NormalizedSnapshot[].
  * If multiple snapshots exist for the same date (e.g. from a currency change),
  * prefers the one whose baseCurrency already matches the target, otherwise the latest seen.
  */
 function normalizeSnapshots(
-  snapshots: NetWorthSnapshot[],
+  snapshots: SnapshotRow[],
   allRatesMap: Map<string, number>,
   targetBaseCurrency: string,
 ): NormalizedSnapshot[] {
@@ -72,6 +81,7 @@ export async function getNormalizedHistory(
   const [snapshotsRaw, allRatesMap] = await Promise.all([
     prisma.netWorthSnapshot.findMany({
       where: { userId, date: { gte: fromDate } },
+      select: { id: true, date: true, netWorth: true, totalAssets: true, totalLiabilities: true, baseCurrency: true },
       orderBy: { date: "asc" },
     }),
     getAllExchangeRates(),
@@ -110,6 +120,7 @@ async function fetchFullHistoryCached(
   const [snapshotsRaw, allRatesMap] = await Promise.all([
     prisma.netWorthSnapshot.findMany({
       where: { userId },
+      select: { id: true, date: true, netWorth: true, totalAssets: true, totalLiabilities: true, baseCurrency: true },
       orderBy: { date: "asc" },
     }),
     getAllExchangeRates(),

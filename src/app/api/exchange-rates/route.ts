@@ -6,7 +6,9 @@ export async function GET(request: Request) {
   const limited = rateLimitCheckWithPrune(request, { limit: 30, prefix: "exchange-rates" });
   if (limited) return limited;
 
-  const rates = await prisma.exchangeRate.findMany();
+  const rates = await prisma.exchangeRate.findMany({
+    select: { fromCurrency: true, toCurrency: true, rate: true },
+  });
   return ok(rates, {
     headers: {
       "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",

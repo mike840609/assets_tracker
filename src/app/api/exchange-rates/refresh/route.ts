@@ -1,13 +1,15 @@
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
+import { withAuth } from "@/lib/api-handler";
 import { ok } from "@/lib/api-responses";
 
-export async function POST() {
-  const settings = await prisma.setting.findFirst();
+export const POST = withAuth(async (_request, _ctx, userId) => {
+  const settings = await prisma.setting.findUnique({ where: { userId } });
   const baseCurrency = settings?.baseCurrency ?? "USD";
 
   const accounts = await prisma.account.findMany({
+    where: { userId },
     select: { currency: true },
     distinct: ["currency"],
   });
@@ -22,4 +24,4 @@ export async function POST() {
   // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
   revalidateTag("exchange-rates", "max");
   return ok({ updated: totalUpdated, baseCurrency });
-}
+});

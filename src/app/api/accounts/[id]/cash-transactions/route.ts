@@ -2,9 +2,10 @@ import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createCashTransactionSchema } from "@/lib/validators";
 import { calculateBalanceDelta } from "@/lib/services/balance";
+import { withAuth } from "@/lib/api-handler";
 import { ok, failure, validationError } from "@/lib/api-responses";
 
-export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const POST = withAuth(async (request, { params }: { params: Promise<{ id: string }> }, userId) => {
   const { id } = await params;
   const body = await request.json();
   const parsed = createCashTransactionSchema.safeParse(body);
@@ -12,7 +13,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { type, amount, note } = parsed.data;
 
-  const account = await prisma.account.findUnique({ where: { id } });
+  const account = await prisma.account.findUnique({ where: { id, userId } });
   if (!account) return failure("Account not found", 404);
 
   const transaction = await prisma.cashTransaction.create({
@@ -25,8 +26,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     data: { cashBalance: { increment: delta } },
   });
 
-  revalidateTag(`accounts:${account.userId}`, "max");
-  revalidateTag(`net-worth:${account.userId}`, "max");
+  revalidateTag(`accounts:${userId}`, "max");
+  revalidateTag(`net-worth:${userId}`, "max");
+  revalidateTag(`history:${userId}`, "max");
 
   return ok(transaction, { status: 201 });
-}
+});
