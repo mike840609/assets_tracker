@@ -245,6 +245,7 @@ export function Sidebar({
 
 export function MobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const t = useTranslations();
   const hidden = useHideOnScroll();
 
@@ -271,6 +272,9 @@ export function MobileNav() {
             key={item.href}
             href={item.href}
             prefetch={false}
+            onTouchStart={() => {
+              if (!isActive) router.prefetch(item.href);
+            }}
             onClick={() => {
               if (!isActive) hapticTick();
             }}
