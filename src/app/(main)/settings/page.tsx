@@ -27,7 +27,7 @@ async function SettingsContent() {
 
   return (
     <NextIntlClientProvider messages={pickMessages(allMessages, CLIENT_NAMESPACES)}>
-      <div className="space-y-10 max-w-2xl pb-16 animate-in fade-in duration-500">
+      <div className="space-y-10 max-w-2xl pb-16 animate-in fade-in duration-200">
         <div className="flex flex-col space-y-4">
           <LargeTitleHeading>{t("title")}</LargeTitleHeading>
           <div className="bg-muted/50 p-4 rounded-lg border w-full">

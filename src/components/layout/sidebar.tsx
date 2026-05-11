@@ -21,7 +21,7 @@ import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import { hapticTick } from "@/lib/haptics";
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore, useState, useTransition } from "react";
 
 const SIDEBAR_STORAGE_KEY = "asset-tracker:sidebar-collapsed";
 const SIDEBAR_SHORTCUT_HINT = "Ctrl+\\ (⌘\\ on Mac)";
@@ -245,8 +245,11 @@ export function Sidebar({
 
 export function MobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const t = useTranslations();
   const hidden = useHideOnScroll();
+  const [isPending, startTransition] = useTransition();
+  const [optimisticHref, setOptimisticHref] = useState<string | null>(null);
 
   const navItems = [
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
@@ -264,15 +267,28 @@ export function MobileNav() {
       )}
     >
       {navItems.map((item) => {
-        const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+        const isActive = isPending
+          ? item.href === "/"
+            ? optimisticHref === "/"
+            : (optimisticHref?.startsWith(item.href) ?? false)
+          : item.href === "/"
+            ? pathname === "/"
+            : pathname.startsWith(item.href);
         const Icon = item.icon;
         return (
-          <Link
+          <button
             key={item.href}
-            href={item.href}
-            prefetch={false}
+            type="button"
+            onTouchStart={() => {
+              if (!isActive) router.prefetch(item.href);
+            }}
             onClick={() => {
-              if (!isActive) hapticTick();
+              if (isActive) return;
+              hapticTick();
+              setOptimisticHref(item.href);
+              startTransition(() => {
+                router.push(item.href);
+              });
             }}
             className={cn(
               "relative flex min-h-12 min-w-12 flex-col items-center justify-center gap-1 px-4 py-2 text-[10px] uppercase tracking-wider transition-all group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
@@ -290,7 +306,7 @@ export function MobileNav() {
               )}
             />
             <span>{item.label}</span>
-          </Link>
+          </button>
         );
       })}
     </nav>

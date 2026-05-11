@@ -24,9 +24,9 @@ export function NetWorthCard({
   const { density } = useDensity();
   const isCompact = density === "compact";
 
-  const animatedNetWorth = useCountUp(netWorth, 1200);
-  const animatedAssets = useCountUp(totalAssets, 1000);
-  const animatedLiabilities = useCountUp(totalLiabilities, 1000);
+  const animatedNetWorth = useCountUp(netWorth, 600);
+  const animatedAssets = useCountUp(totalAssets, 500);
+  const animatedLiabilities = useCountUp(totalLiabilities, 500);
 
   const delta = previousNetWorth !== undefined ? netWorth - previousNetWorth : null;
   const pct =

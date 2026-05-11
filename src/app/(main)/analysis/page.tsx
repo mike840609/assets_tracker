@@ -32,7 +32,7 @@ async function AnalysisContent() {
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
-      <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="space-y-8 animate-in fade-in duration-200">
         <LargeTitleHeading>{t("title")}</LargeTitleHeading>
 
         <AnalysisView
