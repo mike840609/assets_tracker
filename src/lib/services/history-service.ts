@@ -81,7 +81,14 @@ export async function getNormalizedHistory(
   const [snapshotsRaw, allRatesMap] = await Promise.all([
     prisma.netWorthSnapshot.findMany({
       where: { userId, date: { gte: fromDate } },
-      select: { id: true, date: true, netWorth: true, totalAssets: true, totalLiabilities: true, baseCurrency: true },
+      select: {
+        id: true,
+        date: true,
+        netWorth: true,
+        totalAssets: true,
+        totalLiabilities: true,
+        baseCurrency: true,
+      },
       orderBy: { date: "asc" },
     }),
     getAllExchangeRates(),
@@ -120,7 +127,14 @@ async function fetchFullHistoryCached(
   const [snapshotsRaw, allRatesMap] = await Promise.all([
     prisma.netWorthSnapshot.findMany({
       where: { userId },
-      select: { id: true, date: true, netWorth: true, totalAssets: true, totalLiabilities: true, baseCurrency: true },
+      select: {
+        id: true,
+        date: true,
+        netWorth: true,
+        totalAssets: true,
+        totalLiabilities: true,
+        baseCurrency: true,
+      },
       orderBy: { date: "asc" },
     }),
     getAllExchangeRates(),
