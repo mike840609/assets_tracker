@@ -21,6 +21,7 @@ const geistMono = localFont({
   src: "./fonts/geist-mono-latin.woff2",
   variable: "--font-geist-mono",
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
