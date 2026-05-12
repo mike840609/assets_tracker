@@ -2,7 +2,19 @@
 
 import { useMemo, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { XAxis, YAxis, CartesianGrid, Tooltip, Area, AreaChart } from "recharts";
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Area,
+  AreaChart,
+  Customized,
+  useActiveTooltipCoordinate,
+  useActiveTooltipDataPoints,
+  useYAxisScale,
+  usePlotArea,
+} from "recharts";
 import { useContainerWidth } from "@/hooks/use-container-size";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -52,6 +64,45 @@ function TrendTooltip({
         />
       ))}
     </ChartTooltipContainer>
+  );
+}
+
+function CrosshairLines() {
+  const coordinate = useActiveTooltipCoordinate();
+  const yScale = useYAxisScale();
+  const dataPoints = useActiveTooltipDataPoints();
+  const plotArea = usePlotArea();
+
+  if (!coordinate || !yScale || !dataPoints?.[0] || !plotArea) return null;
+
+  const x = coordinate.x;
+  const y = yScale((dataPoints[0] as SnapshotData).netWorth);
+  if (y == null) return null;
+
+  const stroke = "var(--muted-foreground)";
+  return (
+    <g pointerEvents="none">
+      <line
+        x1={x}
+        y1={plotArea.y}
+        x2={x}
+        y2={plotArea.y + plotArea.height}
+        stroke={stroke}
+        strokeWidth={1}
+        strokeDasharray="4 3"
+        strokeOpacity={0.5}
+      />
+      <line
+        x1={plotArea.x}
+        y1={y}
+        x2={plotArea.x + plotArea.width}
+        y2={y}
+        stroke={stroke}
+        strokeWidth={1}
+        strokeDasharray="4 3"
+        strokeOpacity={0.5}
+      />
+    </g>
   );
 }
 
@@ -129,7 +180,7 @@ export function TrendChart({
           </div>
         )}
       </CardHeader>
-      <CardContent className="px-2 sm:px-4 pb-4">
+      <CardContent className="px-2 sm:px-4 pb-1 sm:pb-4">
         {filtered.length === 0 ? (
           <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noData")}
@@ -140,13 +191,26 @@ export function TrendChart({
             className={`relative h-[250px] transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             {containerWidth > 0 && (
-              <AreaChart width={containerWidth} height={250} data={filtered} {...crosshairHandlers}>
+              <AreaChart
+                width={containerWidth}
+                height={250}
+                data={filtered}
+                margin={{ top: 5, right: 5, left: 0, bottom: 0 }}
+                {...crosshairHandlers}
+              >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={xTickFormatter} />
-                <YAxis tick={{ fontSize: 12 }} tickFormatter={yTickFormatter} />
+                <XAxis
+                  dataKey="date"
+                  height={20}
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={xTickFormatter}
+                />
+                <YAxis width={42} tick={{ fontSize: 12 }} tickFormatter={yTickFormatter} />
                 <Tooltip
+                  cursor={false}
                   content={<TrendTooltip baseCurrency={baseCurrency} privacyMode={privacyMode} />}
                 />
+                <Customized component={CrosshairLines} />
                 <Area
                   type="monotone"
                   dataKey="netWorth"
