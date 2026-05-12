@@ -12,7 +12,13 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     viewTransition: true,
-    optimizePackageImports: ["recharts", "lucide-react", "date-fns", "next-intl", "@prisma/client"],
+    optimizePackageImports: [
+      "recharts",
+      "lucide-react",
+      "next-intl",
+      "@prisma/client",
+      "@base-ui/react",
+    ],
   },
   serverExternalPackages: ["ws", "@neondatabase/serverless"],
   headers: async () => [
