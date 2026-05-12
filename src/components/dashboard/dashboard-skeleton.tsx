@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 export function DashboardSkeleton() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 md:space-y-8">
       <div className="flex items-center justify-between mb-2">
         <div className="h-9 w-48 rounded-lg skeleton-shimmer" />
       </div>

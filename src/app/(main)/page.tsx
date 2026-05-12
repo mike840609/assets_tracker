@@ -28,7 +28,7 @@ async function DashboardPageContent() {
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
       <DashboardPullRefresh>
-        <div className="space-y-8 animate-in fade-in duration-200">
+        <div className="space-y-4 md:space-y-8 animate-in fade-in duration-200">
           <div className="flex items-center justify-between mb-2">
             <LargeTitleHeading>{t("title")}</LargeTitleHeading>
           </div>

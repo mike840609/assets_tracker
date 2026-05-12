@@ -27,7 +27,7 @@ async function HistoryContent() {
   return (
     <NextIntlClientProvider messages={pickMessages(allMessages, CLIENT_NAMESPACES)}>
       <HistoryPullRefresh>
-        <div className="space-y-8 animate-in fade-in duration-200">
+        <div className="space-y-4 md:space-y-8 animate-in fade-in duration-200">
           <LargeTitleHeading>{t("title")}</LargeTitleHeading>
 
           <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">

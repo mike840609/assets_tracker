@@ -74,7 +74,7 @@ async function AccountsContent() {
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
-      <div className="space-y-8 animate-in fade-in duration-200">
+      <div className="space-y-4 md:space-y-8 animate-in fade-in duration-200">
         <LargeTitleHeading>{t("title")}</LargeTitleHeading>
         <AccountsList
           accounts={accounts}

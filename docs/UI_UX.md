@@ -159,6 +159,8 @@ Targets: `src/components/dashboard/trend-chart.tsx`, `src/components/analysis/*c
 
 > Implemented `useChartCrosshair` for mobile chart interaction with haptics and sticky tooltips, and `usePersistedRange` to persist range selections across navigation.
 
+> **Enhanced (2026-05-13):** Upgraded `trend-chart.tsx` crosshair to a true data-point-snapped crosshair using Recharts v3 hooks (`useActiveTooltipCoordinate`, `useYAxisScale`, `useActiveTooltipDataPoints`, `usePlotArea`). Previous implementation used the cursor API whose `y` always reflected raw mouse position; the new `CrosshairLines` `<Customized>` component converts the active data value through the y-scale so both lines intersect exactly at the data point. Also reduced chart whitespace: `XAxis height={20}`, `YAxis width={42}`, `margin.bottom=0`, `CardContent pb-1 sm:pb-4`.
+
 ---
 
 ### Suggested implementation order
