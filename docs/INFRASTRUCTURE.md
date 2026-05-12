@@ -43,6 +43,9 @@ Findings sourced from the Vercel MCP connector against project `prj_soY30S7ki1x3
 | V31 | Add `next.config.ts` `images.formats = ["image/avif", "image/webp"]` + `remotePatterns` for `lh3.googleusercontent.com`                               | Speed Insights · LCP     | 🟢 Low    | 15 min  | ✅ Done                |
 | V32 | Configure `<SpeedInsights beforeSend={…}>` to drop `/login` + `/privacy` from telemetry                                                               | Observability            | 🟢 Low    | 15 min  | ✅ Done                |
 | V33 | Ship `@next/bundle-analyzer` (supersedes V22) — prerequisite for measuring any further client-JS Speed Insights wins                                  | Observability            | 🟢 Low    | 30 min  | ⚠️ Partial             |
+| V34 | Extend `maxDuration` in `vercel.json` to cover `/api/prices/refresh` (60 s) and `/api/exchange-rates/refresh` (30 s)                                  | Reliability              | 🟡 Medium | 5 min   | ✅ Done                |
+| V35 | Add `skewProtection: true` to `vercel.json` — keeps old deployment assets alive during transition so users don't hit JS chunk 404s on new deploy       | Reliability              | 🟢 Low    | 5 min   | ✅ Done                |
+| V36 | Add `poweredByHeader: false` to `next.config.ts`; set `images.minimumCacheTTL: 86400` for Google profile-picture cache (was 60 s default)              | Performance              | 🟢 Low    | 5 min   | ✅ Done                |
 
 ### Key Build-log Findings (2026-04-17)
 
