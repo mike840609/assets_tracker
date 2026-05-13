@@ -1,7 +1,6 @@
 {
   "buildCommand": "npm run build:vercel",
   "regions": ["sin1"],
-  "skewProtection": true,
   "crons": [
     {
       "path": "/api/cron/snapshot",
