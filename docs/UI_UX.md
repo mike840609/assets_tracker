@@ -643,3 +643,121 @@ But across components, animation timings are inconsistent:
 - **Accessibility**: keyboard-only task completion rate, Lighthouse accessibility score.
 - **PWA install rate**: track `beforeinstallprompt` events after splash/theme-color fix.
 - **Code health**: LOC reduction after swipe-row extraction, animation inconsistency count.
+
+---
+
+## Desktop Wide-Screen Enhancements (2026-05-13)
+
+Suggestions for monitors at 1280px+ (xl) and 1536px+ (2xl). The app currently caps meaningful layout changes at `xl` and never uses `2xl`.
+
+| #   | Item                                          | Impact | Status   |
+| --- | --------------------------------------------- | ------ | -------- |
+| D1  | Chart grid regression fix (xl breakpoint)     | High   | ✅ Done  |
+| D2  | Activate `2xl` breakpoint / widen max-width   | High   | Proposed |
+| D3  | Dashboard right-rail at `xl+`                 | Medium | Proposed |
+| D4  | Accounts list → data table at `lg+`           | Medium | ✅ Done  |
+| D5  | Holdings table: reveal extra columns at `xl+` | Medium | Proposed |
+| D6  | Sidebar: show account balances when expanded  | Low    | Proposed |
+| D7  | Account detail nav panel wider at `2xl`       | Low    | Proposed |
+| D8  | Sticky column headers + frozen first col      | Low    | Proposed |
+
+---
+
+### D1 — Chart grid regression fix (xl breakpoint) — ✅ Done
+
+**Problem**: `dashboard-content.tsx` chart grid is `xl:grid-cols-3` with trend chart at `xl:col-span-1`. At xl (1280px+) the trend chart _shrinks_ to 1/3 of the grid — smaller than at lg (where it was full-width).
+
+**Fix**: Trend chart uses `xl:col-span-2`; allocation + currency stack vertically in a flex-col wrapper occupying the remaining 1/3 column.
+
+**Result layout at xl**:
+
+```
+[ Trend Chart (2/3 width) ] [ Allocation  ]
+                             [ Currency    ]
+```
+
+**Target files**: `src/components/dashboard/dashboard-content.tsx:246–255`
+
+---
+
+### D2 — Activate `2xl` breakpoint / widen max-width — Proposed
+
+**Problem**: Content is capped at `max-w-7xl` (1280px) with no `2xl` breakpoints anywhere. On a 27" iMac (2560px) or 1920px external monitor, ~600px of whitespace flanks the content.
+
+**Suggestion**:
+
+- Change the main content container in `MobileMainShell` from `max-w-7xl` to `max-w-screen-2xl` at the `2xl` breakpoint.
+- Or introduce a `2xl` grid that adds a right panel (see D3).
+
+**Target files**: `src/components/layout/mobile-main-shell.tsx` (container max-width)
+
+---
+
+### D3 — Dashboard right-rail at `xl+` — Proposed
+
+**Problem**: Dashboard is a single-column flow; at `xl+` there is room for a ~320px right panel that would surface secondary info without scrolling.
+
+**Suggestion**: Add a right-rail at `2xl` containing:
+
+- Recent transactions across all accounts (last 5–10)
+- Biggest movers today (holdings sorted by day % change)
+- Quick-add holding/transaction button
+
+Mirrors the Bloomberg/Robinhood pattern of keeping secondary context in a persistent gutter.
+
+**Target files**: `src/app/(main)/page.tsx`, `src/components/dashboard/` (new `DashboardRail` component)
+
+---
+
+### D4 — Accounts list → data table at `lg+` — ✅ Done
+
+**Problem**: Accounts render as stacked cards at all breakpoints. On desktop, horizontal space is wasted; a table layout is faster to scan and more information-dense.
+
+**Suggestion**: At `lg+`, render accounts as a sortable `<table>` with columns: Name, Type, Balance, Currency, Allocation %, Actions. Mobile stays as stacked cards.
+
+**Target files**: `src/components/accounts/accounts-list.tsx`
+
+> **Implemented**: `accounts-list.tsx` now renders a `hidden lg:block` data table alongside the existing `lg:hidden` card view. Table columns: checkbox | Name ↑↓ | Category (icon + label badge) | Holdings | Value ↑↓ | →. Assets and Liabilities appear as tinted group-header rows inside `<tbody>`. Clicking a row navigates to the account detail; checkboxes stop propagation so selection works independently. Sort defaults to Value descending; clicking Name or Value header toggles asc/desc with a chevron indicator. Native currency shown as a secondary line when it differs from base currency. Four new i18n keys added (`colName`, `colCategory`, `colHoldings`, `colValue`) in both `en-US.json` and `zh-TW.json`. Mobile card view unchanged.
+
+---
+
+### D5 — Holdings table: reveal hidden columns at `xl+` — Proposed
+
+**Problem**: Holdings table hides contextually useful columns on narrower widths. At `xl+` there is space to expose them.
+
+**Suggestion**: Show these columns at `xl+`: Avg Cost, Unrealized P&L ($), Unrealized P&L (%), Day Change, Last Updated. Use `hidden xl:table-cell` on the new cells.
+
+**Target files**: `src/components/accounts/holdings-table.tsx`
+
+---
+
+### D6 — Sidebar: show account balances when expanded — Proposed
+
+**Problem**: The expanded sidebar (`w-64`) shows only nav labels. It could serve as a persistent portfolio summary.
+
+**Suggestion**: When the sidebar is expanded (`!isCollapsed`), render a small balance badge beneath each account-level nav entry (if the account list is short enough). Pulls from the cached summary.
+
+**Target files**: `src/components/layout/sidebar.tsx`
+
+---
+
+### D7 — Account detail nav panel wider at `2xl` — Proposed
+
+**Problem**: `AccountsNavPanel` caps at `xl:w-52` (208px). On `2xl` screens it could show more per-account context.
+
+**Suggestion**: Add `2xl:w-64` and optionally render a mini balance + % allocation beneath each account name in the nav panel.
+
+**Target files**: `src/components/accounts/accounts-nav-panel.tsx`
+
+---
+
+### D8 — Sticky column headers + frozen first column on holdings table — Proposed
+
+**Problem**: With many holdings, scrolling the table loses header context and the symbol column scrolls off-screen horizontally.
+
+**Suggestion**:
+
+- `<thead>` rows use `sticky top-0 z-10 bg-background/90 backdrop-blur-sm` (same pattern as `history-table.tsx:65`).
+- First column (Symbol) uses `sticky left-0 bg-background z-[5]` to stay anchored on horizontal scroll.
+
+**Target files**: `src/components/accounts/holdings-table.tsx`

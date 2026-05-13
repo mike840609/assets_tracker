@@ -213,7 +213,11 @@
     "deleteButton": "刪除（{count}）",
     "deleteConfirm": "確定要刪除 {count} 個帳戶？此操作無法復原。",
     "deleteSuccess": "已刪除 {count} 個帳戶",
-    "deleteFailed": "刪除帳戶失敗"
+    "deleteFailed": "刪除帳戶失敗",
+    "colName": "名稱",
+    "colCategory": "類別",
+    "colHoldings": "持倉",
+    "colValue": "市值"
   },
   "accountForm": {
     "title": "新增帳戶",

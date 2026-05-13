@@ -85,8 +85,10 @@ test("2. create an account, add a holding manually, and see it in the list", asy
 
   await page.getByRole("button", { name: "Create Account" }).click();
 
-  // Account card should appear
-  await expect(page.getByText(accountName)).toBeVisible({ timeout: 15_000 });
+  // Account should appear in the list. Target the table <td> via CSS selector (not ARIA role)
+  // so it matches even when the desktop table is display:none on mobile viewports.
+  // Mobile cards use <p>, never <td>, so there is always exactly one match.
+  await expect(page.locator("td", { hasText: accountName })).toBeAttached({ timeout: 15_000 });
 
   // ── Add holding ─────────────────────────────────────────────────────────
   await page.getByRole("button", { name: "Add Item" }).click();
@@ -121,17 +123,26 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 10_000 });
 
   // ── Cleanup: delete the test account ────────────────────────────────────
-  // Select the account checkbox and delete it so test runs stay idempotent
-  const accountCard = page.locator("a", { hasText: accountName });
-  await accountCard.hover();
-  const checkbox = accountCard.locator("..").locator('[role="checkbox"]').first();
-  await checkbox.check();
+  // Select the account checkbox and delete it so test runs stay idempotent.
+  // The accounts list renders a table on lg+ (desktop) and collapsible cards on
+  // mobile, so we branch on which view is actually visible.
+  const desktopRow = page.getByRole("row").filter({ hasText: accountName });
+  if (await desktopRow.isVisible()) {
+    // Desktop table: checkbox is always visible in its own column
+    await desktopRow.getByRole("checkbox").click();
+  } else {
+    // Mobile cards: checkbox is revealed on hover
+    const mobileCard = page.locator("a", { hasText: accountName });
+    await mobileCard.hover();
+    await mobileCard.locator("..").locator('[role="checkbox"]').first().check();
+  }
   // Register the dialog handler BEFORE the click — confirm() fires synchronously
   // when the button is clicked, so a handler registered after would miss it and
   // Playwright would auto-dismiss the dialog (= delete cancelled).
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: /delete \(1\)/i }).click();
-  await expect(page.getByText(accountName)).not.toBeVisible({ timeout: 10_000 });
+  // After deletion the table row is removed from React state — the <td> disappears from the DOM.
+  await expect(page.locator("td", { hasText: accountName })).toHaveCount(0, { timeout: 10_000 });
 });
 
 // ---------------------------------------------------------------------------

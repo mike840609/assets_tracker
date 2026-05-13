@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { formatCurrency, formatQuantity } from "@/lib/currencies";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -137,6 +138,8 @@ export function AccountsList({
   }, []);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [sortKey, setSortKey] = useState<"name" | "value">("value");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => {
     const all = new Set<string>();
     for (const a of accounts) all.add(`${a.type}_${a.category}`);
@@ -145,6 +148,38 @@ export function AccountsList({
 
   const assets = accounts.filter((a) => a.type === "ASSET");
   const liabilities = accounts.filter((a) => a.type === "LIABILITY");
+
+  const accountBaseValues = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const account of accounts) {
+      const value = getAccountValue(account, priceMap, ratesMap);
+      const rate =
+        account.currency === baseCurrency
+          ? 1
+          : (ratesMap[`${account.currency}_${baseCurrency}`] ?? 1);
+      map[account.id] = value * rate;
+    }
+    return map;
+  }, [accounts, priceMap, ratesMap, baseCurrency]);
+
+  function toggleSort(key: "name" | "value") {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  }
+
+  function sortedAccounts(accts: SerializedAccountWithHoldings[]) {
+    return [...accts].sort((a, b) => {
+      const aVal = sortKey === "value" ? (accountBaseValues[a.id] ?? 0) : a.name.toLowerCase();
+      const bVal = sortKey === "value" ? (accountBaseValues[b.id] ?? 0) : b.name.toLowerCase();
+      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+  }
 
   const assetsByCategory = useMemo(() => {
     const grouped: Record<string, SerializedAccountWithHoldings[]> = {};
@@ -258,55 +293,153 @@ export function AccountsList({
         <p className="text-center text-muted-foreground py-12">{t("accountsList.noAccounts")}</p>
       )}
 
-      {assetsByCategory.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">
-            {t("accountsList.assets")}
-          </h3>
-          <div className="space-y-3">
-            {assetsByCategory.map(({ category, accounts: catAccounts }) => (
-              <CategorySection
-                key={`asset_${category}`}
-                category={category}
-                accounts={catAccounts}
-                priceMap={priceMap}
-                ratesMap={ratesMap}
-                baseCurrency={baseCurrency}
-                isExpanded={expandedCategories.has(`ASSET_${category}`)}
-                onToggleExpand={() => toggleCategory("ASSET", category)}
-                selected={selected}
-                onToggleSelect={toggleSelect}
-                isSelecting={isSelecting}
-              />
-            ))}
-          </div>
+      {/* Desktop table — lg+ */}
+      {accounts.length > 0 && (
+        <div className="hidden lg:block rounded-xl border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/30">
+                <th className="px-4 py-3 w-10 text-left">
+                  <Checkbox
+                    checked={selected.size === accounts.length && accounts.length > 0}
+                    onCheckedChange={toggleAll}
+                  />
+                </th>
+                <th
+                  className="px-4 py-3 text-left font-semibold cursor-pointer select-none hover:text-foreground"
+                  onClick={() => toggleSort("name")}
+                >
+                  <div className="flex items-center gap-1.5">
+                    {t("accountsList.colName")}
+                    <SortIcon active={sortKey === "name"} dir={sortDir} />
+                  </div>
+                </th>
+                <th className="px-4 py-3 text-left font-semibold">
+                  {t("accountsList.colCategory")}
+                </th>
+                <th className="px-4 py-3 text-left font-semibold">
+                  {t("accountsList.colHoldings")}
+                </th>
+                <th
+                  className="px-4 py-3 text-right font-semibold cursor-pointer select-none hover:text-foreground"
+                  onClick={() => toggleSort("value")}
+                >
+                  <div className="flex items-center justify-end gap-1.5">
+                    {t("accountsList.colValue")}
+                    <SortIcon active={sortKey === "value"} dir={sortDir} />
+                  </div>
+                </th>
+                <th className="w-12 px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {assets.length > 0 && (
+                <>
+                  <tr className="bg-green-50/60 dark:bg-green-950/20">
+                    <td
+                      colSpan={6}
+                      className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-green-700 dark:text-green-400"
+                    >
+                      {t("accountsList.assets")}
+                    </td>
+                  </tr>
+                  {sortedAccounts(assets).map((account) => (
+                    <DesktopAccountRow
+                      key={account.id}
+                      account={account}
+                      baseValue={accountBaseValues[account.id] ?? 0}
+                      baseCurrency={baseCurrency}
+                      priceMap={priceMap}
+                      ratesMap={ratesMap}
+                      isSelected={selected.has(account.id)}
+                      onToggle={() => toggleSelect(account.id)}
+                      onNavigate={() => router.push(`/accounts/${account.id}`)}
+                    />
+                  ))}
+                </>
+              )}
+              {liabilities.length > 0 && (
+                <>
+                  <tr className="bg-red-50/60 dark:bg-red-950/20">
+                    <td
+                      colSpan={6}
+                      className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-red-700 dark:text-red-400"
+                    >
+                      {t("accountsList.liabilities")}
+                    </td>
+                  </tr>
+                  {sortedAccounts(liabilities).map((account) => (
+                    <DesktopAccountRow
+                      key={account.id}
+                      account={account}
+                      baseValue={accountBaseValues[account.id] ?? 0}
+                      baseCurrency={baseCurrency}
+                      priceMap={priceMap}
+                      ratesMap={ratesMap}
+                      isSelected={selected.has(account.id)}
+                      onToggle={() => toggleSelect(account.id)}
+                      onNavigate={() => router.push(`/accounts/${account.id}`)}
+                    />
+                  ))}
+                </>
+              )}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {liabilitiesByCategory.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-red-700 dark:text-red-400">
-            {t("accountsList.liabilities")}
-          </h3>
+      {/* Mobile card view — hidden on lg+ */}
+      <div className="lg:hidden space-y-6">
+        {assetsByCategory.length > 0 && (
           <div className="space-y-3">
-            {liabilitiesByCategory.map(({ category, accounts: catAccounts }) => (
-              <CategorySection
-                key={`liability_${category}`}
-                category={category}
-                accounts={catAccounts}
-                priceMap={priceMap}
-                ratesMap={ratesMap}
-                baseCurrency={baseCurrency}
-                isExpanded={expandedCategories.has(`LIABILITY_${category}`)}
-                onToggleExpand={() => toggleCategory("LIABILITY", category)}
-                selected={selected}
-                onToggleSelect={toggleSelect}
-                isSelecting={isSelecting}
-              />
-            ))}
+            <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">
+              {t("accountsList.assets")}
+            </h3>
+            <div className="space-y-3">
+              {assetsByCategory.map(({ category, accounts: catAccounts }) => (
+                <CategorySection
+                  key={`asset_${category}`}
+                  category={category}
+                  accounts={catAccounts}
+                  priceMap={priceMap}
+                  ratesMap={ratesMap}
+                  baseCurrency={baseCurrency}
+                  isExpanded={expandedCategories.has(`ASSET_${category}`)}
+                  onToggleExpand={() => toggleCategory("ASSET", category)}
+                  selected={selected}
+                  onToggleSelect={toggleSelect}
+                  isSelecting={isSelecting}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {liabilitiesByCategory.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-red-700 dark:text-red-400">
+              {t("accountsList.liabilities")}
+            </h3>
+            <div className="space-y-3">
+              {liabilitiesByCategory.map(({ category, accounts: catAccounts }) => (
+                <CategorySection
+                  key={`liability_${category}`}
+                  category={category}
+                  accounts={catAccounts}
+                  priceMap={priceMap}
+                  ratesMap={ratesMap}
+                  baseCurrency={baseCurrency}
+                  isExpanded={expandedCategories.has(`LIABILITY_${category}`)}
+                  onToggleExpand={() => toggleCategory("LIABILITY", category)}
+                  selected={selected}
+                  onToggleSelect={toggleSelect}
+                  isSelecting={isSelecting}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {showForm && (
         <AccountForm
@@ -324,6 +457,82 @@ export function AccountsList({
         />
       )}
     </div>
+  );
+}
+
+function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
+  if (!active) return <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />;
+  return dir === "asc" ? (
+    <ChevronUp className="h-3.5 w-3.5" />
+  ) : (
+    <ChevronDown className="h-3.5 w-3.5" />
+  );
+}
+
+function DesktopAccountRow({
+  account,
+  baseValue,
+  baseCurrency,
+  priceMap,
+  ratesMap,
+  isSelected,
+  onToggle,
+  onNavigate,
+}: {
+  account: SerializedAccountWithHoldings;
+  baseValue: number;
+  baseCurrency: string;
+  priceMap: Record<string, number>;
+  ratesMap: Record<string, number>;
+  isSelected: boolean;
+  onToggle: () => void;
+  onNavigate: () => void;
+}) {
+  const { privacyMode } = usePrivacyMode();
+  const t = useTranslations();
+  const colors = CATEGORY_COLORS[account.category] ?? CATEGORY_COLORS.OTHER;
+  const icon = CATEGORY_ICONS[account.category] ?? "📁";
+  const label = t(`categories.${account.category}`, { defaultValue: account.category });
+  const nativeValue = getAccountValue(account, priceMap, ratesMap);
+
+  return (
+    <tr
+      className={`group hover:bg-muted/40 cursor-pointer transition-colors ${isSelected ? "bg-primary/5" : ""}`}
+      onClick={onNavigate}
+    >
+      <td className="px-4 py-3.5 w-10" onClick={(e) => e.stopPropagation()}>
+        <Checkbox checked={isSelected} onCheckedChange={onToggle} />
+      </td>
+      <td className="px-4 py-3.5 font-medium">{account.name}</td>
+      <td className="px-4 py-3.5">
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${colors.bg} ${colors.border} ${colors.text}`}
+        >
+          <span>{icon}</span>
+          <span>{label}</span>
+        </span>
+      </td>
+      <td className="px-4 py-3.5 text-sm text-muted-foreground tabular-nums">
+        {account.holdings.length > 0 ? (
+          t("accountsList.nHoldings", { count: account.holdings.length })
+        ) : (
+          <span className="text-muted-foreground/40">—</span>
+        )}
+      </td>
+      <td className="px-4 py-3.5 text-right">
+        <p className="font-semibold tabular-nums">
+          {privacyMode ? HIDDEN : formatCurrency(baseValue, baseCurrency)}
+        </p>
+        {account.currency !== baseCurrency && (
+          <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+            {privacyMode ? HIDDEN : formatCurrency(nativeValue, account.currency)}
+          </p>
+        )}
+      </td>
+      <td className="px-4 py-3.5 w-12 text-center">
+        <ChevronRight className="h-4 w-4 text-muted-foreground mx-auto group-hover:translate-x-0.5 transition-transform" />
+      </td>
+    </tr>
   );
 }
 

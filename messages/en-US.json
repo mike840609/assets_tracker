@@ -213,7 +213,11 @@
     "deleteButton": "Delete ({count})",
     "deleteConfirm": "{count, plural, one {Delete # account?} other {Delete # accounts?}} This cannot be undone.",
     "deleteSuccess": "{count, plural, one {Deleted # account} other {Deleted # accounts}}",
-    "deleteFailed": "Failed to delete accounts"
+    "deleteFailed": "Failed to delete accounts",
+    "colName": "Name",
+    "colCategory": "Category",
+    "colHoldings": "Holdings",
+    "colValue": "Value"
   },
   "accountForm": {
     "title": "Add Account",
