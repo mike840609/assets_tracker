@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
+import { AccountsNavPanel } from "@/components/accounts/accounts-nav-panel";
 import { getAccountDetail, getAccountPriceMap } from "@/lib/services/account-service";
+import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
 import { getSession } from "@/lib/auth-session";
 import {
   getAllExchangeRates,
@@ -28,7 +30,10 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
   const userId = session?.user?.id;
   if (!userId) notFound();
 
-  const serialized = await getAccountDetail(userId, id);
+  const [serialized, allAccounts] = await Promise.all([
+    getAccountDetail(userId, id),
+    fetchUserAccountsWithHoldings(userId),
+  ]);
   if (!serialized) notFound();
 
   const symbols = serialized.holdings.map((h) => h.symbol);
@@ -58,8 +63,11 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
-      <div className="space-y-6">
-        <AccountDetail account={serialized} priceMap={priceMap} ratesMap={ratesMap} />
+      <div className="md:flex md:gap-6 md:items-start">
+        <AccountsNavPanel accounts={allAccounts} currentId={id} />
+        <div className="flex-1 min-w-0 space-y-6">
+          <AccountDetail account={serialized} priceMap={priceMap} ratesMap={ratesMap} />
+        </div>
       </div>
     </NextIntlClientProvider>
   );
