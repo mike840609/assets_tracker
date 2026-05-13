@@ -85,8 +85,8 @@ test("2. create an account, add a holding manually, and see it in the list", asy
 
   await page.getByRole("button", { name: "Create Account" }).click();
 
-  // Account card should appear
-  await expect(page.getByText(accountName)).toBeVisible({ timeout: 15_000 });
+  // Account should appear (name exists in both desktop table cell and mobile card)
+  await expect(page.getByText(accountName).first()).toBeVisible({ timeout: 15_000 });
 
   // ── Add holding ─────────────────────────────────────────────────────────
   await page.getByRole("button", { name: "Add Item" }).click();
