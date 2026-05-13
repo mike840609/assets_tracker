@@ -26,20 +26,12 @@ const TransactionHistory = dynamic(
 import { AccountStatCards } from "./account-stat-cards";
 import { HoldingRow } from "./holding-row";
 import type { HoldingWithPrice } from "./holding-row";
+import { HoldingsTable, type HoldingSortField } from "./holdings-table";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { SerializedAccountWithHoldings, SerializedHolding } from "@/lib/types";
 import { showUndoDeleteToast } from "@/lib/undo-delete";
 
-type HoldingSortField =
-  | "symbol"
-  | "name"
-  | "assetType"
-  | "currency"
-  | "quantity"
-  | "currentPrice"
-  | "marketValue"
-  | "percentage";
 type SortOrder = "asc" | "desc";
 
 export function AccountDetail({
@@ -143,6 +135,7 @@ export function AccountDetail({
   }, [holdingsWithValue, sortField, sortDirection]);
 
   const isBank = account.category === "BANK";
+  const filteredSortedHoldings = sortedHoldings.filter((h) => !optimisticHiddenIds.has(h.id));
 
   async function saveBalance(newBalance: number, note?: string) {
     await fetch(`/api/accounts/${account.id}`, {
@@ -311,63 +304,66 @@ export function AccountDetail({
       />
 
       {!isBank && (
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-medium">
-                {t("accountDetail.holdingsCount")}
-              </CardTitle>
-              <Button size="sm" onClick={() => setShowHoldingForm(true)}>
-                {t("accountDetail.addHolding")}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {holdingsWithValue.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                {t("accountDetail.noHoldings")}
-              </p>
-            ) : (
-              <>
-                {holdingsWithValue.length > 1 && (
-                  <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-                    <span className="text-xs text-muted-foreground shrink-0">Sort:</span>
-                    {(
-                      [
-                        {
-                          field: "marketValue" as HoldingSortField,
-                          label: t("accountDetail.colValue"),
-                        },
-                        {
-                          field: "symbol" as HoldingSortField,
-                          label: t("accountDetail.colSymbol"),
-                        },
-                        {
-                          field: "percentage" as HoldingSortField,
-                          label: t("accountDetail.colPercentage"),
-                        },
-                        { field: "quantity" as HoldingSortField, label: t("accountDetail.colQty") },
-                      ] as { field: HoldingSortField; label: string }[]
-                    ).map(({ field, label }) => (
-                      <button
-                        key={field}
-                        onClick={() => handleSort(field)}
-                        className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                          sortField === field
-                            ? "border-primary/40 bg-primary/10 text-primary font-medium"
-                            : "border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40"
-                        }`}
-                      >
-                        {label}
-                        {sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
-                  {sortedHoldings
-                    .filter((h) => !optimisticHiddenIds.has(h.id))
-                    .map((h, index) => (
+        <>
+          {/* Mobile: swipeable card rows */}
+          <Card className="md:hidden">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-medium">
+                  {t("accountDetail.holdingsCount")}
+                </CardTitle>
+                <Button size="sm" onClick={() => setShowHoldingForm(true)}>
+                  {t("accountDetail.addHolding")}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {holdingsWithValue.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  {t("accountDetail.noHoldings")}
+                </p>
+              ) : (
+                <>
+                  {holdingsWithValue.length > 1 && (
+                    <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                      <span className="text-xs text-muted-foreground shrink-0">Sort:</span>
+                      {(
+                        [
+                          {
+                            field: "marketValue" as HoldingSortField,
+                            label: t("accountDetail.colValue"),
+                          },
+                          {
+                            field: "symbol" as HoldingSortField,
+                            label: t("accountDetail.colSymbol"),
+                          },
+                          {
+                            field: "percentage" as HoldingSortField,
+                            label: t("accountDetail.colPercentage"),
+                          },
+                          {
+                            field: "quantity" as HoldingSortField,
+                            label: t("accountDetail.colQty"),
+                          },
+                        ] as { field: HoldingSortField; label: string }[]
+                      ).map(({ field, label }) => (
+                        <button
+                          key={field}
+                          onClick={() => handleSort(field)}
+                          className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                            sortField === field
+                              ? "border-primary/40 bg-primary/10 text-primary font-medium"
+                              : "border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40"
+                          }`}
+                        >
+                          {label}
+                          {sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
+                    {filteredSortedHoldings.map((h, index) => (
                       <div key={h.id}>
                         {index > 0 && <div className="h-px bg-border/60 mx-4" />}
                         <HoldingRow
@@ -379,11 +375,45 @@ export function AccountDetail({
                         />
                       </div>
                     ))}
-                </div>
-              </>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Desktop: data table */}
+          <div className="hidden md:block">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-medium text-sm">
+                {t("accountDetail.holdingsCount")}
+                {filteredSortedHoldings.length > 0 && (
+                  <span className="ml-1.5 text-muted-foreground font-normal">
+                    ({filteredSortedHoldings.length})
+                  </span>
+                )}
+              </h3>
+              <Button size="sm" onClick={() => setShowHoldingForm(true)}>
+                {t("accountDetail.addHolding")}
+              </Button>
+            </div>
+            {filteredSortedHoldings.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                {t("accountDetail.noHoldings")}
+              </p>
+            ) : (
+              <HoldingsTable
+                holdings={filteredSortedHoldings}
+                totalValue={totalHoldingsValue}
+                accountCurrency={account.currency}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+                onEdit={setEditingHolding}
+                onDelete={deleteHolding}
+              />
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </>
       )}
 
       <TransactionHistory accountId={account.id} isBank={isBank} refreshTrigger={refreshTrigger} />
