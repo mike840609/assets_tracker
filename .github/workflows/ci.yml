@@ -5,17 +5,17 @@ on:
   push:
     branches: [master, main]
 
-jobs:
-  ci:
-    name: Lint, type-check, and build
-    runs-on: ubuntu-latest
+env:
+  DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
+  AUTH_SECRET: "ci-secret-placeholder-not-real"
+  AUTH_GOOGLE_ID: "ci-google-id"
+  AUTH_GOOGLE_SECRET: "ci-google-secret"
+  CRON_SECRET: "ci-cron-secret"
 
-    env:
-      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
-      AUTH_SECRET: "ci-secret-placeholder-not-real"
-      AUTH_GOOGLE_ID: "ci-google-id"
-      AUTH_GOOGLE_SECRET: "ci-google-secret"
-      CRON_SECRET: "ci-cron-secret"
+jobs:
+  checks:
+    name: Format, lint, and type-check
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v5
@@ -39,6 +39,34 @@ jobs:
 
       - name: Type check
         run: npm run typecheck
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          # Invalidate when packages change; fall back to any prior build cache for the same lockfile
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-
 
       - name: Build
         run: npm run build
