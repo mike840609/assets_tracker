@@ -85,9 +85,10 @@ test("2. create an account, add a holding manually, and see it in the list", asy
 
   await page.getByRole("button", { name: "Create Account" }).click();
 
-  // Account should appear in the list. Target the table <td> (always in DOM on both viewports,
-  // unambiguous — mobile cards use <p> not <td>) so strict mode never sees duplicate matches.
-  await expect(page.getByRole("cell", { name: accountName })).toBeAttached({ timeout: 15_000 });
+  // Account should appear in the list. Target the table <td> via CSS selector (not ARIA role)
+  // so it matches even when the desktop table is display:none on mobile viewports.
+  // Mobile cards use <p>, never <td>, so there is always exactly one match.
+  await expect(page.locator("td", { hasText: accountName })).toBeAttached({ timeout: 15_000 });
 
   // ── Add holding ─────────────────────────────────────────────────────────
   await page.getByRole("button", { name: "Add Item" }).click();
@@ -140,9 +141,8 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   // Playwright would auto-dismiss the dialog (= delete cancelled).
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: /delete \(1\)/i }).click();
-  // After deletion the table row is removed from React state — both <td> and <p> disappear.
-  // Use the <td> role selector (unambiguous — no duplicate matches) to confirm it's gone.
-  await expect(page.getByRole("cell", { name: accountName })).toHaveCount(0, { timeout: 10_000 });
+  // After deletion the table row is removed from React state — the <td> disappears from the DOM.
+  await expect(page.locator("td", { hasText: accountName })).toHaveCount(0, { timeout: 10_000 });
 });
 
 // ---------------------------------------------------------------------------
