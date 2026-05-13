@@ -85,8 +85,8 @@ test("2. create an account, add a holding manually, and see it in the list", asy
 
   await page.getByRole("button", { name: "Create Account" }).click();
 
-  // Account should appear (name exists in both desktop table cell and mobile card)
-  await expect(page.getByText(accountName).first()).toBeVisible({ timeout: 15_000 });
+  // Account should appear in the list (desktop table cell or mobile card — whichever is visible)
+  await page.waitForSelector(`text="${accountName}"`, { state: "visible", timeout: 15_000 });
 
   // ── Add holding ─────────────────────────────────────────────────────────
   await page.getByRole("button", { name: "Add Item" }).click();
@@ -121,11 +121,19 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 10_000 });
 
   // ── Cleanup: delete the test account ────────────────────────────────────
-  // Select the account checkbox and delete it so test runs stay idempotent
-  const accountCard = page.locator("a", { hasText: accountName });
-  await accountCard.hover();
-  const checkbox = accountCard.locator("..").locator('[role="checkbox"]').first();
-  await checkbox.check();
+  // Select the account checkbox and delete it so test runs stay idempotent.
+  // The accounts list renders a table on lg+ (desktop) and collapsible cards on
+  // mobile, so we branch on which view is actually visible.
+  const desktopRow = page.getByRole("row").filter({ hasText: accountName });
+  if (await desktopRow.isVisible()) {
+    // Desktop table: checkbox is always visible in its own column
+    await desktopRow.getByRole("checkbox").click();
+  } else {
+    // Mobile cards: checkbox is revealed on hover
+    const mobileCard = page.locator("a", { hasText: accountName });
+    await mobileCard.hover();
+    await mobileCard.locator("..").locator('[role="checkbox"]').first().check();
+  }
   // Register the dialog handler BEFORE the click — confirm() fires synchronously
   // when the button is clicked, so a handler registered after would miss it and
   // Playwright would auto-dismiss the dialog (= delete cancelled).
