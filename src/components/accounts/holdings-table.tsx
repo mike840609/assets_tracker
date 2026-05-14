@@ -122,7 +122,9 @@ export function HoldingsTable({
                     {h.assetType}
                   </Badge>
                 </td>
-                <td className={`px-3 ${tdPy} text-right tabular-nums text-muted-foreground hidden lg:table-cell`}>
+                <td
+                  className={`px-3 ${tdPy} text-right tabular-nums text-muted-foreground hidden lg:table-cell`}
+                >
                   {privacyMode ? HIDDEN : formatQuantity(h.quantity, h.assetType)}
                 </td>
                 <td className={`px-3 ${tdPy} text-right tabular-nums text-muted-foreground`}>

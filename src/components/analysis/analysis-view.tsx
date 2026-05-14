@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useDensity } from "@/components/layout/density-context";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
 import type { RawHistoryData, SnapshotBreakdown } from "@/lib/services/history-service";
 import {
@@ -144,20 +143,6 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
 
   const hasData = snapshots.length > 0;
 
-  const [mobileTab, setMobileTab] = useState<string>("overview");
-  useEffect(() => {
-    const saved = sessionStorage.getItem("analysis-mobile-tab");
-    if (saved) setMobileTab(saved);
-  }, []);
-  const handleMobileTabChange = (val: string) => {
-    if (!val) return;
-    setMobileTab(val);
-    sessionStorage.setItem("analysis-mobile-tab", val);
-  };
-
-  const gap = isCompact ? "space-y-3" : "space-y-6";
-  const mt = isCompact ? "mt-3" : "mt-6";
-
   return (
     <div className="space-y-4">
       {/* Range selector + subtitle row */}
@@ -187,68 +172,26 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
           {t("noData")}
         </div>
       ) : (
-        <>
-          {/* Mobile: two-tab layout */}
-          <div className="md:hidden">
-            <Tabs value={mobileTab} onValueChange={handleMobileTabChange}>
-              <TabsList className="w-full">
-                <TabsTrigger value="overview" className="flex-1">
-                  {t("tabOverview")}
-                </TabsTrigger>
-                <TabsTrigger value="details" className="flex-1">
-                  {t("tabDetails")}
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            {mobileTab === "overview" ? (
-              <div className={`${mt} ${gap}`}>
-                <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
-                <div className="premium-card">
-                  <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
-                </div>
-                <div className="premium-card">
-                  <AssetsLiabilitiesChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
-                </div>
-              </div>
-            ) : (
-              <div className={`${mt} ${gap}`}>
-                <div className="premium-card">
-                  <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
-                </div>
-                <div className="premium-card">
-                  <CategoryTrendChart
-                    data={categoryHistory}
-                    baseCurrency={baseCurrency}
-                    locale={locale}
-                  />
-                </div>
-                <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
-              </div>
-            )}
+        <div className={isCompact ? "space-y-3" : "space-y-6"}>
+          <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
+          <div className="premium-card">
+            <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
           </div>
-
-          {/* Desktop: original stacked layout */}
-          <div className={`hidden md:block ${gap}`}>
-            <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
-            <div className="premium-card">
-              <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
-            </div>
-            <div className="premium-card">
-              <AssetsLiabilitiesChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
-            </div>
-            <div className="premium-card">
-              <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
-            </div>
-            <div className="premium-card">
-              <CategoryTrendChart
-                data={categoryHistory}
-                baseCurrency={baseCurrency}
-                locale={locale}
-              />
-            </div>
-            <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
+          <div className="premium-card">
+            <AssetsLiabilitiesChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
           </div>
-        </>
+          <div className="premium-card">
+            <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+          </div>
+          <div className="premium-card">
+            <CategoryTrendChart
+              data={categoryHistory}
+              baseCurrency={baseCurrency}
+              locale={locale}
+            />
+          </div>
+          <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
+        </div>
       )}
     </div>
   );
