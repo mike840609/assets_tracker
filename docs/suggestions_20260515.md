@@ -1,5 +1,7 @@
 # Enhancement Suggestions — 2026-05-15
 
+> **Companion:** [`suggestions_20260515_vercel_mcp.md`](./suggestions_20260515_vercel_mcp.md) — Vercel MCP findings (F1–F8, captured 2026-05-14) re-prioritize S4 / S5 / S6 / S8 / S20 below. Read it alongside this file.
+
 ## Context
 
 The existing `docs/` folder has six trackers (PERFORMANCE, INFRASTRUCTURE, UI*UX, CODE_QUALITY, SUGGESTIONS, LOG) catalogueing ~370 items by lens. This file is a **prioritized digest** across all of them: the highest-impact open work, plus fresh items not yet tracked, ranked crucial-first. Use it as a single "what to do next" roadmap. Each item cross-references the source tracker ID (e.g. \_closes R11*) so nothing fragments — if you ship one of these, mark it ✅ both here and in the source doc.
@@ -22,11 +24,11 @@ The existing `docs/` folder has six trackers (PERFORMANCE, INFRASTRUCTURE, UI*UX
 | S1                                 | Route error boundaries (error.tsx / not-found / global-error)          | S      | 🔴     | ❌     | R11                    |
 | S2                                 | Timing-safe `CRON_SECRET` comparison                                   | XS     | 🔴     | ❌     | R4                     |
 | S3                                 | Ownership-check audit on `[id]` mutations                              | S      | 🔴     | ⚠️     | R5 / D1                |
-| S4                                 | Structured logger + Sentry across services                             | M      | 🔴     | ❌     | Q5 / R17               |
-| S5                                 | `/api/health` endpoint (DB ping + freshness)                           | XS     | 🔴     | ❌     | V12 / R12              |
-| S6                                 | Cron-run audit table + freshness alert                                 | M      | 🔴     | ❌     | V11 / R13              |
+| S4                                 | Structured logger + Sentry across services (**do first** — F1)         | M      | 🔴     | ❌     | Q5 / R17               |
+| S5                                 | `/api/health` endpoint (DB ping + freshness) (**do first** — F1)       | XS     | 🔴     | ❌     | V12 / R12              |
+| S6                                 | Cron-run audit table + freshness alert (**do first** — F1)             | M      | 🔴     | ❌     | V11 / R13              |
 | S7                                 | Vitest + service-layer test suite                                      | M      | 🔴     | ❌     | Q1–Q4                  |
-| S8                                 | CSP header (Report-Only → enforce)                                     | M      | 🔴     | ❌     | V14 / R2               |
+| S8                                 | CSP header (Report-Only → enforce) (report endpoint scaffolded — F4)   | M      | 🔴     | ⚠️     | V14 / R2               |
 | S9                                 | GDPR data export + account deletion                                    | L      | 🔴     | ❌     | R7 / R8                |
 | S10                                | Middleware returns JSON 401 for `/api/*`                               | XS     | 🔴     | ❌     | SUGGESTIONS 2026-05-11 |
 | **Tier 2 — High-Value**            |                                                                        |        |        |        |
@@ -39,7 +41,7 @@ The existing `docs/` folder has six trackers (PERFORMANCE, INFRASTRUCTURE, UI*UX
 | S17                                | `Cache-Control` on `/api/snapshots`, `/api/exchange-rates`             | S      | 🟡     | ❌     | V17 / V18              |
 | S18                                | Bundle-size CI gate (PR-fail if main grows >5%)                        | S      | 🟡     | ❌     | V22 / V33              |
 | S19                                | Preconnect to `va.vercel-scripts.com`                                  | XS     | 🟡     | ❌     | V28                    |
-| S20                                | Vercel Skew Protection on                                              | XS     | 🟡     | ❌     | V35                    |
+| S20                                | Vercel Skew Protection on (**promote to Tier 1** — bundle with F6)     | XS     | 🟡     | ❌     | V35                    |
 | S21                                | Chart CLS reserve (explicit `min-height` on lazy charts)               | XS     | 🟡     | ❌     | V23                    |
 | S22                                | Holding price-alert thresholds (email / web push)                      | L      | 🟡     | ❌     | fresh                  |
 | S23                                | Tax-lot tracking (FIFO / specific-lot cost basis)                      | L      | 🟡     | ❌     | fresh                  |
@@ -81,19 +83,21 @@ Walk every `src/app/api/accounts/[id]/...` route and confirm every mutation re-r
 
 ### S4 — Structured logger + Sentry
 
-**M | 🔴 | ❌ — closes Q5 / R17 / PE1 follow-up**
+**M | 🔴 | ❌ — closes Q5 / R17 / PE1 follow-up — _MCP F1: do first_**
 
 Today services swallow errors into Result shapes. Add a thin logger (pino or just a typed wrapper) emitting JSON `{level, service, userId, requestId, msg}`, route it to Sentry server-side and Vercel logs. Instrument: price-service retries, exchange-rate-service lazy fetches, snapshot cron, net-worth two-pass rate resolution. Unblocks the entire observability story — every other Tier 1 item benefits.
 
+> **MCP context (F1):** `get_runtime_logs` against production returned `No logs found` over a 7-day window. Without S4 there is literally no signal that the daily cron snapshot is healthy.
+
 ### S5 — `/api/health` endpoint
 
-**XS | 🔴 | ❌ — closes V12 / R12**
+**XS | 🔴 | ❌ — closes V12 / R12 — _MCP F1: do first, alongside S4 + S6_**
 
 `GET /api/health` returns `{db: ok|fail, latestSnapshotAt, missingEnv: []}`. Used for uptime checks and the dashboard widget in S6. Keep it auth-free; do NOT leak userIds or secret presence — only booleans.
 
 ### S6 — Cron-run audit table + freshness alert
 
-**M | 🔴 | ❌ — closes V11 / R13**
+**M | 🔴 | ❌ — closes V11 / R13 — _MCP F1: do first, alongside S4 + S5_**
 
 Add `CronRun { id, name, startedAt, finishedAt, ok, error, durationMs }` to Prisma. Snapshot cron writes a row on every invocation. Tiny `/api/cron/heartbeat` job (or part of `/api/health`) flags red if no successful row in >36 h. Today there is no signal that the daily snapshot job stopped firing — silent data loss risk.
 
@@ -112,9 +116,11 @@ Today only the Playwright smoke test exists. A regression in net-worth math woul
 
 ### S8 — CSP header
 
-**M | 🔴 | ❌ — closes V14 / R2**
+**M | 🔴 | ⚠️ — closes V14 / R2 — _MCP F4: report endpoint scaffolded_**
 
 Ship `Content-Security-Policy-Report-Only` with a strict policy (`script-src 'self' 'nonce-…'`, `connect-src` allowlist for `api.coingecko.com`, `query1.finance.yahoo.com`, `va.vercel-scripts.com`). Watch reports for one week, then flip to enforce. Tracks alongside S19 (preconnect targets).
+
+> **MCP context (F4):** `src/app/api/_csp/report/route.ts` is already scaffolded (private folder — not yet routed). Header + nonce pipeline still missing. Promote the route under a public path once the header lands.
 
 ### S9 — GDPR data export + account deletion
 
@@ -208,9 +214,11 @@ Add `<link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin>` t
 
 ### S20 — Vercel Skew Protection
 
-**XS | 🟡 | ❌ — closes V35**
+**XS | 🟡 → 🔴 | ❌ — closes V35 — _MCP F6: bundle with Rolling Releases_**
 
 Enable in Vercel project settings + read `x-deployment-id` header in client. Prevents users from getting half-old / half-new JS during a deploy.
+
+> **MCP context (F6):** Pair this XS dashboard toggle with **Rolling Releases** (also a dashboard toggle, no code change). Both meaningfully shrink deploy blast radius given the daily-deploy cadence (5+ prod deploys per day observed). Logical to ship in the same dashboard session.
 
 ### S21 — Chart CLS reserve
 
