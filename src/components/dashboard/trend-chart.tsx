@@ -106,10 +106,11 @@ function CrosshairLines() {
   );
 }
 
-const ranges = [
+const ranges: { label: string; days: number; ytd?: true }[] = [
   { label: "1M", days: 30 },
   { label: "3M", days: 90 },
   { label: "6M", days: 180 },
+  { label: "YTD", days: 0, ytd: true },
   { label: "1Y", days: 365 },
   { label: "All", days: Infinity },
 ];
@@ -153,9 +154,14 @@ export function TrendChart({
   const filtered = useMemo(() => {
     if (hideRangeFilter || selectedRange.days === Infinity) return snapshots;
     const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - selectedRange.days);
+    if (selectedRange.ytd) {
+      cutoff.setMonth(0, 1);
+      cutoff.setHours(0, 0, 0, 0);
+    } else {
+      cutoff.setDate(cutoff.getDate() - selectedRange.days);
+    }
     return snapshots.filter((s) => new Date(s.date) >= cutoff);
-  }, [snapshots, selectedRange.days, hideRangeFilter]);
+  }, [snapshots, selectedRange.days, selectedRange.ytd, hideRangeFilter]);
 
   const periodChange = useMemo(() => {
     if (filtered.length < 2) return null;
