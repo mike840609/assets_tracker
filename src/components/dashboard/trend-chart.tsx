@@ -15,7 +15,7 @@ import {
   useYAxisScale,
   usePlotArea,
 } from "recharts";
-import { useContainerWidth } from "@/hooks/use-container-size";
+import { useContainerSize } from "@/hooks/use-container-size";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
@@ -124,7 +124,7 @@ export function TrendChart({
   hideRangeFilter?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const containerWidth = useContainerWidth(containerRef);
+  const { width: containerWidth, height: containerHeight } = useContainerSize(containerRef);
   const [range, setRange] = usePersistedRange<string>("trend-chart", "All");
   const t = useTranslations("trendChart");
   const { privacyMode } = usePrivacyMode();
@@ -158,7 +158,7 @@ export function TrendChart({
   }, [snapshots, selectedRange.days, hideRangeFilter]);
 
   return (
-    <Card className="border-0 bg-transparent shadow-none">
+    <Card className="border-0 bg-transparent shadow-none h-full flex flex-col pb-0">
       <CardHeader className="flex flex-row items-center justify-between pb-2 px-2 sm:px-4">
         <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
         {!hideRangeFilter && (
@@ -180,20 +180,20 @@ export function TrendChart({
           </div>
         )}
       </CardHeader>
-      <CardContent className="px-2 sm:px-4 pb-1 sm:pb-4">
+      <CardContent className="px-2 sm:px-4 pb-0 flex-1 flex flex-col">
         {filtered.length === 0 ? (
-          <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">
+          <div className="flex-1 min-h-[200px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noData")}
           </div>
         ) : (
           <div
             ref={containerRef}
-            className={`relative h-[250px] transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+            className={`relative flex-1 min-h-[200px] transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
-            {containerWidth > 0 && (
+            {containerWidth > 0 && containerHeight > 0 && (
               <AreaChart
                 width={containerWidth}
-                height={250}
+                height={containerHeight}
                 data={filtered}
                 margin={{ top: 5, right: 5, left: 0, bottom: 0 }}
                 {...crosshairHandlers}
