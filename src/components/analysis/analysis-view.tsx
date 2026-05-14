@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useDensity } from "@/components/layout/density-context";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
 import type { RawHistoryData, SnapshotBreakdown } from "@/lib/services/history-service";
 import {
@@ -143,6 +144,20 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
 
   const hasData = snapshots.length > 0;
 
+  const [mobileTab, setMobileTab] = useState<string>("overview");
+  useEffect(() => {
+    const saved = sessionStorage.getItem("analysis-mobile-tab");
+    if (saved) setMobileTab(saved);
+  }, []);
+  const handleMobileTabChange = (val: string) => {
+    if (!val) return;
+    setMobileTab(val);
+    sessionStorage.setItem("analysis-mobile-tab", val);
+  };
+
+  const gap = isCompact ? "space-y-3" : "space-y-6";
+  const mt = isCompact ? "mt-3" : "mt-6";
+
   return (
     <div className="space-y-4">
       {/* Range selector + subtitle row */}
@@ -155,7 +170,7 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
               type="button"
               onClick={() => setRange(r.label)}
               aria-pressed={range === r.label}
-              className={`px-2 py-1 text-xs rounded-md transition-colors ${
+              className={`px-3 py-2 min-h-[44px] sm:px-2 sm:py-1 sm:min-h-0 text-xs rounded-md transition-colors ${
                 range === r.label
                   ? "bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   : "text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -172,26 +187,68 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
           {t("noData")}
         </div>
       ) : (
-        <div className={isCompact ? "space-y-3" : "space-y-6"}>
-          <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
-          <div className="premium-card">
-            <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+        <>
+          {/* Mobile: two-tab layout */}
+          <div className="md:hidden">
+            <Tabs value={mobileTab} onValueChange={handleMobileTabChange}>
+              <TabsList className="w-full">
+                <TabsTrigger value="overview" className="flex-1">
+                  {t("tabOverview")}
+                </TabsTrigger>
+                <TabsTrigger value="details" className="flex-1">
+                  {t("tabDetails")}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {mobileTab === "overview" ? (
+              <div className={`${mt} ${gap}`}>
+                <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
+                <div className="premium-card">
+                  <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+                </div>
+                <div className="premium-card">
+                  <AssetsLiabilitiesChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+                </div>
+              </div>
+            ) : (
+              <div className={`${mt} ${gap}`}>
+                <div className="premium-card">
+                  <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+                </div>
+                <div className="premium-card">
+                  <CategoryTrendChart
+                    data={categoryHistory}
+                    baseCurrency={baseCurrency}
+                    locale={locale}
+                  />
+                </div>
+                <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
+              </div>
+            )}
           </div>
-          <div className="premium-card">
-            <AssetsLiabilitiesChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+
+          {/* Desktop: original stacked layout */}
+          <div className={`hidden md:block ${gap}`}>
+            <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
+            <div className="premium-card">
+              <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+            </div>
+            <div className="premium-card">
+              <AssetsLiabilitiesChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+            </div>
+            <div className="premium-card">
+              <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+            </div>
+            <div className="premium-card">
+              <CategoryTrendChart
+                data={categoryHistory}
+                baseCurrency={baseCurrency}
+                locale={locale}
+              />
+            </div>
+            <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
           </div>
-          <div className="premium-card">
-            <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
-          </div>
-          <div className="premium-card">
-            <CategoryTrendChart
-              data={categoryHistory}
-              baseCurrency={baseCurrency}
-              locale={locale}
-            />
-          </div>
-          <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
-        </div>
+        </>
       )}
     </div>
   );

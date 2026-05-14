@@ -42,13 +42,14 @@ interface Column {
   field: HoldingSortField | null;
   label: string;
   align: "left" | "right";
+  hideBelowLg?: boolean;
 }
 
 const COLUMNS: Column[] = [
   { field: "symbol", label: "Symbol", align: "left" },
   { field: "name", label: "Name", align: "left" },
-  { field: "assetType", label: "Type", align: "left" },
-  { field: "quantity", label: "Qty", align: "right" },
+  { field: "assetType", label: "Type", align: "left", hideBelowLg: true },
+  { field: "quantity", label: "Qty", align: "right", hideBelowLg: true },
   { field: "currentPrice", label: "Price", align: "right" },
   { field: "marketValue", label: "Mkt Value", align: "right" },
   { field: "percentage", label: "Weight", align: "right" },
@@ -81,7 +82,9 @@ export function HoldingsTable({
                 key={i}
                 className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap ${
                   col.align === "right" ? "text-right" : "text-left"
-                } ${col.field ? "cursor-pointer select-none hover:text-foreground transition-colors" : ""}`}
+                } ${col.field ? "cursor-pointer select-none hover:text-foreground transition-colors" : ""} ${
+                  col.hideBelowLg ? "hidden lg:table-cell" : ""
+                }`}
                 onClick={col.field ? () => onSort(col.field!) : undefined}
               >
                 {col.label}
@@ -114,12 +117,12 @@ export function HoldingsTable({
                 <td className={`px-3 ${tdPy} text-muted-foreground max-w-[200px] xl:max-w-[280px]`}>
                   <span className="truncate block">{nameLabel}</span>
                 </td>
-                <td className={`px-3 ${tdPy}`}>
+                <td className={`px-3 ${tdPy} hidden lg:table-cell`}>
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 rounded-sm">
                     {h.assetType}
                   </Badge>
                 </td>
-                <td className={`px-3 ${tdPy} text-right tabular-nums text-muted-foreground`}>
+                <td className={`px-3 ${tdPy} text-right tabular-nums text-muted-foreground hidden lg:table-cell`}>
                   {privacyMode ? HIDDEN : formatQuantity(h.quantity, h.assetType)}
                 </td>
                 <td className={`px-3 ${tdPy} text-right tabular-nums text-muted-foreground`}>
