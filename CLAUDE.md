@@ -53,6 +53,26 @@ npm run test:e2e:ui      # Open the Playwright UI runner
 npm run test:e2e:report  # Open the last HTML report
 ```
 
+## Pre-PR Checklist
+
+Before pushing or opening a pull request, always run the full CI-equivalent check suite:
+
+```bash
+npm run format:check   # Prettier format — must match .prettierrc.json exactly
+npm run lint           # ESLint with Next.js + TypeScript rules
+npm run typecheck      # TypeScript strict mode (no DB needed)
+```
+
+Or use the combined script (also runs `build`, which requires DB env vars — skip if unavailable):
+
+```bash
+npm run check
+```
+
+Fix all errors before pushing. CI runs these steps in order and fails fast on the first error.
+
+> The `.husky/pre-push` hook enforces `format:check + lint + typecheck` on every `git push`, so the push will be rejected if any check fails. Run `npm run format` to auto-fix formatting issues before committing.
+
 ## Architecture
 
 ### Route Structure
