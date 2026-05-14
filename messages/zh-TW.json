@@ -145,7 +145,11 @@
     "topMoversAccount": "帳戶",
     "topMoversChange": "變化",
     "topMoversNoData": "歷史資料不足，無法顯示變動。",
-    "cashFlowNote": "貢獻僅反映現金存入與提領。"
+    "cashFlowNote": "貢獻僅反映現金存入與提領。",
+    "benchmarkTitle": "基準比較",
+    "benchmarkSubtitle": "您的淨資產報酬率 vs. 主要指數（同期間）。",
+    "benchmarkNetWorth": "淨資產",
+    "benchmarkNoData": "指數資料無法取得。"
   },
   "history": {
     "title": "淨資產歷史",

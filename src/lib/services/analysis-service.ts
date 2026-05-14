@@ -1,4 +1,5 @@
 import type { NormalizedSnapshot, SnapshotBreakdown, AccountMeta } from "./history-service";
+import type { IndexHistory } from "./benchmark-service";
 
 /**
  * One month's worth of net-worth aggregation.
@@ -241,6 +242,27 @@ export interface CategoryDataPoint {
   [category: string]: number | string;
 }
 
+/**
+ * One data point in the benchmark comparison series.
+ * `netWorth` and each index symbol hold a % return value (e.g. 12.5 = +12.5 %)
+ * relative to the first data point in the selected range. null means no data
+ * for that month (Recharts renders a gap in the line).
+ */
+export interface BenchmarkPoint {
+  /** "YYYY-MM" */
+  monthKey: string;
+  /** Formatted label, e.g. "Apr 2026". */
+  label: string;
+  /** % return of net worth from range start, or null if no snapshot. */
+  netWorth: number | null;
+  /** % return of ^GSPC from range start, or null if no data. */
+  "^GSPC": number | null;
+  /** % return of ^IXIC from range start, or null if no data. */
+  "^IXIC": number | null;
+  /** % return of ^RUT from range start, or null if no data. */
+  "^RUT": number | null;
+}
+
 /** One account's value change over the selected period. */
 export interface TopMover {
   accountId: string;
@@ -351,4 +373,84 @@ export function computeTopMovers(
     .filter((m) => m.startValue !== 0 || m.endValue !== 0)
     .sort((a, b) => Math.abs(b.absoluteChange) - Math.abs(a.absoluteChange))
     .slice(0, 10);
+}
+
+/**
+ * Build a normalized % return series for net worth and each index, aligned by
+ * calendar month. Every series is independently rebased to 0 % at its first
+ * data point on or after `rangeStartIso`.
+ *
+ * The output covers exactly the months spanned by `buckets` (already padded by
+ * fillMonthRange), so the X-axis stays consistent with the other charts.
+ *
+ * @param buckets        Output of fillMonthRange() for the selected range.
+ * @param snapshots      Filtered NormalizedSnapshot[] for the selected range.
+ * @param indexHistory   Output of getIndexHistory().
+ * @param rangeStartIso  First date of the selected range ("YYYY-MM-DD").
+ * @param locale         For formatMonthLabel.
+ */
+export function buildBenchmarkSeries(
+  buckets: MonthlyBucket[],
+  snapshots: NormalizedSnapshot[],
+  indexHistory: IndexHistory[],
+  rangeStartIso: string,
+  locale: string,
+): BenchmarkPoint[] {
+  if (buckets.length === 0) return [];
+
+  // Build a map of monthKey → last net worth value in that month
+  const nwByMonth = new Map<string, number>();
+  for (const s of snapshots) {
+    nwByMonth.set(s.date.slice(0, 7), s.netWorth);
+  }
+
+  // For each index, build a monthKey → close price map
+  const indexByMonth = new Map<string, Map<string, number>>();
+  for (const idx of indexHistory) {
+    const m = new Map<string, number>();
+    for (const pt of idx.data) {
+      m.set(pt.date.slice(0, 7), pt.close);
+    }
+    indexByMonth.set(idx.symbol, m);
+  }
+
+  // Find base values (first available on or after rangeStartIso) for each series
+  const rangeStartMonth = rangeStartIso.slice(0, 7);
+  const monthKeys = buckets.map((b) => b.monthKey).sort();
+
+  const findBase = (valueMap: Map<string, number>): number | null => {
+    for (const mk of monthKeys) {
+      if (mk >= rangeStartMonth) {
+        const v = valueMap.get(mk);
+        if (v != null && v !== 0) return v;
+      }
+    }
+    return null;
+  };
+
+  const nwBase = findBase(nwByMonth);
+  const indexBases = new Map<string, number | null>();
+  for (const idx of indexHistory) {
+    indexBases.set(idx.symbol, findBase(indexByMonth.get(idx.symbol) ?? new Map()));
+  }
+
+  const pct = (value: number | undefined | null, base: number | null): number | null => {
+    if (value == null || base == null || base === 0) return null;
+    return ((value - base) / base) * 100;
+  };
+
+  const symbols = ["^GSPC", "^IXIC", "^RUT"] as const;
+
+  return buckets.map((b) => ({
+    monthKey: b.monthKey,
+    label: formatMonthLabel(b.monthKey, locale),
+    netWorth: pct(nwByMonth.get(b.monthKey), nwBase),
+    "^GSPC": pct(indexByMonth.get("^GSPC")?.get(b.monthKey), indexBases.get("^GSPC") ?? null),
+    "^IXIC": pct(indexByMonth.get("^IXIC")?.get(b.monthKey), indexBases.get("^IXIC") ?? null),
+    "^RUT": pct(indexByMonth.get("^RUT")?.get(b.monthKey), indexBases.get("^RUT") ?? null),
+    // Satisfy the index-signature constraint; the four named keys above cover all symbols
+    ...Object.fromEntries(
+      symbols.filter((s) => !["^GSPC", "^IXIC", "^RUT"].includes(s)).map((s) => [s, null]),
+    ),
+  }));
 }

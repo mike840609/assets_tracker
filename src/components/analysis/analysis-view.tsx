@@ -13,13 +13,16 @@ import {
   buildCashFlowBuckets,
   aggregateCategoryHistory,
   computeTopMovers,
+  buildBenchmarkSeries,
 } from "@/lib/services/analysis-service";
 import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/analysis-service";
+import type { IndexHistory } from "@/lib/services/benchmark-service";
 import { MonthlyChangeChart } from "./monthly-change-chart";
 import { AssetsLiabilitiesChart } from "./assets-liabilities-chart";
 import { KpiTiles } from "./kpi-tiles";
 import { CashFlowChart } from "./cashflow-chart";
 import { CategoryTrendChart } from "./category-trend-chart";
+import { BenchmarkComparisonChart } from "./benchmark-comparison-chart";
 import { TopMoversList } from "./top-movers-list";
 
 interface Props {
@@ -28,6 +31,7 @@ interface Props {
   rawHistory: RawHistoryData;
   baseCurrency: string;
   locale: string;
+  indexHistory: IndexHistory[];
 }
 
 const ranges = [
@@ -48,7 +52,14 @@ function rangeCutoff(months: number): Date {
   return d;
 }
 
-export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency, locale }: Props) {
+export function AnalysisView({
+  snapshots,
+  cashFlowData,
+  rawHistory,
+  baseCurrency,
+  locale,
+  indexHistory,
+}: Props) {
   const t = useTranslations("analysis");
   const { density } = useDensity();
   const isCompact = density === "compact";
@@ -141,6 +152,11 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
     [filteredRawSnapshots, rawHistory.accounts],
   );
 
+  const benchmarkSeries = useMemo(
+    () => buildBenchmarkSeries(buckets, filteredSnapshots, indexHistory, rangeStartIso, locale),
+    [buckets, filteredSnapshots, indexHistory, rangeStartIso, locale],
+  );
+
   const hasData = snapshots.length > 0;
 
   return (
@@ -190,6 +206,11 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
               locale={locale}
             />
           </div>
+          {indexHistory.length > 0 && (
+            <div className="premium-card">
+              <BenchmarkComparisonChart data={benchmarkSeries} indexHistory={indexHistory} />
+            </div>
+          )}
           <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
         </div>
       )}

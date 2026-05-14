@@ -145,7 +145,11 @@
     "topMoversAccount": "Account",
     "topMoversChange": "Change",
     "topMoversNoData": "Not enough history to show movers.",
-    "cashFlowNote": "Contributions reflect cash deposits and withdrawals only."
+    "cashFlowNote": "Contributions reflect cash deposits and withdrawals only.",
+    "benchmarkTitle": "Benchmark Comparison",
+    "benchmarkSubtitle": "Your net worth % return vs. major indices over the same period.",
+    "benchmarkNetWorth": "Net Worth",
+    "benchmarkNoData": "Index data unavailable."
   },
   "history": {
     "title": "Net Worth History",
