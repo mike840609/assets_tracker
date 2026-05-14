@@ -6,7 +6,9 @@ This file consolidates two former docs: `VERCEL_ANALYSIS.md` (V1–V33, Vercel p
 
 ## Vercel Platform
 
-Findings sourced from the Vercel MCP connector against project `prj_soY30S7ki1x38gmeZXCancJD1PVA` (`asset-tracker`, team `team_ImEsp9hzYaqzaPz5VmE6LTiW`) across three audit passes: 2026-04-17, 2026-04-18, and 2026-04-19.
+Findings sourced from the Vercel MCP connector against project `prj_soY30S7ki1x38gmeZXCancJD1PVA` (`asset-tracker`, team `team_ImEsp9hzYaqzaPz5VmE6LTiW`) across four audit passes: 2026-04-17, 2026-04-18, 2026-04-19, and 2026-05-14.
+
+> **2026-05-14 audit pass.** `get_project` returned `"live": false` (meaning TBD — likely a Vercel-internal traffic/billing flag, consistent with the empty 7-day runtime-log window observed in F1). `get_runtime_logs` against production returned no entries for the same window. Full findings in [`suggestions_20260515_vercel_mcp.md`](./suggestions_20260515_vercel_mcp.md) (F1–F8).
 
 | #   | Suggestion                                                                                                                                                                                                                 | Category                 | Impact    | Effort  | Status                 |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | --------- | ------- | ---------------------- |
