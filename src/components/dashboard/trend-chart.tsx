@@ -201,8 +201,10 @@ export function TrendChart({
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="date"
-                  height={20}
+                  height={60}
                   tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
                   tickFormatter={xTickFormatter}
                 />
                 <YAxis width={42} tick={{ fontSize: 12 }} tickFormatter={yTickFormatter} />
