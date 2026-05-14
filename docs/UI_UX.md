@@ -860,7 +860,7 @@ This brings the mobile touch target to approximately 32–34 px (still below 44 
 `src/components/accounts/holdings-table.tsx:156`:
 
 ```tsx
-className="... opacity-0 group-hover:opacity-100 transition-opacity"
+className = "... opacity-0 group-hover:opacity-100 transition-opacity";
 ```
 
 The row actions `DropdownMenuTrigger` (⋯) is hidden by default and only appears on `:hover`. On touch-only devices (iOS Safari, Android Chrome) there is no persistent hover state — the button never becomes visible unless the user has a Bluetooth mouse. A user on iPhone cannot access Edit or Delete for any holding in the desktop table view.
@@ -988,7 +988,10 @@ Extend the empty state with a secondary explanation and a navigation link:
   <p className="text-xs text-muted-foreground/70">
     {t("noDataHint")} {/* "Snapshots are captured daily. Check back tomorrow." */}
   </p>
-  <Link href="/history" className="text-xs text-primary underline underline-offset-2 hover:text-primary/80">
+  <Link
+    href="/history"
+    className="text-xs text-primary underline underline-offset-2 hover:text-primary/80"
+  >
     {t("noDataLink")} {/* "View snapshot history →" */}
   </Link>
 </div>
@@ -1018,14 +1021,16 @@ const visibleHoldings = showAll ? sortedHoldings : sortedHoldings.slice(0, 20);
 
 // ...render visibleHoldings...
 
-{!showAll && sortedHoldings.length > 20 && (
-  <button
-    onClick={() => setShowAll(true)}
-    className="w-full py-3 text-sm text-primary hover:text-primary/80 transition-colors"
-  >
-    {t("showMore", { count: sortedHoldings.length - 20 })}
-  </button>
-)}
+{
+  !showAll && sortedHoldings.length > 20 && (
+    <button
+      onClick={() => setShowAll(true)}
+      className="w-full py-3 text-sm text-primary hover:text-primary/80 transition-colors"
+    >
+      {t("showMore", { count: sortedHoldings.length - 20 })}
+    </button>
+  );
+}
 ```
 
 No virtual-scroll library needed. The threshold of 20 covers ~95 % of real accounts without truncating. Add `account.showMore` and `account.showMoreCount` i18n keys.
