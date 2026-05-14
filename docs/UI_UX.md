@@ -761,3 +761,292 @@ Mirrors the Bloomberg/Robinhood pattern of keeping secondary context in a persis
 - First column (Symbol) uses `sticky left-0 bg-background z-[5]` to stay anchored on horizontal scroll.
 
 **Target files**: `src/components/accounts/holdings-table.tsx`
+
+---
+
+## Mobile Screen Size — Targeted Improvements (2026-05-14)
+
+_Full codebase audit focused on small-screen (≤ 768 px) regressions and gaps not captured in the earlier addenda above._
+
+The app's primary mobile/desktop divider is the `md` breakpoint (768 px). Fine-tuning between phone and tablet uses `sm` (640 px). The items below all affect viewports smaller than `md`, with special attention to the 320–430 px range (iPhone SE → iPhone 16 Pro Max) that represents the majority of real-world mobile sessions.
+
+---
+
+## Mobile Improvement Summary Table
+
+| #   | Item                                                                   | Impact | Status   |
+| --- | ---------------------------------------------------------------------- | ------ | -------- |
+| M1  | Holdings table: all 8 columns at 768 px — Type & Qty should hide at md | High   | Proposed |
+| M2  | Analysis page: 5 charts stacked vertically, no sub-tab navigation      | High   | Proposed |
+| M3  | Analysis range chips ~24 px touch target (iOS min 44 px)               | High   | Proposed |
+| M4  | Holdings table ⋯ button `opacity-0 group-hover` — invisible on touch   | Medium | Proposed |
+| M5  | Login card `p-10` — 80 px horizontal padding on 375 px phones          | Medium | Proposed |
+| M6  | Manual holding form `grid-cols-2` — no collapse on small phones        | Medium | Proposed |
+| M7  | Settings selects `w-[200px]` don't expand full-width when stacked      | Low    | Proposed |
+| M8  | Analysis `noData` empty state — text only, no actionable link          | Low    | Proposed |
+| M9  | Mobile holdings card list renders all rows — no pagination             | Low    | Proposed |
+
+---
+
+## M1) Holdings table: column congestion at the `md` breakpoint (High)
+
+**What I observed**
+
+`src/components/accounts/holdings-table.tsx:47–56`:
+
+The `COLUMNS` constant defines 8 columns: Symbol, Name, Type, Qty, Price, Mkt Value, Weight, Actions. The table is gated behind `hidden md:block` in `account-detail.tsx`, so it first appears at exactly 768 px with all 8 columns. Between 768–1023 px (most tablets in portrait and many small laptops), the name column is capped at `max-w-[200px]` and each cell uses `px-3` — the result is a horizontally cramped table where "Type" and "Qty" compete for space that the user rarely needs at a glance.
+
+**Suggestion**
+
+Hide the two lowest-priority columns below the `lg` breakpoint by adding `hidden lg:table-cell` on the relevant `<th>` and `<td>` elements:
+
+- **Type** column (`assetType`): asset type badge is redundant when the symbol is visible.
+- **Qty** column (`quantity`): useful for options/crypto details; secondary at a glance.
+
+At `md` the table renders 6 columns (Symbol, Name, Price, Mkt Value, Weight, Actions), giving the name column more breathing room. At `lg+` all 8 columns restore.
+
+**Target files**: `src/components/accounts/holdings-table.tsx:79–93` (header cells), `holdings-table.tsx:117–124` (body cells)
+
+---
+
+## M2) Analysis page: 5 charts stacked vertically with no mobile sub-tab navigation (High)
+
+**What I observed**
+
+`src/components/analysis/analysis-view.tsx:175–193`:
+
+After Phase 2 shipped (CashFlow, CategoryTrend, TopMovers are all ✅ Done), the Analysis page renders five heavyweight charts in a single `space-y-6` column: KPI tiles → Monthly Change bar → Assets/Liabilities bar → Cash Flow stacked bar → Category Trend area → Top Movers list. On a 390 px phone this is ~3 000 px of vertical content before the user reaches the bottom. This was explicitly flagged in the cross-cutting concerns of the Analysis Roadmap ("introduce a sub-tab switcher so mobile doesn't become an endless scroll") but was never implemented.
+
+**Suggestion**
+
+On mobile (`md:hidden` / `hidden md:block` split), wrap the charts in a two-tab layout using `Tabs` / `TabsList` / `TabsTrigger` from `src/components/ui/tabs.tsx`:
+
+- **Overview tab**: KPI tiles + Monthly Net Worth Change + Assets vs. Liabilities
+- **Details tab**: Cash Flow Decomposition + Category Trend + Top Movers
+
+Desktop (≥ `md`) keeps the existing stacked layout — no structural change there. Persist the selected tab with the existing `usePersistedRange` pattern (or `sessionStorage` directly) so navigating away and back doesn't reset the tab.
+
+**Target files**: `src/components/analysis/analysis-view.tsx:146–198`
+
+---
+
+## M3) Analysis range chips have ~24 px touch targets — below iOS minimum (High)
+
+**What I observed**
+
+`src/components/analysis/analysis-view.tsx:153–165`:
+
+The range selector renders five buttons (YTD / 6M / 1Y / 2Y / All) with `px-2 py-1 text-xs rounded-md`. At `text-xs` (12 px) with `py-1` (8 px total vertical padding), the rendered height is approximately 24–26 px — well below the iOS Human Interface Guideline minimum of 44 × 44 px and Apple's recommended touch target of 48 × 48 px. On small screens users frequently mis-tap adjacent chips.
+
+**Suggestion**
+
+Add responsive padding variants so the buttons are finger-friendly on mobile while staying compact on desktop:
+
+```diff
+- className={`px-2 py-1 text-xs rounded-md transition-colors ...`}
++ className={`px-3 py-2 text-xs sm:px-2 sm:py-1 rounded-md transition-colors ...`}
+```
+
+This brings the mobile touch target to approximately 32–34 px (still below 44 px ideal but a significant improvement without breaking the compact desktop layout). To fully meet 44 px, consider adding `min-h-[44px]` on mobile only: `min-h-[44px] sm:min-h-0`.
+
+**Target files**: `src/components/analysis/analysis-view.tsx:153–165`
+
+---
+
+## M4) Holdings table ⋯ action button invisible on touch (Medium)
+
+**What I observed**
+
+`src/components/accounts/holdings-table.tsx:156`:
+
+```tsx
+className = "... opacity-0 group-hover:opacity-100 transition-opacity";
+```
+
+The row actions `DropdownMenuTrigger` (⋯) is hidden by default and only appears on `:hover`. On touch-only devices (iOS Safari, Android Chrome) there is no persistent hover state — the button never becomes visible unless the user has a Bluetooth mouse. A user on iPhone cannot access Edit or Delete for any holding in the desktop table view.
+
+**Suggestion**
+
+Make the button always visible on mobile, hidden-until-hover only on true pointer devices:
+
+```diff
+- className="... opacity-0 group-hover:opacity-100 transition-opacity"
++ className="... opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+```
+
+At `md` (the breakpoint where the table first appears, primarily on tablets and desktops), the hover reveal still fires. Below `md` the table is hidden so this is a no-op. If the table ever appears at narrower widths in future, the button will already be always-visible.
+
+**Target files**: `src/components/accounts/holdings-table.tsx:156`
+
+---
+
+## M5) Login card `p-10` — over-padded on small phones (Medium)
+
+**What I observed**
+
+`src/app/login/page.tsx:31` and `:160` (Suspense fallback):
+
+The glassmorphic login card uses `p-10` (40 px on all sides). The card is `w-full max-w-md`, so on a 375 px phone (iPhone SE 2/3, iPhone 13 mini) it spans the full viewport width with 80 px total horizontal padding — leaving only 295 px for inner content. The `<h1 className="text-3xl font-extrabold">` title and the 12-px `h-12` Google button both fit, but it is tighter than necessary and the Suspense fallback skeleton (`:160`) has the same hard-coded `p-10`.
+
+**Suggestion**
+
+Add a responsive padding variant:
+
+```diff
+- className="... p-10 ..."   {/* line 31 */}
++ className="... p-6 sm:p-10 ..."
+
+- className="... p-10 space-y-8 ..."  {/* line 160, Suspense fallback */}
++ className="... p-6 sm:p-10 space-y-8 ..."
+```
+
+On 375 px this widens the inner content area from 295 px to 315 px — a modest but noticeable improvement in breathing room.
+
+**Target files**: `src/app/login/page.tsx:31`, `src/app/login/page.tsx:160`
+
+---
+
+## M6) Manual holding form: `grid-cols-2` with no mobile stack (Medium)
+
+**What I observed**
+
+`src/components/accounts/holding-form.tsx:191`:
+
+When the user chooses "Enter manually" in the holding form, the Symbol and Asset Type inputs render in a fixed two-column grid:
+
+```tsx
+<div className="grid grid-cols-2 gap-4">
+```
+
+No responsive override. On a 320 px iPhone SE (or any phone inside a dialog sheet with added horizontal chrome), the two columns are approximately 130 px each after the 16 px gap — the Asset Type `<select>` label and the symbol `<Input placeholder="e.g. AAPL">` become cramped, and the native select trigger may clip its displayed text.
+
+**Suggestion**
+
+Collapse to single column on mobile:
+
+```diff
+- <div className="grid grid-cols-2 gap-4">
++ <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+```
+
+On `sm+` (≥ 640 px) the two-column layout restores, covering most tablets and larger phones in landscape.
+
+**Target files**: `src/components/accounts/holding-form.tsx:191`
+
+---
+
+## M7) Settings page: currency and language selects stay at `w-[200px]` when stacked (Low)
+
+**What I observed**
+
+`src/components/settings/settings-form.tsx:107` and `:137`:
+
+Both the Currency and Language settings rows use `flex-col sm:flex-row` to stack vertically on mobile. The wrapper div is `flex items-center gap-2 sm:w-auto w-full`, which correctly stretches full-width when stacked. However the `SelectTrigger` inside keeps `w-[200px]`:
+
+```tsx
+<SelectTrigger className="w-[200px]">
+```
+
+When the row wraps on a 375 px phone, the flex container fills the full row width but the Select only occupies 200 px — the Save button appears beside the select rather than on its own line, creating an asymmetric layout. On very small phones (320 px) the Save button label may be cut.
+
+**Suggestion**
+
+Allow the Select to stretch full-width on mobile:
+
+```diff
+- <SelectTrigger className="w-[200px]">
++ <SelectTrigger className="w-full sm:w-[200px]">
+```
+
+Apply to both the Currency select (line 107) and the Language select (line 137). The `sm:w-[200px]` restores the fixed width on tablet+.
+
+**Target files**: `src/components/settings/settings-form.tsx:107`, `src/components/settings/settings-form.tsx:137`
+
+---
+
+## M8) Analysis `noData` empty state has no actionable guidance (Low)
+
+**What I observed**
+
+`src/components/analysis/analysis-view.tsx:171`:
+
+```tsx
+<div className="rounded-xl border border-dashed border-border/60 bg-card/50 p-12 text-center text-sm text-muted-foreground">
+  {t("noData")}
+</div>
+```
+
+When a user has no snapshots yet, this renders a lone translated string (e.g. "No data available") with no explanation of why, no link to take action, and no estimated timeline. New users who land on `/analysis` directly will not understand that the daily cron must run at least once to populate this page.
+
+**Suggestion**
+
+Extend the empty state with a secondary explanation and a navigation link:
+
+```tsx
+<div className="rounded-xl border border-dashed border-border/60 bg-card/50 p-12 text-center space-y-3">
+  <p className="text-sm text-muted-foreground">{t("noData")}</p>
+  <p className="text-xs text-muted-foreground/70">
+    {t("noDataHint")} {/* "Snapshots are captured daily. Check back tomorrow." */}
+  </p>
+  <Link
+    href="/history"
+    className="text-xs text-primary underline underline-offset-2 hover:text-primary/80"
+  >
+    {t("noDataLink")} {/* "View snapshot history →" */}
+  </Link>
+</div>
+```
+
+Add `analysis.noDataHint` and `analysis.noDataLink` keys to both `messages/en-US.json` and `messages/zh-TW.json`.
+
+**Target files**: `src/components/analysis/analysis-view.tsx:171`, `messages/en-US.json`, `messages/zh-TW.json`
+
+---
+
+## M9) Mobile holdings card list renders all rows — no pagination for large accounts (Low)
+
+**What I observed**
+
+`src/components/accounts/account-detail.tsx` (swipeable card view, `md:hidden` block):
+
+The mobile card view iterates over every holding and renders a full swipeable `HoldingRow` for each. For an account with 50+ positions (e.g. a diversified ETF portfolio + individual stocks + crypto) this produces a very long page — the mobile shell already handles pull-to-refresh and bottom-nav clearance, but with 60+ holdings and their associated motion elements the initial paint and JS hydration time increase noticeably. There is no visual affordance for how many holdings exist before scrolling.
+
+**Suggestion**
+
+Add a client-side `useState` slice — render the first 20 holdings on mount and show a "Show X more" button at the bottom:
+
+```tsx
+const [showAll, setShowAll] = useState(false);
+const visibleHoldings = showAll ? sortedHoldings : sortedHoldings.slice(0, 20);
+
+// ...render visibleHoldings...
+
+{
+  !showAll && sortedHoldings.length > 20 && (
+    <button
+      onClick={() => setShowAll(true)}
+      className="w-full py-3 text-sm text-primary hover:text-primary/80 transition-colors"
+    >
+      {t("showMore", { count: sortedHoldings.length - 20 })}
+    </button>
+  );
+}
+```
+
+No virtual-scroll library needed. The threshold of 20 covers ~95 % of real accounts without truncating. Add `account.showMore` and `account.showMoreCount` i18n keys.
+
+**Target files**: `src/components/accounts/account-detail.tsx` (mobile swipeable section), `messages/en-US.json`, `messages/zh-TW.json`
+
+---
+
+## Recommended rollout order
+
+1. **M3 — Range chip touch targets** — one-line `py-2 sm:py-1` change; highest user-visible impact per effort.
+2. **M4 — Holdings table ⋯ always visible on touch** — one-line class change; fixes a broken interaction.
+3. **M5 — Login card padding** — two-line change; improves first impression on small phones.
+4. **M1 — Holdings table column hiding at md** — `hidden lg:table-cell` on 4 cells; quick density win.
+5. **M6 — Manual holding form grid stack** — one-line `grid-cols-1 sm:grid-cols-2`; prevents input clipping.
+6. **M7 — Settings selects full-width** — two-line `w-full sm:w-[200px]`; polish fix.
+7. **M8 — Analysis noData guidance** — small JSX + 4 i18n keys; improves new-user onboarding.
+8. **M9 — Holdings list pagination** — ~15 lines of state + JSX; reduces paint cost for power users.
+9. **M2 — Analysis sub-tab nav** — largest effort; wrap charts in `<Tabs>` with conditional mobile/desktop rendering.
