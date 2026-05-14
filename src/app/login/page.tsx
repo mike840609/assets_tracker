@@ -28,7 +28,7 @@ async function LoginContent() {
       />
 
       {/* Glassmorphism Card */}
-      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col justify-center space-y-8 p-10 bg-card/80 backdrop-blur-xl border border-border/50 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.5)] rounded-3xl animate-slide-in-bottom">
+      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col justify-center space-y-8 p-6 sm:p-10 bg-card/80 backdrop-blur-xl border border-border/50 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.5)] rounded-3xl animate-slide-in-bottom">
         <div className="flex flex-col space-y-3 text-center">
           <div
             className="w-16 h-16 mx-auto rounded-xl flex items-center justify-center mb-4 relative group shadow-lg"
@@ -157,7 +157,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen w-full items-center justify-center bg-background">
-          <div className="w-full max-w-md rounded-3xl bg-card/80 p-10 space-y-8 animate-pulse">
+          <div className="w-full max-w-md rounded-3xl bg-card/80 p-6 sm:p-10 space-y-8 animate-pulse">
             <div className="flex flex-col items-center space-y-3">
               <div className="w-16 h-16 rounded-xl bg-primary/20" />
               <div className="h-8 w-48 rounded bg-muted" />

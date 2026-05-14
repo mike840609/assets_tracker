@@ -337,7 +337,8 @@
     "accountUpdated": "帳戶已更新",
     "updateFailed": "更新帳戶失敗",
     "labelAccountName": "帳戶名稱",
-    "placeholderAccountName": "例如：玉山銀行"
+    "placeholderAccountName": "例如：玉山銀行",
+    "showMore": "顯示另外 {count} 個"
   },
   "dataManagement": {
     "title": "資料管理",
