@@ -243,7 +243,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
       </Suspense>
 
       {/* Charts grid — trend chart + allocation + currency exposure */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6 items-start animate-in fade-in slide-in-from-bottom-8 motion-slow fill-mode-both delay-75">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6 items-stretch animate-in fade-in slide-in-from-bottom-8 motion-slow fill-mode-both delay-75">
         <div className={`${CARD_CLASS} lg:col-span-2 xl:col-span-1`}>
           <Suspense fallback={<div className="h-[350px] animate-pulse bg-muted rounded-lg" />}>
             <TrendChartSection userId={userId} baseCurrency={baseCurrency} />
