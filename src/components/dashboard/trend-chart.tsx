@@ -168,7 +168,7 @@ export function TrendChart({
 
   return (
     <Card className="border-0 bg-transparent shadow-none h-full flex flex-col pb-0">
-      <CardHeader className="flex flex-row items-start justify-between pb-2 px-2 sm:px-4">
+      <CardHeader className="flex flex-col gap-2 pb-2 px-2 sm:px-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
           {periodChange && (
@@ -197,7 +197,7 @@ export function TrendChart({
           )}
         </div>
         {!hideRangeFilter && (
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap">
             {ranges.map((r) => (
               <button
                 key={r.label}
