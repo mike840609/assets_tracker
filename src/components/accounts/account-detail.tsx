@@ -61,6 +61,7 @@ export function AccountDetail({
   const [sortField, setSortField] = useState<HoldingSortField>("marketValue");
   const [sortDirection, setSortDirection] = useState<SortOrder>("desc");
   const [optimisticHiddenIds, setOptimisticHiddenIds] = useState<Set<string>>(new Set());
+  const [showAllMobileHoldings, setShowAllMobileHoldings] = useState(false);
   const pendingHoldingDeletes = useRef<Set<string>>(new Set());
 
   // Commit any in-flight holding deletes if the user refreshes/navigates before the toast expires.
@@ -136,6 +137,9 @@ export function AccountDetail({
 
   const isBank = account.category === "BANK";
   const filteredSortedHoldings = sortedHoldings.filter((h) => !optimisticHiddenIds.has(h.id));
+  const visibleMobileHoldings = showAllMobileHoldings
+    ? filteredSortedHoldings
+    : filteredSortedHoldings.slice(0, 20);
 
   async function saveBalance(newBalance: number, note?: string) {
     await fetch(`/api/accounts/${account.id}`, {
@@ -363,7 +367,7 @@ export function AccountDetail({
                     </div>
                   )}
                   <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
-                    {filteredSortedHoldings.map((h, index) => (
+                    {visibleMobileHoldings.map((h, index) => (
                       <div key={h.id}>
                         {index > 0 && <div className="h-px bg-border/60 mx-4" />}
                         <HoldingRow
@@ -376,6 +380,14 @@ export function AccountDetail({
                       </div>
                     ))}
                   </div>
+                  {!showAllMobileHoldings && filteredSortedHoldings.length > 20 && (
+                    <button
+                      onClick={() => setShowAllMobileHoldings(true)}
+                      className="w-full py-3 text-sm text-primary hover:text-primary/80 transition-colors"
+                    >
+                      {t("accountDetail.showMore", { count: filteredSortedHoldings.length - 20 })}
+                    </button>
+                  )}
                 </>
               )}
             </CardContent>

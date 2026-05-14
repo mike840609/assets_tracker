@@ -337,7 +337,8 @@
     "accountUpdated": "Account updated",
     "updateFailed": "Failed to update account",
     "labelAccountName": "Account Name",
-    "placeholderAccountName": "e.g. Chase Checking"
+    "placeholderAccountName": "e.g. Chase Checking",
+    "showMore": "Show {count} more"
   },
   "dataManagement": {
     "title": "Data Management",
