@@ -207,6 +207,7 @@
     "noAccounts": "尚無帳戶。新增您的第一個帳戶以開始使用。",
     "assets": "資產",
     "liabilities": "負債",
+    "netWorth": "淨值",
     "nAccounts": "{count} 個帳戶",
     "nHoldings": "{count} 個持倉",
     "deleting": "刪除中...",

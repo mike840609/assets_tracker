@@ -5,11 +5,10 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
-import { formatCurrency, formatQuantity } from "@/lib/currencies";
+import { formatCurrency } from "@/lib/currencies";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -180,6 +179,15 @@ export function AccountsList({
       return 0;
     });
   }
+
+  const totalAssets = useMemo(
+    () => assets.reduce((s, a) => s + (accountBaseValues[a.id] ?? 0), 0),
+    [assets, accountBaseValues],
+  );
+  const totalLiabilities = useMemo(
+    () => liabilities.reduce((s, a) => s + (accountBaseValues[a.id] ?? 0), 0),
+    [liabilities, accountBaseValues],
+  );
 
   const assetsByCategory = useMemo(() => {
     const grouped: Record<string, SerializedAccountWithHoldings[]> = {};
@@ -390,6 +398,14 @@ export function AccountsList({
 
       {/* Mobile card view — hidden on lg+ */}
       <div className="lg:hidden space-y-6">
+        {accounts.length > 0 && (
+          <MobileSummaryStrip
+            totalAssets={totalAssets}
+            totalLiabilities={totalLiabilities}
+            baseCurrency={baseCurrency}
+          />
+        )}
+
         {assetsByCategory.length > 0 && (
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">
@@ -536,6 +552,44 @@ function DesktopAccountRow({
   );
 }
 
+function MobileSummaryStrip({
+  totalAssets,
+  totalLiabilities,
+  baseCurrency,
+}: {
+  totalAssets: number;
+  totalLiabilities: number;
+  baseCurrency: string;
+}) {
+  const { privacyMode } = usePrivacyMode();
+  const t = useTranslations();
+  const netWorth = totalAssets - totalLiabilities;
+  return (
+    <div className="rounded-xl border bg-muted/20 px-4 py-3 grid grid-cols-3 gap-2 text-center">
+      <div>
+        <p className="text-xs text-muted-foreground mb-0.5">{t("accountsList.assets")}</p>
+        <p className="text-sm font-bold tabular-nums text-green-600 dark:text-green-400">
+          {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency, true)}
+        </p>
+      </div>
+      <div className="border-x border-border/40">
+        <p className="text-xs text-muted-foreground mb-0.5">{t("accountsList.netWorth")}</p>
+        <p
+          className={`text-sm font-bold tabular-nums ${netWorth >= 0 ? "text-foreground" : "text-destructive"}`}
+        >
+          {privacyMode ? HIDDEN : formatCurrency(netWorth, baseCurrency, true)}
+        </p>
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground mb-0.5">{t("accountsList.liabilities")}</p>
+        <p className="text-sm font-bold tabular-nums text-red-600 dark:text-red-400">
+          {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency, true)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function CategorySection({
   category,
   accounts,
@@ -668,6 +722,7 @@ function AccountCardWithHoldings({
 }) {
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
+  const t = useTranslations();
   const isCompact = density === "compact";
   const displayValue = getAccountValue(account, priceMap, ratesMap);
   const displayCurrency = account.currency;
@@ -678,11 +733,21 @@ function AccountCardWithHoldings({
   const holdingsWithValue = account.holdings.map((h) => {
     const price = priceMap[h.symbol] ?? null;
     const hc = h.currency || "USD";
-    const rate = hc === account.currency ? 1 : (ratesMap[`${hc}_${account.currency}`] ?? 1);
+    const hRate = hc === account.currency ? 1 : (ratesMap[`${hc}_${account.currency}`] ?? 1);
     const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
-    const marketValue = price !== null ? price * h.quantity * multiplier * rate : null;
+    const marketValue = price !== null ? price * h.quantity * multiplier * hRate : null;
     return { ...h, currentPrice: price, marketValue };
   });
+
+  const isBank = account.category === "BANK";
+  const hasHoldings = !isBank && holdingsWithValue.length > 0;
+
+  const subtitle = hasHoldings
+    ? t("accountsList.nHoldings", { count: account.holdings.length }) +
+      (account.cashBalance > 0
+        ? ` · ${privacyMode ? HIDDEN : formatCurrency(account.cashBalance, account.currency)} cash`
+        : "")
+    : null;
 
   return (
     <div className="relative group">
@@ -700,33 +765,27 @@ function AccountCardWithHoldings({
             <div className="flex items-start justify-between">
               <div className={isSelecting ? "pl-6" : "group-hover:pl-6 transition-all"}>
                 <p className="font-semibold">{account.name}</p>
+                {/* D: secondary subtitle line */}
+                {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
               </div>
-              <div className="flex flex-col items-end">
-                <div className="flex items-center gap-2">
-                  <p className="text-lg font-bold tabular-nums text-foreground">
-                    {privacyMode ? HIDDEN : formatCurrency(convertedValue, baseCurrency)}
+              {/* B: plain value + muted currency text, no badge */}
+              <div className="flex flex-col items-end flex-shrink-0 ml-3">
+                <p className="text-lg font-bold tabular-nums text-foreground">
+                  {privacyMode ? HIDDEN : formatCurrency(convertedValue, baseCurrency)}
+                </p>
+                {displayCurrency !== baseCurrency ? (
+                  <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+                    {privacyMode ? HIDDEN : formatCurrency(displayValue, displayCurrency)}
                   </p>
-                  <Badge
-                    variant="secondary"
-                    className="bg-foreground text-background hover:bg-foreground/90"
-                  >
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide">
                     {baseCurrency}
-                  </Badge>
-                </div>
-                {displayCurrency !== baseCurrency && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <p className="text-sm font-medium text-muted-foreground tabular-nums">
-                      {privacyMode ? HIDDEN : formatCurrency(displayValue, displayCurrency)}
-                    </p>
-                    <span className="text-xs font-semibold text-muted-foreground uppercase">
-                      {displayCurrency}
-                    </span>
-                  </div>
+                  </p>
                 )}
               </div>
             </div>
 
-            {account.category !== "BANK" && holdingsWithValue.length > 0 && (
+            {hasHoldings && (
               <div className={`mt-3 ${isSelecting ? "pl-6" : "group-hover:pl-6 transition-all"}`}>
                 <div className="space-y-1.5">
                   {holdingsWithValue.map((h) => (
@@ -734,24 +793,20 @@ function AccountCardWithHoldings({
                       key={h.id}
                       className="flex items-center justify-between py-1.5 border-t border-border/40 first:border-t-0"
                     >
+                      {/* C: symbol + name only, no qty column */}
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="text-xs font-mono font-medium text-muted-foreground w-16 flex-shrink-0 truncate">
                           {h.symbol}
                         </span>
                         <span className="text-sm truncate">{h.name}</span>
                       </div>
-                      <div className="flex items-center gap-3 flex-shrink-0 text-right">
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {formatQuantity(h.quantity, h.assetType)}
-                        </span>
-                        <span className="text-sm font-medium tabular-nums w-20 text-right">
-                          {privacyMode
-                            ? HIDDEN
-                            : h.marketValue !== null
-                              ? formatCurrency(h.marketValue, account.currency)
-                              : "—"}
-                        </span>
-                      </div>
+                      <span className="text-sm font-medium tabular-nums w-20 text-right flex-shrink-0">
+                        {privacyMode
+                          ? HIDDEN
+                          : h.marketValue !== null
+                            ? formatCurrency(h.marketValue, account.currency)
+                            : "—"}
+                      </span>
                     </div>
                   ))}
                 </div>

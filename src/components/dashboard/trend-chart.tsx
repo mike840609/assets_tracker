@@ -157,10 +157,45 @@ export function TrendChart({
     return snapshots.filter((s) => new Date(s.date) >= cutoff);
   }, [snapshots, selectedRange.days, hideRangeFilter]);
 
+  const periodChange = useMemo(() => {
+    if (filtered.length < 2) return null;
+    const first = filtered[0].netWorth;
+    const last = filtered[filtered.length - 1].netWorth;
+    const delta = last - first;
+    const pct = first !== 0 ? (delta / Math.abs(first)) * 100 : null;
+    return { delta, pct };
+  }, [filtered]);
+
   return (
     <Card className="border-0 bg-transparent shadow-none h-full flex flex-col pb-0">
-      <CardHeader className="flex flex-row items-center justify-between pb-2 px-2 sm:px-4">
-        <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
+      <CardHeader className="flex flex-row items-start justify-between pb-2 px-2 sm:px-4">
+        <div>
+          <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
+          {periodChange && (
+            <div
+              className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded text-xs font-semibold tabular-nums ${
+                periodChange.delta >= 0
+                  ? "bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-400"
+                  : "bg-red-50 dark:bg-red-950/50 text-destructive"
+              }`}
+            >
+              {privacyMode ? (
+                "***"
+              ) : (
+                <>
+                  {periodChange.delta >= 0 ? "+" : ""}
+                  {formatCurrency(periodChange.delta, baseCurrency)}
+                  {periodChange.pct !== null && (
+                    <span className="text-[11px] opacity-70">
+                      ({periodChange.delta >= 0 ? "+" : ""}
+                      {periodChange.pct.toFixed(1)}%)
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
         {!hideRangeFilter && (
           <div className="flex gap-1">
             {ranges.map((r) => (
