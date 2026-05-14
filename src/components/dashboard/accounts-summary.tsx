@@ -116,34 +116,42 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
           {accounts.map((account, index) => (
             <div key={account.id}>
               {index > 0 && <div className="h-px bg-border/60 mx-4" />}
-              <Link
-                href={`/accounts/${account.id}`}
-                prefetch={false}
-                className={`flex items-center gap-3 px-4 ${isCompact ? "py-1.5" : "py-3.5"} hover:bg-muted/40 active:bg-muted/60 transition-colors group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset`}
-                transitionTypes={["nav-forward"]}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
-                    {account.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {t(`categories.${account.category}`, { defaultValue: account.category })}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="text-right">
-                    <p className="text-sm font-medium tabular-nums">
-                      {privacyMode
-                        ? HIDDEN
-                        : formatCurrency(account.totalValueInBaseCurrency, summary.baseCurrency)}
+              <div className="relative overflow-hidden">
+                {!privacyMode && (
+                  <div
+                    className={`absolute inset-y-0 left-0 ${isAsset ? "bg-primary/5" : "bg-destructive/5"} transition-[width] duration-500`}
+                    style={{ width: `${getPercentage(account)}%` }}
+                  />
+                )}
+                <Link
+                  href={`/accounts/${account.id}`}
+                  prefetch={false}
+                  className={`relative flex items-center gap-3 px-4 ${isCompact ? "py-1.5" : "py-3.5"} hover:bg-muted/40 active:bg-muted/60 transition-colors group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset`}
+                  transitionTypes={["nav-forward"]}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                      {account.name}
                     </p>
-                    <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
-                      {privacyMode ? "—" : `${getPercentage(account).toFixed(1)}%`}
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {t(`categories.${account.category}`, { defaultValue: account.category })}
                     </p>
                   </div>
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-                </div>
-              </Link>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <p className="text-sm font-medium tabular-nums">
+                        {privacyMode
+                          ? HIDDEN
+                          : formatCurrency(account.totalValueInBaseCurrency, summary.baseCurrency)}
+                      </p>
+                      <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+                        {privacyMode ? "—" : `${getPercentage(account).toFixed(1)}%`}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+                  </div>
+                </Link>
+              </div>
             </div>
           ))}
           <div className="h-px bg-border/60" />

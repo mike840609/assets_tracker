@@ -207,6 +207,7 @@
     "noAccounts": "No accounts yet. Add your first account to get started.",
     "assets": "Assets",
     "liabilities": "Liabilities",
+    "netWorth": "Net Worth",
     "nAccounts": "{count, plural, one {# account} other {# accounts}}",
     "nHoldings": "{count, plural, one {# holding} other {# holdings}}",
     "deleting": "Deleting...",
