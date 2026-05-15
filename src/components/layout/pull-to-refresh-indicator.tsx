@@ -23,7 +23,7 @@ export function PullToRefreshIndicator() {
         isPulling ? "transition-none" : "transition-[transform,opacity] duration-300",
       )}
       style={{
-        top: 0,
+        top: "env(safe-area-inset-top)",
         transform: refreshing
           ? `translate(-50%, ${INDICATOR_REST_Y}px)`
           : `translate(-50%, ${pull - 44}px)`,
