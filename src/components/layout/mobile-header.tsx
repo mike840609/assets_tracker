@@ -33,7 +33,7 @@ export function MobileHeader() {
         "md:hidden sticky top-0 left-0 right-0 z-50 glass backdrop-blur-md",
         "px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))]",
         "flex items-center justify-between",
-        "border-b transition-[border-color,transform] motion-normal",
+        "border-t-0 border-x-0 border-b transition-[border-color,transform] motion-normal",
         hidden ? "-translate-y-full" : "translate-y-0",
         // Separator only appears once the large title is behind the bar (iOS behaviour)
         isVisible ? "border-transparent" : "border-border/50",
