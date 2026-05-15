@@ -341,17 +341,17 @@ html:active-view-transition-type(nav-back)::view-transition-new(root) {
 /* Anthropic — sandy neutrals (#faf9f5 / #141413) + coral orange (#d97757) */
 :root[data-color-schema="anthropic"] {
   --background: oklch(0.98 0.007 87);
-  --foreground: oklch(0.10 0.005 80);
+  --foreground: oklch(0.1 0.005 80);
   --card: oklch(0.99 0.005 87);
-  --card-foreground: oklch(0.10 0.005 80);
+  --card-foreground: oklch(0.1 0.005 80);
   --popover: oklch(0.99 0.005 87);
-  --popover-foreground: oklch(0.10 0.005 80);
+  --popover-foreground: oklch(0.1 0.005 80);
   --primary: oklch(0.63 0.15 37);
   --primary-foreground: oklch(0.98 0.005 37);
   --secondary: oklch(0.91 0.012 82);
   --secondary-foreground: oklch(0.15 0.006 80);
   --muted: oklch(0.91 0.012 82);
-  --muted-foreground: oklch(0.55 0.010 78);
+  --muted-foreground: oklch(0.55 0.01 78);
   --accent: oklch(0.91 0.012 82);
   --accent-foreground: oklch(0.15 0.006 80);
   --border: oklch(0.89 0.012 82);
@@ -361,7 +361,7 @@ html:active-view-transition-type(nav-back)::view-transition-new(root) {
   --sidebar-foreground: oklch(0.15 0.006 80);
   --sidebar-primary: oklch(0.63 0.15 37);
   --sidebar-primary-foreground: oklch(0.98 0.005 37);
-  --sidebar-accent: oklch(0.93 0.010 83);
+  --sidebar-accent: oklch(0.93 0.01 83);
   --sidebar-accent-foreground: oklch(0.15 0.006 80);
   --sidebar-border: oklch(0.88 0.012 82);
   --sidebar-ring: oklch(0.63 0.15 37);
@@ -372,14 +372,14 @@ html:active-view-transition-type(nav-back)::view-transition-new(root) {
   --chart-5: oklch(0.72 0.09 345);
 }
 .dark[data-color-schema="anthropic"] {
-  --background: oklch(0.10 0.005 80);
+  --background: oklch(0.1 0.005 80);
   --foreground: oklch(0.98 0.007 87);
   --card: oklch(0.15 0.006 80);
   --card-foreground: oklch(0.98 0.007 87);
   --popover: oklch(0.17 0.006 80);
   --popover-foreground: oklch(0.98 0.007 87);
   --primary: oklch(0.75 0.15 37);
-  --primary-foreground: oklch(0.10 0.005 37);
+  --primary-foreground: oklch(0.1 0.005 37);
   --secondary: oklch(0.19 0.006 80);
   --secondary-foreground: oklch(0.94 0.006 85);
   --muted: oklch(0.17 0.005 80);
@@ -392,16 +392,16 @@ html:active-view-transition-type(nav-back)::view-transition-new(root) {
   --sidebar: oklch(0.08 0.004 80);
   --sidebar-foreground: oklch(0.94 0.006 85);
   --sidebar-primary: oklch(0.75 0.15 37);
-  --sidebar-primary-foreground: oklch(0.10 0.005 37);
+  --sidebar-primary-foreground: oklch(0.1 0.005 37);
   --sidebar-accent: oklch(0.17 0.005 80);
   --sidebar-accent-foreground: oklch(0.94 0.006 85);
   --sidebar-border: oklch(0.23 0.007 80);
   --sidebar-ring: oklch(0.75 0.15 37);
   --chart-1: oklch(0.78 0.15 37);
   --chart-2: oklch(0.75 0.09 235);
-  --chart-3: oklch(0.70 0.08 125);
+  --chart-3: oklch(0.7 0.08 125);
   --chart-4: oklch(0.82 0.13 55);
-  --chart-5: oklch(0.84 0.10 345);
+  --chart-5: oklch(0.84 0.1 345);
 }
 [data-color-schema="anthropic"] body {
   background-image:
