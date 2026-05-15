@@ -13,9 +13,17 @@ export function MobileMainShell({ children }: { children: React.ReactNode }) {
 
   const mainRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
+  const scrollPositions = useRef(new Map<string, number>());
 
   useEffect(() => {
-    mainRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    const el = mainRef.current;
+    if (!el) return;
+    const saved = scrollPositions.current.get(pathname);
+    el.scrollTo({ top: saved ?? 0, behavior: "instant" });
+    return () => {
+      // Save scroll position of the route we're leaving
+      scrollPositions.current.set(pathname, el.scrollTop);
+    };
   }, [pathname]);
 
   return (
