@@ -228,7 +228,10 @@
     "colName": "名稱",
     "colCategory": "類別",
     "colHoldings": "持倉",
-    "colValue": "市值"
+    "colValue": "市值",
+    "colCurrency": "幣別",
+    "colNative": "原幣",
+    "colAllocation": "佔比"
   },
   "accountForm": {
     "title": "新增帳戶",

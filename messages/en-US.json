@@ -228,7 +228,10 @@
     "colName": "Name",
     "colCategory": "Category",
     "colHoldings": "Holdings",
-    "colValue": "Value"
+    "colValue": "Value",
+    "colCurrency": "Currency",
+    "colNative": "Native",
+    "colAllocation": "Allocation"
   },
   "accountForm": {
     "title": "Add Account",

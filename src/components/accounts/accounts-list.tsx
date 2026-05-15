@@ -325,8 +325,14 @@ export function AccountsList({
                 <th className="px-4 py-3 text-left font-semibold">
                   {t("accountsList.colCategory")}
                 </th>
+                <th className="hidden lg:table-cell px-4 py-3 text-left font-semibold w-16">
+                  {t("accountsList.colCurrency")}
+                </th>
                 <th className="px-4 py-3 text-left font-semibold">
                   {t("accountsList.colHoldings")}
+                </th>
+                <th className="hidden lg:table-cell px-4 py-3 text-right font-semibold">
+                  {t("accountsList.colNative")}
                 </th>
                 <th
                   className="px-4 py-3 text-right font-semibold cursor-pointer select-none hover:text-foreground"
@@ -337,6 +343,9 @@ export function AccountsList({
                     <SortIcon active={sortKey === "value"} dir={sortDir} />
                   </div>
                 </th>
+                <th className="hidden lg:table-cell px-4 py-3 text-right font-semibold w-24">
+                  {t("accountsList.colAllocation")}
+                </th>
                 <th className="w-12 px-4 py-3" />
               </tr>
             </thead>
@@ -345,7 +354,7 @@ export function AccountsList({
                 <>
                   <tr className="bg-green-50/60 dark:bg-green-950/20">
                     <td
-                      colSpan={6}
+                      colSpan={9}
                       className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-green-700 dark:text-green-400"
                     >
                       {t("accountsList.assets")}
@@ -362,6 +371,7 @@ export function AccountsList({
                       isSelected={selected.has(account.id)}
                       onToggle={() => toggleSelect(account.id)}
                       onNavigate={() => router.push(`/accounts/${account.id}`)}
+                      allocationDenominator={totalAssets}
                     />
                   ))}
                 </>
@@ -370,7 +380,7 @@ export function AccountsList({
                 <>
                   <tr className="bg-red-50/60 dark:bg-red-950/20">
                     <td
-                      colSpan={6}
+                      colSpan={9}
                       className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-red-700 dark:text-red-400"
                     >
                       {t("accountsList.liabilities")}
@@ -387,6 +397,7 @@ export function AccountsList({
                       isSelected={selected.has(account.id)}
                       onToggle={() => toggleSelect(account.id)}
                       onNavigate={() => router.push(`/accounts/${account.id}`)}
+                      allocationDenominator={totalLiabilities}
                     />
                   ))}
                 </>
@@ -494,6 +505,7 @@ function DesktopAccountRow({
   isSelected,
   onToggle,
   onNavigate,
+  allocationDenominator,
 }: {
   account: SerializedAccountWithHoldings;
   baseValue: number;
@@ -503,6 +515,7 @@ function DesktopAccountRow({
   isSelected: boolean;
   onToggle: () => void;
   onNavigate: () => void;
+  allocationDenominator: number;
 }) {
   const { privacyMode } = usePrivacyMode();
   const t = useTranslations();
@@ -510,6 +523,9 @@ function DesktopAccountRow({
   const icon = CATEGORY_ICONS[account.category] ?? "📁";
   const label = t(`categories.${account.category}`, { defaultValue: account.category });
   const nativeValue = getAccountValue(account, priceMap, ratesMap);
+  const isSameCurrency = account.currency === baseCurrency;
+  const pct =
+    allocationDenominator > 0 ? (Math.abs(baseValue) / allocationDenominator) * 100 : null;
 
   return (
     <tr
@@ -519,7 +535,11 @@ function DesktopAccountRow({
       <td className="px-4 py-3.5 w-10" onClick={(e) => e.stopPropagation()}>
         <Checkbox checked={isSelected} onCheckedChange={onToggle} />
       </td>
-      <td className="px-4 py-3.5 font-medium">{account.name}</td>
+      <td className="px-4 py-3.5 font-medium max-w-[220px] xl:max-w-[280px]">
+        <span className="truncate block" title={account.name}>
+          {account.name}
+        </span>
+      </td>
       <td className="px-4 py-3.5">
         <span
           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${colors.bg} ${colors.border} ${colors.text}`}
@@ -528,6 +548,9 @@ function DesktopAccountRow({
           <span>{label}</span>
         </span>
       </td>
+      <td className="hidden lg:table-cell px-4 py-3.5 text-xs font-mono text-muted-foreground w-16">
+        {account.currency}
+      </td>
       <td className="px-4 py-3.5 text-sm text-muted-foreground tabular-nums">
         {account.holdings.length > 0 ? (
           t("accountsList.nHoldings", { count: account.holdings.length })
@@ -535,15 +558,34 @@ function DesktopAccountRow({
           <span className="text-muted-foreground/40">—</span>
         )}
       </td>
+      <td className="hidden lg:table-cell px-4 py-3.5 text-right text-sm text-muted-foreground tabular-nums">
+        {isSameCurrency ? (
+          <span className="text-muted-foreground/40">—</span>
+        ) : privacyMode ? (
+          HIDDEN
+        ) : (
+          formatCurrency(nativeValue, account.currency)
+        )}
+      </td>
       <td className="px-4 py-3.5 text-right">
         <p className="font-semibold tabular-nums">
           {privacyMode ? HIDDEN : formatCurrency(baseValue, baseCurrency)}
         </p>
-        {account.currency !== baseCurrency && (
-          <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
-            {privacyMode ? HIDDEN : formatCurrency(nativeValue, account.currency)}
-          </p>
-        )}
+      </td>
+      <td className="hidden lg:table-cell px-4 py-3.5 text-right w-24">
+        <div className="flex flex-col items-end gap-1">
+          <span className="tabular-nums text-xs text-muted-foreground">
+            {privacyMode ? "—" : pct !== null ? `${pct.toFixed(1)}%` : "—"}
+          </span>
+          {!privacyMode && pct !== null && (
+            <div className="w-14 h-1 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full"
+                style={{ width: `${Math.min(pct, 100)}%` }}
+              />
+            </div>
+          )}
+        </div>
       </td>
       <td className="px-4 py-3.5 w-12 text-center">
         <ChevronRight className="h-4 w-4 text-muted-foreground mx-auto group-hover:translate-x-0.5 transition-transform" />
