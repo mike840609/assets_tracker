@@ -717,7 +717,7 @@ Mirrors the Bloomberg/Robinhood pattern of keeping secondary context in a persis
 
 **Target files**: `src/components/accounts/accounts-list.tsx`
 
-> **Implemented**: `accounts-list.tsx` now renders a `hidden lg:block` data table alongside the existing `lg:hidden` card view. Table columns: checkbox | Name ↑↓ | Category (icon + label badge) | Holdings | Value ↑↓ | →. Assets and Liabilities appear as tinted group-header rows inside `<tbody>`. Clicking a row navigates to the account detail; checkboxes stop propagation so selection works independently. Sort defaults to Value descending; clicking Name or Value header toggles asc/desc with a chevron indicator. Native currency shown as a secondary line when it differs from base currency. Four new i18n keys added (`colName`, `colCategory`, `colHoldings`, `colValue`) in both `en-US.json` and `zh-TW.json`. Mobile card view unchanged.
+> **Implemented**: `accounts-list.tsx` now renders a `hidden lg:block` data table alongside the existing `lg:hidden` card view. Table columns: checkbox | Name ↑↓ | Category (icon + label badge) | Currency | Holdings | Native value | Value ↑↓ | Allocation % + bar | →. New columns at `lg+`: Currency (ISO code, monospace), Native value (em-dash when same as base), Allocation % with a 56px inline progress bar (mirrors the holdings-table weight bar). Assets and Liabilities appear as tinted group-header rows inside `<tbody>`; allocation denominator is scoped per section (assets vs. liabilities) so bars stay 0–100%. Clicking a row navigates to the account detail; checkboxes stop propagation. Sort stays Name/Value only (allocation order = value order within a section). Seven i18n keys across both locales. Mobile card view unchanged.
 
 ---
 
