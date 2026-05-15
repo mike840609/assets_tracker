@@ -35,10 +35,8 @@ export function MobileHeader() {
         "shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)]",
         "px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))]",
         "flex items-center justify-between",
-        "border-b transition-[border-color,transform] motion-normal",
+        "transition-transform motion-normal",
         hidden ? "-translate-y-full" : "translate-y-0",
-        // Separator only appears once the large title is behind the bar (iOS behaviour)
-        isVisible ? "border-transparent" : "border-border/50",
       )}
     >
       {/* Left: logo + app name — fades away when the large title scrolls out */}
