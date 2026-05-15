@@ -48,7 +48,6 @@ model Account {
   holdings         Holding[]
   cashTransactions CashTransaction[]
 
-  @@index([userId])
   @@index([userId, isActive])
 }
 
@@ -86,8 +85,6 @@ model Holding {
   transactions       HoldingTransaction[]
 
   @@unique([accountId, symbol])
-  @@index([symbol])
-  @@index([assetType, expiration])
 }
 
 enum TransactionType {
@@ -158,7 +155,6 @@ model NetWorthSnapshot {
   createdAt        DateTime @default(now())
 
   @@unique([userId, date, baseCurrency])
-  @@index([userId])
   @@index([userId, date(sort: Desc)])
 }
 

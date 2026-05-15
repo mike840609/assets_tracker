@@ -25,7 +25,7 @@ async function fetchUserAccountsWithHoldingsInner(
   "use cache";
   cacheTag("accounts");
   cacheTag(`accounts:${userId}`);
-  cacheLife("minutes");
+  cacheLife("hours");
   const raw = await prisma.account.findMany({
     where: { userId, isActive: true },
     include: { holdings: { where: { quantity: { gt: 0 } } } },

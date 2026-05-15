@@ -14,7 +14,7 @@ const RATE_FETCH_TIMEOUT_MS = 1200;
 async function getCachedExchangeRates(): Promise<Record<string, number>> {
   "use cache";
   cacheTag("exchange-rates");
-  cacheLife("minutes");
+  cacheLife("hours");
   const rates = await prisma.exchangeRate.findMany({
     select: { fromCurrency: true, toCurrency: true, rate: true },
   });

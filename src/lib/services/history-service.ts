@@ -73,7 +73,7 @@ export async function getNormalizedHistory(
   cacheTag("snapshots");
   cacheTag("net-worth");
   cacheTag(`history:${userId}`);
-  cacheLife("minutes");
+  cacheLife("hours");
 
   const fromDate = new Date();
   fromDate.setDate(fromDate.getDate() - DEFAULT_HISTORY_DAYS);
@@ -122,7 +122,7 @@ async function fetchFullHistoryCached(
   cacheTag("snapshots");
   cacheTag("net-worth");
   cacheTag(`history:${userId}`);
-  cacheLife("minutes");
+  cacheLife("hours");
 
   const [snapshotsRaw, allRatesMap] = await Promise.all([
     prisma.netWorthSnapshot.findMany({
