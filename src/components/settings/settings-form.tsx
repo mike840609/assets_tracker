@@ -21,7 +21,7 @@ import { Check } from "lucide-react";
 
 const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
   { id: "emerald", light: "#22c55e", dark: "#4ade80" },
-  { id: "anthropic", light: "#d4724a", dark: "#e8916e" },
+  { id: "anthropic", light: "#d97757", dark: "#e8916e" },
   { id: "ocean", light: "#3b82f6", dark: "#60a5fa" },
   { id: "violet", light: "#8b5cf6", dark: "#a78bfa" },
   { id: "amber", light: "#f59e0b", dark: "#fbbf24" },
