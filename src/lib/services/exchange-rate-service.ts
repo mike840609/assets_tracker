@@ -175,15 +175,11 @@ export const getExchangeRate = cache(async function getExchangeRate(
 ): Promise<number> {
   if (from === to) return 1;
 
-  // Fast path: check DB (no timeout needed for DB queries)
-  const cached = await prisma.exchangeRate.findFirst({
-    where: { fromCurrency: from, toCurrency: to },
-  });
-  if (cached) return Number(cached.rate);
+  // Fast path: check DB via primary key (id = "${from}_${to}")
+  const direct = await prisma.exchangeRate.findUnique({ where: { id: `${from}_${to}` } });
+  if (direct) return Number(direct.rate);
 
-  const inverse = await prisma.exchangeRate.findFirst({
-    where: { fromCurrency: to, toCurrency: from },
-  });
+  const inverse = await prisma.exchangeRate.findUnique({ where: { id: `${to}_${from}` } });
   if (inverse) return 1 / Number(inverse.rate);
 
   // Slow path: fetch from external APIs (with timeout)

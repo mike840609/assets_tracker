@@ -20,7 +20,7 @@ function createPrismaClient() {
         const start = Date.now();
         const result = await query(args);
         const durationMs = Date.now() - start;
-        if (durationMs > 100) {
+        if (durationMs > 1000) {
           // Dynamic import avoids a circular-module issue at startup
           const { log } = await import("@/lib/logger");
           log.warn("prisma.slow_query", { model, operation, durationMs });

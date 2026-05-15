@@ -269,23 +269,33 @@ export async function getMonthlyCashFlow(
   userId: string,
   baseCurrency: string,
 ): Promise<MonthlyContribution[]> {
-  const [transactions, allRatesMap] = await Promise.all([
-    prisma.cashTransaction.findMany({
-      where: {
-        account: { userId },
-        type: { in: ["DEPOSIT", "WITHDRAWAL"] },
-      },
-      include: { account: { select: { currency: true } } },
-      orderBy: { createdAt: "asc" },
-    }),
+  "use cache";
+  cacheTag(`accounts:${userId}`);
+  cacheTag(`history:${userId}`);
+  cacheLife("hours");
+
+  const [accounts, allRatesMap] = await Promise.all([
+    prisma.account.findMany({ where: { userId }, select: { id: true, currency: true } }),
     getAllExchangeRates(),
   ]);
+
+  const accountCurrencyMap = new Map(accounts.map((a) => [a.id, a.currency]));
+
+  const transactions = await prisma.cashTransaction.findMany({
+    where: {
+      accountId: { in: accounts.map((a) => a.id) },
+      type: { in: ["DEPOSIT", "WITHDRAWAL"] },
+    },
+    select: { amount: true, type: true, createdAt: true, accountId: true },
+    orderBy: { createdAt: "asc" },
+  });
 
   const byMonth = new Map<string, number>();
 
   for (const tx of transactions) {
     const monthKey = tx.createdAt.toISOString().slice(0, 7); // "YYYY-MM"
-    const rate = resolveRate(allRatesMap, tx.account.currency, baseCurrency) ?? 1;
+    const currency = accountCurrencyMap.get(tx.accountId) ?? "USD";
+    const rate = resolveRate(allRatesMap, currency, baseCurrency) ?? 1;
     const amount = Number(tx.amount) * rate;
     const signed = tx.type === "DEPOSIT" ? amount : -amount;
     byMonth.set(monthKey, (byMonth.get(monthKey) ?? 0) + signed);
