@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { ColorSchemaProvider } from "@/components/layout/color-schema-context";
 import { LazyToaster } from "@/components/layout/lazy-toaster";
 import { CustomSpeedInsights } from "@/components/layout/speed-insights";
 import { Analytics } from "@vercel/analytics/next";
@@ -286,19 +287,21 @@ export default function RootLayout({
       </head>
       <body className="h-full flex flex-col md:flex-row overflow-hidden bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          {/*
-           * LocaleProviders reads the NEXT_LOCALE cookie — a runtime API.
-           * Suspense keeps this cookie read out of the prerender pass so
-           * static routes can produce a ◐ (Partial Prerender) shell.
-           * The fallback is a non-null element to avoid the Next.js
-           * "empty fallback above document body" anti-pattern.
-           */}
-          <Suspense fallback={<span />}>
-            <LocaleProviders>{children}</LocaleProviders>
-          </Suspense>
-          <LazyToaster />
-          <Analytics />
-          <CustomSpeedInsights />
+          <ColorSchemaProvider>
+            {/*
+             * LocaleProviders reads the NEXT_LOCALE cookie — a runtime API.
+             * Suspense keeps this cookie read out of the prerender pass so
+             * static routes can produce a ◐ (Partial Prerender) shell.
+             * The fallback is a non-null element to avoid the Next.js
+             * "empty fallback above document body" anti-pattern.
+             */}
+            <Suspense fallback={<span />}>
+              <LocaleProviders>{children}</LocaleProviders>
+            </Suspense>
+            <LazyToaster />
+            <Analytics />
+            <CustomSpeedInsights />
+          </ColorSchemaProvider>
         </ThemeProvider>
       </body>
     </html>
