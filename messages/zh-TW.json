@@ -80,6 +80,16 @@
     "densityDescription": "調整卡片與列的間距",
     "densityComfortable": "舒適",
     "densityCompact": "緊湊",
+    "colorSchema": "配色方案",
+    "colorSchemaDescription": "選擇淺色與深色模式的主題色彩",
+    "colorSchemas": {
+      "emerald": "翠綠",
+      "anthropic": "Anthropic",
+      "ocean": "海洋藍",
+      "violet": "紫羅蘭",
+      "amber": "琥珀金",
+      "rose": "玫瑰紅"
+    },
     "signOut": "登出",
     "signOutDesc": "安全地登出此裝置上的帳戶。",
     "dangerZone": "危險區域"

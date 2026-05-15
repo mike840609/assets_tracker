@@ -80,6 +80,16 @@
     "densityDescription": "Control the spacing of cards and rows",
     "densityComfortable": "Comfortable",
     "densityCompact": "Compact",
+    "colorSchema": "Color Schema",
+    "colorSchemaDescription": "Choose an accent color for light and dark mode",
+    "colorSchemas": {
+      "emerald": "Emerald",
+      "anthropic": "Anthropic",
+      "ocean": "Ocean",
+      "violet": "Violet",
+      "amber": "Amber",
+      "rose": "Rose"
+    },
     "signOut": "Sign Out",
     "signOutDesc": "Securely log out of your account on this device.",
     "dangerZone": "Danger Zone"

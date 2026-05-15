@@ -16,6 +16,17 @@ import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 import { useDensity, type Density } from "@/components/layout/density-context";
+import { useColorSchema, type ColorSchema } from "@/components/layout/color-schema-context";
+import { Check } from "lucide-react";
+
+const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
+  { id: "emerald", light: "#22c55e", dark: "#4ade80" },
+  { id: "anthropic", light: "#d4724a", dark: "#e8916e" },
+  { id: "ocean", light: "#3b82f6", dark: "#60a5fa" },
+  { id: "violet", light: "#8b5cf6", dark: "#a78bfa" },
+  { id: "amber", light: "#f59e0b", dark: "#fbbf24" },
+  { id: "rose", light: "#f43f5e", dark: "#fb7185" },
+];
 
 export function SettingsForm({
   currentCurrency,
@@ -35,6 +46,7 @@ export function SettingsForm({
   const [currency, setCurrency] = useState(currentCurrency);
   const [locale, setLocale] = useState<Locale>(resolvedActiveLocale);
   const { density, setDensity } = useDensity();
+  const { colorSchema, setColorSchema } = useColorSchema();
   const [saving, setSaving] = useState(false);
   const [savingLocale, setSavingLocale] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -155,7 +167,7 @@ export function SettingsForm({
             </div>
 
             {/* Density Row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
               <div className="space-y-1">
                 <p className="text-sm font-medium">{t("settings.density")}</p>
                 <p className="text-sm text-muted-foreground">{t("settings.densityDescription")}</p>
@@ -174,6 +186,38 @@ export function SettingsForm({
                     {d === "comfortable"
                       ? t("settings.densityComfortable")
                       : t("settings.densityCompact")}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Color Schema Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t("settings.colorSchema")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("settings.colorSchemaDescription")}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {COLOR_SCHEMAS.map((schema) => (
+                  <button
+                    key={schema.id}
+                    onClick={() => setColorSchema(schema.id)}
+                    title={t(`settings.colorSchemas.${schema.id}`)}
+                    aria-label={t(`settings.colorSchemas.${schema.id}`)}
+                    className={`relative w-8 h-8 rounded-full transition-all ${
+                      colorSchema === schema.id
+                        ? "ring-2 ring-offset-2 ring-foreground scale-110"
+                        : "opacity-70 hover:opacity-100 hover:scale-105"
+                    }`}
+                    style={{
+                      background: `linear-gradient(135deg, ${schema.light} 50%, ${schema.dark} 50%)`,
+                    }}
+                  >
+                    {colorSchema === schema.id && (
+                      <Check className="absolute inset-0 m-auto w-3.5 h-3.5 text-white drop-shadow" />
+                    )}
                   </button>
                 ))}
               </div>
