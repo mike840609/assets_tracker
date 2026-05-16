@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { computeGoalsWithProgress } from "@/lib/services/goal-service";
 import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
+import { getProjectionData } from "@/lib/services/projection-service";
 import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
@@ -11,7 +12,7 @@ import { GoalsView } from "@/components/goals/goals-view";
 import GoalsLoading from "./loading";
 import type { SerializedAccount } from "@/lib/types";
 
-const CLIENT_NAMESPACES = ["goals", "common", "nav"];
+const CLIENT_NAMESPACES = ["goals", "common", "nav", "projections"];
 
 async function GoalsContent() {
   const session = await getSession();
@@ -19,11 +20,12 @@ async function GoalsContent() {
   const userId = session.user.id;
 
   const settings = await getOrCreateSettings(userId);
-  const [t, messages, goalsWithProgress, rawAccounts] = await Promise.all([
+  const [t, messages, goalsWithProgress, rawAccounts, projectionData] = await Promise.all([
     getTranslations("goals"),
     getMessages(),
     computeGoalsWithProgress(userId, settings.baseCurrency),
     fetchUserAccountsWithHoldings(userId),
+    getProjectionData(userId, settings.baseCurrency),
   ]);
 
   const accounts: SerializedAccount[] = rawAccounts.map(({ holdings: _h, ...rest }) => rest);
@@ -36,6 +38,7 @@ async function GoalsContent() {
           goalsWithProgress={goalsWithProgress}
           baseCurrency={settings.baseCurrency}
           accounts={accounts}
+          projectionData={projectionData}
         />
       </div>
     </NextIntlClientProvider>
