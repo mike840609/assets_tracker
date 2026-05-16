@@ -14,7 +14,7 @@ import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AnalysisView } from "@/components/analysis/analysis-view";
 import AnalysisLoading from "./loading";
 
-const CLIENT_NAMESPACES = ["analysis", "categories"];
+const CLIENT_NAMESPACES = ["analysis", "categories", "nav", "trendChart", "history"];
 
 async function AnalysisContent() {
   const session = await getSession();

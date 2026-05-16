@@ -10,10 +10,13 @@ import {
 } from "@/lib/services/net-worth-service";
 import { getAllExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
+import { computeGoalsWithProgress } from "@/lib/services/goal-service";
 import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
+import { GoalsMilestoneCard } from "@/components/dashboard/goals-milestone-card";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import type { GoalWithProgress } from "@/lib/types";
 
 const fetchPreviousSnapshot = cache((userId: string) =>
   prisma.netWorthSnapshot.findFirst({
@@ -160,6 +163,44 @@ async function ChartsSection({ userId, baseCurrency }: { userId: string; baseCur
 }
 
 /**
+ * Goals milestone card — shows the next active goal ranked by deadline, then progress.
+ * Streams independently; a user with no goals gets nothing rendered.
+ */
+async function GoalsMilestoneSection({
+  userId,
+  baseCurrency,
+}: {
+  userId: string;
+  baseCurrency: string;
+}) {
+  const goalsWithProgress = await computeGoalsWithProgress(userId, baseCurrency);
+  if (goalsWithProgress.length === 0) return null;
+
+  // Prefer soonest deadline; fall back to highest progress
+  const active = goalsWithProgress.filter((g) => !g.isCompleted);
+  const withDeadline = active
+    .filter((g) => g.goal.targetDate)
+    .sort(
+      (a, b) => new Date(a.goal.targetDate!).getTime() - new Date(b.goal.targetDate!).getTime(),
+    );
+  const byProgress = active
+    .filter((g) => !g.goal.targetDate)
+    .sort((a, b) => b.progressPercent - a.progressPercent);
+  const featured: GoalWithProgress | null =
+    withDeadline[0] ?? byProgress[0] ?? goalsWithProgress[0] ?? null;
+
+  return (
+    <div className={CARD_CLASS}>
+      <GoalsMilestoneCard
+        featured={featured}
+        totalGoals={goalsWithProgress.length}
+        baseCurrency={baseCurrency}
+      />
+    </div>
+  );
+}
+
+/**
  * Accounts summary table.
  * Shares the same cached summary (data-cache dedup).
  */
@@ -240,6 +281,11 @@ export async function DashboardContent({ userId }: { userId: string }) {
       {/* Net worth card — the LCP element, streams as soon as summary resolves */}
       <Suspense fallback={<NetWorthSkeleton />}>
         <NetWorthSection userId={userId} baseCurrency={baseCurrency} />
+      </Suspense>
+
+      {/* Goals milestone — next active goal, streams after net worth */}
+      <Suspense fallback={null}>
+        <GoalsMilestoneSection userId={userId} baseCurrency={baseCurrency} />
       </Suspense>
 
       {/* Charts grid — trend chart + allocation + currency exposure */}

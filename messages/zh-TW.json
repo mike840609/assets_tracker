@@ -7,6 +7,7 @@
   "nav": {
     "dashboard": "儀表板",
     "accounts": "帳戶",
+    "goals": "目標",
     "analysis": "分析",
     "history": "歷史紀錄",
     "projections": "財務預測",
@@ -119,6 +120,57 @@
   },
   "accounts": {
     "title": "帳戶"
+  },
+  "goals": {
+    "title": "目標",
+    "subtitle": "設定並追蹤您的淨資產里程碑。",
+    "addGoal": "新增目標",
+    "emptyTitle": "尚無目標",
+    "emptyDescription": "設定一個目標，例如「2030 年前淨資產達 1 百萬」，在此追蹤進度。",
+    "ofTarget": "/ {target}",
+    "completed": "已達成",
+    "confirmDelete": "確定刪除此目標？",
+    "dueIn": "{date}（{days} 天後）",
+    "overdue": "已逾期 · {date}",
+    "projectedLinear": "線性預測：{date}",
+    "projectedCAGR": "CAGR 預測：{date}",
+    "scope": {
+      "NET_WORTH": "淨資產",
+      "ASSETS_ONLY": "總資產",
+      "CATEGORY": "帳戶類別",
+      "ACCOUNT": "特定帳戶"
+    },
+    "form": {
+      "createTitle": "新增目標",
+      "editTitle": "編輯目標",
+      "name": "目標名稱",
+      "namePlaceholder": "例如：淨資產達 100 萬、房屋頭期款",
+      "targetAmount": "目標金額",
+      "targetCurrency": "貨幣",
+      "targetDate": "目標日期",
+      "targetDateHint": "選填，留空表示無期限目標。",
+      "scope": "範圍",
+      "category": "帳戶類別",
+      "categoryPlaceholder": "選擇類別",
+      "account": "帳戶",
+      "accountPlaceholder": "選擇帳戶",
+      "create": "建立目標",
+      "save": "儲存",
+      "saving": "儲存中...",
+      "cancel": "取消"
+    },
+    "toast": {
+      "created": "目標已建立",
+      "updated": "目標已更新",
+      "deleted": "目標已刪除",
+      "failed": "發生錯誤"
+    }
+  },
+  "goalsMilestone": {
+    "title": "目標",
+    "viewAll": "查看全部（{count}）",
+    "allCompleted": "所有目標已達成！",
+    "due": "到期：{date}"
   },
   "analysis": {
     "title": "分析",

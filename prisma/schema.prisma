@@ -158,6 +158,29 @@ model NetWorthSnapshot {
   @@index([userId, date(sort: Desc)])
 }
 
+enum GoalScope {
+  NET_WORTH
+  ASSETS_ONLY
+  CATEGORY
+  ACCOUNT
+}
+
+model Goal {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  targetAmount   Decimal   @db.Decimal(18, 8)
+  targetCurrency String    @default("USD")
+  targetDate     DateTime? @db.Date
+  scope          GoalScope
+  scopeRefId     String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
 model User {
   id            String        @id @default(cuid())
   name          String?
@@ -170,6 +193,7 @@ model User {
   appSettings Setting?
   appAccounts Account[]
   snapshots   NetWorthSnapshot[]
+  goals       Goal[]
 }
 
 model AuthAccount {

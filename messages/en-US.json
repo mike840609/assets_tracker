@@ -7,6 +7,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "accounts": "Accounts",
+    "goals": "Goals",
     "analysis": "Analysis",
     "history": "History",
     "projections": "Projections",
@@ -119,6 +120,57 @@
   },
   "accounts": {
     "title": "Accounts"
+  },
+  "goals": {
+    "title": "Goals",
+    "subtitle": "Track milestones toward your net worth targets.",
+    "addGoal": "New Goal",
+    "emptyTitle": "No goals yet",
+    "emptyDescription": "Set a target — like \"$1M net worth by 2030\" — and track your progress here.",
+    "ofTarget": "of {target}",
+    "completed": "Completed",
+    "confirmDelete": "Delete this goal?",
+    "dueIn": "{date} ({days} days)",
+    "overdue": "Overdue · {date}",
+    "projectedLinear": "Linear: {date}",
+    "projectedCAGR": "CAGR: {date}",
+    "scope": {
+      "NET_WORTH": "Net Worth",
+      "ASSETS_ONLY": "Assets Only",
+      "CATEGORY": "Account Category",
+      "ACCOUNT": "Specific Account"
+    },
+    "form": {
+      "createTitle": "New Goal",
+      "editTitle": "Edit Goal",
+      "name": "Goal Name",
+      "namePlaceholder": "e.g. $1M Net Worth, House Down Payment",
+      "targetAmount": "Target Amount",
+      "targetCurrency": "Currency",
+      "targetDate": "Target Date",
+      "targetDateHint": "Optional — leave blank for an open-ended goal.",
+      "scope": "Scope",
+      "category": "Account Category",
+      "categoryPlaceholder": "Select a category",
+      "account": "Account",
+      "accountPlaceholder": "Select an account",
+      "create": "Create Goal",
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel"
+    },
+    "toast": {
+      "created": "Goal created",
+      "updated": "Goal updated",
+      "deleted": "Goal deleted",
+      "failed": "Something went wrong"
+    }
+  },
+  "goalsMilestone": {
+    "title": "Goals",
+    "viewAll": "View all ({count})",
+    "allCompleted": "All goals completed!",
+    "due": "Due {date}"
   },
   "analysis": {
     "title": "Analysis",

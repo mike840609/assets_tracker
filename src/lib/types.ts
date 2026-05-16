@@ -1,4 +1,4 @@
-import type { Account, Holding, HoldingTransaction } from "@/generated/prisma/client";
+import type { Account, Goal, Holding, HoldingTransaction } from "@/generated/prisma/client";
 
 // ---------------------------------------------------------------------------
 // Generic serialization utilities
@@ -126,5 +126,47 @@ export function serializeAccountWithHoldings(
   return {
     ...serializeAccount(account),
     holdings: account.holdings.map(serializeHolding),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Goal types
+// ---------------------------------------------------------------------------
+
+export type SerializedGoal = {
+  id: string;
+  userId: string;
+  name: string;
+  targetAmount: number;
+  targetCurrency: string;
+  targetDate: string | null;
+  scope: "NET_WORTH" | "ASSETS_ONLY" | "CATEGORY" | "ACCOUNT";
+  scopeRefId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type GoalWithProgress = {
+  goal: SerializedGoal;
+  currentAmount: number;
+  targetAmountInBase: number;
+  progressPercent: number;
+  projectedDateLinear: string | null;
+  projectedDateCAGR: string | null;
+  isCompleted: boolean;
+};
+
+export function serializeGoal(goal: Goal): SerializedGoal {
+  return {
+    id: goal.id,
+    userId: goal.userId,
+    name: goal.name,
+    targetAmount: Number(goal.targetAmount),
+    targetCurrency: goal.targetCurrency,
+    targetDate: goal.targetDate ? (goal.targetDate as Date).toISOString() : null,
+    scope: goal.scope as "NET_WORTH" | "ASSETS_ONLY" | "CATEGORY" | "ACCOUNT",
+    scopeRefId: goal.scopeRefId,
+    createdAt: goal.createdAt.toISOString(),
+    updatedAt: goal.updatedAt.toISOString(),
   };
 }

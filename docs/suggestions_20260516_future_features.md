@@ -17,7 +17,7 @@
 
 | ID  | Title                                              | Theme           | Effort | Impact | Status |
 | --- | -------------------------------------------------- | --------------- | ------ | ------ | ------ |
-| F1  | Net-worth goals & milestones                       | Projections     | M      | 🔴     | ❌     |
+| F1  | Net-worth goals & milestones                       | Projections     | M      | 🔴     | ✅     |
 | F2  | FIRE / retirement projection page                  | Projections     | L      | 🔴     | ✅     |
 | F3  | Cost basis + realized/unrealized P&L on holdings   | P&L & Tax       | L      | 🔴     | ❌     |
 | F4  | Tax-lot tracking (FIFO / specific-lot)             | P&L & Tax       | XL     | 🟡     | ❌     |

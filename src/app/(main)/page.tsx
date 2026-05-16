@@ -15,6 +15,7 @@ const CLIENT_NAMESPACES = [
   "currencyExposure",
   "accountsSummary",
   "netWorthCard",
+  "goalsMilestone",
   "categories",
   "common",
 ];
