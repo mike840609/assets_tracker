@@ -156,7 +156,13 @@
     "topMoversAccount": "帳戶",
     "topMoversChange": "變化",
     "topMoversNoData": "歷史資料不足，無法顯示變動。",
-    "cashFlowNote": "貢獻僅反映現金存入與提領。"
+    "cashFlowNote": "貢獻僅反映現金存入與提領。",
+    "attribution": "績效歸因",
+    "attributionSubtitle": "哪些帳戶推動了本期淨資產變化。",
+    "attributionNoData": "歷史資料不足，無法計算歸因。",
+    "attributionNote": "市場表現 = 總變化 − 現金貢獻。價格使用目前匯率（v1 近似值）。",
+    "attrCash": "現金流",
+    "attrMarket": "市場"
   },
   "projections": {
     "title": "財務預測",

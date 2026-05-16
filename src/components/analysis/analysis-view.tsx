@@ -1,11 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useDensity } from "@/components/layout/density-context";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
-import type { RawHistoryData, SnapshotBreakdown } from "@/lib/services/history-service";
+import type {
+  RawHistoryData,
+  SnapshotBreakdown,
+  AccountMonthlyContribution,
+} from "@/lib/services/history-service";
 import {
   aggregateMonthlyChange,
   computeKpis,
@@ -13,6 +17,7 @@ import {
   buildCashFlowBuckets,
   aggregateCategoryHistory,
   computeTopMovers,
+  computePerformanceAttribution,
 } from "@/lib/services/analysis-service";
 import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/analysis-service";
 import { MonthlyChangeChart } from "./monthly-change-chart";
@@ -21,11 +26,13 @@ import { KpiTiles } from "./kpi-tiles";
 import { CashFlowChart } from "./cashflow-chart";
 import { CategoryTrendChart } from "./category-trend-chart";
 import { TopMoversList } from "./top-movers-list";
+import { AttributionChart } from "./attribution-chart";
 
 interface Props {
   snapshots: NormalizedSnapshot[];
   cashFlowData: MonthlyContribution[];
   rawHistory: RawHistoryData;
+  accountCashFlow: AccountMonthlyContribution[];
   baseCurrency: string;
   locale: string;
 }
@@ -48,7 +55,14 @@ function rangeCutoff(months: number): Date {
   return d;
 }
 
-export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency, locale }: Props) {
+export function AnalysisView({
+  snapshots,
+  cashFlowData,
+  rawHistory,
+  accountCashFlow,
+  baseCurrency,
+  locale,
+}: Props) {
   const t = useTranslations("analysis");
   const { density } = useDensity();
   const isCompact = density === "compact";
@@ -141,12 +155,39 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
     [filteredRawSnapshots, rawHistory.accounts],
   );
 
+  const attributionItems = useMemo(
+    () =>
+      computePerformanceAttribution(
+        filteredRawSnapshots,
+        rawHistory.accounts,
+        accountCashFlow,
+        rangeStartIso.slice(0, 7),
+      ),
+    [filteredRawSnapshots, rawHistory.accounts, accountCashFlow, rangeStartIso],
+  );
+
   const hasData = snapshots.length > 0;
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [isStuck, setIsStuck] = useState(false);
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(([entry]) => setIsStuck(!entry.isIntersecting), {
+      threshold: [1],
+    });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="space-y-4">
-      {/* Range selector + subtitle row */}
-      <div className="flex items-center justify-between">
+      {/* Sentinel: when this scrolls off-screen the range bar is stuck */}
+      <div ref={sentinelRef} className="h-px -mt-px" aria-hidden />
+      {/* Range selector + subtitle row — floats while scrolling */}
+      <div
+        className={`sticky top-0 z-40 -mx-4 md:-mx-6 px-4 md:px-6 py-2 backdrop-blur-md bg-background/80 dark:bg-card/80 flex items-center justify-between transition-[border-color,box-shadow] border-b ${isStuck ? "border-border/50 shadow-sm" : "border-transparent"}`}
+      >
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         <div className="flex gap-1">
           {ranges.map((r) => (
@@ -182,6 +223,9 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
           </div>
           <div className="premium-card">
             <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+          </div>
+          <div className="premium-card">
+            <AttributionChart items={attributionItems} baseCurrency={baseCurrency} />
           </div>
           <div className="premium-card">
             <CategoryTrendChart

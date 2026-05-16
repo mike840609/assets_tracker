@@ -258,6 +258,66 @@ export async function getRawHistoryWithBreakdown(
   return { snapshots, accounts };
 }
 
+/** Net cash contribution for a single account in one calendar month. */
+export interface AccountMonthlyContribution {
+  accountId: string;
+  /** "YYYY-MM" */
+  monthKey: string;
+  /** Net DEPOSIT − WITHDRAWAL in baseCurrency. */
+  contributions: number;
+}
+
+/**
+ * Like getMonthlyCashFlow but scoped per account, enabling F11 attribution math.
+ * Returns one entry per (accountId, month) pair that has any cash activity.
+ */
+export async function getAccountMonthlyCashFlow(
+  userId: string,
+  baseCurrency: string,
+): Promise<AccountMonthlyContribution[]> {
+  "use cache";
+  cacheTag(`accounts:${userId}`);
+  cacheTag(`history:${userId}`);
+  cacheLife("hours");
+
+  const [accounts, allRatesMap] = await Promise.all([
+    prisma.account.findMany({ where: { userId }, select: { id: true, currency: true } }),
+    getAllExchangeRates(),
+  ]);
+
+  const accountCurrencyMap = new Map(accounts.map((a) => [a.id, a.currency]));
+
+  const transactions = await prisma.cashTransaction.findMany({
+    where: {
+      accountId: { in: accounts.map((a) => a.id) },
+      type: { in: ["DEPOSIT", "WITHDRAWAL"] },
+    },
+    select: { amount: true, type: true, createdAt: true, accountId: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const byKey = new Map<string, number>();
+
+  for (const tx of transactions) {
+    const monthKey = tx.createdAt.toISOString().slice(0, 7);
+    const key = `${tx.accountId}::${monthKey}`;
+    const currency = accountCurrencyMap.get(tx.accountId) ?? "USD";
+    const rate = resolveRate(allRatesMap, currency, baseCurrency) ?? 1;
+    const amount = Number(tx.amount) * rate;
+    const signed = tx.type === "DEPOSIT" ? amount : -amount;
+    byKey.set(key, (byKey.get(key) ?? 0) + signed);
+  }
+
+  return Array.from(byKey.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([key, contributions]) => {
+      const sep = key.indexOf("::");
+      const accountId = key.slice(0, sep);
+      const monthKey = key.slice(sep + 2);
+      return { accountId, monthKey, contributions };
+    });
+}
+
 /**
  * Aggregate CashTransaction (DEPOSIT/WITHDRAWAL) records into per-month net
  * contribution amounts, converted to baseCurrency at current rates (v1 drift).

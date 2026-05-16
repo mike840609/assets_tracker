@@ -7,6 +7,7 @@ import {
   getFullNormalizedHistory,
   getRawHistoryWithBreakdown,
   getMonthlyCashFlow,
+  getAccountMonthlyCashFlow,
 } from "@/lib/services/history-service";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
@@ -21,14 +22,16 @@ async function AnalysisContent() {
   const userId = session.user.id;
 
   const settings = await getOrCreateSettings(userId);
-  const [t, messages, snapshots, cashFlowData, rawHistory, locale] = await Promise.all([
-    getTranslations("analysis"),
-    getMessages(),
-    getFullNormalizedHistory(userId, settings.baseCurrency),
-    getMonthlyCashFlow(userId, settings.baseCurrency),
-    getRawHistoryWithBreakdown(userId, settings.baseCurrency),
-    getLocale(),
-  ]);
+  const [t, messages, snapshots, cashFlowData, rawHistory, accountCashFlow, locale] =
+    await Promise.all([
+      getTranslations("analysis"),
+      getMessages(),
+      getFullNormalizedHistory(userId, settings.baseCurrency),
+      getMonthlyCashFlow(userId, settings.baseCurrency),
+      getRawHistoryWithBreakdown(userId, settings.baseCurrency),
+      getAccountMonthlyCashFlow(userId, settings.baseCurrency),
+      getLocale(),
+    ]);
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
@@ -39,6 +42,7 @@ async function AnalysisContent() {
           snapshots={snapshots}
           cashFlowData={cashFlowData}
           rawHistory={rawHistory}
+          accountCashFlow={accountCashFlow}
           baseCurrency={settings.baseCurrency}
           locale={locale}
         />
