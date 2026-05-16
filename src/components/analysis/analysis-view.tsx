@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useRef, useState, useEffect } from "react";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useDensity } from "@/components/layout/density-context";
-import { History, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { TrendChart } from "@/components/dashboard/trend-chart";
+import { HistoryTable } from "@/components/history/history-table";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
 import type {
   RawHistoryData,
@@ -171,6 +172,8 @@ export function AnalysisView({
 
   const hasData = snapshots.length > 0;
 
+  const [activeTab, setActiveTab] = useState<"analysis" | "history">("analysis");
+
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [isStuck, setIsStuck] = useState(false);
   useEffect(() => {
@@ -185,72 +188,96 @@ export function AnalysisView({
 
   return (
     <div className="space-y-4">
-      {/* Sentinel: when this scrolls off-screen the range bar is stuck */}
-      <div ref={sentinelRef} className="h-px -mt-px" aria-hidden />
-      {/* Range selector + subtitle row — floats while scrolling */}
-      <div
-        className={`sticky top-0 z-40 -mx-4 md:-mx-6 px-4 md:px-6 py-2 backdrop-blur-md bg-background/80 dark:bg-card/80 flex items-center justify-between transition-[border-color,box-shadow] border-b ${isStuck ? "border-border/50 shadow-sm" : "border-transparent"}`}
-      >
-        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-        <div className="flex gap-1">
-          {ranges.map((r) => (
-            <button
-              key={r.label}
-              type="button"
-              onClick={() => setRange(r.label)}
-              aria-pressed={range === r.label}
-              className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                range === r.label
-                  ? "bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                  : "text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              }`}
-            >
-              {t(rangeLabelKey[r.label] as Parameters<typeof t>[0])}
-            </button>
-          ))}
-        </div>
+      {/* Mobile-only tab switcher */}
+      <div className="md:hidden flex border-b">
+        {(["analysis", "history"] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            aria-pressed={activeTab === tab}
+            className={cn(
+              "pb-2 px-4 text-sm font-medium border-b-2 -mb-px transition-colors capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              activeTab === tab
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {tNav(tab)}
+          </button>
+        ))}
       </div>
 
-      {!hasData ? (
-        <div className="rounded-xl border border-dashed border-border/60 bg-card/50 p-12 text-center text-sm text-muted-foreground">
-          {t("noData")}
+      {/* Analysis tab content — always visible on desktop, conditional on mobile */}
+      <div className={activeTab === "history" ? "hidden md:block" : "block"}>
+        {/* Sentinel: when this scrolls off-screen the range bar is stuck */}
+        <div ref={sentinelRef} className="h-px -mt-px" aria-hidden />
+        {/* Range selector + subtitle row — floats while scrolling */}
+        <div
+          className={`sticky top-0 z-40 -mx-4 md:-mx-6 px-4 md:px-6 py-2 backdrop-blur-md bg-background/80 dark:bg-card/80 flex items-center justify-between transition-[border-color,box-shadow] border-b ${isStuck ? "border-border/50 shadow-sm" : "border-transparent"}`}
+        >
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
+          <div className="flex gap-1">
+            {ranges.map((r) => (
+              <button
+                key={r.label}
+                type="button"
+                onClick={() => setRange(r.label)}
+                aria-pressed={range === r.label}
+                className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                  range === r.label
+                    ? "bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    : "text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                }`}
+              >
+                {t(rangeLabelKey[r.label] as Parameters<typeof t>[0])}
+              </button>
+            ))}
+          </div>
         </div>
-      ) : (
-        <div className={isCompact ? "space-y-3" : "space-y-6"}>
-          <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
-          <div className="premium-card">
-            <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+
+        {!hasData ? (
+          <div className="rounded-xl border border-dashed border-border/60 bg-card/50 p-12 text-center text-sm text-muted-foreground">
+            {t("noData")}
           </div>
-          <div className="premium-card">
-            <AssetsLiabilitiesChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+        ) : (
+          <div className={isCompact ? "space-y-3" : "space-y-6"}>
+            <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
+            <div className="premium-card">
+              <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
+            </div>
+            <div className="premium-card">
+              <AssetsLiabilitiesChart
+                buckets={buckets}
+                baseCurrency={baseCurrency}
+                locale={locale}
+              />
+            </div>
+            <div className="premium-card">
+              <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+            </div>
+            <div className="premium-card">
+              <AttributionChart items={attributionItems} baseCurrency={baseCurrency} />
+            </div>
+            <div className="premium-card">
+              <CategoryTrendChart
+                data={categoryHistory}
+                baseCurrency={baseCurrency}
+                locale={locale}
+              />
+            </div>
+            <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
           </div>
-          <div className="premium-card">
-            <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
-          </div>
-          <div className="premium-card">
-            <AttributionChart items={attributionItems} baseCurrency={baseCurrency} />
-          </div>
-          <div className="premium-card">
-            <CategoryTrendChart
-              data={categoryHistory}
-              baseCurrency={baseCurrency}
-              locale={locale}
-            />
-          </div>
-          <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
+        )}
+      </div>
+
+      {/* History tab content — mobile only */}
+      {activeTab === "history" && (
+        <div className="md:hidden space-y-4">
+          <TrendChart snapshots={snapshots} baseCurrency={baseCurrency} />
+          <HistoryTable snapshots={snapshots} baseCurrency={baseCurrency} />
         </div>
       )}
-
-      <Link
-        href="/history"
-        className="md:hidden flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <History className="h-5 w-5 text-muted-foreground" />
-          <span className="font-medium">{tNav("history")}</span>
-        </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-      </Link>
     </div>
   );
 }
