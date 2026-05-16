@@ -145,6 +145,7 @@ function NumberInput({
               isNaN(parsed) ? 0 : Math.max(min, max !== undefined ? Math.min(max, parsed) : parsed),
             );
           }}
+          inputMode="decimal"
           className={`h-9 text-sm ${suffix ? "pr-10" : ""}`}
           style={
             prefix ? { paddingLeft: `calc(0.75rem + ${prefix.length}ch + 0.5rem)` } : undefined
