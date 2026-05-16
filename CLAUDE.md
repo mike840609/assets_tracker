@@ -264,7 +264,7 @@ PREVIEW_AUTH_DISABLED     # Set to "1"/"true" to skip preview password gate
 VERCEL_ENV                # Set automatically by Vercel (production | preview | development)
 ```
 
-`DATABASE_URL` is scoped per Vercel environment — Production uses the prod Neon branch, Preview uses a separate shared `preview` Neon branch, so previews never touch live data. Vercel runs the `build:vercel` script (`prisma migrate deploy && next build`, wired via `vercel.json` → `buildCommand`) so each deploy applies pending migrations to whichever DB is wired in for that environment. CI/local `npm run build` stays as plain `next build` so it doesn't need a database.
+`DATABASE_URL` is scoped per Vercel environment — Production uses the prod Neon branch, Preview uses a separate shared `preview` Neon branch, so previews never touch live data. Vercel runs the `build:vercel` script (wired via `vercel.json` → `buildCommand`); it runs `prisma migrate deploy` followed by `next build`, skipping the migrate step when no files under `prisma/migrations/` changed since `VERCEL_GIT_PREVIOUS_SHA` (`FORCE_PRISMA_MIGRATE_DEPLOY=1` overrides; `SKIP_PRISMA_MIGRATE_DEPLOY=1` skips unconditionally). CI/local `npm run build` stays as plain `next build` so it doesn't need a database.
 
 ### Long-form analysis docs (`docs/`)
 
