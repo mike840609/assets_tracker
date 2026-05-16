@@ -161,6 +161,14 @@ export function TransactionHistory({
   const [editDate, setEditDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  function handleEditQuantityBlur() {
+    const val = editQuantity.replace(/,/g, "");
+    if (!val) return;
+    const parsed = parseFloat(val);
+    if (isNaN(parsed)) return;
+    setEditQuantity(new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(parsed));
+  }
+
   const [transactions, setTransactions] = useState<SerializedTransaction[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -219,7 +227,9 @@ export function TransactionHistory({
   const handleEditClick = (t: SerializedTransaction) => {
     setEditingTx(t);
     setEditType(t.type);
-    setEditQuantity(String(t.quantity));
+    setEditQuantity(
+      new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(t.quantity),
+    );
     setEditNote(t.note || "");
 
     // Format date for datetime-local input
@@ -240,7 +250,7 @@ export function TransactionHistory({
         body: JSON.stringify({
           id: editingTx.id,
           type: editType,
-          quantity: Number(editQuantity),
+          quantity: Number(editQuantity.replace(/,/g, "")),
           note: editNote,
           createdAt: new Date(editDate).toISOString(),
         }),
@@ -436,10 +446,11 @@ export function TransactionHistory({
               </Label>
               <Input
                 id="quantity"
-                type="number"
-                step="any"
+                type="text"
+                inputMode="decimal"
                 value={editQuantity}
                 onChange={(e) => setEditQuantity(e.target.value)}
+                onBlur={handleEditQuantityBlur}
                 className="col-span-3"
               />
             </div>
