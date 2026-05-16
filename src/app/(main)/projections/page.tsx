@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
@@ -17,11 +17,10 @@ async function ProjectionsContent() {
   const userId = session.user.id;
 
   const settings = await getOrCreateSettings(userId);
-  const [t, messages, projectionData, locale] = await Promise.all([
+  const [t, messages, projectionData] = await Promise.all([
     getTranslations("projections"),
     getMessages(),
     getProjectionData(userId, settings.baseCurrency),
-    getLocale(),
   ]);
 
   return (
@@ -35,7 +34,6 @@ async function ProjectionsContent() {
           annualSnapshots={projectionData.annualSnapshots}
           hasData={projectionData.hasData}
           baseCurrency={settings.baseCurrency}
-          locale={locale}
         />
       </div>
     </NextIntlClientProvider>

@@ -1,21 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatCurrency, formatNumber } from "@/lib/currencies";
+import { formatCurrency, formatNumber, getCurrencySymbol } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
 import { ProjectionChart, type ChartPoint } from "./projection-chart";
 
 const GUIDE_STORAGE_KEY = "asset-tracker:projections-guide-open";
-
-// ---------------------------------------------------------------------------
-// Pure projection math (no imports from server-only modules)
-// ---------------------------------------------------------------------------
 
 interface ProjectionResult {
   fireNumber: number;
@@ -74,10 +70,6 @@ function computeProjection(
 
   return { fireNumber, yearsToFire, fireYear, progressPct, projectedPoints };
 }
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
 
 function KpiTile({
   title,
@@ -166,17 +158,12 @@ function NumberInput({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
-
 interface Props {
   latestNetWorth: number;
   trailing12mSavings: number;
   annualSnapshots: { year: number; netWorth: number }[];
   hasData: boolean;
   baseCurrency: string;
-  locale: string;
 }
 
 export function ProjectionView({
@@ -185,7 +172,6 @@ export function ProjectionView({
   annualSnapshots,
   hasData,
   baseCurrency,
-  locale: _locale,
 }: Props) {
   const t = useTranslations("projections");
   const { privacyMode } = usePrivacyMode();
@@ -200,8 +186,13 @@ export function ProjectionView({
   const [annualSavings, setAnnualSavings] = useState(Math.max(0, Math.round(trailing12mSavings)));
   const [expectedReturn, setExpectedReturn] = useState(7); // percent
   const [withdrawalRate, setWithdrawalRate] = useState(4); // percent
-  const [guideOpen, setGuideOpen] = useState(
-    () => typeof window !== "undefined" && window.localStorage.getItem(GUIDE_STORAGE_KEY) === "1",
+  const [guideOpen, setGuideOpen] = useState(false);
+  useEffect(
+    () =>
+      startTransition(() =>
+        setGuideOpen(window.localStorage.getItem(GUIDE_STORAGE_KEY) === "1"),
+      ),
+    [],
   );
 
   const toggleGuide = () => {
@@ -230,29 +221,26 @@ export function ProjectionView({
     ],
   );
 
-  // Build chart data: historical annual snapshots + projected future years
   const chartData = useMemo((): ChartPoint[] => {
     if (!hasData) return [];
 
+    const lastYear = annualSnapshots.at(-1)?.year ?? new Date().getFullYear();
     const historicalYearSet = new Set(annualSnapshots.map((s) => s.year));
     const points: ChartPoint[] = annualSnapshots.map((s) => ({
       year: s.year,
       historical: s.netWorth,
-      // Overlap the last historical point with the projected series so lines connect
-      projected: s.year === lastHistoricalYear ? s.netWorth : undefined,
+      // Overlap last historical point with projected series so lines connect
+      projected: s.year === lastYear ? s.netWorth : undefined,
     }));
 
-    // Add projected points for future years only
     for (const p of projection.projectedPoints) {
-      if (historicalYearSet.has(p.year)) continue; // already in historical
+      if (historicalYearSet.has(p.year)) continue;
       points.push({ year: p.year, projected: p.netWorth });
-
-      // Stop a few years after FIRE year to keep chart readable
       if (projection.fireYear && p.year >= projection.fireYear + 3) break;
     }
 
     return points.sort((a, b) => a.year - b.year);
-  }, [annualSnapshots, projection, lastHistoricalYear, hasData]);
+  }, [annualSnapshots, projection, hasData]);
 
   // --- KPI values ---
   const fireNumberDisplay = privacyMode
@@ -325,8 +313,7 @@ export function ProjectionView({
               onChange={setAnnualExpenses}
               min={0}
               step={1000}
-              prefix={baseCurrency === "USD" ? "$" : undefined}
-              suffix={baseCurrency !== "USD" ? baseCurrency : undefined}
+              prefix={getCurrencySymbol(baseCurrency)}
             />
             <NumberInput
               label={t("annualSavings")}
@@ -335,8 +322,7 @@ export function ProjectionView({
               onChange={setAnnualSavings}
               min={0}
               step={1000}
-              prefix={baseCurrency === "USD" ? "$" : undefined}
-              suffix={baseCurrency !== "USD" ? baseCurrency : undefined}
+              prefix={getCurrencySymbol(baseCurrency)}
             />
             <NumberInput
               label={t("expectedReturn")}
@@ -378,13 +364,11 @@ export function ProjectionView({
         {guideOpen && (
           <CardContent className="space-y-6 pt-0">
             <div className="grid gap-6 sm:grid-cols-3">
-              {(
-                [
-                  { num: "1", title: t("step1Title"), desc: t("step1Desc") },
-                  { num: "2", title: t("step2Title"), desc: t("step2Desc") },
-                  { num: "3", title: t("step3Title"), desc: t("step3Desc") },
-                ] as const
-              ).map((step) => (
+              {[
+                { num: "1", title: t("step1Title"), desc: t("step1Desc") },
+                { num: "2", title: t("step2Title"), desc: t("step2Desc") },
+                { num: "3", title: t("step3Title"), desc: t("step3Desc") },
+              ].map((step) => (
                 <div key={step.num} className="flex gap-3">
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
                     {step.num}

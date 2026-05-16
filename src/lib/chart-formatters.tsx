@@ -1,5 +1,13 @@
 import { formatCurrency } from "@/lib/currencies";
 
+export function formatChartTick(v: number): string {
+  return Math.abs(v) >= 1_000_000
+    ? `${(v / 1_000_000).toFixed(1)}M`
+    : Math.abs(v) >= 1_000
+      ? `${(v / 1_000).toFixed(0)}K`
+      : String(Math.round(v));
+}
+
 /** Currency formatter for area/line chart tooltips (e.g. TrendChart). */
 export function createCurrencyTooltipFormatter(currency: string) {
   return (value: unknown) => formatCurrency(Number(value ?? 0), currency);
