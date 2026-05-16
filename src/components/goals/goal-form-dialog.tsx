@@ -101,6 +101,15 @@ export function GoalFormDialog({
 
   const needsScopeRef = scope === "CATEGORY" || scope === "ACCOUNT";
 
+  function handleTargetAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/,/g, "");
+    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    if (!raw) { setTargetAmount(""); return; }
+    const [intPart, decPart] = raw.split(".");
+    const formattedInt = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    setTargetAmount(decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt);
+  }
+
   function handleTargetAmountBlur() {
     const val = targetAmount.replace(/,/g, "");
     if (!val) return;
@@ -177,7 +186,7 @@ export function GoalFormDialog({
                 type="text"
                 inputMode="decimal"
                 value={targetAmount}
-                onChange={(e) => setTargetAmount(e.target.value)}
+                onChange={handleTargetAmountChange}
                 onBlur={handleTargetAmountBlur}
                 placeholder="1,000,000"
                 required
