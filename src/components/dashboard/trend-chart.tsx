@@ -19,6 +19,7 @@ import { useContainerSize } from "@/hooks/use-container-size";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
+import { formatChartTick } from "@/lib/chart-formatters";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
@@ -140,14 +141,7 @@ export function TrendChart({
   }, []);
 
   const yTickFormatter = useCallback(
-    (v: number) =>
-      privacyMode
-        ? ""
-        : v >= 1000000
-          ? `${(v / 1000000).toFixed(1)}M`
-          : v >= 1000
-            ? `${(v / 1000).toFixed(0)}K`
-            : v.toString(),
+    (v: number) => (privacyMode ? "" : formatChartTick(v)),
     [privacyMode],
   );
 

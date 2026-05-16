@@ -14,6 +14,7 @@ import {
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
+import { formatChartTick } from "@/lib/chart-formatters";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
@@ -80,13 +81,6 @@ function CategoryTooltip({
   );
 }
 
-const tickFormatter = (v: number) =>
-  Math.abs(v) >= 1_000_000
-    ? `${(v / 1_000_000).toFixed(1)}M`
-    : Math.abs(v) >= 1_000
-      ? `${(v / 1_000).toFixed(0)}K`
-      : String(v);
-
 export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
   const tCat = useTranslations("categories");
@@ -144,7 +138,7 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
                 <YAxis
                   width={50}
                   tick={{ fontSize: 12 }}
-                  tickFormatter={(v) => (privacyMode ? "" : tickFormatter(v))}
+                  tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
                 />
                 <Tooltip
                   content={

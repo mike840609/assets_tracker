@@ -15,6 +15,7 @@ import {
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
+import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 
 export interface ChartPoint {
@@ -29,13 +30,6 @@ interface Props {
   fireYear: number | null;
   baseCurrency: string;
 }
-
-const tickFormatter = (v: number) =>
-  Math.abs(v) >= 1_000_000
-    ? `${(v / 1_000_000).toFixed(1)}M`
-    : Math.abs(v) >= 1_000
-      ? `${(v / 1_000).toFixed(0)}K`
-      : String(Math.round(v));
 
 function ProjectionTooltip({
   active,
@@ -101,29 +95,24 @@ export function ProjectionChart({ data, fireNumber, fireYear, baseCurrency }: Pr
         <p className="text-xs text-muted-foreground">{t("chartSubtitle")}</p>
       </CardHeader>
       <CardContent className="px-2 sm:px-4 pb-4">
-        {data.length === 0 ? (
+        {data.length === 0 && (
           <div className="h-[320px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noData")}
           </div>
-        ) : !mounted ? (
-          <div className="h-[320px]" />
-        ) : (
+        )}
+        {data.length > 0 && !mounted && <div className="h-[320px]" />}
+        {data.length > 0 && mounted && (
           <div
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             <ResponsiveContainer width="100%" height={320}>
               <ComposedChart data={data} margin={{ top: 16, right: 8, left: 0, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis
-                  dataKey="year"
-                  tick={{ fontSize: 12 }}
-                  tickFormatter={(v) => String(v)}
-                  interval="preserveStartEnd"
-                />
+                <XAxis dataKey="year" tick={{ fontSize: 12 }} interval="preserveStartEnd" />
                 <YAxis
                   width={52}
                   tick={{ fontSize: 12 }}
-                  tickFormatter={(v) => (privacyMode ? "" : tickFormatter(v))}
+                  tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
                 />
                 <Tooltip
                   content={
@@ -141,7 +130,6 @@ export function ProjectionChart({ data, fireNumber, fireYear, baseCurrency }: Pr
                   )}
                 />
 
-                {/* FIRE target reference line */}
                 {fireNumber > 0 && (
                   <ReferenceLine
                     y={fireNumber}
@@ -156,7 +144,6 @@ export function ProjectionChart({ data, fireNumber, fireYear, baseCurrency }: Pr
                   />
                 )}
 
-                {/* Vertical marker at FIRE year */}
                 {fireYear && (
                   <ReferenceLine
                     x={fireYear}

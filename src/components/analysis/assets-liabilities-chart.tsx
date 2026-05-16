@@ -14,6 +14,7 @@ import {
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
+import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import type { MonthlyBucket } from "@/lib/services/analysis-service";
@@ -124,15 +125,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                 <YAxis
                   width={50}
                   tick={{ fontSize: 12 }}
-                  tickFormatter={(v) =>
-                    privacyMode
-                      ? ""
-                      : v >= 1000000
-                        ? `${(v / 1000000).toFixed(1)}M`
-                        : v >= 1000
-                          ? `${(v / 1000).toFixed(0)}K`
-                          : String(v)
-                  }
+                  tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
                 />
                 <Tooltip
                   cursor={{ fill: "var(--muted)", opacity: 0.3 }}

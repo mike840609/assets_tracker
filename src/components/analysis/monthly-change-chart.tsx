@@ -14,6 +14,7 @@ import {
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
+import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { MonthlyBucket } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
@@ -128,15 +129,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
                 <YAxis
                   width={50}
                   tick={{ fontSize: 12 }}
-                  tickFormatter={(v) =>
-                    privacyMode
-                      ? ""
-                      : Math.abs(v) >= 1000000
-                        ? `${(v / 1000000).toFixed(1)}M`
-                        : Math.abs(v) >= 1000
-                          ? `${(v / 1000).toFixed(0)}K`
-                          : String(v)
-                  }
+                  tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
                 />
                 <Tooltip
                   cursor={{ fill: "var(--muted)", opacity: 0.3 }}
