@@ -1,4 +1,5 @@
 {
+  "installCommand": "npm ci --prefer-offline --no-audit --no-fund",
   "buildCommand": "npm run build:vercel",
   "regions": ["sin1"],
   "crons": [
