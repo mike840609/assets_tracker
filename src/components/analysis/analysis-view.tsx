@@ -216,8 +216,10 @@ export function AnalysisView({
         <div
           className={`sticky top-0 z-40 -mx-4 md:-mx-6 px-4 md:px-6 py-2 backdrop-blur-md bg-background/80 dark:bg-card/80 flex items-center justify-between transition-[border-color,box-shadow] border-b ${isStuck ? "border-border/50 shadow-sm" : "border-transparent"}`}
         >
-          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-          <div className="flex gap-1">
+          <p className="hidden sm:block text-sm text-muted-foreground min-w-0 truncate">
+            {t("subtitle")}
+          </p>
+          <div className="flex gap-1 shrink-0 ml-auto">
             {ranges.map((r) => (
               <button
                 key={r.label}
