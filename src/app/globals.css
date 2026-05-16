@@ -336,6 +336,37 @@ html:active-view-transition-type(nav-back)::view-transition-new(root) {
   }
 }
 
+/* Theme toggle: radial reveal from the click origin (--vt-theme-x / --vt-theme-y).
+   The new view is clipped to a circle that grows from the toggle button; the old
+   view stays put and is masked away as the new view expands over it. */
+@keyframes vt-theme-radial-reveal {
+  from {
+    clip-path: circle(0px at var(--vt-theme-x, 50%) var(--vt-theme-y, 50%));
+  }
+  to {
+    clip-path: circle(
+      var(--vt-theme-radius, 150vmax) at var(--vt-theme-x, 50%) var(--vt-theme-y, 50%)
+    );
+  }
+}
+
+html[data-vt-theme]::view-transition-old(root) {
+  animation: none;
+  /* The outgoing snapshot is the "underneath" layer that the new theme
+     reveals on top of. */
+  z-index: 1;
+}
+html[data-vt-theme]::view-transition-new(root) {
+  animation: 420ms var(--ease-out-expo) both vt-theme-radial-reveal;
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-vt-theme]::view-transition-new(root) {
+    animation: none;
+  }
+}
+
 /* ─── Color schemas ──────────────────────────────────────────────────────── */
 
 /* Anthropic — sandy neutrals (#faf9f5 / #141413) + coral orange (#d97757) */

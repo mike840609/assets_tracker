@@ -3,10 +3,12 @@
 import { useState, useMemo, startTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { springConfig } from "@/lib/motion";
 
 import dynamic from "next/dynamic";
 import { EditHoldingDialog } from "./edit-holding-dialog";
@@ -92,6 +94,8 @@ export function AccountDetail({
       );
     }
   };
+
+  const shouldReduceMotion = useReducedMotion();
 
   const holdingsWithValue: HoldingWithPrice[] = account.holdings.map((h) => {
     const price = priceMap[h.symbol] ?? null;
@@ -367,18 +371,27 @@ export function AccountDetail({
                     </div>
                   )}
                   <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
-                    {visibleMobileHoldings.map((h, index) => (
-                      <div key={h.id}>
-                        {index > 0 && <div className="h-px bg-border/60 mx-4" />}
-                        <HoldingRow
-                          holding={h}
-                          totalValue={totalHoldingsValue}
-                          accountCurrency={account.currency}
-                          onEdit={setEditingHolding}
-                          onDelete={deleteHolding}
-                        />
-                      </div>
-                    ))}
+                    <AnimatePresence initial={false}>
+                      {visibleMobileHoldings.map((h, index) => (
+                        <motion.div
+                          key={h.id}
+                          layout={shouldReduceMotion ? false : "position"}
+                          initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
+                          transition={shouldReduceMotion ? { duration: 0 } : springConfig}
+                        >
+                          {index > 0 && <div className="h-px bg-border/60 mx-4" />}
+                          <HoldingRow
+                            holding={h}
+                            totalValue={totalHoldingsValue}
+                            accountCurrency={account.currency}
+                            onEdit={setEditingHolding}
+                            onDelete={deleteHolding}
+                          />
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                   {!showAllMobileHoldings && filteredSortedHoldings.length > 20 && (
                     <button
