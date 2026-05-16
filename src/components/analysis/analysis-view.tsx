@@ -217,23 +217,27 @@ export function AnalysisView({
       <div className={activeTab === "history" ? "hidden md:block" : "block"}>
         {/* Sentinel: when this scrolls off-screen the range bar is stuck */}
         <div ref={sentinelRef} className="h-px -mt-px" aria-hidden />
-        {/* Range selector + subtitle row — floats while scrolling */}
-        <div
-          className={`sticky top-0 z-40 -mx-4 md:-mx-6 px-4 md:px-6 py-2 backdrop-blur-md bg-background/80 dark:bg-card/80 flex items-center justify-between transition-[border-color,box-shadow] border-b ${isStuck ? "border-border/50 shadow-sm" : "border-transparent"}`}
-        >
-          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-          <div className="flex gap-1">
+        {/* Range selector — floats as a compact pill while scrolling */}
+        <div className="sticky top-[env(safe-area-inset-top)] md:top-0 z-40 flex justify-end py-2">
+          <div
+            className={cn(
+              "inline-flex gap-1 rounded-full p-1 transition-[background-color,box-shadow,backdrop-filter]",
+              isStuck &&
+                "bg-background/80 dark:bg-card/80 backdrop-blur-md shadow-sm ring-1 ring-border/50",
+            )}
+          >
             {ranges.map((r) => (
               <button
                 key={r.label}
                 type="button"
                 onClick={() => setRange(r.label)}
                 aria-pressed={range === r.label}
-                className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                className={cn(
+                  "px-2 py-1 text-xs rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   range === r.label
-                    ? "bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    : "text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                }`}
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted",
+                )}
               >
                 {t(rangeLabelKey[r.label] as Parameters<typeof t>[0])}
               </button>

@@ -104,7 +104,7 @@ To enable automation, deploy to Vercel and set all environment variables in your
 Vercel preview deployments use a **separate Neon branch** so they never touch production data:
 
 - Set `DATABASE_URL` with two scopes in Vercel → Settings → Environment Variables: one for **Production** (prod Neon branch) and one for **Preview** (a dedicated `preview` Neon branch). If your `DATABASE_URL` is managed by the Neon-Vercel integration, configure the per-environment branch mapping inside the integration UI instead.
-- The Vercel build runs `npm run build:vercel` (= `prisma migrate deploy && next build`), so each deploy applies pending migrations to whichever DB is wired in for that environment.
+- The Vercel build runs `npm run build:vercel`, which runs `prisma migrate deploy` followed by `next build`. The migrate step is skipped when no files under `prisma/migrations/` changed since `VERCEL_GIT_PREVIOUS_SHA` (set `FORCE_PRISMA_MIGRATE_DEPLOY=1` to override; `SKIP_PRISMA_MIGRATE_DEPLOY=1` skips it unconditionally).
 - CI / local `npm run build` is plain `next build` and does **not** require a database.
 
 ## 💹 Net Worth History & Currency Normalization

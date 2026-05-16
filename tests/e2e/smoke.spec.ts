@@ -13,7 +13,7 @@
  * saves storage state; tests 2 & 3 reuse that state.
  */
 
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
 // ---------------------------------------------------------------------------
 // Path 1 — Auth: unauthenticated redirect → login → sign-in → dashboard
@@ -51,23 +51,16 @@ test("1. unauthenticated visitor is redirected to /login and can sign in", async
 });
 
 // ---------------------------------------------------------------------------
-// Helpers used by paths 2 & 3  (these tests run with the saved auth state)
-// ---------------------------------------------------------------------------
-
-async function waitForPageReady(page: Page) {
-  await page.waitForLoadState("networkidle", { timeout: 20_000 });
-}
-
-// ---------------------------------------------------------------------------
 // Path 2 — Create account → add holding → holding appears
 // ---------------------------------------------------------------------------
 
 test("2. create an account, add a holding manually, and see it in the list", async ({ page }) => {
   await page.goto("/accounts");
-  await waitForPageReady(page);
 
   // ── Create account ──────────────────────────────────────────────────────
-  await page.getByRole("button", { name: "Add Account" }).click();
+  const addAccountButton = page.getByRole("button", { name: "Add Account" });
+  await expect(addAccountButton).toBeVisible({ timeout: 15_000 });
+  await addAccountButton.click();
 
   // Dialog must be visible
   await expect(page.getByRole("dialog")).toBeVisible();
@@ -151,7 +144,6 @@ test("2. create an account, add a holding manually, and see it in the list", asy
 
 test("3. dashboard renders the net-worth card and trend chart section", async ({ page }) => {
   await page.goto("/");
-  await waitForPageReady(page);
 
   // Net-worth card: scope to the card's data-testid to skip the hidden
   // MobileHeader subtitle ("Net Worth") that appears earlier in DOM order.
