@@ -18,17 +18,19 @@ export const GET = withAuth(async (_req, _ctx, userId) => {
           },
         },
         snapshots: true,
+        goals: true,
       },
     });
 
     if (!data) return failure("User not found", 404);
 
     const exportData = {
-      version: "1.0",
+      version: "1.1",
       exportedAt: new Date().toISOString(),
       settings: data.appSettings,
       accounts: data.appAccounts,
       snapshots: data.snapshots,
+      goals: data.goals,
     };
 
     // Return as a raw JSON file download — NOT wrapped in ok() so the blob
@@ -61,6 +63,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
         // 1. Delete existing data for the user (Cascades should handle holdings and transactions)
         await tx.account.deleteMany({ where: { userId } });
         await tx.netWorthSnapshot.deleteMany({ where: { userId } });
+        await tx.goal.deleteMany({ where: { userId } });
 
         // 2. Import settings if present
         if (importData.settings) {
@@ -107,6 +110,11 @@ export const POST = withAuth(async (request, _ctx, userId) => {
                   assetType: h.assetType,
                   createdAt: h.createdAt,
                   updatedAt: h.updatedAt,
+                  underlyingSymbol: h.underlyingSymbol ?? null,
+                  optionType: h.optionType ?? null,
+                  strike: h.strike ?? null,
+                  expiration: h.expiration ? new Date(h.expiration) : null,
+                  contractMultiplier: h.contractMultiplier ?? null,
                 },
               });
 
@@ -156,6 +164,23 @@ export const POST = withAuth(async (request, _ctx, userId) => {
             })),
           });
         }
+
+        // 5. Import goals
+        if (Array.isArray(importData.goals) && importData.goals.length > 0) {
+          await tx.goal.createMany({
+            data: importData.goals.map((g) => ({
+              userId,
+              name: g.name,
+              targetAmount: g.targetAmount,
+              targetCurrency: g.targetCurrency,
+              targetDate: g.targetDate ? new Date(g.targetDate) : null,
+              scope: g.scope,
+              scopeRefId: g.scopeRefId ?? null,
+              ...(g.createdAt && { createdAt: new Date(g.createdAt) }),
+              ...(g.updatedAt && { updatedAt: new Date(g.updatedAt) }),
+            })),
+          });
+        }
       },
       { timeout: 30000 },
     );
@@ -163,6 +188,6 @@ export const POST = withAuth(async (request, _ctx, userId) => {
     return ok({ ok: true });
   } catch (error) {
     log.error("import.failed", { error: String(error) });
-    return failure(error instanceof Error ? error.message : "Failed to import data", 500);
+    return failure("Failed to import data", 500);
   }
 });
