@@ -11,7 +11,7 @@ import { GoalsView } from "@/components/goals/goals-view";
 import GoalsLoading from "./loading";
 import type { SerializedAccount } from "@/lib/types";
 
-const CLIENT_NAMESPACES = ["goals", "common"];
+const CLIENT_NAMESPACES = ["goals", "common", "nav"];
 
 async function GoalsContent() {
   const session = await getSession();
