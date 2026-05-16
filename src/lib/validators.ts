@@ -6,6 +6,7 @@ import {
   HOLDING_TRANSACTION_TYPES,
   CASH_TRANSACTION_TYPES,
   OPTION_TYPES,
+  GOAL_SCOPES,
 } from "./enums";
 
 const OCC_SHAPE = /^[A-Z][A-Z0-9.\-]{0,5}\d{6}[CP]\d{8}$/;
@@ -103,6 +104,21 @@ export const updateCashTransactionSchema = z.object({
   note: z.string().optional().nullable(),
   createdAt: z.string().optional(),
 });
+
+export const createGoalSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  targetAmount: z.number().positive("Target must be positive"),
+  targetCurrency: z.string().length(3).default("USD"),
+  targetDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD")
+    .optional()
+    .nullable(),
+  scope: z.enum(GOAL_SCOPES),
+  scopeRefId: z.string().min(1).optional().nullable(),
+});
+
+export const updateGoalSchema = createGoalSchema.partial();
 
 const decimalSchema = z.union([z.number(), z.string(), z.any()]);
 

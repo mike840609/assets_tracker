@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   Search,
   Settings,
+  Target,
   TrendingUp,
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
@@ -77,6 +78,7 @@ export function Sidebar({
   const navItems = [
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
     { label: t("nav.accounts"), href: "/accounts", icon: Copy },
+    { label: t("nav.goals"), href: "/goals", icon: Target },
     { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
     { label: t("nav.projections"), href: "/projections", icon: TrendingUp },
     { label: t("nav.history"), href: "/history", icon: History },
@@ -256,6 +258,7 @@ export function MobileNav() {
   const navItems = [
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
     { label: t("nav.accounts"), href: "/accounts", icon: Copy },
+    { label: t("nav.goals"), href: "/goals", icon: Target },
     { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
     { label: t("nav.projections"), href: "/projections", icon: TrendingUp },
     { label: t("nav.history"), href: "/history", icon: History },
