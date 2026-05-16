@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useDensity } from "@/components/layout/density-context";
@@ -168,10 +168,26 @@ export function AnalysisView({
 
   const hasData = snapshots.length > 0;
 
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [isStuck, setIsStuck] = useState(false);
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(([entry]) => setIsStuck(!entry.isIntersecting), {
+      threshold: [1],
+    });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="space-y-4">
-      {/* Range selector + subtitle row */}
-      <div className="flex items-center justify-between">
+      {/* Sentinel: when this scrolls off-screen the range bar is stuck */}
+      <div ref={sentinelRef} className="h-px -mt-px" aria-hidden />
+      {/* Range selector + subtitle row — floats while scrolling */}
+      <div
+        className={`sticky top-0 z-40 -mx-4 md:-mx-6 px-4 md:px-6 py-2 backdrop-blur-md bg-background/80 dark:bg-card/80 flex items-center justify-between transition-[border-color,box-shadow] border-b ${isStuck ? "border-border/50 shadow-sm" : "border-transparent"}`}
+      >
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         <div className="flex gap-1">
           {ranges.map((r) => (

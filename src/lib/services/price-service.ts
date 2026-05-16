@@ -1,5 +1,5 @@
 import "server-only";
-import { cacheLife, cacheTag } from "next/cache";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { log, withTiming } from "@/lib/logger";
 
@@ -178,21 +178,31 @@ export async function fetchCryptoPrices(
   return results;
 }
 
+// Fetch all cached prices once and hold in a single stable cache entry.
+// Using unstable_cache (not "use cache") so slow-query logs from Neon cold
+// starts are NOT replayed on cache hits.
+const fetchAllCachedPrices = unstable_cache(
+  async () => {
+    const results = await prisma.priceCache.findMany({
+      select: { symbol: true, price: true, currency: true },
+    });
+    return results.map((p) => ({
+      symbol: p.symbol,
+      price: Number(p.price),
+      currency: p.currency,
+    }));
+  },
+  ["all-prices"],
+  { tags: ["prices"], revalidate: 300 },
+);
+
 export async function getCachedPricesForSymbols(
   symbols: string[],
 ): Promise<{ symbol: string; price: number; currency: string }[]> {
-  "use cache";
-  cacheTag("prices");
-  cacheLife("minutes");
   if (symbols.length === 0) return [];
-  const results = await prisma.priceCache.findMany({
-    where: { symbol: { in: symbols } },
-  });
-  return results.map((p) => ({
-    symbol: p.symbol,
-    price: Number(p.price),
-    currency: p.currency,
-  }));
+  const all = await fetchAllCachedPrices();
+  const symbolSet = new Set(symbols);
+  return all.filter((p) => symbolSet.has(p.symbol));
 }
 
 export async function refreshAllPrices(): Promise<{
