@@ -214,7 +214,7 @@ export function AnalysisView({
         <div ref={sentinelRef} className="h-px -mt-px" aria-hidden />
         {/* Range selector + subtitle row — floats while scrolling */}
         <div
-          className={`sticky top-0 z-40 -mx-4 md:-mx-6 px-4 md:px-6 py-2 backdrop-blur-md bg-background/80 dark:bg-card/80 flex items-center justify-between transition-[border-color,box-shadow] border-b ${isStuck ? "border-border/50 shadow-sm" : "border-transparent"}`}
+          className={`sticky top-[env(safe-area-inset-top)] md:top-0 z-40 -mx-4 md:-mx-6 px-4 md:px-6 py-2 backdrop-blur-md bg-background/80 dark:bg-card/80 flex items-center justify-between transition-[border-color,box-shadow] border-b ${isStuck ? "border-border/50 shadow-sm" : "border-transparent"}`}
         >
           <p className="hidden sm:block text-sm text-muted-foreground min-w-0 truncate">
             {t("subtitle")}
