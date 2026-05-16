@@ -33,7 +33,7 @@
 | 27  | Add error boundary pages (error.tsx / not-found.tsx)        | Reliability                | 🔴 High   | 1-2 hrs   | ❌ Not Done |
 | 28  | Fix missing auth checks on API routes                       | Security                   | 🔴 High   | 30 min    | ❌ Not Done |
 | 29  | Validate environment variables at startup                   | DX / Reliability           | 🔴 High   | 1 hr      | ✅ Done     |
-| 30  | Add structured logging (Pino)                               | Observability              | 🟡 Medium | 3-4 hrs   | ❌ Not Done |
+| 30  | Add structured logging (Pino)                               | Observability              | 🟡 Medium | 3-4 hrs   | ✅ Done     |
 | 31  | Add API rate limiting                                       | Security                   | 🟡 Medium | 2-3 hrs   | ✅ Done     |
 | 32  | Validate query parameters with Zod                          | Security                   | 🟡 Medium | 1 hr      | ❌ Not Done |
 | 33  | Add timeout guards to price service                         | Reliability                | 🟡 Medium | 30 min    | ✅ Done     |
@@ -58,7 +58,7 @@
 | 52  | Add timeout guards to external pricing calls                | Reliability                | 🔴 High   | 30-60 min | ✅ Done     |
 | 53  | Make data import merge-first (non-destructive) by default   | Reliability                | 🔴 High   | 3-4 hrs   | ❌ Not Done |
 | 54  | Add startup environment validation module (`env.ts`)        | DX / Reliability           | 🔴 High   | 1 hr      | ✅ Done     |
-| 55  | Replace console logs with structured logging                | Observability              | 🟡 Medium | 2-4 hrs   | ❌ Not Done |
+| 55  | Replace console logs with structured logging                | Observability              | 🟡 Medium | 2-4 hrs   | ✅ Done     |
 | 56  | Add baseline automated tests (unit/API/E2E smoke)           | Testing                    | 🔴 High   | 1-2 days  | ✅ Done     |
 | 57  | Improve accessibility semantics on controls/tables          | Accessibility              | 🟡 Medium | 2-3 hrs   | ❌ Not Done |
 | 58  | Add composite database indexes for hot query paths          | Performance                | 🔴 High   | 1-2 hrs   | ✅ Done     |
@@ -125,7 +125,7 @@
 | 119 | `AccountForm` label/id association + `aria-describedby`     | Accessibility              | 🟡 Medium | 30 min    | ❌ Not Done |
 | 120 | Visible required-field indicator on `AccountForm`           | UX                         | 🟢 Low    | 15 min    | ❌ Not Done |
 | 121 | Sonner toaster `aria-live` / `role="status"`                | Accessibility              | 🟢 Low    | 15 min    | ❌ Not Done |
-| 122 | Undo affordance on transaction delete                       | UX                         | 🟡 Medium | 1-2 hrs   | ❌ Not Done |
+| 122 | Undo affordance on transaction delete                       | UX                         | 🟡 Medium | 1-2 hrs   | ✅ Done     |
 | 123 | Responsive Settings `SelectTrigger` width                   | UX                         | 🟢 Low    | 5 min     | ❌ Not Done |
 | 124 | Expand Settings loading skeleton to match layout            | UX                         | 🟢 Low    | 15 min    | ❌ Not Done |
 | 125 | Visible label on login preview password field               | Accessibility              | 🟢 Low    | 5 min     | ❌ Not Done |
@@ -137,8 +137,8 @@
 | 131 | Stream `HistoryTable` with its own Suspense boundary        | Performance                | 🟡 Medium | 30 min    | ❌ Not Done |
 | 132 | Prefetch account detail pages from sidebar                  | Performance                | 🟡 Medium | 30 min    | ❌ Not Done |
 | 133 | Hoist `getOrCreateSettings` into `(main)/layout.tsx`        | Performance                | 🟡 Medium | 1 hr      | ❌ Not Done |
-| 134 | Add `.prettierrc` + Prettier in CI                          | DX                         | 🟢 Low    | 30 min    | ❌ Not Done |
-| 135 | Husky + lint-staged pre-commit hook                         | DX                         | 🟢 Low    | 30 min    | ❌ Not Done |
+| 134 | Add `.prettierrc` + Prettier in CI                          | DX                         | 🟢 Low    | 30 min    | ✅ Done     |
+| 135 | Husky + lint-staged pre-commit hook                         | DX                         | 🟢 Low    | 30 min    | ✅ Done     |
 | 136 | Wrap transaction history API in auth + ownership checks     | Security                   | 🔴 High   | 30-60 min | ❌ Not Done |
 | 137 | Wrap cash transaction create API in auth + ownership checks | Security                   | 🔴 High   | 30 min    | ❌ Not Done |
 | 138 | Wrap transaction update/delete API in auth + ownership      | Security                   | 🔴 High   | 1 hr      | ❌ Not Done |

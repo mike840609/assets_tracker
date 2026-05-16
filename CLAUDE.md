@@ -87,8 +87,9 @@ src/
 │   │   ├── layout.tsx          # Sidebar + mobile header shell
 │   │   ├── page.tsx            # Dashboard
 │   │   ├── accounts/           # Accounts list + [id] detail
-│   │   ├── analysis/           # /analysis tab (see docs/ANALYSIS_ROADMAP.md)
+│   │   ├── analysis/           # Analysis tab (charts: assets/liabilities, cash flow, movers)
 │   │   ├── history/            # Net worth history view
+│   │   ├── projections/        # FIRE/retirement projection page
 │   │   └── settings/           # User settings
 │   └── api/
 │       ├── auth/[...nextauth]/ # NextAuth handlers
@@ -97,6 +98,7 @@ src/
 │       ├── accounts/[id]/transactions/      # HoldingTransaction CRUD
 │       ├── accounts/[id]/cash-transactions/ # CashTransaction CRUD
 │       ├── exchange-rates/     # Fetch + refresh exchange rates
+│       ├── options/chain/      # Options chain data (Yahoo Finance)
 │       ├── prices/refresh/     # Manual price refresh trigger
 │       ├── snapshots/          # Net worth snapshot history
 │       ├── search/             # Holding symbol search (Yahoo Finance)
@@ -186,9 +188,11 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 
 **Other services in `src/lib/services/`:**
 
+- `account-service.ts` — `getAccountDetail` (per-account RSC read, React `cache()`-memoized), `getAccountPriceMap`
 - `snapshot-service.ts` — creates `NetWorthSnapshot` rows with the lossless per-account breakdown
 - `history-service.ts` — reads snapshots and renormalizes them on the fly into the user's current base currency
 - `analysis-service.ts` — backs the `/analysis` tab
+- `projection-service.ts` — `getProjectionData` for FIRE/retirement projections (uses `"use cache"`)
 - `settings-service.ts` — user settings reads/writes
 - `balance.ts` — shared balance/value computation helpers
 
@@ -197,6 +201,14 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 - `src/lib/api-handler.ts` + `src/lib/api-responses.ts` — standardized request handling and JSON response shapes for route handlers.
 - `src/lib/rate-limit.ts` — in-process rate limiter; wrap any new public-facing or cron-adjacent API route with it.
 - `src/lib/validators.ts` — Zod 4 schemas for all API input validation.
+
+### Shared lib utilities
+
+- `src/lib/env.ts` — Zod-validated typed env. Import `env` (or named exports like `DATABASE_URL`) from here rather than reading `process.env` directly. Fails fast at startup with a clear error if required vars are missing.
+- `src/lib/logger.ts` — structured JSON logger (`log.info / warn / error / debug`). Server-only. All API routes and services should use this instead of `console.*`.
+- `src/lib/enums.ts` — runtime arrays of enum values: `ACCOUNT_TYPES`, `ACCOUNT_CATEGORIES`, `HOLDING_ASSET_TYPES`. Import from here for dropdowns, Zod `.enum()`, etc.
+- `src/lib/chart-formatters.tsx` — `formatChartTick(v)`: shared Recharts Y-axis formatter (K/M suffixes). Import instead of writing inline formatters.
+- `src/lib/i18n-utils.ts` — `pickMessages(messages, namespaces)`: limits which i18n namespaces are serialized into HTML for `NextIntlClientProvider`. Always use this when passing messages to a client boundary.
 
 ### Daily Snapshot Cron
 
@@ -215,8 +227,11 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 src/components/
 ├── ui/           # shadcn/ui primitives (button, dialog, table, etc.)
 ├── accounts/     # Account detail, holding form, transaction history, inline editors
+├── analysis/     # Analysis view, assets/liabilities chart, cash flow chart, movers list
 ├── dashboard/    # Net worth card, allocation chart, trend chart, accounts summary
+├── history/      # History table, pull-to-refresh
 ├── layout/       # Sidebar, mobile header, theme provider/toggle
+├── projections/  # FIRE projection chart and view
 └── settings/     # Settings form
 ```
 
@@ -225,6 +240,7 @@ src/components/
 - Use `@/*` path alias for all imports from `src/`
 - Prefer RSC by default; add `"use client"` only when needed
 - Use `Decimal` in Prisma operations — never `number` for monetary/quantity values
+- `Holding` supports an `OPTION` asset type with extra fields: `underlyingSymbol`, `optionType` (CALL/PUT), `strike`, `expiration`, `contractMultiplier`
 - Use Tailwind CSS 4 utilities only — no inline styles or CSS Modules
 - Add shadcn/ui components via `npx shadcn@latest add <component>`
 - Zod 4 schemas live in `@/lib/validators.ts`
@@ -234,11 +250,18 @@ src/components/
 ### Required Environment Variables
 
 ```
+# Required
 DATABASE_URL        # PostgreSQL connection string
 AUTH_SECRET         # NextAuth secret
 AUTH_GOOGLE_ID      # Google OAuth client ID
 AUTH_GOOGLE_SECRET  # Google OAuth client secret
 CRON_SECRET         # Bearer token for /api/cron/snapshot
+
+# Optional
+AUTH_REDIRECT_PROXY_URL   # OAuth proxy URL (for tunneled preview deployments)
+PREVIEW_AUTH_PASSWORD     # Required when VERCEL_ENV=preview (unless PREVIEW_AUTH_DISABLED)
+PREVIEW_AUTH_DISABLED     # Set to "1"/"true" to skip preview password gate
+VERCEL_ENV                # Set automatically by Vercel (production | preview | development)
 ```
 
 `DATABASE_URL` is scoped per Vercel environment — Production uses the prod Neon branch, Preview uses a separate shared `preview` Neon branch, so previews never touch live data. Vercel runs the `build:vercel` script (`prisma migrate deploy && next build`, wired via `vercel.json` → `buildCommand`) so each deploy applies pending migrations to whichever DB is wired in for that environment. CI/local `npm run build` stays as plain `next build` so it doesn't need a database.
