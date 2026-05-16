@@ -260,8 +260,6 @@ export function MobileNav() {
     { label: t("nav.accounts"), href: "/accounts", icon: Copy },
     { label: t("nav.goals"), href: "/goals", icon: Target },
     { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
-    { label: t("nav.projections"), href: "/projections", icon: TrendingUp },
-    { label: t("nav.history"), href: "/history", icon: History },
     { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];
 
