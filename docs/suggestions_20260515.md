@@ -23,7 +23,7 @@ The existing `docs/` folder has six trackers (PERFORMANCE, INFRASTRUCTURE, UI*UX
 | **Tier 1 — Crucial**               |                                                                        |        |        |        |
 | S1                                 | Route error boundaries (error.tsx / not-found / global-error)          | S      | 🔴     | ❌     | R11                    |
 | S2                                 | Timing-safe `CRON_SECRET` comparison                                   | XS     | 🔴     | ❌     | R4                     |
-| S3                                 | Ownership-check audit on `[id]` mutations                              | S      | 🔴     | ⚠️     | R5 / D1                |
+| S3                                 | Ownership-check audit on `[id]` mutations                              | S      | 🔴     | ✅     | R5 / D1                |
 | S4                                 | Structured logger + Sentry across services (**do first** — F1)         | M      | 🔴     | ❌     | Q5 / R17               |
 | S5                                 | `/api/health` endpoint (DB ping + freshness) (**do first** — F1)       | XS     | 🔴     | ❌     | V12 / R12              |
 | S6                                 | Cron-run audit table + freshness alert (**do first** — F1)             | M      | 🔴     | ❌     | V11 / R13              |
@@ -77,9 +77,9 @@ Add `src/app/(main)/error.tsx`, `src/app/(main)/not-found.tsx`, and `src/app/glo
 
 ### S3 — Ownership-check audit on `[id]` mutations
 
-**S | 🔴 | ⚠️ — closes R5 / D1**
+**S | 🔴 | ✅ Done (2026-05-16) — closes R5 / D1 and items 136-138**
 
-Walk every `src/app/api/accounts/[id]/...` route and confirm every mutation re-reads the parent resource scoped to `session.user.id` before applying changes. Holdings/transactions look OK; cash-transactions and the new options chain endpoint are the worry. Add a small `assertOwnership(prisma, userId, resourceId)` helper to `src/lib/api-handler.ts` so future routes can't forget.
+Audited every `src/app/api/accounts/[id]/...` route. Two real gaps were closed: `transactions/[transactionId]/route.ts` PATCH/DELETE were unwrapped (no `withAuth`) and only compared `tx.accountId` to the URL — now wrapped with an upfront `Account.findUnique({ id, userId })` guard. `holdings/route.ts` POST never verified the parent account belonged to `userId`, and PATCH/DELETE updated/deleted by holding id with no user scoping at all; both now use `findFirst({ id, account: { userId } })`. `route.ts`, `cash-transactions/route.ts`, and `transactions/route.ts` GET were already correctly scoped. `/api/options/chain` is read-only public market data — out of scope. Follow-up: extract a shared `assertOwnedAccount(prisma, userId, id)` helper now that there are 3+ callsites.
 
 ### S4 — Structured logger + Sentry
 

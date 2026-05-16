@@ -30,6 +30,13 @@ export const GET = withAuth<IdCtx>(async (_request, { params }, userId) => {
 
 export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
   const { id } = await params;
+
+  const account = await prisma.account.findUnique({
+    where: { id, userId },
+    select: { id: true },
+  });
+  if (!account) return failure("Not found", 404);
+
   const body = await request.json();
   const parsed = createHoldingSchema.safeParse(body);
   if (!parsed.success) return validationError(parsed.error);
@@ -135,21 +142,23 @@ export const PATCH = withAuth<IdCtx>(async (request, _ctx, userId) => {
 
   const { id, ...data } = parsed.data;
 
+  const existing = await prisma.holding.findFirst({
+    where: { id, account: { userId } },
+  });
+  if (!existing) return failure("Not found", 404);
+
   // Log quantity change as EDIT transaction
   if (data.quantity !== undefined) {
-    const existing = await prisma.holding.findUnique({ where: { id } });
-    if (existing) {
-      const diff = data.quantity - Number(existing.quantity);
-      if (diff !== 0) {
-        await prisma.holdingTransaction.create({
-          data: {
-            holdingId: id,
-            type: "EDIT",
-            quantity: diff,
-            note: `Quantity changed from ${Number(existing.quantity)} to ${data.quantity}`,
-          },
-        });
-      }
+    const diff = data.quantity - Number(existing.quantity);
+    if (diff !== 0) {
+      await prisma.holdingTransaction.create({
+        data: {
+          holdingId: id,
+          type: "EDIT",
+          quantity: diff,
+          note: `Quantity changed from ${Number(existing.quantity)} to ${data.quantity}`,
+        },
+      });
     }
   }
 
@@ -162,6 +171,12 @@ export const DELETE = withAuth<IdCtx>(async (request, _ctx, userId) => {
   const body = await request.json();
   const { id } = body;
   if (!id) return failure("Holding ID required");
+
+  const owned = await prisma.holding.findFirst({
+    where: { id, account: { userId } },
+    select: { id: true },
+  });
+  if (!owned) return failure("Not found", 404);
 
   await prisma.holding.delete({ where: { id } });
   invalidateUserCaches(userId);

@@ -3,24 +3,25 @@ import { prisma } from "@/lib/prisma";
 import { updateTransactionSchema, updateCashTransactionSchema } from "@/lib/validators";
 import { calculateBalanceDelta } from "@/lib/services/balance";
 import { ok, failure, validationError } from "@/lib/api-responses";
+import { withAuth } from "@/lib/api-handler";
 
-async function invalidateAccountCaches(accountId: string) {
-  const account = await prisma.account.findUnique({
-    where: { id: accountId },
-    select: { userId: true },
-  });
-  if (account) {
-    revalidateTag(`accounts:${account.userId}`, "max");
-    revalidateTag(`net-worth:${account.userId}`, "max");
-    revalidateTag(`history:${account.userId}`, "max");
-  }
+type TxCtx = { params: Promise<{ id: string; transactionId: string }> };
+
+function invalidateAccountCaches(userId: string) {
+  revalidateTag(`accounts:${userId}`, "max");
+  revalidateTag(`net-worth:${userId}`, "max");
+  revalidateTag(`history:${userId}`, "max");
 }
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string; transactionId: string }> },
-) {
+export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
   const { id: accountId, transactionId } = await params;
+
+  const account = await prisma.account.findUnique({
+    where: { id: accountId, userId },
+    select: { id: true },
+  });
+  if (!account) return failure("Not found", 404);
+
   const body = await request.json();
 
   // Determine if it's a HoldingTransaction or CashTransaction
@@ -60,7 +61,7 @@ export async function PATCH(
       },
     });
 
-    await invalidateAccountCaches(accountId);
+    invalidateAccountCaches(userId);
     return ok(updatedTx);
   }
 
@@ -110,18 +111,21 @@ export async function PATCH(
       },
     });
 
-    await invalidateAccountCaches(accountId);
+    invalidateAccountCaches(userId);
     return ok(updatedTx);
   }
 
   return failure("Transaction not found", 404);
-}
+});
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string; transactionId: string }> },
-) {
+export const DELETE = withAuth<TxCtx>(async (_request, { params }, userId) => {
   const { id: accountId, transactionId } = await params;
+
+  const account = await prisma.account.findUnique({
+    where: { id: accountId, userId },
+    select: { id: true },
+  });
+  if (!account) return failure("Not found", 404);
 
   const holdingTx = await prisma.holdingTransaction.findUnique({
     where: { id: transactionId },
@@ -140,7 +144,7 @@ export async function DELETE(
     });
 
     await prisma.holdingTransaction.delete({ where: { id: transactionId } });
-    await invalidateAccountCaches(accountId);
+    invalidateAccountCaches(userId);
     return ok({ ok: true });
   }
 
@@ -161,9 +165,9 @@ export async function DELETE(
     });
 
     await prisma.cashTransaction.delete({ where: { id: transactionId } });
-    await invalidateAccountCaches(accountId);
+    invalidateAccountCaches(userId);
     return ok({ ok: true });
   }
 
   return failure("Transaction not found", 404);
-}
+});
