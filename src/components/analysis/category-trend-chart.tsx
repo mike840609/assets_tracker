@@ -81,7 +81,6 @@ function CategoryTooltip({
   );
 }
 
-
 export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
   const tCat = useTranslations("categories");

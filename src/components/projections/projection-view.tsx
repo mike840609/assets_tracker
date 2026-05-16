@@ -189,9 +189,7 @@ export function ProjectionView({
   const [guideOpen, setGuideOpen] = useState(false);
   useEffect(
     () =>
-      startTransition(() =>
-        setGuideOpen(window.localStorage.getItem(GUIDE_STORAGE_KEY) === "1"),
-      ),
+      startTransition(() => setGuideOpen(window.localStorage.getItem(GUIDE_STORAGE_KEY) === "1")),
     [],
   );
 

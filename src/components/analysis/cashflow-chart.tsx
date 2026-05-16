@@ -101,7 +101,6 @@ function CashFlowTooltip({
   );
 }
 
-
 export function CashFlowChart({ buckets, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();

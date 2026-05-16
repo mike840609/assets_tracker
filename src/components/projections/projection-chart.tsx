@@ -31,7 +31,6 @@ interface Props {
   baseCurrency: string;
 }
 
-
 function ProjectionTooltip({
   active,
   payload,
@@ -109,11 +108,7 @@ export function ProjectionChart({ data, fireNumber, fireYear, baseCurrency }: Pr
             <ResponsiveContainer width="100%" height={320}>
               <ComposedChart data={data} margin={{ top: 16, right: 8, left: 0, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis
-                  dataKey="year"
-                  tick={{ fontSize: 12 }}
-                  interval="preserveStartEnd"
-                />
+                <XAxis dataKey="year" tick={{ fontSize: 12 }} interval="preserveStartEnd" />
                 <YAxis
                   width={52}
                   tick={{ fontSize: 12 }}
