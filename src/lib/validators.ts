@@ -120,7 +120,7 @@ export const createGoalSchema = z.object({
 
 export const updateGoalSchema = createGoalSchema.partial();
 
-const decimalSchema = z.union([z.number(), z.string(), z.any()]);
+const decimalSchema = z.union([z.string(), z.number()]);
 
 export const dataImportSchema = z.object({
   version: z.string(),
@@ -151,6 +151,11 @@ export const dataImportSchema = z.object({
             assetType: z.enum(HOLDING_ASSET_TYPES),
             createdAt: z.string().optional(),
             updatedAt: z.string().optional(),
+            underlyingSymbol: z.string().optional().nullable(),
+            optionType: z.enum(OPTION_TYPES).optional().nullable(),
+            strike: decimalSchema.optional().nullable(),
+            expiration: z.string().optional().nullable(),
+            contractMultiplier: z.number().int().optional().nullable(),
             transactions: z
               .array(
                 z.object({
@@ -184,8 +189,22 @@ export const dataImportSchema = z.object({
         totalLiabilities: decimalSchema,
         netWorth: decimalSchema,
         baseCurrency: z.string().length(3),
-        breakdown: z.any().optional().nullable(),
+        breakdown: z.record(z.string(), z.unknown()).optional().nullable(),
         createdAt: z.string().optional(),
+      }),
+    )
+    .optional(),
+  goals: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        targetAmount: decimalSchema,
+        targetCurrency: z.string().length(3),
+        targetDate: z.string().optional().nullable(),
+        scope: z.enum(GOAL_SCOPES),
+        scopeRefId: z.string().optional().nullable(),
+        createdAt: z.string().optional(),
+        updatedAt: z.string().optional(),
       }),
     )
     .optional(),
