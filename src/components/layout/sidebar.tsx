@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   Search,
   Settings,
+  TrendingUp,
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { usePrivacyMode } from "./privacy-mode-context";
@@ -77,6 +78,7 @@ export function Sidebar({
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
     { label: t("nav.accounts"), href: "/accounts", icon: Copy },
     { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
+    { label: t("nav.projections"), href: "/projections", icon: TrendingUp },
     { label: t("nav.history"), href: "/history", icon: History },
     { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];
@@ -255,6 +257,7 @@ export function MobileNav() {
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
     { label: t("nav.accounts"), href: "/accounts", icon: Copy },
     { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
+    { label: t("nav.projections"), href: "/projections", icon: TrendingUp },
     { label: t("nav.history"), href: "/history", icon: History },
     { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];
