@@ -147,13 +147,13 @@
 | 141 | Make import merge-first and hide raw server errors          | Data Safety / Security     | 🔴 High   | 2-4 hrs   | ❌ Not Done |
 | 142 | Add API auth/ownership tests to CI                          | Testing / Security         | 🔴 High   | 1 day     | ❌ Not Done |
 | 143 | Add `/api/_metrics/vitals` proxy/rate-limit policy          | Observability              | 🟡 Medium | 30 min    | ❌ Not Done |
-| 144 | Return 401 JSON (not HTML redirect) for unauth `/api/*`     | Security / DX              | 🔴 High   | 30 min    | ❌ Not Done |
+| 144 | Return 401 JSON (not HTML redirect) for unauth `/api/*`     | Security / DX              | 🔴 High   | 30 min    | ✅ Done     |
 | 145 | Decide `/api/_metrics/vitals` public vs. auth (explicit)    | Observability              | 🟡 Medium | 30 min    | ❌ Not Done |
-| 146 | Invalidate `history:${userId}` on cash-tx mutations         | Performance / Correctness  | 🟡 Medium | 10 min    | ❌ Not Done |
+| 146 | Invalidate `history:${userId}` on cash-tx mutations         | Performance / Correctness  | 🟡 Medium | 10 min    | ✅ Done     |
 | 147 | Add `Content-Security-Policy` header in `next.config.ts`    | Security                   | 🔴 High   | 1-2 hrs   | ❌ Not Done |
 | 148 | Batch cron expired-options sweep into one `$transaction`    | Performance / Reliability  | 🟡 Medium | 30 min    | ❌ Not Done |
-| 149 | Lock down `updateHoldingSchema` (no `assetType` mutation)   | Correctness                | 🟡 Medium | 15 min    | ❌ Not Done |
-| 150 | Surface `refreshAllPrices` `errors[]` in dashboard toast    | UX / Reliability           | 🟡 Medium | 30 min    | ❌ Not Done |
+| 149 | Lock down `updateHoldingSchema` (no `assetType` mutation)   | Correctness                | 🟡 Medium | 15 min    | ✅ Done     |
+| 150 | Surface `refreshAllPrices` `errors[]` in dashboard toast    | UX / Reliability           | 🟡 Medium | 30 min    | ✅ Done     |
 | 151 | Replace `: any` casts in API routes with typed responses    | Code Quality               | 🟢 Low    | 1-2 hrs   | ❌ Not Done |
 
 ---

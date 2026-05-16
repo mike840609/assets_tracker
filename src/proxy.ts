@@ -53,6 +53,12 @@ export default auth((req) => {
   const isPublicRoute = ["/login", "/privacy", "/terms"].includes(req.nextUrl.pathname);
 
   if (!isLoggedIn && !isPublicRoute) {
+    if (req.nextUrl.pathname.startsWith("/api/")) {
+      return new Response(JSON.stringify({ error: { message: "Unauthorized" } }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     const newUrl = new URL("/login", req.nextUrl.origin);
     return Response.redirect(newUrl);
   }

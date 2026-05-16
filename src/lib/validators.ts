@@ -75,7 +75,6 @@ export const updateHoldingSchema = z.object({
     .optional(),
   name: z.string().min(1).max(100).optional(),
   quantity: z.number().nonnegative().optional(),
-  assetType: z.enum(HOLDING_ASSET_TYPES).optional(),
 });
 
 export const updateSettingsSchema = z.object({

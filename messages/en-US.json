@@ -289,6 +289,7 @@
     "refreshPrices": "Refresh Prices",
     "refreshing": "Refreshing...",
     "refreshSuccess": "Updated {count} prices & exchange rates",
+    "partialRefresh": "{count} symbol(s) failed to update",
     "refreshFailed": "Failed to refresh prices"
   },
   "trendChart": {

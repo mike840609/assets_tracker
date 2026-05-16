@@ -49,6 +49,9 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
       ]);
       const { data: priceData } = await priceRes.json();
       toast.success(t("refreshSuccess", { count: priceData.updated }));
+      if (priceData.errors?.length > 0) {
+        toast.warning(t("partialRefresh", { count: priceData.errors.length }));
+      }
       setClientRefreshAt(new Date().toISOString());
       window.dispatchEvent(new CustomEvent("prices:refreshed"));
       router.refresh();
