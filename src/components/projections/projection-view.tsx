@@ -145,7 +145,10 @@ function NumberInput({
               isNaN(parsed) ? 0 : Math.max(min, max !== undefined ? Math.min(max, parsed) : parsed),
             );
           }}
-          className={`h-9 text-sm ${prefix ? "pl-7" : ""} ${suffix ? "pr-10" : ""}`}
+          className={`h-9 text-sm ${suffix ? "pr-10" : ""}`}
+          style={
+            prefix ? { paddingLeft: `calc(0.75rem + ${prefix.length}ch + 0.5rem)` } : undefined
+          }
         />
         {suffix && (
           <span className="pointer-events-none absolute right-3 text-sm text-muted-foreground select-none">
