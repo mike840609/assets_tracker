@@ -5,7 +5,11 @@ import { useTranslations } from "next-intl";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useDensity } from "@/components/layout/density-context";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
-import type { RawHistoryData, SnapshotBreakdown } from "@/lib/services/history-service";
+import type {
+  RawHistoryData,
+  SnapshotBreakdown,
+  AccountMonthlyContribution,
+} from "@/lib/services/history-service";
 import {
   aggregateMonthlyChange,
   computeKpis,
@@ -13,6 +17,7 @@ import {
   buildCashFlowBuckets,
   aggregateCategoryHistory,
   computeTopMovers,
+  computePerformanceAttribution,
 } from "@/lib/services/analysis-service";
 import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/analysis-service";
 import { MonthlyChangeChart } from "./monthly-change-chart";
@@ -21,11 +26,13 @@ import { KpiTiles } from "./kpi-tiles";
 import { CashFlowChart } from "./cashflow-chart";
 import { CategoryTrendChart } from "./category-trend-chart";
 import { TopMoversList } from "./top-movers-list";
+import { AttributionChart } from "./attribution-chart";
 
 interface Props {
   snapshots: NormalizedSnapshot[];
   cashFlowData: MonthlyContribution[];
   rawHistory: RawHistoryData;
+  accountCashFlow: AccountMonthlyContribution[];
   baseCurrency: string;
   locale: string;
 }
@@ -48,7 +55,14 @@ function rangeCutoff(months: number): Date {
   return d;
 }
 
-export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency, locale }: Props) {
+export function AnalysisView({
+  snapshots,
+  cashFlowData,
+  rawHistory,
+  accountCashFlow,
+  baseCurrency,
+  locale,
+}: Props) {
   const t = useTranslations("analysis");
   const { density } = useDensity();
   const isCompact = density === "compact";
@@ -141,6 +155,17 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
     [filteredRawSnapshots, rawHistory.accounts],
   );
 
+  const attributionItems = useMemo(
+    () =>
+      computePerformanceAttribution(
+        filteredRawSnapshots,
+        rawHistory.accounts,
+        accountCashFlow,
+        rangeStartIso.slice(0, 7),
+      ),
+    [filteredRawSnapshots, rawHistory.accounts, accountCashFlow, rangeStartIso],
+  );
+
   const hasData = snapshots.length > 0;
 
   return (
@@ -182,6 +207,9 @@ export function AnalysisView({ snapshots, cashFlowData, rawHistory, baseCurrency
           </div>
           <div className="premium-card">
             <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+          </div>
+          <div className="premium-card">
+            <AttributionChart items={attributionItems} baseCurrency={baseCurrency} />
           </div>
           <div className="premium-card">
             <CategoryTrendChart

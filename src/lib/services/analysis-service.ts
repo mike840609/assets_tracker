@@ -1,4 +1,9 @@
-import type { NormalizedSnapshot, SnapshotBreakdown, AccountMeta } from "./history-service";
+import type {
+  NormalizedSnapshot,
+  SnapshotBreakdown,
+  AccountMeta,
+  AccountMonthlyContribution,
+} from "./history-service";
 
 /**
  * One month's worth of net-worth aggregation.
@@ -314,6 +319,74 @@ export function aggregateCategoryHistory(
       }
       return point;
     });
+}
+
+// ---------------------------------------------------------------------------
+// F11 — Performance attribution
+// ---------------------------------------------------------------------------
+
+/** Per-account attribution of net-worth change for a selected period. */
+export interface AttributionItem {
+  accountId: string;
+  accountName: string;
+  category: string;
+  startValue: number;
+  endValue: number;
+  /** endValue − startValue */
+  totalDelta: number;
+  /** Net cash deposited / withdrawn to this account during the period. */
+  cashContribution: number;
+  /** totalDelta − cashContribution: value created/destroyed by market movement. */
+  marketPerformance: number;
+}
+
+/**
+ * Compute per-account performance attribution for a period.
+ *
+ * @param snapshots         Breakdown snapshots filtered to the selected range.
+ * @param accounts          All user accounts (from getRawHistoryWithBreakdown).
+ * @param accountCashFlows  Per-account monthly cash flows (from getAccountMonthlyCashFlow).
+ * @param rangeStartMonthKey "YYYY-MM" — cash flows before this month are excluded.
+ */
+export function computePerformanceAttribution(
+  snapshots: SnapshotBreakdown[],
+  accounts: AccountMeta[],
+  accountCashFlows: AccountMonthlyContribution[],
+  rangeStartMonthKey: string,
+): AttributionItem[] {
+  if (snapshots.length < 2) return [];
+
+  const startSnap = snapshots[0];
+  const endSnap = snapshots[snapshots.length - 1];
+
+  const cashByAccount = new Map<string, number>();
+  for (const c of accountCashFlows) {
+    if (c.monthKey >= rangeStartMonthKey) {
+      cashByAccount.set(c.accountId, (cashByAccount.get(c.accountId) ?? 0) + c.contributions);
+    }
+  }
+
+  return accounts
+    .map((account) => {
+      const startValue = startSnap.accountValues[account.id] ?? 0;
+      const endValue = endSnap.accountValues[account.id] ?? 0;
+      const totalDelta = endValue - startValue;
+      const cashContribution = cashByAccount.get(account.id) ?? 0;
+      const marketPerformance = totalDelta - cashContribution;
+      return {
+        accountId: account.id,
+        accountName: account.name,
+        category: account.category,
+        startValue,
+        endValue,
+        totalDelta,
+        cashContribution,
+        marketPerformance,
+      };
+    })
+    .filter((a) => a.totalDelta !== 0 || a.cashContribution !== 0)
+    .sort((a, b) => Math.abs(b.totalDelta) - Math.abs(a.totalDelta))
+    .slice(0, 10);
 }
 
 /**

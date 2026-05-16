@@ -27,7 +27,7 @@
 | F8  | Cash transaction categories + spending insights    | Cashflow        | L      | 🟡     | ❌     |
 | F9  | Target asset allocation + rebalance alerts         | Portfolio       | L      | 🔴     | ❌     |
 | F10 | Benchmark overlay on net-worth + holding charts    | Portfolio       | M      | 🟡     | ❌     |
-| F11 | Performance attribution ("which holding moved NW") | Portfolio       | M      | 🟡     | ❌     |
+| F11 | Performance attribution ("which holding moved NW") | Portfolio       | M      | 🟡     | ✅     |
 | F12 | Watchlist (symbols you track but don't own)        | Discoverability | S      | 🟡     | ❌     |
 | F13 | Tags on accounts and holdings                      | Discoverability | M      | 🟡     | ❌     |
 | F14 | Holding journal / notes (per-symbol thesis log)    | Discoverability | S      | 🟢     | ❌     |

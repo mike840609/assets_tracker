@@ -156,7 +156,13 @@
     "topMoversAccount": "Account",
     "topMoversChange": "Change",
     "topMoversNoData": "Not enough history to show movers.",
-    "cashFlowNote": "Contributions reflect cash deposits and withdrawals only."
+    "cashFlowNote": "Contributions reflect cash deposits and withdrawals only.",
+    "attribution": "Performance Attribution",
+    "attributionSubtitle": "Which accounts drove your net worth change this period.",
+    "attributionNoData": "Not enough history to compute attribution.",
+    "attributionNote": "Market performance = total change minus cash contributions. Prices use current rates (v1 approximation).",
+    "attrCash": "Cash flow",
+    "attrMarket": "Market"
   },
   "projections": {
     "title": "Projections",
