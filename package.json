@@ -19,9 +19,9 @@
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run build",
     "postinstall": "prisma generate",
     "prepare": "husky",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e": "playwright test --config tests/playwright.config.ts",
+    "test:e2e:ui": "playwright test --ui --config tests/playwright.config.ts",
+    "test:e2e:report": "playwright show-report playwright-report"
   },
   "lint-staged": {
     "**/*.{ts,tsx,mjs,js}": [
