@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useCallback, useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   XAxis,
@@ -132,6 +133,10 @@ export function TrendChart({
   const { privacyMode } = usePrivacyMode();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   const { handlers: crosshairHandlers } = useChartCrosshair();
+  const shouldReduceMotion = useReducedMotion();
+  const rangeFadeTransition = shouldReduceMotion
+    ? { duration: 0 }
+    : { duration: 0.18, ease: [0.16, 1, 0.3, 1] as const };
 
   const selectedRange = ranges.find((r) => r.label === range)!;
 
@@ -226,40 +231,48 @@ export function TrendChart({
             className={`relative flex-1 min-h-[200px] transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             {containerWidth > 0 && containerHeight > 0 && (
-              <AreaChart
-                width={containerWidth}
-                height={containerHeight}
-                data={filtered}
-                margin={{ top: 5, right: 5, left: 0, bottom: 0 }}
-                {...crosshairHandlers}
+              <motion.div
+                key={range}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={rangeFadeTransition}
+                style={{ width: containerWidth, height: containerHeight }}
               >
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis
-                  dataKey="date"
-                  height={60}
-                  tick={{ fontSize: 12 }}
-                  angle={-45}
-                  textAnchor="end"
-                  tickFormatter={xTickFormatter}
-                />
-                <YAxis width={42} tick={{ fontSize: 12 }} tickFormatter={yTickFormatter} />
-                <Tooltip
-                  cursor={false}
-                  content={<TrendTooltip baseCurrency={baseCurrency} privacyMode={privacyMode} />}
-                />
-                <Customized component={CrosshairLines} />
-                <Area
-                  type="monotone"
-                  dataKey="netWorth"
-                  stroke="var(--primary)"
-                  fill="var(--primary)"
-                  fillOpacity={0.1}
-                  strokeWidth={2}
-                  name={t("seriesName")}
-                  isAnimationActive={isAnimationActive}
-                  onAnimationEnd={onAnimationEnd}
-                />
-              </AreaChart>
+                <AreaChart
+                  width={containerWidth}
+                  height={containerHeight}
+                  data={filtered}
+                  margin={{ top: 5, right: 5, left: 0, bottom: 0 }}
+                  {...crosshairHandlers}
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis
+                    dataKey="date"
+                    height={60}
+                    tick={{ fontSize: 12 }}
+                    angle={-45}
+                    textAnchor="end"
+                    tickFormatter={xTickFormatter}
+                  />
+                  <YAxis width={42} tick={{ fontSize: 12 }} tickFormatter={yTickFormatter} />
+                  <Tooltip
+                    cursor={false}
+                    content={<TrendTooltip baseCurrency={baseCurrency} privacyMode={privacyMode} />}
+                  />
+                  <Customized component={CrosshairLines} />
+                  <Area
+                    type="monotone"
+                    dataKey="netWorth"
+                    stroke="var(--primary)"
+                    fill="var(--primary)"
+                    fillOpacity={0.1}
+                    strokeWidth={2}
+                    name={t("seriesName")}
+                    isAnimationActive={isAnimationActive}
+                    onAnimationEnd={onAnimationEnd}
+                  />
+                </AreaChart>
+              </motion.div>
             )}
           </div>
         )}

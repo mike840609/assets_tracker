@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { motion, useReducedMotion } from "framer-motion";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useDensity } from "@/components/layout/density-context";
 import { cn } from "@/lib/utils";
@@ -71,6 +72,10 @@ export function AnalysisView({
   const { density } = useDensity();
   const isCompact = density === "compact";
   const [range, setRange] = usePersistedRange<RangeLabel>("analysis-view", "YTD");
+  const shouldReduceMotion = useReducedMotion();
+  const rangeFadeTransition = shouldReduceMotion
+    ? { duration: 0 }
+    : { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const };
 
   const rangeLabelKey: Record<RangeLabel, string> = {
     YTD: "rangeYTD",
@@ -245,7 +250,13 @@ export function AnalysisView({
             {t("noData")}
           </div>
         ) : (
-          <div className={isCompact ? "space-y-3" : "space-y-6"}>
+          <motion.div
+            key={range}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={rangeFadeTransition}
+            className={isCompact ? "space-y-3" : "space-y-6"}
+          >
             <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
             <div className="premium-card">
               <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
@@ -271,7 +282,7 @@ export function AnalysisView({
               />
             </div>
             <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
-          </div>
+          </motion.div>
         )}
       </div>
 

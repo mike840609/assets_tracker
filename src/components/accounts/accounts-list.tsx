@@ -4,11 +4,13 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { formatCurrency } from "@/lib/currencies";
+import { springConfig } from "@/lib/motion";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -677,6 +679,7 @@ function CategorySection({
   }, [accounts, priceMap, ratesMap, baseCurrency]);
 
   const totalHoldings = accounts.reduce((sum, a) => sum + a.holdings.length, 0);
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <div
@@ -726,18 +729,28 @@ function CategorySection({
           <div
             className={`${isCompact ? "px-3 py-2.5 space-y-2" : "px-4 py-4 space-y-3"} bg-background/50`}
           >
-            {accounts.map((account) => (
-              <AccountCardWithHoldings
-                key={account.id}
-                account={account}
-                priceMap={priceMap}
-                ratesMap={ratesMap}
-                baseCurrency={baseCurrency}
-                isSelected={selected.has(account.id)}
-                onToggle={() => onToggleSelect(account.id)}
-                isSelecting={isSelecting}
-              />
-            ))}
+            <AnimatePresence initial={false}>
+              {accounts.map((account) => (
+                <motion.div
+                  key={account.id}
+                  layout={shouldReduceMotion ? false : "position"}
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
+                  transition={shouldReduceMotion ? { duration: 0 } : springConfig}
+                >
+                  <AccountCardWithHoldings
+                    account={account}
+                    priceMap={priceMap}
+                    ratesMap={ratesMap}
+                    baseCurrency={baseCurrency}
+                    isSelected={selected.has(account.id)}
+                    onToggle={() => onToggleSelect(account.id)}
+                    isSelecting={isSelecting}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         </div>
       </div>

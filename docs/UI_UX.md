@@ -1050,3 +1050,39 @@ No virtual-scroll library needed. The threshold of 20 covers ~95 % of real accou
 7. **M8 — Analysis noData guidance** — small JSX + 4 i18n keys; improves new-user onboarding.
 8. **M9 — Holdings list pagination** — ~15 lines of state + JSX; reduces paint cost for power users.
 9. **M2 — Analysis sub-tab nav** — largest effort; wrap charts in `<Tabs>` with conditional mobile/desktop rendering.
+
+---
+
+## Animation Polish (2026-05-16)
+
+Three contained animation upgrades shipped on top of the existing `framer-motion` + View Transitions API foundation. Each item is gated by `prefers-reduced-motion` / `useReducedMotion()` and ships independently.
+
+### A1 — Theme toggle radial reveal via View Transitions API — ✅ Done
+
+`src/components/layout/theme-toggle.tsx` now wraps `setTheme()` in `document.startViewTransition` and emits a synchronous `flushSync(setTheme)` so the API captures correct before/after snapshots. The click coordinates are written to `--vt-theme-x` / `--vt-theme-y` on `<html>` and an attribute `data-vt-theme` enables the radial reveal CSS in `src/app/globals.css`:
+
+- `@keyframes vt-theme-radial-reveal` animates `clip-path: circle(0 → 150vmax)` from the click origin.
+- 420 ms duration with `--ease-out-expo`.
+- Falls back to instant swap on Firefox / Safari < 18 (feature detection on `document.startViewTransition`).
+- Disabled under `@media (prefers-reduced-motion: reduce)`.
+
+Extends item 10 (Disclosure transitions). Same pattern as `nav-forward` / `nav-back` but typed via attribute selector instead of `:active-view-transition-type()` since the swap is synchronous.
+
+### A2 — Chart range-switch crossfade — ✅ Done
+
+`src/components/analysis/analysis-view.tsx` and `src/components/dashboard/trend-chart.tsx` now wrap chart containers in `motion.div` keyed by `range`, with `initial={{ opacity: 0, y: 4 }} → animate={{ opacity: 1, y: 0 }}` and a 180–220 ms ease-out transition. The chart container remounts on range change; the brief opacity bridge hides the data swap and Recharts' own animation. Reduced motion drops the duration to 0. Affects `/analysis` (KPI tiles + 5 charts grouped under one wrapper) and the dashboard trend chart range chips.
+
+### A3 — Mobile list layout animations — ✅ Done
+
+`framer-motion` `layout` + `AnimatePresence` applied to two mobile lists:
+
+- `src/components/accounts/account-detail.tsx` — `visibleMobileHoldings` rows on `md:hidden`.
+- `src/components/accounts/accounts-list.tsx` — `AccountCardWithHoldings` rows inside `CategorySection` (mobile card view only; desktop table rows unchanged).
+
+Each row uses `layout="position"`, `initial={{ opacity: 0, y: -8 }}`, `exit={{ opacity: 0, scale: 0.96 }}`, and `springConfig` from `src/lib/motion.ts`. Wrapped in `<AnimatePresence initial={false}>` so first paint doesn't animate every row. Adds, deletes, and re-sorts FLIP-animate; existing `SwipeableRow` is untouched and continues to provide swipe-to-delete which now visually collapses the slot.
+
+### Out of scope (deferred)
+
+- Allocation pie hover pull-out spring (replace default Recharts tween) — proposed, not yet shipped.
+- Net-worth card delta tick (▲/▼ pulse on `useCountUp` change) — decoration, deferred.
+- Desktop `<table>` row layout animations — fragile with `<tr>` + framer-motion; intentionally restricted to the mobile card list.

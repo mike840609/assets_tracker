@@ -1,7 +1,8 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useState, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -11,11 +12,53 @@ const themes = [
   { value: "system", icon: Monitor, label: "System" },
 ] as const;
 
+type ThemeValue = (typeof themes)[number]["value"];
+
+type DocumentWithVT = Document & {
+  startViewTransition?: (callback: () => void | Promise<void>) => {
+    ready: Promise<void>;
+    finished: Promise<void>;
+  };
+};
+
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => startTransition(() => setMounted(true)), []);
+
+  const handleSelect = useCallback(
+    (value: ThemeValue, event: React.MouseEvent<HTMLButtonElement>) => {
+      if (value === theme) return;
+
+      const doc = document as DocumentWithVT;
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (!doc.startViewTransition || reduceMotion) {
+        startTransition(() => setTheme(value));
+        return;
+      }
+
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const root = document.documentElement;
+      root.style.setProperty("--vt-theme-x", `${x}px`);
+      root.style.setProperty("--vt-theme-y", `${y}px`);
+      root.setAttribute("data-vt-theme", "1");
+
+      const transition = doc.startViewTransition(() => {
+        // Synchronous DOM commit so the View Transitions API captures the
+        // before/after states correctly across the radial reveal.
+        flushSync(() => setTheme(value));
+      });
+
+      transition.finished.finally(() => {
+        root.removeAttribute("data-vt-theme");
+      });
+    },
+    [theme, setTheme],
+  );
 
   if (!mounted) {
     return (
@@ -32,7 +75,7 @@ export function ThemeToggle() {
       {themes.map(({ value, icon: Icon, label }) => (
         <button
           key={value}
-          onClick={() => startTransition(() => setTheme(value))}
+          onClick={(e) => handleSelect(value, e)}
           className={cn(
             "inline-flex items-center justify-center rounded-md p-1.5 text-sm transition-all duration-200",
             theme === value
