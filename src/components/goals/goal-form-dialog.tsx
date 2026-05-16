@@ -104,7 +104,10 @@ export function GoalFormDialog({
   function handleTargetAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value.replace(/,/g, "");
     if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
-    if (!raw) { setTargetAmount(""); return; }
+    if (!raw) {
+      setTargetAmount("");
+      return;
+    }
     const [intPart, decPart] = raw.split(".");
     const formattedInt = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     setTargetAmount(decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt);

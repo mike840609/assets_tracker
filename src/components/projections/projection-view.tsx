@@ -122,9 +122,7 @@ function NumberInput({
   prefix?: string;
 }) {
   const [display, setDisplay] = useState(() =>
-    value === 0
-      ? ""
-      : new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(value),
+    value === 0 ? "" : new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(value),
   );
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
