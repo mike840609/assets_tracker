@@ -85,6 +85,7 @@ table, immediately useful, and unlocks F2.
 ### F2 — FIRE / retirement projection page · L · 🔴 · ✅ **Shipped** (2026-05-16, PR #275)
 
 A dedicated `/projections` tab was added in commit `5f9fa83`. It uses:
+
 - Current net worth (from latest snapshot).
 - Trailing 12-mo realized savings (derived from `CashTransaction` deltas).
 - Per-projection-type growth assumptions.
