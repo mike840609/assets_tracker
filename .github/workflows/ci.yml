@@ -2,21 +2,27 @@ name: CI
 
 on:
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
   push:
     branches: [master, main]
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
+  AUTH_SECRET: "ci-secret-placeholder-not-real"
+  AUTH_GOOGLE_ID: "ci-google-id"
+  AUTH_GOOGLE_SECRET: "ci-google-secret"
+  CRON_SECRET: "ci-cron-secret"
+
 jobs:
-  ci:
-    name: Lint, type-check, and build
+  install:
+    name: Install
     runs-on: ubuntu-latest
-
-    env:
-      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
-      AUTH_SECRET: "ci-secret-placeholder-not-real"
-      AUTH_GOOGLE_ID: "ci-google-id"
-      AUTH_GOOGLE_SECRET: "ci-google-secret"
-      CRON_SECRET: "ci-cron-secret"
-
     steps:
       - uses: actions/checkout@v5
 
@@ -25,20 +31,105 @@ jobs:
           node-version: "22"
           cache: "npm"
 
+      - name: Restore deps cache
+        id: deps-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            src/generated/prisma
+            ~/.cache/prisma
+          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
+
       - name: Install dependencies
-        run: npm ci
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: npm ci --prefer-offline --no-audit --no-fund
 
-      - name: Generate Prisma client
-        run: npx prisma generate
+  format:
+    name: Format check
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            src/generated/prisma
+            ~/.cache/prisma
+          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
+      - run: npm run format:check
 
-      - name: Format check
-        run: npm run format:check
+  lint:
+    name: Lint
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            src/generated/prisma
+            ~/.cache/prisma
+          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
+      - run: npm run lint
 
-      - name: Lint
-        run: npm run lint
+  typecheck:
+    name: Type check
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            src/generated/prisma
+            ~/.cache/prisma
+          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
+      - run: npm run typecheck
 
-      - name: Type check
-        run: npm run typecheck
+  build:
+    name: Build
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            src/generated/prisma
+            ~/.cache/prisma
+          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
 
-      - name: Build
-        run: npm run build
+      - name: Restore Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma', 'next.config.ts') }}-${{ github.sha }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma', 'next.config.ts') }}-
+
+      - run: npm run build

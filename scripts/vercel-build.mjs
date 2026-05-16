@@ -18,7 +18,29 @@ function run(command, args, { allowFailure = false } = {}) {
   return result.status ?? 1;
 }
 
-const shouldAttemptMigrate = process.env.SKIP_PRISMA_MIGRATE_DEPLOY !== "1";
+// Skip `prisma migrate deploy` when this commit range touched no migration
+// files. Falls open (runs migrate) on any uncertainty: missing previous SHA,
+// shallow clone that can't reach it, or git failure.
+function migrationsChanged() {
+  if (process.env.FORCE_PRISMA_MIGRATE_DEPLOY === "1") return true;
+
+  const prevSha = process.env.VERCEL_GIT_PREVIOUS_SHA;
+  if (!prevSha) return true;
+
+  const reachable = spawnSync("git", ["cat-file", "-e", prevSha], { stdio: "ignore" });
+  if (reachable.status !== 0) return true;
+
+  const diff = spawnSync(
+    "git",
+    ["diff", "--name-only", `${prevSha}...HEAD`, "--", "prisma/migrations"],
+    { encoding: "utf8" },
+  );
+  if (diff.status !== 0) return true;
+
+  return diff.stdout.trim().length > 0;
+}
+
+const shouldAttemptMigrate = process.env.SKIP_PRISMA_MIGRATE_DEPLOY !== "1" && migrationsChanged();
 
 if (shouldAttemptMigrate) {
   const migrateStatus = run("prisma", ["migrate", "deploy"], { allowFailure: true });
@@ -27,6 +49,11 @@ if (shouldAttemptMigrate) {
     console.warn("\n[build:vercel] prisma migrate deploy failed; continuing with Next.js build.");
     console.warn("[build:vercel] Set SKIP_PRISMA_MIGRATE_DEPLOY=1 to skip migration entirely.\n");
   }
+} else {
+  console.log(
+    "[build:vercel] No migration files changed since previous deploy — skipping prisma migrate deploy.",
+  );
+  console.log("[build:vercel] Set FORCE_PRISMA_MIGRATE_DEPLOY=1 to force it.\n");
 }
 
 run("next", ["build"]);

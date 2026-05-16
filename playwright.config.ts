@@ -7,10 +7,10 @@ export default defineConfig({
   globalSetup: "./tests/e2e/global-setup",
   globalTeardown: "./tests/e2e/global-teardown",
   testDir: "./tests/e2e",
-  fullyParallel: false,
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: 1,
+  workers: 2,
   reporter: process.env.CI
     ? [["github"], ["html", { open: "never" }]]
     : [["html", { open: "never" }]],
