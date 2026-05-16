@@ -4,23 +4,23 @@ import { prisma } from "@/lib/prisma";
 import { getCachedNetWorthSummary } from "./net-worth-service";
 import { getAllExchangeRates, resolveRate } from "./exchange-rate-service";
 import { serializeGoal } from "@/lib/types";
-import type { Goal } from "@/generated/prisma/client";
-import type { GoalWithProgress, NetWorthSummary } from "@/lib/types";
+import type { GoalWithProgress, NetWorthSummary, SerializedGoal } from "@/lib/types";
 
-async function fetchUserGoalsInner(userId: string): Promise<Goal[]> {
+async function fetchUserGoalsInner(userId: string): Promise<SerializedGoal[]> {
   "use cache";
   cacheTag("goals");
   cacheTag(`goals:${userId}`);
   cacheLife("minutes");
-  return prisma.goal.findMany({
+  const goals = await prisma.goal.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
   });
+  return goals.map(serializeGoal);
 }
 
 export const fetchUserGoals = cache(fetchUserGoalsInner);
 
-function getCurrentAmount(goal: Goal, summary: NetWorthSummary): number {
+function getCurrentAmount(goal: SerializedGoal, summary: NetWorthSummary): number {
   switch (goal.scope) {
     case "NET_WORTH":
       return summary.netWorth;
@@ -42,7 +42,7 @@ function getCurrentAmount(goal: Goal, summary: NetWorthSummary): number {
 type SnapshotRow = { date: Date; netWorth: number; totalAssets: number };
 
 function computeProjection(
-  goal: Goal,
+  goal: SerializedGoal,
   currentAmount: number,
   targetAmountInBase: number,
   snapshots: SnapshotRow[],
@@ -119,14 +119,14 @@ export async function computeGoalsWithProgress(
   return goals.map((goal) => {
     const currentAmount = getCurrentAmount(goal, summary);
     const exchangeRate = resolveRate(rateMap, goal.targetCurrency, baseCurrency) ?? 1;
-    const targetAmountInBase = Number(goal.targetAmount) * exchangeRate;
+    const targetAmountInBase = goal.targetAmount * exchangeRate;
     const progressPercent =
       targetAmountInBase > 0 ? Math.min(100, (currentAmount / targetAmountInBase) * 100) : 0;
     const isCompleted = progressPercent >= 100;
     const { linear, cagr } = computeProjection(goal, currentAmount, targetAmountInBase, snapshots);
 
     return {
-      goal: serializeGoal(goal),
+      goal,
       currentAmount,
       targetAmountInBase,
       progressPercent,
