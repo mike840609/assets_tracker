@@ -18,7 +18,12 @@ interface GoalsViewProps {
   projectionData: ProjectionData;
 }
 
-export function GoalsView({ goalsWithProgress, baseCurrency, accounts, projectionData }: GoalsViewProps) {
+export function GoalsView({
+  goalsWithProgress,
+  baseCurrency,
+  accounts,
+  projectionData,
+}: GoalsViewProps) {
   const t = useTranslations("goals");
   const tNav = useTranslations("nav");
   const [createOpen, setCreateOpen] = useState(false);
