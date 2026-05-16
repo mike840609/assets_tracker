@@ -7,13 +7,16 @@ A modern, high-performance net worth and investment tracker. Built with **Next.j
 ## ✨ Features
 
 - **🔐 Google OAuth**: Secure multi-user authentication via NextAuth.js v5.
-- **🚀 Real-time Tracking**: Automatically fetch latest prices for Stocks, ETFs, and Cryptocurrencies (via Yahoo Finance + CoinGecko fallback).
+- **🚀 Real-time Tracking**: Automatically fetch latest prices for Stocks, ETFs, Cryptocurrencies, and Options (via Yahoo Finance + CoinGecko fallback).
 - **🌍 Multi-Currency Support**: Track assets in USD, TWD, EUR, and more. All values are automatically converted to your selected **Base Currency**.
-- **📈 Trend Visualization**: Interactive charts showing your net worth, assets, and liabilities over time.
+- **📈 Analysis & Charts**: Interactive charts for net-worth trend, assets/liabilities breakdown, monthly cash flow, top movers, and currency exposure.
+- **🔭 FIRE Projection**: Retirement projection page showing estimated FIRE date and portfolio growth curves from your real savings history.
 - **🔄 Lossless History**: Snapshots store original account balances and currencies, allowing perfectly accurate history normalization even if you change your base currency later.
 - **🤖 Automated Snapshots**: Built-in Vercel Cron integration to automatically record your net worth daily.
-- **🌗 Light / Dark / System Theme**: Full theme support with smooth toggle.
-- **💼 Unified Portfolio**: Combine bank accounts, brokerages, and crypto wallets into one dashboard.
+- **🌗 Light / Dark / System Theme**: Full theme support, plus multiple color schemes (chooseable from Settings).
+- **💼 Unified Portfolio**: Combine bank accounts, brokerages, crypto wallets, and options positions into one dashboard.
+- **⌨️ Keyboard-First Desktop**: Command palette (⌘K / Ctrl+K), Vim-style navigation chords, and configurable shortcuts for power users.
+- **📱 Native Mobile Feel**: iOS large-title navigation, swipe actions on list rows, bottom-sheet dialogs, pull-to-refresh, and haptic feedback.
 - **🌐 Internationalization**: English (en-US) and Traditional Chinese (zh-TW), auto-detected from browser.
 - **📊 Lossless Data Integrity**: Detailed breakdown of historical snapshots ensuring currency conversion accuracy over time.
 
@@ -32,7 +35,7 @@ A modern, high-performance net worth and investment tracker. Built with **Next.j
 
 ### 1. Prerequisites
 
-- Node.js 20.9+ (required by Next.js 16)
+- Node.js 24.x (required by Next.js 16)
 - A [Neon](https://neon.tech) PostgreSQL database (or any PostgreSQL with a Neon-compatible connection string)
 - A Google OAuth app (for authentication)
 
@@ -128,8 +131,8 @@ This approach ensures that your trend lines always remain continuous and compara
 
 ## 📝 Roadmap
 
-- [SUGGESTIONS.md](./docs/SUGGESTIONS.md) — prioritized feature roadmap across the whole app.
-- [ANALYSIS_ROADMAP.md](./docs/ANALYSIS_ROADMAP.md) — phased roadmap for the `/analysis` tab.
+- [SUGGESTIONS.md](./docs/SUGGESTIONS.md) — fix-it backlog (150+ items, ✅/❌ tracked).
+- [suggestions_20260516_future_features.md](./docs/suggestions_20260516_future_features.md) — forward-looking feature backlog (F1–F25).
 
 ## 📄 License
 

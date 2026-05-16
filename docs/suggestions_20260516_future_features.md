@@ -18,7 +18,7 @@
 | ID  | Title                                              | Theme           | Effort | Impact | Status |
 | --- | -------------------------------------------------- | --------------- | ------ | ------ | ------ |
 | F1  | Net-worth goals & milestones                       | Projections     | M      | 🔴     | ❌     |
-| F2  | FIRE / retirement projection page                  | Projections     | L      | 🔴     | ❌     |
+| F2  | FIRE / retirement projection page                  | Projections     | L      | 🔴     | ✅     |
 | F3  | Cost basis + realized/unrealized P&L on holdings   | P&L & Tax       | L      | 🔴     | ❌     |
 | F4  | Tax-lot tracking (FIFO / specific-lot)             | P&L & Tax       | XL     | 🟡     | ❌     |
 | F5  | Year-end tax summary export (realized gains CSV)   | P&L & Tax       | M      | 🟡     | ❌     |
@@ -82,10 +82,18 @@ trailing growth rate; project as both linear and CAGR.
 **Why this first:** zero external dependencies, uses existing snapshot
 table, immediately useful, and unlocks F2.
 
-### F2 — FIRE / retirement projection page · L · 🔴
+### F2 — FIRE / retirement projection page · L · 🔴 · ✅ **Shipped** (2026-05-16, PR #275)
 
-A dedicated `/projections` (or `/analysis/projections`) tab that runs a
-Monte-Carlo or deterministic projection using:
+A dedicated `/projections` tab was added in commit `5f9fa83`. It uses:
+
+- Current net worth (from latest snapshot).
+- Trailing 12-mo realized savings (derived from `CashTransaction` deltas).
+- Per-projection-type growth assumptions.
+
+Renders projected net worth curves and estimated FIRE date. Tick formatter refactored into `src/lib/chart-formatters.tsx` in follow-up commit `f882179`.
+
+~~A dedicated `/projections` (or `/analysis/projections`) tab that runs a
+Monte-Carlo or deterministic projection using:~~
 
 - Current net worth (from latest snapshot).
 - Trailing 12-mo realized savings rate (derived from `CashTransaction`
