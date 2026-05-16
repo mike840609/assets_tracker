@@ -37,8 +37,9 @@ jobs:
         with:
           path: |
             node_modules
+            src/generated/prisma
             ~/.cache/prisma
-          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}
+          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
 
       - name: Install dependencies
         if: steps.deps-cache.outputs.cache-hit != 'true'
@@ -59,8 +60,9 @@ jobs:
         with:
           path: |
             node_modules
+            src/generated/prisma
             ~/.cache/prisma
-          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}
+          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
       - run: npm run format:check
 
   lint:
@@ -78,8 +80,9 @@ jobs:
         with:
           path: |
             node_modules
+            src/generated/prisma
             ~/.cache/prisma
-          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}
+          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
       - run: npm run lint
 
   typecheck:
@@ -97,8 +100,9 @@ jobs:
         with:
           path: |
             node_modules
+            src/generated/prisma
             ~/.cache/prisma
-          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}
+          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
       - run: npm run typecheck
 
   build:
@@ -116,8 +120,9 @@ jobs:
         with:
           path: |
             node_modules
+            src/generated/prisma
             ~/.cache/prisma
-          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}
+          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
 
       - name: Restore Next.js build cache
         uses: actions/cache@v4

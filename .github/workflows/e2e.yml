@@ -36,8 +36,9 @@ jobs:
         with:
           path: |
             node_modules
+            src/generated/prisma
             ~/.cache/prisma
-          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}
+          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
 
       - name: Install dependencies
         if: steps.deps-cache.outputs.cache-hit != 'true'
