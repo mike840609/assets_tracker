@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { DataManagement } from "@/components/settings/data-management";
 import { InstallAppCard } from "@/components/settings/install-app-card";
@@ -11,7 +10,6 @@ import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
-import { History, TrendingUp, ChevronRight } from "lucide-react";
 import SettingsLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["settings", "toast", "languages", "dataManagement"];
@@ -21,9 +19,8 @@ async function SettingsContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
   // Run all independent queries in parallel
-  const [t, tNav, allMessages, settings] = await Promise.all([
+  const [t, allMessages, settings] = await Promise.all([
     getTranslations("settings"),
-    getTranslations("nav"),
     getMessages(),
     getOrCreateSettings(userId),
   ]);
@@ -38,29 +35,6 @@ async function SettingsContent() {
             <p className="text-sm text-muted-foreground leading-relaxed">{t("appDescription")}</p>
           </div>
         </div>
-
-        <section className="md:hidden space-y-2">
-          <Link
-            href="/history"
-            className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <History className="h-5 w-5 text-muted-foreground" />
-              <span className="font-medium">{tNav("history")}</span>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </Link>
-          <Link
-            href="/projections"
-            className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <TrendingUp className="h-5 w-5 text-muted-foreground" />
-              <span className="font-medium">{tNav("projections")}</span>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </Link>
-        </section>
 
         <SettingsForm currentCurrency={settings.baseCurrency} currentLocale={settings.locale} />
         <DataManagement />

@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useRef, useState, useEffect } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useDensity } from "@/components/layout/density-context";
+import { History, ChevronRight } from "lucide-react";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
 import type {
   RawHistoryData,
@@ -64,6 +66,7 @@ export function AnalysisView({
   locale,
 }: Props) {
   const t = useTranslations("analysis");
+  const tNav = useTranslations("nav");
   const { density } = useDensity();
   const isCompact = density === "compact";
   const [range, setRange] = usePersistedRange<RangeLabel>("analysis-view", "YTD");
@@ -237,6 +240,17 @@ export function AnalysisView({
           <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
         </div>
       )}
+
+      <Link
+        href="/history"
+        className="md:hidden flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <History className="h-5 w-5 text-muted-foreground" />
+          <span className="font-medium">{tNav("history")}</span>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </Link>
     </div>
   );
 }

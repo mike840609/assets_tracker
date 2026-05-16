@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Plus, Target } from "lucide-react";
+import { ChevronRight, Plus, Target, TrendingUp } from "lucide-react";
 import type { GoalWithProgress, SerializedAccount } from "@/lib/types";
 import { GoalCard } from "./goal-card";
 import { GoalFormDialog } from "./goal-form-dialog";
@@ -16,6 +17,7 @@ interface GoalsViewProps {
 
 export function GoalsView({ goalsWithProgress, baseCurrency, accounts }: GoalsViewProps) {
   const t = useTranslations("goals");
+  const tNav = useTranslations("nav");
   const [createOpen, setCreateOpen] = useState(false);
 
   return (
@@ -64,6 +66,17 @@ export function GoalsView({ goalsWithProgress, baseCurrency, accounts }: GoalsVi
         accounts={accounts}
         defaultCurrency={baseCurrency}
       />
+
+      <Link
+        href="/projections"
+        className="md:hidden flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <TrendingUp className="h-5 w-5 text-muted-foreground" />
+          <span className="font-medium">{tNav("projections")}</span>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </Link>
     </div>
   );
 }
