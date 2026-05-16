@@ -26,7 +26,7 @@ Findings sourced from the Vercel MCP connector against project `prj_soY30S7ki1x3
 | V12 | Structured error logging in `price-service.ts`                                                                                                                                                                             | Observability            | 🟡 Medium | 1 hr    | ❌ Not Done            |
 | V13 | Add baseline security headers (HSTS, X-CTO, XFO, Referrer-Policy, Permissions-Policy)                                                                                                                                      | Security                 | 🔴 High   | 1 hr    | ✅ Done                |
 | V14 | Add CSP (Report-Only first, then enforce)                                                                                                                                                                                  | Security                 | 🔴 High   | 2-3 hrs | ❌ Not Done            |
-| V15 | Audit & shrink `.next/cache` (currently 292 MB)                                                                                                                                                                            | Build Perf               | 🟢 Low    | 1 hr    | ❌ Not Done            |
+| V15 | Audit & shrink `.next/cache` (currently 292 MB)                                                                                                                                                                            | Build Perf               | 🟢 Low    | 1 hr    | ⚠️ Partial             |
 | V16 | React `cache()` wrap for `/accounts/[id]` reads + audit `<Link prefetch>` to stop 5–8× burst                                                                                                                               | Performance              | 🔴 High   | 45 min  | ✅ Done                |
 | V17 | `Cache-Control` + `"use cache"` / `cacheTag("exchange-rates")` on `/api/exchange-rates`                                                                                                                                    | Performance              | 🟡 Medium | 20 min  | ❌ Not Done            |
 | V18 | Opt `/analysis` and `/history` into PPR with `"use cache"` + `cacheTag`                                                                                                                                                    | Performance              | 🟡 Medium | 1 hr    | ❌ Not Done            |
@@ -55,8 +55,8 @@ Deployment `dpl_3KqPj4qBr3ZojdDaSxtKvo8iNhC2` (44s total, 292 MB build cache):
 
 1. **Deprecated middleware convention.** `⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.` The repo still has `src/middleware.ts`.
 2. **Prisma minor out of date.** Every build prints a 7.6.0 → 7.7.0 upgrade banner.
-3. **Duplicate `prisma generate` (resolved 2026-04-26).** `vercel.json` now pins `buildCommand: "npm run build:vercel"` (= `prisma migrate deploy && next build`).
-4. **Large build cache (292 MB).** Upload takes ~4s.
+3. **Duplicate `prisma generate` (resolved 2026-04-26).** `vercel.json` now pins `buildCommand: "npm run build:vercel"`. As of 2026-05-16, the script runs `prisma migrate deploy` followed by `next build`, and skips the migrate step when `git diff --name-only $VERCEL_GIT_PREVIOUS_SHA HEAD -- prisma/migrations` is empty. Falls open (still runs migrate) on any uncertainty — missing previous SHA, shallow clone that can't reach it, or git failure. `FORCE_PRISMA_MIGRATE_DEPLOY=1` overrides; pre-existing `SKIP_PRISMA_MIGRATE_DEPLOY=1` short-circuit preserved.
+4. **Large build cache (292 MB).** Upload takes ~4s. Partially addressed 2026-05-16 by tightening `.vercelignore` — see V15.
 
 ### Key Runtime-log Findings (production, 7d)
 
@@ -97,7 +97,7 @@ Deployment `dpl_3KqPj4qBr3ZojdDaSxtKvo8iNhC2` (44s total, 292 MB build cache):
 
 **V14 — Add Content-Security-Policy.** Start with `Content-Security-Policy-Report-Only` for one week, then promote to enforcement. Allowlist: `default-src 'self'`, `script-src 'self' 'nonce-<NONCE>' https://va.vercel-scripts.com`, `img-src 'self' data: https://lh3.googleusercontent.com`, `frame-ancestors 'none'`. Critical files: `next.config.ts` or `src/proxy.ts`.
 
-**V15 — Audit & shrink `.next/cache`.** Build cache is 292 MB; upload cost is ~4s per deploy. Run `du -sh .next/cache/*` locally; candidates for exclusion: `.next/cache/swc`, `.next/cache/webpack` (not used under Turbopack). Critical files: `.vercelignore`.
+**V15 — Audit & shrink `.next/cache`.** Build cache is 292 MB; upload cost is ~4s per deploy. ⚠️ Partial (2026-05-16): `.vercelignore` now excludes `tests/`, `playwright-report/`, `test-results/`, `playwright.config.ts`, `docs/`, `*.md` (except `README.md`), `.github/`, `.husky/`, and `scripts/compress-og-images.mjs` so they no longer ride along in the deploy upload. The 292 MB `.next/cache` itself is still untouched — running `du -sh .next/cache/*` locally and excluding the `.next/cache/swc` + `.next/cache/webpack` subtrees (Turbopack doesn't use them) remains open. Critical files: `.vercelignore`.
 
 **V16 — Dedupe `/accounts/[id]` reads.** Done 2026-05-10. `src/lib/services/account-service.ts` now wraps account detail lookup and account-detail price-map reads in React `cache()`, while continuing to use the ownership-safe `fetchUserAccountsWithHoldings(userId)` structural cache. Repeated account detail links in `accounts-list.tsx` and `accounts-summary.tsx`, plus the mobile bottom nav, now use `prefetch={false}` to avoid viewport-triggered RSC bursts. Critical files: `src/app/(main)/accounts/[id]/page.tsx`, `src/lib/services/account-service.ts`, `src/components/accounts/accounts-list.tsx`, `src/components/dashboard/accounts-summary.tsx`, `src/components/layout/sidebar.tsx`.
 
@@ -218,9 +218,9 @@ Findings sourced against Vercel project on **2026-04-24**. Scope: only **launch 
 
 ### Testing / CI (R20–R21)
 
-**R20** — `.github/workflows/ci.yml`: run `npm ci`, `npx prisma generate`, `npm run lint`, `npx tsc --noEmit`, `next build` on every PR. Fails red → blocks merge. ✅ Done.
+**R20** — `.github/workflows/ci.yml`: run `npm ci`, `npx prisma generate`, `npm run lint`, `npx tsc --noEmit`, `next build` on every PR. Fails red → blocks merge. ✅ Done. (2026-05-16) Pipeline is now fan-out: a single `install` job seeds a `node_modules + src/generated/prisma + ~/.cache/prisma` cache (keyed by `package-lock.json` + `prisma/schema.prisma`); `format`, `lint`, `typecheck`, and `build` restore it in parallel. The `build` job additionally restores `.next/cache` keyed by lockfile + schema + `next.config.ts`. `concurrency: cancel-in-progress` is on, and `paths-ignore: docs/**, **.md` skips doc-only PRs.
 
-**R21** — Playwright smoke E2E: cover (1) unauth → login → `/`, (2) create account → add holding → holding appears, (3) dashboard loads with net-worth card + trend chart. ✅ Done.
+**R21** — Playwright smoke E2E: cover (1) unauth → login → `/`, (2) create account → add holding → holding appears, (3) dashboard loads with net-worth card + trend chart. ✅ Done. (2026-05-16) Workflow caches `~/.cache/ms-playwright` keyed by the `@playwright/test` version in the lockfile — warm runs only call `playwright install-deps chromium` instead of redownloading the browser archive. Shares the same `node_modules` cache as CI. `playwright.config.ts` now runs `fullyParallel: true, workers: 2`; the `waitForPageReady` `networkidle` helper was removed in favor of explicit `expect(locator).toBeVisible()` waits.
 
 ### Product (R22–R23)
 
