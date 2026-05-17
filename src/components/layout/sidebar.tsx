@@ -266,7 +266,7 @@ export function MobileNav() {
   return (
     <nav
       className={cn(
-        "md:hidden fixed bottom-0 left-0 right-0 z-50 glass backdrop-blur-md border-t border-border/50 flex justify-around py-3 pb-safe transition-transform motion-normal",
+        "md:hidden fixed bottom-0 left-0 right-0 z-50 glass backdrop-blur-md border-t border-border/50 grid grid-cols-5 py-2 pb-safe transition-transform motion-normal",
         hidden && "translate-y-full",
       )}
     >
@@ -294,22 +294,26 @@ export function MobileNav() {
                 router.push(item.href);
               });
             }}
-            className={cn(
-              "relative flex min-h-12 min-w-12 flex-col items-center justify-center gap-1 px-4 py-2 text-[10px] uppercase tracking-wider transition-all group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              isActive
-                ? "text-primary font-semibold bg-primary/10 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.2)]"
-                : "text-muted-foreground hover:text-foreground",
-            )}
+            className="group relative flex min-h-12 w-full items-center justify-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label={item.label}
             aria-current={isActive ? "page" : undefined}
           >
-            <Icon
+            <span
               className={cn(
-                "h-5 w-5 transition-transform motion-fast",
-                isActive ? "scale-110" : "group-hover:scale-110",
+                "flex w-16 flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-[10px] uppercase tracking-wider transition-all motion-fast",
+                isActive
+                  ? "text-primary font-semibold bg-primary/12 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.25)] scale-[1.04]"
+                  : "text-muted-foreground group-hover:text-foreground",
               )}
-            />
-            <span>{item.label}</span>
+            >
+              <Icon
+                className={cn(
+                  "transition-all motion-fast",
+                  isActive ? "h-6 w-6" : "h-5 w-5 group-hover:scale-110",
+                )}
+              />
+              <span className="truncate w-full text-center">{item.label}</span>
+            </span>
           </button>
         );
       })}
