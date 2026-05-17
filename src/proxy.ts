@@ -77,8 +77,19 @@ export default auth((req) => {
   }
 });
 
+// Negative-lookahead exclusions:
+//   - Next internals + cron + file-based metadata (already excluded before P1).
+//   - robots.txt / sitemap.xml served from `public/`.
+//   - Common bot/scanner probes observed in production logs and in the wild:
+//     wp-admin/wp-login/wp-content/wp-includes/wordpress, xmlrpc, cgi-bin,
+//     phpmyadmin/adminer, cmd_*, vendor/phpunit, plus any path containing
+//     .php/.asp/.aspx/.jsp/.cgi/.env/.git/.svn/.htaccess/.htpasswd.
+// Bot tokens are anchored at position 1 (no leading `.*`) so we don't
+// accidentally skip legitimate routes that happen to contain these
+// substrings deeper in the path; extension/dotfile tokens use `.*` so any
+// component carrying them is excluded.
 export const config = {
   matcher: [
-    "/((?!api/cron|_next/static|_next/image|favicon.ico|apple-icon|icon|opengraph-image|twitter-image).*)",
+    "/((?!api/cron|_next/static|_next/image|favicon\\.ico|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|wp-admin|wp-login|wp-content|wp-includes|wordpress|xmlrpc|cgi-bin|cmd_|phpmyadmin|adminer|vendor/phpunit|.*\\.php|.*\\.aspx?|.*\\.jsp|.*\\.cgi|.*\\.env|.*\\.git|.*\\.svn|.*\\.htaccess|.*\\.htpasswd).*)",
   ],
 };
