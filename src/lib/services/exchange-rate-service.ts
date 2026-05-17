@@ -1,3 +1,4 @@
+import "server-only";
 import { cache } from "react";
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
