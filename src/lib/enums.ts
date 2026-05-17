@@ -29,3 +29,5 @@ export const HOLDING_TRANSACTION_TYPES = ["BUY", "SELL", "EDIT"] as const;
 export const CASH_TRANSACTION_TYPES = ["DEPOSIT", "WITHDRAWAL", "EDIT"] as const;
 
 export const GOAL_SCOPES = ["NET_WORTH", "ASSETS_ONLY", "CATEGORY", "ACCOUNT"] as const;
+
+export const ALLOCATION_SCOPES = ["ASSET_TYPE", "ACCOUNT_CATEGORY"] as const;

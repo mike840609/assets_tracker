@@ -9,12 +9,32 @@ import {
   getMonthlyCashFlow,
   getAccountMonthlyCashFlow,
 } from "@/lib/services/history-service";
+import {
+  fetchUserAllocationTargets,
+  computeAllocationDrift,
+} from "@/lib/services/allocation-service";
+import { getCachedNetWorthSummary } from "@/lib/services/net-worth-service";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AnalysisView } from "@/components/analysis/analysis-view";
 import AnalysisLoading from "./loading";
+import type { AllocationDriftItem } from "@/lib/types";
+import { ACCOUNT_CATEGORIES } from "@/lib/enums";
 
-const CLIENT_NAMESPACES = ["analysis", "categories", "nav", "trendChart", "history"];
+const CLIENT_NAMESPACES = ["analysis", "categories", "nav", "trendChart", "history", "allocation"];
+
+const ASSET_TYPE_LABELS: Record<string, string> = {
+  STOCK: "Stock",
+  ETF: "ETF",
+  CRYPTO: "Crypto",
+  MUTUAL_FUND: "Mutual Fund",
+  BOND: "Bond",
+  OTHER: "Other",
+};
+
+const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
+  ACCOUNT_CATEGORIES.map((c) => [c, c.replace(/_/g, " ")]),
+);
 
 async function AnalysisContent() {
   const session = await getSession();
@@ -22,16 +42,36 @@ async function AnalysisContent() {
   const userId = session.user.id;
 
   const settings = await getOrCreateSettings(userId);
-  const [t, messages, snapshots, cashFlowData, rawHistory, accountCashFlow, locale] =
-    await Promise.all([
-      getTranslations("analysis"),
-      getMessages(),
-      getFullNormalizedHistory(userId, settings.baseCurrency),
-      getMonthlyCashFlow(userId, settings.baseCurrency),
-      getRawHistoryWithBreakdown(userId, settings.baseCurrency),
-      getAccountMonthlyCashFlow(userId, settings.baseCurrency),
-      getLocale(),
-    ]);
+  const baseCurrency = settings.baseCurrency;
+
+  const [
+    t,
+    messages,
+    snapshots,
+    cashFlowData,
+    rawHistory,
+    accountCashFlow,
+    locale,
+    targets,
+    summary,
+  ] = await Promise.all([
+    getTranslations("analysis"),
+    getMessages(),
+    getFullNormalizedHistory(userId, baseCurrency),
+    getMonthlyCashFlow(userId, baseCurrency),
+    getRawHistoryWithBreakdown(userId, baseCurrency),
+    getAccountMonthlyCashFlow(userId, baseCurrency),
+    getLocale(),
+    fetchUserAllocationTargets(userId),
+    getCachedNetWorthSummary(userId, baseCurrency),
+  ]);
+
+  const allocationDrift: AllocationDriftItem[] = computeAllocationDrift(
+    targets,
+    summary,
+    (scope, key) =>
+      scope === "ASSET_TYPE" ? (ASSET_TYPE_LABELS[key] ?? key) : (CATEGORY_LABELS[key] ?? key),
+  );
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
@@ -43,8 +83,9 @@ async function AnalysisContent() {
           cashFlowData={cashFlowData}
           rawHistory={rawHistory}
           accountCashFlow={accountCashFlow}
-          baseCurrency={settings.baseCurrency}
+          baseCurrency={baseCurrency}
           locale={locale}
+          allocationDrift={allocationDrift}
         />
       </div>
     </NextIntlClientProvider>

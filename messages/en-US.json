@@ -215,7 +215,43 @@
     "attributionNoData": "Not enough history to compute attribution.",
     "attributionNote": "Market performance = total change minus cash contributions. Prices use current rates (v1 approximation).",
     "attrCash": "Cash flow",
-    "attrMarket": "Market"
+    "attrMarket": "Market",
+    "allocationDriftTitle": "Allocation Drift",
+    "allocationDriftSubtitle": "How far each category has strayed from your target. Red = past the alert threshold.",
+    "allocationActual": "Actual",
+    "allocationTarget": "Target",
+    "allocationDrift": "Drift",
+    "allocationAlertHint": "Threshold: ±{threshold} pp",
+    "allocationAlertBadge": "{count, plural, one {# off-target} other {# off-target}}",
+    "allocationDriftNoTargets": "No allocation targets set. Add targets in Settings → Allocation Targets.",
+    "allocationDriftNote": "Positive drift = over-allocated vs. target; negative = under-allocated. pp = percentage points."
+  },
+  "allocation": {
+    "title": "Allocation Targets",
+    "description": "Set target percentages for asset types or account categories. You'll see a drift chart in Analysis and receive alerts when drift exceeds your threshold.",
+    "addTarget": "Add Target",
+    "scopeLabel": "Scope",
+    "keyLabel": "Category",
+    "keyPlaceholder": "Select…",
+    "targetPercentLabel": "Target %",
+    "thresholdLabel": "Alert at",
+    "addBtn": "Add",
+    "deleteTarget": "Delete target",
+    "invalidPercent": "Percentage must be between 0 and 100",
+    "totalHint": "{scope}: {total}% total",
+    "totalOverHint": "exceeds 100%",
+    "threshold": "±{n} pp",
+    "scope": {
+      "ASSET_TYPE": "Asset Type",
+      "ACCOUNT_CATEGORY": "Account Category"
+    },
+    "alertToast": "{label}: {drift} pp off target (threshold ±{threshold} pp)",
+    "alertToastMore": "+{count, plural, one {# more alert} other {# more alerts}}",
+    "toast": {
+      "created": "Target added",
+      "deleted": "Target removed",
+      "failed": "Something went wrong"
+    }
   },
   "projections": {
     "title": "Projections",

@@ -18,6 +18,7 @@ const CLIENT_NAMESPACES = [
   "goalsMilestone",
   "categories",
   "common",
+  "allocation",
 ];
 
 async function DashboardPageContent() {

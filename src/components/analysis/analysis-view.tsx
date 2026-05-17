@@ -31,6 +31,8 @@ import { CashFlowChart } from "./cashflow-chart";
 import { CategoryTrendChart } from "./category-trend-chart";
 import { TopMoversList } from "./top-movers-list";
 import { AttributionChart } from "./attribution-chart";
+import { AllocationDriftChart } from "./allocation-drift-chart";
+import type { AllocationDriftItem } from "@/lib/types";
 
 interface Props {
   snapshots: NormalizedSnapshot[];
@@ -39,6 +41,7 @@ interface Props {
   accountCashFlow: AccountMonthlyContribution[];
   baseCurrency: string;
   locale: string;
+  allocationDrift: AllocationDriftItem[];
 }
 
 const ranges = [
@@ -66,6 +69,7 @@ export function AnalysisView({
   accountCashFlow,
   baseCurrency,
   locale,
+  allocationDrift,
 }: Props) {
   const t = useTranslations("analysis");
   const tNav = useTranslations("nav");
@@ -273,6 +277,9 @@ export function AnalysisView({
             </div>
             <div className="premium-card">
               <AttributionChart items={attributionItems} baseCurrency={baseCurrency} />
+            </div>
+            <div className="premium-card">
+              <AllocationDriftChart items={allocationDrift} />
             </div>
             <div className="premium-card">
               <CategoryTrendChart

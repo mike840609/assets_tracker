@@ -181,6 +181,26 @@ model Goal {
   @@index([userId, createdAt(sort: Desc)])
 }
 
+enum AllocationScope {
+  ASSET_TYPE
+  ACCOUNT_CATEGORY
+}
+
+model AllocationTarget {
+  id             String          @id @default(cuid())
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scope          AllocationScope
+  key            String
+  targetPercent  Decimal         @db.Decimal(5, 2)
+  driftThreshold Decimal         @db.Decimal(5, 2) @default(5)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([userId, scope, key])
+  @@index([userId])
+}
+
 model User {
   id            String        @id @default(cuid())
   name          String?
@@ -190,10 +210,11 @@ model User {
   accounts      AuthAccount[]
   sessions      Session[]
 
-  appSettings Setting?
-  appAccounts Account[]
-  snapshots   NetWorthSnapshot[]
-  goals       Goal[]
+  appSettings       Setting?
+  appAccounts       Account[]
+  snapshots         NetWorthSnapshot[]
+  goals             Goal[]
+  allocationTargets AllocationTarget[]
 }
 
 model AuthAccount {

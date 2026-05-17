@@ -1,4 +1,10 @@
-import type { Account, Goal, Holding, HoldingTransaction } from "@/generated/prisma/client";
+import type {
+  Account,
+  AllocationTarget,
+  Goal,
+  Holding,
+  HoldingTransaction,
+} from "@/generated/prisma/client";
 
 // ---------------------------------------------------------------------------
 // Generic serialization utilities
@@ -155,6 +161,46 @@ export type GoalWithProgress = {
   projectedDateCAGR: string | null;
   isCompleted: boolean;
 };
+
+// ---------------------------------------------------------------------------
+// AllocationTarget types
+// ---------------------------------------------------------------------------
+
+export type SerializedAllocationTarget = {
+  id: string;
+  userId: string;
+  scope: "ASSET_TYPE" | "ACCOUNT_CATEGORY";
+  key: string;
+  targetPercent: number;
+  driftThreshold: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AllocationDriftItem = {
+  scope: "ASSET_TYPE" | "ACCOUNT_CATEGORY";
+  key: string;
+  label: string;
+  actualPercent: number;
+  targetPercent: number;
+  driftThreshold: number;
+  /** actualPercent - targetPercent (positive = over-allocated, negative = under-allocated) */
+  drift: number;
+  isOverThreshold: boolean;
+};
+
+export function serializeAllocationTarget(t: AllocationTarget): SerializedAllocationTarget {
+  return {
+    id: t.id,
+    userId: t.userId,
+    scope: t.scope as "ASSET_TYPE" | "ACCOUNT_CATEGORY",
+    key: t.key,
+    targetPercent: Number(t.targetPercent),
+    driftThreshold: Number(t.driftThreshold),
+    createdAt: t.createdAt.toISOString(),
+    updatedAt: t.updatedAt.toISOString(),
+  };
+}
 
 export function serializeGoal(goal: Goal): SerializedGoal {
   return {

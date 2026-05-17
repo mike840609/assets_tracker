@@ -25,7 +25,7 @@
 | F6  | Recurring / scheduled cash transactions            | Cashflow        | M      | 🔴     | ❌     |
 | F7  | Cashflow calendar view                             | Cashflow        | M      | 🟡     | ❌     |
 | F8  | Cash transaction categories + spending insights    | Cashflow        | L      | 🟡     | ❌     |
-| F9  | Target asset allocation + rebalance alerts         | Portfolio       | L      | 🔴     | ❌     |
+| F9  | Target asset allocation + rebalance alerts         | Portfolio       | L      | 🔴     | ✅     |
 | F10 | Benchmark overlay on net-worth + holding charts    | Portfolio       | M      | 🟡     | ❌     |
 | F11 | Performance attribution ("which holding moved NW") | Portfolio       | M      | 🟡     | ✅     |
 | F12 | Watchlist (symbols you track but don't own)        | Discoverability | S      | 🟡     | ❌     |
@@ -230,18 +230,35 @@ the UI doesn't grow categories controls for people who don't categorize.
 You can already _see_ the portfolio. The next step is the app telling
 you something about it.
 
-### F9 — Target allocation + rebalance alerts · L · 🔴
+### F9 — Target allocation + rebalance alerts · L · 🔴 · ✅ **Shipped** (2026-05-17)
 
 Let the user define a target allocation (e.g., 70% stocks / 20% bonds /
 10% crypto). Compute current allocation from holdings, surface drift
 ("crypto is 16% — 6 pts over target"), and emit a Sonner toast on the
 dashboard when drift exceeds a configurable threshold.
 
-**Schema:** `AllocationTarget { userId, scope (ASSET_TYPE | CURRENCY |
-ACCOUNT_CATEGORY), key, targetPercent }`.
+**Schema:**
 
-**UI:** Settings tab "Allocation Targets" + a new card in `/analysis`
-showing actual vs. target as a stacked bar.
+```prisma
+enum AllocationScope { ASSET_TYPE  ACCOUNT_CATEGORY }
+model AllocationTarget {
+  id             String          @id @default(cuid())
+  userId         String
+  scope          AllocationScope
+  key            String          // e.g. "STOCK", "BROKERAGE"
+  targetPercent  Decimal         @db.Decimal(5, 2)
+  driftThreshold Decimal         @db.Decimal(5, 2) @default(5)
+  @@unique([userId, scope, key])
+}
+```
+
+**Shipped surfaces:**
+
+- Settings → "Allocation Targets" section: add/delete targets by scope × key with per-target drift threshold (pp).
+- `/analysis` page: new "Allocation Drift" horizontal bar chart showing `actual − target` per target (red when over threshold).
+- Dashboard: `RebalanceAlert` client component fires Sonner toast warnings once per browser session when any target drifts past its threshold.
+
+**Services / API:** `src/lib/services/allocation-service.ts` (`fetchUserAllocationTargets`, `computeAllocationDrift`, `getRebalanceAlerts`) + REST routes `GET/POST /api/allocation-targets` and `PATCH/DELETE /api/allocation-targets/[id]`.
 
 ### F10 — Benchmark overlay on charts · M · 🟡
 

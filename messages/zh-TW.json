@@ -215,7 +215,43 @@
     "attributionNoData": "歷史資料不足，無法計算歸因。",
     "attributionNote": "市場表現 = 總變化 − 現金貢獻。價格使用目前匯率（v1 近似值）。",
     "attrCash": "現金流",
-    "attrMarket": "市場"
+    "attrMarket": "市場",
+    "allocationDriftTitle": "配置偏差",
+    "allocationDriftSubtitle": "各類別偏離目標配置的程度。紅色 = 超過警示門檻。",
+    "allocationActual": "實際",
+    "allocationTarget": "目標",
+    "allocationDrift": "偏差",
+    "allocationAlertHint": "門檻：±{threshold} pp",
+    "allocationAlertBadge": "{count} 項超標",
+    "allocationDriftNoTargets": "尚未設定配置目標。請至「設定 → 配置目標」新增。",
+    "allocationDriftNote": "正偏差 = 超過目標；負偏差 = 低於目標。pp = 百分比點。"
+  },
+  "allocation": {
+    "title": "配置目標",
+    "description": "為資產類型或帳戶類別設定目標百分比。在分析頁查看偏差圖表，並在偏差超過門檻時收到提示。",
+    "addTarget": "新增目標",
+    "scopeLabel": "範圍",
+    "keyLabel": "類別",
+    "keyPlaceholder": "選擇...",
+    "targetPercentLabel": "目標 %",
+    "thresholdLabel": "警示門檻",
+    "addBtn": "新增",
+    "deleteTarget": "刪除目標",
+    "invalidPercent": "百分比須介於 0 至 100 之間",
+    "totalHint": "{scope}：目前合計 {total}%",
+    "totalOverHint": "已超過 100%",
+    "threshold": "±{n} pp",
+    "scope": {
+      "ASSET_TYPE": "資產類型",
+      "ACCOUNT_CATEGORY": "帳戶類別"
+    },
+    "alertToast": "{label}：偏差 {drift} pp（門檻 ±{threshold} pp）",
+    "alertToastMore": "另有 {count} 項警示",
+    "toast": {
+      "created": "目標已新增",
+      "deleted": "目標已移除",
+      "failed": "發生錯誤"
+    }
   },
   "projections": {
     "title": "財務預測",

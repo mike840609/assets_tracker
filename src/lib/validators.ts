@@ -7,6 +7,7 @@ import {
   CASH_TRANSACTION_TYPES,
   OPTION_TYPES,
   GOAL_SCOPES,
+  ALLOCATION_SCOPES,
 } from "./enums";
 
 const OCC_SHAPE = /^[A-Z][A-Z0-9.\-]{0,5}\d{6}[CP]\d{8}$/;
@@ -119,6 +120,15 @@ export const createGoalSchema = z.object({
 });
 
 export const updateGoalSchema = createGoalSchema.partial();
+
+export const createAllocationTargetSchema = z.object({
+  scope: z.enum(ALLOCATION_SCOPES),
+  key: z.string().min(1).max(64),
+  targetPercent: z.number().min(0).max(100),
+  driftThreshold: z.number().min(0).max(100).default(5),
+});
+
+export const updateAllocationTargetSchema = createAllocationTargetSchema.partial();
 
 const decimalSchema = z.union([z.string(), z.number()]);
 

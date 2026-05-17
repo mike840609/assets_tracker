@@ -11,8 +11,10 @@ import {
 import { getAllExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { computeGoalsWithProgress } from "@/lib/services/goal-service";
+import { getRebalanceAlerts } from "@/lib/services/allocation-service";
 import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
 import { GoalsMilestoneCard } from "@/components/dashboard/goals-milestone-card";
+import { RebalanceAlert } from "@/components/dashboard/rebalance-alert";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -271,8 +273,14 @@ export async function DashboardContent({ userId }: { userId: string }) {
     );
   }
 
+  // Pre-fetch rebalance alerts (shares cached summary, resolves fast)
+  const alerts = await getRebalanceAlerts(userId, baseCurrency);
+
   return (
     <>
+      {/* Rebalance alert toasts — rendered client-side, fires once per session */}
+      <RebalanceAlert alerts={alerts} />
+
       {/* Actions stream first — lightweight metadata, no summary needed */}
       <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded-lg" />}>
         <DashboardActionsSection userId={userId} baseCurrency={baseCurrency} />
