@@ -44,6 +44,16 @@ interface Column {
   align: "left" | "right";
 }
 
+function getAriaSort(
+  activeField: HoldingSortField,
+  activeDirection: "asc" | "desc",
+  field: HoldingSortField | null,
+): "ascending" | "descending" | "none" | undefined {
+  if (!field) return undefined;
+  if (activeField !== field) return "none";
+  return activeDirection === "asc" ? "ascending" : "descending";
+}
+
 const COLUMNS: Column[] = [
   { field: "symbol", label: "Symbol", align: "left" },
   { field: "name", label: "Name", align: "left" },
@@ -74,19 +84,31 @@ export function HoldingsTable({
   return (
     <div className="rounded-xl border border-border/40 overflow-hidden bg-card">
       <table className="w-full text-sm">
+        <caption className="sr-only">{t("accountDetail.holdingsCount")}</caption>
         <thead className="sticky top-0 bg-muted/70 backdrop-blur-sm border-b border-border/40">
           <tr>
             {COLUMNS.map((col, i) => (
               <th
                 key={i}
+                scope="col"
+                aria-sort={getAriaSort(sortField, sortDirection, col.field)}
                 className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap ${
                   col.align === "right" ? "text-right" : "text-left"
-                } ${col.field ? "cursor-pointer select-none hover:text-foreground transition-colors" : ""}`}
-                onClick={col.field ? () => onSort(col.field!) : undefined}
+                }`}
               >
-                {col.label}
-                {col.field && sortField === col.field && (
-                  <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                {col.field ? (
+                  <button
+                    type="button"
+                    className={`inline-flex items-center gap-1 ${col.align === "right" ? "justify-end w-full" : ""} cursor-pointer select-none hover:text-foreground transition-colors`}
+                    onClick={() => onSort(col.field!)}
+                  >
+                    <span>{col.label}</span>
+                    {sortField === col.field && (
+                      <span aria-hidden="true">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                    )}
+                  </button>
+                ) : (
+                  col.label
                 )}
               </th>
             ))}
@@ -105,12 +127,13 @@ export function HoldingsTable({
                 key={h.id}
                 className={`${index > 0 ? "border-t border-border/40" : ""} hover:bg-muted/40 transition-colors group`}
               >
-                <td
+                <th
+                  scope="row"
                   className={`px-3 ${tdPy} font-mono font-semibold whitespace-nowrap`}
                   title={optionDisplay?.occ}
                 >
                   {symbolLabel}
-                </td>
+                </th>
                 <td className={`px-3 ${tdPy} text-muted-foreground max-w-[200px] xl:max-w-[280px]`}>
                   <span className="truncate block">{nameLabel}</span>
                 </td>
@@ -153,7 +176,10 @@ export function HoldingsTable({
                 </td>
                 <td className={`px-2 ${tdPy} text-right`}>
                   <DropdownMenu>
-                    <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <DropdownMenuTrigger
+                      className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                      aria-label={t("common.openActionsFor", { name: symbolLabel })}
+                    >
                       <MoreHorizontal className="h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">

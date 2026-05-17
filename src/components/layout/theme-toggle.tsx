@@ -77,7 +77,10 @@ export function ThemeToggle() {
       {themes.map(({ value, icon: Icon, label }) => (
         <button
           key={value}
+          type="button"
           onClick={(e) => handleSelect(value, e)}
+          aria-label={label}
+          aria-pressed={theme === value}
           className={cn(
             "inline-flex items-center justify-center rounded-md p-1.5 text-sm transition-all duration-200",
             theme === value

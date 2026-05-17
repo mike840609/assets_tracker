@@ -316,7 +316,7 @@ Without this phase, every later impact claim is a guess. Vercel runtime logs hav
 
 - **Problem:** Speed Insights mounted but no budget enforcement; CWV regressions ship silently.
 - **Approach:** extend `src/components/layout/speed-insights.tsx` to import `web-vitals` and POST exceedances (LCP > 2500ms, CLS > 0.1, INP > 200ms) to `/api/_metrics/vitals` → `logger.warn`.
-- **Files:** `src/components/layout/speed-insights.tsx`, `src/app/api/_metrics/vitals/route.ts` (new), `docs/PERFORMANCE_BUDGETS.md` (new).
+- **Files:** `src/components/layout/speed-insights.tsx`, `src/app/api/_metrics/vitals/route.ts` (new). If numeric budgets are later split into their own doc, add `docs/PERFORMANCE_BUDGETS.md` at that point.
 - **Effort:** S. **Impact:** any CWV regression now logs a structured warning.
 - **Status (2026-05-09):** `web-vitals` installed as direct dep. `speed-insights.tsx` now calls `onLCP/onCLS/onINP` via `useEffect` and uses `navigator.sendBeacon` to POST exceedances. `/api/_metrics/vitals/route.ts` created; logs `cwv.budget_exceeded` with metric name, value, rating, url.
 

@@ -100,6 +100,16 @@ const CATEGORY_ORDER = [
   "OTHER",
 ];
 
+function getAriaSort(
+  activeField: "name" | "value",
+  activeDirection: "asc" | "desc",
+  field: "name" | "value" | null,
+): "ascending" | "descending" | "none" | undefined {
+  if (!field) return undefined;
+  if (activeField !== field) return "none";
+  return activeDirection === "asc" ? "ascending" : "descending";
+}
+
 function getAccountValue(
   account: SerializedAccountWithHoldings,
   priceMap: Record<string, number>,
@@ -266,42 +276,59 @@ export function AccountsList({
       {accounts.length > 0 && (
         <div className="hidden lg:block rounded-xl border overflow-hidden">
           <table className="w-full text-sm">
+            <caption className="sr-only">{t("accounts.title")}</caption>
             <thead>
               <tr className="border-b bg-muted/30">
                 <th
-                  className="px-4 py-3 text-left font-semibold cursor-pointer select-none hover:text-foreground"
-                  onClick={() => toggleSort("name")}
+                  scope="col"
+                  aria-sort={getAriaSort(sortKey, sortDir, "name")}
+                  className="px-4 py-3 text-left font-semibold"
                 >
-                  <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 cursor-pointer select-none hover:text-foreground"
+                    onClick={() => toggleSort("name")}
+                  >
                     {t("accountsList.colName")}
                     <SortIcon active={sortKey === "name"} dir={sortDir} />
-                  </div>
+                  </button>
                 </th>
-                <th className="px-4 py-3 text-left font-semibold">
+                <th scope="col" className="px-4 py-3 text-left font-semibold">
                   {t("accountsList.colCategory")}
                 </th>
-                <th className="hidden lg:table-cell px-4 py-3 text-left font-semibold w-16">
+                <th
+                  scope="col"
+                  className="hidden lg:table-cell px-4 py-3 text-left font-semibold w-16"
+                >
                   {t("accountsList.colCurrency")}
                 </th>
-                <th className="px-4 py-3 text-left font-semibold">
+                <th scope="col" className="px-4 py-3 text-left font-semibold">
                   {t("accountsList.colHoldings")}
                 </th>
-                <th className="hidden lg:table-cell px-4 py-3 text-right font-semibold">
+                <th scope="col" className="hidden lg:table-cell px-4 py-3 text-right font-semibold">
                   {t("accountsList.colNative")}
                 </th>
                 <th
-                  className="px-4 py-3 text-right font-semibold cursor-pointer select-none hover:text-foreground"
-                  onClick={() => toggleSort("value")}
+                  scope="col"
+                  aria-sort={getAriaSort(sortKey, sortDir, "value")}
+                  className="px-4 py-3 text-right font-semibold"
                 >
-                  <div className="flex items-center justify-end gap-1.5">
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-end gap-1.5 w-full cursor-pointer select-none hover:text-foreground"
+                    onClick={() => toggleSort("value")}
+                  >
                     {t("accountsList.colValue")}
                     <SortIcon active={sortKey === "value"} dir={sortDir} />
-                  </div>
+                  </button>
                 </th>
-                <th className="hidden lg:table-cell px-4 py-3 text-right font-semibold w-24">
+                <th
+                  scope="col"
+                  className="hidden lg:table-cell px-4 py-3 text-right font-semibold w-24"
+                >
                   {t("accountsList.colAllocation")}
                 </th>
-                <th className="w-12 px-4 py-3" />
+                <th scope="col" className="w-12 px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
@@ -481,12 +508,23 @@ function DesktopAccountRow({
     allocationDenominator > 0 ? (Math.abs(baseValue) / allocationDenominator) * 100 : null;
 
   return (
-    <tr className="group hover:bg-muted/40 cursor-pointer transition-colors" onClick={onNavigate}>
-      <td className="px-4 py-3.5 font-medium max-w-[220px] xl:max-w-[280px]">
+    <tr
+      className="group hover:bg-muted/40 cursor-pointer transition-colors focus-visible:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset"
+      onClick={onNavigate}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onNavigate();
+        }
+      }}
+      tabIndex={0}
+      aria-label={t("accountsList.openAccount", { name: account.name })}
+    >
+      <th scope="row" className="px-4 py-3.5 font-medium max-w-[220px] xl:max-w-[280px]">
         <span className="truncate block" title={account.name}>
           {account.name}
         </span>
-      </td>
+      </th>
       <td className="px-4 py-3.5">
         <span
           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${colors.bg} ${colors.border} ${colors.text}`}
@@ -539,6 +577,7 @@ function DesktopAccountRow({
           <DropdownMenuTrigger
             className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
             disabled={isDeleting}
+            aria-label={t("common.openActionsFor", { name: account.name })}
           >
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>
@@ -636,13 +675,17 @@ function CategorySection({
 
   const totalHoldings = accounts.reduce((sum, a) => sum + a.holdings.length, 0);
   const shouldReduceMotion = useReducedMotion();
+  const panelId = `category-panel-${category.toLowerCase()}`;
 
   return (
     <div
       className={`rounded-xl border overflow-hidden transition-all motion-normal ${colors.border} ${isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"}`}
     >
       <button
+        type="button"
         onClick={onToggleExpand}
+        aria-expanded={isExpanded}
+        aria-controls={panelId}
         className={`w-full text-left ${isCompact ? "px-4 py-2.5" : "px-5 py-4"} flex items-center justify-between transition-colors ${colors.bg} hover:brightness-95 dark:hover:brightness-110`}
       >
         <div className="flex items-center gap-3 min-w-0">
@@ -679,6 +722,7 @@ function CategorySection({
       </button>
 
       <div
+        id={panelId}
         className={`grid transition-all motion-normal ${isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
       >
         <div className="overflow-hidden">
@@ -764,6 +808,7 @@ function AccountCardWithHoldings({
           <DropdownMenuTrigger
             className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
             disabled={isDeleting}
+            aria-label={t("common.openActionsFor", { name: account.name })}
           >
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>

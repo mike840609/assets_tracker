@@ -112,7 +112,10 @@ export function HoldingRow({
       {/* Desktop fallback: three-dot menu */}
       <div className="hidden sm:block">
         <DropdownMenu>
-          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0">
+          <DropdownMenuTrigger
+            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0"
+            aria-label={t("common.openActionsFor", { name: symbolLabel })}
+          >
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

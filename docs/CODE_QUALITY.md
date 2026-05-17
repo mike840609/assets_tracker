@@ -6,7 +6,7 @@ This file consolidates three former docs: `CODE_QUALITY_SUGGESTIONS.md` (Q1–Q2
 
 ## Engineering Hygiene (Q1–Q20)
 
-**Baseline:** 2026-05-07 · **Items:** 20 · **Status:** ❌ all pending
+**Baseline:** 2026-05-07 · **Items:** 20 · **Status:** mixed — see per-item statuses
 
 Concrete, file-cited engineering hygiene gaps. Items can be picked up one at a time.
 
@@ -46,18 +46,12 @@ Concrete, file-cited engineering hygiene gaps. Items can be picked up one at a t
 
 ### Observability & Logging (Q5–Q7)
 
-#### Q5 — Replace `console.*` with a structured logger ❌
+#### Q5 — Replace `console.*` with a structured logger ⚠️
 
-- **Where (verified file:line inventory):**
-  - `src/app/api/cron/snapshot/route.ts:26,47,62,79`
-  - `src/app/api/options/chain/route.ts:70,93`
-  - `src/app/api/search/route.ts:88`
-  - `src/app/api/settings/data/route.ts:41,52,161`
-  - `src/lib/services/price-service.ts:100,106,167`
-  - `src/lib/services/exchange-rate-service.ts:102,124,188,240`
-- **Why:** Raw `console.error/warn/log` is unstructured, unfilterable, and lost on Vercel after ~1 hour of log retention. Cross-ref: R18.
-- **Proposed action:** Introduce `src/lib/log.ts` exporting `logger.{info,warn,error}` with a JSON-line shape `{ level, msg, ctx, ts }`. Pino is the conventional choice. Ban raw `console.*` in `src/app/api/**` and `src/lib/services/**` via ESLint `no-console` override.
-- **Effort:** Medium — mechanical replace, but worth doing in one PR to avoid mixed styles.
+- **Where:** baseline logger now exists in `src/lib/logger.ts`, and ESLint warns on raw `console` usage in `eslint.config.mjs`. Remaining follow-up is to finish migrating any direct `console.*` calls and decide whether the lightweight JSON logger is sufficient or should be upgraded to Pino. Cross-ref: R18.
+- **Why:** The codebase now has a shared logging path, but it still lacks richer request context and a stronger enforcement boundary for the last direct console call sites.
+- **Proposed action:** Keep routing server-side logging through `src/lib/logger.ts`, re-run a `rg` audit for remaining `console.*` usage outside that helper, and only introduce Pino if you need transports, child loggers, or request-scoped metadata beyond the current JSON-line output.
+- **Effort:** Small–Medium.
 
 #### Q6 — Wire Sentry (or equivalent) ❌
 
@@ -136,12 +130,11 @@ Concrete, file-cited engineering hygiene gaps. Items can be picked up one at a t
 
 ### Dev Tooling (Q14–Q17)
 
-#### Q14 — Add Prettier ⚠️
+#### Q14 — Add Prettier ✅ Done
 
-- **Where:** `.prettierrc.json` exists and `prettier` is in `devDependencies` — config and dep are done. Missing: no `format` / `format:check` scripts in `package.json`, no `eslint-config-prettier`, and no `format:check` step in `.github/workflows/ci.yml`. _(Audited 2026-05-08)_
-- **Why:** Without the CI gate, the formatter has no teeth — PRs can still land with divergent whitespace.
-- **Proposed action:** Add `"format": "prettier --write ."` and `"format:check": "prettier --check ."` to `package.json`; add `eslint-config-prettier` to turn off conflicting ESLint rules; add `format:check` as a CI step in `.github/workflows/ci.yml`.
-- **Effort:** Trivial (config is already done; just wire the scripts and CI step).
+- **Where:** `package.json` now exposes `format` / `format:check`, `eslint-config-prettier` is wired in `eslint.config.mjs`, and `.github/workflows/ci.yml` runs a dedicated format-check job.
+- **What landed:** formatter config is enforced both locally and in CI, so whitespace/style drift is no longer just a convention.
+- **Follow-up:** none required unless you want stricter doc formatting or narrower ignore patterns.
 
 #### Q15 — Husky + lint-staged for pre-commit ✅ Done
 

@@ -347,7 +347,11 @@ export function AccountDetail({
               ) : (
                 <>
                   {holdingsWithValue.length > 1 && (
-                    <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm border-b border-border/40 mb-2 -mx-6 px-6 py-2 md:static md:bg-transparent md:backdrop-blur-none md:border-0 md:mx-0 md:px-0 md:py-0 flex items-center gap-1.5 flex-wrap">
+                    <div
+                      className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm border-b border-border/40 mb-2 -mx-6 px-6 py-2 md:static md:bg-transparent md:backdrop-blur-none md:border-0 md:mx-0 md:px-0 md:py-0 flex items-center gap-1.5 flex-wrap"
+                      role="toolbar"
+                      aria-label={t("accountDetail.sortHoldings")}
+                    >
                       <span className="text-xs text-muted-foreground shrink-0">Sort:</span>
                       {(
                         [
@@ -371,7 +375,9 @@ export function AccountDetail({
                       ).map(({ field, label }) => (
                         <button
                           key={field}
+                          type="button"
                           onClick={() => handleSort(field)}
+                          aria-pressed={sortField === field}
                           className={`text-xs px-3 py-2 sm:px-2.5 sm:py-1 rounded-full border transition-colors ${
                             sortField === field
                               ? "border-primary/40 bg-primary/10 text-primary font-medium"

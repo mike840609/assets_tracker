@@ -179,8 +179,18 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
             {sortOptions.map(({ field, label }) => (
               <button
                 key={field}
+                type="button"
                 onClick={() => handleSort(field)}
                 aria-pressed={sortField === field}
+                aria-label={
+                  sortField === field
+                    ? `${label}, ${
+                        sortDirection === "asc"
+                          ? t("common.sortAscending")
+                          : t("common.sortDescending")
+                      }`
+                    : label
+                }
                 className={`text-xs sm:text-[10px] px-3 py-2 sm:px-2 sm:py-1 rounded-md transition-colors ${
                   sortField === field
                     ? "bg-primary/10 text-primary font-semibold"

@@ -29,11 +29,11 @@
 | 23  | Two-Factor Authentication (2FA)                             | Security                   | 🔴 High   | 4-6 hrs   | ❌ Not Done |
 | 24  | Plaid / Brokerage API Sync                                  | Feature                    | 🔴 High   | 10+ hrs   | ❌ Not Done |
 | 25  | Customizable Dashboard Widgets                              | UX                         | 🟢 Low    | 3-5 hrs   | ❌ Not Done |
-| 26  | Add test coverage (Vitest + Playwright)                     | Testing                    | 🔴 High   | 8-12 hrs  | ✅ Done     |
+| 26  | Add test coverage (Vitest + Playwright)                     | Testing                    | 🔴 High   | 8-12 hrs  | ⚠️ Partial  |
 | 27  | Add error boundary pages (error.tsx / not-found.tsx)        | Reliability                | 🔴 High   | 1-2 hrs   | ❌ Not Done |
 | 28  | Fix missing auth checks on API routes                       | Security                   | 🔴 High   | 30 min    | ❌ Not Done |
 | 29  | Validate environment variables at startup                   | DX / Reliability           | 🔴 High   | 1 hr      | ✅ Done     |
-| 30  | Add structured logging (Pino)                               | Observability              | 🟡 Medium | 3-4 hrs   | ✅ Done     |
+| 30  | Add structured logging                                      | Observability              | 🟡 Medium | 3-4 hrs   | ✅ Done     |
 | 31  | Add API rate limiting                                       | Security                   | 🟡 Medium | 2-3 hrs   | ✅ Done     |
 | 32  | Validate query parameters with Zod                          | Security                   | 🟡 Medium | 1 hr      | ❌ Not Done |
 | 33  | Add timeout guards to price service                         | Reliability                | 🟡 Medium | 30 min    | ✅ Done     |
@@ -46,21 +46,21 @@
 | 40  | Fix O(n²) symbol lookup in accounts page                    | Performance                | 🟡 Medium | 30 min    | ✅ Done     |
 | 41  | Reduce client bundle size (date-fns)                        | Performance                | 🟡 Medium | 1 hr      | ✅ Done     |
 | 42  | Add `select` to reduce over-fetching in API routes          | Performance                | 🟢 Low    | 1 hr      | ❌ Not Done |
-| 43  | Add aria-labels to icon-only buttons                        | Accessibility              | 🔴 High   | 1 hr      | ❌ Not Done |
+| 43  | Add aria-labels to icon-only buttons                        | Accessibility              | 🔴 High   | 1 hr      | ✅ Done     |
 | 44  | Fix color-only differentiation for assets/liabilities       | Accessibility              | 🔴 High   | 1 hr      | ❌ Not Done |
 | 45  | Add inline form validation errors                           | UX                         | 🟡 Medium | 2-3 hrs   | ✅ Done     |
 | 46  | Improve empty states with clear CTAs                        | UX                         | 🟡 Medium | 1-2 hrs   | ❌ Not Done |
 | 47  | Add account search/filter                                   | UX                         | 🟡 Medium | 1-2 hrs   | ❌ Not Done |
 | 48  | Add table accessibility attributes                          | Accessibility              | 🟡 Medium | 1 hr      | ❌ Not Done |
 | 49  | Use native `confirm()` → proper confirmation dialogs        | UX                         | 🟢 Low    | 2 hrs     | ❌ Not Done |
-| 50  | Add auth/ownership checks to holding mutation routes        | Security                   | 🔴 High   | 1-2 hrs   | ❌ Not Done |
+| 50  | Add auth/ownership checks to holding mutation routes        | Security                   | 🔴 High   | 1-2 hrs   | ✅ Done     |
 | 51  | Validate snapshots query parameters with Zod                | Reliability                | 🔴 High   | 30-60 min | ❌ Not Done |
 | 52  | Add timeout guards to external pricing calls                | Reliability                | 🔴 High   | 30-60 min | ✅ Done     |
 | 53  | Make data import merge-first (non-destructive) by default   | Reliability                | 🔴 High   | 3-4 hrs   | ❌ Not Done |
 | 54  | Add startup environment validation module (`env.ts`)        | DX / Reliability           | 🔴 High   | 1 hr      | ✅ Done     |
 | 55  | Replace console logs with structured logging                | Observability              | 🟡 Medium | 2-4 hrs   | ✅ Done     |
-| 56  | Add baseline automated tests (unit/API/E2E smoke)           | Testing                    | 🔴 High   | 1-2 days  | ✅ Done     |
-| 57  | Improve accessibility semantics on controls/tables          | Accessibility              | 🟡 Medium | 2-3 hrs   | ❌ Not Done |
+| 56  | Add baseline automated tests (unit/API/E2E smoke)           | Testing                    | 🔴 High   | 1-2 days  | ⚠️ Partial  |
+| 57  | Improve accessibility semantics on controls/tables          | Accessibility              | 🟡 Medium | 2-3 hrs   | ✅ Done     |
 | 58  | Add composite database indexes for hot query paths          | Performance                | 🔴 High   | 1-2 hrs   | ✅ Done     |
 | 59  | Filter `PriceCache` query in `getNetWorthSummary`           | Performance                | 🔴 High   | 15 min    | ✅ Done     |
 | 60  | Remove live price fetches from accounts page SSR            | Performance                | 🔴 High   | 30 min    | ✅ Done     |
@@ -78,7 +78,7 @@
 | 72  | Eliminate Phase 1→Phase 2 waterfall in `DashboardContent`   | Performance                | 🟡 Medium | 1 hr      | ✅ Done     |
 | 73  | Cache `getNetWorthSummary` with Next.js `unstable_cache`    | Performance                | 🔴 High   | 1-2 hrs   | ✅ Done     |
 | 74  | Add granular Suspense boundaries inside `DashboardContent`  | Performance                | 🔴 High   | 2-3 hrs   | ✅ Done     |
-| 75  | Add `Cache-Control` headers to `GET /api/exchange-rates`    | Performance                | 🟢 Low    | 15 min    | ❌ Not Done |
+| 75  | Add `Cache-Control` headers to `GET /api/exchange-rates`    | Performance                | 🟢 Low    | 15 min    | ✅ Done     |
 | 76  | Extract `withAuth()` HOF for API routes                     | Code Quality               | 🟡 Medium | 2-3 hrs   | ✅ Done     |
 | 77  | Unify Yahoo Finance quote fetcher (stock + crypto)          | Code Quality               | 🟢 Low    | 30 min    | ✅ Done     |
 | 78  | Dedupe `normalizeSnapshots` in history-service              | Code Quality               | 🟡 Medium | 1 hr      | ✅ Done     |
@@ -98,7 +98,7 @@
 | 92  | Batch `PriceCache` upserts via `$transaction`               | Performance                | 🔴 High   | 30 min    | ✅ Done     |
 | 93  | Deduplicate `recentSnapshots` query in dashboard sections   | Performance                | 🟡 Medium | 15 min    | ✅ Done     |
 | 94  | Parallelize account detail page waterfall                   | Performance                | 🟡 Medium | 15 min    | ✅ Done     |
-| 95  | Add `Cache-Control` headers to `GET /api/exchange-rates`    | Performance                | 🟢 Low    | 15 min    | ❌ Not Done |
+| 95  | Add `Cache-Control` headers to `GET /api/exchange-rates`    | Performance                | 🟢 Low    | 15 min    | ✅ Done     |
 | 96  | Prefetch high-traffic routes in accounts list               | Performance                | 🟡 Medium | 15 min    | ❌ Not Done |
 | 97  | Scope cron `refreshAllPrices` to per-user symbols           | Performance                | 🟡 Medium | 1 hr      | ❌ Not Done |
 | 98  | Lazy-load `AccountForm` / `QuickAddHolding` dialogs         | Performance                | 🟡 Medium | 30 min    | ✅ Done     |
@@ -149,7 +149,7 @@
 | 143 | Add `/api/_metrics/vitals` proxy/rate-limit policy          | Observability              | 🟡 Medium | 30 min    | ❌ Not Done |
 | 144 | Return 401 JSON (not HTML redirect) for unauth `/api/*`     | Security / DX              | 🔴 High   | 30 min    | ❌ Not Done |
 | 145 | Decide `/api/_metrics/vitals` public vs. auth (explicit)    | Observability              | 🟡 Medium | 30 min    | ❌ Not Done |
-| 146 | Invalidate `history:${userId}` on cash-tx mutations         | Performance / Correctness  | 🟡 Medium | 10 min    | ❌ Not Done |
+| 146 | Invalidate `history:${userId}` on cash-tx mutations         | Performance / Correctness  | 🟡 Medium | 10 min    | ✅ Done     |
 | 147 | Add `Content-Security-Policy` header in `next.config.ts`    | Security                   | 🔴 High   | 1-2 hrs   | ❌ Not Done |
 | 148 | Batch cron expired-options sweep into one `$transaction`    | Performance / Reliability  | 🟡 Medium | 30 min    | ❌ Not Done |
 | 149 | Lock down `updateHoldingSchema` (no `assetType` mutation)   | Correctness                | 🟡 Medium | 15 min    | ❌ Not Done |
@@ -294,7 +294,7 @@ islands.
 54. ✅ **Add startup env validation** via `src/lib/env.ts` instead of direct non-null assertions on `process.env`.
 55. **Adopt structured logging** (e.g., Pino) to replace scattered `console.*` for production debugging/monitoring.
 56. ✅ **Establish baseline automated tests** (unit + API integration + one E2E smoke path).
-57. **Improve accessibility semantics** on icon-only controls and sortable tables (`aria-label`, `aria-expanded`, `aria-sort`, keyboard handlers).
+57. ✅ **Improve accessibility semantics** on icon-only controls and sortable tables (`aria-label`, `aria-expanded`, `aria-sort`, keyboard handlers). _(2026-05-17: added accessible names to icon-only action triggers, `aria-expanded`/`aria-controls` on mobile category disclosures, `aria-sort` + `scope`/`caption` semantics on desktop holdings/accounts tables, and keyboard activation for desktop account rows.)_
 58. **Scope `/api/exchange-rates/refresh` to the authenticated user**. The current implementation uses `setting.findFirst()` and all account currencies globally, which can pick another user's base currency and trigger unnecessary cross-tenant work.
 59. ✅ **Fail fast when `CRON_SECRET` is missing** in `/api/cron/snapshot`. Current string comparison allows `Authorization: Bearer undefined` when secret is not configured.
 60. **Limit snapshot cron concurrency** (batch/chunk users instead of `Promise.all` across all users) to reduce API burst load and DB contention as tenant count grows.
@@ -584,6 +584,15 @@ Affected locations:
 - Add `aria-label="Toggle theme"`, `aria-label="Refresh prices"`, `aria-label="More actions"`, etc. to each icon-only interactive element
 - For expand/collapse, also add `aria-expanded={isExpanded}` to communicate state
 - **Affected files**: `src/components/layout/theme-toggle.tsx`, `src/components/dashboard/dashboard-actions.tsx`, `src/components/accounts/transaction-history.tsx`, `src/components/accounts/accounts-list.tsx`, `src/components/accounts/account-detail.tsx`
+
+**Implementation (2026-05-17):**
+
+- Added accessible names to icon-only action triggers across theme controls, holdings, transactions, and account overflow menus.
+- Added `aria-expanded` / `aria-controls` to the mobile account-category disclosure button.
+- Added localized support text via new message keys: `common.openActionsFor`, `common.sortAscending`, `common.sortDescending`, `accountsList.openAccount`, and `accountDetail.sortHoldings`.
+- Added table semantics and keyboard access across the desktop account/holding views: `caption`, `scope`, `aria-sort`, and Enter/Space activation for desktop account rows.
+
+**Files updated:** `messages/en-US.json`, `messages/zh-TW.json`, `src/components/layout/theme-toggle.tsx`, `src/components/accounts/holding-row.tsx`, `src/components/accounts/transaction-history.tsx`, `src/components/accounts/holdings-table.tsx`, `src/components/accounts/account-detail.tsx`, `src/components/accounts/accounts-list.tsx`, `src/components/dashboard/accounts-summary.tsx`
 
 ### 44. Fix Color-Only Differentiation for Assets/Liabilities
 

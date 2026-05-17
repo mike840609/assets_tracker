@@ -41,7 +41,10 @@
     "asset": "Asset",
     "liability": "Liability",
     "undo": "Undo",
-    "back": "Back"
+    "back": "Back",
+    "openActionsFor": "Open actions menu for {name}",
+    "sortAscending": "ascending",
+    "sortDescending": "descending"
   },
   "categories": {
     "BANK": "Bank",
@@ -337,7 +340,8 @@
     "colValue": "Value",
     "colCurrency": "Currency",
     "colNative": "Native",
-    "colAllocation": "Allocation"
+    "colAllocation": "Allocation",
+    "openAccount": "Open account {name}"
   },
   "accountForm": {
     "title": "Add Account",
@@ -459,7 +463,8 @@
     "updateFailed": "Failed to update account",
     "labelAccountName": "Account Name",
     "placeholderAccountName": "e.g. Chase Checking",
-    "showMore": "Show {count} more"
+    "showMore": "Show {count} more",
+    "sortHoldings": "Sort holdings"
   },
   "dataManagement": {
     "title": "Data Management",
