@@ -276,7 +276,7 @@ export function AccountsList({
       {accounts.length > 0 && (
         <div className="hidden lg:block rounded-xl border overflow-hidden">
           <table className="w-full text-sm">
-            <caption className="sr-only">{t("accounts.title")}</caption>
+            <caption className="sr-only">{t("accountsList.tableCaption")}</caption>
             <thead>
               <tr className="border-b bg-muted/30">
                 <th

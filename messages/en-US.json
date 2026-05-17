@@ -341,7 +341,8 @@
     "colCurrency": "Currency",
     "colNative": "Native",
     "colAllocation": "Allocation",
-    "openAccount": "Open account {name}"
+    "openAccount": "Open account {name}",
+    "tableCaption": "Accounts table"
   },
   "accountForm": {
     "title": "Add Account",

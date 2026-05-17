@@ -341,7 +341,8 @@
     "colCurrency": "幣別",
     "colNative": "原幣",
     "colAllocation": "佔比",
-    "openAccount": "開啟帳戶{name}"
+    "openAccount": "開啟帳戶{name}",
+    "tableCaption": "帳戶資料表"
   },
   "accountForm": {
     "title": "新增帳戶",
