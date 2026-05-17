@@ -169,30 +169,28 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   };
 
   return (
-    <Card className="border-0 shadow-none bg-transparent">
+    <Card className="relative border-0 shadow-none bg-transparent">
+      <div className="absolute right-2 top-2 z-10 flex shrink-0 items-center gap-0.5 sm:right-4 sm:top-3">
+        {sortOptions.map(({ field, label }) => (
+          <button
+            key={field}
+            onClick={() => handleSort(field)}
+            aria-pressed={sortField === field}
+            className={`px-2 py-0.5 text-xs rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+              sortField === field
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {label}
+            {sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
+          </button>
+        ))}
+      </div>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between gap-4">
-          <CardTitle className="text-lg font-semibold tracking-tight">
-            {t("accountsSummary.title")}
-          </CardTitle>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {sortOptions.map(({ field, label }) => (
-              <button
-                key={field}
-                onClick={() => handleSort(field)}
-                aria-pressed={sortField === field}
-                className={`text-xs sm:text-[10px] px-3 py-2 sm:px-2 sm:py-1 rounded-md transition-colors ${
-                  sortField === field
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
-              >
-                {label}
-                {sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
-              </button>
-            ))}
-          </div>
-        </div>
+        <CardTitle className="text-lg font-semibold tracking-tight">
+          {t("accountsSummary.title")}
+        </CardTitle>
       </CardHeader>
       <CardContent className={`${isCompact ? "space-y-2" : "space-y-6"} pt-4`}>
         {assets.length > 0 && renderGroup(assets, true)}
