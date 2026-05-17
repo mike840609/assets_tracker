@@ -185,7 +185,7 @@ export function AccountForm({
               </Select>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <>
               <div className="space-y-2">
                 <Label>{t("accountForm.labelCurrency")}</Label>
                 <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
@@ -213,7 +213,7 @@ export function AccountForm({
                 />
                 {cashBalanceError && <p className="text-xs text-destructive">{cashBalanceError}</p>}
               </div>
-            </div>
+            </>
           )}
 
           <div className="flex justify-end gap-2 pt-2">

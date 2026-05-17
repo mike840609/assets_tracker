@@ -84,23 +84,31 @@ export function InlineBalanceEditor({
   if (editing) {
     return (
       <div className="flex flex-col gap-2 mt-1">
+        <Input
+          type="text"
+          inputMode="decimal"
+          placeholder={formatNumber(currentBalance, 0)}
+          value={balance}
+          onChange={handleBalanceChange}
+          onBlur={handleBalanceBlur}
+          className="h-8 w-full min-w-[160px]"
+          autoFocus
+        />
+        {error && <p className="text-xs text-destructive">{error}</p>}
+        <Input
+          placeholder={notePlaceholder}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          className="h-8 text-sm"
+        />
         <div className="flex gap-2">
-          <Input
-            type="text"
-            inputMode="decimal"
-            placeholder={formatNumber(currentBalance, 0)}
-            value={balance}
-            onChange={handleBalanceChange}
-            onBlur={handleBalanceBlur}
-            className="h-8 flex-1"
-            autoFocus
-          />
-          <Button size="sm" onClick={handleSave} disabled={saving}>
+          <Button size="sm" className="flex-1" onClick={handleSave} disabled={saving}>
             {saving ? "..." : "Save"}
           </Button>
           <Button
             size="sm"
             variant="outline"
+            className="flex-1"
             onClick={() => {
               setEditing(false);
               setNote("");
@@ -109,13 +117,6 @@ export function InlineBalanceEditor({
             Cancel
           </Button>
         </div>
-        {error && <p className="text-xs text-destructive">{error}</p>}
-        <Input
-          placeholder={notePlaceholder}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          className="h-8 text-sm"
-        />
       </div>
     );
   }
