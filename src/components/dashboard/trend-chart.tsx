@@ -208,7 +208,7 @@ export function TrendChart({
               key={r.label}
               onClick={() => setRange(r.label)}
               aria-pressed={range === r.label}
-              className={`px-1.5 py-0.5 text-xs rounded transition-colors ${
+              className={`px-2 py-0.5 text-xs rounded-full transition-colors ${
                 range === r.label
                   ? "bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   : "text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -222,7 +222,7 @@ export function TrendChart({
             onClick={() => setPctMode(isPercentMode ? "off" : "on")}
             aria-pressed={isPercentMode}
             title={t("pctToggleTitle")}
-            className={`px-1.5 py-0.5 text-xs rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+            className={`px-2 py-0.5 text-xs rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
               isPercentMode
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted"
