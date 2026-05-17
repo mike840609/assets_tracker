@@ -33,18 +33,22 @@ type SnapshotData = {
   totalLiabilities: number;
 };
 
+type ChartDataPoint = SnapshotData & { netWorthPct?: number };
+
 function TrendTooltip({
   active,
   payload,
   label,
   baseCurrency,
   privacyMode,
+  isPercentMode,
 }: {
   active?: boolean;
   payload?: { name: string; value: number; color?: string; stroke?: string }[];
   label?: string;
   baseCurrency: string;
   privacyMode: boolean;
+  isPercentMode: boolean;
 }) {
   if (!active || !payload?.length || !label) return null;
 
@@ -55,13 +59,19 @@ function TrendTooltip({
     year: "numeric",
   });
 
+  const formatValue = (v: number) => {
+    if (privacyMode) return "***";
+    if (isPercentMode) return `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
+    return formatCurrency(v, baseCurrency);
+  };
+
   return (
     <ChartTooltipContainer title={formattedDate}>
       {payload.map((entry, i) => (
         <ChartTooltipRow
           key={i}
           label={entry.name}
-          value={privacyMode ? "***" : formatCurrency(entry.value, baseCurrency)}
+          value={formatValue(entry.value)}
           indicatorColor={entry.color || entry.stroke}
         />
       ))}
@@ -78,7 +88,9 @@ function CrosshairLines() {
   if (!coordinate || !yScale || !dataPoints?.[0] || !plotArea) return null;
 
   const x = coordinate.x;
-  const y = yScale((dataPoints[0] as SnapshotData).netWorth);
+  const dataPoint = dataPoints[0] as ChartDataPoint;
+  const yValue = dataPoint.netWorthPct ?? dataPoint.netWorth;
+  const y = yScale(yValue);
   if (y == null) return null;
 
   const stroke = "var(--muted-foreground)";
@@ -129,6 +141,7 @@ export function TrendChart({
   const containerRef = useRef<HTMLDivElement>(null);
   const { width: containerWidth, height: containerHeight } = useContainerSize(containerRef);
   const [range, setRange] = usePersistedRange<string>("trend-chart", "All");
+  const [pctMode, setPctMode] = usePersistedRange<string>("trend-pct-mode", "off");
   const t = useTranslations("trendChart");
   const { privacyMode } = usePrivacyMode();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
@@ -139,6 +152,7 @@ export function TrendChart({
     : { duration: 0.18, ease: [0.16, 1, 0.3, 1] as const };
 
   const selectedRange = ranges.find((r) => r.label === range)!;
+  const isPercentMode = pctMode === "on";
 
   const xTickFormatter = useCallback((v: string) => {
     const d = new Date(v);
@@ -146,8 +160,12 @@ export function TrendChart({
   }, []);
 
   const yTickFormatter = useCallback(
-    (v: number) => (privacyMode ? "" : formatChartTick(v)),
-    [privacyMode],
+    (v: number) => {
+      if (privacyMode) return "";
+      if (isPercentMode) return `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+      return formatChartTick(v);
+    },
+    [privacyMode, isPercentMode],
   );
 
   const filtered = useMemo(() => {
@@ -162,6 +180,16 @@ export function TrendChart({
     return snapshots.filter((s) => new Date(s.date) >= cutoff);
   }, [snapshots, selectedRange.days, selectedRange.ytd, hideRangeFilter]);
 
+  const chartData = useMemo((): ChartDataPoint[] => {
+    if (!isPercentMode || filtered.length === 0) return filtered;
+    const firstNetWorth = filtered[0].netWorth;
+    if (firstNetWorth === 0) return filtered;
+    return filtered.map((snapshot) => ({
+      ...snapshot,
+      netWorthPct: ((snapshot.netWorth - firstNetWorth) / Math.abs(firstNetWorth)) * 100,
+    }));
+  }, [filtered, isPercentMode]);
+
   const periodChange = useMemo(() => {
     if (filtered.length < 2) return null;
     const first = filtered[0].netWorth;
@@ -172,51 +200,62 @@ export function TrendChart({
   }, [filtered]);
 
   return (
-    <Card className="border-0 bg-transparent shadow-none h-full flex flex-col pb-0">
-      <CardHeader className="flex flex-row items-start justify-between pb-2 px-2 sm:px-4">
-        <div className="min-w-0 flex-1 mr-2">
-          <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
-          {periodChange && (
-            <div
-              className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded text-xs font-semibold tabular-nums ${
-                periodChange.delta >= 0
-                  ? "bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-400"
-                  : "bg-red-50 dark:bg-red-950/50 text-destructive"
+    <Card className="relative border-0 bg-transparent shadow-none h-full flex flex-col pb-0">
+      {!hideRangeFilter && (
+        <div className="absolute right-2 top-2 z-10 flex shrink-0 items-center gap-0.5 sm:right-4 sm:top-3">
+          {ranges.map((r) => (
+            <button
+              key={r.label}
+              onClick={() => setRange(r.label)}
+              aria-pressed={range === r.label}
+              className={`px-1.5 py-0.5 text-xs rounded transition-colors ${
+                range === r.label
+                  ? "bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  : "text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               }`}
             >
-              {privacyMode ? (
-                "***"
-              ) : (
-                <>
-                  {periodChange.delta >= 0 ? "+" : ""}
-                  {formatCurrency(periodChange.delta, baseCurrency)}
-                  {periodChange.pct !== null && (
-                    <span className="text-[11px] opacity-70">
-                      ({periodChange.delta >= 0 ? "+" : ""}
-                      {periodChange.pct.toFixed(1)}%)
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
-          )}
+              {r.label}
+            </button>
+          ))}
+          <div className="mx-1 h-3 w-px bg-border" />
+          <button
+            onClick={() => setPctMode(isPercentMode ? "off" : "on")}
+            aria-pressed={isPercentMode}
+            title={t("pctToggleTitle")}
+            className={`px-1.5 py-0.5 text-xs rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+              isPercentMode
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            %
+          </button>
         </div>
-        {!hideRangeFilter && (
-          <div className="flex gap-1 flex-wrap shrink-0">
-            {ranges.map((r) => (
-              <button
-                key={r.label}
-                onClick={() => setRange(r.label)}
-                aria-pressed={range === r.label}
-                className={`px-3 py-2 sm:px-2 sm:py-1 text-xs rounded-md transition-colors ${
-                  range === r.label
-                    ? "bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    : "text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
+      )}
+      <CardHeader className="flex flex-col gap-1 pb-2 px-2 sm:px-4">
+        <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
+        {periodChange && (
+          <div
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold tabular-nums ${
+              periodChange.delta >= 0
+                ? "bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-400"
+                : "bg-red-50 dark:bg-red-950/50 text-destructive"
+            }`}
+          >
+            {privacyMode ? (
+              "***"
+            ) : (
+              <>
+                {periodChange.delta >= 0 ? "+" : ""}
+                {formatCurrency(periodChange.delta, baseCurrency)}
+                {periodChange.pct !== null && (
+                  <span className="text-[11px] opacity-70">
+                    ({periodChange.delta >= 0 ? "+" : ""}
+                    {periodChange.pct.toFixed(1)}%)
+                  </span>
+                )}
+              </>
+            )}
           </div>
         )}
       </CardHeader>
@@ -241,7 +280,7 @@ export function TrendChart({
                 <AreaChart
                   width={containerWidth}
                   height={containerHeight}
-                  data={filtered}
+                  data={chartData}
                   margin={{ top: 5, right: 5, left: 0, bottom: 0 }}
                   {...crosshairHandlers}
                 >
@@ -257,12 +296,18 @@ export function TrendChart({
                   <YAxis width={42} tick={{ fontSize: 12 }} tickFormatter={yTickFormatter} />
                   <Tooltip
                     cursor={false}
-                    content={<TrendTooltip baseCurrency={baseCurrency} privacyMode={privacyMode} />}
+                    content={
+                      <TrendTooltip
+                        baseCurrency={baseCurrency}
+                        privacyMode={privacyMode}
+                        isPercentMode={isPercentMode}
+                      />
+                    }
                   />
                   <Customized component={CrosshairLines} />
                   <Area
                     type="monotone"
-                    dataKey="netWorth"
+                    dataKey={isPercentMode ? "netWorthPct" : "netWorth"}
                     stroke="var(--primary)"
                     fill="var(--primary)"
                     fillOpacity={0.1}

@@ -296,7 +296,8 @@
   "trendChart": {
     "title": "Net Worth Trend",
     "noData": "No data to display yet. Add accounts and your net worth will be tracked automatically at midnight (UTC+8).",
-    "seriesName": "Net Worth"
+    "seriesName": "Net Worth",
+    "pctToggleTitle": "Toggle % return view"
   },
   "allocationChart": {
     "title": "Asset Allocation",
