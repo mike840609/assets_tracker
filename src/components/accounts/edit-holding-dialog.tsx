@@ -36,13 +36,41 @@ export function EditHoldingDialog({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [quantity, setQuantity] = useState(String(holding.quantity));
+  const [quantity, setQuantity] = useState(() =>
+    new Intl.NumberFormat("en-US", {
+      maximumFractionDigits: holding.assetType === "OPTION" ? 0 : 6,
+    }).format(Number(holding.quantity)),
+  );
   const [name, setName] = useState(holding.name);
   const [assetType, setAssetType] = useState<
     "STOCK" | "ETF" | "CRYPTO" | "MUTUAL_FUND" | "BOND" | "OTHER" | "OPTION"
   >(holding.assetType);
   const isOption = holding.assetType === "OPTION";
   const optionDisplay = getOptionDisplay(holding);
+
+  function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/,/g, "");
+    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    if (!raw) {
+      setQuantity("");
+      return;
+    }
+    const [intPart, decPart] = raw.split(".");
+    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    setQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
+  }
+
+  function handleQuantityBlur() {
+    const val = quantity.replace(/,/g, "");
+    if (!val) return;
+    const parsed = isOption ? parseInt(val, 10) : parseFloat(val);
+    if (isNaN(parsed)) return;
+    setQuantity(
+      isOption
+        ? new Intl.NumberFormat("en-US").format(parsed)
+        : new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(parsed),
+    );
+  }
 
   function handleOpen(isOpen: boolean) {
     if (!isOpen) {
@@ -61,7 +89,7 @@ export function EditHoldingDialog({
     e.preventDefault();
     setLoading(true);
 
-    const parsedQty = parseFloat(quantity);
+    const parsedQty = parseFloat(quantity.replace(/,/g, ""));
     const minAllowed = isOption ? 0 : Number.MIN_VALUE;
     if (isNaN(parsedQty) || parsedQty < minAllowed) {
       toast.error(
@@ -185,11 +213,11 @@ export function EditHoldingDialog({
               {isOption ? "Number of contracts" : "Quantity"}
             </Label>
             <Input
-              type="number"
-              step={isOption ? "1" : "any"}
-              min={isOption ? "0" : undefined}
+              type="text"
+              inputMode={isOption ? "numeric" : "decimal"}
               value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
+              onChange={handleQuantityChange}
+              onBlur={handleQuantityBlur}
               placeholder={isOption ? "e.g. 1" : "e.g. 100"}
               required
               className="text-lg h-12"

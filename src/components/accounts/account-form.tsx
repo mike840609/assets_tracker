@@ -48,6 +48,19 @@ export function AccountForm({
   const [cashBalance, setCashBalance] = useState("0");
   const [cashBalanceError, setCashBalanceError] = useState("");
 
+  function handleCashBalanceChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/,/g, "");
+    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    setCashBalanceError("");
+    if (!raw) {
+      setCashBalance("");
+      return;
+    }
+    const [intPart, decPart] = raw.split(".");
+    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    setCashBalance(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
+  }
+
   function handleCashBalanceBlur() {
     const val = cashBalance.replace(/,/g, "");
     if (!val) {
@@ -195,10 +208,7 @@ export function AccountForm({
                   type="text"
                   inputMode="decimal"
                   value={cashBalance}
-                  onChange={(e) => {
-                    setCashBalance(e.target.value);
-                    setCashBalanceError("");
-                  }}
+                  onChange={handleCashBalanceChange}
                   onBlur={handleCashBalanceBlur}
                 />
                 {cashBalanceError && <p className="text-xs text-destructive">{cashBalanceError}</p>}

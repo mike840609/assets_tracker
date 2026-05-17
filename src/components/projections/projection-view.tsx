@@ -109,7 +109,6 @@ function NumberInput({
   onChange,
   min = 0,
   max,
-  step = 1,
   suffix,
   prefix,
 }: {
@@ -119,10 +118,41 @@ function NumberInput({
   onChange: (v: number) => void;
   min?: number;
   max?: number;
-  step?: number;
   suffix?: string;
   prefix?: string;
 }) {
+  const [display, setDisplay] = useState(() =>
+    value === 0 ? "" : new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(value),
+  );
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/,/g, "");
+    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    if (!raw) {
+      setDisplay("");
+      onChange(0);
+      return;
+    }
+    const [intPart, decPart] = raw.split(".");
+    const formattedInt = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    setDisplay(decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt);
+    const parsed = parseFloat(raw);
+    if (!isNaN(parsed)) {
+      onChange(Math.max(min, max !== undefined ? Math.min(max, parsed) : parsed));
+    }
+  }
+
+  function handleBlur() {
+    const raw = display.replace(/,/g, "");
+    const parsed = parseFloat(raw);
+    if (!raw || isNaN(parsed)) {
+      setDisplay("");
+      return;
+    }
+    const clamped = Math.max(min, max !== undefined ? Math.min(max, parsed) : parsed);
+    setDisplay(new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(clamped));
+  }
+
   return (
     <div className="space-y-1.5">
       <Label className="text-xs font-medium">{label}</Label>
@@ -133,19 +163,12 @@ function NumberInput({
           </span>
         )}
         <Input
-          type="number"
-          value={value === 0 ? "" : value}
-          placeholder="0"
-          min={min}
-          max={max}
-          step={step}
-          onChange={(e) => {
-            const parsed = parseFloat(e.target.value);
-            onChange(
-              isNaN(parsed) ? 0 : Math.max(min, max !== undefined ? Math.min(max, parsed) : parsed),
-            );
-          }}
+          type="text"
           inputMode="decimal"
+          value={display}
+          placeholder="0"
+          onChange={handleChange}
+          onBlur={handleBlur}
           className={`h-9 text-sm ${suffix ? "pr-10" : ""}`}
           style={
             prefix ? { paddingLeft: `calc(0.75rem + ${prefix.length}ch + 0.5rem)` } : undefined
@@ -314,7 +337,6 @@ export function ProjectionView({
               value={annualExpenses}
               onChange={setAnnualExpenses}
               min={0}
-              step={1000}
               prefix={getCurrencySymbol(baseCurrency)}
             />
             <NumberInput
@@ -323,7 +345,6 @@ export function ProjectionView({
               value={annualSavings}
               onChange={setAnnualSavings}
               min={0}
-              step={1000}
               prefix={getCurrencySymbol(baseCurrency)}
             />
             <NumberInput
@@ -332,7 +353,6 @@ export function ProjectionView({
               onChange={setExpectedReturn}
               min={0}
               max={30}
-              step={0.5}
               suffix="%"
             />
             <NumberInput
@@ -342,7 +362,6 @@ export function ProjectionView({
               onChange={setWithdrawalRate}
               min={0.5}
               max={10}
-              step={0.25}
               suffix="%"
             />
           </div>

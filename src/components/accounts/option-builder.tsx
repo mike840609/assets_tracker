@@ -76,6 +76,17 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
   const [quantity, setQuantity] = useState("");
   const [quantityError, setQuantityError] = useState("");
 
+  function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/,/g, "");
+    if (raw !== "" && !/^\d*$/.test(raw)) return;
+    setQuantityError("");
+    if (!raw) {
+      setQuantity("");
+      return;
+    }
+    setQuantity(raw.replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+  }
+
   function handleQuantityBlur() {
     const val = quantity.replace(/,/g, "");
     if (!val) {
@@ -446,10 +457,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
           type="text"
           inputMode="numeric"
           value={quantity}
-          onChange={(e) => {
-            setQuantity(e.target.value);
-            setQuantityError("");
-          }}
+          onChange={handleQuantityChange}
           onBlur={handleQuantityBlur}
           placeholder="e.g. 1"
           className="text-lg h-12"

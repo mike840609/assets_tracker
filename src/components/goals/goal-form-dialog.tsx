@@ -35,7 +35,9 @@ function initialState(editGoal: SerializedGoal | undefined, defaultCurrency: str
   if (editGoal) {
     return {
       name: editGoal.name,
-      targetAmount: String(editGoal.targetAmount),
+      targetAmount: new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(
+        Number(editGoal.targetAmount),
+      ),
       targetCurrency: editGoal.targetCurrency,
       targetDate: editGoal.targetDate ? editGoal.targetDate.slice(0, 10) : "",
       scope: editGoal.scope as GoalScope,
@@ -99,9 +101,29 @@ export function GoalFormDialog({
 
   const needsScopeRef = scope === "CATEGORY" || scope === "ACCOUNT";
 
+  function handleTargetAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/,/g, "");
+    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    if (!raw) {
+      setTargetAmount("");
+      return;
+    }
+    const [intPart, decPart] = raw.split(".");
+    const formattedInt = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    setTargetAmount(decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt);
+  }
+
+  function handleTargetAmountBlur() {
+    const val = targetAmount.replace(/,/g, "");
+    if (!val) return;
+    const parsed = parseFloat(val);
+    if (isNaN(parsed) || parsed <= 0) return;
+    setTargetAmount(new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(parsed));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const amount = parseFloat(targetAmount);
+    const amount = parseFloat(targetAmount.replace(/,/g, ""));
     if (!name.trim() || isNaN(amount) || amount <= 0) return;
     if (needsScopeRef && !scopeRefId) return;
 
@@ -164,12 +186,12 @@ export function GoalFormDialog({
               <Label htmlFor="goal-amount">{t("form.targetAmount")}</Label>
               <Input
                 id="goal-amount"
-                type="number"
-                step="any"
-                min="0.01"
+                type="text"
+                inputMode="decimal"
                 value={targetAmount}
-                onChange={(e) => setTargetAmount(e.target.value)}
-                placeholder="1000000"
+                onChange={handleTargetAmountChange}
+                onBlur={handleTargetAmountBlur}
+                placeholder="1,000,000"
                 required
               />
             </div>
