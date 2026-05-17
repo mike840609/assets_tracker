@@ -52,7 +52,10 @@ export function AccountForm({
     const raw = e.target.value.replace(/,/g, "");
     if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
     setCashBalanceError("");
-    if (!raw) { setCashBalance(""); return; }
+    if (!raw) {
+      setCashBalance("");
+      return;
+    }
     const [intPart, decPart] = raw.split(".");
     const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     setCashBalance(decPart !== undefined ? `${formatted}.${decPart}` : formatted);

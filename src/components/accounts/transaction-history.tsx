@@ -164,7 +164,10 @@ export function TransactionHistory({
   function handleEditQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value.replace(/,/g, "");
     if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
-    if (!raw) { setEditQuantity(""); return; }
+    if (!raw) {
+      setEditQuantity("");
+      return;
+    }
     const [intPart, decPart] = raw.split(".");
     const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     setEditQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);

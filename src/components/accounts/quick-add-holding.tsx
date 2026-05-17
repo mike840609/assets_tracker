@@ -68,7 +68,10 @@ export function QuickAddHolding({
     const raw = e.target.value.replace(/,/g, "");
     if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
     setQuantityError("");
-    if (!raw) { setQuantity(""); return; }
+    if (!raw) {
+      setQuantity("");
+      return;
+    }
     const [intPart, decPart] = raw.split(".");
     const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     setQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);

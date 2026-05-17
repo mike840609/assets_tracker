@@ -80,7 +80,10 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
     const raw = e.target.value.replace(/,/g, "");
     if (raw !== "" && !/^\d*$/.test(raw)) return;
     setQuantityError("");
-    if (!raw) { setQuantity(""); return; }
+    if (!raw) {
+      setQuantity("");
+      return;
+    }
     setQuantity(raw.replace(/\B(?=(\d{3})+(?!\d))/g, ","));
   }
 

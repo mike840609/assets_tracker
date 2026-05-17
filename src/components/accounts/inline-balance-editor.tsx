@@ -30,7 +30,10 @@ export function InlineBalanceEditor({
     const raw = e.target.value.replace(/,/g, "");
     if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
     setError("");
-    if (!raw) { setBalance(""); return; }
+    if (!raw) {
+      setBalance("");
+      return;
+    }
     const [intPart, decPart] = raw.split(".");
     const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     setBalance(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
