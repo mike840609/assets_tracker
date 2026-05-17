@@ -125,6 +125,24 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
           <div
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
+            <div className="flex items-center gap-4 mb-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ background: "var(--chart-2)" }}
+                />
+                {t("seriesContributions")}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ background: "var(--chart-1)" }}
+                />
+                {t("seriesMarket")}
+              </span>
+            </div>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart
                 data={buckets}

@@ -177,11 +177,12 @@ export function SettingsForm({
                   <button
                     key={d}
                     onClick={() => setDensity(d)}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    className={`px-3 py-1.5 rounded-md text-sm transition-all ${
                       density === d
-                        ? "bg-background shadow-sm text-foreground"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "bg-background border border-border shadow-sm text-foreground font-semibold"
+                        : "border border-transparent text-muted-foreground font-medium hover:text-foreground"
                     }`}
+                    aria-pressed={density === d}
                   >
                     {d === "comfortable"
                       ? t("settings.densityComfortable")

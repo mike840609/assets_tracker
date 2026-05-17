@@ -19,11 +19,13 @@ function Tile({
   value,
   subtitle,
   tone,
+  isCompact,
 }: {
   title: string;
   value: string;
   subtitle?: string;
   tone?: "positive" | "negative" | "neutral";
+  isCompact: boolean;
 }) {
   const valueClass =
     tone === "positive"
@@ -33,9 +35,11 @@ function Tile({
         : "text-foreground";
   return (
     <Card size="sm">
-      <CardContent className="space-y-1.5">
+      <CardContent className={isCompact ? "space-y-1 p-3" : "space-y-1.5"}>
         <div className="text-xs text-muted-foreground font-medium">{title}</div>
-        <div className={`text-2xl font-semibold tracking-tight tabular-nums ${valueClass}`}>
+        <div
+          className={`${isCompact ? "text-xl" : "text-2xl"} font-semibold tracking-tight tabular-nums ${valueClass}`}
+        >
           {value}
         </div>
         {subtitle && <div className="text-xs text-muted-foreground tabular-nums">{subtitle}</div>}
@@ -97,23 +101,27 @@ export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
         value={bestValue}
         subtitle={bestSub}
         tone={privacyMode ? "neutral" : kpis.best ? toneFor(kpis.best.deltaNetWorth) : "neutral"}
+        isCompact={isCompact}
       />
       <Tile
         title={t("worstMonth")}
         value={worstValue}
         subtitle={worstSub}
         tone={privacyMode ? "neutral" : kpis.worst ? toneFor(kpis.worst.deltaNetWorth) : "neutral"}
+        isCompact={isCompact}
       />
       <Tile
         title={t("avgMonthly")}
         value={privacyMode ? hidden : signed(kpis.avgMonthlyDelta, baseCurrency)}
         tone={privacyMode ? "neutral" : toneFor(kpis.avgMonthlyDelta)}
+        isCompact={isCompact}
       />
       <Tile
         title={t("ytdGrowth")}
         value={privacyMode ? hidden : signed(kpis.ytdDelta, baseCurrency)}
         subtitle={ytdSub}
         tone={privacyMode ? "neutral" : toneFor(kpis.ytdDelta)}
+        isCompact={isCompact}
       />
     </div>
   );

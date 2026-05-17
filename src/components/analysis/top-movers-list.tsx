@@ -46,12 +46,14 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
               <tbody>
                 {movers.map((m) => {
                   const isPositive = m.absoluteChange >= 0;
-                  const changeColor = isPositive ? "text-[var(--chart-1)]" : "text-destructive";
                   const sign = isPositive ? "+" : "";
                   const pct =
                     m.percentChange === null
                       ? "—"
                       : `${isPositive ? "+" : ""}${m.percentChange.toFixed(1)}%`;
+                  const pillClass = isPositive
+                    ? "bg-[color-mix(in_oklch,var(--chart-1)_18%,transparent)] text-[var(--chart-1)]"
+                    : "bg-destructive/15 text-destructive";
 
                   return (
                     <tr
@@ -74,20 +76,26 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
                       <td className={`${isCompact ? "py-1.5" : "py-2.5"} text-right tabular-nums`}>
                         {privacyMode ? "***" : formatCurrency(m.endValue, baseCurrency)}
                       </td>
-                      <td
-                        className={`${isCompact ? "py-1.5" : "py-2.5"} text-right tabular-nums font-medium ${changeColor}`}
-                      >
-                        <div>
-                          {privacyMode ? (
-                            "***"
-                          ) : (
-                            <>
-                              {sign}
-                              {formatCurrency(m.absoluteChange, baseCurrency)}
-                            </>
-                          )}
+                      <td className={`${isCompact ? "py-1.5" : "py-2.5"} text-right`}>
+                        <div className="flex justify-end">
+                          <span
+                            className={`inline-flex items-center rounded-md px-2 py-0.5 text-sm font-semibold tabular-nums ${pillClass}`}
+                          >
+                            {privacyMode ? (
+                              "***"
+                            ) : (
+                              <>
+                                {sign}
+                                {formatCurrency(m.absoluteChange, baseCurrency)}
+                              </>
+                            )}
+                          </span>
                         </div>
-                        <div className="text-xs font-normal">{privacyMode ? "***" : pct}</div>
+                        <div
+                          className={`text-xs tabular-nums mt-0.5 ${isPositive ? "text-[var(--chart-1)]/80" : "text-destructive/80"}`}
+                        >
+                          {privacyMode ? "***" : pct}
+                        </div>
                       </td>
                     </tr>
                   );

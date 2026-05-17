@@ -316,7 +316,7 @@ This addendum captures a deep codebase review and complements the recommendation
 | 3   | Data-freshness live badge on dashboard hero                                     | High       | ✅ Done    |
 | 4   | Accessibility audit: missing `aria-label`, focus rings, sr-only chart summaries | High       | ⚠️ Partial |
 | 5   | Extract duplicated swipe-row logic into shared component                        | Medium     | ✅ Done    |
-| 6   | Sticky sort/filter bar in account detail holdings list                          | Medium     | Proposed   |
+| 6   | Sticky sort/filter bar in account detail holdings list                          | Medium     | ✅ Done    |
 | 7   | Unified motion token system in `globals.css`                                    | Medium     | ✅ Done    |
 | 8   | Richer empty states with multi-action onboarding                                | Medium     | Proposed   |
 | 9   | Mobile chart interaction model (crosshair, haptics, range persistence)          | Medium     | ✅ Done    |
@@ -449,7 +449,7 @@ This addendum captures a deep codebase review and complements the recommendation
 
 ---
 
-## 6) Sticky sort/filter bar in account detail holdings list (Medium)
+## 6) Sticky sort/filter bar in account detail holdings list (Medium) — ✅ Done
 
 **What I observed**
 
@@ -465,6 +465,8 @@ This addendum captures a deep codebase review and complements the recommendation
 - Add a subtle `border-b border-border/40` on scroll for a separator effect.
 
 **Target files**: `src/components/accounts/account-detail.tsx:332–366`
+
+> **Implemented (2026-05-17)**: Sort-pill row now uses `sticky top-0 z-10 bg-background/90 backdrop-blur-sm border-b border-border/40 py-2 -mx-6 px-6` on mobile only (collapses to static at `md+`). Reuses the `history-table.tsx:65` pattern. Sort-pill padding also bumped from `px-2.5 py-1` to `px-3 py-2 sm:px-2.5 sm:py-1` for 44 px-class touch targets on mobile.
 
 ---
 
@@ -778,7 +780,7 @@ The app's primary mobile/desktop divider is the `md` breakpoint (768 px). Fine-t
 | --- | ---------------------------------------------------------------------- | ------ | -------- |
 | M1  | Holdings table: all 8 columns at 768 px — Type & Qty should hide at md | High   | Proposed |
 | M2  | Analysis page: 5 charts stacked vertically, no sub-tab navigation      | High   | Proposed |
-| M3  | Analysis range chips ~24 px touch target (iOS min 44 px)               | High   | Proposed |
+| M3  | Analysis range chips ~24 px touch target (iOS min 44 px)               | High   | ✅ Done  |
 | M4  | Holdings table ⋯ button `opacity-0 group-hover` — invisible on touch   | Medium | Proposed |
 | M5  | Login card `p-10` — 80 px horizontal padding on 375 px phones          | Medium | Proposed |
 | M6  | Manual holding form `grid-cols-2` — no collapse on small phones        | Medium | Proposed |
@@ -830,7 +832,7 @@ Desktop (≥ `md`) keeps the existing stacked layout — no structural change th
 
 ---
 
-## M3) Analysis range chips have ~24 px touch targets — below iOS minimum (High)
+## M3) Analysis range chips have ~24 px touch targets — below iOS minimum (High) — ✅ Done
 
 **What I observed**
 
@@ -850,6 +852,8 @@ Add responsive padding variants so the buttons are finger-friendly on mobile whi
 This brings the mobile touch target to approximately 32–34 px (still below 44 px ideal but a significant improvement without breaking the compact desktop layout). To fully meet 44 px, consider adding `min-h-[44px]` on mobile only: `min-h-[44px] sm:min-h-0`.
 
 **Target files**: `src/components/analysis/analysis-view.tsx:153–165`
+
+> **Implemented (2026-05-17)**: Applied the responsive padding pattern to both the `/analysis` range chips (`analysis-view.tsx:235`) and the dashboard `TrendChart` range chips (`trend-chart.tsx:206`): `px-3 py-2 sm:px-2 sm:py-1`. Mobile chips now ~40 px tall; desktop density unchanged.
 
 ---
 
@@ -1086,3 +1090,64 @@ Each row uses `layout="position"`, `initial={{ opacity: 0, y: -8 }}`, `exit={{ o
 - Allocation pie hover pull-out spring (replace default Recharts tween) — proposed, not yet shipped.
 - Net-worth card delta tick (▲/▼ pulse on `useCountUp` change) — decoration, deferred.
 - Desktop `<table>` row layout animations — fragile with `<tr>` + framer-motion; intentionally restricted to the mobile card list.
+
+---
+
+## UI/UX Sweep — Touch Targets, Chart Clarity, Polish (2026-05-17)
+
+A fresh code-grounded audit (independent of the items already tracked above) surfaced 18 concrete issues across three bundles. All shipped on `planning-20260517`. Items reference specific files and lines as observed at audit time; a few re-state items already tracked here (cross-linked).
+
+### Sweep summary
+
+| #   | Bundle | Item                                                                | Impact | Status  | Cross-ref    |
+| --- | ------ | ------------------------------------------------------------------- | ------ | ------- | ------------ |
+| A1  | A      | AccountsSummary sort buttons `text-[10px] px-2 py-1` → responsive   | High   | ✅ Done |              |
+| A2  | A      | Analysis + TrendChart range chips touch target                      | High   | ✅ Done | M3           |
+| A3  | A      | Account-detail sort pills bigger + sticky on mobile                 | High   | ✅ Done | #6           |
+| A4  | A      | MobileHeader trailing controls `scale-90` removed                   | Medium | ✅ Done |              |
+| A5  | A      | Bulk-select checkboxes visible on touch                             | Medium | ✅ Done |              |
+| A6  | A      | Back button on MobileHeader for nested routes                       | High   | ✅ Done |              |
+| B1  | B      | CashFlowChart on-screen legend (was tooltip-only)                   | High   | ✅ Done |              |
+| B2  | B      | CategoryTrendChart legend wraps on narrow widths                    | Medium | ✅ Done |              |
+| B3  | B      | TopMoversList +/− pill backgrounds (color-vision safety)            | Medium | ✅ Done | #4 (partial) |
+| B4  | B      | ProjectionChart Y-axis currency label                               | Medium | ✅ Done |              |
+| B5  | B      | History table `—` change cell tooltip                               | Low    | ✅ Done |              |
+| C1  | C      | NetWorthCard delta visible without horizontal scroll                | Medium | ✅ Done |              |
+| C2  | C      | Pencil-icon affordance + keyboard support on account-name edit      | Medium | ✅ Done | #4 (partial) |
+| C3  | C      | "Show N more" mobile holdings button uses `Button variant=ghost`    | Low    | ✅ Done |              |
+| C4  | C      | KPI tiles respect compact density (`text-xl`, `p-3 space-y-1`)      | Medium | ✅ Done |              |
+| C5  | C      | Density toggle active state visibly stronger (border + font-weight) | Low    | ✅ Done |              |
+| C6  | C      | Login trust-badge icons `w-3.5` → `w-4`                             | Low    | ✅ Done |              |
+| C7  | C      | ThemeToggle skeleton structurally matches active control            | Low    | ✅ Done |              |
+
+### Bundle A — Touch targets & mobile reachability (6 items)
+
+- **A1** `src/components/dashboard/accounts-summary.tsx:184` — sort buttons now `text-xs sm:text-[10px] px-3 py-2 sm:px-2 sm:py-1` (mobile ≈40 px, desktop unchanged).
+- **A2** `src/components/analysis/analysis-view.tsx:235` + `src/components/dashboard/trend-chart.tsx:206` — range chips now `px-3 py-2 sm:px-2 sm:py-1`. Closes M3.
+- **A3** `src/components/accounts/account-detail.tsx:336` — sort pills wrapped in `sticky top-0 z-10 bg-background/90 backdrop-blur-sm border-b border-border/40 py-2 -mx-6 px-6 md:static md:bg-transparent md:border-0`; pills bumped to `px-3 py-2 sm:px-2.5 sm:py-1`. Closes #6.
+- **A4** `src/components/layout/mobile-header.tsx:101` — dropped `scale-90 origin-right` wrapper; privacy button promoted to `h-10 w-10`.
+- **A5** `src/components/accounts/accounts-list.tsx:810` — checkbox switches from `opacity-0 group-hover:opacity-100` to `opacity-100 md:opacity-0 md:group-hover:opacity-100`; added `p-2 -m-2` so the hit zone exceeds the visual target. Card content shift mirrors the new visibility (`pl-6 md:pl-0 md:group-hover:pl-6`) so the checkbox never overlaps the title.
+- **A6** `src/components/layout/mobile-header.tsx` — new `ChevronLeft` back button appears on nested routes (`/^\/[^/]+\/.+/`) once the `LargeTitleHeading` has scrolled off; calls `router.back()` + `hapticTick()`. Adds `common.back` to both message files (`Back` / `返回`); the root-layout `pickMessages` selection in `src/app/layout.tsx:264` extended with `common`.
+
+### Bundle B — Chart clarity & touch comprehension (5 items)
+
+- **B1** `src/components/analysis/cashflow-chart.tsx:127` — added two-dot legend above the chart (`var(--chart-2)` Contributions, `var(--chart-1)` Market). Reuses existing `analysis.seriesContributions` / `analysis.seriesMarket` keys.
+- **B2** `src/components/analysis/category-trend-chart.tsx:148` — Recharts `<Legend>` switched to `iconSize={8}` with `wrapperStyle={{ fontSize: 12, paddingTop: 8, lineHeight: "18px", width: "100%" }}` so labels wrap cleanly at 320 px.
+- **B3** `src/components/analysis/top-movers-list.tsx:47` — change values render in colored pills (`bg-[color-mix(in_oklch,var(--chart-1)_18%,transparent)]` for gains, `bg-destructive/15` for losses) with explicit `+` / `−` prefix. Helps color-vision deficiency (extends item #4).
+- **B4** `src/components/projections/projection-chart.tsx:112` — Y-axis adds rotated `(${baseCurrency})` label inside; axis width bumped from 52 → 64 to accommodate.
+- **B5** `src/components/history/history-table.tsx:115` — `—` placeholder wrapped in a `<span title aria-label cursor-help>` reading the new `history.noPreviousSnapshot` key (`No previous snapshot to compare` / `無前一筆快照可比較`).
+
+### Bundle C — Visual polish & consistency (7 items)
+
+- **C1** `src/components/dashboard/net-worth-card.tsx:71` — delta split into a pill (currency change) plus adjacent text (percent), wrapper switched to `flex flex-wrap items-center gap-2`. Dropped the outer `overflow-x-auto` so the delta is always visible on narrow widths.
+- **C2** `src/components/accounts/account-detail.tsx:286` — account-name `<h2>` now an inline-flex with a `Pencil` icon (`h-3.5 w-3.5 opacity-60 group-hover:opacity-100`); gained `role="button"`, `tabIndex={0}`, Enter/Space handler, and `aria-label={t("accountDetail.editName")}`. New `accountDetail.editName` i18n key (`Edit account name` / `編輯帳戶名稱`).
+- **C3** `src/components/accounts/account-detail.tsx:399` — mobile "Show N more" replaced by `<Button variant="ghost" size="sm" className="w-full mt-2">`.
+- **C4** `src/components/analysis/kpi-tiles.tsx` — `Tile` now reads `useDensity()`; compact mode tightens to `text-xl` value and `p-3 space-y-1` content. Wires through all four tiles.
+- **C5** `src/components/settings/settings-form.tsx:180` — density-toggle active state adds `border border-border` + `font-semibold`; inactive uses `font-medium` + transparent border (no layout shift); button gains `aria-pressed`.
+- **C6** `src/app/login/page.tsx` — trust-badge icons promoted `w-3.5 h-3.5` → `w-4 h-4` (3 occurrences).
+- **C7** `src/components/layout/theme-toggle.tsx:63` — pre-hydration skeleton now structurally mirrors the active control: same `gap-0.5 p-0.5` outer ring, three `inline-flex … rounded-md p-1.5` slots with a `h-4 w-4 rounded-sm bg-muted` square inside. Eliminates the slot-reshape jump on hydration.
+
+### Verification
+
+- `npm run format:check`, `npm run lint`, `npm run typecheck` — all green after each bundle.
+- Manual viewport sweep on Chrome devtools (iPhone SE 375 × 667 / iPhone 16 Pro Max 430 × 932 / 2xl desktop) covering the targets above; Playwright smoke spec untouched.

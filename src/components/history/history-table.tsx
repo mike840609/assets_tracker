@@ -113,12 +113,20 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                                     : "text-muted-foreground",
                               )}
                             >
-                              {privacyMode
-                                ? "***"
-                                : row.change === null
-                                  ? "—"
-                                  : (row.change >= 0 ? "+" : "") +
-                                    formatCurrency(row.change, baseCurrency)}
+                              {privacyMode ? (
+                                "***"
+                              ) : row.change === null ? (
+                                <span
+                                  title={t("noPreviousSnapshot")}
+                                  aria-label={t("noPreviousSnapshot")}
+                                  className="cursor-help"
+                                >
+                                  —
+                                </span>
+                              ) : (
+                                (row.change >= 0 ? "+" : "") +
+                                formatCurrency(row.change, baseCurrency)
+                              )}
                             </p>
                           </div>
                         </div>

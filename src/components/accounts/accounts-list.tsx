@@ -807,7 +807,7 @@ function AccountCardWithHoldings({
   return (
     <div className="relative group">
       <div
-        className={`absolute top-3 left-3 z-10 transition-opacity ${isSelecting ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+        className={`absolute top-3 left-3 z-10 p-2 -m-2 transition-opacity ${isSelecting ? "opacity-100" : "opacity-100 md:opacity-0 md:group-hover:opacity-100"}`}
         onClick={(e) => e.preventDefault()}
       >
         <Checkbox checked={isSelected} onCheckedChange={onToggle} />
@@ -818,7 +818,9 @@ function AccountCardWithHoldings({
         >
           <CardContent className={isCompact ? "pt-3 pb-2" : "pt-5 pb-4"}>
             <div className="flex items-start justify-between">
-              <div className={isSelecting ? "pl-6" : "group-hover:pl-6 transition-all"}>
+              <div
+                className={isSelecting ? "pl-6" : "pl-6 md:pl-0 md:group-hover:pl-6 transition-all"}
+              >
                 <p className="font-semibold">{account.name}</p>
                 {/* D: secondary subtitle line */}
                 {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
@@ -841,7 +843,9 @@ function AccountCardWithHoldings({
             </div>
 
             {hasHoldings && (
-              <div className={`mt-3 ${isSelecting ? "pl-6" : "group-hover:pl-6 transition-all"}`}>
+              <div
+                className={`mt-3 ${isSelecting ? "pl-6" : "pl-6 md:pl-0 md:group-hover:pl-6 transition-all"}`}
+              >
                 <div className="space-y-1.5">
                   {holdingsWithValue.map((h) => (
                     <div

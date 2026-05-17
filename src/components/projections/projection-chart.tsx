@@ -110,9 +110,20 @@ export function ProjectionChart({ data, fireNumber, fireYear, baseCurrency }: Pr
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="year" tick={{ fontSize: 12 }} interval="preserveStartEnd" />
                 <YAxis
-                  width={52}
+                  width={64}
                   tick={{ fontSize: 12 }}
                   tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
+                  label={{
+                    value: `(${baseCurrency})`,
+                    angle: -90,
+                    position: "insideLeft",
+                    offset: 14,
+                    style: {
+                      fontSize: 11,
+                      fill: "var(--muted-foreground)",
+                      textAnchor: "middle",
+                    },
+                  }}
                 />
                 <Tooltip
                   content={

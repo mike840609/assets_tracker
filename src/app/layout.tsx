@@ -261,7 +261,9 @@ async function LocaleProviders({ children }: { children: React.ReactNode }) {
   await getLocale();
   const messages = await getMessages();
   return (
-    <NextIntlClientProvider messages={pickMessages(messages, ["app", "nav", "commandPalette"])}>
+    <NextIntlClientProvider
+      messages={pickMessages(messages, ["app", "nav", "commandPalette", "common"])}
+    >
       {children}
     </NextIntlClientProvider>
   );

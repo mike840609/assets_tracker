@@ -62,10 +62,12 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
-        <div className="h-7 w-7" />
-        <div className="h-7 w-7" />
-        <div className="h-7 w-7" />
+      <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-0.5">
+        {themes.map(({ value }) => (
+          <div key={value} className="inline-flex items-center justify-center rounded-md p-1.5">
+            <div className="h-4 w-4 rounded-sm bg-muted" />
+          </div>
+        ))}
       </div>
     );
   }

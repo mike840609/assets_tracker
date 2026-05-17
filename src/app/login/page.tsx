@@ -89,15 +89,15 @@ async function LoginContent() {
         {/* Trust badges */}
         <div className="flex flex-col gap-2 pt-2">
           <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-            <Lock className="w-3.5 h-3.5 shrink-0 text-primary" />
+            <Lock className="w-4 h-4 shrink-0 text-primary" />
             <span>{t("trust1")}</span>
           </div>
           <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-            <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-primary" />
+            <ShieldCheck className="w-4 h-4 shrink-0 text-primary" />
             <span>{t("trust2")}</span>
           </div>
           <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-            <EyeOff className="w-3.5 h-3.5 shrink-0 text-primary" />
+            <EyeOff className="w-4 h-4 shrink-0 text-primary" />
             <span>{t("trust3")}</span>
           </div>
         </div>
