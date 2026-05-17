@@ -172,7 +172,7 @@ export function SettingsForm({
                 <p className="text-sm font-medium">{t("settings.density")}</p>
                 <p className="text-sm text-muted-foreground">{t("settings.densityDescription")}</p>
               </div>
-              <div className="flex items-center gap-1 rounded-lg border p-1 bg-muted/30">
+              <div className="w-fit flex items-center gap-1 rounded-lg border p-1 bg-muted/30">
                 {(["comfortable", "compact"] as Density[]).map((d) => (
                   <button
                     key={d}
