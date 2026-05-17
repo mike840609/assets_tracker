@@ -172,16 +172,17 @@ export function SettingsForm({
                 <p className="text-sm font-medium">{t("settings.density")}</p>
                 <p className="text-sm text-muted-foreground">{t("settings.densityDescription")}</p>
               </div>
-              <div className="flex items-center gap-1 rounded-lg border p-1 bg-muted/30">
+              <div className="w-fit flex items-center gap-1 rounded-lg border p-1 bg-muted/30">
                 {(["comfortable", "compact"] as Density[]).map((d) => (
                   <button
                     key={d}
                     onClick={() => setDensity(d)}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    className={`px-3 py-1.5 rounded-md text-sm transition-all ${
                       density === d
-                        ? "bg-background shadow-sm text-foreground"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "bg-background border border-border shadow-sm text-foreground font-semibold"
+                        : "border border-transparent text-muted-foreground font-medium hover:text-foreground"
                     }`}
+                    aria-pressed={density === d}
                   >
                     {d === "comfortable"
                       ? t("settings.densityComfortable")

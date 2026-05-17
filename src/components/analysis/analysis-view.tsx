@@ -233,7 +233,7 @@ export function AnalysisView({
                 onClick={() => setRange(r.label)}
                 aria-pressed={range === r.label}
                 className={cn(
-                  "px-2 py-1 text-xs rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  "px-3 py-2 sm:px-2 sm:py-1 text-xs rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   range === r.label
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted",

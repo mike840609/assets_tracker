@@ -145,7 +145,15 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
                     <CategoryTooltip baseCurrency={baseCurrency} privacyMode={privacyMode} />
                   }
                 />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Legend
+                  iconSize={8}
+                  wrapperStyle={{
+                    fontSize: 12,
+                    paddingTop: 8,
+                    lineHeight: "18px",
+                    width: "100%",
+                  }}
+                />
                 {categories.map((cat, idx) => (
                   <Line
                     key={cat}

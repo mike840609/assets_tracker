@@ -181,7 +181,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
                 key={field}
                 onClick={() => handleSort(field)}
                 aria-pressed={sortField === field}
-                className={`text-[10px] px-2 py-1 rounded-md transition-colors ${
+                className={`text-xs sm:text-[10px] px-3 py-2 sm:px-2 sm:py-1 rounded-md transition-colors ${
                   sortField === field
                     ? "bg-primary/10 text-primary font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"

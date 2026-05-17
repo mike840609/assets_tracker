@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Pencil } from "lucide-react";
 import { springConfig } from "@/lib/motion";
 
 import dynamic from "next/dynamic";
@@ -284,10 +285,23 @@ export function AccountDetail({
             </div>
           ) : (
             <h2
-              className="text-2xl font-bold tracking-tight cursor-pointer hover:text-primary hover:bg-accent/50 rounded px-1 -mx-1 transition-colors"
+              className="group inline-flex items-center gap-1.5 text-2xl font-bold tracking-tight cursor-pointer hover:text-primary hover:bg-accent/50 rounded px-1 -mx-1 transition-colors"
               onClick={() => setIsEditingName(true)}
+              role="button"
+              tabIndex={0}
+              aria-label={t("accountDetail.editName")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsEditingName(true);
+                }
+              }}
             >
-              {account.name}
+              <span>{account.name}</span>
+              <Pencil
+                aria-hidden
+                className="h-3.5 w-3.5 opacity-60 group-hover:opacity-100 transition-opacity shrink-0"
+              />
             </h2>
           )}
           <div className="flex items-center gap-2 mt-1">
@@ -333,7 +347,7 @@ export function AccountDetail({
               ) : (
                 <>
                   {holdingsWithValue.length > 1 && (
-                    <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                    <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm border-b border-border/40 mb-2 -mx-6 px-6 py-2 md:static md:bg-transparent md:backdrop-blur-none md:border-0 md:mx-0 md:px-0 md:py-0 flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs text-muted-foreground shrink-0">Sort:</span>
                       {(
                         [
@@ -358,7 +372,7 @@ export function AccountDetail({
                         <button
                           key={field}
                           onClick={() => handleSort(field)}
-                          className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                          className={`text-xs px-3 py-2 sm:px-2.5 sm:py-1 rounded-full border transition-colors ${
                             sortField === field
                               ? "border-primary/40 bg-primary/10 text-primary font-medium"
                               : "border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40"
@@ -394,12 +408,14 @@ export function AccountDetail({
                     </AnimatePresence>
                   </div>
                   {!showAllMobileHoldings && filteredSortedHoldings.length > 20 && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setShowAllMobileHoldings(true)}
-                      className="w-full py-3 text-sm text-primary hover:text-primary/80 transition-colors"
+                      className="w-full mt-2"
                     >
                       {t("accountDetail.showMore", { count: filteredSortedHoldings.length - 20 })}
-                    </button>
+                    </Button>
                   )}
                 </>
               )}

@@ -40,7 +40,8 @@
     "deleting": "刪除中...",
     "asset": "資產",
     "liability": "負債",
-    "undo": "復原"
+    "undo": "復原",
+    "back": "返回"
   },
   "categories": {
     "BANK": "銀行",
@@ -273,7 +274,8 @@
     "colLiabilities": "總負債",
     "colChange": "變化",
     "noData": "尚無快照。請從儀表板建立快照以開始追蹤歷史。",
-    "noDataForRange": "此範圍內無資料。"
+    "noDataForRange": "此範圍內無資料。",
+    "noPreviousSnapshot": "無前一筆快照可比較"
   },
   "netWorthCard": {
     "netWorth": "淨資產",
@@ -432,6 +434,7 @@
     "breadcrumb": "帳戶",
     "deleteAccount": "刪除帳戶",
     "deleting": "刪除中...",
+    "editName": "編輯帳戶名稱",
     "marketValue": "市值",
     "holdingsCount": "持倉數",
     "cashBalance": "現金餘額",

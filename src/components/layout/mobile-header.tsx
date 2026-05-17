@@ -1,13 +1,14 @@
 "use client";
 
-import { Eye, EyeOff } from "lucide-react";
+import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import { useLargeTitle } from "./large-title-context";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { hapticTick } from "@/lib/haptics";
 
 function getPageTitle(pathname: string, nav: (k: string) => string): string {
   if (pathname === "/") return nav("dashboard");
@@ -24,8 +25,16 @@ export function MobileHeader() {
   const hidden = useHideOnScroll();
   const { isVisible } = useLargeTitle();
   const pathname = usePathname();
+  const router = useRouter();
 
   const pageTitle = getPageTitle(pathname, (k) => t(`nav.${k}`));
+  const isNestedRoute = pathname !== "/" && /^\/[^/]+\/.+/.test(pathname);
+  const showBackButton = isNestedRoute && !isVisible;
+
+  const handleBack = () => {
+    hapticTick();
+    router.back();
+  };
 
   return (
     <header
@@ -41,6 +50,18 @@ export function MobileHeader() {
         isVisible ? "border-transparent" : "border-border/50",
       )}
     >
+      {/* Back button — appears on nested routes once the large title scrolls off */}
+      {showBackButton && (
+        <button
+          type="button"
+          onClick={handleBack}
+          aria-label={t("common.back")}
+          className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-full h-10 w-10 text-foreground hover:bg-muted/60 active:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-normal"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+      )}
+
       {/* Left: logo + app name — fades away when the large title scrolls out */}
       <div
         className={cn(
@@ -99,12 +120,12 @@ export function MobileHeader() {
       </span>
 
       {/* Right: controls — always visible */}
-      <div className="flex items-center gap-1 scale-90 origin-right">
+      <div className="flex items-center gap-1">
         <button
           onClick={togglePrivacyMode}
           title={privacyMode ? "Show values" : "Hide values"}
           aria-label={privacyMode ? "Show values" : "Hide values"}
-          className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="inline-flex items-center justify-center rounded-md h-10 w-10 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           {privacyMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>

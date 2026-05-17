@@ -69,21 +69,24 @@ export function NetWorthCard({
             </p>
           </div>
           {!privacyMode && delta !== null && pct !== null && (
-            <div className="overflow-x-auto scrollbar-none mt-3">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <div
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${bgDeltaColor} ${deltaColor} w-max transition-all group-hover:scale-105 cursor-default whitespace-nowrap`}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${bgDeltaColor} ${deltaColor} max-w-full transition-all group-hover:scale-105 cursor-default tabular-nums`}
               >
                 {isPositive ? (
-                  <TrendingUp className="h-3.5 w-3.5" />
+                  <TrendingUp className="h-3.5 w-3.5 shrink-0" />
                 ) : (
-                  <TrendingDown className="h-3.5 w-3.5" />
+                  <TrendingDown className="h-3.5 w-3.5 shrink-0" />
                 )}
-                <span>
+                <span className="truncate">
                   {deltaSign}
-                  {formatCurrency(delta, baseCurrency)} ({deltaSign}
-                  {pct.toFixed(2)}%)
+                  {formatCurrency(delta, baseCurrency)}
                 </span>
               </div>
+              <span className={`text-xs font-semibold tabular-nums ${deltaColor}`}>
+                {deltaSign}
+                {pct.toFixed(2)}%
+              </span>
             </div>
           )}
         </CardContent>

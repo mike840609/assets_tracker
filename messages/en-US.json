@@ -40,7 +40,8 @@
     "deleting": "Deleting...",
     "asset": "Asset",
     "liability": "Liability",
-    "undo": "Undo"
+    "undo": "Undo",
+    "back": "Back"
   },
   "categories": {
     "BANK": "Bank",
@@ -273,7 +274,8 @@
     "colLiabilities": "Liabilities",
     "colChange": "Change",
     "noData": "No snapshots yet. Take a snapshot from the dashboard to start tracking.",
-    "noDataForRange": "No data for this range."
+    "noDataForRange": "No data for this range.",
+    "noPreviousSnapshot": "No previous snapshot to compare"
   },
   "netWorthCard": {
     "netWorth": "Net Worth",
@@ -432,6 +434,7 @@
     "breadcrumb": "Accounts",
     "deleteAccount": "Delete Account",
     "deleting": "Deleting...",
+    "editName": "Edit account name",
     "marketValue": "Market Value",
     "holdingsCount": "Holdings",
     "cashBalance": "Cash Balance",
