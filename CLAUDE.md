@@ -1,10 +1,8 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-@AGENTS.md
-
 # Assets Tracker — Project Guide
+
+## Prerequisites
+
+- Node.js 24.x (required by Next.js 16)
 
 ## Overview
 
@@ -34,7 +32,7 @@ npm run dev          # Start dev server; binds 0.0.0.0 (LAN-reachable) on port 3
 # Build & Production
 npm run build        # Production build
 npm run start        # Start production server
-ANALYZE=true npm run build  # Build with @next/bundle-analyzer HTML reports
+npm run analyze             # Build with @next/bundle-analyzer HTML reports
 
 # Linting
 npm run lint         # Run ESLint
@@ -116,7 +114,7 @@ src/
 
 ### Cache model (`cacheComponents: true`)
 
-`next.config.ts` enables `cacheComponents: true` (Next.js 16's dynamic-IO / PPR-era cache flag). Service-layer reads throughout `src/lib/services/` use the `"use cache"` directive with `cacheTag("...")` — see `getNetWorthSummary`, `getNormalizedHistory`, settings, and the `/analysis` + `/history` reads (landed per `docs/VERCEL_ANALYSIS.md` V18/V26/V27). Follow the same pattern for new server reads; then invalidate from mutation routes via `revalidateTag(...)`.
+`next.config.ts` enables `cacheComponents: true` (Next.js 16's dynamic-IO / PPR-era cache flag). Service-layer reads throughout `src/lib/services/` use the `"use cache"` directive with `cacheTag("...")` — see `getNetWorthSummary`, `getNormalizedHistory`, settings, and the `/analysis` + `/history` reads. Follow the same pattern for new server reads; then invalidate from mutation routes via `revalidateTag(...)`.
 
 `next.config.ts` also declares `serverExternalPackages: ["ws", "@neondatabase/serverless"]`. Any new server-only dep that imports Node built-ins (fs, net, tls) must be added here or the build breaks with Edge-incompat errors.
 
@@ -276,4 +274,5 @@ Before proposing changes, check whether the work is already tracked in one of th
 - `docs/UI_UX.md` — UI/UX improvements (1–15), `/analysis` tab feature roadmap (Phases 1–4)
 - `docs/CODE_QUALITY.md` — engineering hygiene (Q1–Q20), documentation gaps (C1–C14), cross-doc synthesis (D1–D10)
 - `docs/SUGGESTIONS.md` — master backlog (110+ items, ✅/❌ tracked)
+- `docs/suggestions_20260516_future_features.md` — forward-looking feature backlog (F1–F25)
 - `docs/LOG.md` — running engineering log / decision journal
