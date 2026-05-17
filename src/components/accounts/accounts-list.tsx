@@ -7,8 +7,13 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronUp, ChevronDown, ChevronsUpDown, MoreHorizontal, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/currencies";
 import { springConfig } from "@/lib/motion";
 import { toast } from "sonner";
@@ -137,8 +142,7 @@ export function AccountsList({
     window.addEventListener("add-item", handler);
     return () => window.removeEventListener("add-item", handler);
   }, []);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [deleting, setDeleting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<"name" | "value">("value");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => {
@@ -225,78 +229,33 @@ export function AccountsList({
     });
   }
 
-  function toggleSelect(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
+  async function deleteAccount(id: string) {
+    if (!confirm(t("accountsList.deleteConfirm"))) return;
 
-  function toggleAll() {
-    if (selected.size === accounts.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(accounts.map((a) => a.id)));
-    }
-  }
-
-  async function deleteSelected() {
-    if (selected.size === 0) return;
-    if (!confirm(t("accountsList.deleteConfirm", { count: selected.size }))) return;
-
-    setDeleting(true);
+    setDeletingId(id);
     try {
       const res = await fetch("/api/accounts", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: Array.from(selected) }),
+        body: JSON.stringify({ ids: [id] }),
       });
       if (!res.ok) throw new Error();
-      toast.success(t("accountsList.deleteSuccess", { count: selected.size }));
-      setSelected(new Set());
+      toast.success(t("accountsList.deleteSuccess"));
       router.refresh();
     } catch {
       toast.error(t("accountsList.deleteFailed"));
     } finally {
-      setDeleting(false);
+      setDeletingId(null);
     }
   }
 
-  const isSelecting = selected.size > 0;
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {accounts.length > 0 && (
-            <>
-              <Checkbox
-                checked={selected.size === accounts.length && accounts.length > 0}
-                onCheckedChange={toggleAll}
-              />
-              <span className="text-sm text-muted-foreground">
-                {isSelecting
-                  ? t("accountsList.selected", { count: selected.size })
-                  : t("accountsList.selectAll")}
-              </span>
-            </>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {isSelecting && (
-            <Button variant="destructive" size="sm" onClick={deleteSelected} disabled={deleting}>
-              {deleting
-                ? t("accountsList.deleting")
-                : t("accountsList.deleteButton", { count: selected.size })}
-            </Button>
-          )}
-          <Button variant="outline" onClick={() => setShowQuickAdd(true)}>
-            {t("accountsList.addItem")}
-          </Button>
-          <Button onClick={() => setShowForm(true)}>{t("accountsList.addAccount")}</Button>
-        </div>
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="outline" onClick={() => setShowQuickAdd(true)}>
+          {t("accountsList.addItem")}
+        </Button>
+        <Button onClick={() => setShowForm(true)}>{t("accountsList.addAccount")}</Button>
       </div>
 
       {accounts.length === 0 && (
@@ -309,12 +268,6 @@ export function AccountsList({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/30">
-                <th className="px-4 py-3 w-10 text-left">
-                  <Checkbox
-                    checked={selected.size === accounts.length && accounts.length > 0}
-                    onCheckedChange={toggleAll}
-                  />
-                </th>
                 <th
                   className="px-4 py-3 text-left font-semibold cursor-pointer select-none hover:text-foreground"
                   onClick={() => toggleSort("name")}
@@ -356,7 +309,7 @@ export function AccountsList({
                 <>
                   <tr className="bg-green-50/60 dark:bg-green-950/20">
                     <td
-                      colSpan={9}
+                      colSpan={8}
                       className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-green-700 dark:text-green-400"
                     >
                       {t("accountsList.assets")}
@@ -370,9 +323,9 @@ export function AccountsList({
                       baseCurrency={baseCurrency}
                       priceMap={priceMap}
                       ratesMap={ratesMap}
-                      isSelected={selected.has(account.id)}
-                      onToggle={() => toggleSelect(account.id)}
                       onNavigate={() => router.push(`/accounts/${account.id}`)}
+                      onDelete={deleteAccount}
+                      isDeleting={deletingId === account.id}
                       allocationDenominator={totalAssets}
                     />
                   ))}
@@ -382,7 +335,7 @@ export function AccountsList({
                 <>
                   <tr className="bg-red-50/60 dark:bg-red-950/20">
                     <td
-                      colSpan={9}
+                      colSpan={8}
                       className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-red-700 dark:text-red-400"
                     >
                       {t("accountsList.liabilities")}
@@ -396,9 +349,9 @@ export function AccountsList({
                       baseCurrency={baseCurrency}
                       priceMap={priceMap}
                       ratesMap={ratesMap}
-                      isSelected={selected.has(account.id)}
-                      onToggle={() => toggleSelect(account.id)}
                       onNavigate={() => router.push(`/accounts/${account.id}`)}
+                      onDelete={deleteAccount}
+                      isDeleting={deletingId === account.id}
                       allocationDenominator={totalLiabilities}
                     />
                   ))}
@@ -435,9 +388,8 @@ export function AccountsList({
                   baseCurrency={baseCurrency}
                   isExpanded={expandedCategories.has(`ASSET_${category}`)}
                   onToggleExpand={() => toggleCategory("ASSET", category)}
-                  selected={selected}
-                  onToggleSelect={toggleSelect}
-                  isSelecting={isSelecting}
+                  onDelete={deleteAccount}
+                  deletingId={deletingId}
                 />
               ))}
             </div>
@@ -460,9 +412,8 @@ export function AccountsList({
                   baseCurrency={baseCurrency}
                   isExpanded={expandedCategories.has(`LIABILITY_${category}`)}
                   onToggleExpand={() => toggleCategory("LIABILITY", category)}
-                  selected={selected}
-                  onToggleSelect={toggleSelect}
-                  isSelecting={isSelecting}
+                  onDelete={deleteAccount}
+                  deletingId={deletingId}
                 />
               ))}
             </div>
@@ -504,9 +455,9 @@ function DesktopAccountRow({
   baseCurrency,
   priceMap,
   ratesMap,
-  isSelected,
-  onToggle,
   onNavigate,
+  onDelete,
+  isDeleting,
   allocationDenominator,
 }: {
   account: SerializedAccountWithHoldings;
@@ -514,9 +465,9 @@ function DesktopAccountRow({
   baseCurrency: string;
   priceMap: Record<string, number>;
   ratesMap: Record<string, number>;
-  isSelected: boolean;
-  onToggle: () => void;
   onNavigate: () => void;
+  onDelete: (id: string) => void;
+  isDeleting: boolean;
   allocationDenominator: number;
 }) {
   const { privacyMode } = usePrivacyMode();
@@ -530,13 +481,7 @@ function DesktopAccountRow({
     allocationDenominator > 0 ? (Math.abs(baseValue) / allocationDenominator) * 100 : null;
 
   return (
-    <tr
-      className={`group hover:bg-muted/40 cursor-pointer transition-colors ${isSelected ? "bg-primary/5" : ""}`}
-      onClick={onNavigate}
-    >
-      <td className="px-4 py-3.5 w-10" onClick={(e) => e.stopPropagation()}>
-        <Checkbox checked={isSelected} onCheckedChange={onToggle} />
-      </td>
+    <tr className="group hover:bg-muted/40 cursor-pointer transition-colors" onClick={onNavigate}>
       <td className="px-4 py-3.5 font-medium max-w-[220px] xl:max-w-[280px]">
         <span className="truncate block" title={account.name}>
           {account.name}
@@ -589,8 +534,21 @@ function DesktopAccountRow({
           )}
         </div>
       </td>
-      <td className="px-4 py-3.5 w-12 text-center">
-        <ChevronRight className="h-4 w-4 text-muted-foreground mx-auto group-hover:translate-x-0.5 transition-transform" />
+      <td className="px-2 py-3.5 w-10 text-center" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
+            disabled={isDeleting}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem variant="destructive" onClick={() => onDelete(account.id)}>
+              <Trash2 className="h-4 w-4" />
+              {isDeleting ? t("common.deleting") : t("common.delete")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </td>
     </tr>
   );
@@ -642,9 +600,8 @@ function CategorySection({
   baseCurrency,
   isExpanded,
   onToggleExpand,
-  selected,
-  onToggleSelect,
-  isSelecting,
+  onDelete,
+  deletingId,
 }: {
   category: string;
   accounts: SerializedAccountWithHoldings[];
@@ -653,9 +610,8 @@ function CategorySection({
   baseCurrency: string;
   isExpanded: boolean;
   onToggleExpand: () => void;
-  selected: Set<string>;
-  onToggleSelect: (id: string) => void;
-  isSelecting: boolean;
+  onDelete: (id: string) => void;
+  deletingId: string | null;
 }) {
   const t = useTranslations();
   const { privacyMode } = usePrivacyMode();
@@ -744,9 +700,8 @@ function CategorySection({
                     priceMap={priceMap}
                     ratesMap={ratesMap}
                     baseCurrency={baseCurrency}
-                    isSelected={selected.has(account.id)}
-                    onToggle={() => onToggleSelect(account.id)}
-                    isSelecting={isSelecting}
+                    onDelete={onDelete}
+                    isDeleting={deletingId === account.id}
                   />
                 </motion.div>
               ))}
@@ -763,17 +718,15 @@ function AccountCardWithHoldings({
   priceMap,
   ratesMap,
   baseCurrency,
-  isSelected,
-  onToggle,
-  isSelecting,
+  onDelete,
+  isDeleting,
 }: {
   account: SerializedAccountWithHoldings;
   priceMap: Record<string, number>;
   ratesMap: Record<string, number>;
   baseCurrency: string;
-  isSelected: boolean;
-  onToggle: () => void;
-  isSelecting: boolean;
+  onDelete: (id: string) => void;
+  isDeleting: boolean;
 }) {
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
@@ -806,21 +759,27 @@ function AccountCardWithHoldings({
 
   return (
     <div className="relative group">
-      <div
-        className={`absolute top-3 left-3 z-10 p-2 -m-2 transition-opacity ${isSelecting ? "opacity-100" : "opacity-100 md:opacity-0 md:group-hover:opacity-100"}`}
-        onClick={(e) => e.preventDefault()}
-      >
-        <Checkbox checked={isSelected} onCheckedChange={onToggle} />
+      <div className="absolute top-2 right-2 z-10">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
+            disabled={isDeleting}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem variant="destructive" onClick={() => onDelete(account.id)}>
+              <Trash2 className="h-4 w-4" />
+              {isDeleting ? t("common.deleting") : t("common.delete")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <Link href={`/accounts/${account.id}`} prefetch={false} transitionTypes={["nav-forward"]}>
-        <Card
-          className={`hover:shadow-md transition-all cursor-pointer ${isSelected ? "ring-2 ring-primary" : ""}`}
-        >
+        <Card className="hover:shadow-md transition-all cursor-pointer">
           <CardContent className={isCompact ? "pt-3 pb-2" : "pt-5 pb-4"}>
             <div className="flex items-start justify-between">
-              <div
-                className={isSelecting ? "pl-6" : "pl-6 md:pl-0 md:group-hover:pl-6 transition-all"}
-              >
+              <div>
                 <p className="font-semibold">{account.name}</p>
                 {/* D: secondary subtitle line */}
                 {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
@@ -843,9 +802,7 @@ function AccountCardWithHoldings({
             </div>
 
             {hasHoldings && (
-              <div
-                className={`mt-3 ${isSelecting ? "pl-6" : "pl-6 md:pl-0 md:group-hover:pl-6 transition-all"}`}
-              >
+              <div className="mt-3">
                 <div className="space-y-1.5">
                   {holdingsWithValue.map((h) => (
                     <div
