@@ -1,4 +1,3 @@
-import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createHoldingSchema, updateHoldingSchema } from "@/lib/validators";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
@@ -6,15 +5,9 @@ import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 import { parseOccSymbol, formatOptionLabel, OptionError } from "@/lib/options";
 import { log } from "@/lib/logger";
+import { invalidateAccountData } from "@/lib/cache-invalidation";
 
 type IdCtx = { params: Promise<{ id: string }> };
-
-function invalidateUserCaches(userId: string) {
-  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
-  revalidateTag(`accounts:${userId}`, "max");
-  revalidateTag(`net-worth:${userId}`, "max");
-  revalidateTag(`history:${userId}`, "max");
-}
 
 export const GET = withAuth<IdCtx>(async (_request, { params }, userId) => {
   const { id } = await params;
@@ -131,7 +124,7 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
     log.error("holdings.price_fetch.failed", { symbol: holding.symbol, error: String(error) });
   }
 
-  invalidateUserCaches(userId);
+  invalidateAccountData(userId);
   return ok(holding, { status: 201 });
 });
 
@@ -163,7 +156,7 @@ export const PATCH = withAuth<IdCtx>(async (request, _ctx, userId) => {
   }
 
   const holding = await prisma.holding.update({ where: { id }, data });
-  invalidateUserCaches(userId);
+  invalidateAccountData(userId);
   return ok(holding);
 });
 
@@ -179,6 +172,6 @@ export const DELETE = withAuth<IdCtx>(async (request, _ctx, userId) => {
   if (!owned) return failure("Not found", 404);
 
   await prisma.holding.delete({ where: { id } });
-  invalidateUserCaches(userId);
+  invalidateAccountData(userId);
   return ok({ ok: true });
 });

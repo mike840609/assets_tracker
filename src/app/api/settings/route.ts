@@ -1,9 +1,9 @@
-import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { updateSettingsSchema } from "@/lib/validators";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { ok, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
+import { invalidateSettingsData } from "@/lib/cache-invalidation";
 
 export const GET = withAuth(async (_req, _ctx, userId) => {
   const settings = await getOrCreateSettings(userId);
@@ -28,13 +28,7 @@ export const PATCH = withAuth(async (request, _ctx, userId) => {
     },
   });
 
-  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
-  revalidateTag(`settings:${userId}`, "max");
-  // If the base currency changed, the cached net-worth summary for this
-  // user is stale (values are denominated in the old currency).
-  if (parsed.data.baseCurrency !== undefined) {
-    revalidateTag(`net-worth:${userId}`, "max");
-  }
+  invalidateSettingsData(userId, { affectsNetWorth: parsed.data.baseCurrency !== undefined });
 
   const response = ok(settings);
 

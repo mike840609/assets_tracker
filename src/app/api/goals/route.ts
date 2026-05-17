@@ -1,12 +1,8 @@
-import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createGoalSchema } from "@/lib/validators";
 import { ok, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
-
-function invalidateGoalCaches(userId: string) {
-  revalidateTag(`goals:${userId}`, "max");
-}
+import { invalidateGoalData } from "@/lib/cache-invalidation";
 
 export const GET = withAuth(async (_req, _ctx, userId) => {
   const goals = await prisma.goal.findMany({
@@ -29,6 +25,6 @@ export const POST = withAuth(async (request, _ctx, userId) => {
       targetDate: targetDate ? new Date(targetDate) : null,
     },
   });
-  invalidateGoalCaches(userId);
+  invalidateGoalData(userId);
   return ok(goal, { status: 201 });
 });

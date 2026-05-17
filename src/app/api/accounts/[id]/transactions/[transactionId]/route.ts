@@ -1,17 +1,11 @@
-import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { updateTransactionSchema, updateCashTransactionSchema } from "@/lib/validators";
 import { calculateBalanceDelta } from "@/lib/services/balance";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
+import { invalidateAccountData } from "@/lib/cache-invalidation";
 
 type TxCtx = { params: Promise<{ id: string; transactionId: string }> };
-
-function invalidateAccountCaches(userId: string) {
-  revalidateTag(`accounts:${userId}`, "max");
-  revalidateTag(`net-worth:${userId}`, "max");
-  revalidateTag(`history:${userId}`, "max");
-}
 
 export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
   const { id: accountId, transactionId } = await params;
@@ -61,7 +55,7 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
       },
     });
 
-    invalidateAccountCaches(userId);
+    invalidateAccountData(userId);
     return ok(updatedTx);
   }
 
@@ -111,7 +105,7 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
       },
     });
 
-    invalidateAccountCaches(userId);
+    invalidateAccountData(userId);
     return ok(updatedTx);
   }
 
@@ -144,7 +138,7 @@ export const DELETE = withAuth<TxCtx>(async (_request, { params }, userId) => {
     });
 
     await prisma.holdingTransaction.delete({ where: { id: transactionId } });
-    invalidateAccountCaches(userId);
+    invalidateAccountData(userId);
     return ok({ ok: true });
   }
 
@@ -165,7 +159,7 @@ export const DELETE = withAuth<TxCtx>(async (_request, { params }, userId) => {
     });
 
     await prisma.cashTransaction.delete({ where: { id: transactionId } });
-    invalidateAccountCaches(userId);
+    invalidateAccountData(userId);
     return ok({ ok: true });
   }
 

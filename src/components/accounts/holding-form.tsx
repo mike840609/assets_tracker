@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { HoldingSearch } from "./holding-search";
 import type { SearchResult } from "./holding-search";
 import { OptionBuilder } from "./option-builder";
+import { useFormattedNumberInput } from "@/hooks/use-formatted-number-input";
 
 const ASSET_TYPES = [
   { value: "STOCK", label: "Stock" },
@@ -41,39 +42,23 @@ export function HoldingForm({
 
   const [symbol, setSymbol] = useState("");
   const [name, setName] = useState("");
-  const [quantity, setQuantity] = useState("");
   const [assetType, setAssetType] = useState("STOCK");
   const [currency, setCurrency] = useState("USD");
   const [manualMode, setManualMode] = useState(false);
   const [quantityError, setQuantityError] = useState("");
-
-  function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
-    setQuantityError("");
-    if (!raw) {
-      setQuantity("");
-      return;
-    }
-    const [intPart, decPart] = raw.split(".");
-    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
-  }
-
-  function handleQuantityBlur() {
-    const val = quantity.replace(/,/g, "");
-    if (!val) {
-      setQuantityError("");
-      return;
-    }
-    const parsed = parseFloat(val);
-    if (isNaN(parsed) || parsed <= 0) {
-      setQuantityError("Invalid quantity");
-      return;
-    }
-    setQuantityError("");
-    setQuantity(new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(parsed));
-  }
+  const {
+    value: quantity,
+    rawValue: quantityRawValue,
+    setValue: setQuantity,
+    handleChange: handleQuantityChange,
+    handleBlur: handleQuantityBlur,
+  } = useFormattedNumberInput({
+    maximumFractionDigits: 6,
+    min: Number.MIN_VALUE,
+    invalidMessage: "Invalid quantity",
+    onValid: () => setQuantityError(""),
+    onInvalid: (message) => setQuantityError(message ?? "Invalid quantity"),
+  });
 
   function selectResult(result: SearchResult) {
     setSymbol(result.symbol);
@@ -141,7 +126,7 @@ export function HoldingForm({
     await postHolding({
       symbol,
       name,
-      quantity: parseFloat(quantity.replace(/,/g, "")),
+      quantity: parseFloat(quantityRawValue),
       assetType,
       currency,
     });
@@ -151,7 +136,7 @@ export function HoldingForm({
   const canSubmit =
     (tickerSelected || (manualMode && symbol && name)) &&
     !!quantity &&
-    parseFloat(quantity.replace(/,/g, "")) > 0;
+    parseFloat(quantityRawValue) > 0;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>

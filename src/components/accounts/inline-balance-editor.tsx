@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency, formatNumber } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useFormattedNumberInput } from "@/hooks/use-formatted-number-input";
 
 interface InlineBalanceEditorProps {
   currentBalance: number;
@@ -20,42 +21,25 @@ export function InlineBalanceEditor({
   onSave,
 }: InlineBalanceEditorProps) {
   const [editing, setEditing] = useState(false);
-  const [balance, setBalance] = useState("");
   const [error, setError] = useState("");
+  const {
+    value: balance,
+    rawValue: balanceRawValue,
+    setValue: setBalance,
+    handleChange: handleBalanceChange,
+    handleBlur: handleBalanceBlur,
+  } = useFormattedNumberInput({
+    maximumFractionDigits: 2,
+    invalidMessage: "Invalid amount",
+    onValid: () => setError(""),
+    onInvalid: (message) => setError(message ?? "Invalid amount"),
+  });
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const { privacyMode } = usePrivacyMode();
 
-  function handleBalanceChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
-    setError("");
-    if (!raw) {
-      setBalance("");
-      return;
-    }
-    const [intPart, decPart] = raw.split(".");
-    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setBalance(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
-  }
-
-  function handleBalanceBlur() {
-    const val = balance.replace(/,/g, "");
-    if (!val) {
-      setError("");
-      return;
-    }
-    const parsed = parseFloat(val);
-    if (isNaN(parsed)) {
-      setError("Invalid amount");
-      return;
-    }
-    setError("");
-    setBalance(new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(parsed));
-  }
-
   async function handleSave() {
-    const val = balance.replace(/,/g, "");
+    const val = balanceRawValue;
     if (val.trim() === "") {
       setEditing(false);
       setNote("");

@@ -21,6 +21,7 @@ import { useTranslations } from "next-intl";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
 import { HoldingSearch } from "./holding-search";
 import type { SearchResult } from "./holding-search";
+import { useFormattedNumberInput } from "@/hooks/use-formatted-number-input";
 
 const OptionBuilder = dynamic(() => import("./option-builder").then((m) => m.OptionBuilder));
 
@@ -57,40 +58,27 @@ export function QuickAddHolding({
 
   const [symbol, setSymbol] = useState("");
   const [name, setName] = useState("");
-  const [quantity, setQuantity] = useState("");
   const [assetType, setAssetType] = useState("STOCK");
   const [currency, setCurrency] = useState(defaultCurrency);
   const [manualMode, setManualMode] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("");
   const [quantityError, setQuantityError] = useState("");
-
-  function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
-    setQuantityError("");
-    if (!raw) {
-      setQuantity("");
-      return;
-    }
-    const [intPart, decPart] = raw.split(".");
-    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
-  }
-
-  function handleQuantityBlur() {
-    const val = quantity.replace(/,/g, "");
-    if (!val) {
-      setQuantityError("");
-      return;
-    }
-    const parsed = parseFloat(val);
-    if (isNaN(parsed) || parsed <= 0) {
-      setQuantityError(t("quickAddHolding.invalidQuantity", { defaultValue: "Invalid quantity" }));
-      return;
-    }
-    setQuantityError("");
-    setQuantity(new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(parsed));
-  }
+  const invalidQuantityMessage = t("quickAddHolding.invalidQuantity", {
+    defaultValue: "Invalid quantity",
+  });
+  const {
+    value: quantity,
+    rawValue: quantityRawValue,
+    setValue: setQuantity,
+    handleChange: handleQuantityChange,
+    handleBlur: handleQuantityBlur,
+  } = useFormattedNumberInput({
+    maximumFractionDigits: 6,
+    min: Number.MIN_VALUE,
+    invalidMessage: invalidQuantityMessage,
+    onValid: () => setQuantityError(""),
+    onInvalid: (message) => setQuantityError(message ?? invalidQuantityMessage),
+  });
 
   function selectResult(result: SearchResult) {
     setSymbol(result.symbol);
@@ -167,7 +155,7 @@ export function QuickAddHolding({
         body: JSON.stringify({
           symbol,
           name,
-          quantity: parseFloat(quantity.replace(/,/g, "")),
+          quantity: parseFloat(quantityRawValue),
           assetType,
           currency,
         }),
@@ -200,7 +188,7 @@ export function QuickAddHolding({
   const canProceed =
     (tickerSelected || (manualMode && symbol && name)) &&
     !!quantity &&
-    parseFloat(quantity.replace(/,/g, "")) > 0;
+    parseFloat(quantityRawValue) > 0;
 
   const matchingAccounts = getMatchingAccounts();
   const targetCategory = ASSET_TYPE_TO_CATEGORY[assetType] || "BROKERAGE";
@@ -403,7 +391,7 @@ export function QuickAddHolding({
               </div>
               <p className="text-sm text-muted-foreground mt-0.5">
                 {assetType === "OPTION"
-                  ? `${name} · ${quantity} contract${parseFloat(quantity.replace(/,/g, "")) !== 1 ? "s" : ""}`
+                  ? `${name} · ${quantity} contract${parseFloat(quantityRawValue) !== 1 ? "s" : ""}`
                   : t("quickAddHolding.sharesSummary", { name, quantity })}
               </p>
             </div>

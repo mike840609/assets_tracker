@@ -1,10 +1,14 @@
-import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createSnapshot } from "@/lib/services/snapshot-service";
 import { refreshAllPrices } from "@/lib/services/price-service";
 import { ok, failure } from "@/lib/api-responses";
 import { CRON_SECRET } from "@/lib/env";
 import { log } from "@/lib/logger";
+import {
+  invalidateAllAccountsData,
+  invalidatePriceData,
+  invalidateSnapshotData,
+} from "@/lib/cache-invalidation";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -43,15 +47,13 @@ export async function GET(request: Request) {
           ]),
         ),
       );
-      revalidateTag("accounts", "max");
+      invalidateAllAccountsData();
     }
 
     // 1. Refresh all prices first to ensure the snapshot is accurate
     log.info("cron.prices.refresh");
     await refreshAllPrices();
-    // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
-    revalidateTag("net-worth", "max");
-    revalidateTag("prices:crypto", "max");
+    invalidatePriceData();
 
     // 2. Get all users and their settings
     const users = await prisma.user.findMany({
@@ -68,10 +70,7 @@ export async function GET(request: Request) {
     );
 
     // 4. Invalidate snapshot/history caches now that new rows exist
-    revalidateTag("snapshots", "max");
-    for (const user of users) {
-      revalidateTag(`history:${user.id}`, "max");
-    }
+    invalidateSnapshotData(users.map((user) => user.id));
 
     return ok({
       success: true,

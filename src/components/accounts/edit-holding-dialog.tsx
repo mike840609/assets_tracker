@@ -11,6 +11,10 @@ import { toast } from "sonner";
 import type { SerializedHolding } from "@/lib/types";
 
 import { getOptionDisplay } from "@/lib/options";
+import {
+  formatNumberInputValue,
+  useFormattedNumberInput,
+} from "@/hooks/use-formatted-number-input";
 
 const ASSET_TYPES = [
   { value: "STOCK", label: "Stock" },
@@ -36,41 +40,27 @@ export function EditHoldingDialog({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [quantity, setQuantity] = useState(() =>
-    new Intl.NumberFormat("en-US", {
-      maximumFractionDigits: holding.assetType === "OPTION" ? 0 : 6,
-    }).format(Number(holding.quantity)),
-  );
+  const isOption = holding.assetType === "OPTION";
+  const {
+    value: quantity,
+    rawValue: quantityRawValue,
+    setValue: setQuantity,
+    handleChange: handleQuantityChange,
+    handleBlur: handleQuantityBlur,
+  } = useFormattedNumberInput({
+    initialValue: () =>
+      formatNumberInputValue(Number(holding.quantity), {
+        maximumFractionDigits: isOption ? 0 : 6,
+        integer: isOption,
+      }),
+    maximumFractionDigits: isOption ? 0 : 6,
+    integer: isOption,
+  });
   const [name, setName] = useState(holding.name);
   const [assetType, setAssetType] = useState<
     "STOCK" | "ETF" | "CRYPTO" | "MUTUAL_FUND" | "BOND" | "OTHER" | "OPTION"
   >(holding.assetType);
-  const isOption = holding.assetType === "OPTION";
   const optionDisplay = getOptionDisplay(holding);
-
-  function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
-    if (!raw) {
-      setQuantity("");
-      return;
-    }
-    const [intPart, decPart] = raw.split(".");
-    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
-  }
-
-  function handleQuantityBlur() {
-    const val = quantity.replace(/,/g, "");
-    if (!val) return;
-    const parsed = isOption ? parseInt(val, 10) : parseFloat(val);
-    if (isNaN(parsed)) return;
-    setQuantity(
-      isOption
-        ? new Intl.NumberFormat("en-US").format(parsed)
-        : new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(parsed),
-    );
-  }
 
   function handleOpen(isOpen: boolean) {
     if (!isOpen) {
@@ -89,7 +79,7 @@ export function EditHoldingDialog({
     e.preventDefault();
     setLoading(true);
 
-    const parsedQty = parseFloat(quantity.replace(/,/g, ""));
+    const parsedQty = parseFloat(quantityRawValue);
     const minAllowed = isOption ? 0 : Number.MIN_VALUE;
     if (isNaN(parsedQty) || parsedQty < minAllowed) {
       toast.error(

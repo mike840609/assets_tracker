@@ -4,6 +4,7 @@ import { cacheLife, cacheTag, unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAllExchangeRates, resolveRate, resolveMissingRates } from "./exchange-rate-service";
 import { serializeAccountWithHoldings } from "@/lib/types";
+import { getHoldingMultiplier } from "@/lib/valuation";
 import type {
   AccountWithValue,
   NetWorthSummary,
@@ -79,7 +80,7 @@ async function computeNetWorthSummary(
       const cached = priceMap[h.symbol];
       const currentPrice = cached?.price ?? null;
       const quantity = h.quantity;
-      const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
+      const multiplier = getHoldingMultiplier(h);
       const marketValue = currentPrice !== null ? currentPrice * quantity * multiplier : null;
       return {
         ...h,

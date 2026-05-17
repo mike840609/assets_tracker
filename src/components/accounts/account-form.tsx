@@ -16,6 +16,7 @@ import {
 import { CURRENCIES } from "@/lib/currencies";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useFormattedNumberInput } from "@/hooks/use-formatted-number-input";
 
 const CATEGORY_KEYS = [
   "BANK",
@@ -45,37 +46,24 @@ export function AccountForm({
   const [type, setType] = useState<"ASSET" | "LIABILITY">("ASSET");
   const [category, setCategory] = useState("BANK");
   const [currency, setCurrency] = useState(defaultCurrency);
-  const [cashBalance, setCashBalance] = useState("0");
   const [cashBalanceError, setCashBalanceError] = useState("");
-
-  function handleCashBalanceChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
-    setCashBalanceError("");
-    if (!raw) {
-      setCashBalance("");
-      return;
-    }
-    const [intPart, decPart] = raw.split(".");
-    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setCashBalance(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
-  }
-
-  function handleCashBalanceBlur() {
-    const val = cashBalance.replace(/,/g, "");
-    if (!val) {
-      setCashBalance("0");
-      setCashBalanceError("");
-      return;
-    }
-    const parsed = parseFloat(val);
-    if (isNaN(parsed)) {
-      setCashBalanceError(t("accountForm.invalidAmount", { defaultValue: "Invalid amount" }));
-      return;
-    }
-    setCashBalanceError("");
-    setCashBalance(new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(parsed));
-  }
+  const {
+    value: cashBalance,
+    rawValue: cashBalanceRawValue,
+    setValue: setCashBalance,
+    handleChange: handleCashBalanceChange,
+    handleBlur: handleCashBalanceBlur,
+  } = useFormattedNumberInput({
+    initialValue: "0",
+    maximumFractionDigits: 2,
+    emptyValueOnBlur: "0",
+    invalidMessage: t("accountForm.invalidAmount", { defaultValue: "Invalid amount" }),
+    onValid: () => setCashBalanceError(""),
+    onInvalid: (message) =>
+      setCashBalanceError(
+        message ?? t("accountForm.invalidAmount", { defaultValue: "Invalid amount" }),
+      ),
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -90,7 +78,7 @@ export function AccountForm({
           type,
           category,
           currency,
-          cashBalance: parseFloat(cashBalance.replace(/,/g, "")) || 0,
+          cashBalance: parseFloat(cashBalanceRawValue) || 0,
         }),
       });
 

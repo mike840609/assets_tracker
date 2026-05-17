@@ -1,9 +1,9 @@
-import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createCashTransactionSchema } from "@/lib/validators";
 import { calculateBalanceDelta } from "@/lib/services/balance";
 import { withAuth } from "@/lib/api-handler";
 import { ok, failure, validationError } from "@/lib/api-responses";
+import { invalidateAccountData } from "@/lib/cache-invalidation";
 
 export const POST = withAuth(
   async (request, { params }: { params: Promise<{ id: string }> }, userId) => {
@@ -27,9 +27,7 @@ export const POST = withAuth(
       data: { cashBalance: { increment: delta } },
     });
 
-    revalidateTag(`accounts:${userId}`, "max");
-    revalidateTag(`net-worth:${userId}`, "max");
-    revalidateTag(`history:${userId}`, "max");
+    invalidateAccountData(userId);
 
     return ok(transaction, { status: 201 });
   },

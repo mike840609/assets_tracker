@@ -23,6 +23,7 @@ import {
   tryParseOccSymbol,
   type OptionSide,
 } from "@/lib/options";
+import { useFormattedNumberInput } from "@/hooks/use-formatted-number-input";
 
 function fmtExp(iso: string) {
   const [y, m, d] = iso.split("-").map(Number);
@@ -73,34 +74,19 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
   const [expiration, setExpiration] = useState("");
   const [side, setSide] = useState<OptionSide>("CALL");
   const [strike, setStrike] = useState<string>("");
-  const [quantity, setQuantity] = useState("");
   const [quantityError, setQuantityError] = useState("");
-
-  function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*$/.test(raw)) return;
-    setQuantityError("");
-    if (!raw) {
-      setQuantity("");
-      return;
-    }
-    setQuantity(raw.replace(/\B(?=(\d{3})+(?!\d))/g, ","));
-  }
-
-  function handleQuantityBlur() {
-    const val = quantity.replace(/,/g, "");
-    if (!val) {
-      setQuantityError("");
-      return;
-    }
-    const parsed = parseInt(val, 10);
-    if (isNaN(parsed) || parsed <= 0) {
-      setQuantityError("Invalid quantity");
-      return;
-    }
-    setQuantityError("");
-    setQuantity(new Intl.NumberFormat("en-US").format(parsed));
-  }
+  const {
+    value: quantity,
+    rawValue: quantityRawValue,
+    handleChange: handleQuantityChange,
+    handleBlur: handleQuantityBlur,
+  } = useFormattedNumberInput({
+    integer: true,
+    min: 1,
+    invalidMessage: "Invalid quantity",
+    onValid: () => setQuantityError(""),
+    onInvalid: (message) => setQuantityError(message ?? "Invalid quantity"),
+  });
 
   const [showSearch, setShowSearch] = useState(false);
   const [pasteMode, setPasteMode] = useState(false);
@@ -262,7 +248,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
     if (!underlying || !expiration || !strike || !quantity) return;
     const strikeNum = Number(strike);
     if (!Number.isFinite(strikeNum) || strikeNum <= 0) return;
-    const qty = parseInt(quantity.replace(/,/g, ""), 10);
+    const qty = parseInt(quantityRawValue, 10);
     if (!Number.isFinite(qty) || qty <= 0) return;
     try {
       const occ = buildOccSymbol({
@@ -312,7 +298,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
   const previewParsed = previewOcc ? tryParseOccSymbol(previewOcc) : null;
 
   const ask = selectedContract?.ask ?? null;
-  const qtyNum = parseInt(quantity.replace(/,/g, ""), 10);
+  const qtyNum = parseInt(quantityRawValue, 10);
   const previewCost =
     ask !== null && Number.isFinite(qtyNum) && qtyNum > 0 ? ask * qtyNum * 100 : null;
 
@@ -322,7 +308,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
     !!expiration &&
     !!strike &&
     !!quantity &&
-    parseInt(quantity.replace(/,/g, ""), 10) > 0;
+    parseInt(quantityRawValue, 10) > 0;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

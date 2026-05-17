@@ -34,6 +34,10 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { showUndoDeleteToast } from "@/lib/undo-delete";
+import {
+  formatNumberInputValue,
+  useFormattedNumberInput,
+} from "@/hooks/use-formatted-number-input";
 
 const TYPE_VARIANTS: Record<string, "default" | "secondary" | "destructive"> = {
   BUY: "default",
@@ -156,30 +160,16 @@ export function TransactionHistory({
 
   // Form state
   const [editType, setEditType] = useState("BUY");
-  const [editQuantity, setEditQuantity] = useState("");
+  const {
+    value: editQuantity,
+    rawValue: editQuantityRawValue,
+    setValue: setEditQuantity,
+    handleChange: handleEditQuantityChange,
+    handleBlur: handleEditQuantityBlur,
+  } = useFormattedNumberInput({ maximumFractionDigits: 6 });
   const [editNote, setEditNote] = useState("");
   const [editDate, setEditDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  function handleEditQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
-    if (!raw) {
-      setEditQuantity("");
-      return;
-    }
-    const [intPart, decPart] = raw.split(".");
-    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setEditQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
-  }
-
-  function handleEditQuantityBlur() {
-    const val = editQuantity.replace(/,/g, "");
-    if (!val) return;
-    const parsed = parseFloat(val);
-    if (isNaN(parsed)) return;
-    setEditQuantity(new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(parsed));
-  }
 
   const [transactions, setTransactions] = useState<SerializedTransaction[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -239,9 +229,7 @@ export function TransactionHistory({
   const handleEditClick = (t: SerializedTransaction) => {
     setEditingTx(t);
     setEditType(t.type);
-    setEditQuantity(
-      new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(t.quantity),
-    );
+    setEditQuantity(formatNumberInputValue(t.quantity, { maximumFractionDigits: 6 }));
     setEditNote(t.note || "");
 
     // Format date for datetime-local input
@@ -262,7 +250,7 @@ export function TransactionHistory({
         body: JSON.stringify({
           id: editingTx.id,
           type: editType,
-          quantity: Number(editQuantity.replace(/,/g, "")),
+          quantity: Number(editQuantityRawValue),
           note: editNote,
           createdAt: new Date(editDate).toISOString(),
         }),

@@ -1,14 +1,10 @@
-import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { updateGoalSchema } from "@/lib/validators";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
+import { invalidateGoalData } from "@/lib/cache-invalidation";
 
 type IdCtx = { params: Promise<{ id: string }> };
-
-function invalidateGoalCaches(userId: string) {
-  revalidateTag(`goals:${userId}`, "max");
-}
 
 export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
   const { id } = await params;
@@ -27,7 +23,7 @@ export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
       ...(targetDate !== undefined ? { targetDate: targetDate ? new Date(targetDate) : null } : {}),
     },
   });
-  invalidateGoalCaches(userId);
+  invalidateGoalData(userId);
   return ok(goal);
 });
 
@@ -37,6 +33,6 @@ export const DELETE = withAuth<IdCtx>(async (_request, { params }, userId) => {
   if (!existing) return failure("Not found", 404);
 
   await prisma.goal.delete({ where: { id, userId } });
-  invalidateGoalCaches(userId);
+  invalidateGoalData(userId);
   return ok({ ok: true });
 });

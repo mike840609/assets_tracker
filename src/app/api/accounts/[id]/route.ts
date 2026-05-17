@@ -1,17 +1,10 @@
-import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { updateAccountSchema } from "@/lib/validators";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
+import { invalidateAccountData } from "@/lib/cache-invalidation";
 
 type IdCtx = { params: Promise<{ id: string }> };
-
-function invalidateUserCaches(userId: string) {
-  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
-  revalidateTag(`accounts:${userId}`, "max");
-  revalidateTag(`net-worth:${userId}`, "max");
-  revalidateTag(`history:${userId}`, "max");
-}
 
 export const GET = withAuth<IdCtx>(async (_request, { params }, userId) => {
   const { id } = await params;
@@ -52,13 +45,13 @@ export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
     where: { id, userId },
     data: parsed.data,
   });
-  invalidateUserCaches(userId);
+  invalidateAccountData(userId);
   return ok(account);
 });
 
 export const DELETE = withAuth<IdCtx>(async (_request, { params }, userId) => {
   const { id } = await params;
   await prisma.account.delete({ where: { id, userId } });
-  invalidateUserCaches(userId);
+  invalidateAccountData(userId);
   return ok({ ok: true });
 });

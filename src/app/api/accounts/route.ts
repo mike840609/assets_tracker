@@ -1,14 +1,8 @@
-import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createAccountSchema } from "@/lib/validators";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
-
-function invalidateUserCaches(userId: string) {
-  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
-  revalidateTag(`accounts:${userId}`, "max");
-  revalidateTag(`net-worth:${userId}`, "max");
-}
+import { invalidateAccountData } from "@/lib/cache-invalidation";
 
 export const GET = withAuth(async (_req, _ctx, userId) => {
   const accounts = await prisma.account.findMany({
@@ -32,7 +26,7 @@ export const DELETE = withAuth(async (request, _ctx, userId) => {
       userId,
     },
   });
-  invalidateUserCaches(userId);
+  invalidateAccountData(userId, { includeHistory: false });
   return ok({ ok: true });
 });
 
@@ -44,6 +38,6 @@ export const POST = withAuth(async (request, _ctx, userId) => {
   const account = await prisma.account.create({
     data: { ...parsed.data, userId },
   });
-  invalidateUserCaches(userId);
+  invalidateAccountData(userId, { includeHistory: false });
   return ok(account, { status: 201 });
 });

@@ -1,8 +1,8 @@
-import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { withAuth } from "@/lib/api-handler";
 import { ok } from "@/lib/api-responses";
+import { invalidateExchangeRateData } from "@/lib/cache-invalidation";
 
 export const POST = withAuth(async (_request, _ctx, userId) => {
   const settings = await prisma.setting.findUnique({ where: { userId } });
@@ -21,7 +21,6 @@ export const POST = withAuth(async (_request, _ctx, userId) => {
   ]);
   const totalUpdated = results.reduce((a, b) => a + b, 0);
 
-  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
-  revalidateTag("exchange-rates", "max");
+  invalidateExchangeRateData();
   return ok({ updated: totalUpdated, baseCurrency });
 });
