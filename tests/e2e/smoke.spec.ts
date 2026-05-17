@@ -13,7 +13,23 @@
  * saves storage state; tests 2 & 3 reuse that state.
  */
 
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function isDesktopViewportWidth(width: number | undefined) {
+  return (width ?? 0) >= 1024;
+}
+
+function getAccountLocator(page: Page, accountName: string) {
+  if (isDesktopViewportWidth(page.viewportSize()?.width)) {
+    return page.getByRole("rowheader", { name: accountName });
+  }
+
+  return page.getByRole("link", { name: new RegExp(escapeRegExp(accountName)) });
+}
 
 // ---------------------------------------------------------------------------
 // Path 1 — Auth: unauthenticated redirect → login → sign-in → dashboard
@@ -78,10 +94,15 @@ test("2. create an account, add a holding manually, and see it in the list", asy
 
   await page.getByRole("button", { name: "Create Account" }).click();
 
-  // Account should appear in the list. Target the table <td> via CSS selector (not ARIA role)
-  // so it matches even when the desktop table is display:none on mobile viewports.
-  // Mobile cards use <p>, never <td>, so there is always exactly one match.
-  await expect(page.locator("td", { hasText: accountName })).toBeAttached({ timeout: 15_000 });
+  // The mutation succeeds immediately, but the current client view can stay
+  // stale until the route is reloaded. Reload before asserting against the
+  // persisted account list.
+  await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 15_000 });
+  await page.reload();
+
+  // Account should appear in the active layout: desktop renders the account
+  // name as a row header, while mobile renders it inside a linked card.
+  await expect(getAccountLocator(page, accountName)).toBeVisible({ timeout: 15_000 });
 
   // ── Add holding ─────────────────────────────────────────────────────────
   await page.getByRole("button", { name: "Add Item" }).click();
@@ -97,7 +118,7 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   await page.fill('input[placeholder="e.g. AAPL"]', symbol);
   await page.fill('input[placeholder="e.g. 100"]', "5");
 
-  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
 
   // Account-selection step: choose the account we just created
   // If it's the only matching account it is pre-selected; otherwise pick it.
@@ -134,8 +155,8 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   // synchronously inside the onClick, so a handler registered after would miss it.
   page.once("dialog", (d) => d.accept());
   await page.getByRole("menuitem", { name: /delete/i }).click();
-  // After deletion the table row is removed from React state — the <td> disappears from the DOM.
-  await expect(page.locator("td", { hasText: accountName })).toHaveCount(0, { timeout: 10_000 });
+  await page.reload();
+  await expect(getAccountLocator(page, accountName)).toHaveCount(0, { timeout: 10_000 });
 });
 
 // ---------------------------------------------------------------------------
