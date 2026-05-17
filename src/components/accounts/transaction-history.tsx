@@ -161,6 +161,15 @@ export function TransactionHistory({
   const [editDate, setEditDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  function handleEditQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/,/g, "");
+    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    if (!raw) { setEditQuantity(""); return; }
+    const [intPart, decPart] = raw.split(".");
+    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    setEditQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
+  }
+
   function handleEditQuantityBlur() {
     const val = editQuantity.replace(/,/g, "");
     if (!val) return;
@@ -449,7 +458,7 @@ export function TransactionHistory({
                 type="text"
                 inputMode="decimal"
                 value={editQuantity}
-                onChange={(e) => setEditQuantity(e.target.value)}
+                onChange={handleEditQuantityChange}
                 onBlur={handleEditQuantityBlur}
                 className="col-span-3"
               />

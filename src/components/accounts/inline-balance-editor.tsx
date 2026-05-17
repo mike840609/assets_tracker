@@ -26,6 +26,16 @@ export function InlineBalanceEditor({
   const [saving, setSaving] = useState(false);
   const { privacyMode } = usePrivacyMode();
 
+  function handleBalanceChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/,/g, "");
+    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    setError("");
+    if (!raw) { setBalance(""); return; }
+    const [intPart, decPart] = raw.split(".");
+    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    setBalance(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
+  }
+
   function handleBalanceBlur() {
     const val = balance.replace(/,/g, "");
     if (!val) {
@@ -77,10 +87,7 @@ export function InlineBalanceEditor({
             inputMode="decimal"
             placeholder={formatNumber(currentBalance, 0)}
             value={balance}
-            onChange={(e) => {
-              setBalance(e.target.value);
-              setError("");
-            }}
+            onChange={handleBalanceChange}
             onBlur={handleBalanceBlur}
             className="h-8 flex-1"
             autoFocus

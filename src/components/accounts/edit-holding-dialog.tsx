@@ -48,6 +48,15 @@ export function EditHoldingDialog({
   const isOption = holding.assetType === "OPTION";
   const optionDisplay = getOptionDisplay(holding);
 
+  function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/,/g, "");
+    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    if (!raw) { setQuantity(""); return; }
+    const [intPart, decPart] = raw.split(".");
+    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    setQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
+  }
+
   function handleQuantityBlur() {
     const val = quantity.replace(/,/g, "");
     if (!val) return;
@@ -204,7 +213,7 @@ export function EditHoldingDialog({
               type="text"
               inputMode={isOption ? "numeric" : "decimal"}
               value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
+              onChange={handleQuantityChange}
               onBlur={handleQuantityBlur}
               placeholder={isOption ? "e.g. 1" : "e.g. 100"}
               required

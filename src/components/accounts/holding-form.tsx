@@ -47,6 +47,16 @@ export function HoldingForm({
   const [manualMode, setManualMode] = useState(false);
   const [quantityError, setQuantityError] = useState("");
 
+  function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/,/g, "");
+    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    setQuantityError("");
+    if (!raw) { setQuantity(""); return; }
+    const [intPart, decPart] = raw.split(".");
+    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    setQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
+  }
+
   function handleQuantityBlur() {
     const val = quantity.replace(/,/g, "");
     if (!val) {
@@ -258,10 +268,7 @@ export function HoldingForm({
                 type="text"
                 inputMode="decimal"
                 value={quantity}
-                onChange={(e) => {
-                  setQuantity(e.target.value);
-                  setQuantityError("");
-                }}
+                onChange={handleQuantityChange}
                 onBlur={handleQuantityBlur}
                 placeholder="e.g. 100"
                 required
