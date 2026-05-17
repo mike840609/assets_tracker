@@ -116,24 +116,24 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 10_000 });
 
   // ── Cleanup: delete the test account ────────────────────────────────────
-  // Select the account checkbox and delete it so test runs stay idempotent.
-  // The accounts list renders a table on lg+ (desktop) and collapsible cards on
-  // mobile, so we branch on which view is actually visible.
+  // Open the per-row ⋮ overflow menu and click Delete. The accounts list renders
+  // a table on lg+ (desktop) and collapsible cards on mobile, so we branch on
+  // which view is actually visible.
   const desktopRow = page.getByRole("row").filter({ hasText: accountName });
   if (await desktopRow.isVisible()) {
-    // Desktop table: checkbox is always visible in its own column
-    await desktopRow.getByRole("checkbox").click();
+    // Desktop table: hover the row to reveal the ⋮ button, then open the menu
+    await desktopRow.hover();
+    await desktopRow.getByRole("button").click();
   } else {
-    // Mobile cards: checkbox is revealed on hover
+    // Mobile cards: hover the card to reveal the ⋮ button in the parent wrapper
     const mobileCard = page.locator("a", { hasText: accountName });
     await mobileCard.hover();
-    await mobileCard.locator("..").locator('[role="checkbox"]').first().check();
+    await mobileCard.locator("..").getByRole("button").click();
   }
-  // Register the dialog handler BEFORE the click — confirm() fires synchronously
-  // when the button is clicked, so a handler registered after would miss it and
-  // Playwright would auto-dismiss the dialog (= delete cancelled).
+  // Register the dialog handler BEFORE clicking Delete — confirm() fires
+  // synchronously inside the onClick, so a handler registered after would miss it.
   page.once("dialog", (d) => d.accept());
-  await page.getByRole("button", { name: /delete \(1\)/i }).click();
+  await page.getByRole("menuitem", { name: /delete/i }).click();
   // After deletion the table row is removed from React state — the <td> disappears from the DOM.
   await expect(page.locator("td", { hasText: accountName })).toHaveCount(0, { timeout: 10_000 });
 });

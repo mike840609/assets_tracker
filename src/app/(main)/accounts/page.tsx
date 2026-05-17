@@ -15,7 +15,13 @@ import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service"
 import { getCachedPricesForSymbols } from "@/lib/services/price-service";
 import AccountsLoading from "./loading";
 
-const CLIENT_NAMESPACES = ["accountsList", "accountForm", "quickAddHolding", "categories"];
+const CLIENT_NAMESPACES = [
+  "accountsList",
+  "accountForm",
+  "quickAddHolding",
+  "categories",
+  "common",
+];
 
 async function AccountsContent() {
   const session = await getSession();
