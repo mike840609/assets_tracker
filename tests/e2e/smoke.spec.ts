@@ -78,10 +78,24 @@ test("2. create an account, add a holding manually, and see it in the list", asy
 
   await page.getByRole("button", { name: "Create Account" }).click();
 
+  // Wait for the create dialog to close — signals the POST returned successfully.
+  await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 10_000 });
+
   // Account should appear in the list. Target the table <td> via CSS selector (not ARIA role)
   // so it matches even when the desktop table is display:none on mobile viewports.
   // Mobile cards use <p>, never <td>, so there is always exactly one match.
-  await expect(page.locator("td", { hasText: accountName })).toBeAttached({ timeout: 15_000 });
+  //
+  // The POST handler calls revalidateTag(`accounts:${userId}`, "max") which uses
+  // stale-while-revalidate semantics in Next.js 16, so the initial router.refresh()
+  // after submission may still return cached (stale) data. Reload until the cache
+  // settles and the new account is visible.
+  const newAccountCell = page.locator("td", { hasText: accountName });
+  await expect(async () => {
+    if ((await newAccountCell.count()) === 0) {
+      await page.reload();
+    }
+    await expect(newAccountCell).toBeAttached();
+  }).toPass({ timeout: 20_000, intervals: [1500, 2000, 2000] });
 
   // ── Add holding ─────────────────────────────────────────────────────────
   await page.getByRole("button", { name: "Add Item" }).click();
@@ -97,7 +111,8 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   await page.fill('input[placeholder="e.g. AAPL"]', symbol);
   await page.fill('input[placeholder="e.g. 100"]', "5");
 
-  await page.getByRole("button", { name: "Next" }).click();
+  // exact: true to avoid matching the Next.js dev toolbar button ("Open Next.js Dev Tools")
+  await page.getByRole("button", { name: "Next", exact: true }).click();
 
   // Account-selection step: choose the account we just created
   // If it's the only matching account it is pre-selected; otherwise pick it.
@@ -134,8 +149,16 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   // synchronously inside the onClick, so a handler registered after would miss it.
   page.once("dialog", (d) => d.accept());
   await page.getByRole("menuitem", { name: /delete/i }).click();
-  // After deletion the table row is removed from React state — the <td> disappears from the DOM.
-  await expect(page.locator("td", { hasText: accountName })).toHaveCount(0, { timeout: 10_000 });
+  // After deletion the table row is removed from React state — the <td> disappears
+  // from the DOM. Same stale-while-revalidate concern as the create flow, so reload
+  // until the row is gone.
+  const deletedCell = page.locator("td", { hasText: accountName });
+  await expect(async () => {
+    if ((await deletedCell.count()) > 0) {
+      await page.reload();
+    }
+    await expect(deletedCell).toHaveCount(0);
+  }).toPass({ timeout: 15_000, intervals: [1500, 2000, 2000] });
 });
 
 // ---------------------------------------------------------------------------

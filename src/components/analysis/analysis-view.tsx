@@ -24,13 +24,15 @@ import {
   computePerformanceAttribution,
 } from "@/lib/services/analysis-service";
 import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/analysis-service";
-import { MonthlyChangeChart } from "./monthly-change-chart";
-import { AssetsLiabilitiesChart } from "./assets-liabilities-chart";
+import {
+  LazyMonthlyChangeChart,
+  LazyAssetsLiabilitiesChart,
+  LazyCashFlowChart,
+  LazyCategoryTrendChart,
+  LazyAttributionChart,
+} from "./lazy-analysis-charts";
 import { KpiTiles } from "./kpi-tiles";
-import { CashFlowChart } from "./cashflow-chart";
-import { CategoryTrendChart } from "./category-trend-chart";
 import { TopMoversList } from "./top-movers-list";
-import { AttributionChart } from "./attribution-chart";
 
 interface Props {
   snapshots: NormalizedSnapshot[];
@@ -259,23 +261,27 @@ export function AnalysisView({
           >
             <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
             <div className="premium-card">
-              <MonthlyChangeChart buckets={buckets} baseCurrency={baseCurrency} locale={locale} />
-            </div>
-            <div className="premium-card">
-              <AssetsLiabilitiesChart
+              <LazyMonthlyChangeChart
                 buckets={buckets}
                 baseCurrency={baseCurrency}
                 locale={locale}
               />
             </div>
             <div className="premium-card">
-              <CashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+              <LazyAssetsLiabilitiesChart
+                buckets={buckets}
+                baseCurrency={baseCurrency}
+                locale={locale}
+              />
             </div>
             <div className="premium-card">
-              <AttributionChart items={attributionItems} baseCurrency={baseCurrency} />
+              <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
             </div>
             <div className="premium-card">
-              <CategoryTrendChart
+              <LazyAttributionChart items={attributionItems} baseCurrency={baseCurrency} />
+            </div>
+            <div className="premium-card">
+              <LazyCategoryTrendChart
                 data={categoryHistory}
                 baseCurrency={baseCurrency}
                 locale={locale}
