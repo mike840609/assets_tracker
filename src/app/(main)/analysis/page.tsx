@@ -16,16 +16,15 @@ async function AnalysisContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
 
-  const [t, messages, locale, settings] = await Promise.all([
-    getTranslations("analysis"),
-    getMessages(),
-    getLocale(),
-    getOrCreateSettings(userId),
-  ]);
-  const { snapshots, cashFlowData, rawHistory, accountCashFlow } = await getCachedAnalysisPayload(
-    userId,
-    settings.baseCurrency,
-  );
+  const settingsP = getOrCreateSettings(userId);
+  const [t, messages, locale, { snapshots, cashFlowData, rawHistory, accountCashFlow }, settings] =
+    await Promise.all([
+      getTranslations("analysis"),
+      getMessages(),
+      getLocale(),
+      settingsP.then((s) => getCachedAnalysisPayload(userId, s.baseCurrency)),
+      settingsP,
+    ]);
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
