@@ -87,6 +87,12 @@ This lets the i18n + locale promises start immediately in parallel with the sett
 
 ---
 
+## Follow-up — 2026-05-19
+
+**F3 re-applied.** PR #307 (`fix(proxy): keep /api/auth under proxy ...`) refactored `/analysis` to call a new `getCachedAnalysisPayload` aggregator and inadvertently dropped the `settingsP.then(...)` shape, reintroducing a sequential `await settings → await payload` waterfall. Restored the original pattern in `src/app/(main)/analysis/page.tsx`: payload fetch is now kicked off inside the same `Promise.all` via `settingsP.then((s) => getCachedAnalysisPayload(userId, s.baseCurrency))`, matching `/goals`, `/history`, `/projections`. F1, F2, F4–F6 remained intact.
+
+---
+
 ## Related docs
 
 - `docs/PERFORMANCE.md` — bundle optimization (B1–B15), already flags `next/dynamic` migration for recharts; this completes the analysis + projections side.
