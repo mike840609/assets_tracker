@@ -266,8 +266,8 @@ export function MobileNav() {
   return (
     <nav
       className={cn(
-        "md:hidden fixed bottom-0 left-0 right-0 z-50 glass backdrop-blur-md border-t border-border/50 grid grid-cols-5 py-2 pb-safe transition-transform motion-normal",
-        hidden && "translate-y-full",
+        "md:hidden fixed left-1/2 -translate-x-1/2 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-50 flex items-center gap-1 px-2 py-1.5 rounded-full border border-border/60 bg-background/95 dark:bg-card/95 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_28px_-8px_rgba(0,0,0,0.65)] transition-transform motion-normal will-change-transform",
+        hidden && "translate-y-[150%]",
       )}
     >
       {navItems.map((item) => {
@@ -294,24 +294,19 @@ export function MobileNav() {
                 router.push(item.href);
               });
             }}
-            className="group relative flex min-h-12 w-full items-center justify-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="group relative flex min-h-12 min-w-14 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
             aria-label={item.label}
             aria-current={isActive ? "page" : undefined}
           >
             <span
               className={cn(
-                "flex w-full max-w-20 flex-col items-center justify-center gap-1 px-1 py-1.5 rounded-xl text-[10px] uppercase tracking-normal transition-all motion-fast",
+                "flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-normal transition-colors motion-fast",
                 isActive
-                  ? "text-primary font-semibold bg-primary/12 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.25)] scale-[1.04]"
+                  ? "text-primary font-semibold bg-primary/15 dark:bg-primary/20"
                   : "text-muted-foreground group-hover:text-foreground",
               )}
             >
-              <Icon
-                className={cn(
-                  "transition-all motion-fast",
-                  isActive ? "h-6 w-6" : "h-5 w-5 group-hover:scale-110",
-                )}
-              />
+              <Icon className={cn("motion-fast", isActive ? "h-6 w-6" : "h-5 w-5")} />
               <span className="truncate w-full text-center">{item.label}</span>
             </span>
           </button>
