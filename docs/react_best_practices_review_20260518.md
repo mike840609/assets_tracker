@@ -35,10 +35,12 @@ Two themes emerged:
 - **F7. `getAccountDetail` (`src/lib/services/account-service.ts:7-12`)** uses React `cache()` only — per-render dedup, no cross-request reuse. The underlying `fetchUserAccountsWithHoldings` already has `"use cache"` + tag `accounts:{userId}`, so cross-request caching is happening one layer down. Probably fine; revisit only if production traces show repeated cache misses.
 - **F8. `accounts-list` payload (`src/app/(main)/accounts/page.tsx`)** passes full `SerializedAccountWithHoldings[]` (with holdings) to the client. Trim if confirmed `<AccountsList>` doesn't need holdings; otherwise leave.
 
-### P2 — deferred (separate task)
+### P2 — evaluated and declined
 
-- **F9. SWR not installed.** Nine client components do manual `fetch()` in handlers (`data-management.tsx`, `holding-search.tsx`, `account-detail.tsx`, `transaction-history.tsx`, `quick-add-holding.tsx`, `dashboard-actions.tsx`, `settings-form.tsx`, `goal-form-dialog.tsx`, `goal-card.tsx`). Working as-is; verbose. Significant refactor, needs design discussion.
-- **F10. Duplicate global event listeners** for `new-item`, `sidebar:toggle`, `prices:refresh` across multiple components. Refactor candidate for a centralized event bus.
+Both items were re-read against the current code and judged not worth the change cost. Recorded here so a future reviewer doesn't re-flag them.
+
+- **F9. SWR adoption — declined.** Classified every `fetch()` in the 9 flagged files: 3 are GET queries (`holding-search.tsx`, `data-management.tsx` export, `transaction-history.tsx` list), 15 are POST/PATCH/DELETE mutations. SWR's value (dedup, stale-while-revalidate, focus revalidation) is for queries; the codebase is ~5:1 mutations. The 3 queries are user-action-triggered (or already debounced for `holding-search`), so SWR's auto-features add nothing. `useSWRMutation` for the 15 mutations is just a wrapper that wouldn't shrink the existing toast/setLoading/router.refresh pattern. +12 KB dependency, ~18 sites refactored, ~zero observable user impact.
+- **F10. Centralized event bus — declined.** The review claimed "duplicate listeners" but mapping every dispatcher/listener showed only `new-item` has two listeners — and they're on different routes (`/accounts` vs `/accounts/[id]`), mounted one at a time. The remaining 7 custom events are 1-dispatcher → 1-listener pubs (mostly command palette → page actions). Current pattern is ~8 lines per listener, 1 per dispatch, easy to grep. An `event-bus.ts` would save ~30 lines but add an abstraction layer for no functional gain.
 
 ---
 
