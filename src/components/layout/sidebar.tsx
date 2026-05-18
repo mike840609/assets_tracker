@@ -266,7 +266,7 @@ export function MobileNav() {
   return (
     <nav
       className={cn(
-        "md:hidden fixed left-1/2 -translate-x-1/2 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-50 flex items-center gap-1 px-2 py-1.5 rounded-full border border-border/60 bg-background/95 dark:bg-card/95 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_28px_-8px_rgba(0,0,0,0.65)] transition-transform motion-normal will-change-transform",
+        "md:hidden fixed left-1/2 -translate-x-1/2 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-50 w-[calc(100%-1.5rem)] max-w-sm flex items-stretch gap-1 px-2 py-1.5 rounded-full border border-border/60 bg-background/95 dark:bg-card/95 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_28px_-8px_rgba(0,0,0,0.65)] transition-transform motion-normal will-change-transform",
         hidden && "translate-y-[150%]",
       )}
     >
@@ -294,13 +294,13 @@ export function MobileNav() {
                 router.push(item.href);
               });
             }}
-            className="group relative flex min-h-12 min-w-14 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+            className="group relative flex flex-1 basis-0 min-w-0 min-h-12 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
             aria-label={item.label}
             aria-current={isActive ? "page" : undefined}
           >
             <span
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-normal transition-colors motion-fast",
+                "flex w-full h-full flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-full text-[10px] uppercase tracking-normal transition-colors motion-fast",
                 isActive
                   ? "text-primary font-semibold bg-primary/15 dark:bg-primary/20"
                   : "text-muted-foreground group-hover:text-foreground",
