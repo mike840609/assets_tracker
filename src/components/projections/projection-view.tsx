@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { formatCurrency, formatNumber, getCurrencySymbol } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
-import { ProjectionChart, type ChartPoint } from "./projection-chart";
+import type { ChartPoint } from "./projection-chart";
+import { LazyProjectionChart } from "./lazy-projection-chart";
 
 const GUIDE_STORAGE_KEY = "asset-tracker:projections-guide-open";
 
@@ -317,7 +318,7 @@ export function ProjectionView({
 
       {/* Chart */}
       <div className="premium-card">
-        <ProjectionChart
+        <LazyProjectionChart
           data={chartData}
           fireNumber={projection.fireNumber}
           fireYear={projection.fireYear}

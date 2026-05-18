@@ -19,14 +19,17 @@ async function GoalsContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
 
-  const settings = await getOrCreateSettings(userId);
-  const [t, messages, goalsWithProgress, rawAccounts, projectionData] = await Promise.all([
-    getTranslations("goals"),
-    getMessages(),
-    computeGoalsWithProgress(userId, settings.baseCurrency),
-    fetchUserAccountsWithHoldings(userId),
-    getProjectionData(userId, settings.baseCurrency),
-  ]);
+  const settingsP = getOrCreateSettings(userId);
+  const [t, messages, goalsWithProgress, rawAccounts, projectionData, settings] = await Promise.all(
+    [
+      getTranslations("goals"),
+      getMessages(),
+      settingsP.then((s) => computeGoalsWithProgress(userId, s.baseCurrency)),
+      fetchUserAccountsWithHoldings(userId),
+      settingsP.then((s) => getProjectionData(userId, s.baseCurrency)),
+      settingsP,
+    ],
+  );
 
   const accounts: SerializedAccount[] = rawAccounts.map(({ holdings: _h, ...rest }) => rest);
 

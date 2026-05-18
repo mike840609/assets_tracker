@@ -21,16 +21,17 @@ async function AnalysisContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
 
-  const settings = await getOrCreateSettings(userId);
-  const [t, messages, snapshots, cashFlowData, rawHistory, accountCashFlow, locale] =
+  const settingsP = getOrCreateSettings(userId);
+  const [t, messages, snapshots, cashFlowData, rawHistory, accountCashFlow, locale, settings] =
     await Promise.all([
       getTranslations("analysis"),
       getMessages(),
-      getFullNormalizedHistory(userId, settings.baseCurrency),
-      getMonthlyCashFlow(userId, settings.baseCurrency),
-      getRawHistoryWithBreakdown(userId, settings.baseCurrency),
-      getAccountMonthlyCashFlow(userId, settings.baseCurrency),
+      settingsP.then((s) => getFullNormalizedHistory(userId, s.baseCurrency)),
+      settingsP.then((s) => getMonthlyCashFlow(userId, s.baseCurrency)),
+      settingsP.then((s) => getRawHistoryWithBreakdown(userId, s.baseCurrency)),
+      settingsP.then((s) => getAccountMonthlyCashFlow(userId, s.baseCurrency)),
       getLocale(),
+      settingsP,
     ]);
 
   return (

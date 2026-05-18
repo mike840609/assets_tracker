@@ -16,11 +16,12 @@ async function ProjectionsContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
 
-  const settings = await getOrCreateSettings(userId);
-  const [t, messages, projectionData] = await Promise.all([
+  const settingsP = getOrCreateSettings(userId);
+  const [t, messages, projectionData, settings] = await Promise.all([
     getTranslations("projections"),
     getMessages(),
-    getProjectionData(userId, settings.baseCurrency),
+    settingsP.then((s) => getProjectionData(userId, s.baseCurrency)),
+    settingsP,
   ]);
 
   return (
