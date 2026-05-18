@@ -3,12 +3,7 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
-import {
-  getFullNormalizedHistory,
-  getRawHistoryWithBreakdown,
-  getMonthlyCashFlow,
-  getAccountMonthlyCashFlow,
-} from "@/lib/services/history-service";
+import { getCachedAnalysisPayload } from "@/lib/services/analysis-payload-service";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AnalysisView } from "@/components/analysis/analysis-view";
@@ -21,18 +16,16 @@ async function AnalysisContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
 
-  const settingsP = getOrCreateSettings(userId);
-  const [t, messages, snapshots, cashFlowData, rawHistory, accountCashFlow, locale, settings] =
-    await Promise.all([
-      getTranslations("analysis"),
-      getMessages(),
-      settingsP.then((s) => getFullNormalizedHistory(userId, s.baseCurrency)),
-      settingsP.then((s) => getMonthlyCashFlow(userId, s.baseCurrency)),
-      settingsP.then((s) => getRawHistoryWithBreakdown(userId, s.baseCurrency)),
-      settingsP.then((s) => getAccountMonthlyCashFlow(userId, s.baseCurrency)),
-      getLocale(),
-      settingsP,
-    ]);
+  const [t, messages, locale, settings] = await Promise.all([
+    getTranslations("analysis"),
+    getMessages(),
+    getLocale(),
+    getOrCreateSettings(userId),
+  ]);
+  const { snapshots, cashFlowData, rawHistory, accountCashFlow } = await getCachedAnalysisPayload(
+    userId,
+    settings.baseCurrency,
+  );
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
