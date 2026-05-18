@@ -294,19 +294,25 @@ export function MobileNav() {
                 router.push(item.href);
               });
             }}
-            className="group relative flex flex-1 basis-0 min-w-0 min-h-12 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+            className="group relative flex flex-1 basis-0 min-w-0 min-h-12 items-center justify-center rounded-full select-none touch-manipulation transition-transform motion-fast will-change-transform active:scale-[0.92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
             aria-label={item.label}
             aria-current={isActive ? "page" : undefined}
           >
             <span
               className={cn(
-                "flex w-full h-full flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-full text-[10px] uppercase tracking-normal transition-colors motion-fast",
+                "flex w-full h-full flex-col items-center justify-center gap-0.5 px-1 py-1 rounded-full text-[10px] font-medium tracking-tight normal-case transition-colors motion-normal",
                 isActive
                   ? "text-primary font-semibold bg-primary/15 dark:bg-primary/20"
                   : "text-muted-foreground group-hover:text-foreground",
               )}
             >
-              <Icon className={cn("motion-fast", isActive ? "h-6 w-6" : "h-5 w-5")} />
+              <Icon
+                key={isActive ? "on" : "off"}
+                className={cn(
+                  "transition-transform motion-fast",
+                  isActive ? "motion-safe:ios-tab-pop h-[20px] w-[20px]" : "h-[18px] w-[18px]",
+                )}
+              />
               <span className="truncate w-full text-center">{item.label}</span>
             </span>
           </button>

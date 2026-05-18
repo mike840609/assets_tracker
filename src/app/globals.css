@@ -208,6 +208,10 @@
     transition-timing-function: var(--ease-spring);
   }
 
+  .ios-tab-pop {
+    animation: ios-tab-pop 320ms var(--ease-spring) both;
+  }
+
   .skeleton-shimmer {
     position: relative;
     overflow: hidden;
@@ -257,6 +261,18 @@
 @keyframes skeleton-shimmer {
   100% {
     transform: translateX(100%);
+  }
+}
+
+@keyframes ios-tab-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 
