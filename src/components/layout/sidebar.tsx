@@ -267,7 +267,7 @@ export function MobileNav() {
     <nav
       className={cn(
         "md:hidden fixed left-1/2 -translate-x-1/2 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-50 w-[calc(100%-1.5rem)] max-w-sm flex items-stretch gap-1 px-2 py-1.5 rounded-full border border-border/60 bg-background/95 dark:bg-card/95 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_28px_-8px_rgba(0,0,0,0.65)] transition-transform motion-normal will-change-transform",
-        hidden && "translate-y-[150%]",
+        hidden && "translate-y-[calc(100%+1.75rem+env(safe-area-inset-bottom))]",
       )}
     >
       {navItems.map((item) => {
