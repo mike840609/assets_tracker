@@ -300,7 +300,7 @@ export function MobileNav() {
           >
             <span
               className={cn(
-                "flex w-16 flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-[10px] uppercase tracking-wider transition-all motion-fast",
+                "flex w-full max-w-20 flex-col items-center justify-center gap-1 px-1 py-1.5 rounded-xl text-[10px] uppercase tracking-normal transition-all motion-fast",
                 isActive
                   ? "text-primary font-semibold bg-primary/12 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.25)] scale-[1.04]"
                   : "text-muted-foreground group-hover:text-foreground",

@@ -201,61 +201,63 @@ export function TrendChart({
 
   return (
     <Card className="relative border-0 bg-transparent shadow-none h-full flex flex-col pb-0">
-      {!hideRangeFilter && (
-        <div className="absolute right-2 top-2 z-10 flex shrink-0 items-center gap-0.5 sm:right-4 sm:top-3">
-          {ranges.map((r) => (
-            <button
-              key={r.label}
-              onClick={() => setRange(r.label)}
-              aria-pressed={range === r.label}
-              className={`px-2 py-0.5 text-xs rounded-full transition-colors ${
-                range === r.label
-                  ? "bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                  : "text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 pb-2 px-2 sm:px-4">
+        <div className="flex flex-col gap-1 min-w-0">
+          <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
+          {periodChange && (
+            <div
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold tabular-nums ${
+                periodChange.delta >= 0
+                  ? "bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-400"
+                  : "bg-red-50 dark:bg-red-950/50 text-destructive"
               }`}
             >
-              {r.label}
-            </button>
-          ))}
-          <div className="mx-1 h-3 w-px bg-border" />
-          <button
-            onClick={() => setPctMode(isPercentMode ? "off" : "on")}
-            aria-pressed={isPercentMode}
-            title={t("pctToggleTitle")}
-            className={`px-2 py-0.5 text-xs rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-              isPercentMode
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            %
-          </button>
+              {privacyMode ? (
+                "***"
+              ) : (
+                <>
+                  {periodChange.delta >= 0 ? "+" : ""}
+                  {formatCurrency(periodChange.delta, baseCurrency)}
+                  {periodChange.pct !== null && (
+                    <span className="text-[11px] opacity-70">
+                      ({periodChange.delta >= 0 ? "+" : ""}
+                      {periodChange.pct.toFixed(1)}%)
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
-      )}
-      <CardHeader className="flex flex-col gap-1 pb-2 px-2 sm:px-4">
-        <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
-        {periodChange && (
-          <div
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold tabular-nums ${
-              periodChange.delta >= 0
-                ? "bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-400"
-                : "bg-red-50 dark:bg-red-950/50 text-destructive"
-            }`}
-          >
-            {privacyMode ? (
-              "***"
-            ) : (
-              <>
-                {periodChange.delta >= 0 ? "+" : ""}
-                {formatCurrency(periodChange.delta, baseCurrency)}
-                {periodChange.pct !== null && (
-                  <span className="text-[11px] opacity-70">
-                    ({periodChange.delta >= 0 ? "+" : ""}
-                    {periodChange.pct.toFixed(1)}%)
-                  </span>
-                )}
-              </>
-            )}
+        {!hideRangeFilter && (
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
+            {ranges.map((r) => (
+              <button
+                key={r.label}
+                onClick={() => setRange(r.label)}
+                aria-pressed={range === r.label}
+                className={`px-2 py-0.5 text-xs rounded-full transition-colors ${
+                  range === r.label
+                    ? "bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    : "text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+            <div className="mx-1 h-3 w-px bg-border" />
+            <button
+              onClick={() => setPctMode(isPercentMode ? "off" : "on")}
+              aria-pressed={isPercentMode}
+              title={t("pctToggleTitle")}
+              className={`px-2 py-0.5 text-xs rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                isPercentMode
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              %
+            </button>
           </div>
         )}
       </CardHeader>
