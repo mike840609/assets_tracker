@@ -170,27 +170,27 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
 
   return (
     <Card className="relative border-0 shadow-none bg-transparent">
-      <div className="absolute right-2 top-2 z-10 flex shrink-0 items-center gap-0.5 sm:right-4 sm:top-3">
-        {sortOptions.map(({ field, label }) => (
-          <button
-            key={field}
-            onClick={() => handleSort(field)}
-            aria-pressed={sortField === field}
-            className={`px-2 py-0.5 text-xs rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-              sortField === field
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            {label}
-            {sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
-          </button>
-        ))}
-      </div>
-      <CardHeader className="pb-2">
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-2">
         <CardTitle className="text-lg font-semibold tracking-tight">
           {t("accountsSummary.title")}
         </CardTitle>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
+          {sortOptions.map(({ field, label }) => (
+            <button
+              key={field}
+              onClick={() => handleSort(field)}
+              aria-pressed={sortField === field}
+              className={`px-2 py-0.5 text-xs rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                sortField === field
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              {label}
+              {sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
+            </button>
+          ))}
+        </div>
       </CardHeader>
       <CardContent className={`${isCompact ? "space-y-2" : "space-y-6"} pt-4`}>
         {assets.length > 0 && renderGroup(assets, true)}
