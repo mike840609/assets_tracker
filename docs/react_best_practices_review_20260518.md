@@ -30,10 +30,12 @@ Two themes emerged:
 | F5  | Defer settings await on `/history`                        | `src/app/(main)/history/page.tsx`                                                                              |
 | F6  | Defer settings await on `/projections`                    | `src/app/(main)/projections/page.tsx`                                                                          |
 
-### P1 — flagged, no action this pass
+### P1 — evaluated and declined
 
-- **F7. `getAccountDetail` (`src/lib/services/account-service.ts:7-12`)** uses React `cache()` only — per-render dedup, no cross-request reuse. The underlying `fetchUserAccountsWithHoldings` already has `"use cache"` + tag `accounts:{userId}`, so cross-request caching is happening one layer down. Probably fine; revisit only if production traces show repeated cache misses.
-- **F8. `accounts-list` payload (`src/app/(main)/accounts/page.tsx`)** passes full `SerializedAccountWithHoldings[]` (with holdings) to the client. Trim if confirmed `<AccountsList>` doesn't need holdings; otherwise leave.
+Both items were re-read against the current code and judged not worth the change cost. Recorded here so a future reviewer doesn't re-flag them.
+
+- **F7. `getAccountDetail` `"use cache"` — declined.** Inner `fetchUserAccountsWithHoldings` already has `"use cache"` + `accounts:${userId}` tag + `cacheLife("hours")` (`net-worth-service.ts:23-37`). The wrapper's `.find()` over <100 accounts is microseconds; adding per-account tags would force every mutation route to invalidate the narrower tag instead of the current broad `accounts:${userId}`. Real bookkeeping cost, no measurable benefit.
+- **F8. `accounts-list` payload trim — declined.** The client genuinely uses each holding's `id`, `symbol`, `name`, `currency`, `assetType`, `contractMultiplier`, `quantity` — `getAccountValue` (accounts-list.tsx:108-115) iterates them for sort/totals and `AccountCardWithHoldings` (L741-748) renders every holding row on mobile. Trimming meaningfully would require a parallel `AccountForList` shape and moving per-row compute server-side; ~5-10 KB payload saved doesn't justify the forked type surface.
 
 ### P2 — deferred (separate task)
 
