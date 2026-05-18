@@ -2,6 +2,7 @@ import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createHoldingSchema, updateHoldingSchema } from "@/lib/validators";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
+import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 import { parseOccSymbol, formatOptionLabel, OptionError } from "@/lib/options";
@@ -14,6 +15,20 @@ function invalidateUserCaches(userId: string) {
   revalidateTag(`accounts:${userId}`, "max");
   revalidateTag(`net-worth:${userId}`, "max");
   revalidateTag(`history:${userId}`, "max");
+}
+
+async function maybeWarmExchangeRate(currency: string) {
+  try {
+    const existing = await prisma.exchangeRate.findFirst({
+      where: { fromCurrency: currency },
+      select: { id: true },
+    });
+    if (existing) return;
+    await refreshExchangeRates(currency);
+    revalidateTag("exchange-rates", "max");
+  } catch (error) {
+    log.warn("rates.warm.failed", { currency, error: String(error) });
+  }
 }
 
 export const GET = withAuth<IdCtx>(async (_request, { params }, userId) => {
@@ -132,6 +147,7 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
   }
 
   invalidateUserCaches(userId);
+  if (holding.currency) void maybeWarmExchangeRate(holding.currency);
   return ok(holding, { status: 201 });
 });
 

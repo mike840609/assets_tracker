@@ -5,14 +5,11 @@ import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AccountsList } from "@/components/accounts/accounts-list";
-import {
-  getAllExchangeRates,
-  resolveRate,
-  resolveMissingRates,
-} from "@/lib/services/exchange-rate-service";
+import { getAllExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
 import { getCachedPricesForSymbols } from "@/lib/services/price-service";
+import { log } from "@/lib/logger";
 import AccountsLoading from "./loading";
 
 const CLIENT_NAMESPACES = [
@@ -45,38 +42,37 @@ async function AccountsContent() {
     cachedPrices.map((p) => [p.symbol, p.price]),
   );
 
-  // Build rates map from the bulk-loaded rates (no sequential DB calls!)
+  // Build rates map from the bulk-loaded rates. Render path is read-only
+  // against ExchangeRate — missing pairs fall back to 1 (rates are warmed
+  // by the daily cron and on-write hooks).
   const ratesMap: Record<string, number> = {};
-  const missingPairs: Array<[string, string]> = [];
+  const warnedPairs = new Set<string>();
+  const fillRate = (from: string, to: string) => {
+    const key = `${from}_${to}`;
+    if (ratesMap[key] !== undefined) return;
+    const rate = resolveRate(allRatesMap, from, to);
+    if (rate !== undefined) {
+      ratesMap[key] = rate;
+      return;
+    }
+    ratesMap[key] = 1;
+    if (!warnedPairs.has(key)) {
+      warnedPairs.add(key);
+      log.warn("rates.unresolved", { from, to });
+    }
+  };
 
   for (const account of accounts) {
     if (account.currency !== baseCurrency) {
-      const key = `${account.currency}_${baseCurrency}`;
-      const rate = resolveRate(allRatesMap, account.currency, baseCurrency);
-      if (rate !== undefined) {
-        ratesMap[key] = rate;
-      } else {
-        missingPairs.push([account.currency, baseCurrency]);
-      }
+      fillRate(account.currency, baseCurrency);
     }
     for (const holding of account.holdings) {
       const hc = holding.currency || "USD";
       if (hc !== account.currency) {
-        const key = `${hc}_${account.currency}`;
-        if (ratesMap[key] === undefined) {
-          const rate = resolveRate(allRatesMap, hc, account.currency);
-          if (rate !== undefined) {
-            ratesMap[key] = rate;
-          } else {
-            missingPairs.push([hc, account.currency]);
-          }
-        }
+        fillRate(hc, account.currency);
       }
     }
   }
-
-  // Resolve missing pairs with timeout (defaults to 1 if APIs are slow)
-  await resolveMissingRates(missingPairs, ratesMap);
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
