@@ -213,7 +213,27 @@ export async function refreshAllPrices(): Promise<{
     select: { symbol: true, assetType: true },
     distinct: ["symbol"],
   });
+  return refreshPricesForHoldings(holdings);
+}
 
+export async function refreshPricesForUser(userId: string): Promise<{
+  updated: number;
+  errors: string[];
+}> {
+  const holdings = await prisma.holding.findMany({
+    where: { account: { userId } },
+    select: { symbol: true, assetType: true },
+    distinct: ["symbol"],
+  });
+  return refreshPricesForHoldings(holdings);
+}
+
+async function refreshPricesForHoldings(
+  holdings: { symbol: string; assetType: string }[],
+): Promise<{
+  updated: number;
+  errors: string[];
+}> {
   const stockSymbols = holdings
     .filter((h) => ["STOCK", "ETF", "MUTUAL_FUND", "BOND", "OPTION"].includes(h.assetType))
     .map((h) => h.symbol);

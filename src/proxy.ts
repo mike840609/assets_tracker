@@ -90,6 +90,6 @@ export default auth((req) => {
 // component carrying them is excluded.
 export const config = {
   matcher: [
-    "/((?!api/cron|_next/static|_next/image|favicon\\.ico|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|wp-admin|wp-login|wp-content|wp-includes|wordpress|xmlrpc|cgi-bin|cmd_|phpmyadmin|adminer|vendor/phpunit|.*\\.php|.*\\.aspx?|.*\\.jsp|.*\\.cgi|.*\\.env|.*\\.git|.*\\.svn|.*\\.htaccess|.*\\.htpasswd).*)",
+    "/((?!api/(?!auth)|_next/static|_next/image|favicon\\.ico|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|wp-admin|wp-login|wp-content|wp-includes|wordpress|xmlrpc|cgi-bin|cmd_|phpmyadmin|adminer|vendor/phpunit|.*\\.php|.*\\.aspx?|.*\\.jsp|.*\\.cgi|.*\\.env|.*\\.git|.*\\.svn|.*\\.htaccess|.*\\.htpasswd).*)",
   ],
 };
