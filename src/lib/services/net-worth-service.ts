@@ -2,8 +2,9 @@ import "server-only";
 import { cache } from "react";
 import { cacheLife, cacheTag, unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { getAllExchangeRates, resolveRate, resolveMissingRates } from "./exchange-rate-service";
+import { getAllExchangeRates, resolveRate } from "./exchange-rate-service";
 import { serializeAccountWithHoldings } from "@/lib/types";
+import { log } from "@/lib/logger";
 import type {
   AccountWithValue,
   NetWorthSummary,
@@ -63,16 +64,7 @@ async function computeNetWorthSummary(
   let totalLiabilities = 0;
   const accountsWithValue: AccountWithValue[] = [];
 
-  // Collect missing rate pairs for batch-fetching
-  const missingPairs = new Set<string>();
-
   for (const account of accounts) {
-    // Try to resolve rate from bulk map first
-    const rate = resolveRate(allRatesMap, account.currency, baseCurrency);
-    if (rate === undefined) {
-      missingPairs.add(`${account.currency}_${baseCurrency}`);
-    }
-
     const cashBalance = account.cashBalance;
 
     const holdingsWithPrice: HoldingWithPrice[] = account.holdings.map((h) => {
@@ -88,44 +80,28 @@ async function computeNetWorthSummary(
       };
     });
 
-    for (const h of holdingsWithPrice) {
-      if (h.marketValue !== null) {
-        const holdingCurrency = h.currency || priceMap[h.symbol]?.currency || "USD";
-        if (resolveRate(allRatesMap, holdingCurrency, baseCurrency) === undefined) {
-          missingPairs.add(`${holdingCurrency}_${baseCurrency}`);
-        }
-        if (resolveRate(allRatesMap, holdingCurrency, account.currency) === undefined) {
-          missingPairs.add(`${holdingCurrency}_${account.currency}`);
-        }
-      }
-    }
-
     accountsWithValue.push({
       ...account,
       holdings: holdingsWithPrice,
-      totalValue: 0, // will be filled after missing rates are resolved
+      totalValue: 0,
       totalValueInBaseCurrency: 0,
       _cashBalance: cashBalance,
       _currency: account.currency,
     } as AccountWithValue & { _cashBalance: number; _currency: string });
   }
 
-  // Fetch any truly missing rates with timeout (defaults to 1 if APIs are slow)
-  if (missingPairs.size > 0) {
-    const pairs: Array<[string, string]> = [...missingPairs].map((key) => {
-      const [from, to] = key.split("_");
-      return [from, to];
-    });
-    const resolvedMap: Record<string, number> = {};
-    await resolveMissingRates(pairs, resolvedMap);
-    for (const [key, rate] of Object.entries(resolvedMap)) {
-      allRatesMap.set(key, rate);
-    }
-  }
-
-  // Helper using the now-complete map
+  // Render-time helper: read-only against ExchangeRate. Missing pairs fall
+  // back to 1 (rates are warmed by the daily cron and on-write hooks).
+  const warnedPairs = new Set<string>();
   function getRate(from: string, to: string): number {
-    return resolveRate(allRatesMap, from, to) ?? 1;
+    const resolved = resolveRate(allRatesMap, from, to);
+    if (resolved !== undefined) return resolved;
+    const key = `${from}_${to}`;
+    if (!warnedPairs.has(key)) {
+      warnedPairs.add(key);
+      log.warn("rates.unresolved", { from, to, userId, baseCurrency });
+    }
+    return 1;
   }
 
   // Second pass: compute values using the complete rate map

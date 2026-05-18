@@ -23,20 +23,25 @@ Last updated: 2026-05-18.
   - API requests are excluded from `proxy.ts` matcher (`api/`), so route-level auth (e.g. `withAuth`) owns API authorization checks.
 - ✅ Milestone B shipped:
   - Analysis page now uses a cached aggregate payload (`getCachedAnalysisPayload`) with a 5-minute revalidation window and user-scoped cache tags.
+- ✅ Milestone C shipped (render-time FX fetching removed):
+  - Render paths (`getNetWorthSummary`, `/accounts`, `/accounts/[id]`) no longer import or call `resolveMissingRates`. Missing pairs fall back to `1` with a `log.warn("rates.unresolved", …)` so production logs surface gaps.
+  - Daily cron (`/api/cron/snapshot`) now warms `ExchangeRate` for every currency in use across users (account/holding currencies + every distinct `Setting.baseCurrency`) before refreshing prices.
+  - On-write hooks added: account create, settings PATCH (baseCurrency), and holding create fire-and-forget `refreshExchangeRates(newCurrency)` when the currency isn't yet in the rates table.
 - ⏳ Still pending production verification:
   - Measure before/after Active CPU by function family in Vercel runtime logs.
   - Confirm no API routes lost intended behavior by moving auth responsibility to handlers only.
   - Validate analysis cache hit-rate and invalidation behavior under real write traffic.
+  - Confirm `rates.unresolved` warns stay near zero post-deploy (otherwise the warm-up coverage has a gap).
 
 ## Key Findings
 
 Observed in code/config:
 
 - ✅ Manual refresh global-work issue addressed by splitting user-scoped manual refresh from global refresh logic.
-- The daily cron snapshot flow still bundles several CPU-heavy operations into a single function: expired option sweeping, global price refresh, per-user snapshot creation, and cache invalidation.
+- The daily cron snapshot flow still bundles several CPU-heavy operations into a single function: expired option sweeping, exchange-rate warm-up (added in Milestone C), global price refresh, per-user snapshot creation, and cache invalidation.
 - ✅ Duplicate auth execution on API requests addressed by excluding `/api/*` from proxy and using route-level auth.
 - ✅ Analysis payload recomputation addressed for analysis page through aggregate caching.
-- Some render paths can still trigger exchange-rate resolution work at request time, which increases CPU variance and makes cold or invalidated requests more expensive.
+- ✅ Render-time exchange-rate resolution work removed; render paths are now read-only against `ExchangeRate` and rates are warmed in the cron + on-write hooks.
 
 Needs verification in production:
 
@@ -51,7 +56,7 @@ Needs verification in production:
 | 1        | Split interactive refresh from global refresh and make manual refresh user-scoped. | ✅ Shipped            | Very high       | Cuts the most obvious source of over-broad work; aligns CPU usage with the current user instead of total dataset size. | Requires separate code paths for cron/global refresh vs. manual/user refresh.           |
 | 2        | Reduce duplicate auth execution on API routes.                                     | ✅ Shipped            | High            | Lowers CPU on every protected API call; simplifies the request path.                                                   | Requires careful review of which routes remain protected by proxy vs. route-level auth. |
 | 3        | Cache or precompute analysis, goals, and projection payloads.                      | ✅ Partial (analysis) | High            | Reduces repeated full-history recomputation; stabilizes heavy page requests.                                           | Adds invalidation complexity and may introduce bounded staleness.                       |
-| 4        | Remove render-time FX fetching and rely on prepared cached rates.                  | ⏳ Pending            | High            | Makes request CPU more predictable; avoids external-rate work inside render paths.                                     | Rates may be slightly stale until the next refresh/cron cycle.                          |
+| 4        | Remove render-time FX fetching and rely on prepared cached rates.                  | ✅ Shipped            | High            | Makes request CPU more predictable; avoids external-rate work inside render paths.                                     | Rates may be slightly stale until the next refresh/cron cycle.                          |
 | 5        | Narrow invalidation from global tags to per-user tags where applicable.            | ⏳ Pending            | Medium          | Reduces avoidable recomputation after writes and refreshes.                                                            | Requires consistent cache-tag ownership across routes and services.                     |
 | 6        | Rework broad price-cache access patterns if symbol count grows.                    | ⏳ Pending            | Medium          | Prevents dataset-wide filtering from scaling poorly as the portfolio universe expands.                                 | May trade some shared-cache simplicity for more targeted queries.                       |
 | 7        | Reduce noisy search/options traffic with tighter client behavior and caching.      | ⏳ Pending            | Low/Medium      | Lowers avoidable function invocations from typing-driven lookups and options-chain fetches.                            | Small UX tradeoffs if debounce/min-length rules get stricter.                           |
@@ -62,7 +67,7 @@ Needs verification in production:
 1. ✅ User-scope manual refresh endpoints.
 2. ✅ Remove API double-auth.
 3. ✅ Cache or materialize analytics payloads (analysis page aggregate cache shipped).
-4. Eliminate render-time FX fetching.
+4. ✅ Eliminate render-time FX fetching (cron warm-up + on-write hooks + render fallback to 1).
 5. Revisit invalidation scope and noisy auxiliary endpoints.
 
 ## Next Verification Checklist

@@ -5,11 +5,8 @@ import { AccountsNavPanel } from "@/components/accounts/accounts-nav-panel";
 import { getAccountDetail, getAccountPriceMap } from "@/lib/services/account-service";
 import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
 import { getSession } from "@/lib/auth-session";
-import {
-  getAllExchangeRates,
-  resolveRate,
-  resolveMissingRates,
-} from "@/lib/services/exchange-rate-service";
+import { getAllExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
+import { log } from "@/lib/logger";
 import { getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
@@ -39,27 +36,28 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
   const symbols = serialized.holdings.map((h) => h.symbol);
   const priceMap = await getAccountPriceMap(symbols);
 
-  // Build rates map from bulk-loaded data
+  // Build rates map from bulk-loaded data. Render path is read-only
+  // against ExchangeRate — missing pairs fall back to 1 (rates are warmed
+  // by the daily cron and on-write hooks).
   const ratesMap: Record<string, number> = {};
-  const missingPairs: Array<[string, string]> = [];
+  const warnedPairs = new Set<string>();
 
   for (const holding of serialized.holdings) {
     const hc = holding.currency || "USD";
-    if (hc !== serialized.currency) {
-      const key = `${hc}_${serialized.currency}`;
-      if (ratesMap[key] === undefined) {
-        const rate = resolveRate(allRatesMap, hc, serialized.currency);
-        if (rate !== undefined) {
-          ratesMap[key] = rate;
-        } else {
-          missingPairs.push([hc, serialized.currency]);
-        }
-      }
+    if (hc === serialized.currency) continue;
+    const key = `${hc}_${serialized.currency}`;
+    if (ratesMap[key] !== undefined) continue;
+    const rate = resolveRate(allRatesMap, hc, serialized.currency);
+    if (rate !== undefined) {
+      ratesMap[key] = rate;
+      continue;
+    }
+    ratesMap[key] = 1;
+    if (!warnedPairs.has(key)) {
+      warnedPairs.add(key);
+      log.warn("rates.unresolved", { from: hc, to: serialized.currency });
     }
   }
-
-  // Resolve missing pairs with timeout (defaults to 1 if APIs are slow)
-  await resolveMissingRates(missingPairs, ratesMap);
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
