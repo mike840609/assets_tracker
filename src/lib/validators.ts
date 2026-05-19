@@ -19,7 +19,18 @@ export const createAccountSchema = z.object({
   cashBalance: z.number().default(0),
 });
 
-export const updateAccountSchema = createAccountSchema.partial();
+export const updateAccountSchema = createAccountSchema
+  .extend({
+    isActive: z.boolean(),
+    isPinned: z.boolean(),
+  })
+  .partial();
+
+export const reorderAccountsSchema = z.object({
+  type: z.enum(ACCOUNT_TYPES),
+  pinnedIds: z.array(z.string().min(1)),
+  unpinnedIds: z.array(z.string().min(1)),
+});
 
 const NON_OPTION_ASSET_TYPES = HOLDING_ASSET_TYPES.filter((t) => t !== "OPTION") as Exclude<
   (typeof HOLDING_ASSET_TYPES)[number],
@@ -139,6 +150,8 @@ export const dataImportSchema = z.object({
       currency: z.string().length(3),
       cashBalance: decimalSchema,
       isActive: z.boolean().default(true),
+      isPinned: z.boolean().default(false),
+      sortOrder: z.number().int().default(0),
       createdAt: z.string().optional(),
       updatedAt: z.string().optional(),
       holdings: z

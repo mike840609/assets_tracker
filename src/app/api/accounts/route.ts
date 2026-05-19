@@ -32,7 +32,13 @@ export const GET = withAuth(async (_req, _ctx, userId) => {
   const accounts = await prisma.account.findMany({
     where: { userId },
     include: { holdings: { where: { quantity: { gt: 0 } } } },
-    orderBy: { createdAt: "desc" },
+    orderBy: [
+      { isActive: "desc" },
+      { isPinned: "desc" },
+      { sortOrder: "asc" },
+      { createdAt: "asc" },
+      { id: "asc" },
+    ],
   });
   return ok(accounts);
 });
@@ -59,8 +65,21 @@ export const POST = withAuth(async (request, _ctx, userId) => {
   const parsed = createAccountSchema.safeParse(body);
   if (!parsed.success) return validationError(parsed.error);
 
+  const maxSortOrder = await prisma.account.aggregate({
+    where: {
+      userId,
+      type: parsed.data.type,
+      isActive: true,
+    },
+    _max: { sortOrder: true },
+  });
+
   const account = await prisma.account.create({
-    data: { ...parsed.data, userId },
+    data: {
+      ...parsed.data,
+      userId,
+      sortOrder: (maxSortOrder._max.sortOrder ?? -1) + 1,
+    },
   });
   invalidateUserCaches(userId);
   void maybeWarmExchangeRate(account.currency);
