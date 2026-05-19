@@ -270,10 +270,11 @@ VERCEL_ENV                # Set automatically by Vercel (production | preview | 
 
 Before proposing changes, check whether the work is already tracked in one of these — items are status-marked and cross-referenced:
 
-- `docs/PERFORMANCE.md` — bundle optimization (B1–B15), rendering strategy (S/P/I/X), enhancement roadmap (PE1–PE19)
-- `docs/INFRASTRUCTURE.md` — Vercel platform (V1–V33), launch readiness (R1–R26)
-- `docs/DATABASE.md` — Neon database audit (DB1–DB10): dead-row bloat, missing schema fields, index analysis
-- `docs/UI_UX.md` — UI/UX improvements (1–15), `/analysis` tab feature roadmap (Phases 1–4)
+- `docs/PERFORMANCE.md` — bundle optimization (B1–B15), rendering strategy (S/P/I/X), enhancement roadmap (PE1–PE19), React best-practices review (F1–F10)
+- `docs/PLATFORM.md` — Vercel platform (V1–V36), launch readiness (R1–R26), Fluid CPU optimization (P1–P9), Vercel MCP findings (F1–F8), firewall setup
+- `docs/DATABASE.md` — Neon database audit (DB1–DB14): schema overview, index analysis, enhancement backlog
+- `docs/UI_UX.md` — UI/UX improvements (1–15), `/analysis` tab feature roadmap (Phases 1–4), desktop + mobile enhancements, animation polish
 - `docs/CODE_QUALITY.md` — engineering hygiene (Q1–Q20), documentation gaps (C1–C14), cross-doc synthesis (D1–D10)
-- `docs/SUGGESTIONS.md` — master backlog (110+ items, ✅/❌ tracked)
+- `docs/SUGGESTIONS.md` — master backlog (151 items, ✅/❌ tracked)
+- `docs/ROADMAP.md` — prioritized current work (S1–S32) and future features (F1–F25, themes: projections, P&L, cashflow, portfolio intelligence, etc.)
 - `docs/LOG.md` — running engineering log / decision journal
