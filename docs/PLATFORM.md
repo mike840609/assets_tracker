@@ -1,6 +1,6 @@
-# Assets Tracker — Infrastructure
+# Assets Tracker — Platform
 
-This file consolidates two former docs: `VERCEL_ANALYSIS.md` (V1–V33, Vercel platform audit) and `RELEASE_READINESS.md` (R1–R26, pre-launch checklist).
+This file consolidates four former docs: `INFRASTRUCTURE.md` (V1–V36 Vercel platform audit, R1–R26 release readiness), `vercel_fluid_cpu_optimization_20260517.md` (P1–P9 Active-CPU optimization), `suggestions_20260515_vercel_mcp.md` (F1–F8 live MCP findings), and `firewall_setup.md` (firewall rule setup).
 
 ---
 
@@ -8,7 +8,7 @@ This file consolidates two former docs: `VERCEL_ANALYSIS.md` (V1–V33, Vercel p
 
 Findings sourced from the Vercel MCP connector against project `prj_soY30S7ki1x38gmeZXCancJD1PVA` (`asset-tracker`, team `team_ImEsp9hzYaqzaPz5VmE6LTiW`) across four audit passes: 2026-04-17, 2026-04-18, 2026-04-19, and 2026-05-14.
 
-> **2026-05-14 audit pass.** `get_project` returned `"live": false` (meaning TBD — likely a Vercel-internal traffic/billing flag, consistent with the empty 7-day runtime-log window observed in F1). `get_runtime_logs` against production returned no entries for the same window. Full findings in [`suggestions_20260515_vercel_mcp.md`](./suggestions_20260515_vercel_mcp.md) (F1–F8).
+> **2026-05-14 audit pass.** `get_project` returned `"live": false` (meaning TBD — likely a Vercel-internal traffic/billing flag, consistent with the empty 7-day runtime-log window observed in F1). `get_runtime_logs` against production returned no entries for the same window. Full findings in the [Vercel MCP Findings](#vercel-mcp-findings-2026-05-14) section below (F1–F8).
 
 | #   | Suggestion                                                                                                                                                                                                                 | Category                 | Impact    | Effort  | Status                 |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | --------- | ------- | ---------------------- |
@@ -67,7 +67,7 @@ Deployment `dpl_3KqPj4qBr3ZojdDaSxtKvo8iNhC2` (44s total, 292 MB build cache):
 5. **No `/api/cron/snapshot` hits in log window.** Either the Vercel Cron isn't firing, runtime logs filter it, or runs land outside the sampled window.
 6. **No `/api/health` endpoint exists**.
 
-### Detailed Enhancement Write-ups (V1–V33)
+### Detailed Enhancement Write-ups (V1–V36)
 
 **V1 — Rename `src/middleware.ts` → `src/proxy.ts`.** Next.js 16.2.2 deprecation warning on every build. Rename the file — no import or config changes needed elsewhere. Critical files: `src/middleware.ts`.
 
@@ -135,11 +135,17 @@ Deployment `dpl_3KqPj4qBr3ZojdDaSxtKvo8iNhC2` (44s total, 292 MB build cache):
 
 **V33 — Ship `@next/bundle-analyzer`.** `npm i -D @next/bundle-analyzer`. Wrap the export in `next.config.ts`. Commit the `ANALYZE=true npm run build` baseline (dashboard route JS, shared chunks, largest single module) to this doc. Re-run on every Speed Insights PR.
 
+**V34 — Extend `maxDuration` for refresh routes.** Add per-function entries: `"src/app/api/prices/refresh/route.ts": { "maxDuration": 60 }` and `"src/app/api/exchange-rates/refresh/route.ts": { "maxDuration": 30 }`. Critical files: `vercel.json`.
+
+**V35 — Enable Skew Protection.** Configure via Vercel Dashboard → Project Settings → Deployment Protection. No `vercel.json` change needed.
+
+**V36 — `poweredByHeader: false` + image cache TTL.** Add `poweredByHeader: false` to `next.config.ts`; set `images.minimumCacheTTL: 86400` so Google profile pictures aren't re-fetched every 60 s. Critical files: `next.config.ts`.
+
 ---
 
 ## Release Readiness (Pre-Launch)
 
-Findings sourced against Vercel project on **2026-04-24**. Scope: only **launch blockers or high-risk gaps**. Performance and nice-to-have work tracked in the Performance section is not duplicated here.
+Findings sourced against Vercel project on **2026-04-24**. Scope: only **launch blockers or high-risk gaps**. Performance and nice-to-have work tracked in the Vercel Platform section is not duplicated here.
 
 | #   | Suggestion                                                                           | Category           | Impact    | Effort    | Status                                                                                                       |
 | --- | ------------------------------------------------------------------------------------ | ------------------ | --------- | --------- | ------------------------------------------------------------------------------------------------------------ |
@@ -259,3 +265,367 @@ After R1–R26 land, confirm:
 ### Launch-day go/no-go
 
 Go only when every 🔴 High item above is ✅ Done. The 🟡 Medium items (R4, R10, R12, R16, R18, R19, R22, R25) can land in the week following launch but should all be closed within 14 days.
+
+---
+
+## Fluid CPU Optimization
+
+_Author: planning pass on branch `20260517-optimize-vecel-fluid-cpu-usage`, 2026-05-17. Supersedes the earlier draft (`docs/codex_vercel_fluid_cpu_optimization_plan.md`), which was written before Vercel MCP runtime logs were inspected._
+
+### Context
+
+The project is on the Vercel **Hobby (Free)** plan. Monthly Fluid Function Active-CPU usage is approaching the included **4-hour** allowance, with little real human traffic. Goal: cut billed Active CPU by ≥50 % without UX regressions, so headroom returns before the next monthly window.
+
+Two reasons the earlier draft needed revising:
+
+1. It was written without live log data and over-weighted cron + refresh paths.
+2. The Vercel MCP findings below show those paths are not the current bottleneck — bot traffic through middleware is.
+
+### Evidence from Vercel MCP (last 7 days, production)
+
+| Filter                                       | Result      |
+| -------------------------------------------- | ----------- |
+| `source=serverless`, env=production, 7d      | **0 logs**  |
+| `source=edge-middleware`, env=production, 7d | **33 logs** |
+| `query=snapshot`, env=production, 7d         | **0 logs**  |
+| `query=timing`, env=production, 7d           | **0 logs**  |
+
+Observed top paths (all edge-middleware): `/wp-admin/install.php` (302), `/cmd_sco` (302), `/privacy` (5× repeats in the same second, suggesting a scraper grabbing sub-resources per page load), `/login`, `/`. Production deployment at the time of audit: `dpl_7PdomFLHzWhy3YHAYsRF2UnqqAVD` on `astt.app`.
+
+**Headline finding:** with current traffic, **bot/anonymous middleware invocations dominate billed CPU**. The cron, `refreshAllPrices`, and analytics page fires too rarely to be the primary cost. The earlier draft's #1 ("user-scope manual refresh") is correct in principle but won't move the needle until human traffic grows.
+
+Caveats: Hobby-plan log retention is short and the 100-row MCP cap may under-sample; cron logs may have rolled out of the window since `30 21 * * *` daily fires can fall outside the 7-day sample. Items P5–P8 below still matter as protection against future growth — they're just lower priority right now.
+
+### Code observations the logs do not show
+
+- `src/proxy.ts:80-84` — matcher is broad: `/((?!api/cron|_next/static|...).*)`. Every bot probe to `/wp-admin/install.php`, `/cmd_sco`, `/.env`, etc. invokes `auth()` + locale-cookie write.
+- `src/proxy.ts:5,44` — `NextAuth(authConfig)` runs JWT decode for **every** matched request, even routes that immediately 302 to `/login`.
+- `src/lib/auth-session.ts:10` + `src/lib/api-handler.ts:8` — RSC and `withAuth` both call `auth()` again. React `cache()` dedups _within_ a render, not _across_ the middleware → page boundary, so each authenticated navigation pays **two JWT decodes**.
+- `src/app/privacy/page.tsx:1` and `src/app/login/page.tsx:1` — both have a comment explaining `force-static` is not allowed under `cacheComponents: true`. They re-render dynamically each request, even for bot 5×-burst hits.
+- `src/app/api/cron/snapshot/route.ts:51` + `src/lib/services/price-service.ts:208` — `refreshAllPrices` scans `Holding` distinct by symbol across **all users**, then batch upserts.
+- `src/app/api/prices/refresh/route.ts:5` — manual refresh button calls the same global function.
+- `src/components/dashboard/dashboard-actions.tsx:46-49` — every dashboard refresh fires **two** functions in parallel (`/api/prices/refresh` + `/api/exchange-rates/refresh`).
+- `src/app/(main)/analysis/page.tsx:25` — analysis fans out 4 history reads on every load; cached via `"use cache"` but invalidated whenever the cron/refresh writes new snapshots.
+
+### Prioritized changes
+
+Ordered by **expected Active-CPU saved per change**, given the bot-dominated traffic profile observed in MCP.
+
+#### P1 — Tighten middleware matcher to skip bot/junk paths
+
+**Effect:** Very high. Skips middleware entirely on the most common bot probes, returning a static 404 from the edge cache instead of running NextAuth + cookie logic. With 5+ rapid `/privacy` scrapes and repeated `/wp-admin/install.php` / `/cmd_sco` hits per day, this is the single biggest reduction.
+
+- File: `src/proxy.ts` — extend the negative-lookahead in `config.matcher`.
+- Add exclusions for: `wp-admin`, `wp-login`, `wordpress`, `xmlrpc.php`, `\\.env`, `\\.git`, `phpmyadmin`, `cgi-bin`, `cmd_`, `\\.well-known` (except `acme-challenge`), `robots.txt`, `sitemap.xml`, and anything with a file extension (`.*\\..*`).
+- Optional: add a `public/robots.txt` so Vercel's edge cache absorbs the same paths.
+
+**Pros:** Zero code-path change for legitimate users; meaningful instant savings; trivial to ship; no conflict with `cacheComponents`.
+**Cons:** Tiny risk of accidentally excluding a real route — easy to mitigate with path anchors (`^/wp-admin`) and a smoke test.
+
+#### P2 — Add Vercel Firewall / WAF rules to drop bot probes at the edge
+
+**Effect:** High. Even with a tighter matcher, the request still reaches Vercel's edge before being served. WAF/IP rules let Vercel return a 403 before any function (edge or serverless) is billed. This is the single most effective lever for the `/wp-admin*`, `/cmd_*`, `/xmlrpc.php` pattern in logs.
+
+- Vercel dashboard → Project → Settings → Firewall → custom rules:
+  - Block when `path` matches `/wp-admin/*`, `/wp-login.php`, `/xmlrpc.php`, `/cmd_*`, `/.env*`, `/.git/*`.
+  - Optional: rate-limit `/privacy` and `/login` per IP (e.g. 30 req/min) to absorb scrapers without hurting humans.
+
+**Pros:** Stops billed work upstream of even edge middleware; configurable from the dashboard with no deploy; complements P1.
+**Cons:** Rules live outside the repo (drift risk) — mitigate by exporting via the Vercel API and committing the JSON to `docs/`. Some firewall features (managed rulesets) need a paid plan; custom path-block rules are available on Hobby.
+
+#### P3 — Statically prerender `/privacy`, `/terms`, and the `/login` shell, and exclude them from middleware
+
+**Effect:** High. The page-source comments rule out `force-static` because `cacheComponents: true` is project-wide, but the cheaper, lower-risk alternative is: keep PPR, and exclude these paths from the middleware matcher so the prebuilt shell is served from CDN without any middleware execution. The locale-cookie logic moves to first authenticated navigation instead.
+
+- File: `src/proxy.ts` — add `/login`, `/privacy`, `/terms` to the matcher exclusion.
+- Files: `src/app/privacy/page.tsx`, `src/app/login/page.tsx`, `src/app/terms/page.tsx` — keep PPR; move the dynamic island (e.g. `signIn` button) into a leaf client component so the shell is fully prerendered. Move the locale-cookie write into either the `/login` server action or the `(main)/layout.tsx` first render.
+
+**Pros:** Removes one of the largest bot-traffic categories from billed CPU; legitimate users still get their locale cookie set on first authenticated navigation.
+**Cons:** Need to re-verify locale-cookie still lands before the first user-visible page; the `/login` page reads `process.env.VERCEL_ENV` for the preview-only Credentials path, but env reads are cheap.
+
+#### P4 — Skip middleware JWT decode on requests that are obviously unauthenticated
+
+**Effect:** Medium-High. Today middleware calls `auth()` for every non-excluded path, even when there is no session cookie at all. A fast `request.cookies.get(SESSION_COOKIE)` check before invoking NextAuth can short-circuit anonymous requests to the redirect path without JWT crypto work.
+
+- File: `src/proxy.ts`. Replace the `default auth((req) => …)` wrapping with a plain `default function middleware(req)` that:
+  1. Cheap path: if path is public and there is no session cookie → just `NextResponse.next()`.
+  2. If a session cookie exists, call `auth(req)` to validate (only then pay JWT decode).
+  3. Keep the `/api/auth/*` rate limit and locale-cookie write.
+
+**Pros:** Removes the biggest per-request cost (JWT decode) from any bot traffic that survives P1/P2. Predictable, no UX change.
+**Cons:** Need to keep the session-cookie name in sync with NextAuth (`__Secure-authjs.session-token` in prod, `authjs.session-token` in dev). Extract to a single constant.
+
+#### P5 — Collapse the dashboard "refresh" button into one user-scoped function
+
+**Effect:** Medium per click; grows in importance as user traffic grows.
+
+- File: `src/components/dashboard/dashboard-actions.tsx:46-49`. Today: two fetches in parallel (`/api/prices/refresh` + `/api/exchange-rates/refresh`).
+- New: `POST /api/refresh` that internally fetches **only the symbols held by the requesting user** and the rates for the user's `baseCurrency`. Reuse `getAllExchangeRates` cache instead of re-fetching.
+- Implementation hint: pull symbols via `prisma.holding.findMany({ where: { account: { userId } }, select: { symbol: true, assetType: true }, distinct: ["symbol"] })`; pass to existing `fetchStockPrices` / `fetchCryptoPrices`.
+
+**Pros:** One function invocation instead of two; CPU scales O(user) not O(DB); also fixes the partial-error UX referenced in commit `f0ccd5488`.
+**Cons:** Small refactor (new route + delete old route consumers); cron still uses the global `refreshAllPrices` path.
+
+#### P6 — Gate the cron's `revalidateTag` calls on "anything-changed"
+
+**Effect:** Medium. Today the cron unconditionally invalidates `net-worth`, `prices:crypto`, `snapshots`, and a per-user `history:${user.id}` tag for every user. Every invalidation forces the **next** page load to rebuild via expensive RSC reads — wasted Active CPU on days when no prices actually moved.
+
+- File: `src/app/api/cron/snapshot/route.ts:53-74`.
+- Hash the result of `refreshAllPrices` / `createSnapshot` per user; only invalidate when the new total net-worth differs from yesterday's snapshot by more than a small epsilon (e.g. 0.01 in base currency), or when option expirations were processed.
+
+**Pros:** Removes a daily cold-rebuild cost across all cached RSC reads; aligns invalidation with actual change.
+**Cons:** Adds branching that must be tested — a missed invalidation could surface stale prices on the dashboard for up to 24 h. Mitigate by keeping the per-user `history:${id}` invalidation always-on (cheap) and gating only the heavyweight `net-worth` + `prices:crypto`.
+
+#### P7 — Remove RSC double-auth for protected pages
+
+**Effect:** Low-Medium per request. Middleware decodes the JWT; `getSession()` decodes it again at the page layer. Across heavy navigations (dashboard, `accounts/[id]`, analysis, history) this is 2× the JWT cost per request.
+
+- Files: `src/lib/auth-session.ts` and `src/proxy.ts`.
+- Have middleware attach the decoded userId to a request header (e.g. `x-user-id`), trusted because it was set after middleware decoded the JWT itself. Then `getSession()` reads the header instead of re-decoding (still validates the session cookie is present, but skips crypto).
+- Alternative: set a short-lived `x-session-uid` cookie from middleware that the RSC reads with `cookies()`. Either way, gate strictly behind same-origin.
+
+**Pros:** Halves auth CPU for every authenticated page render.
+**Cons:** Introduces a "trusted header" pattern — needs care so it can't be spoofed. Vercel strips inbound `x-*` headers in production by default, but document the invariant clearly. NextAuth v5 doesn't ship this pattern out of the box.
+
+#### P8 — Cache `yahoo-finance2` module + class instance at module scope
+
+**Effect:** Low. `price-service.ts:73-74`, `search/route.ts:79-80`, `options/chain/route.ts:44-45` each do `await import("yahoo-finance2")` and `new YahooFinance()` per call. Node's ESM cache makes the second import a no-op, but instantiating a new class per call still allocates state.
+
+- Add `src/lib/yahoo.ts` exporting a `const yf = new YahooFinance()` singleton; update the three callers to import it.
+
+**Pros:** Slightly lower per-call CPU/allocation; cleaner code; warm HTTP keep-alive across Fluid invocations.
+**Cons:** Minor — singletons can hold internal state across requests; in Fluid that's actually a benefit.
+
+#### P9 — (Defensive, do NOT ship yet) keep-warm pinger
+
+**Effect:** Defensive only. Cold starts cost more than warm execution on Fluid, but warming itself costs Active CPU. Only worth revisiting **after** P1–P4 land — measure first.
+
+**Recommendation:** **do not add a warmer.** Rely on P1–P4 to keep total work low.
+
+### Recommended execution order
+
+1. **P1 + P2 together (same PR):** tighten middleware matcher and add Vercel firewall rules. These two account for most of the observed traffic.
+2. **P3:** statically serve `/login`, `/privacy`, `/terms` and exclude from middleware.
+3. **P4:** short-circuit anonymous middleware passes before invoking NextAuth.
+4. **P5:** user-scope the refresh button + collapse to one fetch.
+5. **P6 + P7:** invalidation gating + RSC auth dedup.
+6. **P8:** singleton Yahoo client.
+
+After P1–P3 land, re-pull MCP logs for 3 days and recompute the Active-CPU trajectory before deciding whether P4–P7 are still needed.
+
+### Critical files
+
+| Item                                 | Files                                                                                                                                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P1, P3, P4, P7 (header pass-through) | `src/proxy.ts`                                                                                                                                                                                   |
+| P7                                   | `src/lib/auth-session.ts`, `src/lib/api-handler.ts`                                                                                                                                              |
+| P3                                   | `src/app/privacy/page.tsx`, `src/app/login/page.tsx`, `src/app/terms/page.tsx`                                                                                                                   |
+| P5                                   | `src/app/api/prices/refresh/route.ts`, `src/app/api/exchange-rates/refresh/route.ts`, `src/components/dashboard/dashboard-actions.tsx`, `src/lib/services/price-service.ts` (`refreshAllPrices`) |
+| P6                                   | `src/app/api/cron/snapshot/route.ts`                                                                                                                                                             |
+| P8                                   | `src/lib/services/price-service.ts`, `src/app/api/search/route.ts`, `src/app/api/options/chain/route.ts`, new `src/lib/yahoo.ts`                                                                 |
+| P2                                   | None in repo (managed in Vercel dashboard; export JSON to `docs/firewall_rules.json` for tracking)                                                                                               |
+
+### Verification
+
+After each change ships to production, wait ~24 h then:
+
+1. **MCP runtime logs comparison.** Re-run:
+   - `mcp__claude_ai_Vercel__get_runtime_logs` with `source=["edge-middleware"]` and `source=["serverless"]`, `since=24h`.
+   - Confirm prior bot-probe entries no longer appear in middleware logs (P1) and ideally not in edge access logs at all (P2).
+2. **Vercel dashboard → Project → Usage → Active CPU.** Compare the rolling-24 h Active CPU number vs the day before the change. Track results in `docs/LOG.md`.
+3. **Functional smoke:**
+   - Visit `astt.app` while signed out → redirects to `/login` with no broken styling (P3).
+   - Visit `astt.app/privacy` → static HTML, no middleware log entry expected after P1+P3.
+   - Sign in with Google → dashboard loads → click "Refresh" → toast shows success, prices visibly update (P5).
+   - `npm run test:e2e` smoke spec still green (E2E uses Credentials preview login — must keep working after P4).
+4. **Cron sanity:** wait for the next 21:30 UTC fire and confirm `snapshotIds` appear in serverless logs and a new `NetWorthSnapshot` row exists in Neon (`prisma studio` or `mcp__plugin_neon_neon__run_sql`).
+5. **Vercel Firewall blocks (P2):** Dashboard → Firewall → Logs should show blocked requests for `/wp-admin/install.php`, `/cmd_sco`, etc.
+
+### Out of scope (intentionally skipped)
+
+- Switching the JWT session strategy to database sessions — would _increase_ CPU on every page load.
+- Migrating off Hobby — the user explicitly wants to stay on Free.
+- Edge-runtime opt-in for individual API routes — most depend on Prisma (Node-only).
+- Rewriting `analysis-service` payload shape — premature until logs show analytics is actually hot.
+
+---
+
+## Vercel MCP Findings (2026-05-14)
+
+Companion to `docs/ROADMAP.md §Current Priorities`. The S-series digest is the system-of-record backlog (S1–S32). This section captures **only the signal that the Vercel MCP surfaces** — i.e. items that come from inspecting the live project, deployments, build logs, and runtime telemetry on Vercel itself, not from reading the codebase.
+
+When a finding here overlaps an S-item, it appears in the [S-Series Re-Prioritization](#s-series-re-prioritization) table at the bottom — not as a duplicate F-item.
+
+### Live Platform Snapshot (2026-05-14)
+
+Captured via `mcp__plugin_vercel_vercel__*` against project `prj_soY30S7ki1x38gmeZXCancJD1PVA` (`asset-tracker`, team `team_ImEsp9hzYaqzaPz5VmE6LTiW`). Use as a baseline for the next audit.
+
+| Aspect                             | Observed value                                                                   |
+| ---------------------------------- | -------------------------------------------------------------------------------- |
+| Framework / Node                   | Next.js 16.2.2 / Node 24.x / Turbopack bundler                                   |
+| Function region                    | `sin1` (matches Neon `ap-southeast-1`)                                           |
+| Build region                       | `iad1` (Washington DC) — fine, build is one-shot                                 |
+| Latest prod deploy                 | `dpl_3J2mvqrYWANr68Nao6rASJV8fJD2` (commit `54ed7ce`, READY, 55 s build)         |
+| Project flag                       | **`live: false`** in `get_project` response                                      |
+| Domains                            | 5 × `*.vercel.app`, **no custom domain**                                         |
+| Production runtime logs (last 7 d) | **Empty** (`No logs found` for all levels)                                       |
+| Lambdas                            | 4 Node.js functions (`lambdaRuntimeStats: nodejs:4`)                             |
+| Build cache                        | 295 MB uploaded; Turbopack compile 29.6 s; full deploy 55 s                      |
+| Build warnings                     | 2 × `engines.node: ">=22"` auto-upgrade warning (resolved by F3)                 |
+| Prisma                             | Client `7.8.0` generated in build (V3's 7.6.0 → 7.7.0 ask is moot)               |
+| Routes shape                       | All app routes are PPR (`◐`) or Dynamic (`ƒ`); no fully static (`○`) page routes |
+
+### MCP-Only Findings (F-series)
+
+#### F1 — Production runtime logs empty for 7 days · 🔴 · Effort: investigate
+
+`get_runtime_logs` (`environment: production`, last 7 d, all levels) returns `No logs found`. Two possibilities, both worth resolving:
+
+- The cron snapshot at 21:30 UTC isn't firing → silent data loss (matches the worry behind S6 in `docs/ROADMAP.md`).
+- The cron _is_ firing but logs are absent because no `console.*` calls run on the success path → observability blind spot (matches S4 in `docs/ROADMAP.md`).
+
+This **elevates S5 + S6 + S4 to "do first in Tier 1"** — there is currently zero live signal that the daily snapshot pipeline is healthy.
+
+**Action:** Verify in the Vercel dashboard (Functions → `/api/cron/snapshot` → Invocations) whether cron has fired in the last 7 days. If yes → ship S4 (logger) + S5 (`/api/health`) so the next 7 days produce evidence. If no → fix cron _before_ anything else.
+
+#### F2 — `live: false` on the Vercel project · 🟡 · Effort: XS
+
+`get_project` returns `"live": false`. Not user-visible; likely a Vercel-internal traffic/billing flag. Confirm via the dashboard whether it indicates "no traffic in N days" vs. a billing throttle. If it's a traffic indicator, it's consistent with F1.
+
+**Action:** One-line check in the dashboard; document the resolved meaning in the [Vercel Platform](#vercel-platform) section above.
+
+#### F3 — Pin `engines.node` to a specific major · ✅ Done 2026-05-14 · Effort: XS
+
+Build log emitted twice:
+
+> `Warning: Detected "engines": { "node": ">=22" } in your package.json that will automatically upgrade when a new major Node.js Version is released.`
+
+Resolved — `package.json` now declares `"node": "24.x"`. Verify by inspecting the next deployment's build log: the warning should no longer appear.
+
+#### F4 — S8 (CSP) is partly underway · ⚠️ status correction
+
+Untracked file: `src/app/api/_csp/report/route.ts`. The `_` prefix means App Router treats it as a private folder (the route is not yet wired). Someone has already started scaffolding the CSP violation report endpoint that S8 calls for.
+
+**Action:** S8's status in `docs/ROADMAP.md §Current Priorities` updated from ❌ → ⚠️ ("report endpoint scaffolded; header + nonce pipeline still missing"). Promote the route under a public path (e.g. `/api/csp/report`) once the header lands.
+
+#### F5 — No custom domain on production traffic · 🟡 · Effort: S (one-time)
+
+All 5 domains are `*.vercel.app`. Production traffic served from `assets-tracker-ct.vercel.app`. Not a problem today (personal project) but: subdomain on `vercel.app` means no SEO equity, no email-on-domain, and a confusing OAuth consent screen for any future user beyond the owner.
+
+**Action:** If this stays a personal tool, ignore. If invite-anyone is on the roadmap, register a domain and add it to the project (Vercel handles cert).
+
+#### F6 — Vercel Rolling Releases (canary deploys) · 🟡 · Effort: XS
+
+Daily-deploy cadence (5 deploys to production yesterday alone) means a bad ship hits 100% of users instantly. **Rolling Releases** (GA June 2025) lets a deploy go to a configurable % first. Toggle in project settings; no code change.
+
+**Action:** Enable in Vercel dashboard → Settings → Deployments → Rolling Releases. Set canary to 10% for 5 min. Pairs with S20 (Skew Protection) in `docs/ROADMAP.md` — both are XS dashboard toggles that meaningfully shrink deploy blast radius.
+
+#### F7 — Vercel BotID on hot public endpoints · 🟡 · Effort: S
+
+`/api/search` (Yahoo Finance symbol search) and `/api/auth/[...nextauth]` (Google sign-in) are unauthenticated or pre-auth. They're attractive bot-scraping targets that cost Yahoo Finance rate-limit budget. **BotID** (GA June 2025) ships invisible client-side bot detection; protect the routes via the BotID server SDK.
+
+**Action:** Install BotID, gate `/api/search` first (lowest blast radius), then `/api/auth/*` after a week of telemetry. Free up to a quota.
+
+#### F8 — Vercel Log Drain to long-term storage · 🟡 · Effort: S
+
+Vercel default log retention is short. The 7-day `No logs found` query in F1 is partly bounded by retention. Set up a Log Drain to a cheap sink (Better Stack / Logtail / Axiom free tier) so the next time something silently breaks, you have history beyond the retention window.
+
+**Action:** Vercel dashboard → Project → Logs → Drains → add HTTPS endpoint. Pairs naturally with S4 (logger) in `docs/ROADMAP.md` — the logger emits the lines, the drain persists them.
+
+### S-Series Re-Prioritization
+
+Driven by the F-series above. No items are removed — only urgency shifts.
+
+| Item | Current S-tier | Recommended new tier                  | Reason                                                                                  |
+| ---- | -------------- | ------------------------------------- | --------------------------------------------------------------------------------------- |
+| S5   | Tier 1         | Tier 1 — **do first**                 | F1: zero evidence cron is firing; need a healthcheck before adding any observability    |
+| S6   | Tier 1         | Tier 1 — **do alongside S5**          | F1: paired with /api/health; without `CronRun` table no historical signal exists either |
+| S4   | Tier 1         | Tier 1 — **promote ahead of S1 / S7** | F1: every other Tier-1 item benefits from having a logger first                         |
+| S8   | Tier 1, ❌     | Tier 1, **⚠️ partial**                | F4: report endpoint already scaffolded                                                  |
+| S20  | Tier 2         | Tier 1 — bundle with F6               | F6: both are XS dashboard toggles; logical to ship together                             |
+
+### Cross-References
+
+| Tracker                       | Items referenced here        |
+| ----------------------------- | ---------------------------- |
+| `docs/ROADMAP.md` (S-series)  | S4, S5, S6, S8, S20          |
+| `docs/PLATFORM.md` (V-series) | V3 (moot), V8, V11, V14, V35 |
+
+---
+
+## Firewall Setup
+
+Companion to `docs/firewall_rules.json`. Hobby plan allows **3 custom firewall rules**; the rule set below is consolidated to fit that cap. Rules 1 and 2 overlap intentionally (e.g. `/wp-admin/install.php` matches both) — the firewall short-circuits on first match, so duplication is harmless and gives redundant coverage.
+
+Two paths to install: dashboard or REST API.
+
+### A. Dashboard (recommended for first-time setup)
+
+1. Open https://vercel.com/mike840609s-projects/asset-tracker/settings/firewall
+2. Under **Custom Rules**, click **New Rule** and create each entry below in order.
+
+#### Rule 1 — `block-extensions-and-dotfiles`
+
+- **If**: Path, Matches Regex, value: `\.(php|aspx?|jsp|cgi|env|git|svn|htaccess|htpasswd)($|\?|/)`
+- **Then**: Deny (403)
+- **Why**: Broadest single rule. Catches `/wp-admin/install.php`, `/xmlrpc.php`, any `*.php`/`*.asp`/`*.aspx`/`*.jsp`/`*.cgi`, `/.env`, `/.git/config`, `/.svn/...`, `/.htaccess`, `/.htpasswd`. The app is Next.js — none of those extensions are legitimate routes.
+
+#### Rule 2 — `block-bot-prefixes`
+
+- **If**: Path, Matches Regex, value: `^/(wp-admin|wp-login|wp-content|wp-includes|wordpress|xmlrpc|cmd_|phpmyadmin|pma|adminer|vendor/phpunit|cgi-bin)`
+- **Then**: Deny (403)
+- **Why**: Catches what doesn't end in a tell-tale extension. `/cmd_sco` (observed 2026-05-17), `/wp-admin/`, `/wp-content/uploads/...`, `/phpmyadmin/`, `/adminer.php`, `/vendor/phpunit/...` would not be caught by rule 1 alone.
+
+#### Rule 3 — `rate-limit-public-pages`
+
+- **If**: Path, Matches Regex, value: `^/(login|privacy|terms)$` **AND** Method, Equals, value: `GET`
+- **Then**: Rate Limit — **30 requests / 60 seconds per IP**
+- **Why**: Addresses the 5×/sec `/privacy` bursts observed in the 2026-05-17 logs (a scraper grabbing sub-resources per page load) without blocking humans. 30 / 60s is well above any real user pattern.
+
+Rules apply immediately on the edge — no deploy needed.
+
+### B. REST API (for repeatable / scripted setup)
+
+```bash
+# Requires a Vercel token with Firewall scope.
+export VERCEL_TOKEN=...   # never commit this
+export TEAM_ID=team_ImEsp9hzYaqzaPz5VmE6LTiW
+export PROJECT_ID=prj_soY30S7ki1x38gmeZXCancJD1PVA
+
+# The Vercel REST docs describe the exact wire-format expected by the
+# firewall config endpoint:
+#   https://vercel.com/docs/rest-api/reference/endpoints/security
+# The JSON in this repo is the conceptual spec, not the wire-format —
+# you may need to transform `conditionGroup`/`action` to match the
+# current API schema before POSTing.
+curl -X POST "https://api.vercel.com/v1/security/firewall/config?teamId=${TEAM_ID}&projectId=${PROJECT_ID}" \
+  -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+  -H "Content-Type: application/json" \
+  --data-binary @docs/firewall_rules.json
+```
+
+### Verification
+
+After applying, wait ~2 min for edge propagation then:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://astt.app/wp-admin/install.php  # 403 (rules 1 & 2)
+curl -s -o /dev/null -w "%{http_code}\n" https://astt.app/cmd_sco                # 403 (rule 2)
+curl -s -o /dev/null -w "%{http_code}\n" https://astt.app/.env                   # 403 (rule 1)
+curl -s -o /dev/null -w "%{http_code}\n" https://astt.app/xmlrpc.php             # 403 (rules 1 & 2)
+curl -s -o /dev/null -w "%{http_code}\n" https://astt.app/anything.php           # 403 (rule 1)
+curl -s -o /dev/null -w "%{http_code}\n" https://astt.app/login                  # 200
+curl -s -o /dev/null -w "%{http_code}\n" https://astt.app/                        # 302 (redirects to /login)
+```
+
+Then inspect:
+
+- Dashboard → Project → Firewall → Logs — confirm those paths show as **Denied**.
+- MCP runtime logs: `mcp__claude_ai_Vercel__get_runtime_logs source=["edge-middleware"] since=1d` — those paths should no longer appear (firewall is upstream of middleware).
+- Track the resulting Active-CPU drop in Vercel → Project → Usage and record in `docs/LOG.md`.
+
+### Drift management
+
+The dashboard is the source of truth at runtime, but `firewall_rules.json` is the **review-able spec**. After any dashboard change, re-export and commit so the repo stays in sync. The `description` field on each rule is the trail explaining why it exists — keep it current.
+
+If you need a 4th rule later (Pro plan or above), revisit the deleted rules from the original 5-rule draft (see git history for `firewall_rules.json`): a split `block-wordpress-probes` (rule 1 of the original) and a split `block-dotfile-and-source-probes` (rule 2 of the original) are good candidates to break out for clearer reporting.
