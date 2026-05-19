@@ -13,10 +13,15 @@ import {
   statSync,
   symlinkSync,
 } from "node:fs";
+import { cp } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
 const ENV_FILES = [".env", ".env.local"];
+const PRISMA_CLIENT_DIR = "src/generated/prisma";
+const HUSKY_INIT_DIR = ".husky/_";
+const BUCKET_PRISMA_DIR = "prisma-client";
+const BUCKET_HUSKY_DIR = "husky-init";
 
 function cacheRoot() {
   if (process.env.ASSET_TRACKER_CACHE_ROOT) return process.env.ASSET_TRACKER_CACHE_ROOT;
@@ -102,25 +107,57 @@ function symlinkTargetAbs(linkPath) {
   }
 }
 
-function runPrismaGenerateIfNeeded() {
-  if (existsSync("src/generated/prisma")) return 0;
-  console.log("[setup-worktree] Generated Prisma client missing; running `prisma generate`.");
+async function ensurePrismaClient(bucketDir) {
+  if (existsSync(PRISMA_CLIENT_DIR)) return 0;
+  const cached = join(bucketDir, BUCKET_PRISMA_DIR);
+  if (existsSync(cached)) {
+    mkdirSync(dirname(PRISMA_CLIENT_DIR), { recursive: true });
+    await cp(cached, PRISMA_CLIENT_DIR, { recursive: true });
+    console.log("[setup-worktree] Restored Prisma client from cache.");
+    return 0;
+  }
+  console.log("[setup-worktree] Prisma client not cached; running `prisma generate`.");
   const bin =
     process.platform === "win32" ? "node_modules\\.bin\\prisma.cmd" : "node_modules/.bin/prisma";
   const r = spawnSync(bin, ["generate"], { stdio: "inherit", shell: process.platform === "win32" });
   if (r.error) throw r.error;
-  return r.status ?? 1;
+  if (r.status !== 0) return r.status;
+  // Backfill the cache for future hits.
+  if (existsSync(PRISMA_CLIENT_DIR)) {
+    mkdirSync(bucketDir, { recursive: true });
+    await cp(PRISMA_CLIENT_DIR, cached, { recursive: true });
+  }
+  return 0;
 }
 
-function runHuskyIfNeeded() {
+async function ensureHusky(bucketDir) {
   if (!existsSync(".husky")) return 0;
-  if (existsSync(".husky/_")) return 0;
-  console.log("[setup-worktree] Husky hooks not initialized; running `husky`.");
+  if (existsSync(HUSKY_INIT_DIR)) return 0;
+  const cached = join(bucketDir, BUCKET_HUSKY_DIR);
+  if (existsSync(cached)) {
+    await cp(cached, HUSKY_INIT_DIR, { recursive: true });
+    console.log("[setup-worktree] Restored .husky/_ from cache.");
+    return 0;
+  }
+  console.log("[setup-worktree] Husky init not cached; running `husky`.");
   const bin =
     process.platform === "win32" ? "node_modules\\.bin\\husky.cmd" : "node_modules/.bin/husky";
   const r = spawnSync(bin, [], { stdio: "inherit", shell: process.platform === "win32" });
   if (r.error) throw r.error;
-  return r.status ?? 1;
+  if (r.status !== 0) return r.status;
+  if (existsSync(HUSKY_INIT_DIR)) {
+    mkdirSync(bucketDir, { recursive: true });
+    await cp(HUSKY_INIT_DIR, cached, { recursive: true });
+  }
+  return 0;
+}
+
+async function finalizeCacheHit(bucketDir) {
+  const [prisma, husky] = await Promise.all([
+    ensurePrismaClient(bucketDir),
+    ensureHusky(bucketDir),
+  ]);
+  return prisma || husky;
 }
 
 function pruneStaleCacheBuckets(keepHash) {
@@ -144,18 +181,25 @@ function pruneStaleCacheBuckets(keepHash) {
   }
 }
 
-function setupNodeModules() {
+async function stashIntoBucket(bucketDir, sourceRel, bucketSubdir) {
+  if (!existsSync(sourceRel)) return;
+  const target = join(bucketDir, bucketSubdir);
+  if (existsSync(target)) return;
+  mkdirSync(bucketDir, { recursive: true });
+  await cp(sourceRel, target, { recursive: true });
+}
+
+async function setupNodeModules() {
   const hash = lockfileHash();
-  const cacheTarget = join(modulesCacheRoot(), hash, "node_modules");
+  const bucketDir = join(modulesCacheRoot(), hash);
+  const cacheTarget = join(bucketDir, "node_modules");
   const wtNm = resolve("node_modules");
 
   if (isSymlink(wtNm)) {
     const currentTarget = symlinkTargetAbs(wtNm);
     if (currentTarget === cacheTarget && existsSync(cacheTarget)) {
       console.log(`[setup-worktree] node_modules already symlinked to cache (hash ${hash}).`);
-      const prismaStatus = runPrismaGenerateIfNeeded();
-      if (prismaStatus !== 0) return prismaStatus;
-      return runHuskyIfNeeded();
+      return finalizeCacheHit(bucketDir);
     }
   }
 
@@ -163,12 +207,12 @@ function setupNodeModules() {
     if (existsSync(wtNm) || isSymlink(wtNm)) {
       rmSync(wtNm, { recursive: true, force: true });
     }
-    mkdirSync(dirname(cacheTarget), { recursive: true });
+    mkdirSync(bucketDir, { recursive: true });
     symlinkSync(cacheTarget, wtNm, "dir");
     console.log(
       `[setup-worktree] Cache hit (hash ${hash}); symlinked node_modules → ${cacheTarget}.`,
     );
-    return runPrismaGenerateIfNeeded();
+    return finalizeCacheHit(bucketDir);
   }
 
   if (isSymlink(wtNm)) {
@@ -185,14 +229,20 @@ function setupNodeModules() {
   if (result.error) throw result.error;
   if (result.status !== 0) return result.status;
 
-  mkdirSync(dirname(cacheTarget), { recursive: true });
+  mkdirSync(bucketDir, { recursive: true });
   if (existsSync(cacheTarget)) {
     rmSync(wtNm, { recursive: true, force: true });
   } else {
     renameSync(wtNm, cacheTarget);
   }
   symlinkSync(cacheTarget, wtNm, "dir");
-  console.log(`[setup-worktree] Promoted node_modules to cache: ${cacheTarget}.`);
+
+  await Promise.all([
+    stashIntoBucket(bucketDir, PRISMA_CLIENT_DIR, BUCKET_PRISMA_DIR),
+    stashIntoBucket(bucketDir, HUSKY_INIT_DIR, BUCKET_HUSKY_DIR),
+  ]);
+
+  console.log(`[setup-worktree] Promoted node_modules + side artifacts to cache: ${bucketDir}.`);
   return 0;
 }
 
@@ -209,7 +259,7 @@ console.log(
 );
 
 copyEnvFromMainWorktree();
-const status = setupNodeModules();
+const status = await setupNodeModules();
 if (status === 0 && process.argv.includes("--prune")) {
   pruneStaleCacheBuckets(lockfileHash());
 }
