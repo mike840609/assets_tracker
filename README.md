@@ -97,15 +97,14 @@ When you want to work on several branches in parallel — or hand a branch to an
 git worktree add ../asset_tracker-<task-name> -b <branch-name>
 cd ../asset_tracker-<task-name>
 
-# 2. Install deps via the shared cache (cold the first time, fast after)
+# 2. Install deps + auto-copy .env from the main worktree
 npm run setup:worktree
 
-# 3. Reuse env from your main checkout (or write a fresh .env)
-cp ../asset_tracker/.env .
-
-# 4. Develop as usual
+# 3. Develop as usual
 npm run dev
 ```
+
+`setup:worktree` runs `npm ci --prefer-offline` against the shared cache and copies `.env` from the main worktree on first run. It will not overwrite an existing `.env` in the worktree — delete the file first if you want it refreshed.
 
 When the task is done:
 
