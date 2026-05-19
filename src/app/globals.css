@@ -675,9 +675,14 @@ html[data-vt-theme]::view-transition-new(root) {
   color: var(--accent-foreground) !important;
 }
 
-/* Lift toasts above the bottom nav bar on mobile (nav sits ~72px above safe-area edge) */
-@media (max-width: 767px) {
+/*
+ * Lift toasts above the bottom nav bar (visible at <768px).
+ * Sonner has two breakpoints:
+ *  ≤600px  → uses --mobile-offset-bottom  (set via mobileOffset prop in sonner.tsx)
+ *  601-767px → uses --offset-bottom (desktop vars), nav bar still visible → override here
+ */
+@media (min-width: 601px) and (max-width: 767px) {
   [data-sonner-toaster] {
-    --offset: calc(5rem + env(safe-area-inset-bottom)) !important;
+    --offset-bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
   }
 }
