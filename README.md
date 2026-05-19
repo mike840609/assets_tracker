@@ -88,6 +88,35 @@ npm run test:e2e:ui      # Open the Playwright UI runner
 npm run test:e2e:report  # Open the last HTML report
 ```
 
+## 🌳 Git Worktrees (parallel dev / AI agents)
+
+When you want to work on several branches in parallel — or hand a branch to an AI agent in an isolated sandbox — use git worktrees with the bundled setup script. Each worktree gets its own `node_modules` and Prisma client, but installs reuse a **shared npm cache** so subsequent worktrees skip downloads.
+
+```bash
+# 1. Create a worktree for the branch you want to work on
+git worktree add ../asset_tracker-<task-name> -b <branch-name>
+cd ../asset_tracker-<task-name>
+
+# 2. Install deps via the shared cache (cold the first time, fast after)
+npm run setup:worktree
+
+# 3. Reuse env from your main checkout (or write a fresh .env)
+cp ../asset_tracker/.env .
+
+# 4. Develop as usual
+npm run dev
+```
+
+When the task is done:
+
+```bash
+cd ../asset_tracker             # back to the main checkout
+git worktree remove ../asset_tracker-<task-name>
+```
+
+> [!TIP]
+> The shared cache defaults to `~/.cache/asset_tracker/npm`. In ephemeral sandboxes/containers where `$HOME` isn't persisted across sessions, export `ASSET_TRACKER_NPM_CACHE=/path/to/persistent/volume` before running `npm run setup:worktree` so the cache survives across runs.
+
 ## 🤖 Automated Snapshots (Cron Jobs)
 
 This project is optimized for **Vercel** and includes native Cron Job support via `vercel.json`.
