@@ -674,3 +674,15 @@ html[data-vt-theme]::view-transition-new(root) {
   background: var(--accent) !important;
   color: var(--accent-foreground) !important;
 }
+
+/* Slide in from right, slide out to left for top-right toaster.
+   Sonner animates via --y which is applied as transform: var(--y). */
+[data-sonner-toaster][data-x-position="right"]
+  [data-sonner-toast][data-y-position="top"]:not([data-mounted="true"]) {
+  --y: translateX(calc(100% + 1rem)) !important;
+}
+
+[data-sonner-toaster][data-x-position="right"]
+  [data-sonner-toast][data-y-position="top"][data-removed="true"][data-swipe-out="false"] {
+  --y: translateX(calc(-100% - 1rem)) !important;
+}
