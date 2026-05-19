@@ -90,21 +90,25 @@ npm run test:e2e:report  # Open the last HTML report
 
 ## 🌳 Git Worktrees (parallel dev / AI agents)
 
-When you want to work on several branches in parallel — or hand a branch to an AI agent in an isolated sandbox — use git worktrees with the bundled setup script. Each worktree gets its own `node_modules` and Prisma client, but installs reuse a **shared npm cache** so subsequent worktrees skip downloads.
+When you want to work on several branches in parallel — or hand a branch to an AI agent in an isolated sandbox — use git worktrees with the bundled setup script. Worktrees share both an **npm download cache** and a **hash-keyed `node_modules` cache**, so any worktree after the first one with a matching `package-lock.json` skips `npm ci` entirely.
 
 ```bash
 # 1. Create a worktree for the branch you want to work on
 git worktree add ../asset_tracker-<task-name> -b <branch-name>
 cd ../asset_tracker-<task-name>
 
-# 2. Install deps + auto-copy .env from the main worktree
+# 2. Install deps + auto-copy env files from the main worktree
 npm run setup:worktree
 
 # 3. Develop as usual
 npm run dev
 ```
 
-`setup:worktree` runs `npm ci --prefer-offline` against the shared cache and copies `.env` from the main worktree on first run. It will not overwrite an existing `.env` in the worktree — delete the file first if you want it refreshed.
+`setup:worktree`:
+
+- Copies `.env` and `.env.local` from the main worktree on first run (won't overwrite — delete in the worktree to refresh; set `ASSET_TRACKER_SKIP_ENV_COPY=1` to opt out).
+- Hashes `package-lock.json` + `prisma/schema.prisma` and reuses a cached `node_modules` symlink when the hash matches; only runs a real `npm ci` on cache miss.
+- Runs `prisma generate` if the local `src/generated/prisma/` is missing.
 
 When the task is done:
 
@@ -114,7 +118,10 @@ git worktree remove ../asset_tracker-<task-name>
 ```
 
 > [!TIP]
-> The shared cache defaults to `~/.cache/asset_tracker/npm`. In ephemeral sandboxes/containers where `$HOME` isn't persisted across sessions, export `ASSET_TRACKER_NPM_CACHE=/path/to/persistent/volume` before running `npm run setup:worktree` so the cache survives across runs.
+> Cache roots default to `~/.cache/asset_tracker/{npm,modules}`. In ephemeral sandboxes/containers where `$HOME` isn't persisted across sessions, point `ASSET_TRACKER_CACHE_ROOT` (or the narrower `ASSET_TRACKER_NPM_CACHE`) at a persistent volume.
+
+> [!WARNING]
+> A worktree's `node_modules` is a **symlink into the shared cache**. Don't run `npm install <pkg>` directly in a worktree — that mutates the cache and contaminates other worktrees. Instead, edit `package.json` + `package-lock.json` (or use a temporary `node_modules` outside the cache), then re-run `npm run setup:worktree` to populate a fresh hash bucket.
 
 ## 🤖 Automated Snapshots (Cron Jobs)
 
