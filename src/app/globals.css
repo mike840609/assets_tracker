@@ -674,3 +674,10 @@ html[data-vt-theme]::view-transition-new(root) {
   background: var(--accent) !important;
   color: var(--accent-foreground) !important;
 }
+
+/* Lift toasts above the bottom nav bar on mobile (nav sits ~72px above safe-area edge) */
+@media (max-width: 767px) {
+  [data-sonner-toaster] {
+    --offset: calc(5rem + env(safe-area-inset-bottom)) !important;
+  }
+}
