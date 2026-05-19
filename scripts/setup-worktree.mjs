@@ -6,9 +6,11 @@ import {
   lstatSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   readlinkSync,
   renameSync,
   rmSync,
+  statSync,
   symlinkSync,
 } from "node:fs";
 import { homedir } from "node:os";
@@ -110,6 +112,38 @@ function runPrismaGenerateIfNeeded() {
   return r.status ?? 1;
 }
 
+function runHuskyIfNeeded() {
+  if (!existsSync(".husky")) return 0;
+  if (existsSync(".husky/_")) return 0;
+  console.log("[setup-worktree] Husky hooks not initialized; running `husky`.");
+  const bin =
+    process.platform === "win32" ? "node_modules\\.bin\\husky.cmd" : "node_modules/.bin/husky";
+  const r = spawnSync(bin, [], { stdio: "inherit", shell: process.platform === "win32" });
+  if (r.error) throw r.error;
+  return r.status ?? 1;
+}
+
+function pruneStaleCacheBuckets(keepHash) {
+  const root = modulesCacheRoot();
+  if (!existsSync(root)) return;
+  let removed = 0;
+  for (const entry of readdirSync(root)) {
+    if (entry === keepHash) continue;
+    const full = join(root, entry);
+    try {
+      if (!statSync(full).isDirectory()) continue;
+    } catch {
+      continue;
+    }
+    rmSync(full, { recursive: true, force: true });
+    console.log(`[setup-worktree] Pruned stale cache bucket: ${entry}`);
+    removed += 1;
+  }
+  if (removed === 0) {
+    console.log("[setup-worktree] No stale cache buckets to prune.");
+  }
+}
+
 function setupNodeModules() {
   const hash = lockfileHash();
   const cacheTarget = join(modulesCacheRoot(), hash, "node_modules");
@@ -119,7 +153,9 @@ function setupNodeModules() {
     const currentTarget = symlinkTargetAbs(wtNm);
     if (currentTarget === cacheTarget && existsSync(cacheTarget)) {
       console.log(`[setup-worktree] node_modules already symlinked to cache (hash ${hash}).`);
-      return runPrismaGenerateIfNeeded();
+      const prismaStatus = runPrismaGenerateIfNeeded();
+      if (prismaStatus !== 0) return prismaStatus;
+      return runHuskyIfNeeded();
     }
   }
 
@@ -168,7 +204,13 @@ console.log(`[setup-worktree] modules cache: ${modulesCacheRoot()}`);
 console.log(
   "[setup-worktree] Override roots with $ASSET_TRACKER_CACHE_ROOT or $ASSET_TRACKER_NPM_CACHE.",
 );
-console.log("[setup-worktree] Skip env copy with $ASSET_TRACKER_SKIP_ENV_COPY=1.");
+console.log(
+  "[setup-worktree] Skip env copy with $ASSET_TRACKER_SKIP_ENV_COPY=1; pass --prune to evict stale cache buckets.",
+);
 
 copyEnvFromMainWorktree();
-process.exit(setupNodeModules());
+const status = setupNodeModules();
+if (status === 0 && process.argv.includes("--prune")) {
+  pruneStaleCacheBuckets(lockfileHash());
+}
+process.exit(status);
