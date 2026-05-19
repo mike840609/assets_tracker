@@ -2,6 +2,7 @@
   "name": "asset_app",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@10.9.7",
   "engines": {
     "node": "24.x"
   },
@@ -18,6 +19,7 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run build",
     "postinstall": "prisma generate",
+    "setup:worktree": "node scripts/setup-worktree.mjs",
     "prepare": "husky",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

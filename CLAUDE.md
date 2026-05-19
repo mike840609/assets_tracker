@@ -51,6 +51,15 @@ npx prisma studio                                  # Open Prisma Studio GUI
 npm run test:e2e         # Run Playwright suite headless
 npm run test:e2e:ui      # Open the Playwright UI runner
 npm run test:e2e:report  # Open the last HTML report
+
+# Worktree / sandbox setup
+npm run setup:worktree   # Copies .env / .env.local from the main worktree, then symlinks
+                         # node_modules from a hash-keyed shared cache (skips npm ci on cache hit).
+                         # Caches default to ~/.cache/asset_tracker/{npm,modules}; override the root
+                         # with $ASSET_TRACKER_CACHE_ROOT (or $ASSET_TRACKER_NPM_CACHE just for npm).
+                         # Set $ASSET_TRACKER_SKIP_ENV_COPY=1 to skip the env-copy step.
+                         # See README §"Git Worktrees" — do NOT run `npm install <pkg>` in a worktree
+                         # since the symlinked node_modules is shared across worktrees.
 ```
 
 ## Pre-PR Checklist

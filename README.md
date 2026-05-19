@@ -62,6 +62,7 @@ CRON_SECRET="your_secure_random_string"
 ### 3. Installation
 
 ```bash
+corepack enable     # pins the npm version declared in package.json
 npm install
 npx prisma generate
 npx prisma migrate deploy   # apply committed migrations to your database
@@ -87,6 +88,42 @@ npm run test:e2e         # Run headless
 npm run test:e2e:ui      # Open the Playwright UI runner
 npm run test:e2e:report  # Open the last HTML report
 ```
+
+## 🌳 Git Worktrees (parallel dev / AI agents)
+
+When you want to work on several branches in parallel — or hand a branch to an AI agent in an isolated sandbox — use git worktrees with the bundled setup script. Worktrees share both an **npm download cache** and a **hash-keyed `node_modules` cache**, so any worktree after the first one with a matching `package-lock.json` skips `npm ci` entirely.
+
+```bash
+# 1. Create a worktree for the branch you want to work on
+git worktree add ../asset_tracker-<task-name> -b <branch-name>
+cd ../asset_tracker-<task-name>
+
+# 2. Install deps + auto-copy env files from the main worktree
+npm run setup:worktree
+
+# 3. Develop as usual
+npm run dev
+```
+
+`setup:worktree`:
+
+- Copies `.env` and `.env.local` from the main worktree on first run (won't overwrite — delete in the worktree to refresh; set `ASSET_TRACKER_SKIP_ENV_COPY=1` to opt out).
+- Hashes `package-lock.json` + `prisma/schema.prisma` and reuses a cached `node_modules` symlink when the hash matches; only runs a real `npm ci` on cache miss.
+- Runs `prisma generate` if the local `src/generated/prisma/` is missing, and re-initializes `.husky/_/` if missing (both are skipped on cache hit since `npm ci` doesn't run).
+- Pass `--prune` to evict cache buckets that don't match the current hash (`npm run setup:worktree -- --prune`).
+
+When the task is done:
+
+```bash
+cd ../asset_tracker             # back to the main checkout
+git worktree remove ../asset_tracker-<task-name>
+```
+
+> [!TIP]
+> Cache roots default to `~/.cache/asset_tracker/{npm,modules}`. In ephemeral sandboxes/containers where `$HOME` isn't persisted across sessions, point `ASSET_TRACKER_CACHE_ROOT` (or the narrower `ASSET_TRACKER_NPM_CACHE`) at a persistent volume.
+
+> [!WARNING]
+> A worktree's `node_modules` is a **symlink into the shared cache**. Don't run `npm install <pkg>` directly in a worktree — that mutates the cache and contaminates other worktrees. Instead, edit `package.json` + `package-lock.json` (or use a temporary `node_modules` outside the cache), then re-run `npm run setup:worktree` to populate a fresh hash bucket.
 
 ## 🤖 Automated Snapshots (Cron Jobs)
 
