@@ -51,6 +51,11 @@ npx prisma studio                                  # Open Prisma Studio GUI
 npm run test:e2e         # Run Playwright suite headless
 npm run test:e2e:ui      # Open the Playwright UI runner
 npm run test:e2e:report  # Open the last HTML report
+
+# Worktree / sandbox setup
+npm run setup:worktree   # `npm ci --prefer-offline` using a shared npm cache.
+                         # Defaults to ~/.cache/asset_tracker/npm; override with $ASSET_TRACKER_NPM_CACHE
+                         # (point at a persistent volume in ephemeral sandbox/container envs).
 ```
 
 ## Pre-PR Checklist

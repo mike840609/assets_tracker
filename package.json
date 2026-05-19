@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run build",
     "postinstall": "prisma generate",
+    "setup:worktree": "node scripts/setup-worktree.mjs",
     "prepare": "husky",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
