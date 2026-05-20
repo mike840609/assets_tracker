@@ -4,7 +4,13 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, Reorder, useReducedMotion } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  Reorder,
+  useDragControls,
+  useReducedMotion,
+} from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -565,9 +571,7 @@ export function AccountsList({
               />
             )}
             {accounts.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {t("accountsList.mobileGroupedHint")}
-              </p>
+              <p className="text-xs text-muted-foreground">{t("accountsList.mobileGroupedHint")}</p>
             )}
 
             {assetsByCategory.length > 0 && (
@@ -775,6 +779,7 @@ function ReorderTypeSection({
               axis="y"
               values={pinned}
               onReorder={(next) => onReorderPinned(type, next)}
+              layoutScroll
               className="space-y-2"
             >
               {pinned.map((item) => (
@@ -796,6 +801,7 @@ function ReorderTypeSection({
             axis="y"
             values={unpinned}
             onReorder={(next) => onReorderUnpinned(type, next)}
+            layoutScroll
             className="space-y-2"
           >
             {unpinned.map((item) => (
@@ -820,17 +826,31 @@ function ReorderItem({
   onTogglePinned: () => void;
 }) {
   const t = useTranslations();
+  const dragControls = useDragControls();
   const icon = CATEGORY_ICONS[item.category] ?? "📁";
 
   return (
     <Reorder.Item
       value={item}
+      dragListener={false}
+      dragControls={dragControls}
+      dragMomentum={false}
+      layout="position"
       whileDrag={{ scale: 1.01 }}
+      transition={{ type: "spring", stiffness: 520, damping: 38, mass: 0.85 }}
+      style={{ willChange: "transform" }}
       className="rounded-lg border bg-card px-3 py-2"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <GripVertical className="h-4 w-4 text-muted-foreground" aria-hidden />
+          <button
+            type="button"
+            aria-label={t("accountsList.dragHandleLabel")}
+            className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted/60 cursor-grab active:cursor-grabbing touch-none"
+            onPointerDown={(event) => dragControls.start(event)}
+          >
+            <GripVertical className="h-4 w-4" aria-hidden />
+          </button>
           <span>{icon}</span>
           <div className="min-w-0">
             <p className="text-sm font-medium truncate">{item.name}</p>
