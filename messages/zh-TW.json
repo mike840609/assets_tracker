@@ -293,6 +293,14 @@
     "refreshSuccess": "已更新 {count} 個價格和匯率",
     "refreshFailed": "更新價格失敗"
   },
+  "freshness": {
+    "pricesUpdated": "價格更新於 {age}",
+    "pricesUpdatedMobile": "{age}",
+    "snapshot": "快照於 {age}",
+    "snapshotMobile": "{age}",
+    "noData": "尚無資料",
+    "refreshing": "更新中..."
+  },
   "trendChart": {
     "title": "淨資產趨勢",
     "noData": "尚無資料。新增帳戶後，淨資產將於每日午夜（UTC+8）自動記錄。",

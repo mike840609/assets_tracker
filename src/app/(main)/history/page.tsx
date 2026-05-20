@@ -11,7 +11,7 @@ import { HistoryPullRefresh } from "@/components/history/history-pull-refresh";
 import { getNormalizedHistory } from "@/lib/services/history-service";
 import HistoryLoading from "./loading";
 
-const CLIENT_NAMESPACES = ["trendChart", "history"];
+const CLIENT_NAMESPACES = ["trendChart", "history", "freshness"];
 
 async function HistoryContent() {
   const session = await getSession();

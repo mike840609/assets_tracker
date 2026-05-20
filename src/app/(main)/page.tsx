@@ -10,6 +10,7 @@ import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 
 const CLIENT_NAMESPACES = [
   "dashboardActions",
+  "freshness",
   "trendChart",
   "allocationChart",
   "currencyExposure",

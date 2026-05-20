@@ -2,28 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw, Camera, Clock } from "lucide-react";
+import { RefreshCw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import { hapticTick } from "@/lib/haptics";
-
-function getRelativeTime(dateString: string, locale: string, now: number) {
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
-  // Parse as local noon to avoid UTC-midnight causing off-by-one-day in non-UTC timezones
-  const localDate = dateString.includes("T")
-    ? new Date(dateString)
-    : new Date(`${dateString}T12:00:00`);
-  const diffInSeconds = Math.round((localDate.getTime() - now) / 1000);
-  const absDiff = Math.abs(diffInSeconds);
-
-  if (absDiff < 60) return rtf.format(Math.sign(diffInSeconds) * absDiff, "second");
-  if (absDiff < 3600) return rtf.format(Math.round(diffInSeconds / 60), "minute");
-  if (absDiff < 86400) return rtf.format(Math.round(diffInSeconds / 3600), "hour");
-  if (absDiff < 2592000) return rtf.format(Math.round(diffInSeconds / 86400), "day");
-  if (absDiff < 31536000) return rtf.format(Math.round(diffInSeconds / 2592000), "month");
-  return rtf.format(Math.round(diffInSeconds / 31536000), "year");
-}
+import { FreshnessBadge } from "@/components/ui/freshness-badge";
 
 interface DashboardActionsProps {
   baseCurrency: string;
@@ -34,9 +18,7 @@ interface DashboardActionsProps {
 export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: DashboardActionsProps) {
   const router = useRouter();
   const t = useTranslations("dashboardActions");
-  const locale = useLocale();
   const [refreshing, setRefreshing] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
   const [clientRefreshAt, setClientRefreshAt] = useState<string | null>(null);
 
   const handleRefreshPrices = useCallback(async () => {
@@ -76,27 +58,10 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
     return () => window.removeEventListener("prices:refreshed", handler);
   }, []);
 
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  // Whenever the displayed timestamp changes (server prop or client stamp), sync
-  // `now` so the badge formats against a fresh wall-clock instead of a stale one.
-  // setTimeout keeps setNow out of the synchronous effect body (lint requirement).
   const effectiveLastUpdate =
     clientRefreshAt && (!lastPriceUpdate || clientRefreshAt > lastPriceUpdate)
       ? clientRefreshAt
       : lastPriceUpdate;
-
-  useEffect(() => {
-    const t = setTimeout(() => setNow(Date.now()), 0);
-    return () => clearTimeout(t);
-  }, [effectiveLastUpdate]);
-
-  const priceAge = effectiveLastUpdate ? getRelativeTime(effectiveLastUpdate, locale, now) : null;
-
-  const snapshotAge = lastSnapshotDate ? getRelativeTime(lastSnapshotDate, locale, now) : null;
 
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
@@ -104,21 +69,13 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
         className="flex flex-nowrap items-center gap-1.5 sm:gap-x-4 text-xs text-muted-foreground overflow-hidden min-w-0"
         aria-live="polite"
       >
-        {priceAge && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/25 bg-primary/5 px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-primary whitespace-nowrap">
-            <Clock className="h-3 w-3 shrink-0" />
-            <span className="sm:hidden">{t("pricesUpdatedMobile", { age: priceAge })}</span>
-            <span className="hidden sm:inline">{t("pricesUpdated", { age: priceAge })}</span>
-          </span>
+        {effectiveLastUpdate && (
+          <FreshnessBadge kind="price" timestamp={effectiveLastUpdate} mobileShort />
         )}
-        {snapshotAge && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/70 bg-muted/30 px-1.5 py-0.5 sm:px-2.5 sm:py-1 whitespace-nowrap">
-            <Camera className="h-3 w-3 shrink-0" />
-            <span className="sm:hidden">{t("snapshotMobile", { age: snapshotAge })}</span>
-            <span className="hidden sm:inline">{t("snapshot", { age: snapshotAge })}</span>
-          </span>
+        {lastSnapshotDate && (
+          <FreshnessBadge kind="snapshot" timestamp={lastSnapshotDate} mobileShort />
         )}
-        {!priceAge && !snapshotAge && (
+        {!effectiveLastUpdate && !lastSnapshotDate && (
           <span className="inline-flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {t("noPriceData")}
