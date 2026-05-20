@@ -39,9 +39,9 @@ export default defineConfig({
     ? {}
     : {
         webServer: {
-          command: "npm run dev",
+          command: "npm run build && npm run start",
           url: BASE_URL,
-          reuseExistingServer: !process.env.CI,
+          reuseExistingServer: false,
           env: {
             VERCEL_ENV: "preview",
             PREVIEW_AUTH_PASSWORD: E2E_PASSWORD,

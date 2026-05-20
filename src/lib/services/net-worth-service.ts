@@ -31,11 +31,31 @@ async function fetchUserAccountsWithHoldingsInner(
   const raw = await prisma.account.findMany({
     where: { userId, isActive: true },
     include: { holdings: { where: { quantity: { gt: 0 } } } },
+    orderBy: [{ isPinned: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }, { id: "asc" }],
   });
   return raw.map(serializeAccountWithHoldings);
 }
 
 export const fetchUserAccountsWithHoldings = cache(fetchUserAccountsWithHoldingsInner);
+
+async function fetchUserArchivedAccountsWithHoldingsInner(
+  userId: string,
+): Promise<SerializedAccountWithHoldings[]> {
+  "use cache";
+  cacheTag("accounts");
+  cacheTag(`accounts:${userId}`);
+  cacheLife("hours");
+  const raw = await prisma.account.findMany({
+    where: { userId, isActive: false },
+    include: { holdings: { where: { quantity: { gt: 0 } } } },
+    orderBy: [{ isPinned: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+  });
+  return raw.map(serializeAccountWithHoldings);
+}
+
+export const fetchUserArchivedAccountsWithHoldings = cache(
+  fetchUserArchivedAccountsWithHoldingsInner,
+);
 
 async function computeNetWorthSummary(
   userId: string,

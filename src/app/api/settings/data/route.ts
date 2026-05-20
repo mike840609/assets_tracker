@@ -92,6 +92,8 @@ export const POST = withAuth(async (request, _ctx, userId) => {
               currency: acc.currency,
               cashBalance: acc.cashBalance,
               isActive: acc.isActive,
+              isPinned: acc.isPinned,
+              sortOrder: acc.sortOrder,
               createdAt: acc.createdAt,
               updatedAt: acc.updatedAt,
             },

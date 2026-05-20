@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, Reorder, useDragControls, useReducedMotion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +13,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronUp, ChevronDown, ChevronsUpDown, MoreHorizontal, Trash2 } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  ChevronDown,
+  GripVertical,
+  MoreHorizontal,
+  Pin,
+  PinOff,
+  Save,
+  Trash2,
+  X,
+} from "lucide-react";
 import { formatCurrency } from "@/lib/currencies";
 import { springConfig } from "@/lib/motion";
 import { toast } from "sonner";
@@ -23,7 +34,6 @@ import { useDensity } from "@/components/layout/density-context";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
 
 const AccountForm = dynamic(() => import("./account-form").then((m) => m.AccountForm));
-
 const QuickAddHolding = dynamic(() => import("./quick-add-holding").then((m) => m.QuickAddHolding));
 
 const HIDDEN = "***";
@@ -100,6 +110,17 @@ const CATEGORY_ORDER = [
   "OTHER",
 ];
 
+type AccountType = "ASSET" | "LIABILITY";
+
+type ReorderDraftAccount = {
+  id: string;
+  name: string;
+  category: string;
+  currency: string;
+  type: AccountType;
+  isPinned: boolean;
+};
+
 function getAccountValue(
   account: SerializedAccountWithHoldings,
   priceMap: Record<string, number>,
@@ -115,13 +136,45 @@ function getAccountValue(
   return account.cashBalance + holdingsValue;
 }
 
+function toDraft(accounts: SerializedAccountWithHoldings[]): ReorderDraftAccount[] {
+  return accounts.map((account) => ({
+    id: account.id,
+    name: account.name,
+    category: account.category,
+    currency: account.currency,
+    type: account.type as AccountType,
+    isPinned: Boolean(account.isPinned),
+  }));
+}
+
+function getPinned(accounts: ReorderDraftAccount[]) {
+  return accounts.filter((account) => account.isPinned);
+}
+
+function getUnpinned(accounts: ReorderDraftAccount[]) {
+  return accounts.filter((account) => !account.isPinned);
+}
+
+function reinsertByPinState(
+  existing: ReorderDraftAccount[],
+  nextPinned: ReorderDraftAccount[],
+  nextUnpinned: ReorderDraftAccount[],
+) {
+  const lookup = new Map(existing.map((account) => [account.id, account]));
+  const pinned = nextPinned.map((account) => ({ ...lookup.get(account.id)!, isPinned: true }));
+  const unpinned = nextUnpinned.map((account) => ({ ...lookup.get(account.id)!, isPinned: false }));
+  return [...pinned, ...unpinned];
+}
+
 export function AccountsList({
   accounts,
+  archivedAccounts,
   priceMap,
   ratesMap = {},
   baseCurrency = "USD",
 }: {
   accounts: SerializedAccountWithHoldings[];
+  archivedAccounts: SerializedAccountWithHoldings[];
   priceMap: Record<string, number>;
   ratesMap?: Record<string, number>;
   baseCurrency?: string;
@@ -130,6 +183,18 @@ export function AccountsList({
   const t = useTranslations();
   const [showForm, setShowForm] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const [manageMode, setManageMode] = useState(false);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [draftAssets, setDraftAssets] = useState<ReorderDraftAccount[]>([]);
+  const [draftLiabilities, setDraftLiabilities] = useState<ReorderDraftAccount[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => {
+    const all = new Set<string>();
+    for (const account of accounts) all.add(`${account.type}_${account.category}`);
+    return all;
+  });
 
   useEffect(() => {
     const handler = () => setShowForm(true);
@@ -142,17 +207,9 @@ export function AccountsList({
     window.addEventListener("add-item", handler);
     return () => window.removeEventListener("add-item", handler);
   }, []);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<"name" | "value">("value");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => {
-    const all = new Set<string>();
-    for (const a of accounts) all.add(`${a.type}_${a.category}`);
-    return all;
-  });
 
-  const assets = accounts.filter((a) => a.type === "ASSET");
-  const liabilities = accounts.filter((a) => a.type === "LIABILITY");
+  const assets = accounts.filter((account) => account.type === "ASSET");
+  const liabilities = accounts.filter((account) => account.type === "LIABILITY");
 
   const accountBaseValues = useMemo(() => {
     const map: Record<string, number> = {};
@@ -167,31 +224,13 @@ export function AccountsList({
     return map;
   }, [accounts, priceMap, ratesMap, baseCurrency]);
 
-  function toggleSort(key: "name" | "value") {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDir("desc");
-    }
-  }
-
-  function sortedAccounts(accts: SerializedAccountWithHoldings[]) {
-    return [...accts].sort((a, b) => {
-      const aVal = sortKey === "value" ? (accountBaseValues[a.id] ?? 0) : a.name.toLowerCase();
-      const bVal = sortKey === "value" ? (accountBaseValues[b.id] ?? 0) : b.name.toLowerCase();
-      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-  }
-
   const totalAssets = useMemo(
-    () => assets.reduce((s, a) => s + (accountBaseValues[a.id] ?? 0), 0),
+    () => assets.reduce((sum, account) => sum + (accountBaseValues[account.id] ?? 0), 0),
     [assets, accountBaseValues],
   );
+
   const totalLiabilities = useMemo(
-    () => liabilities.reduce((s, a) => s + (accountBaseValues[a.id] ?? 0), 0),
+    () => liabilities.reduce((sum, account) => sum + (accountBaseValues[account.id] ?? 0), 0),
     [liabilities, accountBaseValues],
   );
 
@@ -201,9 +240,9 @@ export function AccountsList({
       if (!grouped[account.category]) grouped[account.category] = [];
       grouped[account.category].push(account);
     }
-    return CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0).map((cat) => ({
-      category: cat,
-      accounts: grouped[cat],
+    return CATEGORY_ORDER.filter((category) => grouped[category]?.length > 0).map((category) => ({
+      category,
+      accounts: grouped[category],
     }));
   }, [assets]);
 
@@ -213,9 +252,9 @@ export function AccountsList({
       if (!grouped[account.category]) grouped[account.category] = [];
       grouped[account.category].push(account);
     }
-    return CATEGORY_ORDER.filter((cat) => grouped[cat]?.length > 0).map((cat) => ({
-      category: cat,
-      accounts: grouped[cat],
+    return CATEGORY_ORDER.filter((category) => grouped[category]?.length > 0).map((category) => ({
+      category,
+      accounts: grouped[category],
     }));
   }, [liabilities]);
 
@@ -227,6 +266,29 @@ export function AccountsList({
       else next.add(key);
       return next;
     });
+  }
+
+  async function patchAccount(
+    id: string,
+    payload: Record<string, unknown>,
+    successMessage: string,
+    failureMessage: string,
+  ) {
+    setUpdatingId(id);
+    try {
+      const res = await fetch(`/api/accounts/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error();
+      toast.success(successMessage);
+      router.refresh();
+    } catch {
+      toast.error(failureMessage);
+    } finally {
+      setUpdatingId(null);
+    }
   }
 
   async function deleteAccount(id: string) {
@@ -249,177 +311,374 @@ export function AccountsList({
     }
   }
 
+  async function archiveAccount(account: SerializedAccountWithHoldings) {
+    await patchAccount(
+      account.id,
+      { isActive: false },
+      t("accountsList.archived"),
+      t("accountsList.archiveFailed"),
+    );
+  }
+
+  async function unarchiveAccount(account: SerializedAccountWithHoldings) {
+    await patchAccount(
+      account.id,
+      { isActive: true },
+      t("accountsList.unarchived"),
+      t("accountsList.unarchiveFailed"),
+    );
+  }
+
+  async function togglePinAccount(account: SerializedAccountWithHoldings) {
+    const nextPinned = !account.isPinned;
+    await patchAccount(
+      account.id,
+      { isPinned: nextPinned },
+      nextPinned ? t("accountsList.pinned") : t("accountsList.unpinned"),
+      nextPinned ? t("accountsList.pinFailed") : t("accountsList.unpinFailed"),
+    );
+  }
+
+  function enterManageMode() {
+    setDraftAssets(toDraft(assets));
+    setDraftLiabilities(toDraft(liabilities));
+    setManageMode(true);
+  }
+
+  function cancelManageMode() {
+    setManageMode(false);
+    setDraftAssets([]);
+    setDraftLiabilities([]);
+  }
+
+  function toggleDraftPinned(type: AccountType, id: string) {
+    const setDraft = type === "ASSET" ? setDraftAssets : setDraftLiabilities;
+    setDraft((prev) => {
+      const pinned = getPinned(prev);
+      const unpinned = getUnpinned(prev);
+      const target = prev.find((account) => account.id === id);
+      if (!target) return prev;
+
+      const inPinned = target.isPinned;
+      if (inPinned) {
+        const nextPinned = pinned.filter((account) => account.id !== id);
+        const nextUnpinned = [...unpinned, { ...target, isPinned: false }];
+        return [...nextPinned, ...nextUnpinned];
+      }
+
+      const nextPinned = [...pinned, { ...target, isPinned: true }];
+      const nextUnpinned = unpinned.filter((account) => account.id !== id);
+      return [...nextPinned, ...nextUnpinned];
+    });
+  }
+
+  async function saveManageOrder() {
+    setSavingOrder(true);
+    try {
+      const requests: Promise<Response>[] = [];
+
+      const queues: Array<{ type: AccountType; items: ReorderDraftAccount[] }> = [
+        { type: "ASSET", items: draftAssets },
+        { type: "LIABILITY", items: draftLiabilities },
+      ];
+
+      for (const queue of queues) {
+        if (queue.items.length === 0) continue;
+        requests.push(
+          fetch("/api/accounts/reorder", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: queue.type,
+              pinnedIds: queue.items.filter((item) => item.isPinned).map((item) => item.id),
+              unpinnedIds: queue.items.filter((item) => !item.isPinned).map((item) => item.id),
+            }),
+          }),
+        );
+      }
+
+      const responses = await Promise.all(requests);
+      if (responses.some((response) => !response.ok)) throw new Error();
+
+      toast.success(t("accountsList.reorderSaved"));
+      setManageMode(false);
+      router.refresh();
+    } catch {
+      toast.error(t("accountsList.reorderSaveFailed"));
+    } finally {
+      setSavingOrder(false);
+    }
+  }
+
+  function handleReorderPinned(type: AccountType, nextPinned: ReorderDraftAccount[]) {
+    const setDraft = type === "ASSET" ? setDraftAssets : setDraftLiabilities;
+    setDraft((prev) => reinsertByPinState(prev, nextPinned, getUnpinned(prev)));
+  }
+
+  function handleReorderUnpinned(type: AccountType, nextUnpinned: ReorderDraftAccount[]) {
+    const setDraft = type === "ASSET" ? setDraftAssets : setDraftLiabilities;
+    setDraft((prev) => reinsertByPinState(prev, getPinned(prev), nextUnpinned));
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end gap-2">
-        <Button variant="outline" onClick={() => setShowQuickAdd(true)}>
-          {t("accountsList.addItem")}
-        </Button>
-        <Button onClick={() => setShowForm(true)}>{t("accountsList.addAccount")}</Button>
-      </div>
-
-      {accounts.length === 0 && (
-        <p className="text-center text-muted-foreground py-12">{t("accountsList.noAccounts")}</p>
-      )}
-
-      {/* Desktop table — lg+ */}
-      {accounts.length > 0 && (
-        <div className="hidden lg:block rounded-xl border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/30">
-                <th
-                  className="px-4 py-3 text-left font-semibold cursor-pointer select-none hover:text-foreground"
-                  onClick={() => toggleSort("name")}
-                >
-                  <div className="flex items-center gap-1.5">
-                    {t("accountsList.colName")}
-                    <SortIcon active={sortKey === "name"} dir={sortDir} />
-                  </div>
-                </th>
-                <th className="px-4 py-3 text-left font-semibold">
-                  {t("accountsList.colCategory")}
-                </th>
-                <th className="hidden lg:table-cell px-4 py-3 text-left font-semibold w-16">
-                  {t("accountsList.colCurrency")}
-                </th>
-                <th className="px-4 py-3 text-left font-semibold">
-                  {t("accountsList.colHoldings")}
-                </th>
-                <th className="hidden lg:table-cell px-4 py-3 text-right font-semibold">
-                  {t("accountsList.colNative")}
-                </th>
-                <th
-                  className="px-4 py-3 text-right font-semibold cursor-pointer select-none hover:text-foreground"
-                  onClick={() => toggleSort("value")}
-                >
-                  <div className="flex items-center justify-end gap-1.5">
-                    {t("accountsList.colValue")}
-                    <SortIcon active={sortKey === "value"} dir={sortDir} />
-                  </div>
-                </th>
-                <th className="hidden lg:table-cell px-4 py-3 text-right font-semibold w-24">
-                  {t("accountsList.colAllocation")}
-                </th>
-                <th className="w-12 px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/60">
-              {assets.length > 0 && (
-                <>
-                  <tr className="bg-green-50/60 dark:bg-green-950/20">
-                    <td
-                      colSpan={8}
-                      className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-green-700 dark:text-green-400"
-                    >
-                      {t("accountsList.assets")}
-                    </td>
-                  </tr>
-                  {sortedAccounts(assets).map((account) => (
-                    <DesktopAccountRow
-                      key={account.id}
-                      account={account}
-                      baseValue={accountBaseValues[account.id] ?? 0}
-                      baseCurrency={baseCurrency}
-                      priceMap={priceMap}
-                      ratesMap={ratesMap}
-                      onNavigate={() => router.push(`/accounts/${account.id}`)}
-                      onDelete={deleteAccount}
-                      isDeleting={deletingId === account.id}
-                      allocationDenominator={totalAssets}
-                    />
-                  ))}
-                </>
-              )}
-              {liabilities.length > 0 && (
-                <>
-                  <tr className="bg-red-50/60 dark:bg-red-950/20">
-                    <td
-                      colSpan={8}
-                      className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-red-700 dark:text-red-400"
-                    >
-                      {t("accountsList.liabilities")}
-                    </td>
-                  </tr>
-                  {sortedAccounts(liabilities).map((account) => (
-                    <DesktopAccountRow
-                      key={account.id}
-                      account={account}
-                      baseValue={accountBaseValues[account.id] ?? 0}
-                      baseCurrency={baseCurrency}
-                      priceMap={priceMap}
-                      ratesMap={ratesMap}
-                      onNavigate={() => router.push(`/accounts/${account.id}`)}
-                      onDelete={deleteAccount}
-                      isDeleting={deletingId === account.id}
-                      allocationDenominator={totalLiabilities}
-                    />
-                  ))}
-                </>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Mobile card view — hidden on lg+ */}
-      <div className="lg:hidden space-y-6">
-        {accounts.length > 0 && (
-          <MobileSummaryStrip
-            totalAssets={totalAssets}
-            totalLiabilities={totalLiabilities}
-            baseCurrency={baseCurrency}
-          />
-        )}
-
-        {assetsByCategory.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">
-              {t("accountsList.assets")}
-            </h3>
-            <div className="space-y-3">
-              {assetsByCategory.map(({ category, accounts: catAccounts }) => (
-                <CategorySection
-                  key={`asset_${category}`}
-                  category={category}
-                  accounts={catAccounts}
-                  priceMap={priceMap}
-                  ratesMap={ratesMap}
-                  baseCurrency={baseCurrency}
-                  isExpanded={expandedCategories.has(`ASSET_${category}`)}
-                  onToggleExpand={() => toggleCategory("ASSET", category)}
-                  onDelete={deleteAccount}
-                  deletingId={deletingId}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {liabilitiesByCategory.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-red-700 dark:text-red-400">
-              {t("accountsList.liabilities")}
-            </h3>
-            <div className="space-y-3">
-              {liabilitiesByCategory.map(({ category, accounts: catAccounts }) => (
-                <CategorySection
-                  key={`liability_${category}`}
-                  category={category}
-                  accounts={catAccounts}
-                  priceMap={priceMap}
-                  ratesMap={ratesMap}
-                  baseCurrency={baseCurrency}
-                  isExpanded={expandedCategories.has(`LIABILITY_${category}`)}
-                  onToggleExpand={() => toggleCategory("LIABILITY", category)}
-                  onDelete={deleteAccount}
-                  deletingId={deletingId}
-                />
-              ))}
-            </div>
-          </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {manageMode ? (
+          <>
+            <Button variant="outline" onClick={cancelManageMode} disabled={savingOrder}>
+              <X className="h-4 w-4" />
+              {t("common.cancel")}
+            </Button>
+            <Button onClick={saveManageOrder} disabled={savingOrder}>
+              <Save className="h-4 w-4" />
+              {savingOrder ? t("common.saving", { defaultValue: "Saving..." }) : t("common.save")}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button variant="outline" onClick={() => setShowQuickAdd(true)}>
+              {t("accountsList.addItem")}
+            </Button>
+            <Button variant="outline" onClick={enterManageMode} disabled={accounts.length === 0}>
+              {t("accountsList.manageOrder")}
+            </Button>
+            <Button onClick={() => setShowForm(true)}>{t("accountsList.addAccount")}</Button>
+          </>
         )}
       </div>
+
+      {manageMode ? (
+        <ManageOrderPanel
+          draftAssets={draftAssets}
+          draftLiabilities={draftLiabilities}
+          onTogglePinned={toggleDraftPinned}
+          onReorderPinned={handleReorderPinned}
+          onReorderUnpinned={handleReorderUnpinned}
+        />
+      ) : (
+        <>
+          {accounts.length === 0 && (
+            <p className="text-center text-muted-foreground py-12">
+              {t("accountsList.noAccounts")}
+            </p>
+          )}
+
+          {accounts.length > 0 && (
+            <div className="hidden lg:block rounded-xl border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/30">
+                    <th className="px-4 py-3 text-left font-semibold">
+                      {t("accountsList.colName")}
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold">
+                      {t("accountsList.colCategory")}
+                    </th>
+                    <th className="hidden lg:table-cell px-4 py-3 text-left font-semibold w-16">
+                      {t("accountsList.colCurrency")}
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold">
+                      {t("accountsList.colHoldings")}
+                    </th>
+                    <th className="hidden lg:table-cell px-4 py-3 text-right font-semibold">
+                      {t("accountsList.colNative")}
+                    </th>
+                    <th className="px-4 py-3 text-right font-semibold">
+                      {t("accountsList.colValue")}
+                    </th>
+                    <th className="hidden lg:table-cell px-4 py-3 text-right font-semibold w-24">
+                      {t("accountsList.colAllocation")}
+                    </th>
+                    <th className="w-12 px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {assets.length > 0 && (
+                    <>
+                      <tr className="bg-green-50/60 dark:bg-green-950/20">
+                        <td
+                          colSpan={8}
+                          className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-green-700 dark:text-green-400"
+                        >
+                          {t("accountsList.assets")}
+                        </td>
+                      </tr>
+                      {assets.map((account) => (
+                        <DesktopAccountRow
+                          key={account.id}
+                          account={account}
+                          baseValue={accountBaseValues[account.id] ?? 0}
+                          baseCurrency={baseCurrency}
+                          priceMap={priceMap}
+                          ratesMap={ratesMap}
+                          onNavigate={() => router.push(`/accounts/${account.id}`)}
+                          onDelete={deleteAccount}
+                          onTogglePin={togglePinAccount}
+                          onArchive={archiveAccount}
+                          isDeleting={deletingId === account.id}
+                          isUpdating={updatingId === account.id}
+                          allocationDenominator={totalAssets}
+                        />
+                      ))}
+                    </>
+                  )}
+                  {liabilities.length > 0 && (
+                    <>
+                      <tr className="bg-red-50/60 dark:bg-red-950/20">
+                        <td
+                          colSpan={8}
+                          className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-red-700 dark:text-red-400"
+                        >
+                          {t("accountsList.liabilities")}
+                        </td>
+                      </tr>
+                      {liabilities.map((account) => (
+                        <DesktopAccountRow
+                          key={account.id}
+                          account={account}
+                          baseValue={accountBaseValues[account.id] ?? 0}
+                          baseCurrency={baseCurrency}
+                          priceMap={priceMap}
+                          ratesMap={ratesMap}
+                          onNavigate={() => router.push(`/accounts/${account.id}`)}
+                          onDelete={deleteAccount}
+                          onTogglePin={togglePinAccount}
+                          onArchive={archiveAccount}
+                          isDeleting={deletingId === account.id}
+                          isUpdating={updatingId === account.id}
+                          allocationDenominator={totalLiabilities}
+                        />
+                      ))}
+                    </>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="lg:hidden space-y-6">
+            {accounts.length > 0 && (
+              <div className="space-y-1">
+                <MobileSummaryStrip
+                  totalAssets={totalAssets}
+                  totalLiabilities={totalLiabilities}
+                  baseCurrency={baseCurrency}
+                />
+              </div>
+            )}
+
+            {assetsByCategory.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">
+                  {t("accountsList.assets")}
+                </h3>
+                <div className="space-y-3">
+                  {assetsByCategory.map(({ category, accounts: catAccounts }) => (
+                    <CategorySection
+                      key={`asset_${category}`}
+                      category={category}
+                      accounts={catAccounts}
+                      priceMap={priceMap}
+                      ratesMap={ratesMap}
+                      baseCurrency={baseCurrency}
+                      isExpanded={expandedCategories.has(`ASSET_${category}`)}
+                      onToggleExpand={() => toggleCategory("ASSET", category)}
+                      onDelete={deleteAccount}
+                      onTogglePin={togglePinAccount}
+                      onArchive={archiveAccount}
+                      deletingId={deletingId}
+                      updatingId={updatingId}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {liabilitiesByCategory.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-red-700 dark:text-red-400">
+                  {t("accountsList.liabilities")}
+                </h3>
+                <div className="space-y-3">
+                  {liabilitiesByCategory.map(({ category, accounts: catAccounts }) => (
+                    <CategorySection
+                      key={`liability_${category}`}
+                      category={category}
+                      accounts={catAccounts}
+                      priceMap={priceMap}
+                      ratesMap={ratesMap}
+                      baseCurrency={baseCurrency}
+                      isExpanded={expandedCategories.has(`LIABILITY_${category}`)}
+                      onToggleExpand={() => toggleCategory("LIABILITY", category)}
+                      onDelete={deleteAccount}
+                      onTogglePin={togglePinAccount}
+                      onArchive={archiveAccount}
+                      deletingId={deletingId}
+                      updatingId={updatingId}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {archivedAccounts.length > 0 && (
+            <div className="rounded-xl border overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowArchived((prev) => !prev)}
+                className="w-full px-4 py-3 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors"
+              >
+                <span className="text-sm font-semibold">{t("accountsList.archivedSection")}</span>
+                <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                  {archivedAccounts.length}
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${showArchived ? "rotate-180" : ""}`}
+                  />
+                </span>
+              </button>
+              {showArchived && (
+                <div className="divide-y">
+                  {archivedAccounts.map((account) => (
+                    <div
+                      key={account.id}
+                      className="px-4 py-3 flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{account.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t(`categories.${account.category}`, { defaultValue: account.category })}{" "}
+                          · {account.currency}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => unarchiveAccount(account)}
+                          disabled={updatingId === account.id}
+                        >
+                          <ArchiveRestore className="h-3.5 w-3.5" />
+                          {t("accountsList.unarchive")}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteAccount(account.id)}
+                          disabled={deletingId === account.id}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          {t("common.delete")}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
 
       {showForm && (
         <AccountForm
@@ -440,12 +699,171 @@ export function AccountsList({
   );
 }
 
-function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
-  if (!active) return <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />;
-  return dir === "asc" ? (
-    <ChevronUp className="h-3.5 w-3.5" />
-  ) : (
-    <ChevronDown className="h-3.5 w-3.5" />
+function ManageOrderPanel({
+  draftAssets,
+  draftLiabilities,
+  onTogglePinned,
+  onReorderPinned,
+  onReorderUnpinned,
+}: {
+  draftAssets: ReorderDraftAccount[];
+  draftLiabilities: ReorderDraftAccount[];
+  onTogglePinned: (type: AccountType, id: string) => void;
+  onReorderPinned: (type: AccountType, nextPinned: ReorderDraftAccount[]) => void;
+  onReorderUnpinned: (type: AccountType, nextUnpinned: ReorderDraftAccount[]) => void;
+}) {
+  const t = useTranslations();
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-0.5">
+        <p className="text-[11px] leading-tight text-muted-foreground/80">
+          {t("accountsList.manageOrderHint")}
+        </p>
+        <p className="text-[11px] leading-tight text-muted-foreground/80">
+          {t("accountsList.manageOrderScopeHint")}
+        </p>
+      </div>
+      <ReorderTypeSection
+        title={t("accountsList.assets")}
+        type="ASSET"
+        items={draftAssets}
+        onTogglePinned={onTogglePinned}
+        onReorderPinned={onReorderPinned}
+        onReorderUnpinned={onReorderUnpinned}
+      />
+      <ReorderTypeSection
+        title={t("accountsList.liabilities")}
+        type="LIABILITY"
+        items={draftLiabilities}
+        onTogglePinned={onTogglePinned}
+        onReorderPinned={onReorderPinned}
+        onReorderUnpinned={onReorderUnpinned}
+      />
+    </div>
+  );
+}
+
+function ReorderTypeSection({
+  title,
+  type,
+  items,
+  onTogglePinned,
+  onReorderPinned,
+  onReorderUnpinned,
+}: {
+  title: string;
+  type: AccountType;
+  items: ReorderDraftAccount[];
+  onTogglePinned: (type: AccountType, id: string) => void;
+  onReorderPinned: (type: AccountType, nextPinned: ReorderDraftAccount[]) => void;
+  onReorderUnpinned: (type: AccountType, nextUnpinned: ReorderDraftAccount[]) => void;
+}) {
+  const t = useTranslations();
+  const pinned = items.filter((item) => item.isPinned);
+  const unpinned = items.filter((item) => !item.isPinned);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border overflow-hidden">
+      <div className="px-4 py-3 bg-muted/30 font-semibold text-sm">{title}</div>
+      <div className="p-3 space-y-3">
+        {pinned.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              {t("accountsList.pinnedGroup")}
+            </p>
+            <Reorder.Group
+              axis="y"
+              values={pinned}
+              onReorder={(next) => onReorderPinned(type, next)}
+              layoutScroll
+              className="space-y-2"
+            >
+              {pinned.map((item) => (
+                <ReorderItem
+                  key={item.id}
+                  item={item}
+                  onTogglePinned={() => onTogglePinned(type, item.id)}
+                />
+              ))}
+            </Reorder.Group>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">
+            {t("accountsList.otherGroup")}
+          </p>
+          <Reorder.Group
+            axis="y"
+            values={unpinned}
+            onReorder={(next) => onReorderUnpinned(type, next)}
+            layoutScroll
+            className="space-y-2"
+          >
+            {unpinned.map((item) => (
+              <ReorderItem
+                key={item.id}
+                item={item}
+                onTogglePinned={() => onTogglePinned(type, item.id)}
+              />
+            ))}
+          </Reorder.Group>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReorderItem({
+  item,
+  onTogglePinned,
+}: {
+  item: ReorderDraftAccount;
+  onTogglePinned: () => void;
+}) {
+  const t = useTranslations();
+  const dragControls = useDragControls();
+  const icon = CATEGORY_ICONS[item.category] ?? "📁";
+
+  return (
+    <Reorder.Item
+      value={item}
+      dragListener={false}
+      dragControls={dragControls}
+      dragMomentum={false}
+      layout="position"
+      whileDrag={{ scale: 1.01 }}
+      transition={{ type: "spring", stiffness: 520, damping: 38, mass: 0.85 }}
+      style={{ willChange: "transform" }}
+      className="rounded-lg border bg-card px-3 py-2"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            type="button"
+            aria-label={t("accountsList.dragHandleLabel")}
+            className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted/60 cursor-grab active:cursor-grabbing touch-none"
+            onPointerDown={(event) => dragControls.start(event)}
+          >
+            <GripVertical className="h-4 w-4" aria-hidden />
+          </button>
+          <span>{icon}</span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate">{item.name}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {t(`categories.${item.category}`, { defaultValue: item.category })} · {item.currency}
+            </p>
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onTogglePinned}>
+          {item.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+          {item.isPinned ? t("accountsList.unpin") : t("accountsList.pin")}
+        </Button>
+      </div>
+    </Reorder.Item>
   );
 }
 
@@ -457,7 +875,10 @@ function DesktopAccountRow({
   ratesMap,
   onNavigate,
   onDelete,
+  onTogglePin,
+  onArchive,
   isDeleting,
+  isUpdating,
   allocationDenominator,
 }: {
   account: SerializedAccountWithHoldings;
@@ -467,7 +888,10 @@ function DesktopAccountRow({
   ratesMap: Record<string, number>;
   onNavigate: () => void;
   onDelete: (id: string) => void;
+  onTogglePin: (account: SerializedAccountWithHoldings) => void;
+  onArchive: (account: SerializedAccountWithHoldings) => void;
   isDeleting: boolean;
+  isUpdating: boolean;
   allocationDenominator: number;
 }) {
   const { privacyMode } = usePrivacyMode();
@@ -484,6 +908,7 @@ function DesktopAccountRow({
     <tr className="group hover:bg-muted/40 cursor-pointer transition-colors" onClick={onNavigate}>
       <td className="px-4 py-3.5 font-medium max-w-[220px] xl:max-w-[280px]">
         <span className="truncate block" title={account.name}>
+          {account.isPinned && <Pin className="inline h-3 w-3 mr-1 text-amber-600" />}
           {account.name}
         </span>
       </td>
@@ -538,11 +963,19 @@ function DesktopAccountRow({
         <DropdownMenu>
           <DropdownMenuTrigger
             className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
-            disabled={isDeleting}
+            disabled={isDeleting || isUpdating}
           >
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onTogglePin(account)}>
+              {account.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+              {account.isPinned ? t("accountsList.unpin") : t("accountsList.pin")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onArchive(account)}>
+              <Archive className="h-4 w-4" />
+              {t("accountsList.archive")}
+            </DropdownMenuItem>
             <DropdownMenuItem variant="destructive" onClick={() => onDelete(account.id)}>
               <Trash2 className="h-4 w-4" />
               {isDeleting ? t("common.deleting") : t("common.delete")}
@@ -601,7 +1034,10 @@ function CategorySection({
   isExpanded,
   onToggleExpand,
   onDelete,
+  onTogglePin,
+  onArchive,
   deletingId,
+  updatingId,
 }: {
   category: string;
   accounts: SerializedAccountWithHoldings[];
@@ -611,7 +1047,10 @@ function CategorySection({
   isExpanded: boolean;
   onToggleExpand: () => void;
   onDelete: (id: string) => void;
+  onTogglePin: (account: SerializedAccountWithHoldings) => void;
+  onArchive: (account: SerializedAccountWithHoldings) => void;
   deletingId: string | null;
+  updatingId: string | null;
 }) {
   const t = useTranslations();
   const { privacyMode } = usePrivacyMode();
@@ -634,7 +1073,7 @@ function CategorySection({
     return total;
   }, [accounts, priceMap, ratesMap, baseCurrency]);
 
-  const totalHoldings = accounts.reduce((sum, a) => sum + a.holdings.length, 0);
+  const totalHoldings = accounts.reduce((sum, account) => sum + account.holdings.length, 0);
   const shouldReduceMotion = useReducedMotion();
 
   return (
@@ -666,15 +1105,9 @@ function CategorySection({
               {privacyMode ? HIDDEN : formatCurrency(totalInBaseCurrency, baseCurrency)}
             </p>
           </div>
-          <svg
+          <ChevronDown
             className={`w-5 h-5 text-muted-foreground transition-transform motion-normal ${isExpanded ? "rotate-180" : ""}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-          </svg>
+          />
         </div>
       </button>
 
@@ -701,7 +1134,10 @@ function CategorySection({
                     ratesMap={ratesMap}
                     baseCurrency={baseCurrency}
                     onDelete={onDelete}
+                    onTogglePin={onTogglePin}
+                    onArchive={onArchive}
                     isDeleting={deletingId === account.id}
+                    isUpdating={updatingId === account.id}
                   />
                 </motion.div>
               ))}
@@ -719,14 +1155,20 @@ function AccountCardWithHoldings({
   ratesMap,
   baseCurrency,
   onDelete,
+  onTogglePin,
+  onArchive,
   isDeleting,
+  isUpdating,
 }: {
   account: SerializedAccountWithHoldings;
   priceMap: Record<string, number>;
   ratesMap: Record<string, number>;
   baseCurrency: string;
   onDelete: (id: string) => void;
+  onTogglePin: (account: SerializedAccountWithHoldings) => void;
+  onArchive: (account: SerializedAccountWithHoldings) => void;
   isDeleting: boolean;
+  isUpdating: boolean;
 }) {
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
@@ -738,13 +1180,13 @@ function AccountCardWithHoldings({
     displayCurrency === baseCurrency ? 1 : (ratesMap[`${displayCurrency}_${baseCurrency}`] ?? 1);
   const convertedValue = displayValue * rate;
 
-  const holdingsWithValue = account.holdings.map((h) => {
-    const price = priceMap[h.symbol] ?? null;
-    const hc = h.currency || "USD";
+  const holdingsWithValue = account.holdings.map((holding) => {
+    const price = priceMap[holding.symbol] ?? null;
+    const hc = holding.currency || "USD";
     const hRate = hc === account.currency ? 1 : (ratesMap[`${hc}_${account.currency}`] ?? 1);
-    const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
-    const marketValue = price !== null ? price * h.quantity * multiplier * hRate : null;
-    return { ...h, currentPrice: price, marketValue };
+    const multiplier = holding.assetType === "OPTION" ? (holding.contractMultiplier ?? 100) : 1;
+    const marketValue = price !== null ? price * holding.quantity * multiplier * hRate : null;
+    return { ...holding, currentPrice: price, marketValue };
   });
 
   const isBank = account.category === "BANK";
@@ -759,15 +1201,23 @@ function AccountCardWithHoldings({
 
   return (
     <div className="relative group">
-      <div className="absolute top-2 right-2 z-10">
+      <div className="absolute top-2 right-2 z-10" onClick={(e) => e.preventDefault()}>
         <DropdownMenu>
           <DropdownMenuTrigger
             className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
-            disabled={isDeleting}
+            disabled={isDeleting || isUpdating}
           >
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onTogglePin(account)}>
+              {account.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+              {account.isPinned ? t("accountsList.unpin") : t("accountsList.pin")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onArchive(account)}>
+              <Archive className="h-4 w-4" />
+              {t("accountsList.archive")}
+            </DropdownMenuItem>
             <DropdownMenuItem variant="destructive" onClick={() => onDelete(account.id)}>
               <Trash2 className="h-4 w-4" />
               {isDeleting ? t("common.deleting") : t("common.delete")}
@@ -780,11 +1230,12 @@ function AccountCardWithHoldings({
           <CardContent className={isCompact ? "pt-3 pb-2" : "pt-5 pb-4"}>
             <div className="flex items-start justify-between">
               <div>
-                <p className="font-semibold">{account.name}</p>
-                {/* D: secondary subtitle line */}
+                <p className="font-semibold">
+                  {account.isPinned && <Pin className="inline h-3 w-3 mr-1 text-amber-600" />}
+                  {account.name}
+                </p>
                 {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
               </div>
-              {/* B: plain value + muted currency text, no badge */}
               <div className="flex flex-col items-end flex-shrink-0 ml-3">
                 <p className="text-lg font-bold tabular-nums text-foreground">
                   {privacyMode ? HIDDEN : formatCurrency(convertedValue, baseCurrency)}
@@ -804,23 +1255,22 @@ function AccountCardWithHoldings({
             {hasHoldings && (
               <div className="mt-3">
                 <div className="space-y-1.5">
-                  {holdingsWithValue.map((h) => (
+                  {holdingsWithValue.map((holding) => (
                     <div
-                      key={h.id}
+                      key={holding.id}
                       className="flex items-center justify-between py-1.5 border-t border-border/40 first:border-t-0"
                     >
-                      {/* C: symbol + name only, no qty column */}
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="text-xs font-mono font-medium text-muted-foreground w-16 flex-shrink-0 truncate">
-                          {h.symbol}
+                          {holding.symbol}
                         </span>
-                        <span className="text-sm truncate">{h.name}</span>
+                        <span className="text-sm truncate">{holding.name}</span>
                       </div>
                       <span className="text-sm font-medium tabular-nums w-20 text-right flex-shrink-0">
                         {privacyMode
                           ? HIDDEN
-                          : h.marketValue !== null
-                            ? formatCurrency(h.marketValue, account.currency)
+                          : holding.marketValue !== null
+                            ? formatCurrency(holding.marketValue, account.currency)
                             : "—"}
                       </span>
                     </div>

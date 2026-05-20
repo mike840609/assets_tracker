@@ -32,23 +32,39 @@ async function globalSetup() {
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  await page.goto(`${baseURL}/login`);
-
-  // Preview login supports two modes:
-  // 1) password-gated (input rendered)
-  // 2) button-only when PREVIEW_AUTH_DISABLED is enabled
-  // Allow 60 s to survive Vercel cold-start + PPR streaming latency.
-  const previewLoginButton = page.getByRole("button", { name: "Preview Login" });
-  await previewLoginButton.waitFor({ timeout: 60_000 });
-
-  const passwordInput = page.locator('input[name="password"]');
-  if (await passwordInput.count()) {
-    await passwordInput.fill(password);
+  // Programmatic credentials sign-in (more deterministic than UI server-action submit).
+  const csrfRes = await context.request.get(`${baseURL}/api/auth/csrf`, { timeout: 60_000 });
+  if (!csrfRes.ok()) {
+    throw new Error(`Failed to get CSRF token: ${csrfRes.status()} ${csrfRes.statusText()}`);
+  }
+  const csrfBody = (await csrfRes.json()) as { csrfToken?: string };
+  if (!csrfBody.csrfToken) {
+    throw new Error("Missing csrfToken from /api/auth/csrf");
   }
 
-  await previewLoginButton.click();
+  await context.request.post(`${baseURL}/api/auth/callback/credentials`, {
+    form: {
+      csrfToken: csrfBody.csrfToken,
+      password,
+      callbackUrl: `${baseURL}/`,
+    },
+    timeout: 60_000,
+  });
 
-  // Wait until we leave /login (dashboard redirect)
+  const sessionRes = await context.request.get(`${baseURL}/api/auth/session`, { timeout: 60_000 });
+  if (!sessionRes.ok()) {
+    throw new Error(
+      `Failed to verify auth session: ${sessionRes.status()} ${sessionRes.statusText()}`,
+    );
+  }
+  const sessionBody = (await sessionRes.json()) as { user?: { id?: string } };
+  if (!sessionBody.user?.id) {
+    throw new Error(
+      "Global setup could not establish authenticated session via credentials provider.",
+    );
+  }
+
+  await page.goto(`${baseURL}/`);
   await page.waitForURL((url) => !url.pathname.includes("login"), { timeout: 30_000 });
 
   await context.storageState({ path: authFile });

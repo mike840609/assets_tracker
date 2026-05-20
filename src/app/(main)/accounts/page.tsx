@@ -7,7 +7,10 @@ import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AccountsList } from "@/components/accounts/accounts-list";
 import { getAllExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
-import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
+import {
+  fetchUserAccountsWithHoldings,
+  fetchUserArchivedAccountsWithHoldings,
+} from "@/lib/services/net-worth-service";
 import { getCachedPricesForSymbols } from "@/lib/services/price-service";
 import { log } from "@/lib/logger";
 import AccountsLoading from "./loading";
@@ -25,10 +28,11 @@ async function AccountsContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
   // Run all independent queries in parallel (translations + data)
-  const [t, messages, accounts, settings, allRatesMap] = await Promise.all([
+  const [t, messages, accounts, archivedAccounts, settings, allRatesMap] = await Promise.all([
     getTranslations("accounts"),
     getMessages(),
     fetchUserAccountsWithHoldings(userId),
+    fetchUserArchivedAccountsWithHoldings(userId),
     getOrCreateSettings(userId),
     getAllExchangeRates(),
   ]);
@@ -80,6 +84,7 @@ async function AccountsContent() {
         <LargeTitleHeading>{t("title")}</LargeTitleHeading>
         <AccountsList
           accounts={accounts}
+          archivedAccounts={archivedAccounts}
           priceMap={priceMap}
           ratesMap={ratesMap}
           baseCurrency={baseCurrency}

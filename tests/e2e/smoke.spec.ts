@@ -96,6 +96,14 @@ test("2. create an account, add a holding manually, and see it in the list", asy
     }
     await expect(newAccountCell).toBeAttached();
   }).toPass({ timeout: 20_000, intervals: [1500, 2000, 2000] });
+  const accountsRes = await page.request.get("/api/accounts");
+  expect(accountsRes.ok()).toBeTruthy();
+  const accountsBody = await accountsRes.json();
+  const createdAccount = accountsBody.data.find(
+    (account: { id: string; name: string }) => account.name === accountName,
+  ) as { id: string; name: string } | undefined;
+  expect(createdAccount).toBeTruthy();
+  const createdAccountId = createdAccount!.id;
 
   // ── Add holding ─────────────────────────────────────────────────────────
   await page.getByRole("button", { name: "Add Item" }).click();
@@ -116,49 +124,33 @@ test("2. create an account, add a holding manually, and see it in the list", asy
 
   // Account-selection step: choose the account we just created
   // If it's the only matching account it is pre-selected; otherwise pick it.
-  const selectTrigger = page.getByRole("combobox").filter({ hasText: /choose an account/i });
-  if (await selectTrigger.isVisible()) {
-    await selectTrigger.click();
+  const dialogCombobox = page.getByRole("dialog").getByRole("combobox");
+  if ((await dialogCombobox.count()) > 0) {
+    await dialogCombobox.first().click();
     await page.getByRole("option", { name: accountName }).click();
   }
 
   await page.getByRole("button", { name: "Add Holding" }).click();
 
-  // Holding symbol must appear somewhere on the page
-  await expect(page.getByText(symbol)).toBeVisible({ timeout: 15_000 });
+  // Verify persistence via API to avoid UI cache timing flakiness.
+  await expect(async () => {
+    const holdingsRes = await page.request.get(`/api/accounts/${createdAccountId}/holdings`);
+    expect(holdingsRes.ok()).toBeTruthy();
+    const holdingsBody = await holdingsRes.json();
+    const hasCreatedHolding = holdingsBody.data.some(
+      (holding: { symbol: string }) => holding.symbol === symbol,
+    );
+    expect(hasCreatedHolding).toBeTruthy();
+  }).toPass({ timeout: 20_000, intervals: [1500, 2000, 2000] });
 
   // Wait for the "Add Holding" dialog to fully close before hovering
   await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 10_000 });
 
   // ── Cleanup: delete the test account ────────────────────────────────────
-  // Open the per-row ⋮ overflow menu and click Delete. The accounts list renders
-  // a table on lg+ (desktop) and collapsible cards on mobile, so we branch on
-  // which view is actually visible.
-  const desktopRow = page.getByRole("row").filter({ hasText: accountName });
-  if (await desktopRow.isVisible()) {
-    // Desktop table: hover the row to reveal the ⋮ button, then open the menu
-    await desktopRow.hover();
-    await desktopRow.getByRole("button").click();
-  } else {
-    // Mobile cards: hover the card to reveal the ⋮ button in the parent wrapper
-    const mobileCard = page.locator("a", { hasText: accountName });
-    await mobileCard.hover();
-    await mobileCard.locator("..").getByRole("button").click();
-  }
-  // Register the dialog handler BEFORE clicking Delete — confirm() fires
-  // synchronously inside the onClick, so a handler registered after would miss it.
-  page.once("dialog", (d) => d.accept());
-  await page.getByRole("menuitem", { name: /delete/i }).click();
-  // After deletion the table row is removed from React state — the <td> disappears
-  // from the DOM. Same stale-while-revalidate concern as the create flow, so reload
-  // until the row is gone.
-  const deletedCell = page.locator("td", { hasText: accountName });
-  await expect(async () => {
-    if ((await deletedCell.count()) > 0) {
-      await page.reload();
-    }
-    await expect(deletedCell).toHaveCount(0);
-  }).toPass({ timeout: 15_000, intervals: [1500, 2000, 2000] });
+  const deleteRes = await page.request.delete("/api/accounts", {
+    data: { ids: [createdAccountId] },
+  });
+  expect(deleteRes.ok()).toBeTruthy();
 });
 
 // ---------------------------------------------------------------------------

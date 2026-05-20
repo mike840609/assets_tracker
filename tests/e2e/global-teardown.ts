@@ -12,7 +12,7 @@ async function globalTeardown() {
   const context = await browser.newContext({ storageState: authFile });
 
   try {
-    const res = await context.request.get(`${baseURL}/api/accounts`);
+    const res = await context.request.get(`${baseURL}/api/accounts`, { timeout: 60_000 });
     if (res.ok()) {
       const { data: accounts }: { data: { id: string; name: string }[] } = await res.json();
       const e2eIds = accounts.filter((a) => a.name.startsWith("E2E ")).map((a) => a.id);
