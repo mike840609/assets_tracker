@@ -564,9 +564,6 @@ export function AccountsList({
                   totalLiabilities={totalLiabilities}
                   baseCurrency={baseCurrency}
                 />
-                <p className="text-[11px] leading-tight text-muted-foreground/80">
-                  {t("accountsList.mobileGroupedHint")}
-                </p>
               </div>
             )}
 
