@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
+import { FreshnessBadge } from "@/components/ui/freshness-badge";
 
 type SnapshotRow = {
   id: string;
@@ -26,6 +27,7 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
   const isCompact = density === "compact";
+  const latestSnapshotAt = snapshots.length > 0 ? snapshots[snapshots.length - 1]!.date : null;
 
   const monthGroups = useMemo(() => {
     const rows = [...snapshots].reverse().map((snap, idx, arr) => ({
@@ -52,8 +54,9 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
 
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
         <CardTitle className="text-base font-medium">{t("title")}</CardTitle>
+        <FreshnessBadge kind="snapshot" timestamp={latestSnapshotAt} />
       </CardHeader>
       <CardContent>
         {monthGroups.length === 0 ? (

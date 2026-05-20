@@ -9,7 +9,7 @@ import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AnalysisView } from "@/components/analysis/analysis-view";
 import AnalysisLoading from "./loading";
 
-const CLIENT_NAMESPACES = ["analysis", "categories", "nav", "trendChart", "history"];
+const CLIENT_NAMESPACES = ["analysis", "categories", "nav", "trendChart", "history", "freshness"];
 
 async function AnalysisContent() {
   const session = await getSession();

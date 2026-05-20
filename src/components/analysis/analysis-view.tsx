@@ -8,6 +8,7 @@ import { useDensity } from "@/components/layout/density-context";
 import { cn } from "@/lib/utils";
 import { TrendChart } from "@/components/dashboard/trend-chart";
 import { HistoryTable } from "@/components/history/history-table";
+import { FreshnessBadge } from "@/components/ui/freshness-badge";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
 import type {
   RawHistoryData,
@@ -178,6 +179,7 @@ export function AnalysisView({
   );
 
   const hasData = snapshots.length > 0;
+  const latestSnapshotAt = snapshots.length > 0 ? snapshots[snapshots.length - 1]!.date : null;
 
   const [activeTab, setActiveTab] = useState<"analysis" | "history">("analysis");
 
@@ -220,7 +222,8 @@ export function AnalysisView({
         {/* Sentinel: when this scrolls off-screen the range bar is stuck */}
         <div ref={sentinelRef} className="h-px -mt-px" aria-hidden />
         {/* Range selector — floats as a compact pill while scrolling */}
-        <div className="sticky top-[env(safe-area-inset-top)] md:top-0 z-40 flex justify-end py-2">
+        <div className="sticky top-[env(safe-area-inset-top)] md:top-0 z-40 flex items-center justify-between gap-2 py-2">
+          <FreshnessBadge kind="snapshot" timestamp={latestSnapshotAt} mobileShort />
           <div
             className={cn(
               "inline-flex gap-1 rounded-full p-1 transition-[background-color,box-shadow,backdrop-filter]",
