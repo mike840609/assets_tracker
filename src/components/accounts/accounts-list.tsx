@@ -4,13 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import {
-  AnimatePresence,
-  motion,
-  Reorder,
-  useDragControls,
-  useReducedMotion,
-} from "framer-motion";
+import { AnimatePresence, motion, Reorder, useDragControls, useReducedMotion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -571,7 +565,9 @@ export function AccountsList({
               />
             )}
             {accounts.length > 0 && (
-              <p className="text-xs text-muted-foreground">{t("accountsList.mobileGroupedHint")}</p>
+              <p className="text-[11px] leading-tight text-muted-foreground/80">
+                {t("accountsList.mobileGroupedHint")}
+              </p>
             )}
 
             {assetsByCategory.length > 0 && (
@@ -723,8 +719,12 @@ function ManageOrderPanel({
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-muted-foreground">{t("accountsList.manageOrderHint")}</p>
-      <p className="text-xs text-muted-foreground">{t("accountsList.manageOrderScopeHint")}</p>
+      <p className="text-[11px] leading-tight text-muted-foreground/80">
+        {t("accountsList.manageOrderHint")}
+      </p>
+      <p className="-mt-3 text-[11px] leading-tight text-muted-foreground/80">
+        {t("accountsList.manageOrderScopeHint")}
+      </p>
       <ReorderTypeSection
         title={t("accountsList.assets")}
         type="ASSET"
