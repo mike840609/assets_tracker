@@ -558,16 +558,16 @@ export function AccountsList({
 
           <div className="lg:hidden space-y-6">
             {accounts.length > 0 && (
-              <MobileSummaryStrip
-                totalAssets={totalAssets}
-                totalLiabilities={totalLiabilities}
-                baseCurrency={baseCurrency}
-              />
-            )}
-            {accounts.length > 0 && (
-              <p className="text-[11px] leading-tight text-muted-foreground/80">
-                {t("accountsList.mobileGroupedHint")}
-              </p>
+              <div className="space-y-1">
+                <MobileSummaryStrip
+                  totalAssets={totalAssets}
+                  totalLiabilities={totalLiabilities}
+                  baseCurrency={baseCurrency}
+                />
+                <p className="text-[11px] leading-tight text-muted-foreground/80">
+                  {t("accountsList.mobileGroupedHint")}
+                </p>
+              </div>
             )}
 
             {assetsByCategory.length > 0 && (
@@ -718,13 +718,15 @@ function ManageOrderPanel({
   const t = useTranslations();
 
   return (
-    <div className="space-y-5">
-      <p className="text-[11px] leading-tight text-muted-foreground/80">
-        {t("accountsList.manageOrderHint")}
-      </p>
-      <p className="-mt-3 text-[11px] leading-tight text-muted-foreground/80">
-        {t("accountsList.manageOrderScopeHint")}
-      </p>
+    <div className="space-y-4">
+      <div className="space-y-0.5">
+        <p className="text-[11px] leading-tight text-muted-foreground/80">
+          {t("accountsList.manageOrderHint")}
+        </p>
+        <p className="text-[11px] leading-tight text-muted-foreground/80">
+          {t("accountsList.manageOrderScopeHint")}
+        </p>
+      </div>
       <ReorderTypeSection
         title={t("accountsList.assets")}
         type="ASSET"
