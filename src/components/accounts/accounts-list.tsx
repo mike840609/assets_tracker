@@ -564,6 +564,11 @@ export function AccountsList({
                 baseCurrency={baseCurrency}
               />
             )}
+            {accounts.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {t("accountsList.mobileGroupedHint")}
+              </p>
+            )}
 
             {assetsByCategory.length > 0 && (
               <div className="space-y-3">
@@ -715,6 +720,7 @@ function ManageOrderPanel({
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted-foreground">{t("accountsList.manageOrderHint")}</p>
+      <p className="text-xs text-muted-foreground">{t("accountsList.manageOrderScopeHint")}</p>
       <ReorderTypeSection
         title={t("accountsList.assets")}
         type="ASSET"
