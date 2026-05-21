@@ -528,6 +528,10 @@
     "trust1": "Google OAuth — 我們絕不儲存您的密碼",
     "trust2": "您的資料私密保存，絕不出售",
     "trust3": "只有您能查看自己的投資組合",
+    "previewMode": "預覽模式",
+    "previewPasswordLabel": "預覽密碼",
+    "previewPasswordPlaceholder": "輸入預覽密碼",
+    "previewLogin": "預覽登入",
     "footerBefore": "您的資料受到保護。閱讀我們的",
     "footerLink": "隱私政策"
   },

@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-21T15:31:11+08:00",
+  "title": "Design System: Assets Tracker",
+  "extensions": {
+    "source": {
+      "designDocument": "DESIGN.md",
+      "productDocument": null,
+      "refreshMode": "merge",
+      "inferredFrom": [
+        "src/app/globals.css",
+        "src/components/ui/button.tsx",
+        "src/components/ui/card.tsx",
+        "src/components/ui/input.tsx",
+        "docs/UI_UX.md",
+        "docs/ROADMAP.md"
+      ]
+    },
+    "stitchFrontmatter": {
+      "colorFormat": "oklch",
+      "colorFormatNote": "The project uses OKLCH as canonical CSS token values, so frontmatter keeps OKLCH and accepts Stitch hex-linter warnings.",
+      "componentPropertyPolicy": "DESIGN.md frontmatter uses only supported component sub-token props: backgroundColor, textColor, typography, rounded, padding, height, width, and size.",
+      "sidecarRole": "Rings, shadows, borders, focus styles, motion, dark-mode behavior, and responsive rules live in this sidecar."
+    },
+    "colorMeta": {
+      "intent": "Calm finance UI with neutral surfaces, emerald primary actions, and broader chart-only color variety.",
+      "tokens": {
+        "primary": {
+          "role": "Main action, active navigation, positive product accent",
+          "light": "oklch(0.6 0.16 150)",
+          "dark": "oklch(0.8 0.17 170)"
+        },
+        "background": {
+          "role": "Page and app shell surface",
+          "light": "oklch(0.99 0.003 260)",
+          "dark": "oklch(0.14 0.03 200)"
+        },
+        "card": {
+          "role": "Grouped financial content and form panels",
+          "light": "oklch(1 0 0)",
+          "dark": "oklch(0.19 0.035 200)"
+        },
+        "muted": {
+          "role": "Subtle panels, inactive tabs, quiet grouped backgrounds",
+          "light": "oklch(0.96 0.01 260)",
+          "dark": "oklch(0.2 0.036 200)"
+        },
+        "destructive": {
+          "role": "Irreversible actions and critical errors",
+          "light": "oklch(0.6 0.18 20)",
+          "dark": "oklch(0.7 0.19 20)"
+        }
+      },
+      "chartPalette": {
+        "light": [
+          "oklch(0.6 0.16 150)",
+          "oklch(0.65 0.12 210)",
+          "oklch(0.6 0.15 260)",
+          "oklch(0.7 0.15 300)",
+          "oklch(0.8 0.1 330)"
+        ],
+        "dark": [
+          "oklch(0.8 0.17 170)",
+          "oklch(0.78 0.15 220)",
+          "oklch(0.74 0.17 270)",
+          "oklch(0.82 0.17 320)",
+          "oklch(0.86 0.13 100)"
+        ]
+      },
+      "guardrails": [
+        "Keep accent usage below 10% of normal product chrome.",
+        "Use chart colors for data visualization, not decorative page sections.",
+        "Pair status color with labels, icons, or text."
+      ]
+    },
+    "typographyMeta": {
+      "primaryStack": "-apple-system, \"SF Pro Text\", \"SF Pro Display\", Geist, system-ui, sans-serif",
+      "monoStack": "var(--font-geist-mono), ui-monospace, \"SF Mono\", Menlo, monospace",
+      "bodyFeatureSettings": "\"cv02\", \"cv03\", \"cv04\", \"cv11\"",
+      "numericRule": "Use tabular numerals for balances, rates, deltas, allocation, and totals.",
+      "scale": {
+        "display": "36px / 1.1 / 700",
+        "headline": "30px / 1.2 / 600",
+        "title": "16px / 1.375 / 500",
+        "body": "16px / 1.5 / 400",
+        "supporting": "14px / 1.43 / 400",
+        "label": "12px / 1.333 / 500"
+      }
+    },
+    "elevation": {
+      "principle": "Use tonal layering, rings, and small shadows before heavy elevation.",
+      "levels": {
+        "surface": "Solid background with no shadow",
+        "card": "bg-card, rounded-xl, ring-1 ring-foreground/10",
+        "raisedCard": "shadow-sm with optional hover shadow-lg and small translate on pointer devices",
+        "overlay": "bg-popover, rounded-xl, ring-1 ring-foreground/10, backdrop only when it improves separation"
+      },
+      "glassPolicy": "Allowed for persistent navigation and overlays; avoided for financial data cards and forms."
+    },
+    "componentDetails": {
+      "buttonVariants": {
+        "default": "bg-primary text-primary-foreground, h-8 default, rounded-lg, text-sm font-medium",
+        "outline": "border-border bg-background, hover bg-muted, dark border-input and bg-input/30",
+        "secondary": "bg-secondary text-secondary-foreground",
+        "ghost": "transparent until hover or expanded state",
+        "destructive": "destructive tint background with destructive text",
+        "link": "text-primary with underline on hover"
+      },
+      "focus": "Interactive elements use focus-visible border-ring and ring-3 ring-ring/50 unless a destructive state overrides it.",
+      "card": "Card defaults to rounded-xl, bg-card, text-card-foreground, py-4, gap-4, ring-1 ring-foreground/10.",
+      "input": "Input defaults to h-8, rounded-lg, border-input, bg-transparent, px-2.5, focus-visible border-ring and ring-3.",
+      "loginControls": "Auth controls intentionally use 48px height while preserving the same token language."
+    },
+    "motion": {
+      "durations": {
+        "fast": "150ms",
+        "normal": "250ms",
+        "slow": "400ms"
+      },
+      "easing": {
+        "micro": "cubic-bezier(0.25, 0.1, 0.25, 1)",
+        "spring": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "outExpo": "cubic-bezier(0.16, 1, 0.3, 1)"
+      },
+      "reducedMotion": "Disable decorative transitions, shimmer, hover lift, and view-transition reveals."
+    },
+    "layout": {
+      "breakpoints": {
+        "mobile": "320px-767px",
+        "tablet": "768px-1023px",
+        "desktop": "1024px+"
+      },
+      "mobile": [
+        "Use safe-area-aware headers and bottom navigation.",
+        "Prefer inset grouped lists over tables.",
+        "Use bottom sheets for multi-step mobile tasks."
+      ],
+      "desktop": [
+        "Use collapsible sidebar navigation.",
+        "Keep dashboards dense but aligned.",
+        "Expose command search and quick actions without crowding primary data."
+      ]
+    },
+    "componentNotes": {
+      "buttons": "Compact app-shell controls, 48px mobile/auth targets, icon buttons for tools, visible focus rings.",
+      "cards": "One entity or decision per card, solid surfaces for financial values, subtle rings.",
+      "inputs": "Explicit labels, semantic autocomplete, accessible validation, localized helper text.",
+      "navigation": "Adaptive mobile/desktop model with active state contrast and safe-area support.",
+      "charts": "Color plus labels, legends, tooltips, summaries, and non-color-only status cues."
+    },
+    "dos": [
+      "Use semantic tokens and OKLCH values.",
+      "Use Apple system typography with Geist fallback.",
+      "Align and tabularize financial numbers.",
+      "Treat empty, loading, error, offline, and reduced-motion states as designed states.",
+      "Localize all user-facing product copy."
+    ],
+    "donts": [
+      "Do not use gradient text for core product UI.",
+      "Do not use glassmorphism for financial data cards or forms.",
+      "Do not hard-code colors outside tokens except vendor marks.",
+      "Do not rely on hover-only affordances or color-only status.",
+      "Do not use centered mobile modals for complex tasks."
+    ]
+  }
+}

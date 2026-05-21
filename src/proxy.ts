@@ -1,8 +1,46 @@
 import NextAuth from "next-auth";
 import authConfig from "./auth.config";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { SUPPORTED_LOCALES, type Locale } from "./i18n/config";
 
 const { auth } = NextAuth(authConfig);
+const PUBLIC_ROUTES = new Set(["/login", "/privacy", "/terms"]);
+
+function getCanonicalPathname(pathname: string): { pathname: string; locale?: Locale } {
+  const locale = SUPPORTED_LOCALES.find(
+    (candidate) => pathname === `/${candidate}` || pathname.startsWith(`/${candidate}/`),
+  );
+
+  if (!locale) return { pathname };
+
+  return {
+    locale,
+    pathname: pathname === `/${locale}` ? "/" : pathname.slice(locale.length + 1),
+  };
+}
+
+function setLocaleCookie(response: NextResponse, locale?: Locale) {
+  if (!locale) return response;
+
+  response.cookies.set("NEXT_LOCALE", locale, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
+
+  return response;
+}
+
+function createRedirectUrl(req: NextRequest, pathname: string, preserveSearch = false) {
+  const protocol = req.headers.get("x-forwarded-proto") ?? req.nextUrl.protocol.replace(/:$/, "");
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  const origin = host ? `${protocol}://${host}` : req.nextUrl.origin;
+  const url = new URL(pathname, origin);
+
+  if (preserveSearch) url.search = req.nextUrl.search;
+
+  return url;
+}
 
 // ---------------------------------------------------------------------------
 // R3 — Inline rate limiter for /api/auth/* (20 req/min per IP).
@@ -50,16 +88,22 @@ export default auth((req) => {
   }
 
   const isLoggedIn = !!req.auth;
-  const isPublicRoute = ["/login", "/privacy", "/terms"].includes(req.nextUrl.pathname);
+  const canonicalPath = getCanonicalPathname(req.nextUrl.pathname);
+  const isPublicRoute = PUBLIC_ROUTES.has(canonicalPath.pathname);
 
-  if (!isLoggedIn && !isPublicRoute) {
-    const newUrl = new URL("/login", req.nextUrl.origin);
-    return Response.redirect(newUrl);
+  if (canonicalPath.locale && isPublicRoute) {
+    const newUrl = createRedirectUrl(req, canonicalPath.pathname, true);
+    return setLocaleCookie(NextResponse.redirect(newUrl), canonicalPath.locale);
   }
 
-  if (isLoggedIn && req.nextUrl.pathname === "/login") {
-    const newUrl = new URL("/", req.nextUrl.origin);
-    return Response.redirect(newUrl);
+  if (!isLoggedIn && !isPublicRoute) {
+    const newUrl = createRedirectUrl(req, "/login");
+    return setLocaleCookie(NextResponse.redirect(newUrl), canonicalPath.locale);
+  }
+
+  if (isLoggedIn && canonicalPath.pathname === "/login") {
+    const newUrl = createRedirectUrl(req, "/");
+    return setLocaleCookie(NextResponse.redirect(newUrl), canonicalPath.locale);
   }
 
   // On first visit (no locale cookie), detect from Accept-Language and set cookie

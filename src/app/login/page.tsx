@@ -3,12 +3,19 @@
 import { Suspense } from "react";
 import { signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { TrendingUp, Lock, ShieldCheck, EyeOff } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Login | Assets Tracker",
+};
 
 async function LoginContent() {
   const t = await getTranslations("login");
+  const locale = await getLocale();
   const isPreviewOrLocal =
     process.env.VERCEL_ENV === "preview" ||
     process.env.VERCEL_ENV === "development" ||
@@ -19,34 +26,19 @@ async function LoginContent() {
   const showPreviewLogin = isPreviewOrLocal;
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center relative overflow-hidden bg-background">
-      {/* Dynamic Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-3xl pointer-events-none -z-10 animate-pulse-slow" />
-      <div
-        className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-chart-4/10 blur-3xl pointer-events-none -z-10 animate-pulse-slow"
-        style={{ animationDelay: "2s" }}
-      />
-
-      {/* Glassmorphism Card */}
-      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col justify-center space-y-8 p-6 sm:p-10 bg-card/80 backdrop-blur-xl border border-border/50 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.5)] rounded-3xl animate-slide-in-bottom">
-        <div className="flex flex-col space-y-3 text-center">
-          <div
-            className="w-16 h-16 mx-auto rounded-xl flex items-center justify-center mb-4 relative group shadow-lg"
-            style={{ background: "linear-gradient(135deg, #34d399 0%, #065f46 100%)" }}
-          >
-            <div
-              className="absolute inset-0 rounded-xl blur-md bg-emerald-500/50 opacity-40 group-hover:opacity-70 transition-opacity duration-500 animate-pulse"
-              style={{ background: "linear-gradient(135deg, #34d399 0%, #065f46 100%)" }}
-            ></div>
-            <TrendingUp
-              className="w-7 h-7 text-white relative z-10 transform transition-all group-hover:scale-110 group-hover:-rotate-12 duration-300"
-              strokeWidth={2}
-            />
+    <div
+      lang={locale}
+      className="relative flex h-dvh min-h-svh w-full items-start justify-center overflow-y-auto overflow-x-hidden px-4 py-3 [@media(min-height:620px)]:items-center [@media(min-height:620px)]:py-4 sm:px-6 sm:py-8"
+    >
+      <Card className="relative z-10 mx-auto w-full max-w-md gap-0 space-y-4 rounded-xl border-border/70 bg-card p-4 shadow-sm animate-slide-in-bottom [@media(min-height:620px)]:space-y-6 [@media(min-height:620px)]:p-5 sm:space-y-8 sm:p-8">
+        <div className="flex flex-col space-y-2 text-center">
+          <div className="mx-auto mb-1 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm [@media(min-height:620px)]:h-14 [@media(min-height:620px)]:w-14 sm:mb-3">
+            <TrendingUp className="h-6 w-6" strokeWidth={2} aria-hidden="true" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+          <h1 className="text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">
             {t("title")}
           </h1>
-          <p className="text-sm text-muted-foreground font-medium">{t("subtitle")}</p>
+          <p className="text-sm font-medium text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         <form
@@ -54,16 +46,19 @@ async function LoginContent() {
             "use server";
             await signIn("google", { redirectTo: "/" });
           }}
-          className="pt-4"
+          className="sm:pt-4"
         >
           <Button
-            className="w-full h-12 text-[15px] font-medium tracking-wide bg-background text-foreground hover:bg-secondary border border-border shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 rounded-xl flex items-center justify-center gap-3"
+            variant="outline"
+            className="flex h-12 w-full items-center justify-center gap-3 rounded-lg text-[15px] font-medium tracking-normal shadow-sm"
             type="submit"
           >
             <svg
               className="w-5 h-5 shrink-0"
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+              focusable="false"
             >
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -86,27 +81,26 @@ async function LoginContent() {
           </Button>
         </form>
 
-        {/* Trust badges */}
-        <div className="flex flex-col gap-2 pt-2">
-          <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-            <Lock className="w-4 h-4 shrink-0 text-primary" />
+        <div className="flex flex-col gap-1.5 sm:gap-2 sm:pt-1">
+          <div className="flex min-w-0 items-start gap-2.5 text-xs leading-5 text-muted-foreground">
+            <Lock className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
             <span>{t("trust1")}</span>
           </div>
-          <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-            <ShieldCheck className="w-4 h-4 shrink-0 text-primary" />
+          <div className="flex min-w-0 items-start gap-2.5 text-xs leading-5 text-muted-foreground">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
             <span>{t("trust2")}</span>
           </div>
-          <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-            <EyeOff className="w-4 h-4 shrink-0 text-primary" />
+          <div className="flex min-w-0 items-start gap-2.5 text-xs leading-5 text-muted-foreground">
+            <EyeOff className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
             <span>{t("trust3")}</span>
           </div>
         </div>
 
         {showPreviewLogin && (
           <>
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-3 sm:pt-2">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground font-medium">Preview Mode</span>
+              <span className="text-xs font-medium text-muted-foreground">{t("previewMode")}</span>
               <div className="flex-1 h-px bg-border" />
             </div>
 
@@ -121,33 +115,47 @@ async function LoginContent() {
             >
               <div className="flex flex-col gap-3">
                 {!previewAuthDisabled && (
-                  <input
-                    name="password"
-                    type="password"
-                    placeholder="Preview password"
-                    required
-                    className="h-12 w-full rounded-xl border border-border bg-input px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
+                  <div className="flex flex-col gap-1.5">
+                    <label
+                      htmlFor="preview-password"
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      {t("previewPasswordLabel")}
+                    </label>
+                    <input
+                      id="preview-password"
+                      name="password"
+                      type="password"
+                      autoComplete="current-password"
+                      placeholder={t("previewPasswordPlaceholder")}
+                      required
+                      className="h-12 w-full rounded-lg border border-border bg-input px-4 text-sm text-foreground placeholder:text-muted-foreground transition-all focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
+                    />
+                  </div>
                 )}
                 <Button
                   type="submit"
-                  className="w-full h-12 text-[15px] font-medium tracking-wide bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 rounded-xl"
+                  variant="secondary"
+                  className="h-12 w-full rounded-lg text-[15px] font-medium tracking-normal"
                 >
-                  Preview Login
+                  {t("previewLogin")}
                 </Button>
               </div>
             </form>
           </>
         )}
 
-        <div className="text-center text-xs text-muted-foreground pt-2 mb-[-1rem]">
+        <div className="text-center text-xs text-muted-foreground sm:pt-1">
           {t("footerBefore")}{" "}
-          <Link href="/privacy" className="underline hover:text-foreground transition-colors">
+          <Link
+            href="/privacy"
+            className="inline-flex min-h-6 items-center rounded-sm underline underline-offset-2 transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+          >
             {t("footerLink")}
           </Link>
           .
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
@@ -156,14 +164,14 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen w-full items-center justify-center bg-background">
-          <div className="w-full max-w-md rounded-3xl bg-card/80 p-6 sm:p-10 space-y-8 animate-pulse">
+        <div className="flex h-dvh min-h-svh w-full items-start justify-center overflow-y-auto overflow-x-hidden px-4 py-3 [@media(min-height:620px)]:items-center [@media(min-height:620px)]:py-4 sm:px-6 sm:py-8">
+          <div className="w-full max-w-md space-y-4 rounded-xl bg-card p-4 shadow-sm animate-pulse [@media(min-height:620px)]:space-y-6 [@media(min-height:620px)]:p-5 sm:space-y-8 sm:p-8">
             <div className="flex flex-col items-center space-y-3">
-              <div className="w-16 h-16 rounded-xl bg-primary/20" />
+              <div className="h-12 w-12 rounded-lg bg-primary/20 [@media(min-height:620px)]:h-14 [@media(min-height:620px)]:w-14" />
               <div className="h-8 w-48 rounded bg-muted" />
               <div className="h-4 w-56 rounded bg-muted" />
             </div>
-            <div className="h-12 w-full rounded-xl bg-muted" />
+            <div className="h-12 w-full rounded-lg bg-muted" />
           </div>
         </div>
       }

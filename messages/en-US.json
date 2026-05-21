@@ -528,6 +528,10 @@
     "trust1": "Google OAuth — we never store your password",
     "trust2": "Your data is private & never sold",
     "trust3": "Only you can see your portfolio",
+    "previewMode": "Preview Mode",
+    "previewPasswordLabel": "Preview password",
+    "previewPasswordPlaceholder": "Enter preview password",
+    "previewLogin": "Preview Login",
     "footerBefore": "Your data stays private. Read our",
     "footerLink": "Privacy Policy"
   },
