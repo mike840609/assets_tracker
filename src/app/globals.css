@@ -167,6 +167,26 @@
 
 /* Premium utilities */
 @layer utilities {
+  /* SVG gradient-stop colors. Must be applied via CSS class (not React inline
+     style) because some browsers do not resolve CSS vars set through a JS-style
+     property on SVG paint properties — slices end up with no fill and lose hit
+     area for pointer events. */
+  .chart-stop-0 {
+    stop-color: var(--chart-1);
+  }
+  .chart-stop-1 {
+    stop-color: var(--chart-2);
+  }
+  .chart-stop-2 {
+    stop-color: var(--chart-3);
+  }
+  .chart-stop-3 {
+    stop-color: var(--chart-4);
+  }
+  .chart-stop-4 {
+    stop-color: var(--chart-5);
+  }
+
   /* .glass is intentionally blur-free for static layout elements.
      Fixed/sticky overlays (sidebar, mobile header, mobile nav) apply backdrop-blur inline. */
   .glass {

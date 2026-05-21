@@ -108,11 +108,11 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
             {/* Chart on top, Legend below */}
             <div className="flex flex-col items-center">
               {/* Donut chart — decorative; the legend below is the accessible surface */}
-              <div className="w-full h-[180px]" aria-hidden="true">
+              <div className="w-full h-[180px]" role="presentation">
                 {containerWidth > 0 && (
                   <PieChart width={containerWidth} height={180}>
                     <defs>
-                      {PALETTE.map((color, index) => (
+                      {PALETTE.map((_, index) => (
                         <linearGradient
                           key={`grad-${index}`}
                           id={`alloc-grad-${index}`}
@@ -121,8 +121,12 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                           x2="1"
                           y2="1"
                         >
-                          <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.95 }} />
-                          <stop offset="100%" style={{ stopColor: color, stopOpacity: 0.65 }} />
+                          <stop offset="0%" className={`chart-stop-${index}`} stopOpacity={0.95} />
+                          <stop
+                            offset="100%"
+                            className={`chart-stop-${index}`}
+                            stopOpacity={0.65}
+                          />
                         </linearGradient>
                       ))}
                     </defs>
@@ -203,11 +207,11 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                         type="button"
                         aria-pressed={isActive}
                         onMouseEnter={() => setActiveIndex(index)}
-                        onMouseLeave={() => setActiveIndex(-1)}
+                        onMouseLeave={() => setActiveIndex((c) => (c === index ? -1 : c))}
                         onTouchStart={() => setActiveIndex(index)}
-                        onTouchEnd={() => setActiveIndex(-1)}
+                        onTouchEnd={() => setActiveIndex((c) => (c === index ? -1 : c))}
                         onFocus={() => setActiveIndex(index)}
-                        onBlur={() => setActiveIndex(-1)}
+                        onBlur={() => setActiveIndex((c) => (c === index ? -1 : c))}
                         className={`group flex w-full items-center gap-2 ${isCompact ? "px-2 py-1" : "px-2.5 py-1.5"} pointer-coarse:min-h-[44px] rounded-lg text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
                           isActive ? "bg-accent/80 shadow-sm scale-[1.01]" : "hover:bg-accent/50"
                         }`}
