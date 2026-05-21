@@ -10,7 +10,7 @@ interface Props {
 }
 
 /**
- * Drop-in replacement for the page-level <h2> that drives the iOS 11+
+ * Drop-in replacement for the page-level <h1> that drives the iOS 11+
  * large-title navigation bar pattern.
  *
  * On mobile: renders as a large (text-4xl) inline title and uses an
@@ -40,7 +40,7 @@ export function LargeTitleHeading({ children, className }: Props) {
   }, [setIsVisible]);
 
   return (
-    <h2
+    <h1
       ref={ref}
       className={cn(
         // mobile: iOS-style large title; desktop: existing size
@@ -49,6 +49,6 @@ export function LargeTitleHeading({ children, className }: Props) {
       )}
     >
       {children}
-    </h2>
+    </h1>
   );
 }

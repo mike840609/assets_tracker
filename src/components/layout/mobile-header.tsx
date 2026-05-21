@@ -50,7 +50,7 @@ export function MobileHeader() {
         isVisible ? "border-transparent" : "border-border/50",
       )}
     >
-      {/* Back button — appears on nested routes once the large title scrolls off */}
+      {/* Back button appears on nested routes once the large title scrolls off. */}
       {showBackButton && (
         <button
           type="button"
@@ -62,7 +62,7 @@ export function MobileHeader() {
         </button>
       )}
 
-      {/* Left: logo + app name — fades away when the large title scrolls out */}
+      {/* Left: logo and app name fade away when the large title scrolls out. */}
       <div
         className={cn(
           "flex items-center gap-2 min-w-0 transition-all motion-normal",
@@ -98,16 +98,14 @@ export function MobileHeader() {
           />
         </svg>
         <div className="flex flex-col min-w-0">
-          <h1 className="text-lg font-bold tracking-tight bg-gradient-to-br from-primary to-chart-3 bg-clip-text text-transparent truncate">
-            {t("app.name")}
-          </h1>
+          <p className="text-lg font-bold tracking-tight text-primary truncate">{t("app.name")}</p>
           <p className="text-[10px] text-muted-foreground font-medium -mt-1 opacity-80 uppercase tracking-wide truncate">
             {t("app.subtitleMobile")}
           </p>
         </div>
       </div>
 
-      {/* Centre: small page title — slides in when the large title collapses */}
+      {/* Centre: small page title slides in when the large title collapses. */}
       <span
         aria-hidden={isVisible}
         className={cn(
@@ -119,7 +117,7 @@ export function MobileHeader() {
         {pageTitle}
       </span>
 
-      {/* Right: controls — always visible */}
+      {/* Right controls are always visible. */}
       <div className="flex items-center gap-1.5">
         <button
           type="button"
