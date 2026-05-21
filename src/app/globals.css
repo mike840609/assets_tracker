@@ -57,6 +57,10 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
+
+  /* Neutral-tinted shadows (hue 260 matches --foreground). Avoids the pure-black look. */
+  --shadow-strong: 0 4px 24px -4px oklch(0.1 0.02 260 / 0.5);
+  --shadow-pop: 0 6px 12px oklch(0.1 0.02 260 / 0.25);
 }
 
 :root {
@@ -167,7 +171,7 @@
      Fixed/sticky overlays (sidebar, mobile header, mobile nav) apply backdrop-blur inline. */
   .glass {
     @apply bg-background/80 border border-border/50 shadow-sm
-           dark:bg-card/80 dark:border-border/60 dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)];
+           dark:bg-card/80 dark:border-border/60 dark:shadow-[var(--shadow-strong)];
   }
   .card-gradient {
     @apply relative overflow-hidden;
@@ -186,7 +190,7 @@
   }
   .premium-card {
     @apply bg-background/80 border border-border/50 shadow-sm
-           dark:bg-card/80 dark:border-border/60 dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)]
+           dark:bg-card/80 dark:border-border/60 dark:shadow-[var(--shadow-strong)]
            relative overflow-hidden rounded-2xl p-1 hover:shadow-lg transition-all duration-300 hover:-translate-y-1;
   }
   .premium-card::after {
@@ -230,31 +234,12 @@
     );
     animation: skeleton-shimmer 1.5s ease-in-out infinite;
   }
+}
 
-  .hero-mesh-positive,
-  .hero-mesh-negative {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.24;
-    filter: saturate(1.08);
-    background-size: 160% 160%;
-    animation: hero-mesh-drift 14s ease-in-out infinite;
-  }
-
-  .hero-mesh-positive {
-    background-image:
-      radial-gradient(circle at 15% 25%, oklch(0.88 0.12 160 / 0.75), transparent 50%),
-      radial-gradient(circle at 80% 20%, oklch(0.72 0.16 165 / 0.45), transparent 46%),
-      radial-gradient(circle at 55% 80%, oklch(0.66 0.13 180 / 0.3), transparent 52%);
-  }
-
-  .hero-mesh-negative {
-    background-image:
-      radial-gradient(circle at 15% 25%, oklch(0.8 0.16 30 / 0.7), transparent 50%),
-      radial-gradient(circle at 80% 20%, oklch(0.66 0.19 25 / 0.45), transparent 46%),
-      radial-gradient(circle at 55% 80%, oklch(0.6 0.15 15 / 0.3), transparent 52%);
+/* Respect motion preference for the only continuous loop in the app. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer::after {
+    animation: none;
   }
 }
 
@@ -273,16 +258,6 @@
   }
   100% {
     transform: scale(1);
-  }
-}
-
-@keyframes hero-mesh-drift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
   }
 }
 

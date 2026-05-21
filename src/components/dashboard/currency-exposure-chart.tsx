@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useCallback, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, Sector, Label } from "recharts";
 import { useContainerWidth } from "@/hooks/use-container-size";
 import { useTranslations } from "next-intl";
@@ -10,16 +9,16 @@ import { formatCurrency } from "@/lib/currencies";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import type { NetWorthSummary } from "@/lib/types";
 
-const COLORS = [
-  "oklch(0.65 0.18 270)", // Indigo
-  "oklch(0.72 0.17 310)", // Fuchsia
-  "oklch(0.78 0.16 65)", // Amber
-  "oklch(0.72 0.19 155)", // Emerald
-  "oklch(0.70 0.15 220)", // Sky blue
-  "oklch(0.68 0.14 25)", // Coral
-  "oklch(0.75 0.12 180)", // Teal
-  "oklch(0.60 0.16 330)", // Rose
-  "oklch(0.80 0.14 100)", // Lime
+/**
+ * Chart palette pulls from --chart-1 … --chart-5 so the active color schema
+ * reaches the donut. Five-color rotation; users rarely hold more than ~5 currencies.
+ */
+const PALETTE = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
 ];
 
 export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary }) {
@@ -69,7 +68,7 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
           fill={fill}
           cornerRadius={4}
           style={{
-            filter: isActive ? "drop-shadow(0px 6px 12px rgba(0,0,0,0.25))" : "none",
+            filter: isActive ? "drop-shadow(var(--shadow-pop))" : "none",
             transition: "all 200ms ease-out",
             outline: "none",
             cursor: "pointer",
@@ -81,11 +80,11 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
   );
 
   return (
-    <Card className="border-0 bg-transparent shadow-none">
-      <CardHeader className="pb-1 px-2 sm:px-4">
-        <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
-      </CardHeader>
-      <CardContent className="px-2 sm:px-4 pb-3">
+    <section className="rounded-xl border border-border/40 bg-card p-4 sm:p-5">
+      <header className="pb-3">
+        <h3 className="text-base font-medium text-foreground">{t("title")}</h3>
+      </header>
+      <div>
         {data.length === 0 ? (
           <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noExposure")}
@@ -97,12 +96,12 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
           >
             {/* Chart on top, Legend below */}
             <div className="flex flex-col items-center">
-              {/* Donut chart */}
-              <div className="w-full h-[180px]">
+              {/* Donut chart — decorative; the legend below is the accessible surface */}
+              <div className="w-full h-[180px]" aria-hidden="true">
                 {containerWidth > 0 && (
                   <PieChart width={containerWidth} height={180}>
                     <defs>
-                      {COLORS.map((color, index) => (
+                      {PALETTE.map((color, index) => (
                         <linearGradient
                           key={`grad-${index}`}
                           id={`expo-grad-${index}`}
@@ -111,8 +110,8 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                           x2="1"
                           y2="1"
                         >
-                          <stop offset="0%" stopColor={color} stopOpacity={0.95} />
-                          <stop offset="100%" stopColor={color} stopOpacity={0.65} />
+                          <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.95 }} />
+                          <stop offset="100%" style={{ stopColor: color, stopOpacity: 0.65 }} />
                         </linearGradient>
                       ))}
                     </defs>
@@ -171,7 +170,7 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                       {data.map((_, index) => (
                         <Cell
                           key={`cell-${index}`}
-                          fill={`url(#expo-grad-${index % COLORS.length})`}
+                          fill={`url(#expo-grad-${index % PALETTE.length})`}
                         />
                       ))}
                     </Pie>
@@ -179,48 +178,56 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                 )}
               </div>
 
-              {/* Custom legend below */}
-              <div className="w-full space-y-1 pt-1">
+              {/* Legend — the accessible control surface for the donut */}
+              <ul className="w-full space-y-1 pt-1 list-none pl-0">
                 {data.map((item, index) => {
                   const isActive = activeIndex === index;
                   return (
-                    <div
-                      key={item.name}
-                      className={`group flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer transition-all duration-200 ${
-                        isActive ? "bg-accent/80 shadow-sm scale-[1.01]" : "hover:bg-accent/50"
-                      }`}
-                      onMouseEnter={() => setActiveIndex(index)}
-                      onMouseLeave={() => setActiveIndex(-1)}
-                    >
-                      <div
-                        className={`w-2.5 h-2.5 rounded-full shrink-0 transition-transform duration-200 ${isActive ? "scale-125" : ""}`}
-                        style={{ background: COLORS[index % COLORS.length] }}
-                      />
-                      <span className="text-sm text-foreground font-medium truncate flex-1 min-w-0">
-                        {item.name}
-                      </span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-xs tabular-nums text-muted-foreground font-medium">
-                          {privacyMode ? "••••" : formatCurrency(item.value, summary.baseCurrency)}
-                        </span>
+                    <li key={item.name}>
+                      <button
+                        type="button"
+                        aria-pressed={isActive}
+                        onMouseEnter={() => setActiveIndex(index)}
+                        onMouseLeave={() => setActiveIndex(-1)}
+                        onFocus={() => setActiveIndex(index)}
+                        onBlur={() => setActiveIndex(-1)}
+                        className={`group flex w-full items-center gap-2 px-2.5 py-1.5 pointer-coarse:min-h-[44px] rounded-lg text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
+                          isActive ? "bg-accent/80 shadow-sm scale-[1.01]" : "hover:bg-accent/50"
+                        }`}
+                      >
                         <span
-                          className={`text-[11px] tabular-nums font-semibold px-1.5 py-0.5 rounded-full transition-colors duration-200 ${
-                            isActive
-                              ? "bg-foreground/10 text-foreground"
-                              : "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {item.percentage}%
+                          aria-hidden="true"
+                          className={`w-2.5 h-2.5 rounded-full shrink-0 transition-transform duration-200 ${isActive ? "scale-125" : ""}`}
+                          style={{ background: PALETTE[index % PALETTE.length] }}
+                        />
+                        <span className="text-sm text-foreground font-medium truncate flex-1 min-w-0">
+                          {item.name}
                         </span>
-                      </div>
-                    </div>
+                        <span className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-xs tabular-nums text-muted-foreground font-medium">
+                            {privacyMode
+                              ? "••••"
+                              : formatCurrency(item.value, summary.baseCurrency)}
+                          </span>
+                          <span
+                            className={`text-[11px] tabular-nums font-semibold px-1.5 py-0.5 rounded-full transition-colors duration-200 ${
+                              isActive
+                                ? "bg-foreground/10 text-foreground"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {item.percentage}%
+                          </span>
+                        </span>
+                      </button>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

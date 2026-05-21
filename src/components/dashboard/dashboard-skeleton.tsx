@@ -1,6 +1,4 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-
-const CARD_CLASS = "premium-card";
+const SURFACE = "rounded-xl border border-border/40 bg-card p-4 sm:p-5";
 
 export function DashboardSkeleton() {
   return (
@@ -13,60 +11,46 @@ export function DashboardSkeleton() {
       {/* Actions */}
       <div className="h-10 w-full rounded-lg skeleton-shimmer" />
 
-      {/* Net Worth Cards — matches NetWorthSkeleton in dashboard-content.tsx */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-        <Card className="col-span-2 lg:col-span-1 rounded-2xl h-[126px]">
-          <CardContent className="h-full rounded-2xl skeleton-shimmer" />
-        </Card>
-        <Card className="col-span-1 rounded-2xl h-[126px]">
-          <CardContent className="h-full rounded-2xl skeleton-shimmer" />
-        </Card>
-        <Card className="col-span-1 rounded-2xl h-[126px]">
-          <CardContent className="h-full rounded-2xl skeleton-shimmer" />
-        </Card>
-      </div>
+      {/* Net Worth hero — matches NetWorthSkeleton in dashboard-content.tsx */}
+      <section className="py-5 sm:py-7">
+        <div className="h-3 w-24 rounded skeleton-shimmer" />
+        <div className="mt-2 h-12 sm:h-16 w-64 sm:w-80 rounded skeleton-shimmer" />
+        <div className="mt-3 h-7 w-40 rounded-full skeleton-shimmer" />
+        <div className="mt-6 pt-5 border-t border-border/60 grid grid-cols-2 gap-x-8 gap-y-3">
+          <div className="space-y-2">
+            <div className="h-3 w-16 rounded skeleton-shimmer" />
+            <div className="h-7 w-28 rounded skeleton-shimmer" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-3 w-20 rounded skeleton-shimmer" />
+            <div className="h-7 w-28 rounded skeleton-shimmer" />
+          </div>
+        </div>
+      </section>
 
       {/* Charts — 1st = trend (taller, lg col-span-2 xl col-span-1), 2nd + 3rd = h-250 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6 items-stretch">
-        <div className={`${CARD_CLASS} lg:col-span-2 xl:col-span-1`}>
-          <Card className="border-0 shadow-none bg-transparent">
-            <CardHeader className="pb-2">
-              <div className="h-5 w-32 rounded skeleton-shimmer" />
-            </CardHeader>
-            <CardContent>
-              <div className="h-[350px] rounded skeleton-shimmer" />
-            </CardContent>
-          </Card>
-        </div>
+        <section className={`${SURFACE} lg:col-span-2 xl:col-span-1`}>
+          <div className="h-5 w-32 rounded skeleton-shimmer mb-3" />
+          <div className="h-[350px] rounded skeleton-shimmer" />
+        </section>
         {[0, 1].map((i) => (
-          <div key={i} className={CARD_CLASS}>
-            <Card className="border-0 shadow-none bg-transparent">
-              <CardHeader className="pb-2">
-                <div className="h-5 w-32 rounded skeleton-shimmer" />
-              </CardHeader>
-              <CardContent>
-                <div className="h-[250px] rounded skeleton-shimmer" />
-              </CardContent>
-            </Card>
-          </div>
+          <section key={i} className={SURFACE}>
+            <div className="h-5 w-32 rounded skeleton-shimmer mb-3" />
+            <div className="h-[250px] rounded skeleton-shimmer" />
+          </section>
         ))}
       </div>
 
       {/* Accounts summary — matches AccountsSummarySkeleton */}
-      <div className={CARD_CLASS}>
-        <Card className="border-0 shadow-none bg-transparent">
-          <CardHeader>
-            <div className="h-5 w-40 rounded skeleton-shimmer" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-10 rounded skeleton-shimmer" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <section className={SURFACE}>
+        <div className="h-5 w-40 rounded skeleton-shimmer mb-4" />
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-10 rounded skeleton-shimmer" />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

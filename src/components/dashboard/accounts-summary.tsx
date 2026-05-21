@@ -2,8 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
 import { formatCurrency } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -77,16 +76,14 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
 
   if (summary.accounts.length === 0) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-muted-foreground text-center py-8">
-            {t("accountsSummary.noAccounts")}{" "}
-            <Link href="/accounts" className="text-primary underline">
-              {t("accountsSummary.addFirstAccount")}
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
+      <section className="rounded-xl border border-border/40 bg-card p-4 sm:p-5">
+        <p className="text-muted-foreground text-center py-4">
+          {t("accountsSummary.noAccounts")}{" "}
+          <Link href="/accounts" className="text-primary underline">
+            {t("accountsSummary.addFirstAccount")}
+          </Link>
+        </p>
+      </section>
     );
   }
 
@@ -101,15 +98,12 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
     const totalDisplay = isAsset ? summary.totalAssets : summary.totalLiabilities;
     const label = isAsset ? t("common.asset").toUpperCase() : t("common.liability").toUpperCase();
     const accentClass = isAsset ? "text-primary" : "text-destructive";
-    const dotClass = isAsset ? "bg-primary" : "bg-destructive";
-    const totalAccentClass = isAsset ? "text-primary" : "text-destructive";
 
     return (
       <div>
         <p
-          className={`text-xs font-semibold uppercase tracking-widest mb-2 px-1 flex items-center gap-1.5 opacity-70 ${accentClass}`}
+          className={`text-xs font-semibold uppercase tracking-widest mb-2 px-1 opacity-70 ${accentClass}`}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
           {label}
         </p>
         <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
@@ -119,14 +113,15 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
               <div className="relative overflow-hidden">
                 {!privacyMode && (
                   <div
-                    className={`absolute inset-y-0 left-0 ${isAsset ? "bg-primary/5" : "bg-destructive/5"} transition-[width] duration-500`}
-                    style={{ width: `${getPercentage(account)}%` }}
+                    aria-hidden="true"
+                    className={`absolute inset-0 origin-left motion-normal transition-transform ${isAsset ? "bg-primary/5" : "bg-destructive/5"}`}
+                    style={{ transform: `scaleX(${getPercentage(account) / 100})` }}
                   />
                 )}
                 <Link
                   href={`/accounts/${account.id}`}
                   prefetch={false}
-                  className={`relative flex items-center gap-3 px-4 ${isCompact ? "py-1.5" : "py-3.5"} hover:bg-muted/40 active:bg-muted/60 transition-colors group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset`}
+                  className={`relative flex items-center gap-3 px-4 ${isCompact ? "py-1.5" : "py-3.5"} hover:bg-muted/40 active:bg-muted/60 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset`}
                   transitionTypes={["nav-forward"]}
                 >
                   <div className="flex-1 min-w-0">
@@ -159,7 +154,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
             <span className="text-xs font-medium text-muted-foreground">
               {t("accountsSummary.total")}
             </span>
-            <span className={`text-sm font-semibold tabular-nums ${totalAccentClass}`}>
+            <span className={`text-sm font-semibold tabular-nums ${accentClass}`}>
               {privacyMode ? HIDDEN : formatCurrency(totalDisplay, summary.baseCurrency)}
             </span>
           </div>
@@ -169,33 +164,36 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   };
 
   return (
-    <Card className="relative border-0 shadow-none bg-transparent">
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-2">
-        <CardTitle className="text-lg font-semibold tracking-tight">
-          {t("accountsSummary.title")}
-        </CardTitle>
+    <section className="relative rounded-xl border border-border/40 bg-card p-4 sm:p-5">
+      <header className="flex flex-wrap items-center justify-between gap-2 pb-3">
+        <h3 className="text-lg font-semibold tracking-tight">{t("accountsSummary.title")}</h3>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
           {sortOptions.map(({ field, label }) => (
             <button
               key={field}
               onClick={() => handleSort(field)}
               aria-pressed={sortField === field}
-              className={`px-2 py-0.5 text-xs rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+              className={`inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs rounded-full transition-colors pointer-coarse:min-h-[44px] pointer-coarse:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                 sortField === field
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted"
               }`}
             >
-              {label}
-              {sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
+              <span>{label}</span>
+              {sortField === field &&
+                (sortDirection === "asc" ? (
+                  <ArrowUp className="h-3 w-3" aria-hidden="true" />
+                ) : (
+                  <ArrowDown className="h-3 w-3" aria-hidden="true" />
+                ))}
             </button>
           ))}
         </div>
-      </CardHeader>
-      <CardContent className={`${isCompact ? "space-y-2" : "space-y-6"} pt-4`}>
+      </header>
+      <div className={isCompact ? "space-y-2" : "space-y-6"}>
         {assets.length > 0 && renderGroup(assets, true)}
         {liabilities.length > 0 && renderGroup(liabilities, false)}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { Target, ArrowRight, CheckCircle2 } from "lucide-react";
 import type { GoalWithProgress } from "@/lib/types";
@@ -29,22 +28,22 @@ export function GoalsMilestoneCard({
   const progressClamped = featured ? Math.max(0, Math.min(100, featured.progressPercent)) : 0;
 
   return (
-    <Card className="border-0 shadow-none bg-transparent">
-      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+    <section className="rounded-xl border border-border/40 bg-card p-4 sm:p-5">
+      <header className="flex items-center justify-between pb-3">
         <div className="flex items-center gap-2">
-          <Target className="h-4 w-4 text-primary" />
-          <p className="text-sm font-medium">{t("title")}</p>
+          <Target className="h-4 w-4 text-primary" aria-hidden="true" />
+          <h3 className="text-sm font-medium">{t("title")}</h3>
         </div>
         <Link
           href="/goals"
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           {t("viewAll", { count: totalGoals })}
-          <ArrowRight className="h-3 w-3" />
+          <ArrowRight className="h-3 w-3" aria-hidden="true" />
         </Link>
-      </CardHeader>
+      </header>
 
-      <CardContent className="pt-0">
+      <div>
         {!featured ? (
           <p className="text-sm text-muted-foreground">{t("allCompleted")}</p>
         ) : (
@@ -87,7 +86,7 @@ export function GoalsMilestoneCard({
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
