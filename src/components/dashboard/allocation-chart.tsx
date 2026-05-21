@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { PieChart, Pie, Cell, Sector, Label } from "recharts";
 import { useContainerWidth } from "@/hooks/use-container-size";
 import { useTranslations } from "next-intl";
@@ -54,6 +54,15 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
   const handleMouseEnter = useCallback((_: unknown, index: number) => setActiveIndex(index), []);
   const handleMouseLeave = useCallback(() => setActiveIndex(-1), []);
 
+  // Keep activeIndex in a ref so renderShape can stay stable across renders.
+  // If renderShape's reference changes, Recharts treats it as a new shape prop
+  // and remounts the sectors — new mounts can't transition from prior state,
+  // so only the first hover animates and subsequent hovers snap.
+  const activeIndexRef = useRef(activeIndex);
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
+
   /* Custom shape function that expands the hovered slice */
   const renderShape = useCallback(
     (props: {
@@ -67,7 +76,7 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
       index: number;
     }) => {
       const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, index } = props;
-      const isActive = index === activeIndex;
+      const isActive = index === activeIndexRef.current;
       return (
         <Sector
           cx={cx}
@@ -87,7 +96,7 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
         />
       );
     },
-    [activeIndex],
+    [],
   );
 
   return (
