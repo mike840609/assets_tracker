@@ -13,6 +13,7 @@ const themes = [
 ] as const;
 
 type ThemeValue = (typeof themes)[number]["value"];
+type ThemeToggleMode = "segmented" | "cycle";
 
 type DocumentWithVT = Document & {
   startViewTransition?: (callback: () => void | Promise<void>) => {
@@ -21,9 +22,15 @@ type DocumentWithVT = Document & {
   };
 };
 
-export function ThemeToggle() {
+export function ThemeToggle({ mode = "segmented" }: { mode?: ThemeToggleMode }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const activeTheme: ThemeValue = themes.some(({ value }) => value === theme)
+    ? (theme as ThemeValue)
+    : "system";
+  const activeIndex = themes.findIndex(({ value }) => value === activeTheme);
+  const activeThemeItem = themes[activeIndex] ?? themes[2];
+  const nextTheme = themes[(activeIndex + 1) % themes.length]?.value ?? "system";
 
   useEffect(() => startTransition(() => setMounted(true)), []);
 
@@ -61,6 +68,14 @@ export function ThemeToggle() {
   );
 
   if (!mounted) {
+    if (mode === "cycle") {
+      return (
+        <div className="inline-flex size-11 items-center justify-center rounded-lg bg-muted/50">
+          <div className="h-4 w-4 rounded-sm bg-muted" />
+        </div>
+      );
+    }
+
     return (
       <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-0.5">
         {themes.map(({ value }) => (
@@ -72,10 +87,30 @@ export function ThemeToggle() {
     );
   }
 
+  if (mode === "cycle") {
+    const Icon = activeThemeItem.icon;
+    return (
+      <button
+        type="button"
+        onClick={(e) => handleSelect(nextTheme, e)}
+        className={cn(
+          "inline-flex size-11 items-center justify-center rounded-lg text-sm transition-colors duration-200",
+          "text-muted-foreground hover:bg-muted/60 hover:text-foreground active:bg-muted",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        )}
+        title={activeThemeItem.label}
+        aria-label={`${activeThemeItem.label} theme. Tap to change theme.`}
+      >
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      </button>
+    );
+  }
+
   return (
     <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-0.5">
       {themes.map(({ value, icon: Icon, label }) => (
         <button
+          type="button"
           key={value}
           onClick={(e) => handleSelect(value, e)}
           className={cn(
