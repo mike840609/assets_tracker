@@ -109,6 +109,7 @@
     "snapshotCreated": "Snapshot created",
     "snapshotFailed": "Failed to create snapshot",
     "exchangeRatesRefreshed": "Exchange rates refreshed",
+    "exchangeRatesFailed": "Failed to refresh exchange rates",
     "failed": "Failed",
     "languageUpdated": "Language updated",
     "languageFailed": "Failed to update language"
@@ -519,7 +520,7 @@
     "step2Before": "Tap the Share button",
     "step2After": "in the toolbar",
     "step3": "Scroll down and tap \"Add to Home Screen\"",
-    "step4": "Tap \"Add\" — the app icon will appear on your home screen"
+    "step4": "Tap \"Add\". The app icon will appear on your home screen"
   },
   "login": {
     "title": "Assets Tracker",

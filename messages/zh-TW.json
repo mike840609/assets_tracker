@@ -109,6 +109,7 @@
     "snapshotCreated": "快照已建立",
     "snapshotFailed": "建立快照失敗",
     "exchangeRatesRefreshed": "匯率已更新",
+    "exchangeRatesFailed": "更新匯率失敗",
     "failed": "失敗",
     "languageUpdated": "語言已更新",
     "languageFailed": "更新語言失敗"
@@ -519,7 +520,7 @@
     "step2Before": "點選",
     "step2After": "工具列上的分享按鈕",
     "step3": "往下捲動並點選「加入主畫面」",
-    "step4": "點選「新增」— App 圖示即會出現在主畫面上"
+    "step4": "點選「新增」。App 圖示即會出現在主畫面上"
   },
   "login": {
     "title": "資產追蹤",

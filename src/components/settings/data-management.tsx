@@ -133,15 +133,16 @@ export function DataManagement() {
               <p className="text-sm text-muted-foreground">{t("exportDescription")}</p>
             </div>
             <Button
+              type="button"
               variant="outline"
               onClick={handleExport}
               disabled={isExporting}
-              className="w-full sm:w-auto min-w-[200px]"
+              className="min-h-11 w-full sm:w-auto sm:min-w-[200px] md:min-h-8"
             >
               {isExporting ? (
-                <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2Icon className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
               ) : (
-                <UploadIcon className="mr-2 h-4 w-4" />
+                <DownloadIcon className="mr-2 h-4 w-4" aria-hidden="true" />
               )}
               {t("export")}
             </Button>
@@ -161,15 +162,16 @@ export function DataManagement() {
                 className="hidden"
               />
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
-                className="w-full min-w-[200px]"
+                className="min-h-11 w-full sm:min-w-[200px] md:min-h-8"
               >
                 {isImporting ? (
-                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                 ) : (
-                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  <UploadIcon className="mr-2 h-4 w-4" aria-hidden="true" />
                 )}
                 {t("importButton")}
               </Button>
@@ -192,6 +194,7 @@ export function DataManagement() {
           <DialogFooter>
             <Button
               variant="outline"
+              type="button"
               onClick={() => {
                 setShowConfirm(false);
                 setSelectedFile(null);
@@ -200,8 +203,14 @@ export function DataManagement() {
             >
               {t("cancel")}
             </Button>
-            <Button variant="destructive" onClick={handleImport}>
-              {t("importButton")}
+            <Button
+              variant="destructive"
+              type="button"
+              onClick={handleImport}
+              disabled={isImporting}
+            >
+              {isImporting && <Loader2Icon className="animate-spin" aria-hidden="true" />}
+              {isImporting ? t("importing") : t("importButton")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -227,6 +236,7 @@ export function DataManagement() {
           <DialogFooter>
             <Button
               variant="outline"
+              type="button"
               onClick={() => {
                 setShowErrorDialog(false);
                 setImportError(null);
@@ -244,7 +254,7 @@ export function DataManagement() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-primary">
-              <CheckCircleIcon className="h-5 w-5 text-green-500" />
+              <CheckCircleIcon className="h-5 w-5" />
               {t("importSuccessTitle")}
             </DialogTitle>
             <DialogDescription className="py-2 text-foreground font-medium">
@@ -252,7 +262,11 @@ export function DataManagement() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button className="w-full" onClick={() => window.location.reload()}>
+            <Button
+              type="button"
+              className="w-full min-h-11 md:min-h-8"
+              onClick={() => window.location.reload()}
+            >
               OK
             </Button>
           </DialogFooter>

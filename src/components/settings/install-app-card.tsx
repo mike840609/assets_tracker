@@ -7,8 +7,8 @@ function ShareIcon() {
     <svg
       viewBox="0 0 50 50"
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4 shrink-0"
-      fill="#007AFF"
+      className="h-4 w-4 shrink-0 text-primary"
+      fill="currentColor"
       aria-hidden="true"
     >
       <path d="M30.3 13.7L25 8.4l-5.3 5.3-1.4-1.4L25 5.6l6.7 6.7z" />
@@ -33,7 +33,7 @@ export async function InstallAppCard() {
             <p className="text-sm font-medium">{t("platform")}</p>
             <p className="text-sm text-muted-foreground">{t("description")}</p>
           </div>
-          <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground bg-muted/30 p-4 rounded-md">
+          <ol className="list-decimal list-inside space-y-2 rounded-md bg-muted/30 p-4 text-sm text-muted-foreground">
             <li>{t("step1")}</li>
             <li>
               <span className="inline-flex items-center gap-1.5">

@@ -41,13 +41,13 @@ async function SettingsContent() {
         <InstallAppCard />
 
         <section className="space-y-3 w-full border-t pt-10">
-          <h3 className="text-lg font-semibold text-red-500 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-destructive flex items-center gap-2">
             {t("dangerZone")}
           </h3>
-          <div className="border border-red-500/20 bg-red-500/5 rounded-lg overflow-hidden">
+          <div className="border border-destructive/20 bg-destructive/5 rounded-lg overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-red-600 dark:text-red-400">{t("signOut")}</p>
+                <p className="text-sm font-medium text-destructive">{t("signOut")}</p>
                 <p className="text-sm text-muted-foreground">{t("signOutDesc")}</p>
               </div>
               <form
@@ -57,7 +57,11 @@ async function SettingsContent() {
                 }}
                 className="w-full sm:w-auto"
               >
-                <Button variant="destructive" type="submit" className="w-full min-w-[200px]">
+                <Button
+                  variant="destructive"
+                  type="submit"
+                  className="min-h-11 w-full min-w-[200px] md:min-h-8"
+                >
                   {t("signOut")}
                 </Button>
               </form>
