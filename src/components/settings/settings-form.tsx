@@ -244,7 +244,7 @@ export function SettingsForm({
                 <p id="settings-color-schema-label" className="text-sm font-medium">
                   {t("settings.colorSchema")}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="hidden text-sm text-muted-foreground sm:block">
                   {t("settings.colorSchemaDescription")}
                 </p>
               </div>
