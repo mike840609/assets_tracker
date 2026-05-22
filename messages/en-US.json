@@ -547,6 +547,10 @@
     "section5Body": "You can export all your data or delete your account at any time from the Settings page.",
     "section6Title": "Authentication",
     "section6Body": "Sign-in is handled entirely by Google OAuth. We receive only a secure session token — your Google password is never shared with or stored by this app.",
+    "section7Title": "Analytics and telemetry",
+    "section7Body": "We use Vercel Analytics and Speed Insights to understand basic usage and page performance. These tools do not include your manually entered account names, holdings, balances, or transaction notes.",
+    "section8Title": "Contact",
+    "section8Body": "For privacy or data requests, email us at",
     "lastUpdated": "Last updated: April 2026"
   },
   "terms": {

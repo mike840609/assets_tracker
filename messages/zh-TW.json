@@ -547,6 +547,10 @@
     "section5Body": "您可以隨時在設定頁面匯出所有資料或刪除帳號。",
     "section6Title": "身份驗證",
     "section6Body": "登入完全由 Google OAuth 處理。我們只接收安全的工作階段令牌，您的 Google 密碼絕不會被本應用程式接收或儲存。",
+    "section7Title": "分析與遙測",
+    "section7Body": "我們使用 Vercel Analytics 和 Speed Insights 了解基本使用情況與頁面效能。這些工具不包含您手動輸入的帳戶名稱、持倉、餘額或交易備註。",
+    "section8Title": "聯絡方式",
+    "section8Body": "如有隱私或資料請求，請寄信至",
     "lastUpdated": "最後更新：2026 年 4 月"
   },
   "terms": {
