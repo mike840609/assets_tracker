@@ -27,12 +27,12 @@ async function SettingsContent() {
 
   return (
     <NextIntlClientProvider messages={pickMessages(allMessages, CLIENT_NAMESPACES)}>
-      <div className="space-y-5 max-w-2xl pb-16 animate-in fade-in duration-200 md:space-y-10">
-        <div className="flex flex-col space-y-3 md:space-y-4">
+      <div className="max-w-2xl space-y-6 pb-16 animate-in fade-in duration-200 md:space-y-8">
+        <div className="flex flex-col space-y-3">
           <LargeTitleHeading>{t("title")}</LargeTitleHeading>
-          <div className="bg-muted/50 p-3 rounded-lg border w-full md:p-4">
-            <h3 className="font-semibold text-sm mb-1">{t("appPhilosophy")}</h3>
-            <p className="line-clamp-1 text-sm text-muted-foreground leading-relaxed sm:line-clamp-none">
+          <div className="w-full rounded-lg border bg-muted/50 px-3 py-2 md:px-4 md:py-3">
+            <h3 className="text-[13px] font-semibold leading-5 md:text-sm">{t("appPhilosophy")}</h3>
+            <p className="max-w-[68ch] text-[13px] leading-5 text-muted-foreground [overflow-wrap:anywhere] md:text-sm md:leading-6">
               {t("appDescription")}
             </p>
           </div>
@@ -42,12 +42,12 @@ async function SettingsContent() {
         <DataManagement />
         <InstallAppCard />
 
-        <section className="space-y-3 w-full border-t pt-10">
-          <h3 className="text-lg font-semibold text-destructive flex items-center gap-2">
+        <section className="w-full space-y-3 border-t pt-6 md:pt-8">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-destructive">
             {t("dangerZone")}
           </h3>
-          <div className="border border-destructive/20 bg-destructive/5 rounded-lg overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+          <div className="overflow-hidden rounded-lg border border-destructive/20 bg-destructive/5">
+            <div className="flex flex-col justify-between gap-3 p-3 sm:flex-row sm:items-center md:p-4">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-destructive">{t("signOut")}</p>
                 <p className="text-sm text-muted-foreground">{t("signOutDesc")}</p>
