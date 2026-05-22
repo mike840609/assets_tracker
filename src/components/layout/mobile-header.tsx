@@ -50,19 +50,19 @@ export function MobileHeader() {
         isVisible ? "border-transparent" : "border-border/50",
       )}
     >
-      {/* Back button appears on nested routes once the large title scrolls off. */}
+      {/* Back button — appears on nested routes once the large title scrolls off */}
       {showBackButton && (
         <button
           type="button"
           onClick={handleBack}
           aria-label={t("common.back")}
-          className="absolute left-3 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted/60 active:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-normal"
+          className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-full h-10 w-10 text-foreground hover:bg-muted/60 active:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-normal"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
       )}
 
-      {/* Left: logo and app name fade away when the large title scrolls out. */}
+      {/* Left: logo + app name — fades away when the large title scrolls out */}
       <div
         className={cn(
           "flex items-center gap-2 min-w-0 transition-all motion-normal",
@@ -98,14 +98,16 @@ export function MobileHeader() {
           />
         </svg>
         <div className="flex flex-col min-w-0">
-          <p className="text-lg font-bold tracking-tight text-primary truncate">{t("app.name")}</p>
+          <h1 className="text-lg font-bold tracking-tight bg-gradient-to-br from-primary to-chart-3 bg-clip-text text-transparent truncate">
+            {t("app.name")}
+          </h1>
           <p className="text-[10px] text-muted-foreground font-medium -mt-1 opacity-80 uppercase tracking-wide truncate">
             {t("app.subtitleMobile")}
           </p>
         </div>
       </div>
 
-      {/* Centre: small page title slides in when the large title collapses. */}
+      {/* Centre: small page title — slides in when the large title collapses */}
       <span
         aria-hidden={isVisible}
         className={cn(
@@ -117,18 +119,17 @@ export function MobileHeader() {
         {pageTitle}
       </span>
 
-      {/* Right controls are always visible. */}
-      <div className="flex items-center gap-1.5">
+      {/* Right: controls — always visible */}
+      <div className="flex items-center gap-1">
         <button
-          type="button"
           onClick={togglePrivacyMode}
           title={privacyMode ? "Show values" : "Hide values"}
           aria-label={privacyMode ? "Show values" : "Hide values"}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground active:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="inline-flex items-center justify-center rounded-md h-10 w-10 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           {privacyMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
-        <ThemeToggle mode="cycle" />
+        <ThemeToggle />
       </div>
     </header>
   );
