@@ -112,11 +112,13 @@ export function SettingsForm({
             {/* Currency Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
               <div className="space-y-1">
-                <p className="text-sm font-medium">{t("settings.baseCurrency")}</p>
+                <label htmlFor="currency-select" className="text-sm font-medium">
+                  {t("settings.baseCurrency")}
+                </label>
               </div>
               <div className="flex items-center gap-2 sm:w-auto w-full">
                 <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
-                  <SelectTrigger className="w-[200px]">
+                  <SelectTrigger id="currency-select" className="w-[200px]">
                     <SelectValue>
                       {(() => {
                         const c = CURRENCIES.find((c) => c.code === currency);
@@ -141,12 +143,14 @@ export function SettingsForm({
             {/* Language Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
               <div className="space-y-1">
-                <p className="text-sm font-medium">{t("settings.language")}</p>
+                <label htmlFor="language-select" className="text-sm font-medium">
+                  {t("settings.language")}
+                </label>
                 <p className="text-sm text-muted-foreground">{t("settings.languageDescription")}</p>
               </div>
               <div className="flex items-center gap-2 sm:w-auto w-full">
                 <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
-                  <SelectTrigger className="w-[200px]">
+                  <SelectTrigger id="language-select" className="w-[200px]">
                     <SelectValue>{t(`languages.${locale}`)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -176,8 +180,9 @@ export function SettingsForm({
                 {(["comfortable", "compact"] as Density[]).map((d) => (
                   <button
                     key={d}
+                    type="button"
                     onClick={() => setDensity(d)}
-                    className={`px-3 py-1.5 rounded-md text-sm transition-all ${
+                    className={`px-3 py-1.5 rounded-md text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                       density === d
                         ? "bg-background border border-border shadow-sm text-foreground font-semibold"
                         : "border border-transparent text-muted-foreground font-medium hover:text-foreground"
@@ -200,14 +205,15 @@ export function SettingsForm({
                   {t("settings.colorSchemaDescription")}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {COLOR_SCHEMAS.map((schema) => (
                   <button
                     key={schema.id}
+                    type="button"
                     onClick={() => setColorSchema(schema.id)}
                     title={t(`settings.colorSchemas.${schema.id}`)}
                     aria-label={t(`settings.colorSchemas.${schema.id}`)}
-                    className={`relative w-8 h-8 rounded-full transition-all ${
+                    className={`relative w-10 h-10 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                       colorSchema === schema.id
                         ? "ring-2 ring-offset-2 ring-foreground scale-110"
                         : "opacity-70 hover:opacity-100 hover:scale-105"

@@ -41,7 +41,7 @@ async function SettingsContent() {
         <InstallAppCard />
 
         <section className="space-y-3 w-full border-t pt-10">
-          <h3 className="text-lg font-semibold text-red-500 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-red-500 dark:text-red-400 flex items-center gap-2">
             {t("dangerZone")}
           </h3>
           <div className="border border-red-500/20 bg-red-500/5 rounded-lg overflow-hidden">

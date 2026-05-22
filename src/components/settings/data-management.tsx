@@ -244,7 +244,7 @@ export function DataManagement() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-primary">
-              <CheckCircleIcon className="h-5 w-5 text-green-500" />
+              <CheckCircleIcon className="h-5 w-5 text-green-500 dark:text-green-400" />
               {t("importSuccessTitle")}
             </DialogTitle>
             <DialogDescription className="py-2 text-foreground font-medium">

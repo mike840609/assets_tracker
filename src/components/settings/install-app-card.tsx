@@ -7,8 +7,8 @@ function ShareIcon() {
     <svg
       viewBox="0 0 50 50"
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4 shrink-0"
-      fill="#007AFF"
+      className="h-4 w-4 shrink-0 text-[#007AFF] dark:text-[#0A84FF]"
+      fill="currentColor"
       aria-hidden="true"
     >
       <path d="M30.3 13.7L25 8.4l-5.3 5.3-1.4-1.4L25 5.6l6.7 6.7z" />
