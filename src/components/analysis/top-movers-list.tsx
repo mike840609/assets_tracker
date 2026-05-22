@@ -45,7 +45,7 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
               </thead>
               <tbody>
                 {movers.map((m) => {
-                  const isPositive = m.absoluteChange >= 0;
+                  const isPositive = m.netWorthChange >= 0;
                   const sign = isPositive ? "+" : "";
                   const pct =
                     m.percentChange === null
@@ -86,7 +86,7 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
                             ) : (
                               <>
                                 {sign}
-                                {formatCurrency(m.absoluteChange, baseCurrency)}
+                                {formatCurrency(m.netWorthChange, baseCurrency)}
                               </>
                             )}
                           </span>

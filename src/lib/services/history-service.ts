@@ -185,6 +185,7 @@ export interface AccountMeta {
   id: string;
   name: string;
   category: string;
+  type: "ASSET" | "LIABILITY";
 }
 
 export interface RawHistoryData {
@@ -214,7 +215,7 @@ export async function getRawHistoryWithBreakdown(
     }),
     prisma.account.findMany({
       where: { userId },
-      select: { id: true, name: true, category: true },
+      select: { id: true, name: true, category: true, type: true },
     }),
     getAllExchangeRates(),
   ]);
@@ -249,11 +250,12 @@ export async function getRawHistoryWithBreakdown(
     });
 
   const accounts: AccountMeta[] = (
-    accountsRaw as { id: string; name: string; category: string }[]
+    accountsRaw as { id: string; name: string; category: string; type: "ASSET" | "LIABILITY" }[]
   ).map((a) => ({
     id: a.id,
     name: a.name,
     category: a.category,
+    type: a.type,
   }));
 
   return { snapshots, accounts };

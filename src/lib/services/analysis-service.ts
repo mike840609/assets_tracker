@@ -251,9 +251,13 @@ export interface TopMover {
   accountId: string;
   accountName: string;
   category: string;
+  accountType: AccountMeta["type"];
   startValue: number;
   endValue: number;
+  /** Raw account balance change: endValue - startValue. */
   absoluteChange: number;
+  /** Impact on net worth. Liability balance increases are negative impact. */
+  netWorthChange: number;
   percentChange: number | null;
 }
 
@@ -390,8 +394,9 @@ export function computePerformanceAttribution(
 }
 
 /**
- * Return the top 10 accounts ranked by absolute value change between the
- * first and last snapshot in the (already-filtered) snapshots array.
+ * Return the top 10 accounts ranked by net-worth impact between the first and
+ * last snapshot in the (already-filtered) snapshots array. Liability balances
+ * are inverted so debt paydown is positive and debt growth is negative.
  *
  * @param snapshots  From getRawHistoryWithBreakdown().snapshots, filtered to range.
  * @param accounts   From getRawHistoryWithBreakdown().accounts.
@@ -410,18 +415,21 @@ export function computeTopMovers(
       const startValue = startSnap.accountValues[a.id] ?? 0;
       const endValue = endSnap.accountValues[a.id] ?? 0;
       const absoluteChange = endValue - startValue;
-      const percentChange = startValue === 0 ? null : (absoluteChange / startValue) * 100;
+      const netWorthChange = a.type === "LIABILITY" ? -absoluteChange : absoluteChange;
+      const percentChange = startValue === 0 ? null : (netWorthChange / startValue) * 100;
       return {
         accountId: a.id,
         accountName: a.name,
         category: a.category,
+        accountType: a.type,
         startValue,
         endValue,
         absoluteChange,
+        netWorthChange,
         percentChange,
       };
     })
-    .filter((m) => m.startValue !== 0 || m.endValue !== 0)
-    .sort((a, b) => Math.abs(b.absoluteChange) - Math.abs(a.absoluteChange))
+    .filter((m) => m.netWorthChange !== 0)
+    .sort((a, b) => Math.abs(b.netWorthChange) - Math.abs(a.netWorthChange))
     .slice(0, 10);
 }
