@@ -78,8 +78,9 @@ export default auth((req) => {
 });
 
 // Negative-lookahead exclusions:
-//   - Next internals + cron + file-based metadata (already excluded before P1).
+//   - Next/Vercel internals + cron + file-based metadata (already excluded before P1).
 //   - robots.txt / sitemap.xml served from `public/`.
+//   - Public legal pages, so they can render without NextAuth cookie work.
 //   - Common bot/scanner probes observed in production logs and in the wild:
 //     wp-admin/wp-login/wp-content/wp-includes/wordpress, xmlrpc, cgi-bin,
 //     phpmyadmin/adminer, cmd_*, vendor/phpunit, plus any path containing
@@ -90,6 +91,6 @@ export default auth((req) => {
 // component carrying them is excluded.
 export const config = {
   matcher: [
-    "/((?!api/(?!auth)|_next/static|_next/image|favicon\\.ico|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|wp-admin|wp-login|wp-content|wp-includes|wordpress|xmlrpc|cgi-bin|cmd_|phpmyadmin|adminer|vendor/phpunit|.*\\.php|.*\\.aspx?|.*\\.jsp|.*\\.cgi|.*\\.env|.*\\.git|.*\\.svn|.*\\.htaccess|.*\\.htpasswd).*)",
+    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms|wp-admin|wp-login|wp-content|wp-includes|wordpress|xmlrpc|cgi-bin|cmd_|phpmyadmin|adminer|vendor/phpunit|.*\\.php|.*\\.aspx?|.*\\.jsp|.*\\.cgi|.*\\.env|.*\\.git|.*\\.svn|.*\\.htaccess|.*\\.htpasswd).*)",
   ],
 };

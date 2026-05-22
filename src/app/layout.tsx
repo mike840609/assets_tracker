@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/layout/theme-provider";
 import { ColorSchemaProvider } from "@/components/layout/color-schema-context";
 import { LazyToaster } from "@/components/layout/lazy-toaster";
 import { CustomSpeedInsights } from "@/components/layout/speed-insights";
+import { HtmlLangSync } from "@/components/layout/html-lang-sync";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -242,14 +243,14 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f9fafb" },
     { media: "(prefers-color-scheme: dark)", color: "#0d1f1e" },
   ],
 };
+
+const enableVercelInsights = process.env.VERCEL === "1";
 
 /**
  * Reads locale from NEXT_LOCALE cookie / Accept-Language header and
@@ -264,6 +265,7 @@ async function LocaleProviders({ children }: { children: React.ReactNode }) {
     <NextIntlClientProvider
       messages={pickMessages(messages, ["app", "nav", "commandPalette", "common"])}
     >
+      <HtmlLangSync />
       {children}
     </NextIntlClientProvider>
   );
@@ -301,8 +303,12 @@ export default function RootLayout({
               <LocaleProviders>{children}</LocaleProviders>
             </Suspense>
             <LazyToaster />
-            <Analytics />
-            <CustomSpeedInsights />
+            {enableVercelInsights ? (
+              <>
+                <Analytics />
+                <CustomSpeedInsights />
+              </>
+            ) : null}
           </ColorSchemaProvider>
         </ThemeProvider>
       </body>
