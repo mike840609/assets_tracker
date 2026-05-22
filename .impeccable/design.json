@@ -1,0 +1,301 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-22T00:12:15Z",
+  "title": "Design System: Assets Tracker",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "Paper Background",
+        "canonical": "oklch(0.99 0.003 260)",
+        "tonalRamp": [
+          "oklch(0.15 0.003 260)",
+          "oklch(0.25 0.003 260)",
+          "oklch(0.38 0.003 260)",
+          "oklch(0.52 0.003 260)",
+          "oklch(0.66 0.003 260)",
+          "oklch(0.80 0.003 260)",
+          "oklch(0.90 0.003 260)",
+          "oklch(0.99 0.003 260)"
+        ]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Ink Foreground",
+        "canonical": "oklch(0.15 0.02 260)",
+        "tonalRamp": [
+          "oklch(0.15 0.02 260)",
+          "oklch(0.25 0.02 260)",
+          "oklch(0.38 0.02 260)",
+          "oklch(0.52 0.02 260)",
+          "oklch(0.66 0.02 260)",
+          "oklch(0.78 0.02 260)",
+          "oklch(0.88 0.02 260)",
+          "oklch(0.96 0.02 260)"
+        ]
+      },
+      "primary": {
+        "role": "primary",
+        "displayName": "Ledger Emerald",
+        "canonical": "oklch(0.6 0.16 150)",
+        "tonalRamp": [
+          "oklch(0.15 0.16 150)",
+          "oklch(0.25 0.16 150)",
+          "oklch(0.36 0.16 150)",
+          "oklch(0.48 0.16 150)",
+          "oklch(0.60 0.16 150)",
+          "oklch(0.72 0.12 150)",
+          "oklch(0.84 0.08 150)",
+          "oklch(0.95 0.04 150)"
+        ]
+      },
+      "destructive": {
+        "role": "semantic",
+        "displayName": "Risk Coral",
+        "canonical": "oklch(0.6 0.18 20)",
+        "tonalRamp": [
+          "oklch(0.15 0.18 20)",
+          "oklch(0.25 0.18 20)",
+          "oklch(0.36 0.18 20)",
+          "oklch(0.48 0.18 20)",
+          "oklch(0.60 0.18 20)",
+          "oklch(0.72 0.14 20)",
+          "oklch(0.84 0.09 20)",
+          "oklch(0.95 0.04 20)"
+        ]
+      },
+      "chart-cyan": {
+        "role": "data",
+        "displayName": "Exposure Cyan",
+        "canonical": "oklch(0.65 0.12 210)",
+        "tonalRamp": [
+          "oklch(0.15 0.12 210)",
+          "oklch(0.25 0.12 210)",
+          "oklch(0.37 0.12 210)",
+          "oklch(0.50 0.12 210)",
+          "oklch(0.65 0.12 210)",
+          "oklch(0.76 0.09 210)",
+          "oklch(0.86 0.06 210)",
+          "oklch(0.95 0.03 210)"
+        ]
+      },
+      "chart-indigo": {
+        "role": "data",
+        "displayName": "Portfolio Indigo",
+        "canonical": "oklch(0.6 0.15 260)",
+        "tonalRamp": [
+          "oklch(0.15 0.15 260)",
+          "oklch(0.25 0.15 260)",
+          "oklch(0.36 0.15 260)",
+          "oklch(0.48 0.15 260)",
+          "oklch(0.60 0.15 260)",
+          "oklch(0.72 0.11 260)",
+          "oklch(0.84 0.07 260)",
+          "oklch(0.95 0.035 260)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Large Native Title",
+        "purpose": "Mobile large titles and the largest net-worth value."
+      },
+      "headline": {
+        "displayName": "Page Headline",
+        "purpose": "Desktop page titles and major sections."
+      },
+      "title": {
+        "displayName": "Component Title",
+        "purpose": "Card, dialog, table, and panel titles."
+      },
+      "body": {
+        "displayName": "Product Body",
+        "purpose": "Default text, inputs, descriptions, and table content."
+      },
+      "mono": {
+        "displayName": "Technical Mono",
+        "purpose": "Keyboard hints, currency codes, and fixed-width comparisons."
+      }
+    },
+    "shadows": [
+      {
+        "name": "resting-card",
+        "value": "shadow-sm + ring-foreground/10",
+        "purpose": "Default low-depth card separation."
+      },
+      {
+        "name": "interactive-lift",
+        "value": "hover:shadow-lg + hover:-translate-y-1",
+        "purpose": "Dashboard metric cards and premium cards."
+      },
+      {
+        "name": "mobile-dock",
+        "value": "0 8px 24px -8px rgba(0,0,0,0.3)",
+        "purpose": "Floating mobile bottom navigation."
+      },
+      {
+        "name": "dark-ambient-panel",
+        "value": "0 4px 24px -4px rgba(0,0,0,0.5)",
+        "purpose": "Dark-mode translucent panels."
+      }
+    ],
+    "motion": [
+      {
+        "name": "duration-fast",
+        "value": "150ms",
+        "purpose": "Immediate hover, active, and icon state changes."
+      },
+      {
+        "name": "duration-normal",
+        "value": "250ms",
+        "purpose": "Default product transitions."
+      },
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Navigation, theme reveal, and state transitions."
+      },
+      {
+        "name": "ease-spring",
+        "value": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "purpose": "Small native-feeling tap feedback."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Compact primary action for forms, refresh, add, and save flows.",
+      "html": "<button class=\"ds-btn-primary\">Add holding</button>",
+      "css": ".ds-btn-primary{display:inline-flex;height:2rem;align-items:center;justify-content:center;gap:.375rem;border:1px solid transparent;border-radius:var(--radius-lg);background:var(--primary);color:var(--primary-foreground);padding:0 .625rem;font:500 .875rem/1.25 -apple-system,\"SF Pro Text\",\"SF Pro Display\",system-ui,sans-serif;white-space:nowrap;transition:background-color 150ms cubic-bezier(.25,.1,.25,1),transform 150ms cubic-bezier(.25,.1,.25,1),box-shadow 150ms cubic-bezier(.25,.1,.25,1)}.ds-btn-primary:hover{background:color-mix(in oklab,var(--primary) 80%,transparent)}.ds-btn-primary:active{transform:translateY(1px)}.ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklab,var(--ring) 50%,transparent)}"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action for filters, settings, and lower-emphasis commands.",
+      "html": "<button class=\"ds-btn-outline\">Export</button>",
+      "css": ".ds-btn-outline{display:inline-flex;height:2rem;align-items:center;justify-content:center;gap:.375rem;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--background);color:var(--foreground);padding:0 .625rem;font:500 .875rem/1.25 -apple-system,\"SF Pro Text\",\"SF Pro Display\",system-ui,sans-serif;white-space:nowrap;transition:background-color 150ms cubic-bezier(.25,.1,.25,1),color 150ms cubic-bezier(.25,.1,.25,1),box-shadow 150ms cubic-bezier(.25,.1,.25,1)}.ds-btn-outline:hover{background:var(--muted);color:var(--foreground)}.ds-btn-outline:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklab,var(--ring) 50%,transparent)}"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Low-profile financial entry field with strong keyboard focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Amount\" />",
+      "css": ".ds-input{height:2rem;width:100%;min-width:0;border:1px solid var(--input);border-radius:var(--radius-lg);background:transparent;color:var(--foreground);padding:.25rem .625rem;font:400 1rem/1.5 -apple-system,\"SF Pro Text\",\"SF Pro Display\",system-ui,sans-serif;transition:border-color 150ms cubic-bezier(.25,.1,.25,1),box-shadow 150ms cubic-bezier(.25,.1,.25,1)}.ds-input::placeholder{color:var(--muted-foreground)}.ds-input:focus-visible{outline:none;border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in oklab,var(--ring) 50%,transparent)}.ds-input:disabled{cursor:not-allowed;background:color-mix(in oklab,var(--input) 50%,transparent);opacity:.5}"
+    },
+    {
+      "name": "Data Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Default framed module for charts, summaries, forms, and account panels.",
+      "html": "<section class=\"ds-card\"><div class=\"ds-card-title\">Net Worth</div><div class=\"ds-card-value\">$128,420</div></section>",
+      "css": ".ds-card{display:flex;flex-direction:column;gap:1rem;overflow:hidden;border-radius:var(--radius-xl);background:var(--card);color:var(--card-foreground);padding:1rem;box-shadow:0 0 0 1px color-mix(in oklab,var(--foreground) 10%,transparent);font-family:-apple-system,\"SF Pro Text\",\"SF Pro Display\",system-ui,sans-serif}.ds-card-title{font-size:1rem;line-height:1.375;font-weight:500}.ds-card-value{font-size:1.5rem;line-height:1.15;font-weight:700;font-variant-numeric:tabular-nums;color:var(--foreground)}"
+    },
+    {
+      "name": "Range Chip",
+      "kind": "chip",
+      "refersTo": "badge-primary",
+      "description": "Small pill for selected chart ranges, deltas, and compact state labels.",
+      "html": "<button class=\"ds-chip\" aria-pressed=\"true\">1Y</button>",
+      "css": ".ds-chip{display:inline-flex;height:1.25rem;align-items:center;justify-content:center;border:1px solid transparent;border-radius:9999px;background:var(--primary);color:var(--primary-foreground);padding:.125rem .5rem;font:500 .75rem/1.2 -apple-system,\"SF Pro Text\",\"SF Pro Display\",system-ui,sans-serif;white-space:nowrap;transition:background-color 150ms cubic-bezier(.25,.1,.25,1),box-shadow 150ms cubic-bezier(.25,.1,.25,1)}.ds-chip:hover{background:color-mix(in oklab,var(--primary) 80%,transparent)}.ds-chip:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklab,var(--ring) 50%,transparent)}"
+    },
+    {
+      "name": "Desktop Nav Item",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Sidebar row with icon, label, and active primary tint.",
+      "html": "<a class=\"ds-nav-item ds-nav-item-active\" href=\"#\"><span class=\"ds-nav-icon\">□</span><span>Dashboard</span></a>",
+      "css": ".ds-nav-item{position:relative;display:flex;align-items:center;gap:.75rem;border-radius:var(--radius-lg);padding:.625rem .75rem;color:color-mix(in oklab,var(--sidebar-foreground) 70%,transparent);font:500 .875rem/1.25 -apple-system,\"SF Pro Text\",\"SF Pro Display\",system-ui,sans-serif;text-decoration:none;transition:color 150ms cubic-bezier(.25,.1,.25,1),background-color 150ms cubic-bezier(.25,.1,.25,1)}.ds-nav-item:hover{color:var(--foreground);background:color-mix(in oklab,var(--sidebar-accent) 50%,transparent)}.ds-nav-item-active{color:var(--primary);background:color-mix(in oklab,var(--primary) 10%,transparent);box-shadow:0 0 0 1px color-mix(in oklab,var(--primary) 20%,transparent)}.ds-nav-icon{display:inline-flex;height:1.25rem;width:1.25rem;align-items:center;justify-content:center}"
+    },
+    {
+      "name": "Mobile Tab Bar",
+      "kind": "nav",
+      "refersTo": "navigation-mobile",
+      "description": "Safe-area aware floating mobile dock with active pill treatment.",
+      "html": "<nav class=\"ds-mobile-tabs\"><button class=\"ds-mobile-tab ds-mobile-tab-active\">Dashboard</button><button class=\"ds-mobile-tab\">Accounts</button></nav>",
+      "css": ".ds-mobile-tabs{display:flex;align-items:stretch;gap:.25rem;width:calc(100% - 1.5rem);max-width:24rem;border:1px solid color-mix(in oklab,var(--border) 60%,transparent);border-radius:9999px;background:color-mix(in oklab,var(--background) 95%,transparent);padding:.375rem .5rem;box-shadow:0 8px 24px -8px rgba(0,0,0,.3);backdrop-filter:blur(12px)}.ds-mobile-tab{min-height:3rem;flex:1;border:0;border-radius:9999px;background:transparent;color:var(--muted-foreground);font:500 .625rem/1.1 -apple-system,\"SF Pro Text\",\"SF Pro Display\",system-ui,sans-serif;transition:color 250ms cubic-bezier(.16,1,.3,1),background-color 250ms cubic-bezier(.16,1,.3,1),transform 150ms cubic-bezier(.25,.1,.25,1)}.ds-mobile-tab:active{transform:scale(.92)}.ds-mobile-tab-active{background:color-mix(in oklab,var(--primary) 15%,transparent);color:var(--primary);font-weight:600}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Native Ledger",
+    "overview": "Assets Tracker should feel like a private financial instrument that happens to live in the browser: native in motion, calm in color, and exacting with numbers. The system borrows heavily from iOS for mobile behavior, then becomes denser and more keyboard-friendly on desktop.\n\nThe visual atmosphere is restrained and breathable, with emerald as the active signal and cool neutrals doing most of the work. Charts, deltas, and account states can carry more color, but the chrome should stay quiet so financial data remains the center of gravity.\n\nThe system explicitly rejects generic fintech navy-and-gold dashboards, crypto-neon trading terminals, decorative SaaS glassmorphism, spreadsheet-like clutter on mobile, and web dialogs that break the installed-app illusion.",
+    "keyCharacteristics": [
+      "Native mobile patterns: large titles, floating tab bar, bottom sheets, swipe actions, haptics, safe areas.",
+      "Dense but legible desktop patterns: collapsible sidebar, command palette, sticky headers, keyboard shortcuts, compact mode.",
+      "Data-first restraint: tinted surfaces, thin rings, tabular numbers, soft state color.",
+      "Motion with purpose: pull feedback, route direction, theme reveal, skeleton loading, chart crosshair state."
+    ],
+    "rules": [
+      {
+        "name": "The Emerald Is Action Rule",
+        "body": "Emerald is for primary action, selection, positive state, and key data. Do not use it as random ornament.",
+        "section": "colors"
+      },
+      {
+        "name": "The Chart Color Boundary Rule",
+        "body": "High-chroma spectrum colors belong in charts and semantic status only. Product chrome stays neutral.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Pure Extremes Rule",
+        "body": "Do not introduce pure black or pure white; every neutral is tinted through the system tokens.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Money Rule",
+        "body": "Financial values must use stable width behavior where possible, especially in animated counts, tables, histories, and summaries.",
+        "section": "typography"
+      },
+      {
+        "name": "The Native Scale Rule",
+        "body": "Do not add display fonts or fluid marketing typography inside product surfaces. Use the system sans stack and fixed product sizes.",
+        "section": "typography"
+      },
+      {
+        "name": "The Surface Before Shadow Rule",
+        "body": "Use background, border, ring, and spacing before adding a shadow. Shadows are earned by overlays, hover, or floating navigation.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No Decorative Glass Rule",
+        "body": "Blur is allowed for sticky or fixed overlays where content passes underneath. Do not use decorative glass cards as a default surface.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use the system token vocabulary from `src/app/globals.css` for colors, radius, motion, and theme variants.",
+      "Do keep emerald rare and meaningful: action, selection, positive movement, primary chart series.",
+      "Do preserve native mobile behavior: large titles, bottom tab bar, bottom sheets, swipe actions, haptics, safe areas, and pull-to-refresh.",
+      "Do use tabular numbers and stable width containers for money, percentages, and chart callouts.",
+      "Do provide hover, focus-visible, active, disabled, loading, error, empty, compact, privacy, dark, and reduced-motion states for product components.",
+      "Do keep chart palettes distinct and role-based. Data can be colorful; chrome should stay restrained."
+    ],
+    "donts": [
+      "Don't make this a generic fintech navy-and-gold dashboard.",
+      "Don't make it feel like a crypto-neon trading terminal.",
+      "Don't add decorative SaaS glassmorphism. Blur belongs to sticky and fixed overlays only.",
+      "Don't introduce spreadsheet-like clutter on mobile. Mobile lists should be grouped, touch-safe, and disclosure-driven.",
+      "Don't use web dialogs where a bottom sheet is expected on mobile.",
+      "Don't use side-stripe borders, gradient text, hero-metric marketing layouts, or repeated identical icon-card grids in new work.",
+      "Don't use pure black, pure white, full-saturation inactive states, or color as decoration without a data or state role."
+    ]
+  }
+}
