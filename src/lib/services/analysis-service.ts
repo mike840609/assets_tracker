@@ -334,11 +334,12 @@ export interface AttributionItem {
   accountId: string;
   accountName: string;
   category: string;
+  accountType: AccountMeta["type"];
   startValue: number;
   endValue: number;
-  /** endValue − startValue */
+  /** Net-worth impact over the period. Liability balance increases are negative. */
   totalDelta: number;
-  /** Net cash deposited / withdrawn to this account during the period. */
+  /** Net cash-flow impact on net worth during the period. */
   cashContribution: number;
   /** totalDelta − cashContribution: value created/destroyed by market movement. */
   marketPerformance: number;
@@ -374,13 +375,17 @@ export function computePerformanceAttribution(
     .map((account) => {
       const startValue = startSnap.accountValues[account.id] ?? 0;
       const endValue = endSnap.accountValues[account.id] ?? 0;
-      const totalDelta = endValue - startValue;
-      const cashContribution = cashByAccount.get(account.id) ?? 0;
+      const balanceDelta = endValue - startValue;
+      const totalDelta = account.type === "LIABILITY" ? -balanceDelta : balanceDelta;
+      const rawCashContribution = cashByAccount.get(account.id) ?? 0;
+      const cashContribution =
+        account.type === "LIABILITY" ? -rawCashContribution : rawCashContribution;
       const marketPerformance = totalDelta - cashContribution;
       return {
         accountId: account.id,
         accountName: account.name,
         category: account.category,
+        accountType: account.type,
         startValue,
         endValue,
         totalDelta,
