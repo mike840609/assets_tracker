@@ -62,6 +62,7 @@ export function DataManagement() {
     if (file) {
       if (file.type !== "application/json" && !file.name.endsWith(".json")) {
         toast.error(t("invalidFile"));
+        if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
       setSelectedFile(file);
@@ -78,6 +79,12 @@ export function DataManagement() {
       setImportError(null);
 
       const reader = new FileReader();
+      reader.onerror = () => {
+        setImportError(t("importFailed"));
+        setShowErrorDialog(true);
+        setIsImporting(false);
+      };
+
       reader.onload = async (e) => {
         try {
           const content = e.target?.result as string;
@@ -207,7 +214,8 @@ export function DataManagement() {
               variant="destructive"
               type="button"
               onClick={handleImport}
-              disabled={isImporting}
+              disabled={isImporting || !selectedFile}
+              aria-label={t("import")}
             >
               {isImporting && <Loader2Icon className="animate-spin" aria-hidden="true" />}
               {isImporting ? t("importing") : t("importButton")}

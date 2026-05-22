@@ -161,6 +161,7 @@ export function SettingsForm({
                   type="button"
                   onClick={saveCurrency}
                   disabled={saving || currency === currentCurrency}
+                  aria-label={t("settings.saveBaseCurrency")}
                   className="min-h-11 md:min-h-8"
                 >
                   {saving && <Loader2 className="animate-spin" aria-hidden="true" />}
@@ -197,6 +198,7 @@ export function SettingsForm({
                   type="button"
                   onClick={saveLocale}
                   disabled={savingLocale || locale === resolvedActiveLocale}
+                  aria-label={t("settings.saveLanguage")}
                   className="min-h-11 md:min-h-8"
                 >
                   {savingLocale && <Loader2 className="animate-spin" aria-hidden="true" />}
@@ -259,7 +261,9 @@ export function SettingsForm({
                     key={schema.id}
                     onClick={() => setColorSchema(schema.id)}
                     title={t(`settings.colorSchemas.${schema.id}`)}
-                    aria-label={t(`settings.colorSchemas.${schema.id}`)}
+                    aria-label={t("settings.colorSchemaOption", {
+                      schema: t(`settings.colorSchemas.${schema.id}`),
+                    })}
                     aria-pressed={colorSchema === schema.id}
                     className={`relative size-11 rounded-full transition-all md:size-8 ${
                       colorSchema === schema.id
@@ -298,6 +302,7 @@ export function SettingsForm({
                 variant="outline"
                 onClick={refreshPrices}
                 disabled={refreshing}
+                aria-label={t("settings.refreshPricesLabel")}
                 className="min-h-11 w-full sm:w-auto sm:min-w-[150px] md:min-h-8"
               >
                 {refreshing && <Loader2 className="animate-spin" aria-hidden="true" />}
@@ -315,6 +320,7 @@ export function SettingsForm({
                 variant="outline"
                 onClick={refreshRates}
                 disabled={refreshingRates}
+                aria-label={t("settings.refreshRatesLabel")}
                 className="min-h-11 w-full sm:w-auto sm:min-w-[150px] md:min-h-8"
               >
                 {refreshingRates && <Loader2 className="animate-spin" aria-hidden="true" />}
