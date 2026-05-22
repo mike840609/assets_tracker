@@ -37,8 +37,11 @@ async function PrivacyContent() {
     <main className="flex h-dvh w-full items-start justify-center overflow-x-hidden overflow-y-auto bg-background px-4 py-6 sm:py-12">
       <article className="w-full max-w-2xl space-y-7 rounded-xl border border-border/50 bg-card p-6 text-card-foreground shadow-sm sm:space-y-8 sm:p-10">
         <div className="flex flex-col space-y-3 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-            <ShieldCheck className="h-6 w-6" strokeWidth={2} />
+          <div
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl shadow-lg"
+            style={{ background: "linear-gradient(135deg, #34d399 0%, #065f46 100%)" }}
+          >
+            <ShieldCheck className="h-7 w-7 text-white" strokeWidth={2} />
           </div>
           <h1 className="text-3xl font-bold text-foreground">{t("title")}</h1>
           <p className="text-sm font-medium text-muted-foreground">{t("subtitle")}</p>
@@ -88,7 +91,7 @@ export default function PrivacyPage() {
         <div className="flex h-dvh w-full items-start justify-center overflow-y-auto bg-background px-4 py-6 sm:py-12">
           <div className="w-full max-w-2xl animate-pulse space-y-6 rounded-xl border border-border/50 bg-card p-6 sm:p-10">
             <div className="flex flex-col items-center space-y-3">
-              <div className="h-12 w-12 rounded-lg bg-muted" />
+              <div className="h-16 w-16 rounded-xl bg-emerald-100" />
               <div className="h-8 w-48 rounded bg-muted" />
               <div className="h-4 w-56 rounded bg-muted" />
             </div>
