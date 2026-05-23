@@ -1,7 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-const CARD_CLASS = "premium-card";
-
 export function DashboardSkeleton() {
   return (
     <div className="space-y-4 md:space-y-8">
@@ -28,44 +26,34 @@ export function DashboardSkeleton() {
 
       {/* Charts — 1st = trend (taller, lg col-span-2 xl col-span-1), 2nd + 3rd = h-250 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6 items-stretch">
-        <div className={`${CARD_CLASS} lg:col-span-2 xl:col-span-1`}>
-          <Card className="border-0 shadow-none bg-transparent">
+        <Card className="lg:col-span-2 xl:col-span-1">
+          <CardHeader className="pb-2">
+            <div className="h-5 w-32 rounded skeleton-shimmer" />
+          </CardHeader>
+          <CardContent>
+            <div className="h-[350px] rounded skeleton-shimmer" />
+          </CardContent>
+        </Card>
+        {[0, 1].map((i) => (
+          <Card key={i}>
             <CardHeader className="pb-2">
               <div className="h-5 w-32 rounded skeleton-shimmer" />
             </CardHeader>
             <CardContent>
-              <div className="h-[350px] rounded skeleton-shimmer" />
+              <div className="h-[250px] rounded skeleton-shimmer" />
             </CardContent>
           </Card>
-        </div>
-        {[0, 1].map((i) => (
-          <div key={i} className={CARD_CLASS}>
-            <Card className="border-0 shadow-none bg-transparent">
-              <CardHeader className="pb-2">
-                <div className="h-5 w-32 rounded skeleton-shimmer" />
-              </CardHeader>
-              <CardContent>
-                <div className="h-[250px] rounded skeleton-shimmer" />
-              </CardContent>
-            </Card>
-          </div>
         ))}
       </div>
 
       {/* Accounts summary — matches AccountsSummarySkeleton */}
-      <div className={CARD_CLASS}>
-        <Card className="border-0 shadow-none bg-transparent">
-          <CardHeader>
-            <div className="h-5 w-40 rounded skeleton-shimmer" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-10 rounded skeleton-shimmer" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      <div className="space-y-3">
+        <div className="h-5 w-40 rounded skeleton-shimmer" />
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-10 rounded skeleton-shimmer" />
+          ))}
+        </div>
       </div>
     </div>
   );
