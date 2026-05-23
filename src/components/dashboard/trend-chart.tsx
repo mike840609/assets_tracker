@@ -206,6 +206,12 @@ export function TrendChart({
           <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
           {periodChange && (
             <div
+              aria-label={
+                privacyMode
+                  ? undefined
+                  : `${t("seriesName")} change: ${periodChange.delta >= 0 ? "+" : ""}${formatCurrency(periodChange.delta, baseCurrency)}${periodChange.pct !== null ? ` (${periodChange.delta >= 0 ? "+" : ""}${periodChange.pct.toFixed(1)}%)` : ""}`
+              }
+              aria-hidden={privacyMode || undefined}
               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold tabular-nums ${
                 periodChange.delta >= 0
                   ? "bg-primary/10 text-primary"
