@@ -53,7 +53,7 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
   }, [snapshots]);
 
   return (
-    <Card>
+    <Card className="border-0 bg-transparent shadow-none">
       <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
         <CardTitle className="text-base font-medium">{t("title")}</CardTitle>
         <FreshnessBadge kind="snapshot" timestamp={latestSnapshotAt} />
@@ -62,12 +62,34 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
         {monthGroups.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground text-sm">{t("noData")}</div>
         ) : (
-          <div className="max-h-[480px] overflow-y-auto space-y-4 pr-1">
+          <div
+            role="table"
+            aria-label={t("title")}
+            tabIndex={0}
+            className="max-h-[min(480px,55vh)] overflow-y-auto space-y-4 pr-1"
+          >
+            <div role="rowgroup" className="sr-only">
+              <div role="row">
+                <span role="columnheader">{t("colDate")}</span>
+                <span role="columnheader">{`${t("colAssets")} / ${t("colLiabilities")}`}</span>
+                <span role="columnheader">{`${t("colNetWorth")} / ${t("colChange")}`}</span>
+              </div>
+            </div>
+
             {monthGroups.map(({ monthKey, label, items }) => (
-              <div key={monthKey}>
-                <p className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 mb-2 px-1 py-1">
-                  {label}
-                </p>
+              <div key={monthKey} role="rowgroup">
+                <div
+                  role="row"
+                  className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm mb-2 px-1 py-1"
+                >
+                  <span
+                    role="columnheader"
+                    aria-colspan={3}
+                    className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70"
+                  >
+                    {label}
+                  </span>
+                </div>
                 <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
                   {items.map((row, index) => {
                     const dayLabel = new Date(row.date + "T00:00:00").toLocaleDateString(
@@ -81,28 +103,32 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                     const changeNegative = row.change !== null && row.change < 0;
                     return (
                       <div key={row.id}>
-                        {index > 0 && <div className="h-px bg-border/60 mx-4" />}
+                        {index > 0 && <div aria-hidden="true" className="h-px bg-border/60 mx-4" />}
                         <div
+                          role="row"
                           className={`flex items-center gap-3 px-4 ${isCompact ? "py-2" : "py-3.5"}`}
                         >
-                          <div className="w-16 shrink-0">
+                          <div role="rowheader" className="min-w-[4rem] shrink-0">
                             <p className="text-sm font-medium">{dayLabel}</p>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-muted-foreground tabular-nums">
+                          <div role="cell" className="flex-1 min-w-0">
+                            <p className="text-xs text-muted-foreground tabular-nums leading-relaxed">
                               {privacyMode ? (
                                 "***"
                               ) : (
                                 <>
-                                  {t("colAssets")} {formatCurrency(row.totalAssets, baseCurrency)}
-                                  {" · "}
-                                  {t("colLiabilities")}{" "}
-                                  {formatCurrency(row.totalLiabilities, baseCurrency)}
+                                  <span className="block truncate">
+                                    {t("colAssets")} {formatCurrency(row.totalAssets, baseCurrency)}
+                                  </span>
+                                  <span className="block truncate">
+                                    {t("colLiabilities")}{" "}
+                                    {formatCurrency(row.totalLiabilities, baseCurrency)}
+                                  </span>
                                 </>
                               )}
                             </p>
                           </div>
-                          <div className="text-right shrink-0">
+                          <div role="cell" className="text-right shrink-0">
                             <p className="text-sm font-semibold tabular-nums">
                               {privacyMode ? "***" : formatCurrency(row.netWorth, baseCurrency)}
                             </p>
@@ -110,9 +136,9 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                               className={cn(
                                 "text-xs tabular-nums mt-0.5",
                                 changePositive
-                                  ? "text-emerald-600 dark:text-emerald-400"
+                                  ? "text-primary"
                                   : changeNegative
-                                    ? "text-red-500 dark:text-red-400"
+                                    ? "text-destructive"
                                     : "text-muted-foreground",
                               )}
                             >
