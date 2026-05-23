@@ -79,7 +79,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
-  const { isAnimationActive } = useChartAnimation();
+  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   const { handlers: crosshairHandlers } = useChartCrosshair();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
@@ -108,6 +108,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
           <div
             role="img"
             aria-label={t("assetsVsLiabilities")}
+            aria-hidden={privacyMode || undefined}
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             <ResponsiveContainer width="100%" height={280}>
@@ -141,6 +142,8 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                   name={t("seriesAssets")}
                   fill="var(--chart-1)"
                   radius={[4, 4, 0, 0]}
+                  isAnimationActive={isAnimationActive}
+                  onAnimationEnd={onAnimationEnd}
                 />
                 <Bar
                   dataKey="liabilities"
@@ -148,6 +151,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                   fill="var(--destructive)"
                   radius={[4, 4, 0, 0]}
                   isAnimationActive={isAnimationActive}
+                  onAnimationEnd={onAnimationEnd}
                 />
               </BarChart>
             </ResponsiveContainer>

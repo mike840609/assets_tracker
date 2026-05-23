@@ -19,6 +19,7 @@ import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { MonthlyBucket } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
+import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 
 interface Props {
@@ -90,6 +91,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
   const { handlers: crosshairHandlers } = useChartCrosshair();
+  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
   const data = buckets.map((b) => ({ ...b, label: formatMonthLabel(b.monthKey, locale) }));
@@ -112,6 +114,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
           <div
             role="img"
             aria-label={t("monthlyChange")}
+            aria-hidden={privacyMode || undefined}
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             <ResponsiveContainer width="100%" height={280}>
@@ -139,7 +142,12 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
                     <ChangeTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />
                   }
                 />
-                <Bar dataKey="deltaNetWorth" radius={[4, 4, 0, 0]}>
+                <Bar
+                  dataKey="deltaNetWorth"
+                  radius={[4, 4, 0, 0]}
+                  isAnimationActive={isAnimationActive}
+                  onAnimationEnd={onAnimationEnd}
+                >
                   {data.map((entry) => (
                     <Cell
                       key={entry.monthKey}

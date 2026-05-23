@@ -16,6 +16,8 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useChartAnimation } from "@/hooks/use-chart-animation";
+import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 import type { AttributionItem } from "@/lib/services/analysis-service";
 
 interface Props {
@@ -48,43 +50,40 @@ function AttributionTooltip({
   const mktSign = item.marketPerformance >= 0 ? "+" : "";
   const totalSign = item.totalDelta >= 0 ? "+" : "";
 
-  return (
-    <div className="rounded-md border border-border/60 bg-popover/95 backdrop-blur-sm px-3 py-2 text-xs shadow-md space-y-1 min-w-[180px]">
-      <div className="font-medium leading-tight">{item.accountName}</div>
-      <div className="text-muted-foreground text-[11px]">{getCategoryLabel(item.category)}</div>
-      <div className="border-t border-border/60 pt-1 space-y-1">
-        <div className="flex justify-between gap-4">
-          <span className="text-muted-foreground">{t("attrCash")}</span>
-          <span className="tabular-nums">
-            {privacyMode
-              ? "***"
-              : `${cashSign}${formatCurrency(item.cashContribution, baseCurrency)}`}
-          </span>
-        </div>
-        <div className="flex justify-between gap-4">
-          <span className="text-muted-foreground">{t("attrMarket")}</span>
-          <span
-            className={`tabular-nums ${
-              item.marketPerformance >= 0 ? "text-[var(--chart-1)]" : "text-destructive"
-            }`}
-          >
-            {privacyMode
-              ? "***"
-              : `${mktSign}${formatCurrency(item.marketPerformance, baseCurrency)}`}
-          </span>
-        </div>
-        <div className="flex justify-between gap-4 border-t border-border/60 pt-1">
-          <span className="text-muted-foreground">{t("tooltipChange")}</span>
-          <span
-            className={`tabular-nums font-medium ${
-              item.totalDelta >= 0 ? "text-[var(--chart-1)]" : "text-destructive"
-            }`}
-          >
-            {privacyMode ? "***" : `${totalSign}${formatCurrency(item.totalDelta, baseCurrency)}`}
-          </span>
-        </div>
+  const titleNode = (
+    <>
+      <div className="leading-tight">{item.accountName}</div>
+      <div className="font-normal text-muted-foreground text-[10px] leading-snug mt-0.5">
+        {getCategoryLabel(item.category)}
       </div>
-    </div>
+    </>
+  );
+
+  return (
+    <ChartTooltipContainer title={titleNode} className="min-w-[180px]">
+      <ChartTooltipRow
+        label={t("attrCash")}
+        value={
+          privacyMode ? "***" : `${cashSign}${formatCurrency(item.cashContribution, baseCurrency)}`
+        }
+      />
+      <ChartTooltipRow
+        label={t("attrMarket")}
+        value={
+          privacyMode ? "***" : `${mktSign}${formatCurrency(item.marketPerformance, baseCurrency)}`
+        }
+        valueClassName={item.marketPerformance >= 0 ? "text-[var(--chart-1)]" : "text-destructive"}
+      />
+      <div className="pt-1.5 mt-1.5 border-t border-border/40">
+        <ChartTooltipRow
+          label={t("tooltipChange")}
+          value={
+            privacyMode ? "***" : `${totalSign}${formatCurrency(item.totalDelta, baseCurrency)}`
+          }
+          valueClassName={item.totalDelta >= 0 ? "text-[var(--chart-1)]" : "text-destructive"}
+        />
+      </div>
+    </ChartTooltipContainer>
   );
 }
 
@@ -104,6 +103,7 @@ export function AttributionChart({ items, baseCurrency }: Props) {
   const tCat = useTranslations("categories");
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
+  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
   const getCategoryLabel = (cat: string) =>
@@ -134,6 +134,7 @@ export function AttributionChart({ items, baseCurrency }: Props) {
           <div style={{ height: chartHeight }} />
         ) : (
           <div
+            aria-hidden={privacyMode || undefined}
             className={`space-y-4 transition-[filter] duration-300 ${
               privacyMode ? "blur-sm pointer-events-none select-none" : ""
             }`}
@@ -174,7 +175,12 @@ export function AttributionChart({ items, baseCurrency }: Props) {
                       />
                     }
                   />
-                  <Bar dataKey="totalDelta" radius={[0, 4, 4, 0]}>
+                  <Bar
+                    dataKey="totalDelta"
+                    radius={[0, 4, 4, 0]}
+                    isAnimationActive={isAnimationActive}
+                    onAnimationEnd={onAnimationEnd}
+                  >
                     {chartData.map((item) => (
                       <Cell
                         key={item.accountId}
