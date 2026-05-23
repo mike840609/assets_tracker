@@ -34,6 +34,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-9: var(--chart-9);
 
   --color-ring: var(--ring);
   --color-input: var(--input);
@@ -85,6 +89,10 @@
   --chart-3: oklch(0.6 0.15 260); /* Indigo */
   --chart-4: oklch(0.7 0.15 300); /* Purple */
   --chart-5: oklch(0.8 0.1 330); /* Pink */
+  --chart-6: oklch(0.65 0.15 40); /* Coral */
+  --chart-7: oklch(0.7 0.13 75); /* Amber */
+  --chart-8: oklch(0.65 0.13 110); /* Lime */
+  --chart-9: oklch(0.62 0.11 190); /* Teal */
 
   --radius: 0.75rem;
   --sidebar: oklch(0.98 0.005 260);
@@ -123,6 +131,10 @@
   --chart-3: oklch(0.74 0.17 270);
   --chart-4: oklch(0.82 0.17 320);
   --chart-5: oklch(0.86 0.13 100);
+  --chart-6: oklch(0.78 0.15 40); /* Coral */
+  --chart-7: oklch(0.84 0.13 75); /* Amber */
+  --chart-8: oklch(0.8 0.13 110); /* Lime */
+  --chart-9: oklch(0.75 0.11 190); /* Teal */
 
   --sidebar: oklch(0.12 0.03 200);
   --sidebar-foreground: oklch(0.94 0.01 190);

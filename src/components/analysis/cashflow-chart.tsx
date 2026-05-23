@@ -18,6 +18,8 @@ import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { CashFlowBucket } from "@/lib/services/analysis-service";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
+import { useChartAnimation } from "@/hooks/use-chart-animation";
+import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 
 interface Props {
   buckets: CashFlowBucket[];
@@ -49,55 +51,41 @@ function CashFlowTooltip({
 
   if (b.isEmpty) {
     return (
-      <div className="rounded-md border border-border/60 bg-popover/95 backdrop-blur-sm px-3 py-2 text-xs shadow-md">
-        <div className="font-medium">{b.label}</div>
-        <div className="text-muted-foreground">{t("noDataMonth")}</div>
-      </div>
+      <ChartTooltipContainer title={b.label}>
+        <div className="text-[11px] text-muted-foreground">{t("noDataMonth")}</div>
+      </ChartTooltipContainer>
     );
   }
 
   const contribSign = b.contributions >= 0 ? "+" : "";
   const marketSign = b.marketPerformance >= 0 ? "+" : "";
+  const deltaSign = b.deltaNetWorth >= 0 ? "+" : "";
 
   return (
-    <div className="rounded-md border border-border/60 bg-popover/95 backdrop-blur-sm px-3 py-2 text-xs shadow-md space-y-1">
-      <div className="font-medium">{b.label}</div>
-      <div className="flex justify-between gap-4">
-        <span className="text-muted-foreground">{t("seriesContributions")}</span>
-        <span className="tabular-nums">
-          {privacyMode ? "***" : `${contribSign}${formatCurrency(b.contributions, baseCurrency)}`}
-        </span>
+    <ChartTooltipContainer title={b.label}>
+      <ChartTooltipRow
+        label={t("seriesContributions")}
+        value={
+          privacyMode ? "***" : `${contribSign}${formatCurrency(b.contributions, baseCurrency)}`
+        }
+      />
+      <ChartTooltipRow
+        label={t("seriesMarket")}
+        value={
+          privacyMode ? "***" : `${marketSign}${formatCurrency(b.marketPerformance, baseCurrency)}`
+        }
+        valueClassName={b.marketPerformance >= 0 ? "text-[var(--chart-1)]" : "text-destructive"}
+      />
+      <div className="pt-1.5 mt-1.5 border-t border-border/40">
+        <ChartTooltipRow
+          label={t("tooltipChange")}
+          value={
+            privacyMode ? "***" : `${deltaSign}${formatCurrency(b.deltaNetWorth, baseCurrency)}`
+          }
+          valueClassName={b.deltaNetWorth >= 0 ? "text-[var(--chart-1)]" : "text-destructive"}
+        />
       </div>
-      <div className="flex justify-between gap-4">
-        <span className="text-muted-foreground">{t("seriesMarket")}</span>
-        <span
-          className={`tabular-nums ${
-            b.marketPerformance >= 0 ? "text-[var(--chart-1)]" : "text-destructive"
-          }`}
-        >
-          {privacyMode
-            ? "***"
-            : `${marketSign}${formatCurrency(b.marketPerformance, baseCurrency)}`}
-        </span>
-      </div>
-      <div className="flex justify-between gap-4 border-t border-border/60 pt-1">
-        <span className="text-muted-foreground">{t("tooltipChange")}</span>
-        <span
-          className={`tabular-nums font-medium ${
-            b.deltaNetWorth >= 0 ? "text-[var(--chart-1)]" : "text-destructive"
-          }`}
-        >
-          {privacyMode ? (
-            "***"
-          ) : (
-            <>
-              {b.deltaNetWorth >= 0 ? "+" : ""}
-              {formatCurrency(b.deltaNetWorth, baseCurrency)}
-            </>
-          )}
-        </span>
-      </div>
-    </div>
+    </ChartTooltipContainer>
   );
 }
 
@@ -106,6 +94,7 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
   const { handlers: crosshairHandlers } = useChartCrosshair();
+  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
   return (
@@ -123,6 +112,7 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
           <div className="h-[280px]" />
         ) : (
           <div
+            aria-hidden={privacyMode || undefined}
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             <div className="flex items-center gap-4 mb-2 text-xs text-muted-foreground">
@@ -143,69 +133,79 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
                 {t("seriesMarket")}
               </span>
             </div>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart
-                data={buckets}
-                margin={{ top: 10, right: 4, left: 0, bottom: 20 }}
-                {...crosshairHandlers}
-              >
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 12 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                />
-                <YAxis
-                  width={50}
-                  tick={{ fontSize: 12 }}
-                  tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
-                />
-                <Tooltip
-                  cursor={{ fill: "var(--muted)", opacity: 0.3 }}
-                  content={
-                    <CashFlowTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />
-                  }
-                />
-                {/* Contributions bar */}
-                <Bar
-                  dataKey="contributions"
-                  name={t("seriesContributions")}
-                  stackId="a"
-                  radius={[0, 0, 0, 0]}
+            <div role="img" aria-label={`${t("cashFlow")}, ${t("cashFlowSubtitle")}`}>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart
+                  data={buckets}
+                  margin={{ top: 10, right: 4, left: 0, bottom: 20 }}
+                  {...crosshairHandlers}
                 >
-                  {buckets.map((b) => (
-                    <Cell
-                      key={`contrib-${b.monthKey}`}
-                      fill="var(--chart-2)"
-                      opacity={b.isEmpty ? 0.2 : 0.85}
-                    />
-                  ))}
-                </Bar>
-                {/* Market performance bar */}
-                <Bar
-                  dataKey="marketPerformance"
-                  name={t("seriesMarket")}
-                  stackId="a"
-                  radius={[4, 4, 0, 0]}
-                >
-                  {buckets.map((b) => (
-                    <Cell
-                      key={`market-${b.monthKey}`}
-                      fill={
-                        b.isEmpty
-                          ? "var(--muted-foreground)"
-                          : b.marketPerformance >= 0
-                            ? "var(--chart-1)"
-                            : "var(--destructive)"
-                      }
-                      opacity={b.isEmpty ? 0.2 : 1}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 12 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis
+                    width={50}
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "var(--muted)", opacity: 0.3 }}
+                    content={
+                      <CashFlowTooltip
+                        baseCurrency={baseCurrency}
+                        t={t}
+                        privacyMode={privacyMode}
+                      />
+                    }
+                  />
+                  {/* Contributions bar */}
+                  <Bar
+                    dataKey="contributions"
+                    name={t("seriesContributions")}
+                    stackId="a"
+                    radius={[0, 0, 0, 0]}
+                    isAnimationActive={isAnimationActive}
+                    onAnimationEnd={onAnimationEnd}
+                  >
+                    {buckets.map((b) => (
+                      <Cell
+                        key={`contrib-${b.monthKey}`}
+                        fill="var(--chart-2)"
+                        opacity={b.isEmpty ? 0.2 : 0.85}
+                      />
+                    ))}
+                  </Bar>
+                  {/* Market performance bar */}
+                  <Bar
+                    dataKey="marketPerformance"
+                    name={t("seriesMarket")}
+                    stackId="a"
+                    radius={[4, 4, 0, 0]}
+                    isAnimationActive={isAnimationActive}
+                    onAnimationEnd={onAnimationEnd}
+                  >
+                    {buckets.map((b) => (
+                      <Cell
+                        key={`market-${b.monthKey}`}
+                        fill={
+                          b.isEmpty
+                            ? "var(--muted-foreground)"
+                            : b.marketPerformance >= 0
+                              ? "var(--chart-1)"
+                              : "var(--destructive)"
+                        }
+                        opacity={b.isEmpty ? 0.2 : 1}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
             <p className="mt-2 text-[11px] text-muted-foreground">{t("cashFlowNote")}</p>
           </div>
         )}

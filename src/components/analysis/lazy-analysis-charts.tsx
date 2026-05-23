@@ -7,10 +7,10 @@ function ChartSkeleton({ height = 280 }: { height?: number }) {
   return (
     <Card className="border-0 bg-transparent shadow-none">
       <CardHeader className="pb-2 px-2 sm:px-4">
-        <div className="h-5 w-40 bg-muted animate-pulse rounded" />
+        <div className="h-5 w-40 rounded skeleton-shimmer" />
       </CardHeader>
       <CardContent className="px-2 sm:px-4 pb-4">
-        <div className="bg-muted animate-pulse rounded" style={{ height }} />
+        <div className="rounded skeleton-shimmer" style={{ height }} />
       </CardContent>
     </Card>
   );

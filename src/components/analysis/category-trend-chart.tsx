@@ -18,18 +18,20 @@ import { formatChartTick } from "@/lib/chart-formatters";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
+import { useChartAnimation } from "@/hooks/use-chart-animation";
+import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 import type { CategoryDataPoint } from "@/lib/services/analysis-service";
 
 const CATEGORY_COLORS = [
-  "#3b82f6", // blue   — BANK
-  "#10b981", // green  — BROKERAGE
-  "#f59e0b", // amber  — CRYPTO_WALLET
-  "#ef4444", // red    — PROPERTY
-  "#8b5cf6", // violet — VEHICLE
-  "#06b6d4", // cyan   — CREDIT_CARD
-  "#ec4899", // pink   — LOAN
-  "#84cc16", // lime   — MORTGAGE
-  "#f97316", // orange — OTHER
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--chart-6)",
+  "var(--chart-7)",
+  "var(--chart-8)",
+  "var(--chart-9)",
 ];
 
 interface Props {
@@ -61,23 +63,16 @@ function CategoryTooltip({
   if (!active || !payload?.length) return null;
   const sorted = [...payload].sort((a, b) => b.value - a.value);
   return (
-    <div className="rounded-md border border-border/60 bg-popover/95 backdrop-blur-sm px-3 py-2 text-xs shadow-md space-y-1 max-w-[200px]">
-      <div className="font-medium">{label}</div>
+    <ChartTooltipContainer title={label} className="max-w-[200px]">
       {sorted.map((p) => (
-        <div key={p.dataKey} className="flex justify-between gap-3">
-          <span className="flex items-center gap-1 text-muted-foreground">
-            <span
-              className="inline-block w-2 h-2 rounded-full shrink-0"
-              style={{ background: p.color }}
-            />
-            {p.name}
-          </span>
-          <span className="tabular-nums">
-            {privacyMode ? "***" : formatCurrency(p.value, baseCurrency)}
-          </span>
-        </div>
+        <ChartTooltipRow
+          key={p.dataKey}
+          label={p.name}
+          value={privacyMode ? "***" : formatCurrency(p.value, baseCurrency)}
+          indicatorColor={p.color}
+        />
       ))}
-    </div>
+    </ChartTooltipContainer>
   );
 }
 
@@ -87,6 +82,7 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
   const { privacyMode } = usePrivacyMode();
   const [mounted, setMounted] = useState(false);
   const { handlers: crosshairHandlers } = useChartCrosshair();
+  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
   // Collect unique categories present in the data, preserving insertion order.
@@ -100,6 +96,16 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
     ...d,
     label: formatMonthLabel(d.monthKey as string, locale),
   }));
+
+  // Compose aria-label: title + subtitle + visible category list, so AT users
+  // get the series enumeration that role="img" hides from the inline Legend.
+  const categoryNames = categories
+    .map((cat) => tCat(cat as Parameters<typeof tCat>[0], { defaultValue: cat }))
+    .join(", ");
+  const ariaLabel =
+    categoryNames.length > 0
+      ? `${t("categoryTrend")}, ${t("categoryTrendSubtitle")} ${categoryNames}.`
+      : `${t("categoryTrend")}, ${t("categoryTrendSubtitle")}`;
 
   return (
     <Card className="border-0 bg-transparent shadow-none">
@@ -118,6 +124,9 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
           <div className="h-[280px]" />
         ) : (
           <div
+            role="img"
+            aria-label={ariaLabel}
+            aria-hidden={privacyMode || undefined}
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             <ResponsiveContainer width="100%" height={280}>
@@ -164,6 +173,8 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
                     strokeWidth={2}
                     dot={false}
                     activeDot={{ r: 4 }}
+                    isAnimationActive={isAnimationActive}
+                    onAnimationEnd={onAnimationEnd}
                   />
                 ))}
               </LineChart>
