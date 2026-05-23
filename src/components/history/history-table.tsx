@@ -106,55 +106,57 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                         {index > 0 && <div aria-hidden="true" className="h-px bg-border/60 mx-4" />}
                         <div
                           role="row"
-                          className={`flex items-center gap-3 px-4 ${isCompact ? "py-2" : "py-3.5"}`}
+                          className={`flex flex-col gap-1 px-4 ${isCompact ? "py-2" : "py-3.5"}`}
                         >
-                          <div role="rowheader" className="min-w-[4rem] shrink-0">
-                            <p className="text-sm font-medium">{dayLabel}</p>
+                          <div className="flex items-baseline justify-between gap-3">
+                            <div role="rowheader" className="shrink-0">
+                              <p className="text-sm font-medium">{dayLabel}</p>
+                            </div>
+                            <div role="cell" className="text-right">
+                              <p className="text-sm font-semibold tabular-nums">
+                                {privacyMode ? "***" : formatCurrency(row.netWorth, baseCurrency)}
+                              </p>
+                              <p
+                                className={cn(
+                                  "text-xs tabular-nums mt-0.5",
+                                  changePositive
+                                    ? "text-primary"
+                                    : changeNegative
+                                      ? "text-destructive"
+                                      : "text-muted-foreground",
+                                )}
+                              >
+                                {privacyMode ? (
+                                  "***"
+                                ) : row.change === null ? (
+                                  <span
+                                    title={t("noPreviousSnapshot")}
+                                    aria-label={t("noPreviousSnapshot")}
+                                    className="cursor-help"
+                                  >
+                                    —
+                                  </span>
+                                ) : (
+                                  (row.change >= 0 ? "+" : "") +
+                                  formatCurrency(row.change, baseCurrency)
+                                )}
+                              </p>
+                            </div>
                           </div>
-                          <div role="cell" className="flex-1 min-w-0">
+                          <div role="cell">
                             <p className="text-xs text-muted-foreground tabular-nums leading-relaxed">
                               {privacyMode ? (
                                 "***"
                               ) : (
                                 <>
-                                  <span className="block truncate">
+                                  <span className="block">
                                     {t("colAssets")} {formatCurrency(row.totalAssets, baseCurrency)}
                                   </span>
-                                  <span className="block truncate">
+                                  <span className="block">
                                     {t("colLiabilities")}{" "}
                                     {formatCurrency(row.totalLiabilities, baseCurrency)}
                                   </span>
                                 </>
-                              )}
-                            </p>
-                          </div>
-                          <div role="cell" className="text-right shrink-0">
-                            <p className="text-sm font-semibold tabular-nums">
-                              {privacyMode ? "***" : formatCurrency(row.netWorth, baseCurrency)}
-                            </p>
-                            <p
-                              className={cn(
-                                "text-xs tabular-nums mt-0.5",
-                                changePositive
-                                  ? "text-primary"
-                                  : changeNegative
-                                    ? "text-destructive"
-                                    : "text-muted-foreground",
-                              )}
-                            >
-                              {privacyMode ? (
-                                "***"
-                              ) : row.change === null ? (
-                                <span
-                                  title={t("noPreviousSnapshot")}
-                                  aria-label={t("noPreviousSnapshot")}
-                                  className="cursor-help"
-                                >
-                                  —
-                                </span>
-                              ) : (
-                                (row.change >= 0 ? "+" : "") +
-                                formatCurrency(row.change, baseCurrency)
                               )}
                             </p>
                           </div>
