@@ -21,13 +21,30 @@ export default function AnalysisLoading() {
         ))}
       </div>
 
-      {/* Charts stack */}
-      {[...Array(3)].map((_, i) => (
+      {/* Charts stack — 5 chart panels matching analysis-view */}
+      {[...Array(5)].map((_, i) => (
         <div key={i} className="rounded-xl border border-border/50 bg-card p-6">
           <div className="h-5 w-40 rounded mb-4 skeleton-shimmer" />
           <div className="h-[280px] rounded-lg skeleton-shimmer" />
         </div>
       ))}
+
+      {/* Top movers list — card with table-like rows */}
+      <div className="rounded-xl border border-border/50 bg-card p-6">
+        <div className="h-5 w-32 rounded mb-2 skeleton-shimmer" />
+        <div className="h-3 w-56 rounded mb-4 skeleton-shimmer" />
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex items-center justify-between gap-3">
+              <div className="flex-1 space-y-1.5">
+                <div className="h-4 w-32 rounded skeleton-shimmer" />
+                <div className="h-3 w-20 rounded skeleton-shimmer" />
+              </div>
+              <div className="h-6 w-24 rounded-md skeleton-shimmer" />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

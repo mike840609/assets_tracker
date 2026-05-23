@@ -138,47 +138,53 @@ export function AttributionChart({ items, baseCurrency }: Props) {
               privacyMode ? "blur-sm pointer-events-none select-none" : ""
             }`}
           >
-            <ResponsiveContainer width="100%" height={chartHeight}>
-              <BarChart
-                layout="vertical"
-                data={chartData}
-                margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={false} />
-                <XAxis
-                  type="number"
-                  tick={{ fontSize: 11 }}
-                  tickFormatter={(v) => (privacyMode ? "" : tickFormatter(v))}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="accountName"
-                  tick={{ fontSize: 12 }}
-                  tickFormatter={truncate}
-                  width={130}
-                />
-                <ReferenceLine x={0} stroke="var(--border)" strokeWidth={1.5} />
-                <Tooltip
-                  cursor={{ fill: "var(--muted)", opacity: 0.3 }}
-                  content={
-                    <AttributionTooltip
-                      baseCurrency={baseCurrency}
-                      t={t}
-                      getCategoryLabel={getCategoryLabel}
-                      privacyMode={privacyMode}
-                    />
-                  }
-                />
-                <Bar dataKey="totalDelta" radius={[0, 4, 4, 0]}>
-                  {chartData.map((item) => (
-                    <Cell
-                      key={item.accountId}
-                      fill={item.totalDelta >= 0 ? "var(--chart-1)" : "var(--destructive)"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div role="img" aria-label={`${t("attribution")}, ${t("attributionSubtitle")}`}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <BarChart
+                  layout="vertical"
+                  data={chartData}
+                  margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    className="stroke-muted"
+                    horizontal={false}
+                  />
+                  <XAxis
+                    type="number"
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={(v) => (privacyMode ? "" : tickFormatter(v))}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="accountName"
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={truncate}
+                    width={130}
+                  />
+                  <ReferenceLine x={0} stroke="var(--border)" strokeWidth={1.5} />
+                  <Tooltip
+                    cursor={{ fill: "var(--muted)", opacity: 0.3 }}
+                    content={
+                      <AttributionTooltip
+                        baseCurrency={baseCurrency}
+                        t={t}
+                        getCategoryLabel={getCategoryLabel}
+                        privacyMode={privacyMode}
+                      />
+                    }
+                  />
+                  <Bar dataKey="totalDelta" radius={[0, 4, 4, 0]}>
+                    {chartData.map((item) => (
+                      <Cell
+                        key={item.accountId}
+                        fill={item.totalDelta >= 0 ? "var(--chart-1)" : "var(--destructive)"}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
 
             {/* Summary row */}
             <div className="grid grid-cols-3 gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs">

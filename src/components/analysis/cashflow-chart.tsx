@@ -143,69 +143,75 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
                 {t("seriesMarket")}
               </span>
             </div>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart
-                data={buckets}
-                margin={{ top: 10, right: 4, left: 0, bottom: 20 }}
-                {...crosshairHandlers}
-              >
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 12 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                />
-                <YAxis
-                  width={50}
-                  tick={{ fontSize: 12 }}
-                  tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
-                />
-                <Tooltip
-                  cursor={{ fill: "var(--muted)", opacity: 0.3 }}
-                  content={
-                    <CashFlowTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />
-                  }
-                />
-                {/* Contributions bar */}
-                <Bar
-                  dataKey="contributions"
-                  name={t("seriesContributions")}
-                  stackId="a"
-                  radius={[0, 0, 0, 0]}
+            <div role="img" aria-label={`${t("cashFlow")}, ${t("cashFlowSubtitle")}`}>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart
+                  data={buckets}
+                  margin={{ top: 10, right: 4, left: 0, bottom: 20 }}
+                  {...crosshairHandlers}
                 >
-                  {buckets.map((b) => (
-                    <Cell
-                      key={`contrib-${b.monthKey}`}
-                      fill="var(--chart-2)"
-                      opacity={b.isEmpty ? 0.2 : 0.85}
-                    />
-                  ))}
-                </Bar>
-                {/* Market performance bar */}
-                <Bar
-                  dataKey="marketPerformance"
-                  name={t("seriesMarket")}
-                  stackId="a"
-                  radius={[4, 4, 0, 0]}
-                >
-                  {buckets.map((b) => (
-                    <Cell
-                      key={`market-${b.monthKey}`}
-                      fill={
-                        b.isEmpty
-                          ? "var(--muted-foreground)"
-                          : b.marketPerformance >= 0
-                            ? "var(--chart-1)"
-                            : "var(--destructive)"
-                      }
-                      opacity={b.isEmpty ? 0.2 : 1}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 12 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis
+                    width={50}
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "var(--muted)", opacity: 0.3 }}
+                    content={
+                      <CashFlowTooltip
+                        baseCurrency={baseCurrency}
+                        t={t}
+                        privacyMode={privacyMode}
+                      />
+                    }
+                  />
+                  {/* Contributions bar */}
+                  <Bar
+                    dataKey="contributions"
+                    name={t("seriesContributions")}
+                    stackId="a"
+                    radius={[0, 0, 0, 0]}
+                  >
+                    {buckets.map((b) => (
+                      <Cell
+                        key={`contrib-${b.monthKey}`}
+                        fill="var(--chart-2)"
+                        opacity={b.isEmpty ? 0.2 : 0.85}
+                      />
+                    ))}
+                  </Bar>
+                  {/* Market performance bar */}
+                  <Bar
+                    dataKey="marketPerformance"
+                    name={t("seriesMarket")}
+                    stackId="a"
+                    radius={[4, 4, 0, 0]}
+                  >
+                    {buckets.map((b) => (
+                      <Cell
+                        key={`market-${b.monthKey}`}
+                        fill={
+                          b.isEmpty
+                            ? "var(--muted-foreground)"
+                            : b.marketPerformance >= 0
+                              ? "var(--chart-1)"
+                              : "var(--destructive)"
+                        }
+                        opacity={b.isEmpty ? 0.2 : 1}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
             <p className="mt-2 text-[11px] text-muted-foreground">{t("cashFlowNote")}</p>
           </div>
         )}

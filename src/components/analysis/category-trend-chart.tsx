@@ -21,15 +21,15 @@ import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
 import type { CategoryDataPoint } from "@/lib/services/analysis-service";
 
 const CATEGORY_COLORS = [
-  "#3b82f6", // blue   — BANK
-  "#10b981", // green  — BROKERAGE
-  "#f59e0b", // amber  — CRYPTO_WALLET
-  "#ef4444", // red    — PROPERTY
-  "#8b5cf6", // violet — VEHICLE
-  "#06b6d4", // cyan   — CREDIT_CARD
-  "#ec4899", // pink   — LOAN
-  "#84cc16", // lime   — MORTGAGE
-  "#f97316", // orange — OTHER
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--chart-6)",
+  "var(--chart-7)",
+  "var(--chart-8)",
+  "var(--chart-9)",
 ];
 
 interface Props {
@@ -118,6 +118,8 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
           <div className="h-[280px]" />
         ) : (
           <div
+            role="img"
+            aria-label={`${t("categoryTrend")}, ${t("categoryTrendSubtitle")}`}
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             <ResponsiveContainer width="100%" height={280}>

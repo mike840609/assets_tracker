@@ -35,10 +35,16 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/60 text-muted-foreground text-xs">
-                  <th className="pb-2 text-left font-medium">{t("topMoversAccount")}</th>
-                  <th className="pb-2 text-right font-medium tabular-nums">{t("tooltipStart")}</th>
-                  <th className="pb-2 text-right font-medium tabular-nums">{t("tooltipEnd")}</th>
-                  <th className="pb-2 text-right font-medium tabular-nums">
+                  <th scope="col" className="pb-2 text-left font-medium">
+                    {t("topMoversAccount")}
+                  </th>
+                  <th scope="col" className="pb-2 text-right font-medium tabular-nums">
+                    {t("tooltipStart")}
+                  </th>
+                  <th scope="col" className="pb-2 text-right font-medium tabular-nums">
+                    {t("tooltipEnd")}
+                  </th>
+                  <th scope="col" className="pb-2 text-right font-medium tabular-nums">
                     {t("topMoversChange")}
                   </th>
                 </tr>

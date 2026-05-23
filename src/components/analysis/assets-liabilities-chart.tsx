@@ -106,6 +106,8 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
           <div className="h-[280px]" />
         ) : (
           <div
+            role="img"
+            aria-label={t("assetsVsLiabilities")}
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
             <ResponsiveContainer width="100%" height={280}>
