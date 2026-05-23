@@ -25,8 +25,6 @@ export function NetWorthCard({
   const isCompact = density === "compact";
 
   const animatedNetWorth = useCountUp(netWorth, 600);
-  const animatedAssets = useCountUp(totalAssets, 500);
-  const animatedLiabilities = useCountUp(totalLiabilities, 500);
 
   const delta = previousNetWorth !== undefined ? netWorth - previousNetWorth : null;
   const pct =
@@ -105,7 +103,7 @@ export function NetWorthCard({
           </div>
           <div className="overflow-x-auto scrollbar-none">
             <p className="text-lg sm:text-2xl font-semibold text-primary mt-1 whitespace-nowrap tabular-nums">
-              {privacyMode ? HIDDEN : formatCurrency(animatedAssets, baseCurrency)}
+              {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency)}
             </p>
           </div>
         </CardContent>
@@ -124,7 +122,7 @@ export function NetWorthCard({
           </div>
           <div className="overflow-x-auto scrollbar-none">
             <p className="text-lg sm:text-2xl font-semibold text-destructive mt-1 whitespace-nowrap tabular-nums">
-              {privacyMode ? HIDDEN : formatCurrency(animatedLiabilities, baseCurrency)}
+              {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency)}
             </p>
           </div>
         </CardContent>

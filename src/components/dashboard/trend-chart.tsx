@@ -200,16 +200,16 @@ export function TrendChart({
   }, [filtered]);
 
   return (
-    <Card className="relative border-0 bg-transparent shadow-none h-full flex flex-col pb-0">
-      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 pb-2 px-2 sm:px-4">
+    <Card className="relative h-full flex flex-col pb-0">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 pb-2 px-4">
         <div className="flex flex-col gap-1 min-w-0">
           <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
           {periodChange && (
             <div
               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold tabular-nums ${
                 periodChange.delta >= 0
-                  ? "bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-400"
-                  : "bg-red-50 dark:bg-red-950/50 text-destructive"
+                  ? "bg-primary/10 text-primary"
+                  : "bg-destructive/10 text-destructive"
               }`}
             >
               {privacyMode ? (
@@ -261,7 +261,7 @@ export function TrendChart({
           </div>
         )}
       </CardHeader>
-      <CardContent className="px-2 sm:px-4 pb-0 flex-1 flex flex-col">
+      <CardContent className="px-4 pb-0 flex-1 flex flex-col">
         {filtered.length === 0 ? (
           <div className="flex-1 min-h-[200px] flex items-center justify-center text-muted-foreground text-sm">
             {t("noData")}

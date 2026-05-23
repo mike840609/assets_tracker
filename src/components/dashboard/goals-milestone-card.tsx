@@ -29,7 +29,7 @@ export function GoalsMilestoneCard({
   const progressClamped = featured ? Math.max(0, Math.min(100, featured.progressPercent)) : 0;
 
   return (
-    <Card className="border-0 shadow-none bg-transparent">
+    <Card>
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <div className="flex items-center gap-2">
           <Target className="h-4 w-4 text-primary" />

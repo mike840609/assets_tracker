@@ -26,8 +26,6 @@ const fetchPreviousSnapshot = cache((userId: string) =>
   }),
 );
 
-const CARD_CLASS = "premium-card";
-
 /* ---------- Section skeleton helpers ---------- */
 
 function NetWorthSkeleton() {
@@ -50,16 +48,14 @@ function ChartsSkeleton() {
   return (
     <>
       {[...Array(2)].map((_, i) => (
-        <div key={i} className={CARD_CLASS}>
-          <Card className="border-0 shadow-none bg-transparent">
-            <CardHeader className="pb-2">
-              <div className="h-5 w-32 bg-muted animate-pulse rounded" />
-            </CardHeader>
-            <CardContent>
-              <div className="h-[250px] bg-muted animate-pulse rounded" />
-            </CardContent>
-          </Card>
-        </div>
+        <Card key={i}>
+          <CardHeader className="pb-2">
+            <div className="h-5 w-32 bg-muted animate-pulse rounded" />
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px] bg-muted animate-pulse rounded" />
+          </CardContent>
+        </Card>
       ))}
     </>
   );
@@ -67,19 +63,13 @@ function ChartsSkeleton() {
 
 function AccountsSummarySkeleton() {
   return (
-    <div className={CARD_CLASS}>
-      <Card className="border-0 shadow-none bg-transparent">
-        <CardHeader>
-          <div className="h-5 w-40 bg-muted animate-pulse rounded" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-10 bg-muted animate-pulse rounded" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-3">
+      <div className="h-5 w-40 bg-muted animate-pulse rounded" />
+      <div className="space-y-3">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-10 bg-muted animate-pulse rounded" />
+        ))}
+      </div>
     </div>
   );
 }
@@ -152,12 +142,8 @@ async function ChartsSection({ userId, baseCurrency }: { userId: string; baseCur
 
   return (
     <>
-      <div className={CARD_CLASS}>
-        <LazyAllocationChart summary={summary} />
-      </div>
-      <div className={CARD_CLASS}>
-        <LazyCurrencyExposureChart summary={summary} />
-      </div>
+      <LazyAllocationChart summary={summary} />
+      <LazyCurrencyExposureChart summary={summary} />
     </>
   );
 }
@@ -190,13 +176,11 @@ async function GoalsMilestoneSection({
     withDeadline[0] ?? byProgress[0] ?? goalsWithProgress[0] ?? null;
 
   return (
-    <div className={CARD_CLASS}>
-      <GoalsMilestoneCard
-        featured={featured}
-        totalGoals={goalsWithProgress.length}
-        baseCurrency={baseCurrency}
-      />
-    </div>
+    <GoalsMilestoneCard
+      featured={featured}
+      totalGoals={goalsWithProgress.length}
+      baseCurrency={baseCurrency}
+    />
   );
 }
 
@@ -214,11 +198,7 @@ async function AccountsSummarySection({
   const summary = await getCachedNetWorthSummary(userId, baseCurrency);
   if (summary.accounts.length === 0) return null;
 
-  return (
-    <div className={CARD_CLASS}>
-      <AccountsSummary summary={summary} />
-    </div>
-  );
+  return <AccountsSummary summary={summary} />;
 }
 
 /* ---------- Orchestrator ---------- */
@@ -290,7 +270,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
 
       {/* Charts grid — trend chart + allocation + currency exposure */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6 items-stretch animate-in fade-in slide-in-from-bottom-8 motion-slow fill-mode-both delay-75">
-        <div className={`${CARD_CLASS} lg:col-span-2 xl:col-span-1`}>
+        <div className="lg:col-span-2 xl:col-span-1">
           <Suspense fallback={<div className="h-[350px] animate-pulse bg-muted rounded-lg" />}>
             <TrendChartSection userId={userId} baseCurrency={baseCurrency} />
           </Suspense>

@@ -91,13 +91,13 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
   );
 
   return (
-    <Card className="border-0 bg-transparent shadow-none">
-      <CardHeader className="pb-1 px-2 sm:px-4">
+    <Card>
+      <CardHeader className="pb-1 px-4">
         <CardTitle className="text-base font-medium text-foreground">
           {t("allocationChart.title")}
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-2 sm:px-4 pb-3">
+      <CardContent className="px-4 pb-3">
         {data.length === 0 ? (
           <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
             {t("allocationChart.noAssets")}

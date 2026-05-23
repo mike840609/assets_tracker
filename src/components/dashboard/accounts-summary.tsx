@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -169,11 +169,9 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   };
 
   return (
-    <Card className="relative border-0 shadow-none bg-transparent">
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-2">
-        <CardTitle className="text-lg font-semibold tracking-tight">
-          {t("accountsSummary.title")}
-        </CardTitle>
+    <section className="space-y-4">
+      <div className="flex flex-row flex-wrap items-center justify-between gap-2 px-1">
+        <h2 className="text-lg font-semibold tracking-tight">{t("accountsSummary.title")}</h2>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
           {sortOptions.map(({ field, label }) => (
             <button
@@ -191,11 +189,11 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
             </button>
           ))}
         </div>
-      </CardHeader>
-      <CardContent className={`${isCompact ? "space-y-2" : "space-y-6"} pt-4`}>
+      </div>
+      <div className={isCompact ? "space-y-2" : "space-y-6"}>
         {assets.length > 0 && renderGroup(assets, true)}
         {liabilities.length > 0 && renderGroup(liabilities, false)}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
