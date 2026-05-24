@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency, formatNumber } from "@/lib/currencies";
@@ -11,6 +13,8 @@ interface InlineBalanceEditorProps {
   currency: string;
   notePlaceholder?: string;
   onSave: (newBalance: number, note?: string) => Promise<void>;
+  mode?: "hero" | "inline";
+  inlineLabel?: string;
 }
 
 export function InlineBalanceEditor({
@@ -18,7 +22,10 @@ export function InlineBalanceEditor({
   currency,
   notePlaceholder = "Note (e.g. Salary, Rent...)",
   onSave,
+  mode = "hero",
+  inlineLabel,
 }: InlineBalanceEditorProps) {
+  const t = useTranslations();
   const [editing, setEditing] = useState(false);
   const [balance, setBalance] = useState("");
   const [error, setError] = useState("");
@@ -83,7 +90,7 @@ export function InlineBalanceEditor({
 
   if (editing) {
     return (
-      <div className="flex flex-col gap-2 mt-1">
+      <div className="flex flex-col gap-2 mt-1 max-w-xs">
         <Input
           type="text"
           inputMode="decimal"
@@ -121,12 +128,46 @@ export function InlineBalanceEditor({
     );
   }
 
+  const displayValue = privacyMode ? "***" : formatCurrency(currentBalance, currency);
+  const editLabel = t("common.edit");
+
+  if (mode === "inline") {
+    return (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        aria-label={`${inlineLabel ?? ""} ${displayValue}. ${editLabel}`.trim()}
+        className="group inline-flex items-center gap-1.5 rounded-md px-1 -mx-1 hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none transition-colors"
+      >
+        {inlineLabel && <span className="text-muted-foreground">{inlineLabel}</span>}
+        <span aria-live="polite" className="tabular-nums font-medium text-foreground">
+          {displayValue}
+        </span>
+        <Pencil
+          aria-hidden
+          className="h-3 w-3 text-muted-foreground/60 group-hover:text-foreground transition-colors"
+        />
+      </button>
+    );
+  }
+
   return (
-    <p
-      className="text-2xl font-bold mt-1 cursor-pointer hover:text-primary"
+    <button
+      type="button"
       onClick={() => setEditing(true)}
+      aria-label={`${displayValue}. ${editLabel}`}
+      className="group inline-flex items-center gap-2 rounded-md px-1 -mx-1 hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none transition-colors text-left"
     >
-      {privacyMode ? "***" : formatCurrency(currentBalance, currency)}
-    </p>
+      <span
+        aria-live="polite"
+        className="text-4xl font-bold tracking-tight tabular-nums text-foreground"
+      >
+        {displayValue}
+      </span>
+      <Pencil
+        aria-hidden
+        className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground transition-colors shrink-0"
+      />
+    </button>
   );
 }

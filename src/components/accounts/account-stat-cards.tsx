@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { InlineBalanceEditor } from "./inline-balance-editor";
 import { useTranslations } from "next-intl";
@@ -24,88 +23,76 @@ export function AccountStatCards({
   const { privacyMode } = usePrivacyMode();
   const isBrokerage = account.category === "BROKERAGE" || account.category === "CRYPTO_WALLET";
   const isBank = account.category === "BANK";
-  const totalValue = account.cashBalance + totalHoldingsValue;
 
-  if (isBrokerage) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">{t("accountDetail.marketValue")}</p>
-            <p className="text-2xl font-bold mt-1">
-              {privacyMode ? HIDDEN : formatCurrency(totalHoldingsValue, account.currency)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">{t("accountDetail.holdingsCount")}</p>
-            <p className="text-2xl font-bold mt-1">{account.holdings.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">{t("accountDetail.cashBalance")}</p>
-            <InlineBalanceEditor
-              currentBalance={account.cashBalance}
-              currency={account.currency}
-              notePlaceholder={t("accountDetail.notePlaceholderDeposit")}
-              onSave={onSaveBalance}
-            />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
+  // BANK: cash IS the headline value, edited inline at Display scale.
   if (isBank) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">{t("accountDetail.cashBalance")}</p>
-            <InlineBalanceEditor
-              currentBalance={account.cashBalance}
-              currency={account.currency}
-              notePlaceholder={t("accountDetail.notePlaceholderSalary")}
-              onSave={onSaveBalance}
-            />
-          </CardContent>
-        </Card>
-      </div>
+      <section className="space-y-1">
+        <InlineBalanceEditor
+          mode="hero"
+          currentBalance={account.cashBalance}
+          currency={account.currency}
+          notePlaceholder={t("accountDetail.notePlaceholderSalary")}
+          onSave={onSaveBalance}
+        />
+        <p className="text-sm text-muted-foreground">{t("accountDetail.cashBalance")}</p>
+      </section>
     );
   }
 
-  // Investment / other
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-sm text-muted-foreground">{t("accountDetail.totalValue")}</p>
-          <p className="text-2xl font-bold mt-1">
-            {privacyMode ? HIDDEN : formatCurrency(totalValue, account.currency)}
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-sm text-muted-foreground">{t("accountDetail.cashBalance")}</p>
+  // BROKERAGE / CRYPTO: primary is market value; cash is the only secondary fact
+  // (holdings count lives in the Holdings section title below).
+  if (isBrokerage) {
+    return (
+      <section className="space-y-1">
+        <p
+          aria-live="polite"
+          className="text-4xl font-bold tracking-tight tabular-nums text-foreground"
+        >
+          {privacyMode ? HIDDEN : formatCurrency(totalHoldingsValue, account.currency)}
+        </p>
+        <p className="text-sm text-muted-foreground">{t("accountDetail.marketValue")}</p>
+        <div className="pt-2">
           <InlineBalanceEditor
+            mode="inline"
+            inlineLabel={t("accountDetail.cashBalance")}
             currentBalance={account.cashBalance}
             currency={account.currency}
-            notePlaceholder={t("accountDetail.notePlaceholderSalary")}
+            notePlaceholder={t("accountDetail.notePlaceholderDeposit")}
             onSave={onSaveBalance}
           />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-sm text-muted-foreground">{t("accountDetail.holdingsValue")}</p>
-          <p className="text-2xl font-bold mt-1">
+        </div>
+      </section>
+    );
+  }
+
+  // OTHER / INVESTMENT: primary is total value; secondary breaks it into cash + holdings value.
+  const totalValue = account.cashBalance + totalHoldingsValue;
+  return (
+    <section className="space-y-1">
+      <p
+        aria-live="polite"
+        className="text-4xl font-bold tracking-tight tabular-nums text-foreground"
+      >
+        {privacyMode ? HIDDEN : formatCurrency(totalValue, account.currency)}
+      </p>
+      <p className="text-sm text-muted-foreground">{t("accountDetail.totalValue")}</p>
+      <div className="pt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+        <InlineBalanceEditor
+          mode="inline"
+          inlineLabel={t("accountDetail.cashBalance")}
+          currentBalance={account.cashBalance}
+          currency={account.currency}
+          notePlaceholder={t("accountDetail.notePlaceholderSalary")}
+          onSave={onSaveBalance}
+        />
+        <span className="text-muted-foreground">
+          {t("accountDetail.holdingsValue")}{" "}
+          <span className="tabular-nums font-medium text-foreground">
             {privacyMode ? HIDDEN : formatCurrency(totalHoldingsValue, account.currency)}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+          </span>
+        </span>
+      </div>
+    </section>
   );
 }
