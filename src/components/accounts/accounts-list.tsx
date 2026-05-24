@@ -21,7 +21,6 @@ import {
   MoreHorizontal,
   Pin,
   PinOff,
-  Plus,
   Save,
   Trash2,
   X,
@@ -423,7 +422,7 @@ export function AccountsList({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         {manageMode ? (
           <>
             <Button variant="outline" onClick={cancelManageMode} disabled={savingOrder}>
@@ -437,41 +436,13 @@ export function AccountsList({
           </>
         ) : (
           <>
-            <Button
-              variant="outline"
-              onClick={() => setShowQuickAdd(true)}
-              className="hidden md:inline-flex"
-            >
+            <Button variant="outline" onClick={() => setShowQuickAdd(true)}>
               {t("accountsList.addItem")}
             </Button>
-            <Button
-              variant="outline"
-              onClick={enterManageMode}
-              disabled={accounts.length === 0}
-              className="hidden md:inline-flex"
-            >
+            <Button variant="outline" onClick={enterManageMode} disabled={accounts.length === 0}>
               {t("accountsList.manageOrder")}
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                aria-label={t("accountsList.moreActions")}
-                className="md:hidden inline-flex items-center justify-center rounded-lg border border-border bg-background text-foreground hover:bg-muted size-9 transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setShowQuickAdd(true)}>
-                  {t("accountsList.addItem")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={enterManageMode} disabled={accounts.length === 0}>
-                  {t("accountsList.manageOrder")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button onClick={() => setShowForm(true)}>
-              <Plus className="h-4 w-4" aria-hidden />
-              {t("accountsList.addAccount")}
-            </Button>
+            <Button onClick={() => setShowForm(true)}>{t("accountsList.addAccount")}</Button>
           </>
         )}
       </div>
@@ -1031,26 +1002,26 @@ function MobileSummaryStrip({
   const t = useTranslations();
   const netWorth = totalAssets - totalLiabilities;
   return (
-    <div className="rounded-xl border bg-muted/20 px-4 py-3">
-      <p className="text-xs text-muted-foreground">{t("accountsList.netWorth")}</p>
-      <p
-        className={`text-2xl font-bold tabular-nums mt-0.5 ${netWorth >= 0 ? "text-foreground" : "text-destructive"}`}
-      >
-        {privacyMode ? HIDDEN : formatCurrency(netWorth, baseCurrency, true)}
-      </p>
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span>
-          {t("accountsList.assets")}{" "}
-          <span className="font-medium text-foreground tabular-nums">
-            {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency, true)}
-          </span>
-        </span>
-        <span>
-          {t("accountsList.liabilities")}{" "}
-          <span className="font-medium text-foreground tabular-nums">
-            {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency, true)}
-          </span>
-        </span>
+    <div className="rounded-xl border bg-muted/20 px-4 py-3 grid grid-cols-3 gap-2 text-center">
+      <div>
+        <p className="text-xs text-muted-foreground mb-0.5">{t("accountsList.assets")}</p>
+        <p className="text-sm font-bold tabular-nums text-green-600 dark:text-green-400">
+          {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency, true)}
+        </p>
+      </div>
+      <div className="border-x border-border/40">
+        <p className="text-xs text-muted-foreground mb-0.5">{t("accountsList.netWorth")}</p>
+        <p
+          className={`text-sm font-bold tabular-nums ${netWorth >= 0 ? "text-foreground" : "text-destructive"}`}
+        >
+          {privacyMode ? HIDDEN : formatCurrency(netWorth, baseCurrency, true)}
+        </p>
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground mb-0.5">{t("accountsList.liabilities")}</p>
+        <p className="text-sm font-bold tabular-nums text-red-600 dark:text-red-400">
+          {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency, true)}
+        </p>
       </div>
     </div>
   );
@@ -1228,9 +1199,7 @@ function AccountCardWithHoldings({
   const subtitle = hasHoldings
     ? t("accountsList.nHoldings", { count: account.holdings.length }) +
       (account.cashBalance > 0
-        ? ` · ${t("accountsList.cashSuffix", {
-            amount: privacyMode ? HIDDEN : formatCurrency(account.cashBalance, account.currency),
-          })}`
+        ? ` · ${privacyMode ? HIDDEN : formatCurrency(account.cashBalance, account.currency)} cash`
         : "")
     : null;
 
