@@ -131,10 +131,12 @@
     "ofTarget": "/ {target}",
     "completed": "已達成",
     "confirmDelete": "確定刪除此目標？",
+    "deleteConfirmDescription": "此操作無法復原。",
+    "deleteButton": "刪除",
     "dueIn": "{date}（{days} 天後）",
     "overdue": "已逾期 · {date}",
-    "projectedLinear": "線性預測：{date}",
-    "projectedCAGR": "CAGR 預測：{date}",
+    "projectedLinear": "按當前進度：{date}",
+    "projectedCAGR": "複利預測：{date}",
     "scope": {
       "NET_WORTH": "淨資產",
       "ASSETS_ONLY": "總資產",
@@ -165,6 +167,10 @@
       "updated": "目標已更新",
       "deleted": "目標已刪除",
       "failed": "發生錯誤"
+    },
+    "aria": {
+      "editGoal": "編輯{name}",
+      "deleteGoal": "刪除{name}"
     }
   },
   "goalsMilestone": {

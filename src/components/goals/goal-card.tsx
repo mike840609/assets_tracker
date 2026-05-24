@@ -2,15 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/currencies";
 import { Pencil, Trash2, Target, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import type { GoalWithProgress, SerializedAccount, SerializedGoal } from "@/lib/types";
 import { GoalFormDialog } from "./goal-form-dialog";
+
+const HIDDEN = "***";
 
 interface GoalCardProps {
   data: GoalWithProgress;
@@ -41,11 +51,13 @@ export function GoalCard({ data, baseCurrency, accounts, defaultCurrency }: Goal
     isCompleted,
   } = data;
   const t = useTranslations("goals");
+  const locale = useLocale();
   const router = useRouter();
+  const { privacyMode } = usePrivacyMode();
   const [editOpen, setEditOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const locale = typeof navigator !== "undefined" ? navigator.language : "en-US";
   const progressClamped = Math.max(0, Math.min(100, progressPercent));
 
   const scopeLabel = t(`scope.${goal.scope}`);
@@ -61,9 +73,9 @@ export function GoalCard({ data, baseCurrency, accounts, defaultCurrency }: Goal
 
   const targetDateDays = goal.targetDate ? daysFromNow(goal.targetDate) : null;
 
-  async function handleDelete() {
-    if (!confirm(t("confirmDelete"))) return;
+  async function handleDeleteConfirm() {
     setDeleting(true);
+    setConfirmOpen(false);
     try {
       const res = await fetch(`/api/goals/${goal.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed");
@@ -89,9 +101,9 @@ export function GoalCard({ data, baseCurrency, accounts, defaultCurrency }: Goal
                 className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${isCompleted ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}
               >
                 {isCompleted ? (
-                  <CheckCircle2 className="h-5 w-5" />
+                  <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
                 ) : (
-                  <Target className="h-5 w-5" />
+                  <Target className="h-5 w-5" aria-hidden="true" />
                 )}
               </div>
               <div className="min-w-0">
@@ -106,19 +118,21 @@ export function GoalCard({ data, baseCurrency, accounts, defaultCurrency }: Goal
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                className="h-9 w-9 p-0 text-muted-foreground hover:text-foreground"
+                aria-label={t("aria.editGoal", { name: goal.name })}
                 onClick={() => setEditOpen(true)}
               >
-                <Pencil className="h-3.5 w-3.5" />
+                <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 px-2 text-muted-foreground hover:text-destructive"
-                onClick={handleDelete}
+                className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
+                aria-label={t("aria.deleteGoal", { name: goal.name })}
+                onClick={() => setConfirmOpen(true)}
                 disabled={deleting}
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               </Button>
             </div>
           </div>
@@ -126,10 +140,17 @@ export function GoalCard({ data, baseCurrency, accounts, defaultCurrency }: Goal
           {/* Progress bar */}
           <div className="space-y-1.5">
             <div className="flex justify-between items-baseline text-xs text-muted-foreground">
-              <span>{formatCurrency(currentAmount, baseCurrency)}</span>
+              <span>{privacyMode ? HIDDEN : formatCurrency(currentAmount, baseCurrency)}</span>
               <span className="font-medium text-foreground">{progressClamped.toFixed(1)}%</span>
             </div>
-            <div className="h-2.5 w-full rounded-full bg-muted/60 overflow-hidden">
+            <div
+              role="progressbar"
+              aria-valuenow={progressClamped}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={goal.name}
+              className="h-2.5 w-full rounded-full bg-muted/60 overflow-hidden"
+            >
               <div
                 className={`h-full rounded-full transition-all motion-normal ${isCompleted ? "bg-primary" : "bg-primary/80"}`}
                 style={{ width: `${progressClamped}%` }}
@@ -138,12 +159,12 @@ export function GoalCard({ data, baseCurrency, accounts, defaultCurrency }: Goal
             <div className="flex justify-between items-baseline text-xs">
               <span className="text-muted-foreground">
                 {t("ofTarget", {
-                  target: formatCurrency(targetAmountInBase, baseCurrency),
+                  target: privacyMode ? HIDDEN : formatCurrency(targetAmountInBase, baseCurrency),
                 })}
               </span>
               {goal.targetCurrency !== baseCurrency && (
                 <span className="text-muted-foreground/70">
-                  {formatCurrency(goal.targetAmount, goal.targetCurrency)}
+                  {privacyMode ? HIDDEN : formatCurrency(goal.targetAmount, goal.targetCurrency)}
                 </span>
               )}
             </div>
@@ -193,6 +214,23 @@ export function GoalCard({ data, baseCurrency, accounts, defaultCurrency }: Goal
         accounts={accounts}
         defaultCurrency={defaultCurrency}
       />
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("confirmDelete")}</DialogTitle>
+            <DialogDescription>{t("deleteConfirmDescription")}</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={deleting}>
+              {t("form.cancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={deleting}>
+              {t("deleteButton")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
