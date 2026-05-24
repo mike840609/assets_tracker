@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { DataManagement } from "@/components/settings/data-management";
 import { InstallAppCard } from "@/components/settings/install-app-card";
@@ -10,7 +9,6 @@ import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
-import SettingsLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["settings", "toast", "languages", "dataManagement"];
 
@@ -64,9 +62,5 @@ async function SettingsContent() {
 }
 
 export default function SettingsPage() {
-  return (
-    <Suspense fallback={<SettingsLoading />}>
-      <SettingsContent />
-    </Suspense>
-  );
+  return <SettingsContent />;
 }

@@ -50,100 +50,100 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
 
   const { gridDays, monthLabels, maxPos, maxNeg, weeksToShow, currentYear, todayColIndex } =
     useMemo(() => {
-    // 1. Sort snapshots chronologically (oldest first) to easily calculate deltas
-    const sortedSnapshots = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+      // 1. Sort snapshots chronologically (oldest first) to easily calculate deltas
+      const sortedSnapshots = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
 
-    let maxPositiveChange = 0;
-    let maxNegativeChange = 0;
+      let maxPositiveChange = 0;
+      let maxNegativeChange = 0;
 
-    // 2. Create a lookup map of snapshot dates with pre-calculated changes (O(N))
-    const snapshotMap = new Map<string, SnapshotRow & { change: number | null }>();
+      // 2. Create a lookup map of snapshot dates with pre-calculated changes (O(N))
+      const snapshotMap = new Map<string, SnapshotRow & { change: number | null }>();
 
-    for (let i = 0; i < sortedSnapshots.length; i++) {
-      const snap = sortedSnapshots[i]!;
-      const prevSnap = i > 0 ? sortedSnapshots[i - 1] : null;
-      const change = prevSnap ? snap.netWorth - prevSnap.netWorth : null;
+      for (let i = 0; i < sortedSnapshots.length; i++) {
+        const snap = sortedSnapshots[i]!;
+        const prevSnap = i > 0 ? sortedSnapshots[i - 1] : null;
+        const change = prevSnap ? snap.netWorth - prevSnap.netWorth : null;
 
-      if (change !== null) {
-        if (change > maxPositiveChange) maxPositiveChange = change;
-        if (change < maxNegativeChange) maxNegativeChange = change;
+        if (change !== null) {
+          if (change > maxPositiveChange) maxPositiveChange = change;
+          if (change < maxNegativeChange) maxNegativeChange = change;
+        }
+
+        snapshotMap.set(snap.date, { ...snap, change });
       }
 
-      snapshotMap.set(snap.date, { ...snap, change });
-    }
+      // 3. Determine end date (Saturday on or after Dec 31st of current year)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const currentYear = today.getFullYear();
+      const dec31 = new Date(currentYear, 11, 31);
+      const dayOfWeekEnd = dec31.getDay(); // 0 = Sunday, 6 = Saturday
+      const daysToAddToReachSaturday = 6 - dayOfWeekEnd;
+      const endDate = new Date(dec31);
+      endDate.setDate(dec31.getDate() + daysToAddToReachSaturday);
 
-    // 3. Determine end date (Saturday on or after Dec 31st of current year)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const currentYear = today.getFullYear();
-    const dec31 = new Date(currentYear, 11, 31);
-    const dayOfWeekEnd = dec31.getDay(); // 0 = Sunday, 6 = Saturday
-    const daysToAddToReachSaturday = 6 - dayOfWeekEnd;
-    const endDate = new Date(dec31);
-    endDate.setDate(dec31.getDate() + daysToAddToReachSaturday);
+      // 4. Determine start date (Sunday on or before Jan 1st of current year)
+      const jan1 = new Date(currentYear, 0, 1);
+      const dayOfWeekStart = jan1.getDay();
+      const startDate = new Date(jan1);
+      startDate.setDate(jan1.getDate() - dayOfWeekStart);
 
-    // 4. Determine start date (Sunday on or before Jan 1st of current year)
-    const jan1 = new Date(currentYear, 0, 1);
-    const dayOfWeekStart = jan1.getDay();
-    const startDate = new Date(jan1);
-    startDate.setDate(jan1.getDate() - dayOfWeekStart);
+      // 5. Calculate total days to show
+      const daysToShow =
+        Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const weeksToShow = daysToShow / 7;
 
-    // 5. Calculate total days to show
-    const daysToShow =
-      Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    const weeksToShow = daysToShow / 7;
+      const days: GridDay[] = [];
+      const mLabels: { col: number; label: string }[] = [];
+      let currentMonth = -1;
 
-    const days: GridDay[] = [];
-    const mLabels: { col: number; label: string }[] = [];
-    let currentMonth = -1;
+      for (let i = 0; i < daysToShow; i++) {
+        const current = new Date(startDate);
+        current.setDate(startDate.getDate() + i);
 
-    for (let i = 0; i < daysToShow; i++) {
-      const current = new Date(startDate);
-      current.setDate(startDate.getDate() + i);
+        const year = current.getFullYear();
+        const month = String(current.getMonth() + 1).padStart(2, "0");
+        const day = String(current.getDate()).padStart(2, "0");
+        const dateString = `${year}-${month}-${day}`;
 
-      const year = current.getFullYear();
-      const month = String(current.getMonth() + 1).padStart(2, "0");
-      const day = String(current.getDate()).padStart(2, "0");
-      const dateString = `${year}-${month}-${day}`;
+        const snapData = snapshotMap.get(dateString);
 
-      const snapData = snapshotMap.get(dateString);
+        // Track month boundaries for labels (only if we are still in the current year)
+        if (year === currentYear && current.getMonth() !== currentMonth && current.getDate() < 15) {
+          currentMonth = current.getMonth();
+          mLabels.push({
+            col: Math.floor(i / 7),
+            label: format.dateTime(current, { month: "short" }),
+          });
+        }
 
-      // Track month boundaries for labels (only if we are still in the current year)
-      if (year === currentYear && current.getMonth() !== currentMonth && current.getDate() < 15) {
-        currentMonth = current.getMonth();
-        mLabels.push({
-          col: Math.floor(i / 7),
-          label: format.dateTime(current, { month: "short" }),
+        days.push({
+          date: current,
+          dateString,
+          hasSnapshot: !!snapData,
+          netWorth: snapData?.netWorth,
+          change: snapData?.change ?? null,
+          isFuture: current > today,
+          isNextYear: year > currentYear,
         });
       }
 
-      days.push({
-        date: current,
-        dateString,
-        hasSnapshot: !!snapData,
-        netWorth: snapData?.netWorth,
-        change: snapData?.change ?? null,
-        isFuture: current > today,
-        isNextYear: year > currentYear,
-      });
-    }
+      // Column index of the current week, used to seed the initial scroll position
+      const todayDayOffset = Math.round(
+        (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      const todayColIndex = Math.floor(todayDayOffset / 7);
 
-    // Column index of the current week, used to seed the initial scroll position
-    const todayDayOffset = Math.round(
-      (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-    );
-    const todayColIndex = Math.floor(todayDayOffset / 7);
-
-    return {
-      gridDays: days,
-      monthLabels: mLabels,
-      maxPos: maxPositiveChange,
-      maxNeg: Math.abs(maxNegativeChange),
-      weeksToShow,
-      currentYear,
-      todayColIndex,
-    };
-  }, [snapshots, format]);
+      return {
+        gridDays: days,
+        monthLabels: mLabels,
+        maxPos: maxPositiveChange,
+        maxNeg: Math.abs(maxNegativeChange),
+        weeksToShow,
+        currentYear,
+        todayColIndex,
+      };
+    }, [snapshots, format]);
 
   // Transpose the flat array into 7 rows (Sunday–Saturday)
   const rows = useMemo(() => {
@@ -239,9 +239,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
                       ? `${dateLabel}, no data yet`
                       : day.hasSnapshot
                         ? `${dateLabel}, net worth ${
-                            privacyMode
-                              ? "hidden"
-                              : formatCurrency(day.netWorth!, baseCurrency)
+                            privacyMode ? "hidden" : formatCurrency(day.netWorth!, baseCurrency)
                           }${
                             day.change !== null
                               ? `, change ${
@@ -308,7 +306,8 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
                         }
                         className={cn(
                           "w-[10px] h-[10px] rounded-[2px]",
-                          isClickable && "cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-1",
+                          isClickable &&
+                            "cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-1",
                           bgClass,
                         )}
                       />

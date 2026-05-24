@@ -1,7 +1,8 @@
 import { Suspense, cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { NetWorthCard } from "@/components/dashboard/net-worth-card";
-import { LazyAllocationChart, LazyCurrencyExposureChart, TrendChartSkeleton } from "@/components/dashboard/lazy-charts";
+import { LazyAllocationChart, LazyCurrencyExposureChart } from "@/components/dashboard/lazy-charts";
+import { TrendChartSkeleton } from "@/components/dashboard/trend-chart-skeleton";
 import { AccountsSummary } from "@/components/dashboard/accounts-summary";
 import { DashboardActions } from "@/components/dashboard/dashboard-actions";
 import {

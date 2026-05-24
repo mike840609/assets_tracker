@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { getSession } from "@/lib/auth-session";
 import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
@@ -13,7 +12,6 @@ import {
 } from "@/lib/services/net-worth-service";
 import { getCachedPricesForSymbols } from "@/lib/services/price-service";
 import { log } from "@/lib/logger";
-import AccountsLoading from "./loading";
 
 const CLIENT_NAMESPACES = [
   "accountsList",
@@ -95,9 +93,5 @@ async function AccountsContent() {
 }
 
 export default function AccountsPage() {
-  return (
-    <Suspense fallback={<AccountsLoading />}>
-      <AccountsContent />
-    </Suspense>
-  );
+  return <AccountsContent />;
 }
