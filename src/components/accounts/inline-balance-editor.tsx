@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency, formatNumber } from "@/lib/currencies";
@@ -9,16 +10,17 @@ import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 interface InlineBalanceEditorProps {
   currentBalance: number;
   currency: string;
-  notePlaceholder?: string;
+  notePlaceholder: string;
   onSave: (newBalance: number, note?: string) => Promise<void>;
 }
 
 export function InlineBalanceEditor({
   currentBalance,
   currency,
-  notePlaceholder = "Note (e.g. Salary, Rent...)",
+  notePlaceholder,
   onSave,
 }: InlineBalanceEditorProps) {
+  const t = useTranslations();
   const [editing, setEditing] = useState(false);
   const [balance, setBalance] = useState("");
   const [error, setError] = useState("");
@@ -47,7 +49,7 @@ export function InlineBalanceEditor({
     }
     const parsed = parseFloat(val);
     if (isNaN(parsed)) {
-      setError("Invalid amount");
+      setError(t("accountDetail.invalidAmount"));
       return;
     }
     setError("");
@@ -65,7 +67,7 @@ export function InlineBalanceEditor({
 
     const parsed = parseFloat(val);
     if (isNaN(parsed)) {
-      setError("Invalid amount");
+      setError(t("accountDetail.invalidAmount"));
       return;
     }
 
@@ -103,7 +105,7 @@ export function InlineBalanceEditor({
         />
         <div className="flex gap-2">
           <Button size="sm" className="flex-1" onClick={handleSave} disabled={saving}>
-            {saving ? "..." : "Save"}
+            {saving ? t("common.saving") : t("common.save")}
           </Button>
           <Button
             size="sm"
@@ -114,7 +116,7 @@ export function InlineBalanceEditor({
               setNote("");
             }}
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
         </div>
       </div>

@@ -41,7 +41,8 @@
     "asset": "Asset",
     "liability": "Liability",
     "undo": "Undo",
-    "back": "Back"
+    "back": "Back",
+    "breadcrumb": "Breadcrumb"
   },
   "categories": {
     "BANK": "Bank",
@@ -367,7 +368,8 @@
     "colValue": "Value",
     "colCurrency": "Currency",
     "colNative": "Native",
-    "colAllocation": "Allocation"
+    "colAllocation": "Allocation",
+    "accountActions": "Actions for {name}"
   },
   "accountForm": {
     "title": "Add Account",
@@ -489,7 +491,9 @@
     "updateFailed": "Failed to update account",
     "labelAccountName": "Account Name",
     "placeholderAccountName": "e.g. Chase Checking",
-    "showMore": "Show {count} more"
+    "showMore": "Show {count} more",
+    "holdingActions": "Actions for {symbol}",
+    "invalidAmount": "Invalid amount"
   },
   "dataManagement": {
     "title": "Data Management",

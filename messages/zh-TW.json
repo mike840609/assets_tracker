@@ -41,7 +41,8 @@
     "asset": "資產",
     "liability": "負債",
     "undo": "復原",
-    "back": "返回"
+    "back": "返回",
+    "breadcrumb": "路徑"
   },
   "categories": {
     "BANK": "銀行",
@@ -367,7 +368,8 @@
     "colValue": "市值",
     "colCurrency": "幣別",
     "colNative": "原幣",
-    "colAllocation": "佔比"
+    "colAllocation": "佔比",
+    "accountActions": "{name} 的操作"
   },
   "accountForm": {
     "title": "新增帳戶",
@@ -489,7 +491,9 @@
     "updateFailed": "更新帳戶失敗",
     "labelAccountName": "帳戶名稱",
     "placeholderAccountName": "例如：玉山銀行",
-    "showMore": "顯示另外 {count} 個"
+    "showMore": "顯示另外 {count} 個",
+    "holdingActions": "{symbol} 的操作",
+    "invalidAmount": "金額無效"
   },
   "dataManagement": {
     "title": "資料管理",
