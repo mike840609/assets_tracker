@@ -88,7 +88,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col border-r bg-sidebar/80 backdrop-blur-md text-sidebar-foreground glass z-10 shrink-0 transition-[width] motion-normal",
+        "hidden md:flex flex-col border-r bg-sidebar/80 backdrop-blur-md text-sidebar-foreground glass z-10 shrink-0",
         collapsed ? "w-[72px]" : "w-64",
       )}
     >

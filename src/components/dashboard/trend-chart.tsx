@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback, useRef } from "react";
+import { useMemo, useCallback, useRef, type ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -133,10 +133,12 @@ export function TrendChart({
   snapshots,
   baseCurrency = "USD",
   hideRangeFilter = false,
+  footer,
 }: {
   snapshots: SnapshotData[];
   baseCurrency?: string;
   hideRangeFilter?: boolean;
+  footer?: ReactNode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { width: containerWidth, height: containerHeight } = useContainerSize(containerRef);
@@ -330,6 +332,11 @@ export function TrendChart({
           </div>
         )}
       </CardContent>
+      {footer && (
+        <div className="border-t border-border/40 px-4 pt-3 pb-4">
+          {footer}
+        </div>
+      )}
     </Card>
   );
 }
