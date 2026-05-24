@@ -7,6 +7,7 @@ import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { LazyTrendChart } from "@/components/dashboard/lazy-charts";
 import { HistoryTable } from "@/components/history/history-table";
+import { HistoryHeatmap } from "@/components/history/history-heatmap";
 import { HistoryPullRefresh } from "@/components/history/history-pull-refresh";
 import { getNormalizedHistory } from "@/lib/services/history-service";
 import HistoryLoading from "./loading";
@@ -39,7 +40,10 @@ async function HistoryContent() {
             />
           </div>
 
-          <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-1 card-gradient transition-shadow hover:shadow-lg">
+          <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-4 card-gradient transition-shadow hover:shadow-lg">
+            <div className="mb-4">
+              <HistoryHeatmap snapshots={snapshots} baseCurrency={settings.baseCurrency} />
+            </div>
             <HistoryTable snapshots={snapshots} baseCurrency={settings.baseCurrency} />
           </div>
         </div>

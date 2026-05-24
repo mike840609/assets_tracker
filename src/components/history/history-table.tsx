@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useFormatter } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currencies";
@@ -24,6 +24,7 @@ type Props = {
 
 export function HistoryTable({ snapshots, baseCurrency }: Props) {
   const t = useTranslations("history");
+  const format = useFormatter();
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
   const isCompact = density === "compact";
@@ -39,9 +40,7 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
     for (const row of rows) {
       const d = new Date(row.date + "T00:00:00");
       const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
-      const label = d
-        .toLocaleDateString(undefined, { year: "numeric", month: "long" })
-        .toUpperCase();
+      const label = format.dateTime(d, { year: "numeric", month: "long" }).toUpperCase();
       const last = groups[groups.length - 1];
       if (last && last.monthKey === monthKey) {
         last.items.push(row);
@@ -50,7 +49,7 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
       }
     }
     return groups;
-  }, [snapshots]);
+  }, [snapshots, format]);
 
   return (
     <Card className="border-0 bg-transparent shadow-none">
@@ -91,14 +90,19 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                   </span>
                 </div>
                 <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
+                  {/* Desktop Column Headers (visible only on md+) */}
+                  <div className="hidden md:grid md:grid-cols-[100px_1fr_1fr_120px] md:gap-4 px-4 py-2 bg-muted/30 border-b border-border/40 text-xs font-medium text-muted-foreground">
+                    <div>{t("colDate")}</div>
+                    <div className="text-right">{t("colAssets")}</div>
+                    <div className="text-right">{t("colLiabilities")}</div>
+                    <div className="text-right">{`${t("colNetWorth")} / ${t("colChange")}`}</div>
+                  </div>
+
                   {items.map((row, index) => {
-                    const dayLabel = new Date(row.date + "T00:00:00").toLocaleDateString(
-                      undefined,
-                      {
-                        month: "short",
-                        day: "numeric",
-                      },
-                    );
+                    const dayLabel = format.dateTime(new Date(row.date + "T00:00:00"), {
+                      month: "short",
+                      day: "numeric",
+                    });
                     const changePositive = row.change !== null && row.change > 0;
                     const changeNegative = row.change !== null && row.change < 0;
                     return (
@@ -106,13 +110,20 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                         {index > 0 && <div aria-hidden="true" className="h-px bg-border/60 mx-4" />}
                         <div
                           role="row"
-                          className={`flex flex-col gap-1 px-4 ${isCompact ? "py-2" : "py-3.5"}`}
+                          className={cn(
+                            "flex flex-col gap-1 px-4 md:grid md:grid-cols-[100px_1fr_1fr_120px] md:gap-4 md:items-center",
+                            isCompact ? "py-2" : "py-3.5"
+                          )}
                         >
-                          <div className="flex items-baseline justify-between gap-3">
+                          {/* Mobile: Date and Net Worth row. Desktop: Column 1 and 4 */}
+                          <div className="flex items-baseline justify-between gap-3 md:contents">
+                            {/* Date */}
                             <div role="rowheader" className="shrink-0">
                               <p className="text-sm font-medium">{dayLabel}</p>
                             </div>
-                            <div role="cell" className="text-right">
+                            
+                            {/* Net Worth & Change (Mobile order is different than desktop DOM order, but visually similar. For grid, it stays at the end) */}
+                            <div role="cell" className="text-right md:order-last md:flex md:flex-col md:justify-center">
                               <p className="text-sm font-semibold tabular-nums">
                                 {privacyMode ? "***" : formatCurrency(row.netWorth, baseCurrency)}
                               </p>
@@ -143,8 +154,10 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                               </p>
                             </div>
                           </div>
-                          <div role="cell">
-                            <p className="text-xs text-muted-foreground tabular-nums leading-relaxed">
+                          
+                          {/* Assets and Liabilities */}
+                          <div role="cell" className="md:contents">
+                            <p className="text-xs text-muted-foreground tabular-nums leading-relaxed md:hidden">
                               {privacyMode ? (
                                 "***"
                               ) : (
@@ -159,6 +172,13 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                                 </>
                               )}
                             </p>
+                            {/* Desktop specific cells */}
+                            <div className="hidden md:block text-right text-sm tabular-nums text-muted-foreground">
+                               {privacyMode ? "***" : formatCurrency(row.totalAssets, baseCurrency)}
+                            </div>
+                            <div className="hidden md:block text-right text-sm tabular-nums text-muted-foreground">
+                               {privacyMode ? "***" : formatCurrency(row.totalLiabilities, baseCurrency)}
+                            </div>
                           </div>
                         </div>
                       </div>
