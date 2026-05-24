@@ -25,6 +25,7 @@ export function InlineBalanceEditor({
   mode = "hero",
   inlineLabel,
 }: InlineBalanceEditorProps) {
+  const t = useTranslations();
   const [editing, setEditing] = useState(false);
   const [balance, setBalance] = useState("");
   const [error, setError] = useState("");
