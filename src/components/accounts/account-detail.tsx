@@ -336,6 +336,11 @@ export function AccountDetail({
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-medium">
                   {t("accountDetail.holdingsCount")}
+                  {filteredSortedHoldings.length > 0 && (
+                    <span className="ml-1.5 text-muted-foreground font-normal">
+                      ({filteredSortedHoldings.length})
+                    </span>
+                  )}
                 </CardTitle>
                 <Button size="sm" onClick={() => setShowHoldingForm(true)}>
                   {t("accountDetail.addHolding")}
