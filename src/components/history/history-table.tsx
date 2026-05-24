@@ -112,7 +112,7 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                           role="row"
                           className={cn(
                             "flex flex-col gap-1 px-4 md:grid md:grid-cols-[100px_1fr_1fr_120px] md:gap-4 md:items-center",
-                            isCompact ? "py-2" : "py-3.5"
+                            isCompact ? "py-2" : "py-3.5",
                           )}
                         >
                           {/* Mobile: Date and Net Worth row. Desktop: Column 1 and 4 */}
@@ -121,9 +121,12 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                             <div role="rowheader" className="shrink-0">
                               <p className="text-sm font-medium">{dayLabel}</p>
                             </div>
-                            
+
                             {/* Net Worth & Change (Mobile order is different than desktop DOM order, but visually similar. For grid, it stays at the end) */}
-                            <div role="cell" className="text-right md:order-last md:flex md:flex-col md:justify-center">
+                            <div
+                              role="cell"
+                              className="text-right md:order-last md:flex md:flex-col md:justify-center"
+                            >
                               <p className="text-sm font-semibold tabular-nums">
                                 {privacyMode ? "***" : formatCurrency(row.netWorth, baseCurrency)}
                               </p>
@@ -154,7 +157,7 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                               </p>
                             </div>
                           </div>
-                          
+
                           {/* Assets and Liabilities */}
                           <div role="cell" className="md:contents">
                             <p className="text-xs text-muted-foreground tabular-nums leading-relaxed md:hidden">
@@ -174,10 +177,12 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                             </p>
                             {/* Desktop specific cells */}
                             <div className="hidden md:block text-right text-sm tabular-nums text-muted-foreground">
-                               {privacyMode ? "***" : formatCurrency(row.totalAssets, baseCurrency)}
+                              {privacyMode ? "***" : formatCurrency(row.totalAssets, baseCurrency)}
                             </div>
                             <div className="hidden md:block text-right text-sm tabular-nums text-muted-foreground">
-                               {privacyMode ? "***" : formatCurrency(row.totalLiabilities, baseCurrency)}
+                              {privacyMode
+                                ? "***"
+                                : formatCurrency(row.totalLiabilities, baseCurrency)}
                             </div>
                           </div>
                         </div>

@@ -45,7 +45,8 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
     startDate.setDate(jan1.getDate() - dayOfWeekStart);
 
     // 4. Calculate total days to show
-    const daysToShow = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const daysToShow =
+      Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const weeksToShow = daysToShow / 7;
 
     const days = [];
@@ -57,7 +58,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
     for (let i = 0; i < daysToShow; i++) {
       const current = new Date(startDate);
       current.setDate(startDate.getDate() + i);
-      
+
       const year = current.getFullYear();
       const month = String(current.getMonth() + 1).padStart(2, "0");
       const day = String(current.getDate()).padStart(2, "0");
@@ -77,11 +78,11 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
       // Calculate change
       let change: number | null = null;
       if (snap) {
-        const previousSnapshots = snapshots.filter(s => s.date < snap.date);
+        const previousSnapshots = snapshots.filter((s) => s.date < snap.date);
         if (previousSnapshots.length > 0) {
           previousSnapshots.sort((a, b) => b.date.localeCompare(a.date));
           change = snap.netWorth - previousSnapshots[0].netWorth;
-          
+
           if (change > maxPositiveChange) maxPositiveChange = change;
           if (change < maxNegativeChange) maxNegativeChange = change;
         }
@@ -98,7 +99,13 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
       });
     }
 
-    return { gridDays: days, monthLabels: mLabels, maxPos: maxPositiveChange, maxNeg: Math.abs(maxNegativeChange), weeksToShow };
+    return {
+      gridDays: days,
+      monthLabels: mLabels,
+      maxPos: maxPositiveChange,
+      maxNeg: Math.abs(maxNegativeChange),
+      weeksToShow,
+    };
   }, [snapshots, format]);
 
   // Transpose the 1D array into 7 rows (Sunday - Saturday)
@@ -128,11 +135,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
           {/* Month Labels */}
           <div className="flex text-xs text-muted-foreground/70 mb-1 ml-6 relative h-4">
             {monthLabels.map((m, i) => (
-              <span
-                key={i}
-                className="absolute"
-                style={{ left: `${m.col * 14}px` }}
-              >
+              <span key={i} className="absolute" style={{ left: `${m.col * 14}px` }}>
                 {m.label}
               </span>
             ))}
@@ -157,9 +160,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
                       ? undefined
                       : day.hasSnapshot
                         ? `${format.dateTime(day.date, { dateStyle: "medium" })}\n${
-                            privacyMode
-                              ? "***"
-                              : formatCurrency(day.netWorth!, baseCurrency)
+                            privacyMode ? "***" : formatCurrency(day.netWorth!, baseCurrency)
                           }${
                             day.change !== null && !privacyMode
                               ? ` (${day.change >= 0 ? "+" : ""}${formatCurrency(day.change, baseCurrency)})`
@@ -180,7 +181,8 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
                         else bgClass = "bg-destructive";
                       } else {
                         // Positive or zero change, or no previous snapshot
-                        const intensity = maxPos > 0 && day.change !== null ? day.change / maxPos : 1;
+                        const intensity =
+                          maxPos > 0 && day.change !== null ? day.change / maxPos : 1;
                         if (intensity < 0.25) bgClass = "bg-primary/20";
                         else if (intensity < 0.5) bgClass = "bg-primary/40";
                         else if (intensity < 0.75) bgClass = "bg-primary/60";
@@ -193,10 +195,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
                       <div
                         key={cIdx}
                         title={title}
-                        className={cn(
-                          "w-[10px] h-[10px] rounded-[2px]",
-                          bgClass
-                        )}
+                        className={cn("w-[10px] h-[10px] rounded-[2px]", bgClass)}
                       />
                     );
                   })}
