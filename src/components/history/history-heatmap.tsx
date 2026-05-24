@@ -24,23 +24,23 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
   const { gridDays, monthLabels, maxPos, maxNeg, weeksToShow } = useMemo(() => {
     // 1. Sort snapshots chronologically (oldest first) to easily calculate deltas
     const sortedSnapshots = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
-    
+
     let maxPositiveChange = 0;
     let maxNegativeChange = 0;
 
     // 2. Create a lookup map of snapshot dates with pre-calculated changes (O(N))
     const snapshotMap = new Map<string, SnapshotRow & { change: number | null }>();
-    
+
     for (let i = 0; i < sortedSnapshots.length; i++) {
       const snap = sortedSnapshots[i]!;
       const prevSnap = i > 0 ? sortedSnapshots[i - 1] : null;
       const change = prevSnap ? snap.netWorth - prevSnap.netWorth : null;
-      
+
       if (change !== null) {
         if (change > maxPositiveChange) maxPositiveChange = change;
         if (change < maxNegativeChange) maxNegativeChange = change;
       }
-      
+
       snapshotMap.set(snap.date, { ...snap, change });
     }
 
