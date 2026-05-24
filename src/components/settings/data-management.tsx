@@ -244,7 +244,7 @@ export function DataManagement() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-primary">
-              <CheckCircleIcon className="h-5 w-5 text-green-500 dark:text-green-400" />
+              <CheckCircleIcon className="h-5 w-5 text-primary" />
               {t("importSuccessTitle")}
             </DialogTitle>
             <DialogDescription className="py-2 text-foreground font-medium">
@@ -253,7 +253,7 @@ export function DataManagement() {
           </DialogHeader>
           <DialogFooter>
             <Button className="w-full" onClick={() => window.location.reload()}>
-              OK
+              {t("done")}
             </Button>
           </DialogFooter>
         </DialogContent>

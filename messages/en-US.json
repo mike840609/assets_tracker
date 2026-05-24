@@ -515,7 +515,8 @@
     "close": "Close",
     "parseError": "JSON Syntax Error: The file you uploaded is not a valid JSON. Please check the file content.",
     "importSuccessTitle": "Import Successful",
-    "importSuccessMessage": "Your data has been restored successfully. Please refresh the page to see the changes."
+    "importSuccessMessage": "Your data has been restored successfully. Please refresh the page to see the changes.",
+    "done": "Done"
   },
   "installApp": {
     "title": "Add to Home Screen",
