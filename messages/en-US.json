@@ -131,10 +131,12 @@
     "ofTarget": "of {target}",
     "completed": "Completed",
     "confirmDelete": "Delete this goal?",
-    "dueIn": "{date} ({days} days)",
+    "deleteConfirmDescription": "This action cannot be undone.",
+    "deleteButton": "Delete",
+    "dueIn": "{date} ({days, plural, one {# day} other {# days}})",
     "overdue": "Overdue · {date}",
-    "projectedLinear": "Linear: {date}",
-    "projectedCAGR": "CAGR: {date}",
+    "projectedLinear": "At current pace: {date}",
+    "projectedCAGR": "At growth rate: {date}",
     "scope": {
       "NET_WORTH": "Net Worth",
       "ASSETS_ONLY": "Assets Only",
@@ -165,6 +167,10 @@
       "updated": "Goal updated",
       "deleted": "Goal deleted",
       "failed": "Something went wrong"
+    },
+    "aria": {
+      "editGoal": "Edit {name}",
+      "deleteGoal": "Delete {name}"
     }
   },
   "goalsMilestone": {

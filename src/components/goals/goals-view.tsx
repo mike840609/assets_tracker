@@ -32,13 +32,15 @@ export function GoalsView({
   return (
     <div className="space-y-4">
       {/* Mobile-only tab switcher */}
-      <div className="md:hidden flex border-b">
+      <div role="tablist" className="md:hidden flex border-b">
         {(["goals", "projections"] as const).map((tab) => (
           <button
             key={tab}
+            role="tab"
             type="button"
             onClick={() => setActiveTab(tab)}
-            aria-pressed={activeTab === tab}
+            aria-selected={activeTab === tab}
+            tabIndex={activeTab === tab ? 0 : -1}
             className={cn(
               "pb-2 px-4 text-sm font-medium border-b-2 -mb-px transition-colors capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               activeTab === tab
@@ -52,7 +54,7 @@ export function GoalsView({
       </div>
 
       {/* Goals tab — always visible on desktop, conditional on mobile */}
-      <div className={activeTab === "projections" ? "hidden md:block" : "block"}>
+      <div role="tabpanel" className={activeTab === "projections" ? "hidden md:block" : "block"}>
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
@@ -103,7 +105,7 @@ export function GoalsView({
 
       {/* Projections tab — mobile only */}
       {activeTab === "projections" && (
-        <div className="md:hidden">
+        <div role="tabpanel" className="md:hidden">
           <ProjectionView
             latestNetWorth={projectionData.latestNetWorth}
             trailing12mSavings={projectionData.trailing12mSavings}

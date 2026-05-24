@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { Target, ArrowRight, CheckCircle2 } from "lucide-react";
@@ -22,6 +22,7 @@ export function GoalsMilestoneCard({
   baseCurrency,
 }: GoalsMilestoneCardProps) {
   const t = useTranslations("goalsMilestone");
+  const locale = useLocale();
   const { privacyMode } = usePrivacyMode();
 
   if (totalGoals === 0) return null;
@@ -58,7 +59,14 @@ export function GoalsMilestoneCard({
             </div>
 
             {/* Progress bar */}
-            <div className="h-2 w-full rounded-full bg-muted/60 overflow-hidden">
+            <div
+              role="progressbar"
+              aria-valuenow={progressClamped}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={featured.goal.name}
+              className="h-2 w-full rounded-full bg-muted/60 overflow-hidden"
+            >
               <div
                 className="h-full rounded-full bg-primary/80 transition-all motion-normal"
                 style={{ width: `${progressClamped}%` }}
@@ -77,7 +85,7 @@ export function GoalsMilestoneCard({
             {featured.goal.targetDate && (
               <p className="text-xs text-muted-foreground">
                 {t("due", {
-                  date: new Intl.DateTimeFormat("en-US", {
+                  date: new Intl.DateTimeFormat(locale, {
                     year: "numeric",
                     month: "short",
                     day: "numeric",
