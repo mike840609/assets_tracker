@@ -1,13 +1,15 @@
-import { getNormalizedHistory } from "@/lib/services/history-service";
+import { type ReactNode } from "react";
+import { type NormalizedSnapshot } from "@/lib/services/history-service";
 import { LazyTrendChart } from "@/components/dashboard/lazy-charts";
 
-export async function TrendChartSection({
-  userId,
+export function TrendChartSection({
   baseCurrency,
+  snapshots,
+  footer,
 }: {
-  userId: string;
   baseCurrency: string;
+  snapshots: NormalizedSnapshot[];
+  footer?: ReactNode;
 }) {
-  const snapshots = await getNormalizedHistory(userId, baseCurrency);
-  return <LazyTrendChart baseCurrency={baseCurrency} snapshots={snapshots} />;
+  return <LazyTrendChart baseCurrency={baseCurrency} snapshots={snapshots} footer={footer} />;
 }

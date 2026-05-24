@@ -1,7 +1,7 @@
 import { Suspense, cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { NetWorthCard } from "@/components/dashboard/net-worth-card";
-import { LazyAllocationChart, LazyCurrencyExposureChart } from "@/components/dashboard/lazy-charts";
+import { LazyAllocationChart, LazyCurrencyExposureChart, TrendChartSkeleton } from "@/components/dashboard/lazy-charts";
 import { AccountsSummary } from "@/components/dashboard/accounts-summary";
 import { DashboardActions } from "@/components/dashboard/dashboard-actions";
 import {
@@ -10,6 +10,8 @@ import {
 } from "@/lib/services/net-worth-service";
 import { getAllExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
+import { getNormalizedHistory } from "@/lib/services/history-service";
+import { HistoryHeatmap } from "@/components/history/history-heatmap";
 import { computeGoalsWithProgress } from "@/lib/services/goal-service";
 import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
 import { GoalsMilestoneCard } from "@/components/dashboard/goals-milestone-card";
@@ -46,7 +48,7 @@ function NetWorthSkeleton() {
 
 function ChartsSkeleton() {
   return (
-    <>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
       {[...Array(2)].map((_, i) => (
         <Card key={i}>
           <CardHeader className="pb-2">
@@ -57,7 +59,7 @@ function ChartsSkeleton() {
           </CardContent>
         </Card>
       ))}
-    </>
+    </div>
   );
 }
 
@@ -141,10 +143,10 @@ async function ChartsSection({ userId, baseCurrency }: { userId: string; baseCur
   if (summary.accounts.length === 0) return null;
 
   return (
-    <>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
       <LazyAllocationChart summary={summary} />
       <LazyCurrencyExposureChart summary={summary} />
-    </>
+    </div>
   );
 }
 
@@ -212,6 +214,11 @@ export async function DashboardContent({ userId }: { userId: string }) {
   void fetchUserAccountsWithHoldings(userId);
   void getAllExchangeRates();
 
+  // Fetch snapshot history once — shared by TrendChartSection and HistoryHeatmap.
+  // getNormalizedHistory is "use cache" with cacheLife("hours"), so this is a
+  // cache read on warm requests. No extra DB query on repeat renders.
+  const snapshots = await getNormalizedHistory(userId, baseCurrency);
+
   // Fast check: does this user have any active accounts?
   const accountCount = await prisma.account.count({
     where: { userId, isActive: true },
@@ -268,13 +275,19 @@ export async function DashboardContent({ userId }: { userId: string }) {
         <GoalsMilestoneSection userId={userId} baseCurrency={baseCurrency} />
       </Suspense>
 
-      {/* Charts grid — trend chart + allocation + currency exposure */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6 items-stretch animate-in fade-in slide-in-from-bottom-8 motion-slow fill-mode-both delay-75">
-        <div className="lg:col-span-2 xl:col-span-1">
-          <Suspense fallback={<div className="h-[350px] animate-pulse bg-muted rounded-lg" />}>
-            <TrendChartSection userId={userId} baseCurrency={baseCurrency} />
-          </Suspense>
-        </div>
+      {/* Trend chart + activity heatmap footer — share the same card */}
+      <div className="animate-in fade-in slide-in-from-bottom-8 motion-slow fill-mode-both delay-75">
+        <Suspense fallback={<TrendChartSkeleton />}>
+          <TrendChartSection
+            baseCurrency={baseCurrency}
+            snapshots={snapshots}
+            footer={<HistoryHeatmap snapshots={snapshots} baseCurrency={baseCurrency} />}
+          />
+        </Suspense>
+      </div>
+
+      {/* Allocation + currency exposure charts */}
+      <div className="animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
         <Suspense fallback={<ChartsSkeleton />}>
           <ChartsSection userId={userId} baseCurrency={baseCurrency} />
         </Suspense>
