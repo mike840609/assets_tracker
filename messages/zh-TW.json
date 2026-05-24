@@ -515,7 +515,8 @@
     "close": "關閉",
     "parseError": "JSON 語法錯誤：您上傳的檔案並非有效的 JSON 格式。請檢查檔案內容。",
     "importSuccessTitle": "匯入成功",
-    "importSuccessMessage": "您的資料已成功還原。請重新整理頁面以查看變更。"
+    "importSuccessMessage": "您的資料已成功還原。請重新整理頁面以查看變更。",
+    "done": "完成"
   },
   "installApp": {
     "title": "加入主畫面",

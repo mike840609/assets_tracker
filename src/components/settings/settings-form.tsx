@@ -118,7 +118,7 @@ export function SettingsForm({
               </div>
               <div className="flex items-center gap-2 sm:w-auto w-full">
                 <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
-                  <SelectTrigger id="currency-select" className="w-[200px]">
+                  <SelectTrigger id="currency-select" className="flex-1 sm:flex-none sm:w-[200px]">
                     <SelectValue>
                       {(() => {
                         const c = CURRENCIES.find((c) => c.code === currency);
@@ -150,7 +150,7 @@ export function SettingsForm({
               </div>
               <div className="flex items-center gap-2 sm:w-auto w-full">
                 <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
-                  <SelectTrigger id="language-select" className="w-[200px]">
+                  <SelectTrigger id="language-select" className="flex-1 sm:flex-none sm:w-[200px]">
                     <SelectValue>{t(`languages.${locale}`)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -182,7 +182,7 @@ export function SettingsForm({
                     key={d}
                     type="button"
                     onClick={() => setDensity(d)}
-                    className={`px-3 py-1.5 rounded-md text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                    className={`px-3 py-1.5 min-h-[44px] md:min-h-0 flex items-center justify-center rounded-md text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                       density === d
                         ? "bg-background border border-border shadow-sm text-foreground font-semibold"
                         : "border border-transparent text-muted-foreground font-medium hover:text-foreground"
@@ -213,7 +213,8 @@ export function SettingsForm({
                     onClick={() => setColorSchema(schema.id)}
                     title={t(`settings.colorSchemas.${schema.id}`)}
                     aria-label={t(`settings.colorSchemas.${schema.id}`)}
-                    className={`relative w-10 h-10 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                    aria-pressed={colorSchema === schema.id}
+                    className={`relative w-11 h-11 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                       colorSchema === schema.id
                         ? "ring-2 ring-offset-2 ring-foreground scale-110"
                         : "opacity-70 hover:opacity-100 hover:scale-105"
