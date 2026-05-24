@@ -1,13 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { formatCurrency, formatQuantity } from "@/lib/currencies";
 import { getOptionDisplay } from "@/lib/options";
 import { useTranslations } from "next-intl";
@@ -108,23 +102,6 @@ export function HoldingRow({
               ? `${((h.marketValue / totalValue) * 100).toFixed(1)}%`
               : "—"}
         </p>
-      </div>
-      {/* Desktop fallback: three-dot menu */}
-      <div className="hidden sm:block">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            aria-label={t("accountDetail.holdingActions", { symbol: symbolLabel })}
-            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0"
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(h)}>{t("common.edit")}</DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive" onClick={() => onDelete(h.id)}>
-              {t("common.delete")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </SwipeableRow>
   );
