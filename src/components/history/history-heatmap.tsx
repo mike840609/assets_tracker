@@ -22,13 +22,29 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
   const { privacyMode } = usePrivacyMode();
 
   const { gridDays, monthLabels, maxPos, maxNeg, weeksToShow } = useMemo(() => {
-    // 1. Create a lookup map of snapshot dates
-    const snapshotMap = new Map<string, SnapshotRow>();
-    for (const snap of snapshots) {
-      snapshotMap.set(snap.date, snap);
+    // 1. Sort snapshots chronologically (oldest first) to easily calculate deltas
+    const sortedSnapshots = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+    
+    let maxPositiveChange = 0;
+    let maxNegativeChange = 0;
+
+    // 2. Create a lookup map of snapshot dates with pre-calculated changes (O(N))
+    const snapshotMap = new Map<string, SnapshotRow & { change: number | null }>();
+    
+    for (let i = 0; i < sortedSnapshots.length; i++) {
+      const snap = sortedSnapshots[i]!;
+      const prevSnap = i > 0 ? sortedSnapshots[i - 1] : null;
+      const change = prevSnap ? snap.netWorth - prevSnap.netWorth : null;
+      
+      if (change !== null) {
+        if (change > maxPositiveChange) maxPositiveChange = change;
+        if (change < maxNegativeChange) maxNegativeChange = change;
+      }
+      
+      snapshotMap.set(snap.date, { ...snap, change });
     }
 
-    // 2. Determine end date (Saturday on or after Dec 31st of current year)
+    // 3. Determine end date (Saturday on or after Dec 31st of current year)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const currentYear = today.getFullYear();
@@ -38,13 +54,13 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
     const endDate = new Date(dec31);
     endDate.setDate(dec31.getDate() + daysToAddToReachSaturday);
 
-    // 3. Determine start date (Sunday on or before Jan 1st of current year)
+    // 4. Determine start date (Sunday on or before Jan 1st of current year)
     const jan1 = new Date(currentYear, 0, 1);
     const dayOfWeekStart = jan1.getDay();
     const startDate = new Date(jan1);
     startDate.setDate(jan1.getDate() - dayOfWeekStart);
 
-    // 4. Calculate total days to show
+    // 5. Calculate total days to show
     const daysToShow =
       Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const weeksToShow = daysToShow / 7;
@@ -52,8 +68,6 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
     const days = [];
     const mLabels: { col: number; label: string }[] = [];
     let currentMonth = -1;
-    let maxPositiveChange = 0;
-    let maxNegativeChange = 0;
 
     for (let i = 0; i < daysToShow; i++) {
       const current = new Date(startDate);
@@ -64,7 +78,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
       const day = String(current.getDate()).padStart(2, "0");
       const dateString = `${year}-${month}-${day}`;
 
-      const snap = snapshotMap.get(dateString);
+      const snapData = snapshotMap.get(dateString);
 
       // Track month boundaries for labels (only if we are still in the current year)
       if (year === currentYear && current.getMonth() !== currentMonth && current.getDate() < 15) {
@@ -75,25 +89,12 @@ export function HistoryHeatmap({ snapshots, baseCurrency }: Props) {
         });
       }
 
-      // Calculate change
-      let change: number | null = null;
-      if (snap) {
-        const previousSnapshots = snapshots.filter((s) => s.date < snap.date);
-        if (previousSnapshots.length > 0) {
-          previousSnapshots.sort((a, b) => b.date.localeCompare(a.date));
-          change = snap.netWorth - previousSnapshots[0].netWorth;
-
-          if (change > maxPositiveChange) maxPositiveChange = change;
-          if (change < maxNegativeChange) maxNegativeChange = change;
-        }
-      }
-
       days.push({
         date: current,
         dateString,
-        hasSnapshot: !!snap,
-        netWorth: snap?.netWorth,
-        change,
+        hasSnapshot: !!snapData,
+        netWorth: snapData?.netWorth,
+        change: snapData?.change ?? null,
         isFuture: current > today,
         isNextYear: year > currentYear,
       });
