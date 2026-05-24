@@ -627,7 +627,6 @@ export function AccountsList({
               <button
                 type="button"
                 onClick={() => setShowArchived((prev) => !prev)}
-                aria-expanded={showArchived}
                 className="w-full px-4 py-3 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors"
               >
                 <span className="text-sm font-semibold">{t("accountsList.archivedSection")}</span>
@@ -963,7 +962,6 @@ function DesktopAccountRow({
       <td className="px-2 py-3.5 w-10 text-center" onClick={(e) => e.stopPropagation()}>
         <DropdownMenu>
           <DropdownMenuTrigger
-            aria-label={t("accountsList.accountActions", { name: account.name })}
             className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
             disabled={isDeleting || isUpdating}
           >
@@ -1080,12 +1078,10 @@ function CategorySection({
 
   return (
     <div
-      className={`rounded-xl border overflow-hidden transition-shadow motion-normal ${colors.border} ${isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"}`}
+      className={`rounded-xl border overflow-hidden transition-all motion-normal ${colors.border} ${isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"}`}
     >
       <button
-        type="button"
         onClick={onToggleExpand}
-        aria-expanded={isExpanded}
         className={`w-full text-left ${isCompact ? "px-4 py-2.5" : "px-5 py-4"} flex items-center justify-between transition-colors ${colors.bg} hover:brightness-95 dark:hover:brightness-110`}
       >
         <div className="flex items-center gap-3 min-w-0">
@@ -1208,7 +1204,6 @@ function AccountCardWithHoldings({
       <div className="absolute top-2 right-2 z-10" onClick={(e) => e.preventDefault()}>
         <DropdownMenu>
           <DropdownMenuTrigger
-            aria-label={t("accountsList.accountActions", { name: account.name })}
             className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
             disabled={isDeleting || isUpdating}
           >

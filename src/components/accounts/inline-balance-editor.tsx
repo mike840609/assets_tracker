@@ -11,7 +11,7 @@ import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 interface InlineBalanceEditorProps {
   currentBalance: number;
   currency: string;
-  notePlaceholder: string;
+  notePlaceholder?: string;
   onSave: (newBalance: number, note?: string) => Promise<void>;
   mode?: "hero" | "inline";
   inlineLabel?: string;
@@ -20,12 +20,11 @@ interface InlineBalanceEditorProps {
 export function InlineBalanceEditor({
   currentBalance,
   currency,
-  notePlaceholder,
+  notePlaceholder = "Note (e.g. Salary, Rent...)",
   onSave,
   mode = "hero",
   inlineLabel,
 }: InlineBalanceEditorProps) {
-  const t = useTranslations();
   const [editing, setEditing] = useState(false);
   const [balance, setBalance] = useState("");
   const [error, setError] = useState("");
@@ -54,7 +53,7 @@ export function InlineBalanceEditor({
     }
     const parsed = parseFloat(val);
     if (isNaN(parsed)) {
-      setError(t("accountDetail.invalidAmount"));
+      setError("Invalid amount");
       return;
     }
     setError("");
@@ -72,7 +71,7 @@ export function InlineBalanceEditor({
 
     const parsed = parseFloat(val);
     if (isNaN(parsed)) {
-      setError(t("accountDetail.invalidAmount"));
+      setError("Invalid amount");
       return;
     }
 
@@ -110,7 +109,7 @@ export function InlineBalanceEditor({
         />
         <div className="flex gap-2">
           <Button size="sm" className="flex-1" onClick={handleSave} disabled={saving}>
-            {saving ? t("common.saving") : t("common.save")}
+            {saving ? "..." : "Save"}
           </Button>
           <Button
             size="sm"
@@ -121,7 +120,7 @@ export function InlineBalanceEditor({
               setNote("");
             }}
           >
-            {t("common.cancel")}
+            Cancel
           </Button>
         </div>
       </div>

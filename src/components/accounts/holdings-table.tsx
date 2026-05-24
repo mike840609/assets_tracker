@@ -80,15 +80,6 @@ export function HoldingsTable({
             {COLUMNS.map((col, i) => (
               <th
                 key={i}
-                aria-sort={
-                  col.field
-                    ? sortField === col.field
-                      ? sortDirection === "asc"
-                        ? "ascending"
-                        : "descending"
-                      : "none"
-                    : undefined
-                }
                 className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap ${
                   col.align === "right" ? "text-right" : "text-left"
                 } ${col.field ? "cursor-pointer select-none hover:text-foreground transition-colors" : ""} ${col.className ?? ""}`}
@@ -165,10 +156,7 @@ export function HoldingsTable({
                 </td>
                 <td className={`px-2 ${tdPy} text-right`}>
                   <DropdownMenu>
-                    <DropdownMenuTrigger
-                      aria-label={t("accountDetail.holdingActions", { symbol: symbolLabel })}
-                      className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
-                    >
+                    <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <MoreHorizontal className="h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">

@@ -255,16 +255,13 @@ export function AccountDetail({
 
   return (
     <>
-      <nav
-        aria-label={t("common.breadcrumb")}
-        className="flex items-center gap-2 text-sm text-muted-foreground"
-      >
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link href="/accounts" className="hover:text-foreground" transitionTypes={["nav-back"]}>
           {t("accountDetail.breadcrumb")}
         </Link>
-        <span aria-hidden="true">/</span>
-        <span aria-current="page">{account.name}</span>
-      </nav>
+        <span>/</span>
+        <span>{account.name}</span>
+      </div>
 
       <div className="flex items-start justify-between">
         <div className="flex-1 mr-4">
