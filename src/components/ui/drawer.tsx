@@ -49,37 +49,40 @@ function DrawerContent({
     <DrawerPortal>
       <DrawerBackdrop />
       <DrawerPrimitive.Viewport className="fixed inset-0 z-50 flex items-end pointer-events-none">
-      <DrawerPrimitive.Popup
-        data-slot="drawer-content"
-        className={cn(
-          "flex flex-col pointer-events-auto",
-          "max-h-[90dvh] w-full",
-          "rounded-t-2xl bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10",
-          "outline-none",
-          "data-open:animate-in data-open:slide-in-from-bottom data-open:fade-in-0",
-          "data-closed:animate-out data-closed:slide-out-to-bottom data-closed:fade-out-0",
-          "duration-300 ease-out",
-          className,
-        )}
-        {...props}
-      >
-        {/* Swipe handle */}
-        <div className="flex justify-center py-3 shrink-0" aria-hidden="true">
-          <div className="h-1 w-10 rounded-full bg-foreground/20" />
-        </div>
-        <div className="overflow-y-auto flex-1" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-          {children}
-        </div>
-        {showCloseButton && (
-          <DrawerPrimitive.Close
-            data-slot="drawer-close"
-            render={<Button variant="ghost" className="absolute top-1 right-2" size="icon-sm" />}
+        <DrawerPrimitive.Popup
+          data-slot="drawer-content"
+          className={cn(
+            "flex flex-col pointer-events-auto",
+            "max-h-[90dvh] w-full",
+            "rounded-t-2xl bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10",
+            "outline-none",
+            "data-open:animate-in data-open:slide-in-from-bottom data-open:fade-in-0",
+            "data-closed:animate-out data-closed:slide-out-to-bottom data-closed:fade-out-0",
+            "duration-300 ease-out",
+            className,
+          )}
+          {...props}
+        >
+          {/* Swipe handle */}
+          <div className="flex justify-center py-3 shrink-0" aria-hidden="true">
+            <div className="h-1 w-10 rounded-full bg-foreground/20" />
+          </div>
+          <div
+            className="overflow-y-auto flex-1"
+            style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
           >
-            <XIcon />
-            <span className="sr-only">Close</span>
-          </DrawerPrimitive.Close>
-        )}
-      </DrawerPrimitive.Popup>
+            {children}
+          </div>
+          {showCloseButton && (
+            <DrawerPrimitive.Close
+              data-slot="drawer-close"
+              render={<Button variant="ghost" className="absolute top-1 right-2" size="icon-sm" />}
+            >
+              <XIcon />
+              <span className="sr-only">Close</span>
+            </DrawerPrimitive.Close>
+          )}
+        </DrawerPrimitive.Popup>
       </DrawerPrimitive.Viewport>
     </DrawerPortal>
   );
