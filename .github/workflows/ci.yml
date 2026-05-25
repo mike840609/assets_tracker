@@ -6,7 +6,10 @@ on:
       - "docs/**"
       - "**.md"
   push:
-    branches: [master, main]
+    branches: [master]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -45,28 +48,9 @@ jobs:
         if: steps.deps-cache.outputs.cache-hit != 'true'
         run: npm ci --prefer-offline --no-audit --no-fund
 
-  format:
-    name: Format check
-    needs: install
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-          cache: "npm"
-      - name: Restore deps cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            src/generated/prisma
-            ~/.cache/prisma
-          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
-      - run: npm run format:check
-
   lint:
     name: Lint
+    if: github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '[skip ci]') && !contains(github.event.pull_request.body || '', '[skip ci]')
     needs: install
     runs-on: ubuntu-latest
     steps:
@@ -87,6 +71,7 @@ jobs:
 
   typecheck:
     name: Type check
+    if: github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '[skip ci]') && !contains(github.event.pull_request.body || '', '[skip ci]')
     needs: install
     runs-on: ubuntu-latest
     steps:
@@ -107,6 +92,7 @@ jobs:
 
   build:
     name: Build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, '[skip ci]')
     needs: install
     runs-on: ubuntu-latest
     steps:

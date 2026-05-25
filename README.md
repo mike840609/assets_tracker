@@ -125,6 +125,21 @@ git worktree remove ../asset_tracker-<task-name>
 > [!WARNING]
 > A worktree's `node_modules` is a **symlink into the shared cache**. Don't run `npm install <pkg>` directly in a worktree — that mutates the cache and contaminates other worktrees. Instead, edit `package.json` + `package-lock.json` (or use a temporary `node_modules` outside the cache), then re-run `npm run setup:worktree` to populate a fresh hash bucket.
 
+
+## 🔁 GitHub Actions policy (to control free-plan minutes)
+
+This repository uses a **light-vs-heavy CI split**:
+
+- **Pull requests**: run fast checks only (`lint`, `typecheck`).
+- **Push to `master`** (production merge path): run heavy checks (`build`, Playwright `e2e`).
+- **Docs-only / markdown-only changes** on push are skipped via workflow `paths-ignore`.
+- Add `[skip ci]` to a commit message to skip push-triggered heavy jobs.
+- Add `[skip ci]` to PR title/body to skip PR lint/typecheck jobs.
+
+Workflow files:
+- `.github/workflows/ci.yml`
+- `.github/workflows/e2e.yml`
+
 ## 🤖 Automated Snapshots (Cron Jobs)
 
 This project is optimized for **Vercel** and includes native Cron Job support via `vercel.json`.
