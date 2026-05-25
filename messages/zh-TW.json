@@ -279,8 +279,11 @@
     "colAssets": "總資產",
     "colLiabilities": "總負債",
     "colChange": "變化",
+    "dailyChange30": "近 30 日每日變化",
+    "dailyChangeNoData": "近期快照不足，無法顯示每日變化。",
     "noData": "尚無快照。請從儀表板建立快照以開始追蹤歷史。",
     "noDataForRange": "此範圍內無資料。",
+    "noSnapshot": "無快照",
     "noPreviousSnapshot": "無前一筆快照可比較"
   },
   "netWorthCard": {

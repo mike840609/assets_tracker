@@ -5,10 +5,9 @@ import { withAuth } from "@/lib/api-handler";
 import { reorderAccountsSchema } from "@/lib/validators";
 
 function invalidateUserCaches(userId: string) {
-  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
-  revalidateTag(`accounts:${userId}`, "max");
-  revalidateTag(`net-worth:${userId}`, "max");
-  revalidateTag(`history:${userId}`, "max");
+  revalidateTag(`accounts:${userId}`, { expire: 0 });
+  revalidateTag(`net-worth:${userId}`, { expire: 0 });
+  revalidateTag(`history:${userId}`, { expire: 0 });
 }
 
 export const PATCH = withAuth(async (request, _ctx, userId) => {

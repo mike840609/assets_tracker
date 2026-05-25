@@ -125,7 +125,6 @@ git worktree remove ../asset_tracker-<task-name>
 > [!WARNING]
 > A worktree's `node_modules` is a **symlink into the shared cache**. Don't run `npm install <pkg>` directly in a worktree — that mutates the cache and contaminates other worktrees. Instead, edit `package.json` + `package-lock.json` (or use a temporary `node_modules` outside the cache), then re-run `npm run setup:worktree` to populate a fresh hash bucket.
 
-
 ## 🔁 GitHub Actions policy (to control free-plan minutes)
 
 This repository uses a **light-vs-heavy CI split**:
@@ -137,6 +136,7 @@ This repository uses a **light-vs-heavy CI split**:
 - Add `[skip ci]` to PR title/body to skip PR lint/typecheck jobs.
 
 Workflow files:
+
 - `.github/workflows/ci.yml`
 - `.github/workflows/e2e.yml`
 

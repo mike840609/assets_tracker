@@ -27,9 +27,9 @@ export const POST = withAuth(
       data: { cashBalance: { increment: delta } },
     });
 
-    revalidateTag(`accounts:${userId}`, "max");
-    revalidateTag(`net-worth:${userId}`, "max");
-    revalidateTag(`history:${userId}`, "max");
+    revalidateTag(`accounts:${userId}`, { expire: 0 });
+    revalidateTag(`net-worth:${userId}`, { expire: 0 });
+    revalidateTag(`history:${userId}`, { expire: 0 });
 
     return ok(transaction, { status: 201 });
   },

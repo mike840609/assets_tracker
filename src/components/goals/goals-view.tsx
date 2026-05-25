@@ -106,13 +106,7 @@ export function GoalsView({
       {/* Projections tab — mobile only */}
       {activeTab === "projections" && (
         <div role="tabpanel" className="md:hidden">
-          <ProjectionView
-            latestNetWorth={projectionData.latestNetWorth}
-            trailing12mSavings={projectionData.trailing12mSavings}
-            annualSnapshots={projectionData.annualSnapshots}
-            hasData={projectionData.hasData}
-            baseCurrency={baseCurrency}
-          />
+          <ProjectionView projectionData={projectionData} baseCurrency={baseCurrency} />
         </div>
       )}
     </div>
