@@ -332,11 +332,7 @@ export function TrendChart({
           </div>
         )}
       </CardContent>
-      {footer && (
-        <div className="border-t border-border/40 px-4 pt-3 pb-4">
-          {footer}
-        </div>
-      )}
+      {footer && <div className="border-t border-border/40 px-4 pt-3 pb-4">{footer}</div>}
     </Card>
   );
 }

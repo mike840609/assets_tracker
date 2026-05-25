@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { getSession } from "@/lib/auth-session";
@@ -7,7 +6,6 @@ import { getCachedAnalysisPayload } from "@/lib/services/analysis-payload-servic
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AnalysisView } from "@/components/analysis/analysis-view";
-import AnalysisLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["analysis", "categories", "nav", "trendChart", "history", "freshness"];
 
@@ -45,9 +43,5 @@ async function AnalysisContent() {
 }
 
 export default function AnalysisPage() {
-  return (
-    <Suspense fallback={<AnalysisLoading />}>
-      <AnalysisContent />
-    </Suspense>
-  );
+  return <AnalysisContent />;
 }

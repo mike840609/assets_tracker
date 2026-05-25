@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { getMessages, getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { getSession } from "@/lib/auth-session";
@@ -7,7 +6,6 @@ import { getProjectionData } from "@/lib/services/projection-service";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { ProjectionView } from "@/components/projections/projection-view";
-import ProjectionsLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["projections"];
 
@@ -42,9 +40,5 @@ async function ProjectionsContent() {
 }
 
 export default function ProjectionsPage() {
-  return (
-    <Suspense fallback={<ProjectionsLoading />}>
-      <ProjectionsContent />
-    </Suspense>
-  );
+  return <ProjectionsContent />;
 }

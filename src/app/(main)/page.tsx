@@ -1,7 +1,5 @@
-import { Suspense } from "react";
 import { getSession } from "@/lib/auth-session";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
-import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { DashboardPullRefresh } from "@/components/dashboard/dashboard-pull-refresh";
 import { getTranslations, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
@@ -43,9 +41,5 @@ async function DashboardPageContent() {
 }
 
 export default function DashboardPage() {
-  return (
-    <Suspense fallback={<DashboardSkeleton />}>
-      <DashboardPageContent />
-    </Suspense>
-  );
+  return <DashboardPageContent />;
 }

@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { computeGoalsWithProgress } from "@/lib/services/goal-service";
@@ -9,7 +8,6 @@ import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { GoalsView } from "@/components/goals/goals-view";
-import GoalsLoading from "./loading";
 import type { SerializedAccount } from "@/lib/types";
 
 const CLIENT_NAMESPACES = ["goals", "common", "nav", "projections"];
@@ -49,9 +47,5 @@ async function GoalsContent() {
 }
 
 export default function GoalsPage() {
-  return (
-    <Suspense fallback={<GoalsLoading />}>
-      <GoalsContent />
-    </Suspense>
-  );
+  return <GoalsContent />;
 }

@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { getTranslations, getMessages } from "next-intl/server";
@@ -10,7 +9,6 @@ import { HistoryTable } from "@/components/history/history-table";
 import { HistoryHeatmap } from "@/components/history/history-heatmap";
 import { HistoryPullRefresh } from "@/components/history/history-pull-refresh";
 import { getNormalizedHistory } from "@/lib/services/history-service";
-import HistoryLoading from "./loading";
 
 const CLIENT_NAMESPACES = ["trendChart", "history", "freshness"];
 
@@ -53,9 +51,5 @@ async function HistoryContent() {
 }
 
 export default function HistoryPage() {
-  return (
-    <Suspense fallback={<HistoryLoading />}>
-      <HistoryContent />
-    </Suspense>
-  );
+  return <HistoryContent />;
 }

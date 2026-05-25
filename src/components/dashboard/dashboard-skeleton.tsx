@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { TrendChartSkeleton } from "@/components/dashboard/trend-chart-skeleton";
 
 export function DashboardSkeleton() {
   return (
@@ -24,16 +25,11 @@ export function DashboardSkeleton() {
         </Card>
       </div>
 
-      {/* Charts — 1st = trend (taller, lg col-span-2 xl col-span-1), 2nd + 3rd = h-250 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6 items-stretch">
-        <Card className="lg:col-span-2 xl:col-span-1">
-          <CardHeader className="pb-2">
-            <div className="h-5 w-32 rounded skeleton-shimmer" />
-          </CardHeader>
-          <CardContent>
-            <div className="h-[350px] rounded skeleton-shimmer" />
-          </CardContent>
-        </Card>
+      {/* Trend chart + heatmap footer */}
+      <TrendChartSkeleton />
+
+      {/* Allocation + currency exposure charts */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
         {[0, 1].map((i) => (
           <Card key={i}>
             <CardHeader className="pb-2">
