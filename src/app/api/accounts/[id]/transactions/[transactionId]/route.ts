@@ -8,9 +8,9 @@ import { withAuth } from "@/lib/api-handler";
 type TxCtx = { params: Promise<{ id: string; transactionId: string }> };
 
 function invalidateAccountCaches(userId: string) {
-  revalidateTag(`accounts:${userId}`, "max");
-  revalidateTag(`net-worth:${userId}`, "max");
-  revalidateTag(`history:${userId}`, "max");
+  revalidateTag(`accounts:${userId}`, { expire: 0 });
+  revalidateTag(`net-worth:${userId}`, { expire: 0 });
+  revalidateTag(`history:${userId}`, { expire: 0 });
 }
 
 export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {

@@ -117,7 +117,12 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
             aria-hidden={privacyMode || undefined}
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer
+              width="100%"
+              height={280}
+              minWidth={0}
+              initialDimension={{ width: 1, height: 280 }}
+            >
               <BarChart
                 data={data}
                 margin={{ top: 10, right: 4, left: 0, bottom: 20 }}

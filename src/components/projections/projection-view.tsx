@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { formatCurrency, formatNumber, getCurrencySymbol } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
+import type { ProjectionData } from "@/lib/services/projection-service";
 import type { ChartPoint } from "./projection-chart";
 import { LazyProjectionChart } from "./lazy-projection-chart";
 
@@ -187,20 +188,12 @@ function NumberInput({
 }
 
 interface Props {
-  latestNetWorth: number;
-  trailing12mSavings: number;
-  annualSnapshots: { year: number; netWorth: number }[];
-  hasData: boolean;
+  projectionData: ProjectionData;
   baseCurrency: string;
 }
 
-export function ProjectionView({
-  latestNetWorth,
-  trailing12mSavings,
-  annualSnapshots,
-  hasData,
-  baseCurrency,
-}: Props) {
+export function ProjectionView({ projectionData, baseCurrency }: Props) {
+  const { latestNetWorth, trailing12mSavings, annualSnapshots, hasData } = projectionData;
   const t = useTranslations("projections");
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();

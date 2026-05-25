@@ -27,13 +27,7 @@ async function ProjectionsContent() {
       <div className="space-y-4 md:space-y-8 animate-in fade-in duration-200">
         <LargeTitleHeading>{t("title")}</LargeTitleHeading>
 
-        <ProjectionView
-          latestNetWorth={projectionData.latestNetWorth}
-          trailing12mSavings={projectionData.trailing12mSavings}
-          annualSnapshots={projectionData.annualSnapshots}
-          hasData={projectionData.hasData}
-          baseCurrency={settings.baseCurrency}
-        />
+        <ProjectionView projectionData={projectionData} baseCurrency={settings.baseCurrency} />
       </div>
     </NextIntlClientProvider>
   );

@@ -7,9 +7,8 @@ import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { log } from "@/lib/logger";
 
 function invalidateUserCaches(userId: string) {
-  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
-  revalidateTag(`accounts:${userId}`, "max");
-  revalidateTag(`net-worth:${userId}`, "max");
+  revalidateTag(`accounts:${userId}`, { expire: 0 });
+  revalidateTag(`net-worth:${userId}`, { expire: 0 });
 }
 
 // Fire-and-forget rate refresh for a currency that doesn't yet exist in

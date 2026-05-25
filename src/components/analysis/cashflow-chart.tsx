@@ -134,7 +134,12 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
               </span>
             </div>
             <div role="img" aria-label={`${t("cashFlow")}, ${t("cashFlowSubtitle")}`}>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer
+                width="100%"
+                height={280}
+                minWidth={0}
+                initialDimension={{ width: 1, height: 280 }}
+              >
                 <BarChart
                   data={buckets}
                   margin={{ top: 10, right: 4, left: 0, bottom: 20 }}

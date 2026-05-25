@@ -279,8 +279,11 @@
     "colAssets": "Assets",
     "colLiabilities": "Liabilities",
     "colChange": "Change",
+    "dailyChange30": "Daily Change, 30 Days",
+    "dailyChangeNoData": "Not enough recent snapshots to show daily changes.",
     "noData": "No snapshots yet. Take a snapshot from the dashboard to start tracking.",
     "noDataForRange": "No data for this range.",
+    "noSnapshot": "No snapshot",
     "noPreviousSnapshot": "No previous snapshot to compare"
   },
   "netWorthCard": {

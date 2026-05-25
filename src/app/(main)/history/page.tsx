@@ -1,13 +1,10 @@
 import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
-import { getTranslations, getMessages } from "next-intl/server";
+import { getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
-import { LargeTitleHeading } from "@/components/layout/large-title-heading";
-import { LazyTrendChart } from "@/components/dashboard/lazy-charts";
-import { HistoryTable } from "@/components/history/history-table";
-import { HistoryHeatmap } from "@/components/history/history-heatmap";
 import { HistoryPullRefresh } from "@/components/history/history-pull-refresh";
+import { HistoryView } from "@/components/history/history-view";
 import { getNormalizedHistory } from "@/lib/services/history-service";
 
 const CLIENT_NAMESPACES = ["trendChart", "history", "freshness"];
@@ -17,8 +14,7 @@ async function HistoryContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
   const settingsP = getOrCreateSettings(userId);
-  const [t, allMessages, snapshots, settings] = await Promise.all([
-    getTranslations("history"),
+  const [allMessages, snapshots, settings] = await Promise.all([
     getMessages(),
     settingsP.then((s) => getNormalizedHistory(userId, s.baseCurrency)),
     settingsP,
@@ -27,24 +23,13 @@ async function HistoryContent() {
   return (
     <NextIntlClientProvider messages={pickMessages(allMessages, CLIENT_NAMESPACES)}>
       <HistoryPullRefresh>
-        <div className="space-y-4 md:space-y-8 animate-in fade-in duration-200">
-          <LargeTitleHeading>{t("title")}</LargeTitleHeading>
-
-          <div className="h-[300px]">
-            <LazyTrendChart
-              baseCurrency={settings.baseCurrency}
-              snapshots={snapshots}
-              hideRangeFilter
-            />
-          </div>
-
-          <div className="bg-card border border-border/50 shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] rounded-xl p-4 card-gradient transition-shadow hover:shadow-lg">
-            <div className="mb-4">
-              <HistoryHeatmap snapshots={snapshots} baseCurrency={settings.baseCurrency} />
-            </div>
-            <HistoryTable snapshots={snapshots} baseCurrency={settings.baseCurrency} />
-          </div>
-        </div>
+        <HistoryView
+          snapshots={snapshots}
+          baseCurrency={settings.baseCurrency}
+          showTitle
+          hideTrendRangeFilter
+          className="animate-in fade-in duration-200"
+        />
       </HistoryPullRefresh>
     </NextIntlClientProvider>
   );

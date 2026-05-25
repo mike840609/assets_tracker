@@ -6,8 +6,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useDensity } from "@/components/layout/density-context";
 import { cn } from "@/lib/utils";
-import { TrendChart } from "@/components/dashboard/trend-chart";
-import { HistoryTable } from "@/components/history/history-table";
+import { HistoryView } from "@/components/history/history-view";
 import { FreshnessBadge } from "@/components/ui/freshness-badge";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
 import type {
@@ -297,10 +296,7 @@ export function AnalysisView({
 
       {/* History tab content — mobile only */}
       {activeTab === "history" && (
-        <div className="md:hidden space-y-4">
-          <TrendChart snapshots={snapshots} baseCurrency={baseCurrency} />
-          <HistoryTable snapshots={snapshots} baseCurrency={baseCurrency} />
-        </div>
+        <HistoryView snapshots={snapshots} baseCurrency={baseCurrency} className="md:hidden" />
       )}
     </div>
   );

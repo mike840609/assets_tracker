@@ -140,7 +140,12 @@ export function AttributionChart({ items, baseCurrency }: Props) {
             }`}
           >
             <div role="img" aria-label={`${t("attribution")}, ${t("attributionSubtitle")}`}>
-              <ResponsiveContainer width="100%" height={chartHeight}>
+              <ResponsiveContainer
+                width="100%"
+                height={chartHeight}
+                minWidth={0}
+                initialDimension={{ width: 1, height: chartHeight }}
+              >
                 <BarChart
                   layout="vertical"
                   data={chartData}
