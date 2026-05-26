@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useMemo, useState, useRef, useEffect, useId } from "react";
 import { createPortal } from "react-dom";
-import { useFormatter } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
@@ -48,10 +48,16 @@ type Props = {
 };
 
 export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
+  const tooltipId = useId();
   const format = useFormatter();
+  const t = useTranslations("history");
   const { privacyMode } = usePrivacyMode();
-  const [tooltip, setTooltip] = useState<{ day: GridDay; x: number; y: number } | null>(null);
-  const tooltipLabels = labels ?? { netWorth: "Net Worth", change: "Change" };
+  // tooltip.day drives React renders (content changes); position is tracked separately
+  const [tooltip, setTooltip] = useState<{ day: GridDay } | null>(null);
+  const tooltipPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const tooltipElRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
+  const tooltipLabels = labels ?? { netWorth: t("colNetWorth"), change: t("colChange") };
 
   const { gridDays, monthLabels, maxPos, maxNeg, weeksToShow, currentYear, todayColIndex } =
     useMemo(() => {
@@ -179,9 +185,25 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
     el.scrollLeft = Math.max(0, targetLeft);
   }, [todayColIndex]);
 
+  // Dismiss a touch-opened tooltip when the user taps outside any cell
+  useEffect(() => {
+    if (!tooltip) return;
+    const dismiss = () => setTooltip(null);
+    document.addEventListener("click", dismiss);
+    return () => document.removeEventListener("click", dismiss);
+  }, [tooltip]);
+
+  // Cancel any pending rAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
   const showTooltipAtElement = (day: GridDay, element: HTMLElement) => {
     const rect = element.getBoundingClientRect();
-    setTooltip({ day, x: rect.left + rect.width / 2, y: rect.top });
+    tooltipPosRef.current = { x: rect.left + rect.width / 2, y: rect.top };
+    setTooltip({ day });
   };
 
   return (
@@ -246,7 +268,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
 
                     const dateLabel = format.dateTime(day.date, { dateStyle: "medium" });
                     const cellLabel = day.isFuture
-                      ? `${dateLabel}, no data yet`
+                      ? `${dateLabel}, ${t("cellNoDataYet")}`
                       : day.hasSnapshot
                         ? `${dateLabel}, net worth ${
                             privacyMode ? "hidden" : formatCurrency(day.netWorth!, baseCurrency)
@@ -260,7 +282,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                                 }`
                               : ""
                           }`
-                        : `${dateLabel}, no snapshot`;
+                        : `${dateLabel}, ${t("noSnapshot")}`;
 
                     let bgClass = "bg-muted/40 dark:bg-muted/20";
                     if (!day.isFuture && day.hasSnapshot) {
@@ -289,29 +311,46 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                         aria-colindex={cIdx + 1}
                         aria-label={cellLabel}
                         aria-selected={tooltip?.day.dateString === day.dateString}
+                        aria-describedby={
+                          tooltip?.day.dateString === day.dateString ? tooltipId : undefined
+                        }
                         tabIndex={canShowDetails ? 0 : -1}
                         onPointerEnter={
                           canShowDetails
                             ? (e) => {
-                                if (e.pointerType === "mouse") {
-                                  setTooltip({ day, x: e.clientX, y: e.clientY });
-                                }
+                                if (e.pointerType !== "mouse") return;
+                                tooltipPosRef.current = { x: e.clientX, y: e.clientY };
+                                setTooltip({ day });
                               }
                             : undefined
                         }
                         onPointerMove={
                           canShowDetails
                             ? (e) => {
-                                if (e.pointerType === "mouse") {
-                                  setTooltip({ day, x: e.clientX, y: e.clientY });
-                                }
+                                if (e.pointerType !== "mouse") return;
+                                // Update ref immediately; apply to DOM at most once per frame
+                                tooltipPosRef.current = { x: e.clientX, y: e.clientY };
+                                if (rafRef.current !== null) return;
+                                rafRef.current = requestAnimationFrame(() => {
+                                  rafRef.current = null;
+                                  const el = tooltipElRef.current;
+                                  if (el) {
+                                    el.style.left = `${tooltipPosRef.current.x}px`;
+                                    el.style.top = `${tooltipPosRef.current.y}px`;
+                                  }
+                                });
                               }
                             : undefined
                         }
                         onPointerLeave={
                           canShowDetails
                             ? (e) => {
-                                if (e.pointerType === "mouse") setTooltip(null);
+                                if (e.pointerType !== "mouse") return;
+                                if (rafRef.current !== null) {
+                                  cancelAnimationFrame(rafRef.current);
+                                  rafRef.current = null;
+                                }
+                                setTooltip(null);
                               }
                             : undefined
                         }
@@ -321,10 +360,31 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                             : undefined
                         }
                         onBlur={canShowDetails ? () => setTooltip(null) : undefined}
+                        onClick={
+                          canShowDetails
+                            ? (e) => {
+                                const pe = e.nativeEvent as PointerEvent;
+                                if (pe.pointerType === "mouse") return;
+                                e.stopPropagation();
+                                if (tooltip?.day.dateString === day.dateString) {
+                                  setTooltip(null);
+                                } else {
+                                  showTooltipAtElement(day, e.currentTarget);
+                                }
+                              }
+                            : undefined
+                        }
                         className={cn(
-                          "w-[10px] h-[10px] rounded-[2px]",
-                          canShowDetails &&
-                            "cursor-pointer transition-transform hover:scale-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-1",
+                          "relative w-[10px] h-[10px] rounded-[2px]",
+                          canShowDetails && [
+                            "cursor-pointer",
+                            "transition-transform hover:scale-125",
+                            "focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-1",
+                            // Expand hit area to ~44×44px on touch without changing visual size or layout
+                            "[@media(pointer:coarse)]:after:absolute",
+                            "[@media(pointer:coarse)]:after:content-['']",
+                            "[@media(pointer:coarse)]:after:inset-[-17px]",
+                          ],
                           bgClass,
                         )}
                       />
@@ -341,9 +401,11 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
         tooltip &&
         createPortal(
           <div
+            ref={tooltipElRef}
+            id={tooltipId}
             role="tooltip"
-            className="pointer-events-none fixed z-[60] min-w-[180px] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-lg border border-border/60 bg-popover/95 px-3 py-2.5 shadow-xl ring-1 ring-black/5 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 dark:ring-white/5"
-            style={{ left: tooltip.x, top: tooltip.y }}
+            className="pointer-events-none fixed z-[60] min-w-[180px] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-lg border border-border/60 bg-popover/95 px-3 py-2.5 shadow-xl ring-1 ring-foreground/5 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+            style={{ left: tooltipPosRef.current.x, top: tooltipPosRef.current.y }}
           >
             <p className="border-b border-border/40 pb-1 text-xs font-semibold text-foreground/90">
               {format.dateTime(tooltip.day.date, { dateStyle: "medium" })}

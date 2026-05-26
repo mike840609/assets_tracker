@@ -74,14 +74,13 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
           </div>
 
           {monthGroups.map(({ monthKey, label, items }) => (
-            <div key={monthKey} role="rowgroup">
+            <div key={monthKey} role="rowgroup" aria-label={label}>
               <div
-                role="row"
+                role="presentation"
                 className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm mb-2 px-1 py-1"
               >
                 <span
-                  role="columnheader"
-                  aria-colspan={3}
+                  aria-hidden="true"
                   className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70"
                 >
                   {label}

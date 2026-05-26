@@ -284,6 +284,7 @@
     "noData": "尚無快照。請從儀表板建立快照以開始追蹤歷史。",
     "noDataForRange": "此範圍內無資料。",
     "noSnapshot": "無快照",
+    "cellNoDataYet": "尚無資料",
     "noPreviousSnapshot": "無前一筆快照可比較"
   },
   "netWorthCard": {

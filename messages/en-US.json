@@ -284,6 +284,7 @@
     "noData": "No snapshots yet. Take a snapshot from the dashboard to start tracking.",
     "noDataForRange": "No data for this range.",
     "noSnapshot": "No snapshot",
+    "cellNoDataYet": "No data yet",
     "noPreviousSnapshot": "No previous snapshot to compare"
   },
   "netWorthCard": {
