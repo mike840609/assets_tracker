@@ -8,12 +8,18 @@ datasource db {
 }
 
 model Setting {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  baseCurrency String   @default("USD")
-  locale       String   @default("en-US")
-  updatedAt    DateTime @updatedAt
+  id               String           @id @default(cuid())
+  userId           String           @unique
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  baseCurrency     String           @default("USD")
+  locale           String           @default("en-US")
+  stockColorScheme StockColorScheme @default(GREEN_UP)
+  updatedAt        DateTime         @updatedAt
+}
+
+enum StockColorScheme {
+  GREEN_UP
+  RED_UP
 }
 
 enum AccountType {

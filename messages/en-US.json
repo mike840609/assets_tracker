@@ -93,6 +93,12 @@
       "amber": "Amber",
       "rose": "Rose"
     },
+    "stockColorScheme": "Up/Down Color",
+    "stockColorSchemeDescription": "Choose which color represents a positive market change.",
+    "stockColorSchemes": {
+      "GREEN_UP": "Green Up (Western)",
+      "RED_UP": "Red Up (East Asian)"
+    },
     "signOut": "Sign Out",
     "signOutDesc": "Securely log out of your account on this device.",
     "dangerZone": "Danger Zone"
@@ -111,7 +117,9 @@
     "exchangeRatesRefreshed": "Exchange rates refreshed",
     "failed": "Failed",
     "languageUpdated": "Language updated",
-    "languageFailed": "Failed to update language"
+    "languageFailed": "Failed to update language",
+    "stockColorSchemeUpdated": "Up/down color updated",
+    "stockColorSchemeFailed": "Failed to update up/down color"
   },
   "dashboard": {
     "title": "Dashboard",

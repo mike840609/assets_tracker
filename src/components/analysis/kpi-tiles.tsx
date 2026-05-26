@@ -29,9 +29,9 @@ function Tile({
 }) {
   const valueClass =
     tone === "positive"
-      ? "text-[var(--chart-1)]"
+      ? "text-[var(--gain)]"
       : tone === "negative"
-        ? "text-destructive"
+        ? "text-[var(--loss)]"
         : "text-foreground";
   return (
     <Card size="sm">

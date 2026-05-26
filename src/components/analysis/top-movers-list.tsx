@@ -58,8 +58,8 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
                       ? "—"
                       : `${isPositive ? "+" : ""}${m.percentChange.toFixed(1)}%`;
                   const pillClass = isPositive
-                    ? "bg-[color-mix(in_oklch,var(--chart-1)_18%,transparent)] text-[var(--chart-1)]"
-                    : "bg-destructive/15 text-destructive";
+                    ? "bg-[color-mix(in_oklch,var(--gain)_18%,transparent)] text-[var(--gain)]"
+                    : "bg-[color-mix(in_oklch,var(--loss)_18%,transparent)] text-[var(--loss)]";
 
                   return (
                     <tr
@@ -98,7 +98,7 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
                           </span>
                         </div>
                         <div
-                          className={`text-xs tabular-nums mt-0.5 ${isPositive ? "text-[var(--chart-1)]/80" : "text-destructive/80"}`}
+                          className={`text-xs tabular-nums mt-0.5 ${isPositive ? "text-[var(--gain)]/80" : "text-[var(--loss)]/80"}`}
                         >
                           {privacyMode ? "***" : pct}
                         </div>

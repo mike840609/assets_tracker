@@ -94,6 +94,11 @@
   --chart-8: oklch(0.65 0.13 110); /* Lime */
   --chart-9: oklch(0.62 0.11 190); /* Teal */
 
+  /* Gain/loss semantic tokens — direction coloring (not category).
+     Defaults to Western (Green=Up); overridden under [data-stock-color-scheme="red-up"]. */
+  --gain: var(--chart-1);
+  --loss: var(--destructive);
+
   --radius: 0.75rem;
   --sidebar: oklch(0.98 0.005 260);
   --sidebar-foreground: oklch(0.2 0.02 260);
@@ -135,6 +140,9 @@
   --chart-7: oklch(0.84 0.13 75); /* Amber */
   --chart-8: oklch(0.8 0.13 110); /* Lime */
   --chart-9: oklch(0.75 0.11 190); /* Teal */
+
+  --gain: var(--chart-1);
+  --loss: var(--destructive);
 
   --sidebar: oklch(0.12 0.03 200);
   --sidebar-foreground: oklch(0.94 0.01 190);
@@ -667,6 +675,29 @@ html[data-vt-theme]::view-transition-new(root) {
   background-image:
     radial-gradient(ellipse 80% 50% at 50% -10%, oklch(0.76 0.18 15 / 0.08), transparent),
     radial-gradient(ellipse 60% 40% at 100% 80%, oklch(0.8 0.14 330 / 0.05), transparent);
+}
+
+/* ─── Stock direction color scheme ───────────────────────────────────────
+   Default (no attribute / "green-up"): --gain = emerald, --loss = red (Western).
+   "red-up": swapped (East Asian markets). Applied on the (main)/layout wrapper. */
+[data-stock-color-scheme="red-up"] {
+  --gain: var(--destructive);
+  --loss: var(--chart-1);
+}
+
+/* Hero-mesh background classes bake oklch coordinates into background-image and
+   can't reference the swappable tokens, so paint the opposite gradient under red-up. */
+[data-stock-color-scheme="red-up"] .hero-mesh-positive {
+  background-image:
+    radial-gradient(circle at 15% 25%, oklch(0.8 0.16 30 / 0.7), transparent 50%),
+    radial-gradient(circle at 80% 20%, oklch(0.66 0.19 25 / 0.45), transparent 46%),
+    radial-gradient(circle at 55% 80%, oklch(0.6 0.15 15 / 0.3), transparent 52%);
+}
+[data-stock-color-scheme="red-up"] .hero-mesh-negative {
+  background-image:
+    radial-gradient(circle at 15% 25%, oklch(0.88 0.12 160 / 0.75), transparent 50%),
+    radial-gradient(circle at 80% 20%, oklch(0.72 0.16 165 / 0.45), transparent 46%),
+    radial-gradient(circle at 55% 80%, oklch(0.66 0.13 180 / 0.3), transparent 52%);
 }
 
 /* Sonner toast action button — theme-aware outline style */

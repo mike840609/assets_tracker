@@ -495,10 +495,10 @@ export function AccountsList({
                 <tbody className="divide-y divide-border/60">
                   {assets.length > 0 && (
                     <>
-                      <tr className="bg-green-50/60 dark:bg-green-950/20">
+                      <tr className="bg-[var(--gain)]/8">
                         <td
                           colSpan={8}
-                          className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-green-700 dark:text-green-400"
+                          className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-[var(--gain)]"
                         >
                           {t("accountsList.assets")}
                         </td>
@@ -524,10 +524,10 @@ export function AccountsList({
                   )}
                   {liabilities.length > 0 && (
                     <>
-                      <tr className="bg-red-50/60 dark:bg-red-950/20">
+                      <tr className="bg-[var(--loss)]/8">
                         <td
                           colSpan={8}
-                          className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-red-700 dark:text-red-400"
+                          className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-[var(--loss)]"
                         >
                           {t("accountsList.liabilities")}
                         </td>
@@ -569,7 +569,7 @@ export function AccountsList({
 
             {assetsByCategory.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-green-700 dark:text-green-400">
+                <h3 className="text-lg font-semibold text-[var(--gain)]">
                   {t("accountsList.assets")}
                 </h3>
                 <div className="space-y-3">
@@ -596,7 +596,7 @@ export function AccountsList({
 
             {liabilitiesByCategory.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-red-700 dark:text-red-400">
+                <h3 className="text-lg font-semibold text-[var(--loss)]">
                   {t("accountsList.liabilities")}
                 </h3>
                 <div className="space-y-3">
@@ -1003,21 +1003,21 @@ function MobileSummaryStrip({
     <div className="rounded-xl border bg-muted/20 px-4 py-3 grid grid-cols-3 gap-2 text-center">
       <div>
         <p className="text-xs text-muted-foreground mb-0.5">{t("accountsList.assets")}</p>
-        <p className="text-sm font-bold tabular-nums text-green-600 dark:text-green-400">
+        <p className="text-sm font-bold tabular-nums text-[var(--gain)]">
           {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency, true)}
         </p>
       </div>
       <div className="border-x border-border/40">
         <p className="text-xs text-muted-foreground mb-0.5">{t("accountsList.netWorth")}</p>
         <p
-          className={`text-sm font-bold tabular-nums ${netWorth >= 0 ? "text-foreground" : "text-destructive"}`}
+          className={`text-sm font-bold tabular-nums ${netWorth >= 0 ? "text-foreground" : "text-[var(--loss)]"}`}
         >
           {privacyMode ? HIDDEN : formatCurrency(netWorth, baseCurrency, true)}
         </p>
       </div>
       <div>
         <p className="text-xs text-muted-foreground mb-0.5">{t("accountsList.liabilities")}</p>
-        <p className="text-sm font-bold tabular-nums text-red-600 dark:text-red-400">
+        <p className="text-sm font-bold tabular-nums text-[var(--loss)]">
           {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency, true)}
         </p>
       </div>

@@ -9,6 +9,7 @@ import { PullToRefreshProvider } from "@/components/layout/pull-to-refresh-conte
 import { LargeTitleProvider } from "@/components/layout/large-title-context";
 import { LazyCommandPalette } from "@/components/layout/lazy-command-palette";
 import { getSession } from "@/lib/auth-session";
+import { getOrCreateSettings } from "@/lib/services/settings-service";
 
 async function SidebarWithSession() {
   const session = await getSession();
@@ -17,29 +18,35 @@ async function SidebarWithSession() {
   );
 }
 
-export default function MainLayout({
+export default async function MainLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSession();
+  const settings = session?.user?.id ? await getOrCreateSettings(session.user.id) : null;
+  const stockScheme = settings?.stockColorScheme === "RED_UP" ? "red-up" : undefined;
+
   return (
-    <DensityProvider>
-      <PrivacyModeProvider>
-        <LargeTitleProvider>
-          <PullToRefreshProvider>
-            <Suspense fallback={<Sidebar userImage={null} userName={null} />}>
-              <SidebarWithSession />
-            </Suspense>
-            <PullToRefreshIndicator />
-            <MobileMainShell>
-              <MobileHeader />
-              <div className="mx-auto w-full max-w-7xl p-4 md:p-6">{children}</div>
-            </MobileMainShell>
-            <MobileNav />
-            <LazyCommandPalette />
-          </PullToRefreshProvider>
-        </LargeTitleProvider>
-      </PrivacyModeProvider>
-    </DensityProvider>
+    <div data-stock-color-scheme={stockScheme} className="contents">
+      <DensityProvider>
+        <PrivacyModeProvider>
+          <LargeTitleProvider>
+            <PullToRefreshProvider>
+              <Suspense fallback={<Sidebar userImage={null} userName={null} />}>
+                <SidebarWithSession />
+              </Suspense>
+              <PullToRefreshIndicator />
+              <MobileMainShell>
+                <MobileHeader />
+                <div className="mx-auto w-full max-w-7xl p-4 md:p-6">{children}</div>
+              </MobileMainShell>
+              <MobileNav />
+              <LazyCommandPalette />
+            </PullToRefreshProvider>
+          </LargeTitleProvider>
+        </PrivacyModeProvider>
+      </DensityProvider>
+    </div>
   );
 }

@@ -100,9 +100,9 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   const renderGroup = (accounts: typeof summary.accounts, isAsset: boolean) => {
     const totalDisplay = isAsset ? summary.totalAssets : summary.totalLiabilities;
     const label = isAsset ? t("common.asset").toUpperCase() : t("common.liability").toUpperCase();
-    const accentClass = isAsset ? "text-primary" : "text-destructive";
-    const dotClass = isAsset ? "bg-primary" : "bg-destructive";
-    const totalAccentClass = isAsset ? "text-primary" : "text-destructive";
+    const accentClass = isAsset ? "text-[var(--gain)]" : "text-[var(--loss)]";
+    const dotClass = isAsset ? "bg-[var(--gain)]" : "bg-[var(--loss)]";
+    const totalAccentClass = isAsset ? "text-[var(--gain)]" : "text-[var(--loss)]";
 
     return (
       <div>
@@ -119,7 +119,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
               <div className="relative overflow-hidden">
                 {!privacyMode && (
                   <div
-                    className={`absolute inset-y-0 left-0 ${isAsset ? "bg-primary/5" : "bg-destructive/5"} transition-[width] duration-500`}
+                    className={`absolute inset-y-0 left-0 ${isAsset ? "bg-[var(--gain)]/5" : "bg-[var(--loss)]/5"} transition-[width] duration-500`}
                     style={{ width: `${getPercentage(account)}%` }}
                   />
                 )}

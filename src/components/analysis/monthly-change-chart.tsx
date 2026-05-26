@@ -79,7 +79,7 @@ function ChangeTooltip({
           value={
             privacyMode ? pct : `${sign}${formatCurrency(b.deltaNetWorth, baseCurrency)} (${pct})`
           }
-          valueClassName={b.deltaNetWorth >= 0 ? "text-[var(--chart-1)]" : "text-destructive"}
+          valueClassName={b.deltaNetWorth >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"}
         />
       </div>
     </ChartTooltipContainer>
@@ -160,8 +160,8 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
                         entry.isEmpty
                           ? "var(--muted-foreground)"
                           : entry.deltaNetWorth >= 0
-                            ? "var(--chart-1)"
-                            : "var(--destructive)"
+                            ? "var(--gain)"
+                            : "var(--loss)"
                       }
                       opacity={entry.isEmpty ? 0.3 : 1}
                     />

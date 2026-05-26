@@ -266,19 +266,19 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                     if (!day.isFuture && day.hasSnapshot) {
                       if (day.change !== null && day.change < 0) {
                         const intensity = maxNeg > 0 ? Math.abs(day.change) / maxNeg : 1;
-                        if (intensity < 0.25) bgClass = "bg-destructive/20";
-                        else if (intensity < 0.5) bgClass = "bg-destructive/40";
-                        else if (intensity < 0.75) bgClass = "bg-destructive/60";
-                        else if (intensity < 0.95) bgClass = "bg-destructive/80";
-                        else bgClass = "bg-destructive";
+                        if (intensity < 0.25) bgClass = "bg-[var(--loss)]/20";
+                        else if (intensity < 0.5) bgClass = "bg-[var(--loss)]/40";
+                        else if (intensity < 0.75) bgClass = "bg-[var(--loss)]/60";
+                        else if (intensity < 0.95) bgClass = "bg-[var(--loss)]/80";
+                        else bgClass = "bg-[var(--loss)]";
                       } else {
                         const intensity =
                           maxPos > 0 && day.change !== null ? day.change / maxPos : 1;
-                        if (intensity < 0.25) bgClass = "bg-primary/20";
-                        else if (intensity < 0.5) bgClass = "bg-primary/40";
-                        else if (intensity < 0.75) bgClass = "bg-primary/60";
-                        else if (intensity < 0.95) bgClass = "bg-primary/80";
-                        else bgClass = "bg-primary";
+                        if (intensity < 0.25) bgClass = "bg-[var(--gain)]/20";
+                        else if (intensity < 0.5) bgClass = "bg-[var(--gain)]/40";
+                        else if (intensity < 0.75) bgClass = "bg-[var(--gain)]/60";
+                        else if (intensity < 0.95) bgClass = "bg-[var(--gain)]/80";
+                        else bgClass = "bg-[var(--gain)]";
                       }
                     }
 
@@ -362,9 +362,9 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                     className={cn(
                       "font-medium tabular-nums whitespace-nowrap",
                       tooltip.day.change > 0
-                        ? "text-primary"
+                        ? "text-[var(--gain)]"
                         : tooltip.day.change < 0
-                          ? "text-destructive"
+                          ? "text-[var(--loss)]"
                           : "text-muted-foreground",
                     )}
                   >

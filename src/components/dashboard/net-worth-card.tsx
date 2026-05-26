@@ -33,8 +33,9 @@ export function NetWorthCard({
       : null;
 
   const isPositive = delta !== null && delta >= 0;
-  const deltaColor = delta === null ? "" : isPositive ? "text-primary" : "text-destructive";
-  const bgDeltaColor = delta === null ? "" : isPositive ? "bg-primary/10" : "bg-destructive/10";
+  const deltaColor = delta === null ? "" : isPositive ? "text-[var(--gain)]" : "text-[var(--loss)]";
+  const bgDeltaColor =
+    delta === null ? "" : isPositive ? "bg-[var(--gain)]/10" : "bg-[var(--loss)]/10";
   const deltaSign = delta !== null && delta > 0 ? "+" : "";
   const meshClass = delta === null ? "" : isPositive ? "hero-mesh-positive" : "hero-mesh-negative";
 
@@ -96,13 +97,13 @@ export function NetWorthCard({
           className={`${isCompact ? "p-2.5 sm:p-3" : "p-4 sm:p-6"} h-full flex flex-col justify-center min-w-0`}
         >
           <div className="flex items-center gap-1.5 sm:gap-2 mb-1 whitespace-nowrap overflow-hidden">
-            <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0" />
+            <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[var(--gain)] shrink-0" />
             <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
               {t("totalAssets")}
             </p>
           </div>
           <div className="overflow-x-auto scrollbar-none">
-            <p className="text-lg sm:text-2xl font-semibold text-primary mt-1 whitespace-nowrap tabular-nums">
+            <p className="text-lg sm:text-2xl font-semibold text-[var(--gain)] mt-1 whitespace-nowrap tabular-nums">
               {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency)}
             </p>
           </div>
@@ -115,13 +116,13 @@ export function NetWorthCard({
           className={`${isCompact ? "p-2.5 sm:p-3" : "p-4 sm:p-6"} h-full flex flex-col justify-center min-w-0`}
         >
           <div className="flex items-center gap-1.5 sm:gap-2 mb-1 whitespace-nowrap overflow-hidden">
-            <TrendingDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive shrink-0" />
+            <TrendingDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[var(--loss)] shrink-0" />
             <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
               {t("totalLiabilities")}
             </p>
           </div>
           <div className="overflow-x-auto scrollbar-none">
-            <p className="text-lg sm:text-2xl font-semibold text-destructive mt-1 whitespace-nowrap tabular-nums">
+            <p className="text-lg sm:text-2xl font-semibold text-[var(--loss)] mt-1 whitespace-nowrap tabular-nums">
               {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency)}
             </p>
           </div>

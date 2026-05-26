@@ -74,7 +74,7 @@ function CashFlowTooltip({
         value={
           privacyMode ? "***" : `${marketSign}${formatCurrency(b.marketPerformance, baseCurrency)}`
         }
-        valueClassName={b.marketPerformance >= 0 ? "text-[var(--chart-1)]" : "text-destructive"}
+        valueClassName={b.marketPerformance >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"}
       />
       <div className="pt-1.5 mt-1.5 border-t border-border/40">
         <ChartTooltipRow
@@ -82,7 +82,7 @@ function CashFlowTooltip({
           value={
             privacyMode ? "***" : `${deltaSign}${formatCurrency(b.deltaNetWorth, baseCurrency)}`
           }
-          valueClassName={b.deltaNetWorth >= 0 ? "text-[var(--chart-1)]" : "text-destructive"}
+          valueClassName={b.deltaNetWorth >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"}
         />
       </div>
     </ChartTooltipContainer>
@@ -128,7 +128,7 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
                 <span
                   aria-hidden
                   className="inline-block h-2 w-2 rounded-full"
-                  style={{ background: "var(--chart-1)" }}
+                  style={{ background: "var(--gain)" }}
                 />
                 {t("seriesMarket")}
               </span>
@@ -201,8 +201,8 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
                           b.isEmpty
                             ? "var(--muted-foreground)"
                             : b.marketPerformance >= 0
-                              ? "var(--chart-1)"
-                              : "var(--destructive)"
+                              ? "var(--gain)"
+                              : "var(--loss)"
                         }
                         opacity={b.isEmpty ? 0.2 : 1}
                       />

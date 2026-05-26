@@ -17,7 +17,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 import { useDensity, type Density } from "@/components/layout/density-context";
 import { useColorSchema, type ColorSchema } from "@/components/layout/color-schema-context";
-import { Check } from "lucide-react";
+import { Check, TrendingUp, TrendingDown } from "lucide-react";
 
 const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
   { id: "emerald", light: "#22c55e", dark: "#4ade80" },
@@ -28,12 +28,25 @@ const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
   { id: "rose", light: "#f43f5e", dark: "#fb7185" },
 ];
 
+type StockColorScheme = "GREEN_UP" | "RED_UP";
+
+const STOCK_COLOR_SCHEMES: Array<{
+  id: StockColorScheme;
+  upColor: string;
+  downColor: string;
+}> = [
+  { id: "GREEN_UP", upColor: "#22c55e", downColor: "#ef4444" },
+  { id: "RED_UP", upColor: "#ef4444", downColor: "#22c55e" },
+];
+
 export function SettingsForm({
   currentCurrency,
   currentLocale,
+  currentStockColorScheme,
 }: {
   currentCurrency: string;
   currentLocale: string;
+  currentStockColorScheme: StockColorScheme;
 }) {
   const router = useRouter();
   const t = useTranslations();
@@ -45,10 +58,13 @@ export function SettingsForm({
       : DEFAULT_LOCALE;
   const [currency, setCurrency] = useState(currentCurrency);
   const [locale, setLocale] = useState<Locale>(resolvedActiveLocale);
+  const [stockColorScheme, setStockColorScheme] =
+    useState<StockColorScheme>(currentStockColorScheme);
   const { density, setDensity } = useDensity();
   const { colorSchema, setColorSchema } = useColorSchema();
   const [saving, setSaving] = useState(false);
   const [savingLocale, setSavingLocale] = useState(false);
+  const [savingStockColor, setSavingStockColor] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   async function saveCurrency() {
@@ -85,6 +101,28 @@ export function SettingsForm({
       toast.error(t("toast.languageFailed"));
     } finally {
       setSavingLocale(false);
+    }
+  }
+
+  async function pickStockColorScheme(next: StockColorScheme) {
+    if (next === stockColorScheme || savingStockColor) return;
+    setStockColorScheme(next);
+    setSavingStockColor(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stockColorScheme: next }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast.success(t("toast.stockColorSchemeUpdated"));
+      // Reload so the (main)/layout server component re-reads the setting and
+      // Recharts SVGs (which inline fill colors at render time) repaint.
+      setTimeout(() => window.location.reload(), 800);
+    } catch {
+      setStockColorScheme(stockColorScheme);
+      toast.error(t("toast.stockColorSchemeFailed"));
+      setSavingStockColor(false);
     }
   }
 
@@ -167,6 +205,49 @@ export function SettingsForm({
                 >
                   {savingLocale ? t("settings.saving") : t("settings.save")}
                 </Button>
+              </div>
+            </div>
+
+            {/* Stock Up/Down Color Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t("settings.stockColorScheme")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("settings.stockColorSchemeDescription")}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {STOCK_COLOR_SCHEMES.map((scheme) => {
+                  const isSelected = stockColorScheme === scheme.id;
+                  return (
+                    <button
+                      key={scheme.id}
+                      type="button"
+                      onClick={() => pickStockColorScheme(scheme.id)}
+                      disabled={savingStockColor}
+                      title={t(`settings.stockColorSchemes.${scheme.id}`)}
+                      aria-label={t(`settings.stockColorSchemes.${scheme.id}`)}
+                      aria-pressed={isSelected}
+                      className={`relative w-11 h-11 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed ${
+                        isSelected
+                          ? "ring-2 ring-offset-2 ring-foreground scale-110"
+                          : "opacity-70 hover:opacity-100 hover:scale-105"
+                      }`}
+                      style={{
+                        background: `linear-gradient(135deg, ${scheme.upColor} 50%, ${scheme.downColor} 50%)`,
+                      }}
+                    >
+                      <TrendingUp
+                        aria-hidden
+                        className="absolute top-2 left-2 w-3 h-3 text-white drop-shadow"
+                      />
+                      <TrendingDown
+                        aria-hidden
+                        className="absolute bottom-2 right-2 w-3 h-3 text-white drop-shadow"
+                      />
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
