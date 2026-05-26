@@ -64,12 +64,12 @@ function AssetsTooltip({
       <ChartTooltipRow
         label={t("seriesAssets")}
         value={privacyMode ? "***" : formatCurrency(entry.assets, baseCurrency)}
-        indicatorColor="var(--chart-1)"
+        indicatorColor="var(--gain)"
       />
       <ChartTooltipRow
         label={t("seriesLiabilities")}
         value={privacyMode ? "***" : formatCurrency(entry.liabilities, baseCurrency)}
-        indicatorColor="var(--destructive)"
+        indicatorColor="var(--loss)"
       />
     </ChartTooltipContainer>
   );
@@ -145,7 +145,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                 <Bar
                   dataKey="assets"
                   name={t("seriesAssets")}
-                  fill="var(--chart-1)"
+                  fill="var(--gain)"
                   radius={[4, 4, 0, 0]}
                   isAnimationActive={isAnimationActive}
                   onAnimationEnd={onAnimationEnd}
@@ -153,7 +153,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                 <Bar
                   dataKey="liabilities"
                   name={t("seriesLiabilities")}
-                  fill="var(--destructive)"
+                  fill="var(--loss)"
                   radius={[4, 4, 0, 0]}
                   isAnimationActive={isAnimationActive}
                   onAnimationEnd={onAnimationEnd}
