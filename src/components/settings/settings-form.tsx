@@ -239,11 +239,11 @@ export function SettingsForm({
                     >
                       <TrendingUp
                         aria-hidden
-                        className="absolute top-1 left-1 w-3 h-3 text-white drop-shadow"
+                        className="absolute top-2 left-2 w-3 h-3 text-white drop-shadow"
                       />
                       <TrendingDown
                         aria-hidden
-                        className="absolute bottom-1 right-1 w-3 h-3 text-white drop-shadow"
+                        className="absolute bottom-2 right-2 w-3 h-3 text-white drop-shadow"
                       />
                     </button>
                   );
