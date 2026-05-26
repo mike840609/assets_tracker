@@ -17,7 +17,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 import { useDensity, type Density } from "@/components/layout/density-context";
 import { useColorSchema, type ColorSchema } from "@/components/layout/color-schema-context";
-import { Check } from "lucide-react";
+import { Check, TrendingUp, TrendingDown } from "lucide-react";
 
 const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
   { id: "emerald", light: "#22c55e", dark: "#4ade80" },
@@ -29,6 +29,15 @@ const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
 ];
 
 type StockColorScheme = "GREEN_UP" | "RED_UP";
+
+const STOCK_COLOR_SCHEMES: Array<{
+  id: StockColorScheme;
+  upColor: string;
+  downColor: string;
+}> = [
+  { id: "GREEN_UP", upColor: "#22c55e", downColor: "#ef4444" },
+  { id: "RED_UP", upColor: "#ef4444", downColor: "#22c55e" },
+];
 
 export function SettingsForm({
   currentCurrency,
@@ -95,13 +104,15 @@ export function SettingsForm({
     }
   }
 
-  async function saveStockColorScheme() {
+  async function pickStockColorScheme(next: StockColorScheme) {
+    if (next === stockColorScheme || savingStockColor) return;
+    setStockColorScheme(next);
     setSavingStockColor(true);
     try {
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stockColorScheme }),
+        body: JSON.stringify({ stockColorScheme: next }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       toast.success(t("toast.stockColorSchemeUpdated"));
@@ -109,8 +120,8 @@ export function SettingsForm({
       // Recharts SVGs (which inline fill colors at render time) repaint.
       setTimeout(() => window.location.reload(), 800);
     } catch {
+      setStockColorScheme(stockColorScheme);
       toast.error(t("toast.stockColorSchemeFailed"));
-    } finally {
       setSavingStockColor(false);
     }
   }
@@ -200,37 +211,46 @@ export function SettingsForm({
             {/* Stock Up/Down Color Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
               <div className="space-y-1">
-                <label htmlFor="stock-color-select" className="text-sm font-medium">
-                  {t("settings.stockColorScheme")}
-                </label>
+                <p className="text-sm font-medium">{t("settings.stockColorScheme")}</p>
                 <p className="text-sm text-muted-foreground">
                   {t("settings.stockColorSchemeDescription")}
                 </p>
               </div>
-              <div className="flex items-center gap-2 sm:w-auto w-full">
-                <Select
-                  value={stockColorScheme}
-                  onValueChange={(v) => v && setStockColorScheme(v as StockColorScheme)}
-                >
-                  <SelectTrigger
-                    id="stock-color-select"
-                    className="flex-1 sm:flex-none sm:w-[240px]"
-                  >
-                    <SelectValue>{t(`settings.stockColorSchemes.${stockColorScheme}`)}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GREEN_UP">
-                      {t("settings.stockColorSchemes.GREEN_UP")}
-                    </SelectItem>
-                    <SelectItem value="RED_UP">{t("settings.stockColorSchemes.RED_UP")}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={saveStockColorScheme}
-                  disabled={savingStockColor || stockColorScheme === currentStockColorScheme}
-                >
-                  {savingStockColor ? t("settings.saving") : t("settings.save")}
-                </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                {STOCK_COLOR_SCHEMES.map((scheme) => {
+                  const isSelected = stockColorScheme === scheme.id;
+                  return (
+                    <button
+                      key={scheme.id}
+                      type="button"
+                      onClick={() => pickStockColorScheme(scheme.id)}
+                      disabled={savingStockColor}
+                      title={t(`settings.stockColorSchemes.${scheme.id}`)}
+                      aria-label={t(`settings.stockColorSchemes.${scheme.id}`)}
+                      aria-pressed={isSelected}
+                      className={`relative w-11 h-11 rounded-full overflow-hidden transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed ${
+                        isSelected
+                          ? "ring-2 ring-offset-2 ring-foreground scale-110"
+                          : "opacity-70 hover:opacity-100 hover:scale-105"
+                      }`}
+                      style={{
+                        background: `linear-gradient(180deg, ${scheme.upColor} 50%, ${scheme.downColor} 50%)`,
+                      }}
+                    >
+                      <TrendingUp
+                        aria-hidden
+                        className="absolute top-1 left-1/2 -translate-x-1/2 w-3 h-3 text-white drop-shadow"
+                      />
+                      <TrendingDown
+                        aria-hidden
+                        className="absolute bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 text-white drop-shadow"
+                      />
+                      {isSelected && (
+                        <Check className="absolute inset-0 m-auto w-3.5 h-3.5 text-white drop-shadow" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
