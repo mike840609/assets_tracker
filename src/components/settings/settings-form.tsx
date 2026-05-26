@@ -237,6 +237,12 @@ export function SettingsForm({
                         background: `linear-gradient(135deg, ${scheme.upColor} 50%, ${scheme.downColor} 50%)`,
                       }}
                     >
+                      {isSelected ? (
+                        <span className="absolute -top-1 -right-1 inline-flex items-center gap-1 rounded-full border border-border bg-background/95 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-foreground shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
+                          <Check aria-hidden className="h-2.5 w-2.5" />
+                          <span aria-hidden>Selected</span>
+                        </span>
+                      ) : null}
                       <TrendingUp
                         aria-hidden
                         className="absolute top-2 left-2 w-3 h-3 text-white drop-shadow"
@@ -245,6 +251,7 @@ export function SettingsForm({
                         aria-hidden
                         className="absolute bottom-2 right-2 w-3 h-3 text-white drop-shadow"
                       />
+                      {isSelected ? <span className="sr-only">Selected</span> : null}
                     </button>
                   );
                 })}
