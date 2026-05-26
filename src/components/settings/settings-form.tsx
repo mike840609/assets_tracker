@@ -17,7 +17,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 import { useDensity, type Density } from "@/components/layout/density-context";
 import { useColorSchema, type ColorSchema } from "@/components/layout/color-schema-context";
-import { Check, TrendingUp, TrendingDown } from "lucide-react";
+import { Check } from "lucide-react";
 
 const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
   { id: "emerald", light: "#22c55e", dark: "#4ade80" },
@@ -228,23 +228,15 @@ export function SettingsForm({
                       title={t(`settings.stockColorSchemes.${scheme.id}`)}
                       aria-label={t(`settings.stockColorSchemes.${scheme.id}`)}
                       aria-pressed={isSelected}
-                      className={`relative w-11 h-11 rounded-full overflow-hidden transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed ${
+                      className={`relative w-11 h-11 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed ${
                         isSelected
                           ? "ring-2 ring-offset-2 ring-foreground scale-110"
                           : "opacity-70 hover:opacity-100 hover:scale-105"
                       }`}
                       style={{
-                        background: `linear-gradient(180deg, ${scheme.upColor} 50%, ${scheme.downColor} 50%)`,
+                        background: `linear-gradient(135deg, ${scheme.upColor} 50%, ${scheme.downColor} 50%)`,
                       }}
                     >
-                      <TrendingUp
-                        aria-hidden
-                        className="absolute top-1 left-1/2 -translate-x-1/2 w-3 h-3 text-white drop-shadow"
-                      />
-                      <TrendingDown
-                        aria-hidden
-                        className="absolute bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 text-white drop-shadow"
-                      />
                       {isSelected && (
                         <Check className="absolute inset-0 m-auto w-3.5 h-3.5 text-white drop-shadow" />
                       )}
