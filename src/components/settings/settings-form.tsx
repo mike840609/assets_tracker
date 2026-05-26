@@ -28,12 +28,16 @@ const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
   { id: "rose", light: "#f43f5e", dark: "#fb7185" },
 ];
 
+type StockColorScheme = "GREEN_UP" | "RED_UP";
+
 export function SettingsForm({
   currentCurrency,
   currentLocale,
+  currentStockColorScheme,
 }: {
   currentCurrency: string;
   currentLocale: string;
+  currentStockColorScheme: StockColorScheme;
 }) {
   const router = useRouter();
   const t = useTranslations();
@@ -45,10 +49,13 @@ export function SettingsForm({
       : DEFAULT_LOCALE;
   const [currency, setCurrency] = useState(currentCurrency);
   const [locale, setLocale] = useState<Locale>(resolvedActiveLocale);
+  const [stockColorScheme, setStockColorScheme] =
+    useState<StockColorScheme>(currentStockColorScheme);
   const { density, setDensity } = useDensity();
   const { colorSchema, setColorSchema } = useColorSchema();
   const [saving, setSaving] = useState(false);
   const [savingLocale, setSavingLocale] = useState(false);
+  const [savingStockColor, setSavingStockColor] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   async function saveCurrency() {
@@ -85,6 +92,26 @@ export function SettingsForm({
       toast.error(t("toast.languageFailed"));
     } finally {
       setSavingLocale(false);
+    }
+  }
+
+  async function saveStockColorScheme() {
+    setSavingStockColor(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stockColorScheme }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast.success(t("toast.stockColorSchemeUpdated"));
+      // Reload so the (main)/layout server component re-reads the setting and
+      // Recharts SVGs (which inline fill colors at render time) repaint.
+      setTimeout(() => window.location.reload(), 800);
+    } catch {
+      toast.error(t("toast.stockColorSchemeFailed"));
+    } finally {
+      setSavingStockColor(false);
     }
   }
 
@@ -166,6 +193,43 @@ export function SettingsForm({
                   disabled={savingLocale || locale === resolvedActiveLocale}
                 >
                   {savingLocale ? t("settings.saving") : t("settings.save")}
+                </Button>
+              </div>
+            </div>
+
+            {/* Stock Up/Down Color Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
+              <div className="space-y-1">
+                <label htmlFor="stock-color-select" className="text-sm font-medium">
+                  {t("settings.stockColorScheme")}
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  {t("settings.stockColorSchemeDescription")}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 sm:w-auto w-full">
+                <Select
+                  value={stockColorScheme}
+                  onValueChange={(v) => v && setStockColorScheme(v as StockColorScheme)}
+                >
+                  <SelectTrigger
+                    id="stock-color-select"
+                    className="flex-1 sm:flex-none sm:w-[240px]"
+                  >
+                    <SelectValue>{t(`settings.stockColorSchemes.${stockColorScheme}`)}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GREEN_UP">
+                      {t("settings.stockColorSchemes.GREEN_UP")}
+                    </SelectItem>
+                    <SelectItem value="RED_UP">{t("settings.stockColorSchemes.RED_UP")}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={saveStockColorScheme}
+                  disabled={savingStockColor || stockColorScheme === currentStockColorScheme}
+                >
+                  {savingStockColor ? t("settings.saving") : t("settings.save")}
                 </Button>
               </div>
             </div>

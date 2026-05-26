@@ -33,8 +33,9 @@ export function NetWorthCard({
       : null;
 
   const isPositive = delta !== null && delta >= 0;
-  const deltaColor = delta === null ? "" : isPositive ? "text-primary" : "text-destructive";
-  const bgDeltaColor = delta === null ? "" : isPositive ? "bg-primary/10" : "bg-destructive/10";
+  const deltaColor = delta === null ? "" : isPositive ? "text-[var(--gain)]" : "text-[var(--loss)]";
+  const bgDeltaColor =
+    delta === null ? "" : isPositive ? "bg-[var(--gain)]/10" : "bg-[var(--loss)]/10";
   const deltaSign = delta !== null && delta > 0 ? "+" : "";
   const meshClass = delta === null ? "" : isPositive ? "hero-mesh-positive" : "hero-mesh-negative";
 

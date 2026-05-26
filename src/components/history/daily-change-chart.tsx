@@ -88,7 +88,11 @@ function DailyChangeTooltip({
               : `${isPositive ? "+" : ""}${formatCurrency(point.change, baseCurrency)}`
           }
           valueClassName={
-            isZero ? "text-muted-foreground" : isPositive ? "text-primary" : "text-destructive"
+            isZero
+              ? "text-muted-foreground"
+              : isPositive
+                ? "text-[var(--gain)]"
+                : "text-[var(--loss)]"
           }
         />
       )}
@@ -214,8 +218,8 @@ export function DailyChangeChart({ snapshots, baseCurrency }: Props) {
                           : entry.change === 0
                             ? "var(--muted-foreground)"
                             : entry.change > 0
-                              ? "var(--primary)"
-                              : "var(--destructive)"
+                              ? "var(--gain)"
+                              : "var(--loss)"
                       }
                       opacity={
                         !entry.hasSnapshot || !entry.hasPreviousSnapshot

@@ -36,11 +36,15 @@ export const PATCH = withAuth(async (request, _ctx, userId) => {
     update: {
       ...(parsed.data.baseCurrency !== undefined && { baseCurrency: parsed.data.baseCurrency }),
       ...(parsed.data.locale !== undefined && { locale: parsed.data.locale }),
+      ...(parsed.data.stockColorScheme !== undefined && {
+        stockColorScheme: parsed.data.stockColorScheme,
+      }),
     },
     create: {
       userId,
       baseCurrency: parsed.data.baseCurrency ?? "USD",
       locale: parsed.data.locale ?? "en-US",
+      stockColorScheme: parsed.data.stockColorScheme ?? "GREEN_UP",
     },
   });
 

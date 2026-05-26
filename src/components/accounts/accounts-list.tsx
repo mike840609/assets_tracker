@@ -1010,7 +1010,7 @@ function MobileSummaryStrip({
       <div className="border-x border-border/40">
         <p className="text-xs text-muted-foreground mb-0.5">{t("accountsList.netWorth")}</p>
         <p
-          className={`text-sm font-bold tabular-nums ${netWorth >= 0 ? "text-foreground" : "text-destructive"}`}
+          className={`text-sm font-bold tabular-nums ${netWorth >= 0 ? "text-foreground" : "text-[var(--loss)]"}`}
         >
           {privacyMode ? HIDDEN : formatCurrency(netWorth, baseCurrency, true)}
         </p>

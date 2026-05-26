@@ -72,7 +72,7 @@ function AttributionTooltip({
         value={
           privacyMode ? "***" : `${mktSign}${formatCurrency(item.marketPerformance, baseCurrency)}`
         }
-        valueClassName={item.marketPerformance >= 0 ? "text-[var(--chart-1)]" : "text-destructive"}
+        valueClassName={item.marketPerformance >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"}
       />
       <div className="pt-1.5 mt-1.5 border-t border-border/40">
         <ChartTooltipRow
@@ -80,7 +80,7 @@ function AttributionTooltip({
           value={
             privacyMode ? "***" : `${totalSign}${formatCurrency(item.totalDelta, baseCurrency)}`
           }
-          valueClassName={item.totalDelta >= 0 ? "text-[var(--chart-1)]" : "text-destructive"}
+          valueClassName={item.totalDelta >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"}
         />
       </div>
     </ChartTooltipContainer>
@@ -189,7 +189,7 @@ export function AttributionChart({ items, baseCurrency }: Props) {
                     {chartData.map((item) => (
                       <Cell
                         key={item.accountId}
-                        fill={item.totalDelta >= 0 ? "var(--chart-1)" : "var(--destructive)"}
+                        fill={item.totalDelta >= 0 ? "var(--gain)" : "var(--loss)"}
                       />
                     ))}
                   </Bar>
@@ -210,7 +210,7 @@ export function AttributionChart({ items, baseCurrency }: Props) {
                 <div className="text-muted-foreground">{t("attrMarket")}</div>
                 <div
                   className={`tabular-nums font-medium mt-0.5 ${
-                    totalMarket >= 0 ? "text-[var(--chart-1)]" : "text-destructive"
+                    totalMarket >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"
                   }`}
                 >
                   {totalMarket >= 0 ? "+" : ""}
@@ -221,7 +221,7 @@ export function AttributionChart({ items, baseCurrency }: Props) {
                 <div className="text-muted-foreground">{t("tooltipChange")}</div>
                 <div
                   className={`tabular-nums font-medium mt-0.5 ${
-                    totalDelta >= 0 ? "text-[var(--chart-1)]" : "text-destructive"
+                    totalDelta >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"
                   }`}
                 >
                   {totalDelta >= 0 ? "+" : ""}
