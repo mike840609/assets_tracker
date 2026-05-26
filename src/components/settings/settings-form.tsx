@@ -216,35 +216,43 @@ export function SettingsForm({
                   {t("settings.stockColorSchemeDescription")}
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-stretch gap-2">
                 {STOCK_COLOR_SCHEMES.map((scheme) => {
                   const isSelected = stockColorScheme === scheme.id;
+                  const schemeLabel = t(`settings.stockColorSchemes.${scheme.id}`);
                   return (
                     <button
                       key={scheme.id}
                       type="button"
                       onClick={() => pickStockColorScheme(scheme.id)}
                       disabled={savingStockColor}
-                      title={t(`settings.stockColorSchemes.${scheme.id}`)}
-                      aria-label={t(`settings.stockColorSchemes.${scheme.id}`)}
+                      title={schemeLabel}
+                      aria-label={schemeLabel}
                       aria-pressed={isSelected}
-                      className={`relative w-11 h-11 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed ${
+                      className={`relative min-w-[9.5rem] rounded-lg border bg-background px-2 py-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed ${
                         isSelected
-                          ? "ring-2 ring-offset-2 ring-foreground scale-110"
-                          : "opacity-70 hover:opacity-100 hover:scale-105"
+                          ? "ring-2 ring-offset-2 ring-foreground"
+                          : "opacity-80 hover:opacity-100"
                       }`}
-                      style={{
-                        background: `linear-gradient(135deg, ${scheme.upColor} 50%, ${scheme.downColor} 50%)`,
-                      }}
                     >
-                      <TrendingUp
-                        aria-hidden
-                        className="absolute top-2 left-2 w-3 h-3 text-white drop-shadow"
-                      />
-                      <TrendingDown
-                        aria-hidden
-                        className="absolute bottom-2 right-2 w-3 h-3 text-white drop-shadow"
-                      />
+                      <span className="flex flex-col items-center gap-2 text-xs font-medium leading-tight text-foreground">
+                        <span
+                          className="relative h-10 w-10 rounded-full"
+                          style={{
+                            background: `linear-gradient(135deg, ${scheme.upColor} 50%, ${scheme.downColor} 50%)`,
+                          }}
+                        >
+                          <TrendingUp
+                            aria-hidden
+                            className="absolute top-1.5 left-1.5 h-3 w-3 text-white drop-shadow"
+                          />
+                          <TrendingDown
+                            aria-hidden
+                            className="absolute bottom-1.5 right-1.5 h-3 w-3 text-white drop-shadow"
+                          />
+                        </span>
+                        <span>{schemeLabel}</span>
+                      </span>
                     </button>
                   );
                 })}
