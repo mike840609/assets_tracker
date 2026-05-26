@@ -28,7 +28,7 @@ export default async function MainLayout({
   const stockScheme = settings?.stockColorScheme === "RED_UP" ? "red-up" : undefined;
 
   return (
-    <div data-stock-color-scheme={stockScheme}>
+    <div data-stock-color-scheme={stockScheme} className="contents">
       <DensityProvider>
         <PrivacyModeProvider>
           <LargeTitleProvider>
