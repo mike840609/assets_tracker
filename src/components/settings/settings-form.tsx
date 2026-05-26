@@ -17,7 +17,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 import { useDensity, type Density } from "@/components/layout/density-context";
 import { useColorSchema, type ColorSchema } from "@/components/layout/color-schema-context";
-import { Check } from "lucide-react";
+import { Check, TrendingUp, TrendingDown } from "lucide-react";
 
 const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
   { id: "emerald", light: "#22c55e", dark: "#4ade80" },
@@ -237,9 +237,14 @@ export function SettingsForm({
                         background: `linear-gradient(135deg, ${scheme.upColor} 50%, ${scheme.downColor} 50%)`,
                       }}
                     >
-                      {isSelected && (
-                        <Check className="absolute inset-0 m-auto w-3.5 h-3.5 text-white drop-shadow" />
-                      )}
+                      <TrendingUp
+                        aria-hidden
+                        className="absolute top-1 left-1 w-3 h-3 text-white drop-shadow"
+                      />
+                      <TrendingDown
+                        aria-hidden
+                        className="absolute bottom-1 right-1 w-3 h-3 text-white drop-shadow"
+                      />
                     </button>
                   );
                 })}
