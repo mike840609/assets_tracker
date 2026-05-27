@@ -1,5 +1,5 @@
 import "server-only";
-import { unstable_cache } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { log, withTiming } from "@/lib/logger";
 
@@ -270,6 +270,7 @@ async function refreshPricesForHoldings(
       ...params,
     );
     updated = entries.length;
+    revalidateTag("prices", "max");
   } catch (error) {
     errors.push(`Bulk upsert failed: ${String(error)}`);
   }

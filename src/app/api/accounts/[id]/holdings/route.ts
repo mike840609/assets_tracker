@@ -139,6 +139,7 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
         update: { price: result.price, currency: result.currency, updatedAt: new Date() },
         create: { symbol: holding.symbol, price: result.price, currency: result.currency },
       });
+      revalidateTag("prices", "max");
     }
   } catch (error) {
     // Non-blocking: if price fetch fails, holding is still created

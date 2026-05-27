@@ -1,6 +1,14 @@
-import { CashTransactionType } from "@/generated/prisma/client";
+import type { CashTransactionType, TransactionType } from "@/generated/prisma/client";
 
 type CashTxInput = { type: CashTransactionType; amount: number };
+type HoldingTxInput = { type: TransactionType; quantity: number };
+
+export function getCashTransactionAmountError(tx: CashTxInput): string | null {
+  if (tx.type === "DEPOSIT" || tx.type === "WITHDRAWAL") {
+    return tx.amount > 0 ? null : "Amount must be positive";
+  }
+  return tx.amount !== 0 ? null : "Adjustment amount cannot be zero";
+}
 
 /**
  * Calculates the net change to an account's cash balance for a cash transaction
@@ -19,4 +27,23 @@ export function calculateBalanceDelta(
     return tx.amount; // EDIT: amount is the explicit balance adjustment
   };
   return (newTx ? toSign(newTx) : 0) - (oldTx ? toSign(oldTx) : 0);
+}
+
+export function getHoldingQuantityEffect(tx: HoldingTxInput): number {
+  if (tx.type === "BUY") return Math.abs(tx.quantity);
+  if (tx.type === "SELL") return -Math.abs(tx.quantity);
+  return tx.quantity; // EDIT: quantity is the explicit adjustment delta
+}
+
+export function normalizeHoldingTransactionQuantity(tx: HoldingTxInput): number {
+  return tx.type === "EDIT" ? tx.quantity : Math.abs(tx.quantity);
+}
+
+export function calculateHoldingQuantityDelta(
+  oldTx: HoldingTxInput | null,
+  newTx: HoldingTxInput | null,
+): number {
+  return (
+    (newTx ? getHoldingQuantityEffect(newTx) : 0) - (oldTx ? getHoldingQuantityEffect(oldTx) : 0)
+  );
 }

@@ -43,6 +43,18 @@ const TYPE_VARIANTS: Record<string, "default" | "secondary" | "destructive"> = {
   EDIT: "secondary",
 };
 
+function getDisplayQuantity(tx: SerializedTransaction, isCash: boolean): number {
+  const txType = tx.type as string;
+  if (isCash) {
+    if (txType === "DEPOSIT") return Math.abs(tx.quantity);
+    if (txType === "WITHDRAWAL") return -Math.abs(tx.quantity);
+    return tx.quantity;
+  }
+  if (txType === "BUY") return Math.abs(tx.quantity);
+  if (txType === "SELL") return -Math.abs(tx.quantity);
+  return tx.quantity;
+}
+
 interface TxRowProps {
   tx: SerializedTransaction;
   typeLabel: string;
@@ -379,7 +391,8 @@ export function TransactionHistory({
                   const typeLabel = t.has(typeKey) ? t(typeKey) : tx.type;
                   const isCash = (tx as SerializedTransaction & { isCash?: boolean }).isCash;
                   const symbol = isCash ? null : (tx.holding?.symbol ?? null);
-                  const qty = `${tx.quantity > 0 ? "+" : ""}${formatQuantity(tx.quantity, tx.holding?.assetType ?? "")}`;
+                  const displayQuantity = getDisplayQuantity(tx, Boolean(isCash));
+                  const qty = `${displayQuantity > 0 ? "+" : ""}${formatQuantity(displayQuantity, tx.holding?.assetType ?? "")}`;
                   const time = new Date(tx.createdAt).toLocaleTimeString(undefined, {
                     hour: "2-digit",
                     minute: "2-digit",

@@ -25,10 +25,11 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
     hapticTick();
     setRefreshing(true);
     try {
-      const [priceRes] = await Promise.all([
+      const [priceRes, ratesRes] = await Promise.all([
         fetch("/api/prices/refresh", { method: "POST" }),
         fetch("/api/exchange-rates/refresh", { method: "POST" }),
       ]);
+      if (!priceRes.ok || !ratesRes.ok) throw new Error("Refresh failed");
       const { data: priceData } = await priceRes.json();
       toast.success(t("refreshSuccess", { count: priceData.updated }));
       setClientRefreshAt(new Date().toISOString());

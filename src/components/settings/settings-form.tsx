@@ -130,6 +130,7 @@ export function SettingsForm({
     setRefreshing(true);
     try {
       const res = await fetch("/api/prices/refresh", { method: "POST" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const { data } = await res.json();
       toast.success(t("toast.pricesUpdated", { count: data.updated }));
       router.refresh();
@@ -137,6 +138,17 @@ export function SettingsForm({
       toast.error(t("toast.pricesFailed"));
     } finally {
       setRefreshing(false);
+    }
+  }
+
+  async function refreshExchangeRates() {
+    try {
+      const res = await fetch("/api/exchange-rates/refresh", { method: "POST" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast.success(t("toast.exchangeRatesRefreshed"));
+      router.refresh();
+    } catch {
+      toast.error(t("toast.failed"));
     }
   }
 
@@ -344,11 +356,7 @@ export function SettingsForm({
               </div>
               <Button
                 variant="outline"
-                onClick={() =>
-                  fetch("/api/exchange-rates/refresh", { method: "POST" })
-                    .then(() => toast.success(t("toast.exchangeRatesRefreshed")))
-                    .catch(() => toast.error(t("toast.failed")))
-                }
+                onClick={refreshExchangeRates}
                 className="w-full sm:w-auto min-w-[150px]"
               >
                 {t("settings.btnRefresh")}

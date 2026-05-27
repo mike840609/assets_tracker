@@ -1,7 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createCashTransactionSchema } from "@/lib/validators";
-import { calculateBalanceDelta } from "@/lib/services/balance";
+import { calculateBalanceDelta, getCashTransactionAmountError } from "@/lib/services/balance";
 import { withAuth } from "@/lib/api-handler";
 import { ok, failure, validationError } from "@/lib/api-responses";
 
@@ -13,6 +13,8 @@ export const POST = withAuth(
     if (!parsed.success) return validationError(parsed.error);
 
     const { type, amount, note } = parsed.data;
+    const amountError = getCashTransactionAmountError({ type, amount });
+    if (amountError) return failure(amountError, 400);
 
     const account = await prisma.account.findUnique({ where: { id, userId } });
     if (!account) return failure("Account not found", 404);

@@ -1,7 +1,12 @@
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { updateTransactionSchema, updateCashTransactionSchema } from "@/lib/validators";
-import { calculateBalanceDelta } from "@/lib/services/balance";
+import {
+  calculateBalanceDelta,
+  calculateHoldingQuantityDelta,
+  getCashTransactionAmountError,
+  normalizeHoldingTransactionQuantity,
+} from "@/lib/services/balance";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 
@@ -40,25 +45,37 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
 
     const { id: _txId, ...data } = parsed.data;
 
-    if (data.quantity !== undefined) {
-      const diff = data.quantity - Number(holdingTx.quantity);
-      if (diff !== 0) {
-        const newHoldingQty = Number(holdingTx.holding.quantity) + diff;
-        await prisma.holding.update({
-          where: { id: holdingTx.holding.id },
-          data: { quantity: newHoldingQty },
-        });
-      }
+    const nextType = data.type ?? holdingTx.type;
+    const nextQuantity = normalizeHoldingTransactionQuantity({
+      type: nextType,
+      quantity: data.quantity ?? Number(holdingTx.quantity),
+    });
+    const holdingDelta = calculateHoldingQuantityDelta(
+      { type: holdingTx.type, quantity: Number(holdingTx.quantity) },
+      { type: nextType, quantity: nextQuantity },
+    );
+    const nextHoldingQty = Number(holdingTx.holding.quantity) + holdingDelta;
+    if (nextHoldingQty < 0) {
+      return failure("Holding quantity cannot be negative", 400);
     }
 
-    const updatedTx = await prisma.holdingTransaction.update({
-      where: { id: transactionId },
-      data: {
-        ...(data.quantity !== undefined && { quantity: data.quantity }),
-        ...(data.type !== undefined && { type: data.type }),
-        ...(data.note !== undefined && { note: data.note }),
-        ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
-      },
+    const updatedTx = await prisma.$transaction(async (tx) => {
+      if (holdingDelta !== 0) {
+        await tx.holding.update({
+          where: { id: holdingTx.holding.id },
+          data: { quantity: nextHoldingQty },
+        });
+      }
+
+      return tx.holdingTransaction.update({
+        where: { id: transactionId },
+        data: {
+          ...(data.quantity !== undefined && { quantity: nextQuantity }),
+          ...(data.type !== undefined && { type: data.type }),
+          ...(data.note !== undefined && { note: data.note }),
+          ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
+        },
+      });
     });
 
     invalidateAccountCaches(userId);
@@ -84,15 +101,17 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
     if (!parsed.success) return validationError(parsed.error);
 
     const { id: _txId, ...data } = parsed.data;
+    const nextCashTx = {
+      type: data.type ?? cashTx.type,
+      amount: data.amount ?? Number(cashTx.amount),
+    };
+    const amountError = getCashTransactionAmountError(nextCashTx);
+    if (amountError) return failure(amountError, 400);
 
     // Recompute balance delta whenever amount or type changes.
     if (data.amount !== undefined || data.type !== undefined) {
       const oldTx = { type: cashTx.type, amount: Number(cashTx.amount) };
-      const newTx = {
-        type: data.type ?? cashTx.type,
-        amount: data.amount ?? Number(cashTx.amount),
-      };
-      const delta = calculateBalanceDelta(oldTx, newTx);
+      const delta = calculateBalanceDelta(oldTx, nextCashTx);
       if (delta !== 0) {
         await prisma.account.update({
           where: { id: accountId },
@@ -137,13 +156,22 @@ export const DELETE = withAuth<TxCtx>(async (_request, { params }, userId) => {
       return failure("Transaction not found", 404);
     }
 
-    const newHoldingQty = Number(holdingTx.holding.quantity) - Number(holdingTx.quantity);
-    await prisma.holding.update({
-      where: { id: holdingTx.holding.id },
-      data: { quantity: newHoldingQty },
-    });
+    const holdingDelta = calculateHoldingQuantityDelta(
+      { type: holdingTx.type, quantity: Number(holdingTx.quantity) },
+      null,
+    );
+    const nextHoldingQty = Number(holdingTx.holding.quantity) + holdingDelta;
+    if (nextHoldingQty < 0) {
+      return failure("Holding quantity cannot be negative", 400);
+    }
 
-    await prisma.holdingTransaction.delete({ where: { id: transactionId } });
+    await prisma.$transaction([
+      prisma.holding.update({
+        where: { id: holdingTx.holding.id },
+        data: { quantity: nextHoldingQty },
+      }),
+      prisma.holdingTransaction.delete({ where: { id: transactionId } }),
+    ]);
     invalidateAccountCaches(userId);
     return ok({ ok: true });
   }
