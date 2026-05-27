@@ -34,15 +34,19 @@ function Tile({
         ? "text-[var(--loss)]"
         : "text-foreground";
   return (
-    <Card size="sm">
-      <CardContent className={isCompact ? "space-y-1 p-3" : "space-y-1.5"}>
-        <div className="text-xs text-muted-foreground font-medium">{title}</div>
-        <div
-          className={`${isCompact ? "text-xl" : "text-2xl"} font-semibold tracking-tight tabular-nums ${valueClass}`}
-        >
-          {value}
+    <Card size="sm" className="min-w-0">
+      <CardContent className={isCompact ? "space-y-1 p-3 min-w-0" : "space-y-1.5 min-w-0"}>
+        <div className="text-xs text-muted-foreground font-medium truncate">{title}</div>
+        <div className="overflow-x-auto scrollbar-none">
+          <div
+            className={`${isCompact ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"} font-semibold tracking-tight tabular-nums whitespace-nowrap ${valueClass}`}
+          >
+            {value}
+          </div>
         </div>
-        {subtitle && <div className="text-xs text-muted-foreground tabular-nums">{subtitle}</div>}
+        {subtitle && (
+          <div className="text-xs text-muted-foreground tabular-nums truncate">{subtitle}</div>
+        )}
       </CardContent>
     </Card>
   );
@@ -95,7 +99,7 @@ export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
       : `${kpis.ytdPct >= 0 ? "+" : ""}${kpis.ytdPct.toFixed(1)}%`;
 
   return (
-    <div className={`grid ${isCompact ? "gap-2" : "gap-4"} sm:grid-cols-2 lg:grid-cols-4`}>
+    <div className={`grid grid-cols-2 ${isCompact ? "gap-2" : "gap-3 sm:gap-4"} md:grid-cols-4`}>
       <Tile
         title={t("bestMonth")}
         value={bestValue}

@@ -61,7 +61,7 @@ export function NetWorthCard({
           </div>
           <div className="overflow-x-auto scrollbar-none">
             <p
-              className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent mt-1 whitespace-nowrap tabular-nums"
+              className="text-2xl sm:text-3xl font-bold text-foreground mt-1 whitespace-nowrap tabular-nums"
               style={{ letterSpacing: "-0.02em" }}
             >
               {privacyMode ? HIDDEN : formatCurrency(animatedNetWorth, baseCurrency)}

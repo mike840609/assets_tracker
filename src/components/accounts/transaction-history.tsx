@@ -112,24 +112,25 @@ function SwipeableTxRow({
       <div className="text-right shrink-0">
         <p className="text-sm font-medium tabular-nums">{qty}</p>
       </div>
-      {/* Desktop fallback: three-dot menu */}
-      <div className="hidden sm:block">
-        <DropdownMenu>
-          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0">
-            <MoreHorizontal className="h-4 w-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onEdit}>
-              <Pencil className="mr-2 h-4 w-4" />
-              {tCommon("edit")}
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive" onClick={onDelete}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              {tCommon("delete")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      {/* Keyboard / screen-reader path — swipe is the primary touch affordance */}
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label={tCommon("actionsFor", { name: symbol ?? typeLabel })}
+          className="inline-flex items-center justify-center rounded-md h-9 w-9 sm:h-7 sm:w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={onEdit}>
+            <Pencil className="mr-2 h-4 w-4" />
+            {tCommon("edit")}
+          </DropdownMenuItem>
+          <DropdownMenuItem className="text-destructive" onClick={onDelete}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            {tCommon("delete")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </SwipeableRow>
   );
 }
