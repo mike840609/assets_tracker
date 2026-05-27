@@ -40,18 +40,7 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
 
     const { id: _txId, ...data } = parsed.data;
 
-    if (data.quantity !== undefined) {
-      const diff = data.quantity - Number(holdingTx.quantity);
-      if (diff !== 0) {
-        const newHoldingQty = Number(holdingTx.holding.quantity) + diff;
-        await prisma.holding.update({
-          where: { id: holdingTx.holding.id },
-          data: { quantity: newHoldingQty },
-        });
-      }
-    }
-
-    const updatedTx = await prisma.holdingTransaction.update({
+    const txUpdate = prisma.holdingTransaction.update({
       where: { id: transactionId },
       data: {
         ...(data.quantity !== undefined && { quantity: data.quantity }),
@@ -60,6 +49,22 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
         ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
       },
     });
+
+    const diff = data.quantity !== undefined ? data.quantity - Number(holdingTx.quantity) : 0;
+
+    let updatedTx;
+    if (diff !== 0) {
+      const [, tx] = await prisma.$transaction([
+        prisma.holding.update({
+          where: { id: holdingTx.holding.id },
+          data: { quantity: { increment: diff } },
+        }),
+        txUpdate,
+      ]);
+      updatedTx = tx;
+    } else {
+      updatedTx = await txUpdate;
+    }
 
     invalidateAccountCaches(userId);
     return ok(updatedTx);
@@ -85,23 +90,7 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
 
     const { id: _txId, ...data } = parsed.data;
 
-    // Recompute balance delta whenever amount or type changes.
-    if (data.amount !== undefined || data.type !== undefined) {
-      const oldTx = { type: cashTx.type, amount: Number(cashTx.amount) };
-      const newTx = {
-        type: data.type ?? cashTx.type,
-        amount: data.amount ?? Number(cashTx.amount),
-      };
-      const delta = calculateBalanceDelta(oldTx, newTx);
-      if (delta !== 0) {
-        await prisma.account.update({
-          where: { id: accountId },
-          data: { cashBalance: { increment: delta } },
-        });
-      }
-    }
-
-    const updatedTx = await prisma.cashTransaction.update({
+    const cashTxUpdate = prisma.cashTransaction.update({
       where: { id: transactionId },
       data: {
         ...(data.amount !== undefined && { amount: data.amount }),
@@ -110,6 +99,31 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
         ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
       },
     });
+
+    // Recompute balance delta whenever amount or type changes.
+    let delta = 0;
+    if (data.amount !== undefined || data.type !== undefined) {
+      const oldTx = { type: cashTx.type, amount: Number(cashTx.amount) };
+      const newTx = {
+        type: data.type ?? cashTx.type,
+        amount: data.amount ?? Number(cashTx.amount),
+      };
+      delta = calculateBalanceDelta(oldTx, newTx);
+    }
+
+    let updatedTx;
+    if (delta !== 0) {
+      const [, tx] = await prisma.$transaction([
+        prisma.account.update({
+          where: { id: accountId },
+          data: { cashBalance: { increment: delta } },
+        }),
+        cashTxUpdate,
+      ]);
+      updatedTx = tx;
+    } else {
+      updatedTx = await cashTxUpdate;
+    }
 
     invalidateAccountCaches(userId);
     return ok(updatedTx);
@@ -137,13 +151,13 @@ export const DELETE = withAuth<TxCtx>(async (_request, { params }, userId) => {
       return failure("Transaction not found", 404);
     }
 
-    const newHoldingQty = Number(holdingTx.holding.quantity) - Number(holdingTx.quantity);
-    await prisma.holding.update({
-      where: { id: holdingTx.holding.id },
-      data: { quantity: newHoldingQty },
-    });
-
-    await prisma.holdingTransaction.delete({ where: { id: transactionId } });
+    await prisma.$transaction([
+      prisma.holding.update({
+        where: { id: holdingTx.holding.id },
+        data: { quantity: { decrement: Number(holdingTx.quantity) } },
+      }),
+      prisma.holdingTransaction.delete({ where: { id: transactionId } }),
+    ]);
     invalidateAccountCaches(userId);
     return ok({ ok: true });
   }
