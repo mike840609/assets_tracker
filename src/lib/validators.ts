@@ -85,8 +85,7 @@ export const updateHoldingSchema = z.object({
     .transform((s) => s.toUpperCase())
     .optional(),
   name: z.string().min(1).max(100).optional(),
-  quantity: z.number().nonnegative().optional(),
-  assetType: z.enum(HOLDING_ASSET_TYPES).optional(),
+  quantity: z.number().positive("Quantity must be positive").optional(),
 });
 
 export const updateSettingsSchema = z.object({
@@ -95,27 +94,37 @@ export const updateSettingsSchema = z.object({
   stockColorScheme: z.enum(["GREEN_UP", "RED_UP"]).optional(),
 });
 
-export const updateTransactionSchema = z.object({
-  id: z.string(),
-  quantity: z.number().optional(),
-  type: z.enum(HOLDING_TRANSACTION_TYPES).optional(),
-  note: z.string().optional().nullable(),
-  createdAt: z.string().optional(), // Using string for ISO dates
-});
+export const updateTransactionSchema = z
+  .object({
+    id: z.string(),
+    quantity: z.number().finite().optional(),
+    type: z.enum(HOLDING_TRANSACTION_TYPES).optional(),
+    note: z.string().optional().nullable(),
+    createdAt: z.iso.datetime({ offset: true }).optional(),
+  })
+  .refine((d) => d.quantity === undefined || d.type === "EDIT" || d.quantity > 0, {
+    message: "quantity must be positive for BUY/SELL",
+    path: ["quantity"],
+  });
 
 export const createCashTransactionSchema = z.object({
   type: z.enum(CASH_TRANSACTION_TYPES),
-  amount: z.number(),
+  amount: z.number().finite(),
   note: z.string().optional().nullable(),
 });
 
-export const updateCashTransactionSchema = z.object({
-  id: z.string(),
-  type: z.enum(CASH_TRANSACTION_TYPES).optional(),
-  amount: z.number().optional(),
-  note: z.string().optional().nullable(),
-  createdAt: z.string().optional(),
-});
+export const updateCashTransactionSchema = z
+  .object({
+    id: z.string(),
+    type: z.enum(CASH_TRANSACTION_TYPES).optional(),
+    amount: z.number().finite().optional(),
+    note: z.string().optional().nullable(),
+    createdAt: z.iso.datetime({ offset: true }).optional(),
+  })
+  .refine((d) => d.amount === undefined || d.type === "EDIT" || d.amount > 0, {
+    message: "amount must be positive for DEPOSIT/WITHDRAWAL",
+    path: ["amount"],
+  });
 
 export const createGoalSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),

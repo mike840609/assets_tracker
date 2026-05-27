@@ -2,9 +2,13 @@ import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { withAuth } from "@/lib/api-handler";
+import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
 import { ok } from "@/lib/api-responses";
 
-export const POST = withAuth(async (_request, _ctx, userId) => {
+export const POST = withAuth(async (request, _ctx, userId) => {
+  const limited = rateLimitCheckWithPrune(request, { limit: 60, prefix: "rates-refresh" });
+  if (limited) return limited;
+
   const settings = await prisma.setting.findUnique({ where: { userId } });
   const baseCurrency = settings?.baseCurrency ?? "USD";
 

@@ -56,18 +56,31 @@ export function resolveRate(
 
 /**
  * Race a promise against a timeout. Returns fallback if the promise
- * doesn't resolve within `ms` milliseconds.
+ * doesn't resolve within `ms` milliseconds. The optional onTimeout
+ * callback fires exactly once when the timeout wins the race, so
+ * callers can distinguish "timed out" from "completed with no data".
  */
-function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  fallback: T,
+  onTimeout?: () => void,
+): Promise<T> {
   return Promise.race([
     promise,
-    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+    new Promise<T>((resolve) =>
+      setTimeout(() => {
+        onTimeout?.();
+        resolve(fallback);
+      }, ms),
+    ),
   ]);
 }
 
 /**
  * Fetch exchange rates from external APIs with a timeout guard.
- * Returns {} if all sources fail or timeout.
+ * Returns {} if all sources fail or timeout. Logs distinctly on
+ * timeout so the failure mode is visible in the logs.
  */
 export async function fetchExchangeRates(base: string): Promise<Record<string, number>> {
   const doFetch = async (): Promise<Record<string, number>> => {
@@ -115,21 +128,35 @@ export async function fetchExchangeRates(base: string): Promise<Record<string, n
     return {};
   };
 
-  return withTimeout(doFetch(), RATE_FETCH_TIMEOUT_MS, {});
+  return withTimeout(doFetch(), RATE_FETCH_TIMEOUT_MS, {}, () => {
+    log.warn("rates.fetch.timeout", { base, timeoutMs: RATE_FETCH_TIMEOUT_MS });
+  });
 }
 
 /**
- * Upsert a single exchange rate into the DB.
+ * Upsert a single exchange rate into the DB. Also persists the inverse
+ * direction so reads never depend on `1 / rate` at query time (which
+ * makes different conversion paths return different values).
  * Errors are caught and logged as warnings so callers are never blocked.
  */
 async function persistExchangeRate(from: string, to: string, rate: number): Promise<void> {
   const id = `${from}_${to}`;
+  const inverseId = `${to}_${from}`;
+  const inverseRate = 1 / rate;
+  const now = new Date();
   try {
-    await prisma.exchangeRate.upsert({
-      where: { id },
-      update: { rate, updatedAt: new Date() },
-      create: { id, fromCurrency: from, toCurrency: to, rate },
-    });
+    await prisma.$transaction([
+      prisma.exchangeRate.upsert({
+        where: { id },
+        update: { rate, updatedAt: now },
+        create: { id, fromCurrency: from, toCurrency: to, rate },
+      }),
+      prisma.exchangeRate.upsert({
+        where: { id: inverseId },
+        update: { rate: inverseRate, updatedAt: now },
+        create: { id: inverseId, fromCurrency: to, toCurrency: from, rate: inverseRate },
+      }),
+    ]);
   } catch (error) {
     log.warn("rates.persist.failed", { from, to, error: String(error) });
   }
@@ -145,13 +172,24 @@ export async function refreshExchangeRates(baseCurrency: string): Promise<number
 
   if (entries.length === 0) return 0;
 
+  // Persist both directions (FROM→TO and TO→FROM) so reads never need
+  // to compute `1 / rate` at query time. Two paths through the rate map
+  // then always agree.
   const params: unknown[] = [];
-  const placeholders = entries.map(([toCurrency, rate]) => {
+  const placeholders: string[] = [];
+  for (const [toCurrency, rate] of entries) {
     const id = `${baseCurrency}_${toCurrency}`;
     const base = params.length;
     params.push(id, baseCurrency, toCurrency, String(rate));
-    return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}::numeric, NOW())`;
-  });
+    placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}::numeric, NOW())`);
+
+    const inverseId = `${toCurrency}_${baseCurrency}`;
+    const inverseBase = params.length;
+    params.push(inverseId, toCurrency, baseCurrency, String(1 / rate));
+    placeholders.push(
+      `($${inverseBase + 1}, $${inverseBase + 2}, $${inverseBase + 3}, $${inverseBase + 4}::numeric, NOW())`,
+    );
+  }
   await prisma.$executeRawUnsafe(
     `INSERT INTO "ExchangeRate" (id, "fromCurrency", "toCurrency", rate, "updatedAt")
      VALUES ${placeholders.join(", ")}

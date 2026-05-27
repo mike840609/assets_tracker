@@ -5,6 +5,7 @@ import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-servic
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
+import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
 import { parseOccSymbol, formatOptionLabel, OptionError } from "@/lib/options";
 import { log } from "@/lib/logger";
 
@@ -43,6 +44,9 @@ export const GET = withAuth<IdCtx>(async (_request, { params }, userId) => {
 });
 
 export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
+  const limited = rateLimitCheckWithPrune(request, { limit: 60, prefix: "holdings-create" });
+  if (limited) return limited;
+
   const { id } = await params;
 
   const account = await prisma.account.findUnique({

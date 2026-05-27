@@ -2,6 +2,7 @@ import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
+import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
 import { reorderAccountsSchema } from "@/lib/validators";
 
 function invalidateUserCaches(userId: string) {
@@ -11,6 +12,9 @@ function invalidateUserCaches(userId: string) {
 }
 
 export const PATCH = withAuth(async (request, _ctx, userId) => {
+  const limited = rateLimitCheckWithPrune(request, { limit: 60, prefix: "accounts-reorder" });
+  if (limited) return limited;
+
   const body = await request.json();
   const parsed = reorderAccountsSchema.safeParse(body);
   if (!parsed.success) return validationError(parsed.error);

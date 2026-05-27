@@ -1,4 +1,5 @@
 import "server-only";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getNetWorthSummary } from "./net-worth-service";
 
@@ -35,6 +36,10 @@ export async function createSnapshot(userId: string, baseCurrency: string) {
       breakdown,
     },
   });
+
+  revalidateTag(`history:${userId}`, "max");
+  revalidateTag(`net-worth:${userId}`, "max");
+  revalidateTag(`accounts:${userId}`, "max");
 
   return snapshot;
 }

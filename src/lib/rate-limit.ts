@@ -32,6 +32,10 @@ const store = new Map<string, WindowEntry>();
 function getClientIp(request: Request): string {
   const xff = request.headers.get("x-forwarded-for");
   if (xff) return xff.split(",")[0].trim();
+  const cf = request.headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
+  const real = request.headers.get("x-real-ip");
+  if (real) return real.trim();
   return "unknown";
 }
 

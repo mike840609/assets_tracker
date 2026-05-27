@@ -91,7 +91,19 @@ async function computeNetWorthSummary(
       const cached = priceMap[h.symbol];
       const currentPrice = cached?.price ?? null;
       const quantity = h.quantity;
-      const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
+      let multiplier = 1;
+      if (h.assetType === "OPTION") {
+        if (h.contractMultiplier == null) {
+          log.warn("holdings.option.missing_multiplier", {
+            userId,
+            holdingId: h.id,
+            symbol: h.symbol,
+          });
+          multiplier = 100;
+        } else {
+          multiplier = h.contractMultiplier;
+        }
+      }
       const marketValue = currentPrice !== null ? currentPrice * quantity * multiplier : null;
       return {
         ...h,
