@@ -7,6 +7,8 @@ export const POST = withAuth(async (_request, _ctx, userId) => {
   const result = await refreshPricesForUser(userId);
   // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
   revalidateTag("net-worth", "max");
+  revalidateTag(`net-worth:${userId}`, "max");
+  revalidateTag("prices", "max");
   revalidateTag("prices:crypto", "max");
   return ok(result);
 });

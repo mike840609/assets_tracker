@@ -103,19 +103,56 @@ export const updateTransactionSchema = z.object({
   createdAt: z.string().optional(), // Using string for ISO dates
 });
 
-export const createCashTransactionSchema = z.object({
-  type: z.enum(CASH_TRANSACTION_TYPES),
-  amount: z.number(),
-  note: z.string().optional().nullable(),
+const positiveCashAmount = z.number().positive("Amount must be positive");
+const nonZeroCashAdjustment = z.number().refine((amount) => amount !== 0, {
+  message: "Adjustment amount cannot be zero",
 });
+const cashNoteField = z.string().optional().nullable();
 
-export const updateCashTransactionSchema = z.object({
-  id: z.string(),
-  type: z.enum(CASH_TRANSACTION_TYPES).optional(),
-  amount: z.number().optional(),
-  note: z.string().optional().nullable(),
-  createdAt: z.string().optional(),
-});
+export const createCashTransactionSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("DEPOSIT"),
+    amount: positiveCashAmount,
+    note: cashNoteField,
+  }),
+  z.object({
+    type: z.literal("WITHDRAWAL"),
+    amount: positiveCashAmount,
+    note: cashNoteField,
+  }),
+  z.object({
+    type: z.literal("EDIT"),
+    amount: nonZeroCashAdjustment,
+    note: cashNoteField,
+  }),
+]);
+
+export const updateCashTransactionSchema = z
+  .object({
+    id: z.string(),
+    type: z.enum(CASH_TRANSACTION_TYPES).optional(),
+    amount: z.number().optional(),
+    note: cashNoteField,
+    createdAt: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === "DEPOSIT" || data.type === "WITHDRAWAL") {
+      if (data.amount !== undefined && data.amount <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["amount"],
+          message: "Amount must be positive",
+        });
+      }
+    }
+    if (data.type === "EDIT" && data.amount === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["amount"],
+        message: "Adjustment amount cannot be zero",
+      });
+    }
+  });
 
 export const createGoalSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),

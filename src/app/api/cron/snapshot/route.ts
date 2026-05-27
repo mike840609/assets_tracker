@@ -62,12 +62,14 @@ export async function GET(request: Request) {
     log.info("cron.rates.refresh", { count: sourceCurrencies.size });
     await Promise.all([...sourceCurrencies].map((c) => refreshExchangeRates(c)));
     revalidateTag("exchange-rates", "max");
+    revalidateTag("net-worth", "max");
 
     // 1b. Refresh all prices to ensure the snapshot is accurate
     log.info("cron.prices.refresh");
     await refreshAllPrices();
     // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
     revalidateTag("net-worth", "max");
+    revalidateTag("prices", "max");
     revalidateTag("prices:crypto", "max");
 
     // 2. Get all users and their settings
