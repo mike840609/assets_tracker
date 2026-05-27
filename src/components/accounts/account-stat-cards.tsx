@@ -40,34 +40,12 @@ export function AccountStatCards({
     );
   }
 
-  // BROKERAGE / CRYPTO: primary is market value; cash is the only secondary fact
-  // (holdings count lives in the Holdings section title below).
-  if (isBrokerage) {
-    return (
-      <section className="space-y-1">
-        <p
-          aria-live="polite"
-          className="text-4xl font-bold tracking-tight tabular-nums text-foreground"
-        >
-          {privacyMode ? HIDDEN : formatCurrency(totalHoldingsValue, account.currency)}
-        </p>
-        <p className="text-sm text-muted-foreground">{t("accountDetail.marketValue")}</p>
-        <div className="pt-2">
-          <InlineBalanceEditor
-            mode="inline"
-            inlineLabel={t("accountDetail.cashBalance")}
-            currentBalance={account.cashBalance}
-            currency={account.currency}
-            notePlaceholder={t("accountDetail.notePlaceholderDeposit")}
-            onSave={onSaveBalance}
-          />
-        </div>
-      </section>
-    );
-  }
-
-  // OTHER / INVESTMENT: primary is total value; secondary breaks it into cash + holdings value.
+  // BROKERAGE / CRYPTO / OTHER: primary is total value (cash + holdings);
+  // secondary breaks it into editable cash balance + holdings market value.
   const totalValue = account.cashBalance + totalHoldingsValue;
+  const notePlaceholder = isBrokerage
+    ? t("accountDetail.notePlaceholderDeposit")
+    : t("accountDetail.notePlaceholderSalary");
   return (
     <section className="space-y-1">
       <p
@@ -83,7 +61,7 @@ export function AccountStatCards({
           inlineLabel={t("accountDetail.cashBalance")}
           currentBalance={account.cashBalance}
           currency={account.currency}
-          notePlaceholder={t("accountDetail.notePlaceholderSalary")}
+          notePlaceholder={notePlaceholder}
           onSave={onSaveBalance}
         />
         <span className="text-muted-foreground">
