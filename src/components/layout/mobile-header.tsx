@@ -98,7 +98,7 @@ export function MobileHeader() {
           />
         </svg>
         <div className="flex flex-col min-w-0">
-          <h1 className="text-lg font-bold tracking-tight bg-gradient-to-br from-primary to-chart-3 bg-clip-text text-transparent truncate">
+          <h1 className="text-lg font-bold tracking-tight text-foreground truncate">
             {t("app.name")}
           </h1>
           <p className="text-[10px] text-muted-foreground font-medium -mt-1 opacity-80 uppercase tracking-wide truncate">

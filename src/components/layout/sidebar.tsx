@@ -124,9 +124,7 @@ export function Sidebar({
           </svg>
           {!collapsed && (
             <div>
-              <h1 className="text-xl font-bold tracking-tight bg-gradient-to-br from-primary to-chart-3 bg-clip-text text-transparent">
-                {t("app.name")}
-              </h1>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">{t("app.name")}</h1>
               <p className="text-xs text-muted-foreground mt-0.5 font-medium">
                 {t("app.subtitle")}
               </p>

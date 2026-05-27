@@ -43,9 +43,7 @@ async function LoginContent() {
               strokeWidth={2}
             />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            {t("title")}
-          </h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">{t("title")}</h1>
           <p className="text-sm text-muted-foreground font-medium">{t("subtitle")}</p>
         </div>
 

@@ -109,20 +109,21 @@ export function HoldingRow({
               : "—"}
         </p>
       </div>
-      {/* Desktop fallback: three-dot menu */}
-      <div className="hidden sm:block">
-        <DropdownMenu>
-          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0">
-            <MoreHorizontal className="h-4 w-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(h)}>{t("common.edit")}</DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive" onClick={() => onDelete(h.id)}>
-              {t("common.delete")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      {/* Keyboard / screen-reader path — swipe is the primary touch affordance */}
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label={t("common.actionsFor", { name: symbolLabel })}
+          className="inline-flex items-center justify-center rounded-md h-9 w-9 sm:h-7 sm:w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onEdit(h)}>{t("common.edit")}</DropdownMenuItem>
+          <DropdownMenuItem className="text-destructive" onClick={() => onDelete(h.id)}>
+            {t("common.delete")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </SwipeableRow>
   );
 }

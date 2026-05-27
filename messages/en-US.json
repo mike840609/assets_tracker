@@ -41,7 +41,8 @@
     "asset": "Asset",
     "liability": "Liability",
     "undo": "Undo",
-    "back": "Back"
+    "back": "Back",
+    "actionsFor": "Actions for {name}"
   },
   "categories": {
     "BANK": "Bank",

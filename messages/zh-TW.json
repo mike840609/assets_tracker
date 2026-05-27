@@ -41,7 +41,8 @@
     "asset": "資產",
     "liability": "負債",
     "undo": "復原",
-    "back": "返回"
+    "back": "返回",
+    "actionsFor": "{name} 的操作"
   },
   "categories": {
     "BANK": "銀行",
