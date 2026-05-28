@@ -178,7 +178,7 @@ export function AnalysisView({
   );
 
   const hasData = snapshots.length > 0;
-  const latestSnapshotAt = snapshots.length > 0 ? snapshots[snapshots.length - 1]!.date : null;
+  const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
 
   const [activeTab, setActiveTab] = useState<"analysis" | "history">("analysis");
 
