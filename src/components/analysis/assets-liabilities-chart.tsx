@@ -1,18 +1,16 @@
 "use client";
 
 import { useEffect, useState, startTransition } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -83,6 +81,11 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
   const { handlers: crosshairHandlers } = useChartCrosshair();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
+  const config: ChartConfig = {
+    assets: { label: t("seriesAssets"), color: "var(--gain)" },
+    liabilities: { label: t("seriesLiabilities"), color: "var(--loss)" },
+  };
+
   const data = buckets.map((b) => ({
     label: formatMonthLabel(b.monthKey, locale),
     assets: b.totalAssets,
@@ -111,10 +114,9 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
             aria-hidden={privacyMode || undefined}
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
-            <ResponsiveContainer
-              width="100%"
-              height={280}
-              minWidth={0}
+            <ChartContainer
+              config={config}
+              className="h-[280px] w-full"
               initialDimension={{ width: 1, height: 280 }}
             >
               <BarChart
@@ -135,31 +137,29 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                   tick={{ fontSize: 12 }}
                   tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
                 />
-                <Tooltip
+                <ChartTooltip
                   cursor={{ fill: "var(--muted)", opacity: 0.3 }}
                   content={
                     <AssetsTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />
                   }
                 />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <ChartLegend content={<ChartLegendContent />} wrapperStyle={{ paddingBottom: 4 }} />
                 <Bar
                   dataKey="assets"
-                  name={t("seriesAssets")}
-                  fill="var(--gain)"
+                  fill="var(--color-assets)"
                   radius={[4, 4, 0, 0]}
                   isAnimationActive={isAnimationActive}
                   onAnimationEnd={onAnimationEnd}
                 />
                 <Bar
                   dataKey="liabilities"
-                  name={t("seriesLiabilities")}
-                  fill="var(--loss)"
+                  fill="var(--color-liabilities)"
                   radius={[4, 4, 0, 0]}
                   isAnimationActive={isAnimationActive}
                   onAnimationEnd={onAnimationEnd}
                 />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </div>
         )}
       </CardContent>

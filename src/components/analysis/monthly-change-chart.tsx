@@ -1,18 +1,14 @@
 "use client";
 
 import { useEffect, useState, startTransition } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -86,6 +82,8 @@ function ChangeTooltip({
   );
 }
 
+const monthlyChangeConfig = {} satisfies ChartConfig;
+
 export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
@@ -117,10 +115,9 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
             aria-hidden={privacyMode || undefined}
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
-            <ResponsiveContainer
-              width="100%"
-              height={280}
-              minWidth={0}
+            <ChartContainer
+              config={monthlyChangeConfig}
+              className="h-[280px] w-full"
               initialDimension={{ width: 1, height: 280 }}
             >
               <BarChart
@@ -141,7 +138,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
                   tick={{ fontSize: 12 }}
                   tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
                 />
-                <Tooltip
+                <ChartTooltip
                   cursor={{ fill: "var(--muted)", opacity: 0.3 }}
                   content={
                     <ChangeTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />
@@ -168,7 +165,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
                   ))}
                 </Bar>
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </div>
         )}
       </CardContent>
