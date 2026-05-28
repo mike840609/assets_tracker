@@ -1,19 +1,14 @@
 "use client";
 
 import { useEffect, useState, startTransition } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, XAxis, YAxis } from "recharts";
 import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
@@ -98,6 +93,8 @@ const MAX_LABEL_LEN = 18;
 const truncate = (s: string) =>
   s.length > MAX_LABEL_LEN ? s.slice(0, MAX_LABEL_LEN - 1) + "…" : s;
 
+const attributionConfig = {} satisfies ChartConfig;
+
 export function AttributionChart({ items, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const tCat = useTranslations("categories");
@@ -140,10 +137,10 @@ export function AttributionChart({ items, baseCurrency }: Props) {
             }`}
           >
             <div role="img" aria-label={`${t("attribution")}, ${t("attributionSubtitle")}`}>
-              <ResponsiveContainer
-                width="100%"
-                height={chartHeight}
-                minWidth={0}
+              <ChartContainer
+                config={attributionConfig}
+                className="w-full"
+                style={{ height: chartHeight }}
                 initialDimension={{ width: 1, height: chartHeight }}
               >
                 <BarChart
@@ -169,7 +166,7 @@ export function AttributionChart({ items, baseCurrency }: Props) {
                     width={130}
                   />
                   <ReferenceLine x={0} stroke="var(--border)" strokeWidth={1.5} />
-                  <Tooltip
+                  <ChartTooltip
                     cursor={{ fill: "var(--muted)", opacity: 0.3 }}
                     content={
                       <AttributionTooltip
@@ -194,7 +191,7 @@ export function AttributionChart({ items, baseCurrency }: Props) {
                     ))}
                   </Bar>
                 </BarChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </div>
 
             {/* Summary row */}

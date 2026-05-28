@@ -1,18 +1,14 @@
 "use client";
 
 import { useEffect, useState, startTransition } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -89,6 +85,8 @@ function CashFlowTooltip({
   );
 }
 
+const cashflowConfig = {} satisfies ChartConfig;
+
 export function CashFlowChart({ buckets, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
@@ -134,10 +132,9 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
               </span>
             </div>
             <div role="img" aria-label={`${t("cashFlow")}, ${t("cashFlowSubtitle")}`}>
-              <ResponsiveContainer
-                width="100%"
-                height={280}
-                minWidth={0}
+              <ChartContainer
+                config={cashflowConfig}
+                className="h-[280px] w-full"
                 initialDimension={{ width: 1, height: 280 }}
               >
                 <BarChart
@@ -158,7 +155,7 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
                     tick={{ fontSize: 12 }}
                     tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
                   />
-                  <Tooltip
+                  <ChartTooltip
                     cursor={{ fill: "var(--muted)", opacity: 0.3 }}
                     content={
                       <CashFlowTooltip
@@ -168,7 +165,6 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
                       />
                     }
                   />
-                  {/* Contributions bar */}
                   <Bar
                     dataKey="contributions"
                     name={t("seriesContributions")}
@@ -185,7 +181,6 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
                       />
                     ))}
                   </Bar>
-                  {/* Market performance bar */}
                   <Bar
                     dataKey="marketPerformance"
                     name={t("seriesMarket")}
@@ -209,7 +204,7 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
                     ))}
                   </Bar>
                 </BarChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </div>
             <p className="mt-2 text-[11px] text-muted-foreground">{t("cashFlowNote")}</p>
           </div>
