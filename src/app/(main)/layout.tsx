@@ -9,7 +9,6 @@ import { PullToRefreshProvider } from "@/components/layout/pull-to-refresh-conte
 import { LargeTitleProvider } from "@/components/layout/large-title-context";
 import { LazyCommandPalette } from "@/components/layout/lazy-command-palette";
 import { getSession } from "@/lib/auth-session";
-import { getOrCreateSettings } from "@/lib/services/settings-service";
 
 async function SidebarWithSession() {
   const session = await getSession();
@@ -23,12 +22,8 @@ export default async function MainLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getSession();
-  const settings = session?.user?.id ? await getOrCreateSettings(session.user.id) : null;
-  const stockScheme = settings?.stockColorScheme === "RED_UP" ? "red-up" : undefined;
-
   return (
-    <div data-stock-color-scheme={stockScheme} className="contents">
+    <div className="contents">
       <DensityProvider>
         <PrivacyModeProvider>
           <LargeTitleProvider>

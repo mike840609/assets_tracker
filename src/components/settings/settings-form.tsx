@@ -17,6 +17,10 @@ import { useLocale, useTranslations } from "next-intl";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 import { useDensity, type Density } from "@/components/layout/density-context";
 import { useColorSchema, type ColorSchema } from "@/components/layout/color-schema-context";
+import {
+  useStockColorScheme,
+  type StockColorScheme,
+} from "@/components/layout/stock-color-scheme-context";
 import { Check, TrendingUp, TrendingDown } from "lucide-react";
 
 const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
@@ -27,8 +31,6 @@ const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
   { id: "amber", light: "#f59e0b", dark: "#fbbf24" },
   { id: "rose", light: "#f43f5e", dark: "#fb7185" },
 ];
-
-type StockColorScheme = "GREEN_UP" | "RED_UP";
 
 const STOCK_COLOR_SCHEMES: Array<{
   id: StockColorScheme;
@@ -42,11 +44,9 @@ const STOCK_COLOR_SCHEMES: Array<{
 export function SettingsForm({
   currentCurrency,
   currentLocale,
-  currentStockColorScheme,
 }: {
   currentCurrency: string;
   currentLocale: string;
-  currentStockColorScheme: StockColorScheme;
 }) {
   const router = useRouter();
   const t = useTranslations();
@@ -58,13 +58,11 @@ export function SettingsForm({
       : DEFAULT_LOCALE;
   const [currency, setCurrency] = useState(currentCurrency);
   const [locale, setLocale] = useState<Locale>(resolvedActiveLocale);
-  const [stockColorScheme, setStockColorScheme] =
-    useState<StockColorScheme>(currentStockColorScheme);
   const { density, setDensity } = useDensity();
   const { colorSchema, setColorSchema } = useColorSchema();
+  const { stockColorScheme, setStockColorScheme } = useStockColorScheme();
   const [saving, setSaving] = useState(false);
   const [savingLocale, setSavingLocale] = useState(false);
-  const [savingStockColor, setSavingStockColor] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   async function saveCurrency() {
@@ -104,26 +102,10 @@ export function SettingsForm({
     }
   }
 
-  async function pickStockColorScheme(next: StockColorScheme) {
-    if (next === stockColorScheme || savingStockColor) return;
+  function pickStockColorScheme(next: StockColorScheme) {
+    if (next === stockColorScheme) return;
     setStockColorScheme(next);
-    setSavingStockColor(true);
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stockColorScheme: next }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      toast.success(t("toast.stockColorSchemeUpdated"));
-      // Reload so the (main)/layout server component re-reads the setting and
-      // Recharts SVGs (which inline fill colors at render time) repaint.
-      setTimeout(() => window.location.reload(), 800);
-    } catch {
-      setStockColorScheme(stockColorScheme);
-      toast.error(t("toast.stockColorSchemeFailed"));
-      setSavingStockColor(false);
-    }
+    toast.success(t("toast.stockColorSchemeUpdated"));
   }
 
   async function refreshPrices() {
@@ -236,7 +218,6 @@ export function SettingsForm({
                       key={scheme.id}
                       type="button"
                       onClick={() => pickStockColorScheme(scheme.id)}
-                      disabled={savingStockColor}
                       title={t(`settings.stockColorSchemes.${scheme.id}`)}
                       aria-label={t(`settings.stockColorSchemes.${scheme.id}`)}
                       aria-pressed={isSelected}
