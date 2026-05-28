@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -97,7 +97,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
   const data = buckets.map((b) => ({ ...b, label: formatMonthLabel(b.monthKey, locale) }));
 
   return (
-    <Card className="border-0 bg-transparent shadow-none">
+    <>
       <CardHeader className="pb-2 px-2 sm:px-4">
         <CardTitle className="text-base font-medium text-foreground">
           {t("monthlyChange")}
@@ -172,6 +172,6 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
           </div>
         )}
       </CardContent>
-    </Card>
+    </>
   );
 }

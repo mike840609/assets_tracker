@@ -2,16 +2,17 @@
 
 import dynamic from "next/dynamic";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TrendChartSkeleton } from "@/components/dashboard/trend-chart-skeleton";
 
 function ChartSkeleton() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="h-5 w-32 skeleton-shimmer rounded" />
+        <Skeleton className="h-5 w-32" />
       </CardHeader>
       <CardContent>
-        <div className="h-[250px] skeleton-shimmer rounded" />
+        <Skeleton className="h-[250px]" />
       </CardContent>
     </Card>
   );

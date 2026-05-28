@@ -232,25 +232,6 @@
     animation: ios-tab-pop 320ms var(--ease-spring) both;
   }
 
-  .skeleton-shimmer {
-    position: relative;
-    overflow: hidden;
-    background: color-mix(in oklab, var(--muted) 88%, white 12%);
-  }
-  .skeleton-shimmer::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    transform: translateX(-100%);
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      color-mix(in oklab, var(--background) 60%, white 40%) 50%,
-      transparent 100%
-    );
-    animation: skeleton-shimmer 1.5s ease-in-out infinite;
-  }
-
   .hero-mesh-positive,
   .hero-mesh-negative {
     position: absolute;
@@ -275,12 +256,6 @@
       radial-gradient(circle at 15% 25%, oklch(0.8 0.16 30 / 0.7), transparent 50%),
       radial-gradient(circle at 80% 20%, oklch(0.66 0.19 25 / 0.45), transparent 46%),
       radial-gradient(circle at 55% 80%, oklch(0.6 0.15 15 / 0.3), transparent 52%);
-  }
-}
-
-@keyframes skeleton-shimmer {
-  100% {
-    transform: translateX(100%);
   }
 }
 

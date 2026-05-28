@@ -385,7 +385,8 @@
     "colValue": "市值",
     "colCurrency": "幣別",
     "colNative": "原幣",
-    "colAllocation": "佔比"
+    "colAllocation": "佔比",
+    "cashLabel": "現金"
   },
   "accountForm": {
     "title": "新增帳戶",

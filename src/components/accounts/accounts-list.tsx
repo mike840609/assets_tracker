@@ -5,7 +5,16 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, Reorder, useDragControls, useReducedMotion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -1195,12 +1204,74 @@ function AccountCardWithHoldings({
   const subtitle = hasHoldings
     ? t("accountsList.nHoldings", { count: account.holdings.length }) +
       (account.cashBalance > 0
-        ? ` · ${privacyMode ? HIDDEN : formatCurrency(account.cashBalance, account.currency)} cash`
+        ? ` · ${privacyMode ? HIDDEN : formatCurrency(account.cashBalance, account.currency)} ${t("accountsList.cashLabel")}`
         : "")
     : null;
 
   return (
     <div className="relative group">
+      <Link href={`/accounts/${account.id}`} prefetch={false} transitionTypes={["nav-forward"]}>
+        <Card
+          size={isCompact ? "sm" : "default"}
+          className="cursor-pointer transition-all hover:shadow-md hover:ring-foreground/20"
+        >
+          <CardHeader>
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-center gap-1.5">
+                {account.isPinned && (
+                  <Badge
+                    variant="secondary"
+                    aria-label={t("accountsList.pinned")}
+                    className="h-4 gap-0 px-1"
+                  >
+                    <Pin className="h-2.5 w-2.5 text-amber-600" aria-hidden />
+                  </Badge>
+                )}
+                <CardTitle className="truncate">{account.name}</CardTitle>
+              </div>
+              {subtitle && <CardDescription className="text-xs">{subtitle}</CardDescription>}
+            </div>
+            <CardAction className="flex flex-col items-end">
+              <p className="text-lg font-bold tabular-nums text-foreground">
+                {privacyMode ? HIDDEN : formatCurrency(convertedValue, baseCurrency)}
+              </p>
+              {displayCurrency !== baseCurrency ? (
+                <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+                  {privacyMode ? HIDDEN : formatCurrency(displayValue, displayCurrency)}
+                </p>
+              ) : (
+                <Badge variant="outline" className="mt-0.5 font-mono">
+                  {baseCurrency}
+                </Badge>
+              )}
+            </CardAction>
+          </CardHeader>
+          {hasHoldings && (
+            <CardContent>
+              {holdingsWithValue.map((holding, idx) => (
+                <div key={holding.id}>
+                  {idx > 0 && <Separator className="bg-border/40" />}
+                  <div className="flex items-center justify-between gap-2 py-1.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-mono font-medium text-muted-foreground w-16 flex-shrink-0 truncate">
+                        {holding.symbol}
+                      </span>
+                      <span className="text-sm truncate">{holding.name}</span>
+                    </div>
+                    <span className="text-sm font-medium tabular-nums w-20 text-right flex-shrink-0">
+                      {privacyMode
+                        ? HIDDEN
+                        : holding.marketValue !== null
+                          ? formatCurrency(holding.marketValue, account.currency)
+                          : "—"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          )}
+        </Card>
+      </Link>
       <div className="absolute top-2 right-2 z-10" onClick={(e) => e.preventDefault()}>
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -1225,62 +1296,6 @@ function AccountCardWithHoldings({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <Link href={`/accounts/${account.id}`} prefetch={false} transitionTypes={["nav-forward"]}>
-        <Card className="hover:shadow-md transition-all cursor-pointer">
-          <CardContent className={isCompact ? "pt-3 pb-2" : "pt-5 pb-4"}>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-semibold">
-                  {account.isPinned && <Pin className="inline h-3 w-3 mr-1 text-amber-600" />}
-                  {account.name}
-                </p>
-                {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
-              </div>
-              <div className="flex flex-col items-end flex-shrink-0 ml-3">
-                <p className="text-lg font-bold tabular-nums text-foreground">
-                  {privacyMode ? HIDDEN : formatCurrency(convertedValue, baseCurrency)}
-                </p>
-                {displayCurrency !== baseCurrency ? (
-                  <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
-                    {privacyMode ? HIDDEN : formatCurrency(displayValue, displayCurrency)}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide">
-                    {baseCurrency}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {hasHoldings && (
-              <div className="mt-3">
-                <div className="space-y-1.5">
-                  {holdingsWithValue.map((holding) => (
-                    <div
-                      key={holding.id}
-                      className="flex items-center justify-between py-1.5 border-t border-border/40 first:border-t-0"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs font-mono font-medium text-muted-foreground w-16 flex-shrink-0 truncate">
-                          {holding.symbol}
-                        </span>
-                        <span className="text-sm truncate">{holding.name}</span>
-                      </div>
-                      <span className="text-sm font-medium tabular-nums w-20 text-right flex-shrink-0">
-                        {privacyMode
-                          ? HIDDEN
-                          : holding.marketValue !== null
-                            ? formatCurrency(holding.marketValue, account.currency)
-                            : "—"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </Link>
     </div>
   );
 }

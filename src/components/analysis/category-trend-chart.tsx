@@ -12,7 +12,7 @@ import {
   Legend,
 } from "recharts";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
@@ -108,7 +108,7 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
       : `${t("categoryTrend")}, ${t("categoryTrendSubtitle")}`;
 
   return (
-    <Card className="border-0 bg-transparent shadow-none">
+    <>
       <CardHeader className="pb-2 px-2 sm:px-4">
         <CardTitle className="text-base font-medium text-foreground">
           {t("categoryTrend")}
@@ -187,6 +187,6 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
           </div>
         )}
       </CardContent>
-    </Card>
+    </>
   );
 }

@@ -8,6 +8,8 @@ import { useDensity } from "@/components/layout/density-context";
 import { cn } from "@/lib/utils";
 import { HistoryView } from "@/components/history/history-view";
 import { FreshnessBadge } from "@/components/ui/freshness-badge";
+import { SegmentedControl, type SegmentedOption } from "@/components/ui/segmented-control";
+import { Card } from "@/components/ui/card";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
 import type {
   RawHistoryData,
@@ -86,6 +88,16 @@ export function AnalysisView({
     "2Y": "range2Y",
     All: "rangeAll",
   };
+
+  const rangeOptions: SegmentedOption<RangeLabel>[] = ranges.map((r) => ({
+    value: r.label,
+    label: t(rangeLabelKey[r.label] as Parameters<typeof t>[0]),
+  }));
+
+  const tabOptions: SegmentedOption<"analysis" | "history">[] = [
+    { value: "analysis", label: tNav("analysis") },
+    { value: "history", label: tNav("history") },
+  ];
 
   const { filteredSnapshots, rangeStart, rangeEnd, rangeStartIso } = useMemo(() => {
     const selected = ranges.find((r) => r.label === range)!;
@@ -197,24 +209,14 @@ export function AnalysisView({
   return (
     <div className="space-y-4">
       {/* Mobile-only tab switcher */}
-      <div className="md:hidden flex border-b">
-        {(["analysis", "history"] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            aria-pressed={activeTab === tab}
-            className={cn(
-              "pb-2 px-4 text-sm font-medium border-b-2 -mb-px transition-colors capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              activeTab === tab
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {tNav(tab)}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        variant="underline"
+        options={tabOptions}
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="md:hidden"
+        aria-label={tNav("analysis")}
+      />
 
       {/* Analysis tab content — always visible on desktop, conditional on mobile */}
       <div className={activeTab === "history" ? "hidden md:block" : "block"}>
@@ -223,36 +225,26 @@ export function AnalysisView({
         {/* Range selector — floats as a compact pill while scrolling */}
         <div className="sticky top-[env(safe-area-inset-top)] md:top-0 z-40 flex items-center justify-between gap-2 py-2">
           <FreshnessBadge kind="snapshot" timestamp={latestSnapshotAt} mobileShort />
-          <div
+          <SegmentedControl
+            variant="pill"
+            size="sm"
+            options={rangeOptions}
+            value={range}
+            onValueChange={setRange}
+            aria-label={t("title")}
             className={cn(
-              "inline-flex gap-1 rounded-full p-1 transition-[background-color,box-shadow,backdrop-filter]",
+              "transition-[background-color,box-shadow,backdrop-filter]",
               isStuck &&
                 "bg-background/80 dark:bg-card/80 backdrop-blur-md shadow-sm ring-1 ring-border/50",
             )}
-          >
-            {ranges.map((r) => (
-              <button
-                key={r.label}
-                type="button"
-                onClick={() => setRange(r.label)}
-                aria-pressed={range === r.label}
-                className={cn(
-                  "px-3 py-2 sm:px-2 sm:py-1 text-xs rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  range === r.label
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted",
-                )}
-              >
-                {t(rangeLabelKey[r.label] as Parameters<typeof t>[0])}
-              </button>
-            ))}
-          </div>
+            itemClassName="px-3 py-2 sm:px-2 sm:py-1"
+          />
         </div>
 
         {!hasData ? (
-          <div className="rounded-xl border border-dashed border-border/60 bg-card/50 p-12 text-center text-sm text-muted-foreground">
+          <Card className="border border-dashed border-border/60 bg-card/50 ring-0 p-12 text-center text-sm text-muted-foreground">
             {t("noData")}
-          </div>
+          </Card>
         ) : (
           <motion.div
             key={range}
@@ -262,33 +254,33 @@ export function AnalysisView({
             className={isCompact ? "space-y-3" : "space-y-6"}
           >
             <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
-            <div className="premium-card">
+            <Card>
               <LazyMonthlyChangeChart
                 buckets={buckets}
                 baseCurrency={baseCurrency}
                 locale={locale}
               />
-            </div>
-            <div className="premium-card">
+            </Card>
+            <Card>
               <LazyAssetsLiabilitiesChart
                 buckets={buckets}
                 baseCurrency={baseCurrency}
                 locale={locale}
               />
-            </div>
-            <div className="premium-card">
+            </Card>
+            <Card>
               <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
-            </div>
-            <div className="premium-card">
+            </Card>
+            <Card>
               <LazyAttributionChart items={attributionItems} baseCurrency={baseCurrency} />
-            </div>
-            <div className="premium-card">
+            </Card>
+            <Card>
               <LazyCategoryTrendChart
                 data={categoryHistory}
                 baseCurrency={baseCurrency}
                 locale={locale}
               />
-            </div>
+            </Card>
             <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
           </motion.div>
         )}
