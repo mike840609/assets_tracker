@@ -31,7 +31,6 @@ async function SettingsContent() {
         <SettingsForm
           currentCurrency={settings.baseCurrency}
           currentLocale={settings.locale}
-          currentStockColorScheme={settings.stockColorScheme}
         />
         <DataManagement />
         <InstallAppCard />
