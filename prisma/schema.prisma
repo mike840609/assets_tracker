@@ -161,7 +161,7 @@ model NetWorthSnapshot {
   netWorth         Decimal  @db.Decimal(18, 2)
   baseCurrency     String
   breakdown        Json?
-  createdAt        DateTime @default(now())
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
 
   @@unique([userId, date, baseCurrency])
   @@index([userId, date(sort: Desc)])

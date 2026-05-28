@@ -8,6 +8,7 @@ import type { MonthlyContribution } from "./analysis-service";
 export interface NormalizedSnapshot {
   id: string;
   date: string;
+  createdAt: string;
   netWorth: number;
   totalAssets: number;
   totalLiabilities: number;
@@ -20,6 +21,7 @@ const DEFAULT_HISTORY_DAYS = 90;
 interface SnapshotRow {
   id: string;
   date: Date;
+  createdAt: Date;
   netWorth: Decimal;
   totalAssets: Decimal;
   totalLiabilities: Decimal;
@@ -45,6 +47,7 @@ function normalizeSnapshots(
     const normalized: NormalizedSnapshot = {
       id: s.id,
       date: dateStr,
+      createdAt: s.createdAt.toISOString(),
       netWorth: Number(s.netWorth) * rate,
       totalAssets: Number(s.totalAssets) * rate,
       totalLiabilities: Number(s.totalLiabilities) * rate,
@@ -85,6 +88,7 @@ export async function getNormalizedHistory(
       select: {
         id: true,
         date: true,
+        createdAt: true,
         netWorth: true,
         totalAssets: true,
         totalLiabilities: true,
@@ -131,6 +135,7 @@ async function fetchFullHistoryCached(
       select: {
         id: true,
         date: true,
+        createdAt: true,
         netWorth: true,
         totalAssets: true,
         totalLiabilities: true,

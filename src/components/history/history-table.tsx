@@ -11,6 +11,7 @@ import { FreshnessBadge } from "@/components/ui/freshness-badge";
 type SnapshotRow = {
   id: string;
   date: string;
+  createdAt: string;
   netWorth: number;
   totalAssets: number;
   totalLiabilities: number;
@@ -27,7 +28,7 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
   const isCompact = density === "compact";
-  const latestSnapshotAt = snapshots.length > 0 ? snapshots[snapshots.length - 1]!.date : null;
+  const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
 
   const monthGroups = useMemo(() => {
     const rows = [...snapshots].reverse().map((snap, idx, arr) => ({

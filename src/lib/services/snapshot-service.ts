@@ -4,7 +4,8 @@ import { getNetWorthSummary } from "./net-worth-service";
 
 export async function createSnapshot(userId: string, baseCurrency: string) {
   const summary = await getNetWorthSummary(userId, baseCurrency);
-  const today = new Date();
+  const snapshotTakenAt = new Date();
+  const today = new Date(snapshotTakenAt);
   today.setHours(0, 0, 0, 0);
 
   const breakdown = Object.fromEntries(
@@ -24,6 +25,7 @@ export async function createSnapshot(userId: string, baseCurrency: string) {
       totalLiabilities: summary.totalLiabilities,
       netWorth: summary.netWorth,
       breakdown,
+      createdAt: snapshotTakenAt,
     },
     create: {
       userId,
@@ -33,6 +35,7 @@ export async function createSnapshot(userId: string, baseCurrency: string) {
       netWorth: summary.netWorth,
       baseCurrency,
       breakdown,
+      createdAt: snapshotTakenAt,
     },
   });
 
