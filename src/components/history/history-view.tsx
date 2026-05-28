@@ -25,6 +25,7 @@ export function HistoryView({
   className,
 }: Props) {
   const t = useTranslations("history");
+  const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
 
   return (
     <div className={cn("space-y-4 md:space-y-8", className)}>
@@ -34,6 +35,7 @@ export function HistoryView({
         snapshots={snapshots}
         baseCurrency={baseCurrency}
         hideRangeFilter={hideTrendRangeFilter}
+        snapshotTimestamp={latestSnapshotAt}
         footer={
           <HistoryHeatmap
             snapshots={snapshots}

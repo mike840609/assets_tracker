@@ -25,6 +25,7 @@ import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
+import { FreshnessBadge } from "@/components/ui/freshness-badge";
 
 type SnapshotData = {
   date: string;
@@ -134,11 +135,13 @@ export function TrendChart({
   baseCurrency = "USD",
   hideRangeFilter = false,
   footer,
+  snapshotTimestamp,
 }: {
   snapshots: SnapshotData[];
   baseCurrency?: string;
   hideRangeFilter?: boolean;
   footer?: ReactNode;
+  snapshotTimestamp?: string | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { width: containerWidth, height: containerHeight } = useContainerSize(containerRef);
@@ -237,35 +240,42 @@ export function TrendChart({
             </div>
           )}
         </div>
-        {!hideRangeFilter && (
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
-            {ranges.map((r) => (
-              <button
-                key={r.label}
-                onClick={() => setRange(r.label)}
-                aria-pressed={range === r.label}
-                className={`px-2 py-0.5 text-xs rounded-full transition-colors ${
-                  range === r.label
-                    ? "bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    : "text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
-            <div className="mx-1 h-3 w-px bg-border" />
-            <button
-              onClick={() => setPctMode(isPercentMode ? "off" : "on")}
-              aria-pressed={isPercentMode}
-              title={t("pctToggleTitle")}
-              className={`px-2 py-0.5 text-xs rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                isPercentMode
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              %
-            </button>
+        {(snapshotTimestamp || !hideRangeFilter) && (
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+            {snapshotTimestamp && (
+              <FreshnessBadge kind="snapshot" timestamp={snapshotTimestamp} mobileShort />
+            )}
+            {!hideRangeFilter && (
+              <div className="flex flex-wrap items-center justify-end gap-0.5">
+                {ranges.map((r) => (
+                  <button
+                    key={r.label}
+                    onClick={() => setRange(r.label)}
+                    aria-pressed={range === r.label}
+                    className={`px-2 py-0.5 text-xs rounded-full transition-colors ${
+                      range === r.label
+                        ? "bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        : "text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+                <div className="mx-1 h-3 w-px bg-border" />
+                <button
+                  onClick={() => setPctMode(isPercentMode ? "off" : "on")}
+                  aria-pressed={isPercentMode}
+                  title={t("pctToggleTitle")}
+                  className={`px-2 py-0.5 text-xs rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                    isPercentMode
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  %
+                </button>
+              </div>
+            )}
           </div>
         )}
       </CardHeader>
