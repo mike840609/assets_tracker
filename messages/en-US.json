@@ -385,7 +385,8 @@
     "colValue": "Value",
     "colCurrency": "Currency",
     "colNative": "Native",
-    "colAllocation": "Allocation"
+    "colAllocation": "Allocation",
+    "cashLabel": "cash"
   },
   "accountForm": {
     "title": "Add Account",

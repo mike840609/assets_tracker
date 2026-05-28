@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -98,7 +98,7 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
   useEffect(() => startTransition(() => setMounted(true)), []);
 
   return (
-    <Card className="border-0 bg-transparent shadow-none">
+    <>
       <CardHeader className="pb-2 px-2 sm:px-4">
         <CardTitle className="text-base font-medium text-foreground">{t("cashFlow")}</CardTitle>
         <p className="text-xs text-muted-foreground">{t("cashFlowSubtitle")}</p>
@@ -215,6 +215,6 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
           </div>
         )}
       </CardContent>
-    </Card>
+    </>
   );
 }

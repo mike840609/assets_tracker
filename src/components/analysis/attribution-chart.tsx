@@ -13,7 +13,7 @@ import {
   YAxis,
 } from "recharts";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
@@ -120,7 +120,7 @@ export function AttributionChart({ items, baseCurrency }: Props) {
   const chartHeight = Math.max(200, chartData.length * 36 + 40);
 
   return (
-    <Card className="border-0 bg-transparent shadow-none">
+    <>
       <CardHeader className="pb-2 px-2 sm:px-4">
         <CardTitle className="text-base font-medium text-foreground">{t("attribution")}</CardTitle>
         <p className="text-xs text-muted-foreground">{t("attributionSubtitle")}</p>
@@ -234,6 +234,6 @@ export function AttributionChart({ items, baseCurrency }: Props) {
           </div>
         )}
       </CardContent>
-    </Card>
+    </>
   );
 }

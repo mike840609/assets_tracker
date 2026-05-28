@@ -1,18 +1,19 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function ChartSkeleton({ height = 280 }: { height?: number }) {
   return (
-    <Card className="border-0 bg-transparent shadow-none">
+    <>
       <CardHeader className="pb-2 px-2 sm:px-4">
-        <div className="h-5 w-40 rounded skeleton-shimmer" />
+        <Skeleton className="h-5 w-40" />
       </CardHeader>
       <CardContent className="px-2 sm:px-4 pb-4">
-        <div className="rounded skeleton-shimmer" style={{ height }} />
+        <Skeleton style={{ height }} />
       </CardContent>
-    </Card>
+    </>
   );
 }
 
