@@ -364,6 +364,7 @@
     "manageOrderHint": "Drag accounts to reorder. Pinned accounts always stay above unpinned ones.",
     "manageOrderScopeHint": "Ordering is global within each type (Assets/Liabilities), not per category.",
     "dragHandleLabel": "Drag to reorder",
+    "accountOptions": "Account options",
     "pinnedGroup": "Pinned",
     "otherGroup": "Others",
     "pin": "Pin",

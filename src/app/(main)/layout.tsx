@@ -8,6 +8,7 @@ import { DensityProvider } from "@/components/layout/density-context";
 import { PullToRefreshProvider } from "@/components/layout/pull-to-refresh-context";
 import { LargeTitleProvider } from "@/components/layout/large-title-context";
 import { LazyCommandPalette } from "@/components/layout/lazy-command-palette";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { getSession } from "@/lib/auth-session";
 
 async function SidebarWithSession() {
@@ -28,16 +29,18 @@ export default async function MainLayout({
         <PrivacyModeProvider>
           <LargeTitleProvider>
             <PullToRefreshProvider>
-              <Suspense fallback={<Sidebar userImage={null} userName={null} />}>
-                <SidebarWithSession />
-              </Suspense>
-              <PullToRefreshIndicator />
-              <MobileMainShell>
-                <MobileHeader />
-                <div className="mx-auto w-full max-w-7xl p-4 md:p-6">{children}</div>
-              </MobileMainShell>
-              <MobileNav />
-              <LazyCommandPalette />
+              <TooltipProvider>
+                <Suspense fallback={<Sidebar userImage={null} userName={null} />}>
+                  <SidebarWithSession />
+                </Suspense>
+                <PullToRefreshIndicator />
+                <MobileMainShell>
+                  <MobileHeader />
+                  <div className="mx-auto w-full max-w-7xl p-4 md:p-6">{children}</div>
+                </MobileMainShell>
+                <MobileNav />
+                <LazyCommandPalette />
+              </TooltipProvider>
             </PullToRefreshProvider>
           </LargeTitleProvider>
         </PrivacyModeProvider>

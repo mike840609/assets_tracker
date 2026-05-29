@@ -32,6 +32,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Collapsible, CollapsibleTrigger, CollapsiblePanel } from "@/components/ui/collapsible";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { AllocationBar } from "./allocation-bar";
 import {
   Archive,
   ArchiveRestore,
@@ -649,12 +652,12 @@ export function AccountsList({
           </div>
 
           {archivedAccounts.length > 0 && (
-            <div className="rounded-xl border overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setShowArchived((prev) => !prev)}
-                className="w-full px-4 py-3 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors"
-              >
+            <Collapsible
+              open={showArchived}
+              onOpenChange={setShowArchived}
+              className="rounded-xl border overflow-hidden"
+            >
+              <CollapsibleTrigger className="w-full px-4 py-3 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors">
                 <span className="text-sm font-semibold">{t("accountsList.archivedSection")}</span>
                 <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                   {archivedAccounts.length}
@@ -662,8 +665,8 @@ export function AccountsList({
                     className={`h-4 w-4 transition-transform ${showArchived ? "rotate-180" : ""}`}
                   />
                 </span>
-              </button>
-              {showArchived && (
+              </CollapsibleTrigger>
+              <CollapsiblePanel>
                 <div className="divide-y">
                   {archivedAccounts.map((account) => (
                     <div
@@ -700,8 +703,8 @@ export function AccountsList({
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </CollapsiblePanel>
+            </Collapsible>
           )}
         </>
       )}
@@ -998,23 +1001,26 @@ function DesktopAccountRow({
             {privacyMode ? "—" : pct !== null ? `${pct.toFixed(1)}%` : "—"}
           </span>
           {!privacyMode && pct !== null && (
-            <div className="w-14 h-1 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full"
-                style={{ width: `${Math.min(pct, 100)}%` }}
-              />
-            </div>
+            <AllocationBar value={pct} label={`${pct.toFixed(1)}%`} />
           )}
         </div>
       </td>
       <td className="px-2 py-3.5 w-10 text-center" onClick={(e) => e.stopPropagation()}>
         <DropdownMenu>
-          <DropdownMenuTrigger
-            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
-            disabled={isDeleting || isUpdating}
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </DropdownMenuTrigger>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <DropdownMenuTrigger
+                  className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
+                  disabled={isDeleting || isUpdating}
+                  aria-label={t("accountsList.accountOptions")}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </DropdownMenuTrigger>
+              }
+            />
+            <TooltipContent>{t("accountsList.accountOptions")}</TooltipContent>
+          </Tooltip>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onTogglePin(account)}>
               {account.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
@@ -1125,11 +1131,12 @@ function CategorySection({
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div
+    <Collapsible
+      open={isExpanded}
+      onOpenChange={onToggleExpand}
       className={`rounded-xl border overflow-hidden transition-all motion-normal ${colors.border} ${isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"}`}
     >
-      <button
-        onClick={onToggleExpand}
+      <CollapsibleTrigger
         className={`w-full text-left ${isCompact ? "px-4 py-2.5" : "px-5 py-4"} flex items-center justify-between transition-colors ${colors.bg} hover:brightness-95 dark:hover:brightness-110`}
       >
         <div className="flex items-center gap-3 min-w-0">
@@ -1157,43 +1164,39 @@ function CategorySection({
             className={`w-5 h-5 text-muted-foreground transition-transform motion-normal ${isExpanded ? "rotate-180" : ""}`}
           />
         </div>
-      </button>
+      </CollapsibleTrigger>
 
-      <div
-        className={`grid transition-all motion-normal ${isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
-      >
-        <div className="overflow-hidden">
-          <div
-            className={`${isCompact ? "px-3 py-2.5 space-y-2" : "px-4 py-4 space-y-3"} bg-background/50`}
-          >
-            <AnimatePresence initial={false}>
-              {accounts.map((account) => (
-                <motion.div
-                  key={account.id}
-                  layout={shouldReduceMotion ? false : "position"}
-                  initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
-                  transition={shouldReduceMotion ? { duration: 0 } : springConfig}
-                >
-                  <AccountCardWithHoldings
-                    account={account}
-                    priceMap={priceMap}
-                    ratesMap={ratesMap}
-                    baseCurrency={baseCurrency}
-                    onDelete={onDelete}
-                    onTogglePin={onTogglePin}
-                    onArchive={onArchive}
-                    isDeleting={deletingId === account.id}
-                    isUpdating={updatingId === account.id}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+      <CollapsiblePanel>
+        <div
+          className={`${isCompact ? "px-3 py-2.5 space-y-2" : "px-4 py-4 space-y-3"} bg-background/50`}
+        >
+          <AnimatePresence initial={false}>
+            {accounts.map((account) => (
+              <motion.div
+                key={account.id}
+                layout={shouldReduceMotion ? false : "position"}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
+                transition={shouldReduceMotion ? { duration: 0 } : springConfig}
+              >
+                <AccountCardWithHoldings
+                  account={account}
+                  priceMap={priceMap}
+                  ratesMap={ratesMap}
+                  baseCurrency={baseCurrency}
+                  onDelete={onDelete}
+                  onTogglePin={onTogglePin}
+                  onArchive={onArchive}
+                  isDeleting={deletingId === account.id}
+                  isUpdating={updatingId === account.id}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
-      </div>
-    </div>
+      </CollapsiblePanel>
+    </Collapsible>
   );
 }
 
@@ -1313,12 +1316,20 @@ function AccountCardWithHoldings({
       </Link>
       <div className="absolute top-2 right-2 z-10" onClick={(e) => e.preventDefault()}>
         <DropdownMenu>
-          <DropdownMenuTrigger
-            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
-            disabled={isDeleting || isUpdating}
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </DropdownMenuTrigger>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <DropdownMenuTrigger
+                  className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
+                  disabled={isDeleting || isUpdating}
+                  aria-label={t("accountsList.accountOptions")}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </DropdownMenuTrigger>
+              }
+            />
+            <TooltipContent>{t("accountsList.accountOptions")}</TooltipContent>
+          </Tooltip>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onTogglePin(account)}>
               {account.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}

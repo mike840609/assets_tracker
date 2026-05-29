@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { AllocationBar } from "./allocation-bar";
 import { MoreHorizontal } from "lucide-react";
 import { formatCurrency, formatQuantity } from "@/lib/currencies";
 import { getOptionDisplay } from "@/lib/options";
@@ -145,12 +146,7 @@ export function HoldingsTable({
                       {privacyMode ? "—" : weight !== null ? `${weight.toFixed(1)}%` : "—"}
                     </span>
                     {!privacyMode && weight !== null && (
-                      <div className="w-14 h-1 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full"
-                          style={{ width: `${Math.min(weight, 100)}%` }}
-                        />
-                      </div>
+                      <AllocationBar value={weight} label={`${weight.toFixed(1)}%`} />
                     )}
                   </div>
                 </td>

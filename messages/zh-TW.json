@@ -364,6 +364,7 @@
     "manageOrderHint": "拖曳帳戶即可重新排序。已釘選帳戶會固定在未釘選帳戶上方。",
     "manageOrderScopeHint": "排序會在每個類型（資產／負債）內全域生效，不會依類別各自排序。",
     "dragHandleLabel": "拖曳以重新排序",
+    "accountOptions": "帳戶選項",
     "pinnedGroup": "已釘選",
     "otherGroup": "其他",
     "pin": "釘選",
