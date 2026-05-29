@@ -44,6 +44,17 @@
     "back": "返回",
     "actionsFor": "{name} 的操作"
   },
+  "errors": {
+    "title": "發生錯誤",
+    "description": "載入此頁面時發生未預期的錯誤。您可以重試，或返回儀表板。",
+    "retry": "重試",
+    "backHome": "返回儀表板",
+    "notFoundTitle": "找不到頁面",
+    "notFoundDescription": "您要找的頁面不存在，或已被移動。",
+    "globalTitle": "發生錯誤",
+    "globalDescription": "應用程式發生未預期的錯誤，請嘗試重新載入。",
+    "reload": "重新載入"
+  },
   "categories": {
     "BANK": "銀行",
     "BROKERAGE": "券商",
@@ -377,6 +388,8 @@
     "nAccounts": "{count} 個帳戶",
     "nHoldings": "{count} 個持倉",
     "deleteConfirm": "確定要刪除此帳戶？此操作無法復原。",
+    "deleteTitle": "刪除帳戶？",
+    "deleteDescription": "{name} 及其所有持倉將被永久刪除。此操作無法復原。",
     "deleteSuccess": "帳戶已刪除",
     "deleteFailed": "刪除帳戶失敗",
     "colName": "名稱",
@@ -496,6 +509,8 @@
     "colValue": "價值",
     "colPercentage": "%",
     "deleteConfirm": "確定要刪除此帳戶？此操作無法復原。",
+    "deleteTitle": "刪除帳戶？",
+    "deleteDescription": "{name} 及其所有持倉將被永久刪除。此操作無法復原。",
     "balanceUpdated": "餘額已更新",
     "accountDeleted": "帳戶已刪除",
     "holdingRemoved": "持倉已移除",

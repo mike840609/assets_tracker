@@ -8,6 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Pencil } from "lucide-react";
 import { springConfig } from "@/lib/motion";
 
@@ -60,6 +70,7 @@ export function AccountDetail({
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(account.name);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [sortField, setSortField] = useState<HoldingSortField>("marketValue");
   const [sortDirection, setSortDirection] = useState<SortOrder>("desc");
@@ -193,24 +204,20 @@ export function AccountDetail({
     }
   }
 
-  function deleteAccount() {
+  async function confirmDeleteAccount() {
+    setShowDeleteConfirm(false);
     setDeleting(true);
-    showUndoDeleteToast({
-      message: t("accountDetail.accountDeleted"),
-      undoLabel: t("common.undo"),
-      onUndo: () => setDeleting(false),
-      onCommit: async () => {
-        try {
-          await fetch(`/api/accounts/${account.id}`, { method: "DELETE" });
-          startTransition(() => {
-            router.push("/accounts");
-          });
-        } catch {
-          toast.error(t("accountDetail.deleteFailed"));
-          setDeleting(false);
-        }
-      },
-    });
+    try {
+      const res = await fetch(`/api/accounts/${account.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success(t("accountDetail.accountDeleted"));
+      startTransition(() => {
+        router.push("/accounts");
+      });
+    } catch {
+      toast.error(t("accountDetail.deleteFailed"));
+      setDeleting(false);
+    }
   }
 
   function deleteHolding(holdingId: string) {
@@ -314,7 +321,12 @@ export function AccountDetail({
             </span>
           </div>
         </div>
-        <Button variant="destructive" size="sm" onClick={deleteAccount} disabled={deleting}>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => setShowDeleteConfirm(true)}
+          disabled={deleting}
+        >
           {deleting ? t("accountDetail.deleting") : t("accountDetail.deleteAccount")}
         </Button>
       </div>
@@ -480,6 +492,28 @@ export function AccountDetail({
           onSuccess={() => setRefreshTrigger((prev) => prev + 1)}
         />
       )}
+
+      <AlertDialog
+        open={showDeleteConfirm}
+        onOpenChange={(open) => {
+          if (!open) setShowDeleteConfirm(false);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("accountDetail.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("accountDetail.deleteDescription", { name: account.name })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDeleteAccount}>
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
