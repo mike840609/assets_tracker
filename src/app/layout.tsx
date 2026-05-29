@@ -264,7 +264,7 @@ async function LocaleProviders({ children }: { children: React.ReactNode }) {
   const messages = await getMessages();
   return (
     <NextIntlClientProvider
-      messages={pickMessages(messages, ["app", "nav", "commandPalette", "common"])}
+      messages={pickMessages(messages, ["app", "nav", "commandPalette", "common", "errors"])}
     >
       <HtmlLangSync />
       {children}
@@ -294,23 +294,23 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <ColorSchemaProvider>
             <StockColorSchemeProvider>
-            {/*
-             * LocaleProviders reads the NEXT_LOCALE cookie — a runtime API.
-             * Suspense keeps this cookie read out of the prerender pass so
-             * static routes can produce a ◐ (Partial Prerender) shell.
-             * The fallback is a non-null element to avoid the Next.js
-             * "empty fallback above document body" anti-pattern.
-             */}
-            <Suspense fallback={<span />}>
-              <LocaleProviders>{children}</LocaleProviders>
-            </Suspense>
-            <LazyToaster />
-            {enableVercelInsights ? (
-              <>
-                <Analytics />
-                <CustomSpeedInsights />
-              </>
-            ) : null}
+              {/*
+               * LocaleProviders reads the NEXT_LOCALE cookie — a runtime API.
+               * Suspense keeps this cookie read out of the prerender pass so
+               * static routes can produce a ◐ (Partial Prerender) shell.
+               * The fallback is a non-null element to avoid the Next.js
+               * "empty fallback above document body" anti-pattern.
+               */}
+              <Suspense fallback={<span />}>
+                <LocaleProviders>{children}</LocaleProviders>
+              </Suspense>
+              <LazyToaster />
+              {enableVercelInsights ? (
+                <>
+                  <Analytics />
+                  <CustomSpeedInsights />
+                </>
+              ) : null}
             </StockColorSchemeProvider>
           </ColorSchemaProvider>
         </ThemeProvider>

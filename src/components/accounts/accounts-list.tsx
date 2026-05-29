@@ -23,6 +23,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Archive,
   ArchiveRestore,
   ChevronDown,
@@ -193,6 +203,7 @@ export function AccountsList({
   const [showForm, setShowForm] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [manageMode, setManageMode] = useState(false);
@@ -300,9 +311,15 @@ export function AccountsList({
     }
   }
 
-  async function deleteAccount(id: string) {
-    if (!confirm(t("accountsList.deleteConfirm"))) return;
+  function deleteAccount(id: string) {
+    const account = accounts.find((a) => a.id === id) ?? archivedAccounts.find((a) => a.id === id);
+    setPendingDelete({ id, name: account?.name ?? "" });
+  }
 
+  async function confirmDeleteAccount() {
+    if (!pendingDelete) return;
+    const id = pendingDelete.id;
+    setPendingDelete(null);
     setDeletingId(id);
     try {
       const res = await fetch("/api/accounts", {
@@ -704,6 +721,28 @@ export function AccountsList({
           defaultCurrency={baseCurrency}
         />
       )}
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("accountsList.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("accountsList.deleteDescription", { name: pendingDelete?.name ?? "" })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDeleteAccount}>
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -44,6 +44,17 @@
     "back": "Back",
     "actionsFor": "Actions for {name}"
   },
+  "errors": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred while loading this page. You can try again or head back to your dashboard.",
+    "retry": "Try again",
+    "backHome": "Back to dashboard",
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "The page you're looking for doesn't exist or may have moved.",
+    "globalTitle": "Something went wrong",
+    "globalDescription": "The app ran into an unexpected error. Please try reloading.",
+    "reload": "Reload"
+  },
   "categories": {
     "BANK": "Bank",
     "BROKERAGE": "Brokerage",
@@ -377,6 +388,8 @@
     "nAccounts": "{count, plural, one {# account} other {# accounts}}",
     "nHoldings": "{count, plural, one {# holding} other {# holdings}}",
     "deleteConfirm": "Delete this account? This cannot be undone.",
+    "deleteTitle": "Delete account?",
+    "deleteDescription": "{name} and all of its holdings will be permanently deleted. This cannot be undone.",
     "deleteSuccess": "Account deleted",
     "deleteFailed": "Failed to delete account",
     "colName": "Name",
@@ -496,6 +509,8 @@
     "colValue": "Value",
     "colPercentage": "%",
     "deleteConfirm": "Delete this account? This cannot be undone.",
+    "deleteTitle": "Delete account?",
+    "deleteDescription": "{name} and all of its holdings will be permanently deleted. This cannot be undone.",
     "balanceUpdated": "Balance updated",
     "accountDeleted": "Account deleted",
     "holdingRemoved": "Holding removed",
