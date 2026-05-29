@@ -1,10 +1,14 @@
 import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
 import { AccountsNavPanel } from "@/components/accounts/accounts-nav-panel";
-import { getAccountDetail, getAccountPriceMap } from "@/lib/services/account-service";
-import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
+import {
+  resolveAccountDetail,
+  resolveAccountPriceMap,
+  resolveAccountsWithHoldings,
+  resolveExchangeRatesMap,
+} from "@/lib/services/demo-service";
 import { getSession } from "@/lib/auth-session";
-import { getAllExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
+import { resolveRate } from "@/lib/services/exchange-rate-service";
 import { log } from "@/lib/logger";
 import { getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
@@ -16,7 +20,7 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
   const { id } = await params;
 
   // Kick off independent queries before awaiting the account
-  const ratesP = getAllExchangeRates();
+  const ratesP = resolveExchangeRatesMap();
   const messagesP = getMessages();
   const sessionP = getSession();
 
@@ -26,13 +30,13 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
   if (!userId) notFound();
 
   const [serialized, allAccounts] = await Promise.all([
-    getAccountDetail(userId, id),
-    fetchUserAccountsWithHoldings(userId),
+    resolveAccountDetail(userId, id),
+    resolveAccountsWithHoldings(userId),
   ]);
   if (!serialized) notFound();
 
   const symbols = serialized.holdings.map((h) => h.symbol);
-  const priceMap = await getAccountPriceMap(symbols);
+  const priceMap = await resolveAccountPriceMap(symbols);
 
   // Build rates map from bulk-loaded data. Render path is read-only
   // against ExchangeRate — missing pairs fall back to 1 (rates are warmed

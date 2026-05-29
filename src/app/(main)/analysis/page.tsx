@@ -2,7 +2,7 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
-import { getCachedAnalysisPayload } from "@/lib/services/analysis-payload-service";
+import { resolveAnalysisPayload } from "@/lib/services/demo-service";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AnalysisView } from "@/components/analysis/analysis-view";
@@ -20,7 +20,7 @@ async function AnalysisContent() {
       getTranslations("analysis"),
       getMessages(),
       getLocale(),
-      settingsP.then((s) => getCachedAnalysisPayload(userId, s.baseCurrency)),
+      settingsP.then((s) => resolveAnalysisPayload(userId, s.baseCurrency)),
       settingsP,
     ]);
 

@@ -113,7 +113,17 @@
     },
     "signOut": "Sign Out",
     "signOutDesc": "Securely log out of your account on this device.",
-    "dangerZone": "Danger Zone"
+    "dangerZone": "Danger Zone",
+    "gettingStartedTitle": "Getting Started",
+    "demoMode": "Demo mode",
+    "demoModeDescription": "Explore the app with a sample portfolio. Your real data is untouched and returns the moment you turn it off.",
+    "demoModeOn": "On",
+    "demoModeOff": "Off",
+    "demoModeEnabled": "Demo mode on — showing sample data",
+    "demoModeDisabled": "Demo mode off — showing your data",
+    "appTour": "App tour",
+    "appTourDescription": "Replay the quick intro to the main features.",
+    "showAppTour": "Show tour"
   },
   "languages": {
     "en-US": "English",
@@ -636,5 +646,20 @@
     "deleteSuccess": "Transaction deleted",
     "deleteSuccessSymbol": "{symbol} transaction deleted",
     "deleteFailed": "Failed to delete transaction"
+  },
+  "onboarding": {
+    "title": "Welcome to Assets Tracker",
+    "slide1Title": "Track your net worth",
+    "slide1Description": "See your complete financial picture in one place — assets minus liabilities, in any currency you choose.",
+    "slide2Title": "Organize accounts & holdings",
+    "slide2Description": "Add bank, brokerage, crypto, property and loan accounts, then track the stocks, ETFs and coins inside them.",
+    "slide3Title": "Understand your history",
+    "slide3Description": "Daily snapshots power trend charts, a contribution-vs-market breakdown, and your biggest movers over time.",
+    "slide4Title": "Plan ahead — and try demo mode",
+    "slide4Description": "Project your path to financial goals. New here? Turn on Demo mode in Settings to explore with sample data.",
+    "back": "Back",
+    "next": "Next",
+    "skip": "Skip",
+    "done": "Get started"
   }
 }

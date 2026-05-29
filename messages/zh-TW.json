@@ -113,7 +113,17 @@
     },
     "signOut": "登出",
     "signOutDesc": "安全地登出此裝置上的帳戶。",
-    "dangerZone": "危險區域"
+    "dangerZone": "危險區域",
+    "gettingStartedTitle": "開始使用",
+    "demoMode": "示範模式",
+    "demoModeDescription": "使用範例投資組合探索應用程式。您的真實資料不會被更動，關閉後立即恢復。",
+    "demoModeOn": "開啟",
+    "demoModeOff": "關閉",
+    "demoModeEnabled": "示範模式已開啟 — 顯示範例資料",
+    "demoModeDisabled": "示範模式已關閉 — 顯示您的資料",
+    "appTour": "應用程式導覽",
+    "appTourDescription": "重新播放主要功能的快速介紹。",
+    "showAppTour": "顯示導覽"
   },
   "languages": {
     "en-US": "English",
@@ -636,5 +646,20 @@
     "deleteSuccess": "交易已刪除",
     "deleteSuccessSymbol": "{symbol} 交易已刪除",
     "deleteFailed": "刪除交易失敗"
+  },
+  "onboarding": {
+    "title": "歡迎使用 Assets Tracker",
+    "slide1Title": "追蹤您的淨資產",
+    "slide1Description": "在同一處掌握完整的財務全貌 — 以您選擇的任何貨幣計算資產減去負債。",
+    "slide2Title": "整理帳戶與持倉",
+    "slide2Description": "新增銀行、券商、加密貨幣、不動產與貸款帳戶，並追蹤其中的股票、ETF 與幣別。",
+    "slide3Title": "了解您的歷史變化",
+    "slide3Description": "每日快照可繪製趨勢圖、投入與市場表現的拆解，以及一段期間內變動最大的項目。",
+    "slide4Title": "提前規劃 — 並試用示範模式",
+    "slide4Description": "預測您達成財務目標的路徑。第一次使用嗎？到設定開啟示範模式，用範例資料探索。",
+    "back": "上一步",
+    "next": "下一步",
+    "skip": "略過",
+    "done": "開始使用"
   }
 }

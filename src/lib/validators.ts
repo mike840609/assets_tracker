@@ -93,6 +93,9 @@ export const updateSettingsSchema = z.object({
   baseCurrency: z.string().length(3).optional(),
   locale: z.enum(["en-US", "zh-TW"]).optional(),
   stockColorScheme: z.enum(["GREEN_UP", "RED_UP"]).optional(),
+  // Read-only demo overlay. Persisted as a cookie, not a DB column — toggling
+  // it writes zero rows for the user's real data.
+  demoMode: z.boolean().optional(),
 });
 
 export const updateTransactionSchema = z.object({

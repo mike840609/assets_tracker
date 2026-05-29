@@ -21,6 +21,7 @@ import {
   useStockColorScheme,
   type StockColorScheme,
 } from "@/components/layout/stock-color-scheme-context";
+import { useOnboarding } from "@/components/onboarding/onboarding-context";
 import { Check, TrendingUp, TrendingDown } from "lucide-react";
 
 const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
@@ -44,12 +45,17 @@ const STOCK_COLOR_SCHEMES: Array<{
 export function SettingsForm({
   currentCurrency,
   currentLocale,
+  currentDemoMode,
 }: {
   currentCurrency: string;
   currentLocale: string;
+  currentDemoMode: boolean;
 }) {
   const router = useRouter();
   const t = useTranslations();
+  const { openTour } = useOnboarding();
+  const [demoMode, setDemoMode] = useState(currentDemoMode);
+  const [savingDemo, setSavingDemo] = useState(false);
   const activeLocale = useLocale();
   const resolvedActiveLocale: Locale = SUPPORTED_LOCALES.includes(activeLocale as Locale)
     ? (activeLocale as Locale)
@@ -99,6 +105,27 @@ export function SettingsForm({
       toast.error(t("toast.languageFailed"));
     } finally {
       setSavingLocale(false);
+    }
+  }
+
+  async function toggleDemoMode(next: boolean) {
+    if (next === demoMode || savingDemo) return;
+    setSavingDemo(true);
+    setDemoMode(next);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ demoMode: next }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast.success(next ? t("settings.demoModeEnabled") : t("settings.demoModeDisabled"));
+      router.refresh();
+    } catch {
+      setDemoMode(!next);
+      toast.error(t("toast.failed"));
+    } finally {
+      setSavingDemo(false);
     }
   }
 
@@ -303,6 +330,57 @@ export function SettingsForm({
                   </button>
                 ))}
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* GETTING STARTED SECTION */}
+      <section className="space-y-3">
+        <h3 className="text-lg font-semibold text-foreground">
+          {t("settings.gettingStartedTitle")}
+        </h3>
+        <Card className="overflow-hidden p-0">
+          <CardContent className="p-0">
+            {/* Demo Mode Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t("settings.demoMode")}</p>
+                <p className="text-sm text-muted-foreground">{t("settings.demoModeDescription")}</p>
+              </div>
+              <div className="w-fit flex items-center gap-1 rounded-lg border p-1 bg-muted/30">
+                {([false, true] as const).map((value) => (
+                  <button
+                    key={String(value)}
+                    type="button"
+                    onClick={() => toggleDemoMode(value)}
+                    disabled={savingDemo}
+                    className={`px-3 py-1.5 min-h-[44px] md:min-h-0 flex items-center justify-center rounded-md text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-60 ${
+                      demoMode === value
+                        ? "bg-background border border-border shadow-sm text-foreground font-semibold"
+                        : "border border-transparent text-muted-foreground font-medium hover:text-foreground"
+                    }`}
+                    aria-pressed={demoMode === value}
+                  >
+                    {value ? t("settings.demoModeOn") : t("settings.demoModeOff")}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* App Tour Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t("settings.appTour")}</p>
+                <p className="text-sm text-muted-foreground">{t("settings.appTourDescription")}</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={openTour}
+                className="w-full sm:w-auto min-w-[150px]"
+              >
+                {t("settings.showAppTour")}
+              </Button>
             </div>
           </CardContent>
         </Card>

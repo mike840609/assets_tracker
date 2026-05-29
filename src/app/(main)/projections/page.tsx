@@ -2,7 +2,7 @@ import { getMessages, getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
-import { getProjectionData } from "@/lib/services/projection-service";
+import { resolveProjectionData } from "@/lib/services/demo-service";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { ProjectionView } from "@/components/projections/projection-view";
@@ -18,7 +18,7 @@ async function ProjectionsContent() {
   const [t, messages, projectionData, settings] = await Promise.all([
     getTranslations("projections"),
     getMessages(),
-    settingsP.then((s) => getProjectionData(userId, s.baseCurrency)),
+    settingsP.then((s) => resolveProjectionData(userId, s.baseCurrency)),
     settingsP,
   ]);
 

@@ -80,6 +80,24 @@ async function computeNetWorthSummary(
     prices.map((p) => [p.symbol, { price: Number(p.price), currency: p.currency }]),
   );
 
+  return computeSummaryFromData(accounts, allRatesMap, priceMap, baseCurrency, userId);
+}
+
+/**
+ * Pure net-worth computation: given already-fetched accounts, an exchange-rate
+ * map, and a price map, derive the full {@link NetWorthSummary}. Separated from
+ * {@link computeNetWorthSummary} so callers that already hold the inputs — most
+ * notably the read-only **demo overlay** (`src/lib/services/demo-service.ts`),
+ * which feeds a static fixture — can reuse the exact same math without touching
+ * the database.
+ */
+export function computeSummaryFromData(
+  accounts: SerializedAccountWithHoldings[],
+  allRatesMap: Map<string, number>,
+  priceMap: Record<string, { price: number; currency: string }>,
+  baseCurrency: string,
+  userId?: string,
+): NetWorthSummary {
   let totalAssets = 0;
   let totalLiabilities = 0;
   const accountsWithValue: AccountWithValue[] = [];

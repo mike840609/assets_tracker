@@ -5,13 +5,16 @@ import { LazyAllocationChart, LazyCurrencyExposureChart } from "@/components/das
 import { TrendChartSkeleton } from "@/components/dashboard/trend-chart-skeleton";
 import { AccountsSummary } from "@/components/dashboard/accounts-summary";
 import { DashboardActions } from "@/components/dashboard/dashboard-actions";
-import {
-  getCachedNetWorthSummary,
-  fetchUserAccountsWithHoldings,
-} from "@/lib/services/net-worth-service";
+import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
 import { getAllExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
-import { getNormalizedHistory } from "@/lib/services/history-service";
+import {
+  isDemoMode,
+  resolveNetWorthSummary,
+  resolveNormalizedHistory,
+  resolveAccountCount,
+  getDemoPreviousSnapshot,
+} from "@/lib/services/demo-service";
 import { HistoryHeatmap } from "@/components/history/history-heatmap";
 import { computeGoalsWithProgress } from "@/lib/services/goal-service";
 import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
@@ -86,10 +89,23 @@ function AccountsSummarySkeleton() {
 async function DashboardActionsSection({
   userId,
   baseCurrency,
+  demo,
 }: {
   userId: string;
   baseCurrency: string;
+  demo: boolean;
 }) {
+  if (demo) {
+    const nowIso = new Date().toISOString();
+    return (
+      <DashboardActions
+        baseCurrency={baseCurrency}
+        lastPriceUpdate={nowIso}
+        lastSnapshotDate={nowIso}
+      />
+    );
+  }
+
   const [previousSnapshot, latestPrice] = await Promise.all([
     fetchPreviousSnapshot(userId),
     prisma.priceCache.findFirst({
@@ -113,22 +129,31 @@ async function DashboardActionsSection({
  * Net worth cards — the LCP element on the dashboard.
  * Fetches the cached summary and recent snapshots for the delta display.
  */
-async function NetWorthSection({ userId, baseCurrency }: { userId: string; baseCurrency: string }) {
-  const [summary, previousSnapshot] = await Promise.all([
-    getCachedNetWorthSummary(userId, baseCurrency),
-    fetchPreviousSnapshot(userId),
-  ]);
-
+async function NetWorthSection({
+  userId,
+  baseCurrency,
+  demo,
+}: {
+  userId: string;
+  baseCurrency: string;
+  demo: boolean;
+}) {
+  const summary = await resolveNetWorthSummary(userId, baseCurrency);
   if (summary.accounts.length === 0) return null;
 
   let previousNetWorth: number | undefined;
-  if (previousSnapshot) {
-    if (previousSnapshot.baseCurrency === baseCurrency) {
-      previousNetWorth = Number(previousSnapshot.netWorth);
-    } else {
-      const rateMap = await getAllExchangeRates();
-      const rate = resolveRate(rateMap, previousSnapshot.baseCurrency, baseCurrency);
-      if (rate !== undefined) previousNetWorth = Number(previousSnapshot.netWorth) * rate;
+  if (demo) {
+    previousNetWorth = getDemoPreviousSnapshot(baseCurrency)?.netWorth;
+  } else {
+    const previousSnapshot = await fetchPreviousSnapshot(userId);
+    if (previousSnapshot) {
+      if (previousSnapshot.baseCurrency === baseCurrency) {
+        previousNetWorth = Number(previousSnapshot.netWorth);
+      } else {
+        const rateMap = await getAllExchangeRates();
+        const rate = resolveRate(rateMap, previousSnapshot.baseCurrency, baseCurrency);
+        if (rate !== undefined) previousNetWorth = Number(previousSnapshot.netWorth) * rate;
+      }
     }
   }
 
@@ -140,7 +165,7 @@ async function NetWorthSection({ userId, baseCurrency }: { userId: string; baseC
  * Shares the same cached summary as NetWorthSection (data-cache dedup).
  */
 async function ChartsSection({ userId, baseCurrency }: { userId: string; baseCurrency: string }) {
-  const summary = await getCachedNetWorthSummary(userId, baseCurrency);
+  const summary = await resolveNetWorthSummary(userId, baseCurrency);
   if (summary.accounts.length === 0) return null;
 
   return (
@@ -158,10 +183,15 @@ async function ChartsSection({ userId, baseCurrency }: { userId: string; baseCur
 async function GoalsMilestoneSection({
   userId,
   baseCurrency,
+  demo,
 }: {
   userId: string;
   baseCurrency: string;
+  demo: boolean;
 }) {
+  // Goals are real user data; suppress them under the read-only demo overlay
+  // so the demo dashboard stays self-consistent with its fixture net worth.
+  if (demo) return null;
   const goalsWithProgress = await computeGoalsWithProgress(userId, baseCurrency);
   if (goalsWithProgress.length === 0) return null;
 
@@ -198,7 +228,7 @@ async function AccountsSummarySection({
   userId: string;
   baseCurrency: string;
 }) {
-  const summary = await getCachedNetWorthSummary(userId, baseCurrency);
+  const summary = await resolveNetWorthSummary(userId, baseCurrency);
   if (summary.accounts.length === 0) return null;
 
   return <AccountsSummary summary={summary} />;
@@ -210,20 +240,20 @@ export async function DashboardContent({ userId }: { userId: string }) {
   // Settings are data-cached (30s TTL) — resolves near-instantly on cache hit
   const settings = await getOrCreateSettings(userId);
   const baseCurrency = settings.baseCurrency;
+  const demo = await isDemoMode();
 
-  // Pre-warm React caches for the inner sections
-  void fetchUserAccountsWithHoldings(userId);
-  void getAllExchangeRates();
+  // Pre-warm React caches for the inner sections (skip under the demo overlay,
+  // which never touches these DB-backed fetchers).
+  if (!demo) {
+    void fetchUserAccountsWithHoldings(userId);
+    void getAllExchangeRates();
+  }
 
   // Fetch snapshot history once — shared by TrendChartSection and HistoryHeatmap.
-  // getNormalizedHistory is "use cache" with cacheLife("hours"), so this is a
-  // cache read on warm requests. No extra DB query on repeat renders.
-  const snapshots = await getNormalizedHistory(userId, baseCurrency);
+  const snapshots = await resolveNormalizedHistory(userId, baseCurrency);
 
-  // Fast check: does this user have any active accounts?
-  const accountCount = await prisma.account.count({
-    where: { userId, isActive: true },
-  });
+  // Fast check: does this user have any active accounts (or demo data)?
+  const accountCount = await resolveAccountCount(userId);
 
   if (accountCount === 0) {
     const t = await getTranslations("dashboard");
@@ -263,17 +293,17 @@ export async function DashboardContent({ userId }: { userId: string }) {
     <>
       {/* Actions stream first — lightweight metadata, no summary needed */}
       <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded-lg" />}>
-        <DashboardActionsSection userId={userId} baseCurrency={baseCurrency} />
+        <DashboardActionsSection userId={userId} baseCurrency={baseCurrency} demo={demo} />
       </Suspense>
 
       {/* Net worth card — the LCP element, streams as soon as summary resolves */}
       <Suspense fallback={<NetWorthSkeleton />}>
-        <NetWorthSection userId={userId} baseCurrency={baseCurrency} />
+        <NetWorthSection userId={userId} baseCurrency={baseCurrency} demo={demo} />
       </Suspense>
 
       {/* Goals milestone — next active goal, streams after net worth */}
       <Suspense fallback={null}>
-        <GoalsMilestoneSection userId={userId} baseCurrency={baseCurrency} />
+        <GoalsMilestoneSection userId={userId} baseCurrency={baseCurrency} demo={demo} />
       </Suspense>
 
       {/* Trend chart + activity heatmap footer — share the same card */}

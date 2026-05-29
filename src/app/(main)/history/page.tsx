@@ -5,7 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import { HistoryPullRefresh } from "@/components/history/history-pull-refresh";
 import { HistoryView } from "@/components/history/history-view";
-import { getNormalizedHistory } from "@/lib/services/history-service";
+import { resolveNormalizedHistory } from "@/lib/services/demo-service";
 
 const CLIENT_NAMESPACES = ["trendChart", "history", "freshness"];
 
@@ -16,7 +16,7 @@ async function HistoryContent() {
   const settingsP = getOrCreateSettings(userId);
   const [allMessages, snapshots, settings] = await Promise.all([
     getMessages(),
-    settingsP.then((s) => getNormalizedHistory(userId, s.baseCurrency)),
+    settingsP.then((s) => resolveNormalizedHistory(userId, s.baseCurrency)),
     settingsP,
   ]);
 
