@@ -4,11 +4,7 @@ import { useEffect, useState, startTransition } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  type ChartConfig,
-} from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";

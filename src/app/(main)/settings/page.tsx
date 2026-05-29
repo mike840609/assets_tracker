@@ -28,10 +28,7 @@ async function SettingsContent() {
       <div className="space-y-10 max-w-2xl pb-16 animate-in fade-in duration-200">
         <LargeTitleHeading>{t("title")}</LargeTitleHeading>
 
-        <SettingsForm
-          currentCurrency={settings.baseCurrency}
-          currentLocale={settings.locale}
-        />
+        <SettingsForm currentCurrency={settings.baseCurrency} currentLocale={settings.locale} />
         <DataManagement />
         <InstallAppCard />
 
