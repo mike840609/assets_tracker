@@ -185,7 +185,13 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   };
 
   return (
-    <div className="w-full">
+    <div
+      className={cn(
+        "w-full transition-[filter] duration-300",
+        privacyMode && "blur-sm pointer-events-none select-none",
+      )}
+      aria-hidden={privacyMode || undefined}
+    >
       {/*
         Relative wrapper lets the fade overlay sit on top of the scroll container
         without affecting layout. The fade uses mask-image on the scroll div itself
