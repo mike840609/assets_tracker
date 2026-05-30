@@ -268,10 +268,6 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
   const chartData = selectedAccount?.children?.length
     ? selectedAccount.children
     : topLevelChartData;
-  const accountPickerItems =
-    isPhone && selectedAccount
-      ? accounts.filter((account) => account.id !== selectedAccount.id)
-      : accounts;
   const currentDetail = activeNode ?? selectedAccount ?? accounts[0] ?? null;
   const unpricedCount = accounts.reduce((sum, account) => sum + (account.unpricedCount ?? 0), 0);
 
@@ -473,9 +469,56 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
               <div className="min-w-0 space-y-3">
                 {renderDetailCard("hidden sm:block")}
 
-                {accountPickerItems.length > 0 && (
+                {selectedAccount?.children && selectedAccount.children.length > 0 ? (
+                  <div className="max-h-[22rem] overflow-y-auto rounded-xl border border-border/60 bg-muted/10 sm:max-h-[18rem] lg:max-h-[23rem]">
+                    {selectedAccount.children.map((child) => (
+                      <button
+                        key={child.id}
+                        type="button"
+                        onClick={() => setActiveNode(child)}
+                        onFocus={() => setActiveNode(child)}
+                        onMouseEnter={() => setActiveNode(child)}
+                        aria-pressed={activeNode?.id === child.id}
+                        className={cn(
+                          "grid min-h-11 w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 px-3 py-2 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset md:min-h-10",
+                          activeNode?.id === child.id &&
+                            "bg-[color:var(--heatmap-child-active-bg)] ring-1 ring-inset ring-[color:var(--heatmap-child-active-border)]",
+                        )}
+                        style={
+                          {
+                            "--heatmap-child-active-bg": tintFill(child.color, 10),
+                            "--heatmap-child-active-border": borderTint(child.color, 28),
+                          } as CSSProperties
+                        }
+                      >
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-[3px] ring-1 ring-foreground/10"
+                          style={{ backgroundColor: tileFill(child.color, false, child.tone) }}
+                        />
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium">{child.name}</span>
+                          <span
+                            className={cn(
+                              "mt-0.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs",
+                              isPhone ? "justify-start" : "justify-between",
+                            )}
+                          >
+                            <span className="shrink-0 text-muted-foreground tabular-nums">
+                              {formatPercent(child.accountShare ?? 0)}
+                            </span>
+                            <span className="min-w-0 truncate font-medium tabular-nums">
+                              {privacyMode
+                                ? HIDDEN
+                                : formatCurrency(child.value, summary.baseCurrency, true)}
+                            </span>
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
                   <div className="flex snap-x gap-2 overflow-x-auto pb-1 pr-1 sm:grid sm:max-h-[18rem] sm:grid-cols-2 sm:gap-1.5 sm:overflow-x-visible sm:overflow-y-auto lg:block lg:max-h-[23rem] lg:space-y-1.5">
-                    {accountPickerItems.map((account) => (
+                    {accounts.map((account) => (
                       <button
                         key={account.id}
                         type="button"
@@ -524,55 +567,6 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
                 )}
               </div>
             </div>
-
-            {selectedAccount?.children && selectedAccount.children.length > 0 && (
-              <div className="max-h-[22rem] overflow-y-auto rounded-xl border border-border/60 bg-muted/10 lg:max-h-[28rem]">
-                {selectedAccount.children.map((child) => (
-                  <button
-                    key={child.id}
-                    type="button"
-                    onClick={() => setActiveNode(child)}
-                    onFocus={() => setActiveNode(child)}
-                    onMouseEnter={() => setActiveNode(child)}
-                    aria-pressed={activeNode?.id === child.id}
-                    className={cn(
-                      "grid min-h-11 w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 px-3 py-2 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset md:min-h-10",
-                      activeNode?.id === child.id &&
-                        "bg-[color:var(--heatmap-child-active-bg)] ring-1 ring-inset ring-[color:var(--heatmap-child-active-border)]",
-                    )}
-                    style={
-                      {
-                        "--heatmap-child-active-bg": tintFill(child.color, 10),
-                        "--heatmap-child-active-border": borderTint(child.color, 28),
-                      } as CSSProperties
-                    }
-                  >
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-[3px] ring-1 ring-foreground/10"
-                      style={{ backgroundColor: tileFill(child.color, false, child.tone) }}
-                    />
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium">{child.name}</span>
-                      <span
-                        className={cn(
-                          "mt-0.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs",
-                          isPhone ? "justify-start" : "justify-between",
-                        )}
-                      >
-                        <span className="shrink-0 text-muted-foreground tabular-nums">
-                          {formatPercent(child.accountShare ?? 0)}
-                        </span>
-                        <span className="min-w-0 truncate font-medium tabular-nums">
-                          {privacyMode
-                            ? HIDDEN
-                            : formatCurrency(child.value, summary.baseCurrency, true)}
-                        </span>
-                      </span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
 
             {unpricedCount > 0 && !privacyMode && (
               <p className="text-xs text-muted-foreground">
