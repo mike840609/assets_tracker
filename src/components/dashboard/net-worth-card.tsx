@@ -59,14 +59,13 @@ export function NetWorthCard({
               {t("netWorth")}
             </p>
           </div>
-          <div className="overflow-x-auto scrollbar-none">
-            <p
-              className="text-2xl sm:text-3xl font-bold text-foreground mt-1 whitespace-nowrap tabular-nums"
-              style={{ letterSpacing: "-0.02em" }}
-            >
-              {privacyMode ? HIDDEN : formatCurrency(animatedNetWorth, baseCurrency)}
-            </p>
-          </div>
+          <p
+            className="text-2xl sm:text-3xl font-bold text-foreground mt-1 whitespace-nowrap tabular-nums truncate"
+            style={{ letterSpacing: "-0.02em" }}
+            title={privacyMode ? undefined : formatCurrency(netWorth, baseCurrency)}
+          >
+            {privacyMode ? HIDDEN : formatCurrency(animatedNetWorth, baseCurrency)}
+          </p>
           {!privacyMode && delta !== null && pct !== null && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <div
@@ -102,11 +101,12 @@ export function NetWorthCard({
               {t("totalAssets")}
             </p>
           </div>
-          <div className="overflow-x-auto scrollbar-none">
-            <p className="text-lg sm:text-2xl font-semibold text-[var(--gain)] mt-1 whitespace-nowrap tabular-nums">
-              {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency)}
-            </p>
-          </div>
+          <p
+            className="text-lg sm:text-2xl font-semibold text-[var(--gain)] mt-1 whitespace-nowrap tabular-nums truncate"
+            title={privacyMode ? undefined : formatCurrency(totalAssets, baseCurrency)}
+          >
+            {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency, true)}
+          </p>
         </CardContent>
       </Card>
 
@@ -121,11 +121,12 @@ export function NetWorthCard({
               {t("totalLiabilities")}
             </p>
           </div>
-          <div className="overflow-x-auto scrollbar-none">
-            <p className="text-lg sm:text-2xl font-semibold text-[var(--loss)] mt-1 whitespace-nowrap tabular-nums">
-              {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency)}
-            </p>
-          </div>
+          <p
+            className="text-lg sm:text-2xl font-semibold text-[var(--loss)] mt-1 whitespace-nowrap tabular-nums truncate"
+            title={privacyMode ? undefined : formatCurrency(totalLiabilities, baseCurrency)}
+          >
+            {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency, true)}
+          </p>
         </CardContent>
       </Card>
     </div>

@@ -306,8 +306,17 @@
   animation: skeleton-shimmer 1.6s ease-in-out infinite;
 }
 
+/* Decorative, continuously-looping effects must not run when the user has
+   asked for reduced motion (WCAG 2.3.3) — the mesh stays as a static wash. */
 @media (prefers-reduced-motion: reduce) {
   .skeleton-shimmer {
+    animation: none;
+  }
+  .hero-mesh-positive,
+  .hero-mesh-negative {
+    animation: none;
+  }
+  .ios-tab-pop {
     animation: none;
   }
 }

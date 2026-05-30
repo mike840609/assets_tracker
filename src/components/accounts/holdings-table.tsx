@@ -40,20 +40,21 @@ interface HoldingsTableProps {
 
 interface Column {
   field: HoldingSortField | null;
-  label: string;
+  /** Key under the `accountDetail` i18n namespace; null for the actions column. */
+  labelKey: string | null;
   align: "left" | "right";
   className?: string;
 }
 
 const COLUMNS: Column[] = [
-  { field: "symbol", label: "Symbol", align: "left" },
-  { field: "name", label: "Name", align: "left" },
-  { field: "assetType", label: "Type", align: "left", className: "hidden lg:table-cell" },
-  { field: "quantity", label: "Qty", align: "right", className: "hidden lg:table-cell" },
-  { field: "currentPrice", label: "Price", align: "right" },
-  { field: "marketValue", label: "Mkt Value", align: "right" },
-  { field: "percentage", label: "Weight", align: "right" },
-  { field: null, label: "", align: "right" },
+  { field: "symbol", labelKey: "colSymbol", align: "left" },
+  { field: "name", labelKey: "colName", align: "left" },
+  { field: "assetType", labelKey: "colType", align: "left", className: "hidden lg:table-cell" },
+  { field: "quantity", labelKey: "colQty", align: "right", className: "hidden lg:table-cell" },
+  { field: "currentPrice", labelKey: "colPrice", align: "right" },
+  { field: "marketValue", labelKey: "colValue", align: "right" },
+  { field: "percentage", labelKey: "colPercentage", align: "right" },
+  { field: null, labelKey: null, align: "right" },
 ];
 
 export function HoldingsTable({
@@ -77,20 +78,39 @@ export function HoldingsTable({
       <table className="w-full text-sm">
         <thead className="sticky top-0 bg-muted/70 backdrop-blur-sm border-b border-border/40">
           <tr>
-            {COLUMNS.map((col, i) => (
-              <th
-                key={i}
-                className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap ${
-                  col.align === "right" ? "text-right" : "text-left"
-                } ${col.field ? "cursor-pointer select-none hover:text-foreground transition-colors" : ""} ${col.className ?? ""}`}
-                onClick={col.field ? () => onSort(col.field!) : undefined}
-              >
-                {col.label}
-                {col.field && sortField === col.field && (
-                  <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                )}
-              </th>
-            ))}
+            {COLUMNS.map((col, i) => {
+              const isSorted = !!col.field && sortField === col.field;
+              const label = col.labelKey ? t(`accountDetail.${col.labelKey}`) : "";
+              return (
+                <th
+                  key={i}
+                  scope="col"
+                  aria-sort={
+                    isSorted ? (sortDirection === "asc" ? "ascending" : "descending") : undefined
+                  }
+                  className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap ${
+                    col.align === "right" ? "text-right" : "text-left"
+                  } ${col.className ?? ""}`}
+                >
+                  {col.field ? (
+                    <button
+                      type="button"
+                      onClick={() => onSort(col.field!)}
+                      className={`inline-flex items-center gap-1 select-none rounded-sm transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                        col.align === "right" ? "flex-row-reverse" : ""
+                      } ${isSorted ? "text-foreground" : ""}`}
+                    >
+                      <span>{label}</span>
+                      {isSorted && (
+                        <span aria-hidden="true">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                      )}
+                    </button>
+                  ) : (
+                    label
+                  )}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
@@ -156,8 +176,11 @@ export function HoldingsTable({
                 </td>
                 <td className={`px-2 ${tdPy} text-right`}>
                   <DropdownMenu>
-                    <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <MoreHorizontal className="h-4 w-4" />
+                    <DropdownMenuTrigger
+                      aria-label={t("common.actionsFor", { name: symbolLabel })}
+                      className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:opacity-100"
+                    >
+                      <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => onEdit(h)}>
