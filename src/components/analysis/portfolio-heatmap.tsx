@@ -25,8 +25,6 @@ const HEATMAP_COLORS = [
   "var(--chart-4)",
 ];
 const ACCOUNT_TILE_TONE = 70;
-const CASH_TILE_TONE = 42;
-const HOLDING_TILE_TONES = [68, 56, 74, 50, 62, 78, 54, 70];
 
 type HeatmapNode = {
   id: string;
@@ -71,17 +69,10 @@ function borderTint(color: string, weight = 34): string {
   return `color-mix(in oklch, ${color} ${weight}%, var(--border))`;
 }
 
-function stableTone(key: string, tones: number[]): number {
-  let hash = 0;
-  for (const character of key) {
-    hash = (hash * 31 + character.charCodeAt(0)) % tones.length;
-  }
-  return tones[hash] ?? ACCOUNT_TILE_TONE;
-}
-
-function childTone(child: { id: string; kind: "holding" | "cash" }): number {
-  if (child.kind === "cash") return CASH_TILE_TONE;
-  return stableTone(child.id, HOLDING_TILE_TONES);
+function toneFromShare(share: number, min = 34, max = 90): number {
+  if (!Number.isFinite(share) || share <= 0) return min;
+  const normalized = Math.min(1, Math.max(0, share / 100));
+  return min + (max - min) * normalized ** 0.82;
 }
 
 function nodeShare(node: HeatmapNode): number {
@@ -249,7 +240,7 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
             ...child,
             accountId: account.id,
             color,
-            tone: childTone(child),
+            tone: toneFromShare(childAccountShare, child.kind === "cash" ? 28 : 34, 90),
             portfolioShare: childPortfolioShare,
             accountShare: childAccountShare,
             id: `${account.id}:${child.id}:${childIndex}`,
