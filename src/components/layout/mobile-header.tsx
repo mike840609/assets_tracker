@@ -56,7 +56,7 @@ export function MobileHeader() {
           type="button"
           onClick={handleBack}
           aria-label={t("common.back")}
-          className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-full h-10 w-10 text-foreground hover:bg-muted/60 active:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-normal"
+          className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-full h-11 w-11 text-foreground hover:bg-muted/60 active:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-normal"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -125,7 +125,7 @@ export function MobileHeader() {
           onClick={togglePrivacyMode}
           title={privacyMode ? "Show values" : "Hide values"}
           aria-label={privacyMode ? "Show values" : "Hide values"}
-          className="inline-flex items-center justify-center rounded-md h-10 w-10 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="inline-flex items-center justify-center rounded-md h-11 w-11 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           {privacyMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
