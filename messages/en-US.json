@@ -245,7 +245,18 @@
     "attributionNoData": "Not enough history to compute attribution.",
     "attributionNote": "Market performance = total change minus cash contributions. Prices use current rates (v1 approximation).",
     "attrCash": "Cash flow",
-    "attrMarket": "Market"
+    "attrMarket": "Market",
+    "heatmapTitle": "Account Heatmap",
+    "heatmapSubtitle": "Each asset account sized by its share of total assets. Tap to see holdings.",
+    "heatmapEmpty": "Add an asset account to see how your portfolio breaks down.",
+    "heatmapCash": "Cash",
+    "heatmapUnpriced": "{count, plural, =1 {# holding hidden: no cached price.} other {# holdings hidden: no cached price.}}",
+    "heatmapPortfolioShare": "Share of assets",
+    "heatmapAccountShare": "Share of account",
+    "heatmapTotalAssets": "Total assets",
+    "heatmapValue": "Value",
+    "heatmapBack": "All accounts",
+    "heatmapViewAccount": "View account"
   },
   "projections": {
     "title": "Projections",

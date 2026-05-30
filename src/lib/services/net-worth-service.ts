@@ -97,6 +97,8 @@ async function computeNetWorthSummary(
         ...h,
         currentPrice,
         marketValue,
+        // Filled in the second pass below, once the rate map is complete.
+        marketValueInBaseCurrency: null,
       };
     });
 
@@ -143,6 +145,7 @@ async function computeNetWorthSummary(
         const holdingCurrency = h.currency || priceMap[h.symbol]?.currency || "USD";
         const holdingRateToBase = getRate(holdingCurrency, baseCurrency);
         const valueInBase = h.marketValue * holdingRateToBase;
+        h.marketValueInBaseCurrency = valueInBase;
         holdingsInBase += valueInBase;
         const holdingRateToAccount = getRate(holdingCurrency, account.currency);
         holdingsInAccountCurrency += h.marketValue * holdingRateToAccount;

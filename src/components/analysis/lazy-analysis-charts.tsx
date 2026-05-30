@@ -41,3 +41,8 @@ export const LazyAttributionChart = dynamic(
   () => import("./attribution-chart").then((m) => m.AttributionChart),
   { loading: () => <ChartSkeleton height={200} /> },
 );
+
+export const LazyPortfolioHeatmap = dynamic(
+  () => import("./portfolio-heatmap").then((m) => m.PortfolioHeatmap),
+  { loading: () => <ChartSkeleton height={280} /> },
+);

@@ -245,7 +245,18 @@
     "attributionNoData": "歷史資料不足，無法計算歸因。",
     "attributionNote": "市場表現 = 總變化 − 現金貢獻。價格使用目前匯率（v1 近似值）。",
     "attrCash": "現金流",
-    "attrMarket": "市場"
+    "attrMarket": "市場",
+    "heatmapTitle": "帳戶熱力圖",
+    "heatmapSubtitle": "每個資產帳戶依其占總資產的比例調整大小。點選即可查看持倉。",
+    "heatmapEmpty": "新增資產帳戶後即可查看投資組合的分布。",
+    "heatmapCash": "現金",
+    "heatmapUnpriced": "{count, plural, other {已隱藏 # 項持倉：無快取價格。}}",
+    "heatmapPortfolioShare": "占總資產比例",
+    "heatmapAccountShare": "占帳戶比例",
+    "heatmapTotalAssets": "總資產",
+    "heatmapValue": "價值",
+    "heatmapBack": "所有帳戶",
+    "heatmapViewAccount": "查看帳戶"
   },
   "projections": {
     "title": "財務預測",
