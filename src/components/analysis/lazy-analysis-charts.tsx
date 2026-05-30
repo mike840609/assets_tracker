@@ -3,15 +3,19 @@
 import dynamic from "next/dynamic";
 import { CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDensity } from "@/components/layout/density-context";
 
 function ChartSkeleton({ height = 280 }: { height?: number }) {
+  const { density } = useDensity();
+  const skeletonHeight = density === "compact" ? Math.max(180, height - 40) : height;
+
   return (
     <>
       <CardHeader className="pb-2 px-2 sm:px-4">
         <Skeleton className="h-5 w-40" />
       </CardHeader>
       <CardContent className="px-2 sm:px-4 pb-4">
-        <Skeleton style={{ height }} />
+        <Skeleton style={{ height: skeletonHeight }} />
       </CardContent>
     </>
   );

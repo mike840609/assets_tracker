@@ -17,6 +17,7 @@ import { formatCurrency } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useDensity } from "@/components/layout/density-context";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
@@ -80,6 +81,8 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
   const tCat = useTranslations("categories");
   const { privacyMode } = usePrivacyMode();
+  const { density } = useDensity();
+  const chartHeight = density === "compact" ? 240 : 280;
   const [mounted, setMounted] = useState(false);
   const { handlers: crosshairHandlers } = useChartCrosshair();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
@@ -117,11 +120,14 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
       </CardHeader>
       <CardContent className="px-2 sm:px-4 pb-4">
         {data.length === 0 ? (
-          <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
+          <div
+            className="flex items-center justify-center text-muted-foreground text-sm"
+            style={{ height: chartHeight }}
+          >
             {t("noData")}
           </div>
         ) : !mounted ? (
-          <div className="h-[280px]" />
+          <div style={{ height: chartHeight }} />
         ) : (
           <div
             role="img"
@@ -131,9 +137,9 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
           >
             <ResponsiveContainer
               width="100%"
-              height={280}
+              height={chartHeight}
               minWidth={0}
-              initialDimension={{ width: 1, height: 280 }}
+              initialDimension={{ width: 1, height: chartHeight }}
             >
               <LineChart
                 data={chartData}

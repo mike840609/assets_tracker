@@ -7,6 +7,7 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useDensity } from "@/components/layout/density-context";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 import type { AttributionItem } from "@/lib/services/analysis-service";
@@ -95,6 +96,8 @@ export function AttributionChart({ items, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const tCat = useTranslations("categories");
   const { privacyMode } = usePrivacyMode();
+  const { density } = useDensity();
+  const isCompact = density === "compact";
   const [mounted, setMounted] = useState(false);
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => startTransition(() => setMounted(true)), []);
@@ -110,7 +113,10 @@ export function AttributionChart({ items, baseCurrency }: Props) {
   // largest bar at the top of the chart.
   const chartData = [...items].reverse();
 
-  const chartHeight = Math.max(200, chartData.length * 36 + 40);
+  const chartHeight = Math.max(
+    isCompact ? 180 : 200,
+    chartData.length * (isCompact ? 30 : 36) + 40,
+  );
 
   return (
     <>
@@ -128,7 +134,7 @@ export function AttributionChart({ items, baseCurrency }: Props) {
         ) : (
           <div
             aria-hidden={privacyMode || undefined}
-            className={`space-y-4 transition-[filter] duration-300 ${
+            className={`${isCompact ? "space-y-3" : "space-y-4"} transition-[filter] duration-300 ${
               privacyMode ? "blur-sm pointer-events-none select-none" : ""
             }`}
           >
@@ -191,7 +197,11 @@ export function AttributionChart({ items, baseCurrency }: Props) {
             </div>
 
             {/* Summary row */}
-            <div className="grid grid-cols-3 gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs">
+            <div
+              className={`grid grid-cols-3 gap-2 rounded-lg bg-muted/40 text-xs ${
+                isCompact ? "px-2.5 py-1.5" : "px-3 py-2"
+              }`}
+            >
               <div>
                 <div className="text-muted-foreground">{t("attrCash")}</div>
                 <div className="tabular-nums font-medium mt-0.5">
