@@ -10,7 +10,13 @@ import { getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 
-const CLIENT_NAMESPACES = ["accountDetail", "common", "categories", "transactionHistory"];
+const CLIENT_NAMESPACES = [
+  "accountDetail",
+  "common",
+  "categories",
+  "transactionHistory",
+  "holdingSearch",
+];
 
 async function AccountDetailContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

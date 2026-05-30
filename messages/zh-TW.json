@@ -42,7 +42,11 @@
     "liability": "負債",
     "undo": "復原",
     "back": "返回",
-    "actionsFor": "{name} 的操作"
+    "actionsFor": "{name} 的操作",
+    "discardTitle": "捨棄變更？",
+    "discardBody": "您輸入的內容將會遺失。",
+    "discardConfirm": "捨棄",
+    "keepEditing": "繼續編輯"
   },
   "errors": {
     "title": "發生錯誤",
@@ -416,6 +420,12 @@
     "create": "建立帳戶",
     "created": "帳戶已建立",
     "createFailed": "建立帳戶失敗"
+  },
+  "holdingSearch": {
+    "searching": "搜尋中…",
+    "noResults": "找不到相符的代號",
+    "resultCount": "{count, plural, other {# 筆結果}}",
+    "unavailable": "搜尋暫時無法使用，請稍後再試。"
   },
   "quickAddHolding": {
     "titleSearch": "搜尋代號",

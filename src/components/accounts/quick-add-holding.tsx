@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, startTransition } from "react";
+import { useState, startTransition, useId } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,9 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useDiscardGuard } from "@/hooks/use-discard-guard";
+import { DiscardConfirmDialog } from "@/components/discard-confirm-dialog";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
 import { HoldingSearch } from "./holding-search";
 import type { SearchResult } from "./holding-search";
@@ -51,6 +55,14 @@ export function QuickAddHolding({
 }) {
   const router = useRouter();
   const t = useTranslations();
+  const isMobile = useIsMobile();
+  // Stable field ids so every <Label> binds to its control (htmlFor/id).
+  const fieldId = useId();
+  const symbolId = `${fieldId}-symbol`;
+  const assetTypeId = `${fieldId}-asset-type`;
+  const nameId = `${fieldId}-name`;
+  const quantityId = `${fieldId}-quantity`;
+  const accountId = `${fieldId}-account`;
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"form" | "account">("form");
   const [mode, setMode] = useState<Mode>("stock");
@@ -121,6 +133,13 @@ export function QuickAddHolding({
     resetForm();
     onClose();
   }
+
+  // Dirty once the user has picked/typed a ticker, named it, or set a quantity.
+  const isDirty = !!symbol || !!quantity || name.trim() !== "";
+  const { confirmOpen, setConfirmOpen, requestClose, confirmDiscard } = useDiscardGuard(
+    isDirty,
+    handleClose,
+  );
 
   function getMatchingAccounts(typeOverride?: string) {
     const type = typeOverride ?? assetType;
@@ -221,256 +240,297 @@ export function QuickAddHolding({
           })
         : t("quickAddHolding.titleSearch");
 
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
-        </DialogHeader>
+  const body = (
+    <>
+      {/* ── Form step ── */}
+      {step === "form" && (
+        <div className="space-y-4">
+          {/* Mode tabs */}
+          <Tabs
+            value={mode}
+            onValueChange={(v) => {
+              if (v) {
+                setMode(v as Mode);
+                clearSelection();
+              }
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="stock">Stock / ETF / Crypto</TabsTrigger>
+              <TabsTrigger value="option">Option</TabsTrigger>
+            </TabsList>
+          </Tabs>
 
-        {/* ── Form step ── */}
-        {step === "form" && (
-          <div className="space-y-4">
-            {/* Mode tabs */}
-            <Tabs
-              value={mode}
-              onValueChange={(v) => {
-                if (v) {
-                  setMode(v as Mode);
-                  clearSelection();
-                }
+          {mode === "option" ? (
+            <OptionBuilder
+              loading={loading}
+              onConfigure={(payload) => {
+                setSymbol(payload.symbol);
+                setName(payload.name);
+                setAssetType("OPTION");
+                setQuantity(String(payload.quantity));
+                setCurrency("USD");
+                proceedToAccount("OPTION");
               }}
-            >
-              <TabsList>
-                <TabsTrigger value="stock">Stock / ETF / Crypto</TabsTrigger>
-                <TabsTrigger value="option">Option</TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            {mode === "option" ? (
-              <OptionBuilder
-                loading={loading}
-                onConfigure={(payload) => {
-                  setSymbol(payload.symbol);
-                  setName(payload.name);
-                  setAssetType("OPTION");
-                  setQuantity(String(payload.quantity));
-                  setCurrency("USD");
-                  proceedToAccount("OPTION");
-                }}
-                onCancel={handleClose}
-              />
-            ) : (
-              <>
-                {/* ── Ticker section ── */}
-                {tickerSelected ? (
-                  <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold">{symbol}</span>
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                          {t(`quickAddHolding.assetTypes.${assetType}` as Parameters<typeof t>[0], {
-                            defaultValue: assetType,
-                          })}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                          {currency}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-0.5">{name}</p>
+              onCancel={requestClose}
+            />
+          ) : (
+            <>
+              {/* ── Ticker section ── */}
+              {tickerSelected ? (
+                <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold">{symbol}</span>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {t(`quickAddHolding.assetTypes.${assetType}` as Parameters<typeof t>[0], {
+                          defaultValue: assetType,
+                        })}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        {currency}
+                      </Badge>
                     </div>
-                    <Button type="button" variant="ghost" size="sm" onClick={clearSelection}>
-                      {t("quickAddHolding.change")}
-                    </Button>
+                    <p className="text-sm text-muted-foreground mt-0.5">{name}</p>
                   </div>
-                ) : manualMode ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>{t("quickAddHolding.labelSymbol")}</Label>
-                        <Input
-                          value={symbol}
-                          onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                          placeholder={t("quickAddHolding.placeholderSymbol")}
-                          autoFocus
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>{t("quickAddHolding.labelAssetType")}</Label>
-                        <select
-                          value={assetType}
-                          onChange={(e) => setAssetType(e.target.value)}
-                          className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        >
-                          {ASSET_TYPE_KEYS.map((key) => (
-                            <option key={key} value={key}>
-                              {t(`quickAddHolding.assetTypes.${key}`)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+                  <Button type="button" variant="ghost" size="sm" onClick={clearSelection}>
+                    {t("quickAddHolding.change")}
+                  </Button>
+                </div>
+              ) : manualMode ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label>{t("quickAddHolding.labelName")}</Label>
+                      <Label htmlFor={symbolId}>{t("quickAddHolding.labelSymbol")}</Label>
                       <Input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder={t("quickAddHolding.placeholderName")}
+                        id={symbolId}
+                        value={symbol}
+                        onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                        placeholder={t("quickAddHolding.placeholderSymbol")}
+                        autoFocus={!isMobile}
                         required
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={assetTypeId}>{t("quickAddHolding.labelAssetType")}</Label>
+                      <select
+                        id={assetTypeId}
+                        value={assetType}
+                        onChange={(e) => setAssetType(e.target.value)}
+                        className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        {ASSET_TYPE_KEYS.map((key) => (
+                          <option key={key} value={key}>
+                            {t(`quickAddHolding.assetTypes.${key}`)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={nameId}>{t("quickAddHolding.labelName")}</Label>
+                    <Input
+                      id={nameId}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder={t("quickAddHolding.placeholderName")}
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    <button
+                      type="button"
+                      className="text-primary underline underline-offset-2 hover:text-primary/80"
+                      onClick={() => setManualMode(false)}
+                    >
+                      Search instead
+                    </button>
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <HoldingSearch
+                    onSelect={selectResult}
+                    label={t("quickAddHolding.labelSearch")}
+                    placeholder={t("quickAddHolding.placeholderSearch")}
+                    autoFocus={!isMobile}
+                  />
+                  <div className="pt-2 border-t">
                     <p className="text-xs text-muted-foreground">
+                      {t("quickAddHolding.cantFind")}{" "}
                       <button
                         type="button"
                         className="text-primary underline underline-offset-2 hover:text-primary/80"
-                        onClick={() => setManualMode(false)}
+                        onClick={() => setManualMode(true)}
                       >
-                        Search instead
+                        {t("quickAddHolding.enterManually")}
                       </button>
                     </p>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <HoldingSearch
-                      onSelect={selectResult}
-                      label={t("quickAddHolding.labelSearch")}
-                      placeholder={t("quickAddHolding.placeholderSearch")}
-                      autoFocus
-                    />
-                    <div className="pt-2 border-t">
-                      <p className="text-xs text-muted-foreground">
-                        {t("quickAddHolding.cantFind")}{" "}
-                        <button
-                          type="button"
-                          className="text-primary underline underline-offset-2 hover:text-primary/80"
-                          onClick={() => setManualMode(true)}
-                        >
-                          {t("quickAddHolding.enterManually")}
-                        </button>
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Quantity ── */}
-                <div className="space-y-2">
-                  <Label className="text-base font-medium">
-                    {t("quickAddHolding.labelShares")}
-                  </Label>
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    value={quantity}
-                    onChange={handleQuantityChange}
-                    onBlur={handleQuantityBlur}
-                    placeholder={t("quickAddHolding.placeholderShares")}
-                    autoFocus={tickerSelected}
-                    className="text-lg h-12"
-                  />
-                  {quantityError && <p className="text-xs text-destructive">{quantityError}</p>}
                 </div>
+              )}
 
-                {/* ── Actions ── */}
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button type="button" variant="outline" onClick={handleClose}>
-                    {t("quickAddHolding.cancel")}
-                  </Button>
-                  <Button type="button" disabled={!canProceed} onClick={() => proceedToAccount()}>
-                    {t("quickAddHolding.next")}
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ── Account step ── */}
-        {step === "account" && (
-          <div className="space-y-4">
-            {/* Summary */}
-            <div className="rounded-lg border bg-muted/50 p-3">
-              <div className="flex items-center gap-2">
-                <span className="font-mono font-bold">{symbol}</span>
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                  {t(`quickAddHolding.assetTypes.${assetType}` as Parameters<typeof t>[0], {
-                    defaultValue: assetType,
-                  })}
-                </Badge>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                  {currency}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {assetType === "OPTION"
-                  ? `${name} · ${quantity} contract${parseFloat(quantity.replace(/,/g, "")) !== 1 ? "s" : ""}`
-                  : t("quickAddHolding.sharesSummary", { name, quantity })}
-              </p>
-            </div>
-
-            {matchingAccounts.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                {t("quickAddHolding.noAccountFound", {
-                  category: categoryLabel,
-                  name: defaultAccountName,
-                })}
-              </p>
-            )}
-
-            {matchingAccounts.length === 1 && (
+              {/* ── Quantity ── */}
               <div className="space-y-2">
-                <Label>{t("quickAddHolding.labelAccount")}</Label>
-                <div className="rounded-lg border bg-muted/50 p-3">
-                  <p className="font-medium">{matchingAccounts[0].name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {t(`categories.${matchingAccounts[0].category}` as Parameters<typeof t>[0], {
-                      defaultValue: matchingAccounts[0].category,
-                    })}
+                <Label htmlFor={quantityId} className="text-base font-medium">
+                  {t("quickAddHolding.labelShares")}
+                </Label>
+                <Input
+                  id={quantityId}
+                  type="text"
+                  inputMode="decimal"
+                  value={quantity}
+                  onChange={handleQuantityChange}
+                  onBlur={handleQuantityBlur}
+                  placeholder={t("quickAddHolding.placeholderShares")}
+                  autoFocus={tickerSelected && !isMobile}
+                  className="text-lg h-12"
+                  aria-invalid={!!quantityError}
+                  aria-describedby={quantityError ? `${quantityId}-error` : undefined}
+                />
+                {quantityError && (
+                  <p id={`${quantityId}-error`} className="text-xs text-destructive" role="alert">
+                    {quantityError}
                   </p>
-                </div>
+                )}
               </div>
-            )}
 
-            {matchingAccounts.length > 1 && (
-              <div className="space-y-2">
-                <Label>{t("quickAddHolding.selectAccount")}</Label>
-                <Select
-                  value={selectedAccountId}
-                  onValueChange={(v) => v && setSelectedAccountId(v)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue>
-                      {matchingAccounts.find((a) => a.id === selectedAccountId)?.name ??
-                        t("quickAddHolding.chooseAccount")}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {matchingAccounts.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {a.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="flex justify-between pt-2">
-              <Button type="button" variant="ghost" onClick={() => setStep("form")}>
-                {t("quickAddHolding.back")}
-              </Button>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={handleClose}>
+              {/* ── Actions ── */}
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={requestClose}>
                   {t("quickAddHolding.cancel")}
                 </Button>
-                <Button type="button" disabled={loading} onClick={handleSubmit}>
-                  {loading ? t("quickAddHolding.adding") : t("quickAddHolding.addHolding")}
+                <Button type="button" disabled={!canProceed} onClick={() => proceedToAccount()}>
+                  {t("quickAddHolding.next")}
                 </Button>
               </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Account step ── */}
+      {step === "account" && (
+        <div className="space-y-4">
+          {/* Summary */}
+          <div className="rounded-lg border bg-muted/50 p-3">
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-bold">{symbol}</span>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                {t(`quickAddHolding.assetTypes.${assetType}` as Parameters<typeof t>[0], {
+                  defaultValue: assetType,
+                })}
+              </Badge>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                {currency}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {assetType === "OPTION"
+                ? `${name} · ${quantity} contract${parseFloat(quantity.replace(/,/g, "")) !== 1 ? "s" : ""}`
+                : t("quickAddHolding.sharesSummary", { name, quantity })}
+            </p>
+          </div>
+
+          {matchingAccounts.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              {t("quickAddHolding.noAccountFound", {
+                category: categoryLabel,
+                name: defaultAccountName,
+              })}
+            </p>
+          )}
+
+          {matchingAccounts.length === 1 && (
+            <div className="space-y-2">
+              <Label>{t("quickAddHolding.labelAccount")}</Label>
+              <div className="rounded-lg border bg-muted/50 p-3">
+                <p className="font-medium">{matchingAccounts[0].name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t(`categories.${matchingAccounts[0].category}` as Parameters<typeof t>[0], {
+                    defaultValue: matchingAccounts[0].category,
+                  })}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {matchingAccounts.length > 1 && (
+            <div className="space-y-2">
+              <Label htmlFor={accountId}>{t("quickAddHolding.selectAccount")}</Label>
+              <Select value={selectedAccountId} onValueChange={(v) => v && setSelectedAccountId(v)}>
+                <SelectTrigger id={accountId} className="w-full">
+                  <SelectValue>
+                    {matchingAccounts.find((a) => a.id === selectedAccountId)?.name ??
+                      t("quickAddHolding.chooseAccount")}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {matchingAccounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="flex justify-between pt-2">
+            <Button type="button" variant="ghost" onClick={() => setStep("form")}>
+              {t("quickAddHolding.back")}
+            </Button>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={requestClose}>
+                {t("quickAddHolding.cancel")}
+              </Button>
+              <Button type="button" disabled={loading} onClick={handleSubmit}>
+                {loading ? t("quickAddHolding.adding") : t("quickAddHolding.addHolding")}
+              </Button>
             </div>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+        </div>
+      )}
+    </>
+  );
+
+  const discardGuard = (
+    <DiscardConfirmDialog
+      open={confirmOpen}
+      onOpenChange={setConfirmOpen}
+      onDiscard={confirmDiscard}
+    />
+  );
+
+  // Mobile: native bottom sheet (swipe-to-dismiss, safe-area aware).
+  // Desktop: centered dialog. Same body, same two-step flow.
+  if (isMobile) {
+    return (
+      <>
+        <Drawer open={open} onOpenChange={(o) => !o && requestClose()}>
+          <DrawerContent showCloseButton={false}>
+            <DrawerHeader>
+              <DrawerTitle>{dialogTitle}</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-4">{body}</div>
+          </DrawerContent>
+        </Drawer>
+        {discardGuard}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={(v) => !v && requestClose()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{dialogTitle}</DialogTitle>
+          </DialogHeader>
+          {body}
+        </DialogContent>
+      </Dialog>
+      {discardGuard}
+    </>
   );
 }
