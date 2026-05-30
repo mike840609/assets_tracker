@@ -16,6 +16,7 @@ import { HistoryHeatmap } from "@/components/history/history-heatmap";
 import { computeGoalsWithProgress } from "@/lib/services/goal-service";
 import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
 import { GoalsMilestoneCard } from "@/components/dashboard/goals-milestone-card";
+import { PortfolioHeatmap } from "@/components/analysis/portfolio-heatmap";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -89,6 +90,30 @@ function AccountsSummarySkeleton() {
         ))}
       </div>
     </div>
+  );
+}
+
+function PortfolioHeatmapSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <Skeleton className="h-5 w-36" />
+        <Skeleton className="h-4 w-64 max-w-full" />
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <Skeleton className="h-[240px] sm:h-[280px]" />
+          <div className="hidden space-y-3 lg:block">
+            <Skeleton className="h-24" />
+            <div className="space-y-2">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-10" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -219,6 +244,26 @@ async function AccountsSummarySection({
   return <AccountsSummary summary={summary} />;
 }
 
+/**
+ * Portfolio account heatmap.
+ * Sits between current exposure and the full account list as a visual bridge.
+ */
+async function PortfolioHeatmapSection({
+  userId,
+  baseCurrency,
+}: {
+  userId: string;
+  baseCurrency: string;
+}) {
+  const summary = await getCachedNetWorthSummary(userId, baseCurrency);
+  const hasAssets = summary.accounts.some(
+    (account) => account.type === "ASSET" && account.totalValueInBaseCurrency > 0,
+  );
+  if (!hasAssets) return null;
+
+  return <PortfolioHeatmap summary={summary} />;
+}
+
 /* ---------- Orchestrator ---------- */
 
 export async function DashboardContent({ userId }: { userId: string }) {
@@ -306,6 +351,13 @@ export async function DashboardContent({ userId }: { userId: string }) {
       <div className="animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
         <Suspense fallback={<ChartsSkeleton />}>
           <ChartsSection userId={userId} baseCurrency={baseCurrency} />
+        </Suspense>
+      </div>
+
+      {/* Account heatmap — bridges exposure charts and the detailed account list */}
+      <div className="animate-in fade-in slide-in-from-bottom-12 motion-slow fill-mode-both delay-150">
+        <Suspense fallback={<PortfolioHeatmapSkeleton />}>
+          <PortfolioHeatmapSection userId={userId} baseCurrency={baseCurrency} />
         </Suspense>
       </div>
 

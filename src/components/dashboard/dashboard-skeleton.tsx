@@ -59,6 +59,27 @@ export function DashboardSkeleton() {
         ))}
       </div>
 
+      {/* Account heatmap */}
+      <Card>
+        <CardHeader className="pb-2">
+          <Skeleton className="h-5 w-36" />
+          <Skeleton className="h-4 w-64 max-w-full" />
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <Skeleton className="h-[240px] sm:h-[280px]" />
+            <div className="hidden space-y-3 lg:block">
+              <Skeleton className="h-24" />
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-10" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Accounts summary — matches AccountsSummarySkeleton */}
       <div className="space-y-3">
         <Skeleton className="h-5 w-40" />
