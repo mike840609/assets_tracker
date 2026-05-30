@@ -78,11 +78,20 @@ const cachedYahooSearch = unstable_cache(
     try {
       const YahooFinance = (await import("yahoo-finance2")).default;
       const yahooFinance = new YahooFinance();
+      // `validateResult: false` skips yahoo-finance2's strict schema validation.
+      // Yahoo periodically tweaks its search response shape (e.g. returning
+      // `typeDisp: "Equity"` where the lib's schema expects a lowercase const),
+      // which otherwise throws FailedYahooValidationError and makes search return
+      // zero results. The fields we read below are still present and coerced.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result: any = await yahooFinance.search(query, {
-        quotesCount: 10,
-        newsCount: 0,
-      });
+      const result: any = await yahooFinance.search(
+        query,
+        {
+          quotesCount: 10,
+          newsCount: 0,
+        },
+        { validateResult: false },
+      );
 
       return (result.quotes || [])
         .filter((q: Record<string, unknown>) => {
@@ -110,7 +119,10 @@ export async function GET(request: Request) {
   if (limited) return limited;
 
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get("q")?.trim();
+  // Normalize to lowercase so the cache key is case-insensitive: "AAPL", "aapl",
+  // and "Aapl" collapse to one cache entry. Yahoo's search is already
+  // case-insensitive, so this doesn't change which results come back.
+  const query = searchParams.get("q")?.trim().toLowerCase();
 
   if (!query || query.length < 1) {
     return ok([] as SearchResult[]);
