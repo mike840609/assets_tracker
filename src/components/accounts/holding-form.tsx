@@ -3,11 +3,15 @@
 import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useDiscardGuard } from "@/hooks/use-discard-guard";
+import { DiscardConfirmDialog } from "@/components/discard-confirm-dialog";
 import { toast } from "sonner";
 import { HoldingSearch } from "./holding-search";
 import type { SearchResult } from "./holding-search";
@@ -36,6 +40,7 @@ export function HoldingForm({
   onSuccess?: () => void;
 }) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<Mode>("stock");
 
@@ -153,146 +158,188 @@ export function HoldingForm({
     !!quantity &&
     parseFloat(quantity.replace(/,/g, "")) > 0;
 
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{mode === "option" ? "Add Option Contract" : "Add Holding"}</DialogTitle>
-        </DialogHeader>
+  // Dirty once the user has picked/typed a ticker, named it, or set a quantity.
+  const isDirty = !!symbol || !!quantity || name.trim() !== "";
+  const { confirmOpen, setConfirmOpen, requestClose, confirmDiscard } = useDiscardGuard(
+    isDirty,
+    handleClose,
+  );
 
-        {/* Mode tabs */}
-        <Tabs
-          value={mode}
-          onValueChange={(v) => {
-            if (v) {
-              setMode(v as Mode);
-              clearSelection();
-            }
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="stock">Stock / ETF / Crypto</TabsTrigger>
-            <TabsTrigger value="option">Option</TabsTrigger>
-          </TabsList>
-        </Tabs>
+  const title = mode === "option" ? "Add Option Contract" : "Add Holding";
 
-        {mode === "option" ? (
-          <OptionBuilder loading={loading} onSubmit={postHolding} onCancel={handleClose} />
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* ── Ticker section ── */}
-            {tickerSelected ? (
-              <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold">{symbol}</span>
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                      {ASSET_TYPES.find((t) => t.value === assetType)?.label ?? assetType}
-                    </Badge>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                      {currency}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-0.5">{name}</p>
+  const body = (
+    <>
+      {/* Mode tabs */}
+      <Tabs
+        value={mode}
+        onValueChange={(v) => {
+          if (v) {
+            setMode(v as Mode);
+            clearSelection();
+          }
+        }}
+      >
+        <TabsList>
+          <TabsTrigger value="stock">Stock / ETF / Crypto</TabsTrigger>
+          <TabsTrigger value="option">Option</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {mode === "option" ? (
+        <OptionBuilder loading={loading} onSubmit={postHolding} onCancel={requestClose} />
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* ── Ticker section ── */}
+          {tickerSelected ? (
+            <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold">{symbol}</span>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                    {ASSET_TYPES.find((t) => t.value === assetType)?.label ?? assetType}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                    {currency}
+                  </Badge>
                 </div>
-                <Button type="button" variant="ghost" size="sm" onClick={clearSelection}>
-                  Change
-                </Button>
+                <p className="text-sm text-muted-foreground mt-0.5">{name}</p>
               </div>
-            ) : manualMode ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Symbol</Label>
-                    <Input
-                      value={symbol}
-                      onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                      placeholder="e.g. AAPL"
-                      autoFocus
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Asset Type</Label>
-                    <select
-                      value={assetType}
-                      onChange={(e) => setAssetType(e.target.value)}
-                      className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      {ASSET_TYPES.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+              <Button type="button" variant="ghost" size="sm" onClick={clearSelection}>
+                Change
+              </Button>
+            </div>
+          ) : manualMode ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Name</Label>
+                  <Label>Symbol</Label>
                   <Input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Apple Inc."
+                    value={symbol}
+                    onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                    placeholder="e.g. AAPL"
+                    autoFocus={!isMobile}
                     required
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Asset Type</Label>
+                  <select
+                    value={assetType}
+                    onChange={(e) => setAssetType(e.target.value)}
+                    className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {ASSET_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Apple Inc."
+                  required
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                <button
+                  type="button"
+                  className="text-primary underline underline-offset-2 hover:text-primary/80"
+                  onClick={() => setManualMode(false)}
+                >
+                  Search instead
+                </button>
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <HoldingSearch onSelect={selectResult} autoFocus={!isMobile} />
+              <div className="pt-2 border-t">
                 <p className="text-xs text-muted-foreground">
+                  Can&apos;t find what you&apos;re looking for?{" "}
                   <button
                     type="button"
                     className="text-primary underline underline-offset-2 hover:text-primary/80"
-                    onClick={() => setManualMode(false)}
+                    onClick={() => setManualMode(true)}
                   >
-                    Search instead
+                    Enter manually
                   </button>
                 </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <HoldingSearch onSelect={selectResult} autoFocus />
-                <div className="pt-2 border-t">
-                  <p className="text-xs text-muted-foreground">
-                    Can&apos;t find what you&apos;re looking for?{" "}
-                    <button
-                      type="button"
-                      className="text-primary underline underline-offset-2 hover:text-primary/80"
-                      onClick={() => setManualMode(true)}
-                    >
-                      Enter manually
-                    </button>
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* ── Quantity ── */}
-            <div className="space-y-2">
-              <Label className="text-base font-medium">Number of Shares</Label>
-              <Input
-                type="text"
-                inputMode="decimal"
-                value={quantity}
-                onChange={handleQuantityChange}
-                onBlur={handleQuantityBlur}
-                placeholder="e.g. 100"
-                required
-                autoFocus={tickerSelected}
-                className="text-lg h-12"
-              />
-              {quantityError && <p className="text-xs text-destructive">{quantityError}</p>}
             </div>
+          )}
 
-            {/* ── Actions ── */}
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={loading || !canSubmit}>
-                {loading ? "Adding..." : "Add Holding"}
-              </Button>
-            </div>
-          </form>
-        )}
-      </DialogContent>
-    </Dialog>
+          {/* ── Quantity ── */}
+          <div className="space-y-2">
+            <Label className="text-base font-medium">Number of Shares</Label>
+            <Input
+              type="text"
+              inputMode="decimal"
+              value={quantity}
+              onChange={handleQuantityChange}
+              onBlur={handleQuantityBlur}
+              placeholder="e.g. 100"
+              required
+              autoFocus={tickerSelected && !isMobile}
+              className="text-lg h-12"
+            />
+            {quantityError && <p className="text-xs text-destructive">{quantityError}</p>}
+          </div>
+
+          {/* ── Actions ── */}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={requestClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading || !canSubmit}>
+              {loading ? "Adding..." : "Add Holding"}
+            </Button>
+          </div>
+        </form>
+      )}
+    </>
+  );
+
+  const discardGuard = (
+    <DiscardConfirmDialog
+      open={confirmOpen}
+      onOpenChange={setConfirmOpen}
+      onDiscard={confirmDiscard}
+    />
+  );
+
+  // Mobile: native bottom sheet. Desktop: centered dialog. Same form body.
+  if (isMobile) {
+    return (
+      <>
+        <Drawer open={open} onOpenChange={(o) => !o && requestClose()}>
+          <DrawerContent showCloseButton={false}>
+            <DrawerHeader>
+              <DrawerTitle>{title}</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-4">{body}</div>
+          </DrawerContent>
+        </Drawer>
+        {discardGuard}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={(v) => !v && requestClose()}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+          </DialogHeader>
+          {body}
+        </DialogContent>
+      </Dialog>
+      {discardGuard}
+    </>
   );
 }

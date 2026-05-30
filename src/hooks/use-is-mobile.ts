@@ -1,19 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
+/**
+ * Hydration-safe viewport media-query hook.
+ *
+ * Uses `useSyncExternalStore` so the server snapshot (`false`) is also used for
+ * the initial client render. That keeps the hydrated markup identical to the
+ * server HTML — avoiding mismatches in consumers that branch on it (e.g. Dialog
+ * vs. Drawer) — then React re-renders with the real client value immediately
+ * after hydration without a warning. Components mounted after hydration read the
+ * correct value on first render, so there's no flash either.
+ */
 export function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia(`(max-width: ${breakpoint - 1}px)`).matches;
-  });
+  const query = `(max-width: ${breakpoint - 1}px)`;
 
-  useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [breakpoint]);
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const mq = window.matchMedia(query);
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    [query],
+  );
 
-  return isMobile;
+  const getSnapshot = useCallback(() => window.matchMedia(query).matches, [query]);
+
+  return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }

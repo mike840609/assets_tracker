@@ -42,7 +42,11 @@
     "liability": "Liability",
     "undo": "Undo",
     "back": "Back",
-    "actionsFor": "Actions for {name}"
+    "actionsFor": "Actions for {name}",
+    "discardTitle": "Discard changes?",
+    "discardBody": "What you've entered will be lost.",
+    "discardConfirm": "Discard",
+    "keepEditing": "Keep editing"
   },
   "errors": {
     "title": "Something went wrong",
@@ -416,6 +420,12 @@
     "create": "Create Account",
     "created": "Account created",
     "createFailed": "Failed to create account"
+  },
+  "holdingSearch": {
+    "searching": "Searching…",
+    "noResults": "No matching symbols",
+    "resultCount": "{count, plural, one {# result} other {# results}}",
+    "unavailable": "Search is temporarily unavailable. Please try again."
   },
   "quickAddHolding": {
     "titleSearch": "Search Ticker",
