@@ -25,6 +25,15 @@ const HEATMAP_COLORS = [
   "var(--chart-4)",
 ];
 const ACCOUNT_TILE_TONE = 70;
+const CHILD_COLOR_MIX_TARGETS = [
+  "var(--chart-8)",
+  "var(--chart-9)",
+  "var(--chart-2)",
+  "var(--chart-7)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+];
+const CHILD_COLOR_ACCOUNT_WEIGHTS = [88, 78, 68, 84, 74, 64, 92, 72];
 
 type HeatmapNode = {
   id: string;
@@ -69,10 +78,23 @@ function borderTint(color: string, weight = 34): string {
   return `color-mix(in oklch, ${color} ${weight}%, var(--border))`;
 }
 
-function toneFromShare(share: number, min = 34, max = 90): number {
+function toneFromShare(share: number, min = 42, max = 90): number {
   if (!Number.isFinite(share) || share <= 0) return min;
   const normalized = Math.min(1, Math.max(0, share / 100));
-  return min + (max - min) * normalized ** 0.82;
+  return Number((min + (max - min) * normalized ** 0.82).toFixed(1));
+}
+
+function childColor(accountColor: string, childIndex: number, kind: "holding" | "cash"): string {
+  if (kind === "cash") {
+    return `color-mix(in oklch, ${accountColor} 44%, var(--muted-foreground))`;
+  }
+
+  const targets = CHILD_COLOR_MIX_TARGETS.filter((target) => target !== accountColor);
+  const target = targets[childIndex % targets.length] ?? "var(--muted-foreground)";
+  const accountWeight =
+    CHILD_COLOR_ACCOUNT_WEIGHTS[childIndex % CHILD_COLOR_ACCOUNT_WEIGHTS.length] ?? 82;
+
+  return `color-mix(in oklch, ${accountColor} ${accountWeight}%, ${target})`;
 }
 
 function nodeShare(node: HeatmapNode): number {
@@ -239,8 +261,8 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
           return {
             ...child,
             accountId: account.id,
-            color,
-            tone: toneFromShare(childAccountShare, child.kind === "cash" ? 28 : 34, 90),
+            color: childColor(color, childIndex, child.kind),
+            tone: toneFromShare(childAccountShare, child.kind === "cash" ? 32 : 42, 90),
             portfolioShare: childPortfolioShare,
             accountShare: childAccountShare,
             id: `${account.id}:${child.id}:${childIndex}`,
