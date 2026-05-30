@@ -68,6 +68,12 @@ function borderTint(color: string, weight = 34): string {
   return `color-mix(in oklch, ${color} ${weight}%, var(--border))`;
 }
 
+function toneFromShare(share: number, min = 42, max = 82): number {
+  if (!Number.isFinite(share) || share <= 0) return min;
+  const normalized = Math.min(1, Math.max(0, share / 100));
+  return min + (max - min) * Math.sqrt(normalized);
+}
+
 function nodeShare(node: HeatmapNode): number {
   return node.kind === "account" ? node.portfolioShare : (node.accountShare ?? 0);
 }
@@ -205,6 +211,10 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
         const children = accountChildren(account, t("heatmapCashLabel"));
         const childTotal = children.reduce((sum, child) => sum + child.value, 0);
         const color = HEATMAP_COLORS[index % HEATMAP_COLORS.length];
+        const portfolioShare =
+          summary.totalAssets > 0
+            ? (account.totalValueInBaseCurrency / summary.totalAssets) * 100
+            : 0;
         const unpricedCount = account.holdings.filter(
           (holding) => holding.currentPrice === null || holding.marketValueInBaseCurrency === null,
         ).length;
@@ -215,21 +225,24 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
           value: account.totalValueInBaseCurrency,
           color,
           kind: "account" as const,
-          tone: Math.max(48, 74 - index * 6),
-          portfolioShare:
-            summary.totalAssets > 0
-              ? (account.totalValueInBaseCurrency / summary.totalAssets) * 100
-              : 0,
+          tone: toneFromShare(portfolioShare, 44, 78),
+          portfolioShare,
           unpricedCount,
-          children: children.map((child, childIndex) => ({
-            ...child,
-            accountId: account.id,
-            color,
-            tone: child.kind === "cash" ? 34 : Math.max(44, 80 - childIndex * 6),
-            portfolioShare: summary.totalAssets > 0 ? (child.value / summary.totalAssets) * 100 : 0,
-            accountShare: childTotal > 0 ? (child.value / childTotal) * 100 : 0,
-            id: `${account.id}:${child.id}:${childIndex}`,
-          })),
+          children: children.map((child, childIndex) => {
+            const childPortfolioShare =
+              summary.totalAssets > 0 ? (child.value / summary.totalAssets) * 100 : 0;
+            const childAccountShare = childTotal > 0 ? (child.value / childTotal) * 100 : 0;
+
+            return {
+              ...child,
+              accountId: account.id,
+              color,
+              tone: toneFromShare(childPortfolioShare, child.kind === "cash" ? 34 : 42, 82),
+              portfolioShare: childPortfolioShare,
+              accountShare: childAccountShare,
+              id: `${account.id}:${child.id}:${childIndex}`,
+            };
+          }),
         };
       })
       .sort((a, b) => b.value - a.value);
