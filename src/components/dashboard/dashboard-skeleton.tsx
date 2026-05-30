@@ -13,23 +13,31 @@ export function DashboardSkeleton() {
       {/* Actions */}
       <Skeleton className="h-10 w-full rounded-lg" />
 
-      {/* Net Worth Cards — matches NetWorthSkeleton in dashboard-content.tsx */}
+      {/* Net Worth Cards — mirror NetWorthCard internals (icon + label + value) */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+        {/* Primary: Net Worth */}
         <Card className="col-span-2 lg:col-span-1 rounded-2xl h-[126px]">
-          <CardContent className="h-full p-0">
-            <Skeleton className="h-full w-full rounded-2xl" />
+          <CardContent className="h-full p-4 sm:p-6 flex flex-col justify-center">
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+            <Skeleton className="h-8 w-40 max-w-full mt-1" />
+            <Skeleton className="h-6 w-28 rounded-full mt-3" />
           </CardContent>
         </Card>
-        <Card className="col-span-1 rounded-2xl h-[126px]">
-          <CardContent className="h-full p-0">
-            <Skeleton className="h-full w-full rounded-2xl" />
-          </CardContent>
-        </Card>
-        <Card className="col-span-1 rounded-2xl h-[126px]">
-          <CardContent className="h-full p-0">
-            <Skeleton className="h-full w-full rounded-2xl" />
-          </CardContent>
-        </Card>
+        {/* Secondary: Assets + Liabilities */}
+        {[0, 1].map((i) => (
+          <Card key={i} className="col-span-1 rounded-2xl h-[126px]">
+            <CardContent className="h-full p-4 sm:p-6 flex flex-col justify-center">
+              <div className="flex items-center gap-2 mb-1">
+                <Skeleton className="h-4 w-4 rounded-sm shrink-0" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <Skeleton className="h-6 w-24 max-w-full mt-1" />
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Trend chart + heatmap footer */}

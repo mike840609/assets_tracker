@@ -281,6 +281,37 @@
   }
 }
 
+/* ─── Skeleton loading shimmer ───────────────────────────────────────────────
+   A highlight band sweeps across placeholders so the loading state is obvious
+   rather than reading as a static gray block. Applied via [data-slot="skeleton"]
+   in src/components/ui/skeleton.tsx. */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 20%,
+    color-mix(in oklab, var(--foreground) 12%, transparent) 50%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none;
+  }
+}
+
 /* ─── View-transition slide animations (item 10) ─────────────────────────── */
 
 @keyframes vt-slide-in-from-right {

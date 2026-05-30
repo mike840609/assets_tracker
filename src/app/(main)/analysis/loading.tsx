@@ -31,14 +31,14 @@ export default function AnalysisLoading() {
         </div>
 
         <div className="space-y-6">
-          {/* KPI tiles */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* KPI tiles — mirrors KpiTiles: 2-col on mobile, 4-col at md */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
             {[...Array(4)].map((_, i) => (
               <Card key={i} size="sm">
-                <div className="px-4 space-y-2">
+                <div className="px-3 space-y-1.5">
                   <Skeleton className="h-3 w-24" />
-                  <Skeleton className="h-7 w-36" />
-                  {i < 2 && <Skeleton className="h-3 w-20" />}
+                  <Skeleton className="h-7 w-36 max-w-full" />
+                  {i !== 2 && <Skeleton className="h-3 w-20" />}
                 </div>
               </Card>
             ))}
