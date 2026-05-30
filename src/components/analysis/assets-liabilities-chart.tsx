@@ -14,6 +14,7 @@ import {
 import { formatCurrency } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useDensity } from "@/components/layout/density-context";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import type { MonthlyBucket } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
@@ -76,6 +77,8 @@ function AssetsTooltip({
 export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
+  const { density } = useDensity();
+  const chartHeight = density === "compact" ? 240 : 280;
   const [mounted, setMounted] = useState(false);
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   const { handlers: crosshairHandlers } = useChartCrosshair();
@@ -102,11 +105,14 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
       </CardHeader>
       <CardContent className="px-2 sm:px-4 pb-4">
         {data.length === 0 ? (
-          <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
+          <div
+            className="flex items-center justify-center text-muted-foreground text-sm"
+            style={{ height: chartHeight }}
+          >
             {t("noData")}
           </div>
         ) : !mounted ? (
-          <div className="h-[280px]" />
+          <div style={{ height: chartHeight }} />
         ) : (
           <div
             role="img"
@@ -116,8 +122,9 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
           >
             <ChartContainer
               config={config}
-              className="h-[280px] w-full"
-              initialDimension={{ width: 1, height: 280 }}
+              className="w-full"
+              style={{ height: chartHeight }}
+              initialDimension={{ width: 1, height: chartHeight }}
             >
               <BarChart
                 data={data}

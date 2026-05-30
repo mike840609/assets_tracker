@@ -254,27 +254,27 @@ export function AnalysisView({
             className={isCompact ? "space-y-3" : "space-y-6"}
           >
             <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
-            <Card>
+            <Card size={isCompact ? "sm" : "default"}>
               <LazyMonthlyChangeChart
                 buckets={buckets}
                 baseCurrency={baseCurrency}
                 locale={locale}
               />
             </Card>
-            <Card>
+            <Card size={isCompact ? "sm" : "default"}>
               <LazyAssetsLiabilitiesChart
                 buckets={buckets}
                 baseCurrency={baseCurrency}
                 locale={locale}
               />
             </Card>
-            <Card>
+            <Card size={isCompact ? "sm" : "default"}>
               <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
             </Card>
-            <Card>
+            <Card size={isCompact ? "sm" : "default"}>
               <LazyAttributionChart items={attributionItems} baseCurrency={baseCurrency} />
             </Card>
-            <Card>
+            <Card size={isCompact ? "sm" : "default"}>
               <LazyCategoryTrendChart
                 data={categoryHistory}
                 baseCurrency={baseCurrency}

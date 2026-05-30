@@ -34,8 +34,8 @@ function Tile({
         ? "text-[var(--loss)]"
         : "text-foreground";
   return (
-    <Card size="sm" className="min-w-0">
-      <CardContent className={isCompact ? "space-y-1 p-3 min-w-0" : "space-y-1.5 min-w-0"}>
+    <Card size={isCompact ? "sm" : "default"} className="min-w-0">
+      <CardContent className={isCompact ? "space-y-1 min-w-0" : "space-y-1.5 min-w-0"}>
         <div className="text-xs text-muted-foreground font-medium truncate">{title}</div>
         <div className="overflow-x-auto scrollbar-none">
           <div

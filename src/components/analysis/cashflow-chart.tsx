@@ -8,6 +8,7 @@ import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/
 import { formatCurrency } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { useDensity } from "@/components/layout/density-context";
 import type { CashFlowBucket } from "@/lib/services/analysis-service";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
@@ -86,6 +87,8 @@ const cashflowConfig = {} satisfies ChartConfig;
 export function CashFlowChart({ buckets, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
+  const { density } = useDensity();
+  const chartHeight = density === "compact" ? 240 : 280;
   const [mounted, setMounted] = useState(false);
   const { handlers: crosshairHandlers } = useChartCrosshair();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
@@ -99,11 +102,14 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
       </CardHeader>
       <CardContent className="px-2 sm:px-4 pb-4">
         {buckets.length === 0 ? (
-          <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
+          <div
+            className="flex items-center justify-center text-muted-foreground text-sm"
+            style={{ height: chartHeight }}
+          >
             {t("noData")}
           </div>
         ) : !mounted ? (
-          <div className="h-[280px]" />
+          <div style={{ height: chartHeight }} />
         ) : (
           <div
             aria-hidden={privacyMode || undefined}
@@ -130,8 +136,9 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
             <div role="img" aria-label={`${t("cashFlow")}, ${t("cashFlowSubtitle")}`}>
               <ChartContainer
                 config={cashflowConfig}
-                className="h-[280px] w-full"
-                initialDimension={{ width: 1, height: 280 }}
+                className="w-full"
+                style={{ height: chartHeight }}
+                initialDimension={{ width: 1, height: chartHeight }}
               >
                 <BarChart
                   data={buckets}
