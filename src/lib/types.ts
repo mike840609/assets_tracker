@@ -68,6 +68,7 @@ export type SerializedTransaction = Serialized<HoldingTransaction, "quantity", "
 export type HoldingWithPrice = SerializedHolding & {
   currentPrice: number | null;
   marketValue: number | null;
+  marketValueInBaseCurrency: number | null;
 };
 
 export type AccountWithValue = SerializedAccount & {

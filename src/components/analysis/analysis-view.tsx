@@ -34,13 +34,16 @@ import {
   LazyAttributionChart,
 } from "./lazy-analysis-charts";
 import { KpiTiles } from "./kpi-tiles";
+import { PortfolioHeatmap } from "./portfolio-heatmap";
 import { TopMoversList } from "./top-movers-list";
+import type { NetWorthSummary } from "@/lib/types";
 
 interface Props {
   snapshots: NormalizedSnapshot[];
   cashFlowData: MonthlyContribution[];
   rawHistory: RawHistoryData;
   accountCashFlow: AccountMonthlyContribution[];
+  summary: NetWorthSummary;
   baseCurrency: string;
   locale: string;
 }
@@ -68,6 +71,7 @@ export function AnalysisView({
   cashFlowData,
   rawHistory,
   accountCashFlow,
+  summary,
   baseCurrency,
   locale,
 }: Props) {
@@ -254,6 +258,7 @@ export function AnalysisView({
             className={isCompact ? "space-y-3" : "space-y-6"}
           >
             <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
+            <PortfolioHeatmap summary={summary} />
             <Card size={isCompact ? "sm" : "default"}>
               <LazyMonthlyChangeChart
                 buckets={buckets}
