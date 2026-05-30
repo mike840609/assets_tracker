@@ -1,6 +1,7 @@
 import "server-only";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { getYahooClient } from "@/lib/services/yahoo-client";
 import { log, withTiming } from "@/lib/logger";
 
 const FETCH_TIMEOUT_MS = 5_000;
@@ -70,8 +71,7 @@ async function fetchYahooQuotes(
   const results = new Map<string, { price: number; currency: string }>();
   if (symbols.length === 0) return results;
 
-  const YahooFinance = (await import("yahoo-finance2")).default;
-  const yahooFinance = new YahooFinance();
+  const yahooFinance = await getYahooClient();
 
   const fetchSymbols = async (syms: string[]) => {
     const quotes = await withRetry(() =>
