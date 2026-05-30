@@ -217,7 +217,6 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
       .map((account, index) => {
         const children = accountChildren(account, t("heatmapCashLabel"));
         const childTotal = children.reduce((sum, child) => sum + child.value, 0);
-        const maxChildValue = Math.max(0, ...children.map((child) => child.value));
         const color = HEATMAP_COLORS[index % HEATMAP_COLORS.length];
         const portfolioShare =
           summary.totalAssets > 0
@@ -242,13 +241,12 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
             const childPortfolioShare =
               summary.totalAssets > 0 ? (child.value / summary.totalAssets) * 100 : 0;
             const childAccountShare = childTotal > 0 ? (child.value / childTotal) * 100 : 0;
-            const childDepthShare = maxChildValue > 0 ? (child.value / maxChildValue) * 100 : 0;
 
             return {
               ...child,
               accountId: account.id,
               color,
-              tone: toneFromShare(childDepthShare, child.kind === "cash" ? 28 : 34, 90),
+              tone: toneFromShare(childAccountShare, child.kind === "cash" ? 28 : 34, 90),
               portfolioShare: childPortfolioShare,
               accountShare: childAccountShare,
               id: `${account.id}:${child.id}:${childIndex}`,
