@@ -1,5 +1,6 @@
 import { ok } from "@/lib/api-responses";
 import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
+import { getYahooClient } from "@/lib/services/yahoo-client";
 import { log } from "@/lib/logger";
 
 type ChainContract = {
@@ -41,8 +42,7 @@ export async function GET(request: Request) {
   const dateParam = searchParams.get("date"); // YYYY-MM-DD
 
   try {
-    const YahooFinance = (await import("yahoo-finance2")).default;
-    const yf = new YahooFinance();
+    const yf = await getYahooClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const initial: any = await yf.options(symbol);
     const allDates: Date[] = initial.expirationDates ?? [];
