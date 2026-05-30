@@ -174,7 +174,10 @@
       radial-gradient(ellipse 60% 40% at 100% 80%, oklch(0.74 0.17 270 / 0.05), transparent);
   }
   html {
-    @apply font-sans scroll-smooth;
+    /* Paint the root element with the base background so the iOS safe-area
+       (status bar + home-indicator chin) blends with the page in standalone
+       PWA mode, where the chin is painted by <html>, not theme-color. */
+    @apply bg-background font-sans scroll-smooth;
   }
   .recharts-wrapper * {
     outline: none !important;
