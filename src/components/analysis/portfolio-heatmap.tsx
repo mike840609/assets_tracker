@@ -485,7 +485,7 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
                 {renderDetailCard("hidden sm:block")}
 
                 {selectedAccount?.children && selectedAccount.children.length > 0 ? (
-                  <div className="max-h-[22rem] overflow-y-auto rounded-xl border border-border/60 bg-muted/10 sm:max-h-[18rem] lg:max-h-[23rem]">
+                  <div className="max-h-[22rem] space-y-1 overflow-y-auto rounded-xl border border-border/60 bg-muted/10 p-1 sm:max-h-[18rem] lg:max-h-[23rem]">
                     {selectedAccount.children.map((child) => (
                       <button
                         key={child.id}
@@ -495,7 +495,7 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
                         onMouseEnter={() => setActiveNode(child)}
                         aria-pressed={activeNode?.id === child.id}
                         className={cn(
-                          "grid min-h-11 w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 px-3 py-2 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset md:min-h-10",
+                          "grid min-h-11 w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset md:min-h-10",
                           activeNode?.id === child.id &&
                             "bg-[color:var(--heatmap-child-active-bg)] ring-1 ring-inset ring-[color:var(--heatmap-child-active-border)]",
                         )}
