@@ -1,5 +1,6 @@
 "use client";
 
+import { useLayoutEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
@@ -10,6 +11,56 @@ import type { NetWorthSummary } from "@/lib/types";
 import { TrendingUp, TrendingDown, Layers, Wallet } from "lucide-react";
 
 const HIDDEN = "***";
+
+/**
+ * Currency value that prefers the full number but falls back to the compact
+ * form (e.g. $1.2M) when the full digits would overflow the available width.
+ * An invisible, out-of-flow sibling holds the full string so its natural width
+ * can be compared against the container without affecting layout.
+ */
+function FitCurrency({
+  amount,
+  currency,
+  privacy,
+  className,
+}: {
+  amount: number;
+  currency: string;
+  privacy: boolean;
+  className?: string;
+}) {
+  const full = formatCurrency(amount, currency);
+  const containerRef = useRef<HTMLParagraphElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const [fits, setFits] = useState(true);
+
+  useLayoutEffect(() => {
+    if (privacy) return;
+    const container = containerRef.current;
+    const measure = measureRef.current;
+    if (!container || !measure) return;
+    const check = () => setFits(measure.offsetWidth <= container.clientWidth);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [full, privacy]);
+
+  return (
+    <p ref={containerRef} className={className} title={privacy ? undefined : full}>
+      {privacy ? HIDDEN : fits ? full : formatCurrency(amount, currency, true)}
+      {!privacy && (
+        <span
+          ref={measureRef}
+          aria-hidden
+          className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap"
+        >
+          {full}
+        </span>
+      )}
+    </p>
+  );
+}
 
 export function NetWorthCard({
   summary,
@@ -101,12 +152,12 @@ export function NetWorthCard({
               {t("totalAssets")}
             </p>
           </div>
-          <p
-            className="text-lg sm:text-2xl font-semibold text-[var(--gain)] mt-1 whitespace-nowrap tabular-nums truncate"
-            title={privacyMode ? undefined : formatCurrency(totalAssets, baseCurrency)}
-          >
-            {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency, true)}
-          </p>
+          <FitCurrency
+            amount={totalAssets}
+            currency={baseCurrency}
+            privacy={privacyMode}
+            className="relative text-lg sm:text-2xl font-semibold text-[var(--gain)] mt-1 whitespace-nowrap tabular-nums truncate"
+          />
         </CardContent>
       </Card>
 
@@ -121,12 +172,12 @@ export function NetWorthCard({
               {t("totalLiabilities")}
             </p>
           </div>
-          <p
-            className="text-lg sm:text-2xl font-semibold text-[var(--loss)] mt-1 whitespace-nowrap tabular-nums truncate"
-            title={privacyMode ? undefined : formatCurrency(totalLiabilities, baseCurrency)}
-          >
-            {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency, true)}
-          </p>
+          <FitCurrency
+            amount={totalLiabilities}
+            currency={baseCurrency}
+            privacy={privacyMode}
+            className="relative text-lg sm:text-2xl font-semibold text-[var(--loss)] mt-1 whitespace-nowrap tabular-nums truncate"
+          />
         </CardContent>
       </Card>
     </div>
