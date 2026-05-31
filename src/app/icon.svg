@@ -4,8 +4,16 @@
       <stop offset="0%" stop-color="#34d399"/>
       <stop offset="100%" stop-color="#065f46"/>
     </linearGradient>
+    <linearGradient id="shine" x1="7" y1="2" x2="25" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="white" stop-opacity=".3"/>
+      <stop offset="44%" stop-color="white" stop-opacity=".08"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
   </defs>
   <rect width="32" height="32" rx="6" fill="url(#g)"/>
-  <path d="M8 20 L13.5 13.5 L17.5 17.5 L24 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M20 10 L24 10 L24 14" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="1.25" y="1.25" width="29.5" height="29.5" rx="5" fill="none" stroke="url(#shine)" stroke-width="1.5"/>
+  <path d="M9 9.5 H15" stroke="white" stroke-opacity=".64" stroke-width="2.25" stroke-linecap="round"/>
+  <path d="M9 14 H13" stroke="white" stroke-opacity=".42" stroke-width="2.25" stroke-linecap="round"/>
+  <path d="M9 22 L13.25 17.25 L17 19.75 L23 11.25" stroke="white" stroke-width="2.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M19.25 11.25 H23 V15" stroke="white" stroke-width="2.65" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

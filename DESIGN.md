@@ -245,7 +245,7 @@ The net-worth card may carry a soft animated mesh and bottom accent, but both mu
 
 ### App Icon / Favicon
 
-The app mark is a rounded square with a diagonal gradient and white chart-arrow glyph. Preserve the original shape, radius, white stroke, and shadow treatment. Only recolor the gradient using the active schema's dedicated app-icon gradient tokens. The browser favicon may update through a generated SVG data URL; Apple/PWA icons remain stable because iOS caches them aggressively.
+The app mark is a rounded square with a diagonal schema gradient, a subtle inset highlight, and a white ledger-plus-sparkline glyph. Preserve the shared mark geometry across favicon, mobile header, and sidebar. Only the gradient colors adapt through the active schema's dedicated app-icon gradient tokens; the white glyph and existing shadow treatment remain stable. The browser favicon may update through a generated SVG data URL; Apple/PWA icons remain stable because iOS caches them aggressively.
 
 ### Inputs / Fields
 
