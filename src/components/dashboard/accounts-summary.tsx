@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
+import { springConfig } from "@/lib/motion";
 import type { NetWorthSummary } from "@/lib/types";
 
 const HIDDEN = "***";
@@ -22,6 +24,16 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
   const isCompact = density === "compact";
+  const reduceMotion = useReducedMotion();
+
+  // Allocation bars grow from 0 → their share once, the frame after mount, so
+  // proportion reads as a quick fill (the existing transition-[width] carries it).
+  // Skipped under reduced motion: bars render at full width immediately.
+  const [barsGrown, setBarsGrown] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setBarsGrown(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -114,13 +126,13 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
         </p>
         <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
           {accounts.map((account, index) => (
-            <div key={account.id}>
+            <motion.div key={account.id} layout={!reduceMotion} transition={springConfig}>
               {index > 0 && <div className="h-px bg-border/60 mx-4" />}
               <div className="relative overflow-hidden">
                 {!privacyMode && (
                   <div
-                    className={`absolute inset-y-0 left-0 ${isAsset ? "bg-[var(--gain)]/5" : "bg-[var(--loss)]/5"} transition-[width] duration-500`}
-                    style={{ width: `${getPercentage(account)}%` }}
+                    className={`absolute inset-y-0 left-0 ${isAsset ? "bg-[var(--gain)]/5" : "bg-[var(--loss)]/5"} transition-[width] duration-500 ease-out`}
+                    style={{ width: `${reduceMotion || barsGrown ? getPercentage(account) : 0}%` }}
                   />
                 )}
                 <Link
@@ -152,7 +164,7 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
                   </div>
                 </Link>
               </div>
-            </div>
+            </motion.div>
           ))}
           <div className="h-px bg-border/60" />
           <div className="flex items-center justify-between px-4 py-3 bg-muted/20">
