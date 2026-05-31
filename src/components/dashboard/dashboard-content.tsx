@@ -63,20 +63,16 @@ function NetWorthSkeleton() {
   );
 }
 
-function ChartsSkeleton() {
+function ChartCardSkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
-      {[...Array(2)].map((_, i) => (
-        <Card key={i}>
-          <CardHeader className="pb-2">
-            <div className="h-5 w-32 bg-muted animate-pulse rounded" />
-          </CardHeader>
-          <CardContent>
-            <div className="h-[250px] bg-muted animate-pulse rounded" />
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+    <Card>
+      <CardHeader className="pb-2">
+        <Skeleton className="h-5 w-32" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-[250px]" />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -176,19 +172,31 @@ async function NetWorthSection({ userId, baseCurrency }: { userId: string; baseC
 }
 
 /**
- * Allocation + currency exposure charts.
- * Shares the same cached summary as NetWorthSection (data-cache dedup).
+ * Allocation donut — asset composition by category.
+ * Lives in the trend-row rail. Shares the cached summary (data-cache dedup).
  */
-async function ChartsSection({ userId, baseCurrency }: { userId: string; baseCurrency: string }) {
+async function AllocationSection({
+  userId,
+  baseCurrency,
+}: {
+  userId: string;
+  baseCurrency: string;
+}) {
   const summary = await getCachedNetWorthSummary(userId, baseCurrency);
   if (summary.accounts.length === 0) return null;
 
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
-      <LazyAllocationChart summary={summary} />
-      <LazyCurrencyExposureChart summary={summary} />
-    </div>
-  );
+  return <LazyAllocationChart summary={summary} />;
+}
+
+/**
+ * Currency exposure donut — value split by currency.
+ * Pairs with the portfolio heatmap row. Shares the cached summary (data-cache dedup).
+ */
+async function CurrencySection({ userId, baseCurrency }: { userId: string; baseCurrency: string }) {
+  const summary = await getCachedNetWorthSummary(userId, baseCurrency);
+  if (summary.accounts.length === 0) return null;
+
+  return <LazyCurrencyExposureChart summary={summary} />;
 }
 
 /**
@@ -261,7 +269,7 @@ async function PortfolioHeatmapSection({
   );
   if (!hasAssets) return null;
 
-  return <PortfolioHeatmap summary={summary} />;
+  return <PortfolioHeatmap summary={summary} fillHeight />;
 }
 
 /* ---------- Orchestrator ---------- */
@@ -326,42 +334,61 @@ export async function DashboardContent({ userId }: { userId: string }) {
         <DashboardActionsSection userId={userId} baseCurrency={baseCurrency} />
       </Suspense>
 
-      {/* Net worth card — the LCP element, streams as soon as summary resolves */}
+      {/* Net worth card — the LCP element, full-bleed headline above the grid */}
       <Suspense fallback={<NetWorthSkeleton />}>
         <NetWorthSection userId={userId} baseCurrency={baseCurrency} />
       </Suspense>
 
-      {/* Goals milestone — next active goal, streams after net worth */}
-      <Suspense fallback={null}>
-        <GoalsMilestoneSection userId={userId} baseCurrency={baseCurrency} />
-      </Suspense>
+      {/* Tier 2 — "what changed": trend chart (8) + goals/allocation rail (4) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 animate-in fade-in slide-in-from-bottom-8 motion-slow fill-mode-both delay-75">
+        <div className="min-w-0 lg:col-span-8">
+          <Suspense fallback={<TrendChartSkeleton />}>
+            <TrendChartSection
+              baseCurrency={baseCurrency}
+              snapshots={snapshots}
+              footer={<HistoryHeatmap snapshots={snapshots} baseCurrency={baseCurrency} />}
+            />
+          </Suspense>
+        </div>
+        <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4">
+          <Suspense fallback={null}>
+            <GoalsMilestoneSection userId={userId} baseCurrency={baseCurrency} />
+          </Suspense>
+          {/* Allocation lives in the desktop rail; on mobile it joins the donut pair below */}
+          <div className="hidden lg:block">
+            <Suspense fallback={<ChartCardSkeleton />}>
+              <AllocationSection userId={userId} baseCurrency={baseCurrency} />
+            </Suspense>
+          </div>
+        </div>
+      </div>
 
-      {/* Trend chart + activity heatmap footer — share the same card */}
-      <div className="animate-in fade-in slide-in-from-bottom-8 motion-slow fill-mode-both delay-75">
-        <Suspense fallback={<TrendChartSkeleton />}>
-          <TrendChartSection
-            baseCurrency={baseCurrency}
-            snapshots={snapshots}
-            footer={<HistoryHeatmap snapshots={snapshots} baseCurrency={baseCurrency} />}
-          />
+      {/* Mobile-only — keep the two donuts side by side below the desktop breakpoint */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:hidden animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
+        <Suspense fallback={<ChartCardSkeleton />}>
+          <AllocationSection userId={userId} baseCurrency={baseCurrency} />
+        </Suspense>
+        <Suspense fallback={<ChartCardSkeleton />}>
+          <CurrencySection userId={userId} baseCurrency={baseCurrency} />
         </Suspense>
       </div>
 
-      {/* Allocation + currency exposure charts */}
-      <div className="animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
-        <Suspense fallback={<ChartsSkeleton />}>
-          <ChartsSection userId={userId} baseCurrency={baseCurrency} />
-        </Suspense>
+      {/* Tier 3 — "what it's made of": portfolio heatmap (8) + currency donut (4) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
+        <div className="min-w-0 lg:col-span-8">
+          <Suspense fallback={<PortfolioHeatmapSkeleton />}>
+            <PortfolioHeatmapSection userId={userId} baseCurrency={baseCurrency} />
+          </Suspense>
+        </div>
+        {/* Currency lives in the desktop rail; on mobile it joins the donut pair above */}
+        <div className="hidden min-w-0 lg:col-span-4 lg:block">
+          <Suspense fallback={<ChartCardSkeleton />}>
+            <CurrencySection userId={userId} baseCurrency={baseCurrency} />
+          </Suspense>
+        </div>
       </div>
 
-      {/* Account heatmap — bridges exposure charts and the detailed account list */}
-      <div className="animate-in fade-in slide-in-from-bottom-12 motion-slow fill-mode-both delay-150">
-        <Suspense fallback={<PortfolioHeatmapSkeleton />}>
-          <PortfolioHeatmapSection userId={userId} baseCurrency={baseCurrency} />
-        </Suspense>
-      </div>
-
-      {/* Accounts summary table */}
+      {/* Tier 4 — drill-in detail: full-width accounts summary */}
       <div className="animate-in fade-in slide-in-from-bottom-12 motion-slow fill-mode-both delay-150">
         <Suspense fallback={<AccountsSummarySkeleton />}>
           <AccountsSummarySection userId={userId} baseCurrency={baseCurrency} />

@@ -8,7 +8,7 @@ import { Treemap, type TreemapNode } from "recharts";
 import { useDensity } from "@/components/layout/density-context";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useContainerWidth } from "@/hooks/use-container-size";
+import { useContainerSize } from "@/hooks/use-container-size";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { formatCurrency } from "@/lib/currencies";
 import { cn } from "@/lib/utils";
@@ -208,7 +208,14 @@ function accountChildren(account: NetWorthSummary["accounts"][number], cashLabel
   ];
 }
 
-export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
+export function PortfolioHeatmap({
+  summary,
+  fillHeight = false,
+}: {
+  summary: NetWorthSummary;
+  /** Grow the treemap to fill the side-panel height (for fixed-height slots like the dashboard grid). */
+  fillHeight?: boolean;
+}) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
@@ -217,13 +224,17 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
   const shouldReduceMotion = useReducedMotion();
   const chartSummaryId = useId();
   const chartRef = useRef<HTMLDivElement>(null);
-  const chartWidth = useContainerWidth(chartRef);
-  const chartHeight = useMemo(() => {
+  const { width: chartWidth, height: chartContainerHeight } = useContainerSize(chartRef);
+  const baseChartHeight = useMemo(() => {
     if (chartWidth === 0) return isCompact ? 220 : 280;
     if (chartWidth < 420) return Math.max(190, Math.round(chartWidth * 0.62));
     if (chartWidth < 760) return Math.max(240, Math.round(chartWidth * 0.55));
     return isCompact ? 220 : 280;
   }, [chartWidth, isCompact]);
+  // In fillHeight mode the container stretches to the taller side panel; render the
+  // treemap at that measured height so it consumes the gap instead of leaving it blank.
+  const chartHeight =
+    fillHeight && chartContainerHeight > baseChartHeight ? chartContainerHeight : baseChartHeight;
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [activeNode, setActiveNode] = useState<HeatmapNode | null>(null);
 
@@ -425,7 +436,7 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
         ) : (
           <>
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
-              <div className="min-w-0">
+              <div className={cn("min-w-0", fillHeight && "lg:flex lg:flex-col")}>
                 <div className="mb-2 flex min-h-8 items-center gap-2 overflow-hidden">
                   {selectedAccount && (
                     <button
@@ -448,9 +459,11 @@ export function PortfolioHeatmap({ summary }: { summary: NetWorthSummary }) {
                 <div
                   ref={chartRef}
                   className={cn(
-                    "relative min-h-[190px] overflow-hidden bg-[color-mix(in_oklch,var(--muted)_24%,var(--card))] ring-1 ring-border/60 transition-[filter] duration-300 sm:min-h-[240px] lg:min-h-0",
+                    "relative min-h-[190px] overflow-hidden bg-[color-mix(in_oklch,var(--muted)_24%,var(--card))] ring-1 ring-border/60 transition-[filter] duration-300 sm:min-h-[240px]",
+                    fillHeight ? "lg:flex-1" : "lg:min-h-0",
                     privacyMode && "blur-sm pointer-events-none select-none",
                   )}
+                  style={fillHeight ? { minHeight: baseChartHeight } : undefined}
                   role={privacyMode ? undefined : "img"}
                   aria-label={privacyMode ? undefined : chartLabel}
                   aria-describedby={privacyMode ? undefined : chartSummaryId}

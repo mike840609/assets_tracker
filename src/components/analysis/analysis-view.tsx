@@ -258,7 +258,7 @@ export function AnalysisView({
             className={isCompact ? "space-y-3" : "space-y-6"}
           >
             <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
-            <PortfolioHeatmap summary={summary} />
+            <PortfolioHeatmap summary={summary} fillHeight />
             <Card size={isCompact ? "sm" : "default"}>
               <LazyMonthlyChangeChart
                 buckets={buckets}
