@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useReducedMotion } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
@@ -24,6 +26,15 @@ export function GoalsMilestoneCard({
   const t = useTranslations("goalsMilestone");
   const locale = useLocale();
   const { privacyMode } = usePrivacyMode();
+  const reduceMotion = useReducedMotion();
+
+  // Fill the progress bar from 0 → its value the frame after mount so the
+  // milestone reads as advancing. Reduced motion lands at the final width.
+  const [filled, setFilled] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setFilled(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   if (totalGoals === 0) return null;
 
@@ -68,8 +79,8 @@ export function GoalsMilestoneCard({
               className="h-2 w-full rounded-full bg-muted/60 overflow-hidden"
             >
               <div
-                className="h-full rounded-full bg-primary/80 transition-all motion-normal"
-                style={{ width: `${progressClamped}%` }}
+                className="h-full rounded-full bg-primary/80 transition-[width] duration-700 ease-out"
+                style={{ width: `${reduceMotion || filled ? progressClamped : 0}%` }}
               />
             </div>
 
