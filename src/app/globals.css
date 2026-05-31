@@ -94,10 +94,11 @@
   --chart-8: oklch(0.65 0.13 110); /* Lime */
   --chart-9: oklch(0.62 0.11 190); /* Teal */
 
-  /* Gain/loss semantic tokens — direction coloring (not category).
-     Defaults to Western (Green=Up); overridden under [data-stock-color-scheme="red-up"]. */
+  /* Gain/loss semantic tokens follow the active color schema. */
   --gain: var(--chart-1);
-  --loss: var(--destructive);
+  --loss: var(--chart-2);
+  --app-icon-gradient-start: #34d399;
+  --app-icon-gradient-end: #065f46;
 
   --radius: 0.75rem;
   --sidebar: oklch(0.98 0.005 260);
@@ -142,7 +143,7 @@
   --chart-9: oklch(0.75 0.11 190); /* Teal */
 
   --gain: var(--chart-1);
-  --loss: var(--destructive);
+  --loss: var(--chart-2);
 
   --sidebar: oklch(0.12 0.03 200);
   --sidebar-foreground: oklch(0.94 0.01 190);
@@ -234,32 +235,84 @@
   .ios-tab-pop {
     animation: ios-tab-pop 320ms var(--ease-spring) both;
   }
+}
 
-  .hero-mesh-positive,
-  .hero-mesh-negative {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.24;
-    filter: saturate(1.08);
-    background-size: 160% 160%;
-    animation: hero-mesh-drift 14s ease-in-out infinite;
-  }
+.hero-mesh-neutral,
+.hero-mesh-positive,
+.hero-mesh-negative {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.26;
+  filter: saturate(1.04);
+  background-size: 160% 160%;
+  animation: hero-mesh-drift 14s ease-in-out infinite;
+}
 
-  .hero-mesh-positive {
-    background-image:
-      radial-gradient(circle at 15% 25%, oklch(0.88 0.12 160 / 0.75), transparent 50%),
-      radial-gradient(circle at 80% 20%, oklch(0.72 0.16 165 / 0.45), transparent 46%),
-      radial-gradient(circle at 55% 80%, oklch(0.66 0.13 180 / 0.3), transparent 52%);
-  }
+.hero-mesh-neutral {
+  background-image:
+    radial-gradient(
+      circle at 14% 24%,
+      color-mix(in oklch, var(--primary) 42%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 82% 18%,
+      color-mix(in oklch, var(--chart-2) 28%, transparent),
+      transparent 46%
+    ),
+    radial-gradient(
+      circle at 56% 82%,
+      color-mix(in oklch, var(--chart-3) 18%, transparent),
+      transparent 54%
+    );
+}
 
-  .hero-mesh-negative {
-    background-image:
-      radial-gradient(circle at 15% 25%, oklch(0.8 0.16 30 / 0.7), transparent 50%),
-      radial-gradient(circle at 80% 20%, oklch(0.66 0.19 25 / 0.45), transparent 46%),
-      radial-gradient(circle at 55% 80%, oklch(0.6 0.15 15 / 0.3), transparent 52%);
-  }
+.hero-mesh-positive {
+  background-image:
+    radial-gradient(
+      circle at 14% 24%,
+      color-mix(in oklch, var(--gain) 48%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 82% 18%,
+      color-mix(in oklch, var(--chart-2) 30%, transparent),
+      transparent 46%
+    ),
+    radial-gradient(
+      circle at 56% 82%,
+      color-mix(in oklch, var(--chart-3) 22%, transparent),
+      transparent 54%
+    );
+}
+
+.hero-mesh-negative {
+  background-image:
+    radial-gradient(
+      circle at 14% 24%,
+      color-mix(in oklch, var(--loss) 46%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 82% 18%,
+      color-mix(in oklch, var(--chart-3) 28%, transparent),
+      transparent 46%
+    ),
+    radial-gradient(
+      circle at 56% 82%,
+      color-mix(in oklch, var(--chart-4) 18%, transparent),
+      transparent 54%
+    );
+}
+
+.net-worth-card-accent {
+  background: linear-gradient(
+    90deg,
+    var(--gain),
+    color-mix(in oklch, var(--chart-2) 72%, var(--background))
+  );
 }
 
 @keyframes ios-tab-pop {
@@ -315,6 +368,7 @@
   .skeleton-shimmer {
     animation: none;
   }
+  .hero-mesh-neutral,
   .hero-mesh-positive,
   .hero-mesh-negative {
     animation: none;
@@ -455,6 +509,8 @@ html[data-vt-theme]::view-transition-new(root) {
   --chart-3: oklch(0.56 0.08 125);
   --chart-4: oklch(0.68 0.12 55);
   --chart-5: oklch(0.72 0.09 345);
+  --app-icon-gradient-start: #e8916e;
+  --app-icon-gradient-end: #9a3412;
 }
 .dark[data-color-schema="anthropic"] {
   --background: oklch(0.1 0.005 80);
@@ -512,6 +568,8 @@ html[data-vt-theme]::view-transition-new(root) {
   --chart-3: oklch(0.55 0.16 260);
   --chart-4: oklch(0.65 0.15 150);
   --chart-5: oklch(0.7 0.12 300);
+  --app-icon-gradient-start: #60a5fa;
+  --app-icon-gradient-end: #075985;
 }
 .dark[data-color-schema="ocean"] {
   --primary: oklch(0.75 0.16 220);
@@ -561,6 +619,8 @@ html[data-vt-theme]::view-transition-new(root) {
   --chart-3: oklch(0.55 0.18 320);
   --chart-4: oklch(0.65 0.14 200);
   --chart-5: oklch(0.7 0.12 150);
+  --app-icon-gradient-start: #a78bfa;
+  --app-icon-gradient-end: #5b21b6;
 }
 .dark[data-color-schema="violet"] {
   --primary: oklch(0.74 0.18 280);
@@ -610,6 +670,8 @@ html[data-vt-theme]::view-transition-new(root) {
   --chart-3: oklch(0.6 0.15 90);
   --chart-4: oklch(0.62 0.14 110);
   --chart-5: oklch(0.72 0.1 150);
+  --app-icon-gradient-start: #fbbf24;
+  --app-icon-gradient-end: #92400e;
 }
 .dark[data-color-schema="amber"] {
   --primary: oklch(0.8 0.18 65);
@@ -659,6 +721,8 @@ html[data-vt-theme]::view-transition-new(root) {
   --chart-3: oklch(0.62 0.16 30);
   --chart-4: oklch(0.65 0.14 330);
   --chart-5: oklch(0.7 0.12 300);
+  --app-icon-gradient-start: #fb7185;
+  --app-icon-gradient-end: #9f1239;
 }
 .dark[data-color-schema="rose"] {
   --primary: oklch(0.76 0.18 15);
@@ -693,29 +757,6 @@ html[data-vt-theme]::view-transition-new(root) {
   background-image:
     radial-gradient(ellipse 80% 50% at 50% -10%, oklch(0.76 0.18 15 / 0.08), transparent),
     radial-gradient(ellipse 60% 40% at 100% 80%, oklch(0.8 0.14 330 / 0.05), transparent);
-}
-
-/* ─── Stock direction color scheme ───────────────────────────────────────
-   Default (no attribute / "green-up"): --gain = emerald, --loss = red (Western).
-   "red-up": swapped (East Asian markets). Applied on the (main)/layout wrapper. */
-[data-stock-color-scheme="red-up"] {
-  --gain: var(--destructive);
-  --loss: var(--chart-1);
-}
-
-/* Hero-mesh background classes bake oklch coordinates into background-image and
-   can't reference the swappable tokens, so paint the opposite gradient under red-up. */
-[data-stock-color-scheme="red-up"] .hero-mesh-positive {
-  background-image:
-    radial-gradient(circle at 15% 25%, oklch(0.8 0.16 30 / 0.7), transparent 50%),
-    radial-gradient(circle at 80% 20%, oklch(0.66 0.19 25 / 0.45), transparent 46%),
-    radial-gradient(circle at 55% 80%, oklch(0.6 0.15 15 / 0.3), transparent 52%);
-}
-[data-stock-color-scheme="red-up"] .hero-mesh-negative {
-  background-image:
-    radial-gradient(circle at 15% 25%, oklch(0.88 0.12 160 / 0.75), transparent 50%),
-    radial-gradient(circle at 80% 20%, oklch(0.72 0.16 165 / 0.45), transparent 46%),
-    radial-gradient(circle at 55% 80%, oklch(0.66 0.13 180 / 0.3), transparent 52%);
 }
 
 /* Sonner toast action button — theme-aware outline style */

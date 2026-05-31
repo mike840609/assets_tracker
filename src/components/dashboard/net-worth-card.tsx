@@ -88,7 +88,8 @@ export function NetWorthCard({
   const bgDeltaColor =
     delta === null ? "" : isPositive ? "bg-[var(--gain)]/10" : "bg-[var(--loss)]/10";
   const deltaSign = delta !== null && delta > 0 ? "+" : "";
-  const meshClass = delta === null ? "" : isPositive ? "hero-mesh-positive" : "hero-mesh-negative";
+  const meshClass =
+    delta === null ? "hero-mesh-neutral" : isPositive ? "hero-mesh-positive" : "hero-mesh-negative";
 
   return (
     <div
@@ -97,8 +98,8 @@ export function NetWorthCard({
     >
       {/* Primary Hero Metric: Net Worth */}
       <Card className="col-span-2 lg:col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all motion-normal hover:-translate-y-1 relative group min-w-0">
-        {meshClass && <div className={meshClass} />}
-        <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-primary to-primary/50 opacity-100 transition-opacity" />
+        <div className={meshClass} />
+        <div className="net-worth-card-accent absolute inset-x-0 bottom-0 h-1 opacity-100 transition-opacity" />
         <CardContent
           className={`${isCompact ? "p-2.5 sm:p-3" : "p-4 sm:p-6"} h-full flex flex-col justify-center min-w-0 relative z-10`}
         >

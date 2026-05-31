@@ -102,8 +102,8 @@ export function Sidebar({
           >
             <defs>
               <linearGradient id="sidebar-icon-g" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#34d399" />
-                <stop offset="100%" stopColor="#065f46" />
+                <stop offset="0%" style={{ stopColor: "var(--app-icon-gradient-start)" }} />
+                <stop offset="100%" style={{ stopColor: "var(--app-icon-gradient-end)" }} />
               </linearGradient>
             </defs>
             <rect width="32" height="32" rx="9" fill="url(#sidebar-icon-g)" />

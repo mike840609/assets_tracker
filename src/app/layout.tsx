@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { ColorSchemaProvider } from "@/components/layout/color-schema-context";
-import { StockColorSchemeProvider } from "@/components/layout/stock-color-scheme-context";
 import { LazyToaster } from "@/components/layout/lazy-toaster";
 import { CustomSpeedInsights } from "@/components/layout/speed-insights";
 import { HtmlLangSync } from "@/components/layout/html-lang-sync";
@@ -293,25 +292,23 @@ export default function RootLayout({
       <body className="h-full flex flex-col md:flex-row overflow-hidden bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <ColorSchemaProvider>
-            <StockColorSchemeProvider>
-              {/*
-               * LocaleProviders reads the NEXT_LOCALE cookie — a runtime API.
-               * Suspense keeps this cookie read out of the prerender pass so
-               * static routes can produce a ◐ (Partial Prerender) shell.
-               * The fallback is a non-null element to avoid the Next.js
-               * "empty fallback above document body" anti-pattern.
-               */}
-              <Suspense fallback={<span />}>
-                <LocaleProviders>{children}</LocaleProviders>
-              </Suspense>
-              <LazyToaster />
-              {enableVercelInsights ? (
-                <>
-                  <Analytics />
-                  <CustomSpeedInsights />
-                </>
-              ) : null}
-            </StockColorSchemeProvider>
+            {/*
+             * LocaleProviders reads the NEXT_LOCALE cookie — a runtime API.
+             * Suspense keeps this cookie read out of the prerender pass so
+             * static routes can produce a ◐ (Partial Prerender) shell.
+             * The fallback is a non-null element to avoid the Next.js
+             * "empty fallback above document body" anti-pattern.
+             */}
+            <Suspense fallback={<span />}>
+              <LocaleProviders>{children}</LocaleProviders>
+            </Suspense>
+            <LazyToaster />
+            {enableVercelInsights ? (
+              <>
+                <Analytics />
+                <CustomSpeedInsights />
+              </>
+            ) : null}
           </ColorSchemaProvider>
         </ThemeProvider>
       </body>
