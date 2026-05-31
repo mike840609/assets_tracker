@@ -73,11 +73,26 @@ npx prisma migrate deploy   # apply committed migrations to your database
 
 ### 4. Running Locally
 
-```bash
-npm run dev
-```
+We recommend using a local PostgreSQL database via Docker for development to avoid incurring Neon compute costs.
+
+1. **Start the local database:**
+   ```bash
+   npm run db:up
+   ```
+
+2. **Push the schema to your local DB:**
+   ```bash
+   npx prisma db push
+   ```
+
+3. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
 
 Open [http://localhost:3000](http://localhost:3000) to see your dashboard.
+
+When you are done developing for the day, you can stop the database with `npm run db:down`.
 
 ### 5. End-to-End Tests
 
