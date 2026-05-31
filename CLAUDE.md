@@ -45,6 +45,7 @@ npx prisma migrate dev --name <description>        # Author a new migration loca
 npx prisma migrate deploy                          # Apply pending migrations against $DATABASE_URL (run by build:vercel on Vercel)
 npx prisma migrate resolve --applied <migration>   # One-shot baseline: mark a migration as already-applied (e.g. when adopting migrations on a DB seeded via db push)
 npx prisma db push                                 # Quick prototype-only schema sync — bypasses migration history; commit a migrate dev before merging
+npx prisma db push --force-reset                    # Reset local DB (drops all tables, recreates schema directly, bypassing migration history)
 npx prisma studio                                  # Open Prisma Studio GUI
 
 # E2E tests (Playwright)

@@ -76,11 +76,13 @@ npx prisma migrate deploy   # apply committed migrations to your database
 We recommend using a local PostgreSQL database via Docker for development to avoid incurring Neon compute costs.
 
 1. **Start the local database:**
+
    ```bash
    npm run db:up
    ```
 
 2. **Push the schema to your local DB:**
+
    ```bash
    npx prisma db push
    ```
@@ -93,6 +95,9 @@ We recommend using a local PostgreSQL database via Docker for development to avo
 Open [http://localhost:3000](http://localhost:3000) to see your dashboard.
 
 When you are done developing for the day, you can stop the database with `npm run db:down`.
+
+> [!TIP]
+> **Resetting the Local Database**: If you need to clear all data and rebuild the database schema from scratch, run `npx prisma db push --force-reset`. Avoid using `npx prisma migrate reset` locally, as the repository does not have a baseline migration file (it relies on `db push` for schema sync) and the command will fail.
 
 ### 5. End-to-End Tests
 

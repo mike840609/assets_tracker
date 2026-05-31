@@ -30,13 +30,24 @@ async function getOrCreateSettingsInner(userId: string) {
   const locale = await getLocale();
   const baseCurrency = getLocaleDefaultCurrency(locale);
 
-  return prisma.setting.create({
-    data: {
-      userId,
-      locale,
-      baseCurrency,
-    },
-  });
+  try {
+    const created = await prisma.setting.create({
+      data: {
+        userId,
+        locale,
+        baseCurrency,
+      },
+    });
+    return created;
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+      // If a concurrent request successfully created the settings first,
+      // load it directly from the database
+      const directSettings = await prisma.setting.findUnique({ where: { userId } });
+      if (directSettings) return directSettings;
+    }
+    throw error;
+  }
 }
 
 /**

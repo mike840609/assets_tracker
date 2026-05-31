@@ -52,7 +52,7 @@ const nextConfig: NextConfig = {
       "@base-ui/react",
     ],
   },
-  serverExternalPackages: ["ws", "@neondatabase/serverless"],
+  serverExternalPackages: ["ws", "@neondatabase/serverless", "pg"],
   headers: async () => [
     {
       source: "/:path*",
