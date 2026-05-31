@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Pencil } from "lucide-react";
+import { Pencil, ChevronLeft, Plus, Trash2 } from "lucide-react";
 import { springConfig } from "@/lib/motion";
 
 import dynamic from "next/dynamic";
@@ -262,7 +262,20 @@ export function AccountDetail({
 
   return (
     <>
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      {/* Mobile Back Nav */}
+      <div className="flex items-center gap-1.5 mb-4 md:hidden">
+        <Link 
+          href="/accounts" 
+          className="inline-flex items-center gap-0.5 text-sm font-medium text-primary hover:text-primary/80 active:text-primary/60 transition-colors -ml-1"
+          transitionTypes={["nav-back"]}
+        >
+          <ChevronLeft className="h-5 w-5" />
+          {t("accountDetail.breadcrumb")}
+        </Link>
+      </div>
+
+      {/* Desktop Breadcrumb */}
+      <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground mb-4">
         <Link href="/accounts" className="hover:text-foreground" transitionTypes={["nav-back"]}>
           {t("accountDetail.breadcrumb")}
         </Link>
@@ -270,8 +283,8 @@ export function AccountDetail({
         <span>{account.name}</span>
       </div>
 
-      <div className="flex items-start justify-between">
-        <div className="flex-1 mr-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
           {isEditingName ? (
             <div className="flex items-center gap-2 max-w-md">
               <Input
@@ -292,7 +305,7 @@ export function AccountDetail({
             </div>
           ) : (
             <h2
-              className="group inline-flex items-center gap-1.5 text-2xl font-bold tracking-tight cursor-pointer hover:text-primary hover:bg-accent/50 rounded px-1 -mx-1 transition-colors"
+              className="group inline-flex items-center gap-1.5 text-2xl font-bold tracking-tight cursor-pointer hover:text-primary hover:bg-accent/50 rounded-md px-1.5 -mx-1.5 py-0.5 transition-colors"
               onClick={() => setIsEditingName(true)}
               role="button"
               tabIndex={0}
@@ -304,31 +317,34 @@ export function AccountDetail({
                 }
               }}
             >
-              <span>{account.name}</span>
+              <span className="truncate">{account.name}</span>
               <Pencil
                 aria-hidden
-                className="h-3.5 w-3.5 opacity-60 group-hover:opacity-100 transition-opacity shrink-0"
+                className="h-3.5 w-3.5 opacity-0 group-hover:opacity-60 transition-opacity shrink-0"
               />
             </h2>
           )}
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1.5">
             <Badge variant={account.type === "ASSET" ? "default" : "destructive"}>
               {t(`common.${account.type.toLowerCase()}`, { defaultValue: account.type })}
             </Badge>
-            <span className="text-muted-foreground">
-              {t(`categories.${account.category}`, { defaultValue: account.category })} ·{" "}
-              {account.currency}
+            <span className="text-sm text-muted-foreground">
+              {t(`categories.${account.category}`, { defaultValue: account.category })} · {account.currency}
             </span>
           </div>
         </div>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => setShowDeleteConfirm(true)}
-          disabled={deleting}
-        >
-          {deleting ? t("accountDetail.deleting") : t("accountDetail.deleteAccount")}
-        </Button>
+        <div className="hidden md:block shrink-0 pt-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={deleting}
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+            {deleting ? t("accountDetail.deleting") : t("accountDetail.deleteAccount")}
+          </Button>
+        </div>
       </div>
 
       <AccountStatCards
@@ -339,32 +355,40 @@ export function AccountDetail({
 
       {!isBank && (
         <>
-          {/* Mobile: swipeable card rows */}
-          <Card className="md:hidden">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-medium">
-                  {t("accountDetail.holdingsCount")}
-                  {filteredSortedHoldings.length > 0 && (
-                    <span className="ml-1.5 text-muted-foreground font-normal">
-                      ({filteredSortedHoldings.length})
-                    </span>
-                  )}
-                </CardTitle>
+          {/* Mobile: swipeable rows */}
+          <div className="md:hidden mt-8">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h3 className="font-medium text-sm">
+                {t("accountDetail.holdingsCount")}
+                {filteredSortedHoldings.length > 0 && (
+                  <span className="ml-1.5 text-muted-foreground font-normal">
+                    ({filteredSortedHoldings.length})
+                  </span>
+                )}
+              </h3>
+              <Button size="sm" variant="ghost" className="h-8 text-primary px-2" onClick={() => setShowHoldingForm(true)}>
+                <Plus className="h-4 w-4 mr-1.5" />
+                {t("accountDetail.addHolding")}
+              </Button>
+            </div>
+            
+            {holdingsWithValue.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center rounded-2xl border border-dashed border-border/60 bg-muted/10">
+                <div className="bg-primary/10 p-3 rounded-full mb-3">
+                  <Plus className="w-5 h-5 text-primary" />
+                </div>
+                <p className="text-sm text-muted-foreground mb-4 max-w-xs">
+                  {t("accountDetail.noHoldings")}
+                </p>
                 <Button size="sm" onClick={() => setShowHoldingForm(true)}>
+                  <Plus className="h-4 w-4 mr-1.5" />
                   {t("accountDetail.addHolding")}
                 </Button>
               </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {holdingsWithValue.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  {t("accountDetail.noHoldings")}
-                </p>
-              ) : (
-                <>
-                  {holdingsWithValue.length > 1 && (
-                    <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm border-b border-border/40 mb-2 -mx-6 px-6 py-2 md:static md:bg-transparent md:backdrop-blur-none md:border-0 md:mx-0 md:px-0 md:py-0 flex items-center gap-1.5 flex-wrap">
+            ) : (
+              <>
+                {holdingsWithValue.length > 1 && (
+                  <div className="sticky top-14 z-10 bg-background/90 backdrop-blur-sm border-b border-border/40 mb-2 py-2 flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs text-muted-foreground shrink-0">Sort:</span>
                       {(
                         [
@@ -436,8 +460,7 @@ export function AccountDetail({
                   )}
                 </>
               )}
-            </CardContent>
-          </Card>
+          </div>
 
           {/* Desktop: data table */}
           <div className="hidden md:block">
@@ -455,9 +478,18 @@ export function AccountDetail({
               </Button>
             </div>
             {filteredSortedHoldings.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                {t("accountDetail.noHoldings")}
-              </p>
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center rounded-xl border border-dashed border-border/60 bg-muted/10">
+                <div className="bg-primary/10 p-3 rounded-full mb-3">
+                  <Plus className="w-5 h-5 text-primary" />
+                </div>
+                <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+                  {t("accountDetail.noHoldings")}
+                </p>
+                <Button size="sm" onClick={() => setShowHoldingForm(true)}>
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  {t("accountDetail.addHolding")}
+                </Button>
+              </div>
             ) : (
               <HoldingsTable
                 holdings={filteredSortedHoldings}
@@ -475,6 +507,22 @@ export function AccountDetail({
       )}
 
       <TransactionHistory accountId={account.id} isBank={isBank} refreshTrigger={refreshTrigger} />
+
+      {/* Mobile Danger Zone */}
+      <div className="mt-10 md:hidden pt-6 border-t border-border/40">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+          {t("accountDetail.dangerZone", { defaultValue: "Danger Zone" })}
+        </p>
+        <Button
+          variant="outline"
+          className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+          onClick={() => setShowDeleteConfirm(true)}
+          disabled={deleting}
+        >
+          <Trash2 className="h-4 w-4 mr-1.5" />
+          {deleting ? t("accountDetail.deleting") : t("accountDetail.deleteAccount")}
+        </Button>
+      </div>
 
       <HoldingForm
         open={showHoldingForm}

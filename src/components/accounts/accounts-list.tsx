@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -35,15 +35,27 @@ import {
 import {
   Archive,
   ArchiveRestore,
+  ArrowUpDown,
+  Banknote,
+  BriefcaseBusiness,
+  Building2,
+  Car,
   ChevronDown,
+  ChevronRight,
+  CreditCard,
+  FileText,
+  Folder,
   GripVertical,
+  Landmark,
   MoreHorizontal,
   Pin,
   PinOff,
+  Plus,
   Save,
   Trash2,
   X,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { formatCurrency } from "@/lib/currencies";
 import { springConfig } from "@/lib/motion";
 import { toast } from "sonner";
@@ -57,16 +69,16 @@ const QuickAddHolding = dynamic(() => import("./quick-add-holding").then((m) => 
 
 const HIDDEN = "***";
 
-const CATEGORY_ICONS: Record<string, string> = {
-  BANK: "🏦",
-  BROKERAGE: "📈",
-  CRYPTO_WALLET: "🪙",
-  PROPERTY: "🏠",
-  VEHICLE: "🚗",
-  CREDIT_CARD: "💳",
-  LOAN: "📋",
-  MORTGAGE: "🏡",
-  OTHER: "📁",
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  BANK: Landmark,
+  BROKERAGE: BriefcaseBusiness,
+  CRYPTO_WALLET: Banknote,
+  PROPERTY: Building2,
+  VEHICLE: Car,
+  CREDIT_CARD: CreditCard,
+  LOAN: FileText,
+  MORTGAGE: Building2,
+  OTHER: Folder,
 };
 
 const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
@@ -446,32 +458,58 @@ export function AccountsList({
     setDraft((prev) => reinsertByPinState(prev, getPinned(prev), nextUnpinned));
   }
 
+  const netWorth = totalAssets - totalLiabilities;
+  const { privacyMode } = usePrivacyMode();
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {manageMode ? (
-          <>
-            <Button variant="outline" onClick={cancelManageMode} disabled={savingOrder}>
-              <X className="h-4 w-4" />
-              {t("common.cancel")}
-            </Button>
-            <Button onClick={saveManageOrder} disabled={savingOrder}>
-              <Save className="h-4 w-4" />
-              {savingOrder ? t("common.saving", { defaultValue: "Saving..." }) : t("common.save")}
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="outline" onClick={() => setShowQuickAdd(true)}>
-              {t("accountsList.addItem")}
-            </Button>
-            <Button variant="outline" onClick={enterManageMode} disabled={accounts.length === 0}>
-              {t("accountsList.manageOrder")}
-            </Button>
-            <Button onClick={() => setShowForm(true)}>{t("accountsList.addAccount")}</Button>
-          </>
-        )}
-      </div>
+    <div className="space-y-6 md:space-y-8">
+      {accounts.length > 0 && (
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:pb-6 md:border-b md:border-border/60">
+          <div className="flex flex-col gap-1">
+            <h3 className="text-sm font-medium text-muted-foreground">
+              {t("accountsList.totalNetWorth", { defaultValue: "Total Net Worth" })}
+            </h3>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl md:text-4xl font-bold tabular-nums tracking-tight text-foreground" aria-live="polite">
+                {privacyMode ? HIDDEN : formatCurrency(netWorth, baseCurrency)}
+              </span>
+              <span className="text-sm font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                {baseCurrency}
+              </span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {manageMode ? (
+              <>
+                <Button variant="outline" onClick={cancelManageMode} disabled={savingOrder}>
+                  <X className="h-4 w-4 mr-1.5" />
+                  {t("common.cancel")}
+                </Button>
+                <Button onClick={saveManageOrder} disabled={savingOrder}>
+                  <Save className="h-4 w-4 mr-1.5" />
+                  {savingOrder ? t("common.saving", { defaultValue: "Saving..." }) : t("common.save")}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" className="hidden md:inline-flex" onClick={() => setShowQuickAdd(true)}>
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  {t("accountsList.addItem", { defaultValue: "Add Item" })}
+                </Button>
+                <Button variant="outline" className="hidden md:inline-flex" onClick={enterManageMode} disabled={accounts.length === 0}>
+                  <ArrowUpDown className="h-4 w-4 mr-1.5" />
+                  {t("accountsList.manageOrder")}
+                </Button>
+                <Button onClick={() => setShowForm(true)}>
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  {t("accountsList.addAccount")}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {manageMode ? (
         <ManageOrderPanel
@@ -484,9 +522,21 @@ export function AccountsList({
       ) : (
         <>
           {accounts.length === 0 && (
-            <p className="text-center text-muted-foreground py-12">
-              {t("accountsList.noAccounts")}
-            </p>
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center border rounded-xl bg-muted/10 border-dashed">
+              <div className="bg-primary/10 p-4 rounded-full mb-4">
+                <Plus className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-1">
+                {t("accountsList.noAccountsTitle", { defaultValue: "No accounts yet" })}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+                {t("accountsList.noAccountsDesc", { defaultValue: "Add your first account to start tracking your net worth and balances." })}
+              </p>
+              <Button onClick={() => setShowForm(true)}>
+                <Plus className="h-4 w-4 mr-1.5" />
+                {t("accountsList.addAccount")}
+              </Button>
+            </div>
           )}
 
           {accounts.length > 0 && (
@@ -582,70 +632,94 @@ export function AccountsList({
             </div>
           )}
 
-          <div className="lg:hidden space-y-6">
+          <div className="lg:hidden">
+            {/* Summary strip + quick actions: grouped tightly */}
             {accounts.length > 0 && (
-              <div className="space-y-1">
+              <div className="space-y-3 mb-6">
                 <MobileSummaryStrip
                   totalAssets={totalAssets}
                   totalLiabilities={totalLiabilities}
                   baseCurrency={baseCurrency}
                 />
+
+                {/* Mobile quick actions */}
+                {!manageMode && (
+                  <div className="flex md:hidden gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setShowQuickAdd(true)}>
+                      <Plus className="h-4 w-4 mr-1.5" />
+                      {t("accountsList.addItem", { defaultValue: "Add Item" })}
+                    </Button>
+                    <Button variant="outline" className="flex-1" onClick={enterManageMode} disabled={accounts.length === 0}>
+                      <ArrowUpDown className="h-4 w-4 mr-1.5" />
+                      {t("accountsList.manageOrder")}
+                    </Button>
+                  </div>
+                )}
+                {manageMode && (
+                  <div className="flex md:hidden gap-2">
+                    <Button variant="outline" className="flex-1" onClick={cancelManageMode} disabled={savingOrder}>
+                      <X className="h-4 w-4 mr-1.5" />
+                      {t("common.cancel")}
+                    </Button>
+                    <Button className="flex-1" onClick={saveManageOrder} disabled={savingOrder}>
+                      <Save className="h-4 w-4 mr-1.5" />
+                      {savingOrder ? t("common.saving", { defaultValue: "Saving..." }) : t("common.save")}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
-            {assetsByCategory.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-[var(--gain)]">
-                  {t("accountsList.assets")}
-                </h3>
-                <div className="space-y-3">
-                  {assetsByCategory.map(({ category, accounts: catAccounts }) => (
-                    <CategorySection
-                      key={`asset_${category}`}
-                      category={category}
-                      accounts={catAccounts}
-                      priceMap={priceMap}
-                      ratesMap={ratesMap}
-                      baseCurrency={baseCurrency}
-                      isExpanded={expandedCategories.has(`ASSET_${category}`)}
-                      onToggleExpand={() => toggleCategory("ASSET", category)}
-                      onDelete={deleteAccount}
-                      onTogglePin={togglePinAccount}
-                      onArchive={archiveAccount}
-                      deletingId={deletingId}
-                      updatingId={updatingId}
-                    />
-                  ))}
+            {/* Account lists: generous separation between sections */}
+            <div className="space-y-6">
+              {assets.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    {t("accountsList.assets")}
+                  </h3>
+                  <div className="rounded-xl border overflow-hidden divide-y divide-border/60">
+                    {assets.map((account) => (
+                      <MobileAccountRow
+                        key={account.id}
+                        account={account}
+                        priceMap={priceMap}
+                        ratesMap={ratesMap}
+                        baseCurrency={baseCurrency}
+                        onDelete={deleteAccount}
+                        onTogglePin={togglePinAccount}
+                        onArchive={archiveAccount}
+                        isDeleting={deletingId === account.id}
+                        isUpdating={updatingId === account.id}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {liabilitiesByCategory.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-[var(--loss)]">
-                  {t("accountsList.liabilities")}
-                </h3>
-                <div className="space-y-3">
-                  {liabilitiesByCategory.map(({ category, accounts: catAccounts }) => (
-                    <CategorySection
-                      key={`liability_${category}`}
-                      category={category}
-                      accounts={catAccounts}
-                      priceMap={priceMap}
-                      ratesMap={ratesMap}
-                      baseCurrency={baseCurrency}
-                      isExpanded={expandedCategories.has(`LIABILITY_${category}`)}
-                      onToggleExpand={() => toggleCategory("LIABILITY", category)}
-                      onDelete={deleteAccount}
-                      onTogglePin={togglePinAccount}
-                      onArchive={archiveAccount}
-                      deletingId={deletingId}
-                      updatingId={updatingId}
-                    />
-                  ))}
+              {liabilities.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    {t("accountsList.liabilities")}
+                  </h3>
+                  <div className="rounded-xl border overflow-hidden divide-y divide-border/60">
+                    {liabilities.map((account) => (
+                      <MobileAccountRow
+                        key={account.id}
+                        account={account}
+                        priceMap={priceMap}
+                        ratesMap={ratesMap}
+                        baseCurrency={baseCurrency}
+                        onDelete={deleteAccount}
+                        onTogglePin={togglePinAccount}
+                        onArchive={archiveAccount}
+                        isDeleting={deletingId === account.id}
+                        isUpdating={updatingId === account.id}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {archivedAccounts.length > 0 && (
@@ -874,7 +948,7 @@ function ReorderItem({
 }) {
   const t = useTranslations();
   const dragControls = useDragControls();
-  const icon = CATEGORY_ICONS[item.category] ?? "📁";
+  const CategoryIcon = CATEGORY_ICONS[item.category] ?? Folder;
 
   return (
     <Reorder.Item
@@ -898,7 +972,7 @@ function ReorderItem({
           >
             <GripVertical className="h-4 w-4" aria-hidden />
           </button>
-          <span>{icon}</span>
+          <CategoryIcon className="h-4 w-4 text-muted-foreground shrink-0" />
           <div className="min-w-0">
             <p className="text-sm font-medium truncate">{item.name}</p>
             <p className="text-xs text-muted-foreground truncate">
@@ -945,7 +1019,7 @@ function DesktopAccountRow({
   const { privacyMode } = usePrivacyMode();
   const t = useTranslations();
   const colors = CATEGORY_COLORS[account.category] ?? CATEGORY_COLORS.OTHER;
-  const icon = CATEGORY_ICONS[account.category] ?? "📁";
+  const CategoryIcon = CATEGORY_ICONS[account.category] ?? Folder;
   const label = t(`categories.${account.category}`, { defaultValue: account.category });
   const nativeValue = getAccountValue(account, priceMap, ratesMap);
   const isSameCurrency = account.currency === baseCurrency;
@@ -964,7 +1038,7 @@ function DesktopAccountRow({
         <span
           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${colors.bg} ${colors.border} ${colors.text}`}
         >
-          <span>{icon}</span>
+          <CategoryIcon className="h-3.5 w-3.5" />
           <span>{label}</span>
         </span>
       </td>
@@ -1046,28 +1120,117 @@ function MobileSummaryStrip({
 }) {
   const { privacyMode } = usePrivacyMode();
   const t = useTranslations();
-  const netWorth = totalAssets - totalLiabilities;
+
   return (
-    <div className="rounded-xl border bg-muted/20 px-4 py-3 grid grid-cols-3 gap-2 text-center">
-      <div>
-        <p className="text-xs text-muted-foreground mb-0.5">{t("accountsList.assets")}</p>
-        <p className="text-sm font-bold tabular-nums text-[var(--gain)]">
-          {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency, true)}
-        </p>
+    <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center gap-4">
+        <div>
+          <p className="text-xs text-muted-foreground">{t("accountsList.assets")}</p>
+          <p className="font-semibold tabular-nums text-[var(--gain)]">
+            {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency, true)}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">{t("accountsList.liabilities")}</p>
+          <p className="font-semibold tabular-nums text-[var(--loss)]">
+            {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency, true)}
+          </p>
+        </div>
       </div>
-      <div className="border-x border-border/40">
-        <p className="text-xs text-muted-foreground mb-0.5">{t("accountsList.netWorth")}</p>
-        <p
-          className={`text-sm font-bold tabular-nums ${netWorth >= 0 ? "text-foreground" : "text-[var(--loss)]"}`}
-        >
-          {privacyMode ? HIDDEN : formatCurrency(netWorth, baseCurrency, true)}
-        </p>
-      </div>
-      <div>
-        <p className="text-xs text-muted-foreground mb-0.5">{t("accountsList.liabilities")}</p>
-        <p className="text-sm font-bold tabular-nums text-[var(--loss)]">
-          {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency, true)}
-        </p>
+    </div>
+  );
+}
+
+function MobileAccountRow({
+  account,
+  priceMap,
+  ratesMap,
+  baseCurrency,
+  onDelete,
+  onTogglePin,
+  onArchive,
+  isDeleting,
+  isUpdating,
+}: {
+  account: SerializedAccountWithHoldings;
+  priceMap: Record<string, number>;
+  ratesMap: Record<string, number>;
+  baseCurrency: string;
+  onDelete: (id: string) => void;
+  onTogglePin: (account: SerializedAccountWithHoldings) => void;
+  onArchive: (account: SerializedAccountWithHoldings) => void;
+  isDeleting: boolean;
+  isUpdating: boolean;
+}) {
+  const { privacyMode } = usePrivacyMode();
+  const { density } = useDensity();
+  const t = useTranslations();
+  const isCompact = density === "compact";
+  const displayValue = getAccountValue(account, priceMap, ratesMap);
+  const displayCurrency = account.currency;
+  const rate =
+    displayCurrency === baseCurrency ? 1 : (ratesMap[`${displayCurrency}_${baseCurrency}`] ?? 1);
+  const convertedValue = displayValue * rate;
+
+  const CategoryIcon = CATEGORY_ICONS[account.category] ?? Folder;
+  const holdingCount = account.holdings.length;
+  const isBank = account.category === "BANK";
+
+  return (
+    <div className="relative group">
+      <Link href={`/accounts/${account.id}`} prefetch={false} transitionTypes={["nav-forward"]}>
+        <div className={`flex items-center gap-3 ${isCompact ? "px-4 py-2.5" : "px-4 py-3.5"} bg-card hover:bg-muted/40 active:bg-muted/60 transition-colors`}>
+          <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-muted/60 shrink-0">
+            <CategoryIcon className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              {account.isPinned && <Pin className="h-3 w-3 text-amber-500 shrink-0" aria-hidden />}
+              <p className="font-medium text-sm truncate">{account.name}</p>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t(`categories.${account.category}`, { defaultValue: account.category })}
+              {!isBank && holdingCount > 0 && (
+                <span> · {t("accountsList.nHoldings", { count: holdingCount })}</span>
+              )}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-sm font-semibold tabular-nums">
+              {privacyMode ? HIDDEN : formatCurrency(convertedValue, baseCurrency)}
+            </p>
+            {displayCurrency !== baseCurrency && (
+              <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+                {privacyMode ? HIDDEN : formatCurrency(displayValue, displayCurrency)}
+              </p>
+            )}
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+        </div>
+      </Link>
+      <div className="absolute top-1/2 -translate-y-1/2 right-10 z-10" onClick={(e) => e.preventDefault()}>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
+            disabled={isDeleting || isUpdating}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onTogglePin(account)}>
+              {account.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+              {account.isPinned ? t("accountsList.unpin") : t("accountsList.pin")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onArchive(account)}>
+              <Archive className="h-4 w-4" />
+              {t("accountsList.archive")}
+            </DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" onClick={() => onDelete(account.id)}>
+              <Trash2 className="h-4 w-4" />
+              {isDeleting ? t("common.deleting") : t("common.delete")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
@@ -1105,7 +1268,6 @@ function CategorySection({
   const { density } = useDensity();
   const isCompact = density === "compact";
   const colors = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.OTHER;
-  const icon = CATEGORY_ICONS[category] ?? "📁";
   const label = t(`categories.${category}`, { defaultValue: category });
 
   const totalInBaseCurrency = useMemo(() => {
@@ -1124,6 +1286,8 @@ function CategorySection({
   const totalHoldings = accounts.reduce((sum, account) => sum + account.holdings.length, 0);
   const shouldReduceMotion = useReducedMotion();
 
+  const CategoryIcon = CATEGORY_ICONS[category] ?? Folder;
+
   return (
     <div
       className={`rounded-xl border overflow-hidden transition-all motion-normal ${colors.border} ${isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"}`}
@@ -1133,7 +1297,7 @@ function CategorySection({
         className={`w-full text-left ${isCompact ? "px-4 py-2.5" : "px-5 py-4"} flex items-center justify-between transition-colors ${colors.bg} hover:brightness-95 dark:hover:brightness-110`}
       >
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-2xl flex-shrink-0">{icon}</span>
+          <CategoryIcon className={`h-5 w-5 flex-shrink-0 ${colors.text}`} />
           <div className="min-w-0">
             <p className={`font-semibold text-base ${colors.text}`}>{label}</p>
             <p className="text-xs text-muted-foreground mt-0.5">

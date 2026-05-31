@@ -443,6 +443,9 @@
     "assets": "資產",
     "liabilities": "負債",
     "netWorth": "淨值",
+    "totalNetWorth": "總淨資產",
+    "noAccountsTitle": "尚無帳戶",
+    "noAccountsDesc": "新增您的第一個帳戶以開始追蹤您的淨資產和餘額。",
     "nAccounts": "{count} 個帳戶",
     "nHoldings": "{count} 個持倉",
     "deleteConfirm": "確定要刪除此帳戶？此操作無法復原。",
@@ -587,7 +590,9 @@
     "updateFailed": "更新帳戶失敗",
     "labelAccountName": "帳戶名稱",
     "placeholderAccountName": "例如：玉山銀行",
-    "showMore": "顯示另外 {count} 個"
+    "showMore": "顯示另外 {count} 個",
+    "dangerZone": "危險區域",
+    "deleteAccountPermanently": "刪除此帳戶"
   },
   "dataManagement": {
     "title": "資料管理",
