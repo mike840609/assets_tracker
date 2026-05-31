@@ -9,6 +9,12 @@ import {
   useState,
   startTransition,
 } from "react";
+import {
+  APP_ICON_FALLBACK_END,
+  APP_ICON_FALLBACK_START,
+  APP_ICON_FAVICON_RADIUS,
+  createAppIconSvg,
+} from "./app-icon";
 
 export type ColorSchema = "emerald" | "anthropic" | "ocean" | "violet" | "amber" | "rose";
 
@@ -26,12 +32,50 @@ const ColorSchemaContext = createContext<ColorSchemaContextType>({
 
 const STORAGE_KEY = "asset-tracker:color-schema";
 
+function getAppIconPalette() {
+  const styles = getComputedStyle(document.documentElement);
+
+  return {
+    start: styles.getPropertyValue("--app-icon-gradient-start").trim() || APP_ICON_FALLBACK_START,
+    end: styles.getPropertyValue("--app-icon-gradient-end").trim() || APP_ICON_FALLBACK_END,
+  };
+}
+
+function createFaviconHref() {
+  const palette = getAppIconPalette();
+  const svg = createAppIconSvg({
+    ...palette,
+    radius: APP_ICON_FAVICON_RADIUS,
+  });
+
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+function applyFavicon() {
+  const href = createFaviconHref();
+  const existing = document.querySelector<HTMLLinkElement>(
+    'link[data-color-schema-favicon="true"]',
+  );
+  const link = existing ?? document.createElement("link");
+
+  link.dataset.colorSchemaFavicon = "true";
+  link.rel = "icon";
+  link.type = "image/svg+xml";
+  link.sizes = "any";
+  link.href = href;
+
+  if (!existing) {
+    document.head.appendChild(link);
+  }
+}
+
 function applySchema(schema: ColorSchema) {
   if (schema === "emerald") {
     delete document.documentElement.dataset.colorSchema;
   } else {
     document.documentElement.dataset.colorSchema = schema;
   }
+  applyFavicon();
 }
 
 export function ColorSchemaProvider({ children }: { children: React.ReactNode }) {

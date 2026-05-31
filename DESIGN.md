@@ -1,6 +1,6 @@
 ---
 name: Assets Tracker
-description: A native-feeling personal finance cockpit for net worth, holdings, history, goals, and projections.
+description: A native-feeling personal finance cockpit for net worth, holdings, history, goals, projections, and portfolio analysis.
 colors:
   background: "oklch(0.99 0.003 260)"
   foreground: "oklch(0.15 0.02 260)"
@@ -17,11 +17,15 @@ colors:
   input: "oklch(0.9 0.02 260)"
   ring: "oklch(0.6 0.16 150)"
   sidebar: "oklch(0.98 0.005 260)"
-  chart-emerald: "oklch(0.6 0.16 150)"
-  chart-cyan: "oklch(0.65 0.12 210)"
-  chart-indigo: "oklch(0.6 0.15 260)"
-  chart-purple: "oklch(0.7 0.15 300)"
-  chart-pink: "oklch(0.8 0.1 330)"
+  chart-1: "oklch(0.6 0.16 150)"
+  chart-2: "oklch(0.65 0.12 210)"
+  chart-3: "oklch(0.6 0.15 260)"
+  chart-4: "oklch(0.7 0.15 300)"
+  chart-5: "oklch(0.8 0.1 330)"
+  gain: "{colors.chart-1}"
+  loss: "{colors.chart-2}"
+  app-icon-gradient-start: "#34d399"
+  app-icon-gradient-end: "#065f46"
 typography:
   display:
     fontFamily: "-apple-system, SF Pro Text, SF Pro Display, Geist, system-ui, sans-serif"
@@ -116,7 +120,7 @@ components:
 
 Assets Tracker should feel like a private financial instrument that happens to live in the browser: native in motion, calm in color, and exacting with numbers. The system borrows heavily from iOS for mobile behavior, then becomes denser and more keyboard-friendly on desktop.
 
-The visual atmosphere is restrained and breathable, with emerald as the active signal and cool neutrals doing most of the work. Charts, deltas, and account states can carry more color, but the chrome should stay quiet so financial data remains the center of gravity.
+The visual atmosphere is restrained and breathable. The active color schema supplies the brand accent, chart family, gain/loss semantics, app icon gradient, and net-worth hero wash. Data can carry richer color, but the chrome should stay quiet so financial information remains the center of gravity.
 
 The system explicitly rejects generic fintech navy-and-gold dashboards, crypto-neon trading terminals, decorative SaaS glassmorphism, spreadsheet-like clutter on mobile, and web dialogs that break the installed-app illusion.
 
@@ -125,15 +129,16 @@ The system explicitly rejects generic fintech navy-and-gold dashboards, crypto-n
 - Native mobile patterns: large titles, floating tab bar, bottom sheets, swipe actions, haptics, safe areas.
 - Dense but legible desktop patterns: collapsible sidebar, command palette, sticky headers, keyboard shortcuts, compact mode.
 - Data-first restraint: tinted surfaces, thin rings, tabular numbers, soft state color.
+- Schema-aware identity: one color schema controls chart tokens, gain/loss, app icon accents, favicon, and dashboard hero gradients.
 - Motion with purpose: pull feedback, route direction, theme reveal, skeleton loading, chart crosshair state.
 
 ## 2. Colors
 
-The palette is a cool financial neutral field with an emerald active voice and a richer chart spectrum reserved for data.
+The default palette is a cool financial neutral field with emerald as the active voice and a richer chart spectrum reserved for data. Additional schemas are available from Settings: Anthropic, Ocean, Violet, Amber, and Rose. Each schema retints the same semantic roles rather than adding separate market-convention toggles.
 
 ### Primary
 
-- **Ledger Emerald**: Used for primary actions, active navigation, positive deltas, chart series 1, focus rings, and the default app identity mark. Its role is signal, not decoration.
+- **Schema Primary**: Used for primary actions, active navigation, chart series 1, focus rings, schema-aware app identity, and default gain styling. Its role is signal, not decoration.
 
 ### Secondary
 
@@ -141,19 +146,25 @@ The palette is a cool financial neutral field with an emerald active voice and a
 
 ### Tertiary
 
-- **Analysis Spectrum**: Cyan, indigo, purple, and pink support allocation, currency, category, and history charts. These colors belong inside visualization and status contexts, not general page chrome.
+- **Analysis Spectrum**: Chart tokens 1-9 support allocation, currency, category, attribution, heatmap, and history charts. These colors belong inside visualization and status contexts, not general page chrome.
 
 ### Neutral
 
 - **Paper Background**: The light base, almost white with a cool blue tint, used for the main page canvas.
 - **Ink Foreground**: The default text color, a cool near-black tuned away from pure black.
-- **Card Plane**: The top surface for cards, dialogs, and popovers.
+- **Card Plane**: The top surface for cards, dialogs, popovers, and sheets.
 - **Hairline Border**: The structural divider color for cards, sidebars, sticky headers, and list rows.
 - **Muted Text**: Secondary labels, timestamps, hints, placeholders, and helper copy.
 
+### Semantic Direction
+
+- `--gain` and `--loss` are semantic tokens controlled by the active color schema. Do not add Taiwan/US red-up or green-up switches.
+- Positive and negative states must remain visually distinct through color, icon direction, labels, and context.
+- App marks use `--app-icon-gradient-start` and `--app-icon-gradient-end`, a dedicated highlight-to-deep pair that preserves the original dimensional icon style while changing hue by schema.
+
 ### Named Rules
 
-**The Emerald Is Action Rule.** Emerald is for primary action, selection, positive state, and key data. Do not use it as random ornament.
+**The Schema Is Color Authority Rule.** Color Schema owns primary, chart, gain/loss, icon, favicon, and hero-gradient colors. Do not create separate color preferences for direction or icons.
 
 **The Chart Color Boundary Rule.** High-chroma spectrum colors belong in charts and semantic status only. Product chrome stays neutral.
 
@@ -192,6 +203,7 @@ The system uses tonal layering first, thin rings second, and shadows as state fe
 - **Interactive Lift** (`hover:shadow-lg` with `hover:-translate-y-1`): Dashboard metric cards and premium cards only.
 - **Mobile Dock** (`0 8px 24px -8px rgba(0,0,0,0.3)`): Floating bottom navigation, stronger in dark mode.
 - **Dark Ambient Panel** (`0 4px 24px -4px rgba(0,0,0,0.5)`): Dark-mode glass/premium cards where tonal contrast needs help.
+- **App Icon Shadow**: Preserve existing `drop-shadow-lg` and dark-mode SVG shadow treatment; change only the gradient colors when adapting the mark to a schema.
 
 ### Named Rules
 
@@ -206,9 +218,9 @@ The system uses tonal layering first, thin rings second, and shadows as state fe
 Buttons are compact, native, and stateful rather than ornamental.
 
 - **Shape:** Soft rectangle, usually `rounded-lg` (`0.75rem`) with smaller compact variants clamped to 10-12px.
-- **Primary:** Ledger Emerald background with primary foreground, `h-8`, `px-2.5`, medium label text.
+- **Primary:** Schema primary background with primary foreground, `h-8`, `px-2.5`, medium label text.
 - **Hover / Focus:** Hover darkens through opacity. Focus uses a 3px ring at `ring/50`. Active press translates down by 1px where the control is not a popup trigger.
-- **Secondary / Ghost / Destructive:** Secondary uses muted fill; outline uses background plus border; ghost is fill-free until hover; destructive is a red tint, not a fully saturated red block.
+- **Secondary / Ghost / Destructive:** Secondary uses muted fill; outline uses background plus border; ghost is fill-free until hover; destructive is a controlled negative tint, not a fully saturated block.
 
 ### Chips
 
@@ -227,6 +239,14 @@ Cards frame data modules, not entire page sections.
 - **Border:** Thin ring or hairline border only.
 - **Internal Padding:** Base cards use 16px; compact cards use 12px; hero cards use 16-24px depending on density.
 
+### Net Worth Hero
+
+The net-worth card may carry a soft animated mesh and bottom accent, but both must derive from schema tokens (`--gain`, `--loss`, `--primary`, and chart tokens). The mesh is a data/state wash, not a marketing hero.
+
+### App Icon / Favicon
+
+The app mark is a rounded square with a diagonal gradient and white chart-arrow glyph. Preserve the original shape, radius, white stroke, and shadow treatment. Only recolor the gradient using the active schema's dedicated app-icon gradient tokens. The browser favicon may update through a generated SVG data URL; Apple/PWA icons remain stable because iOS caches them aggressively.
+
 ### Inputs / Fields
 
 Fields should feel native and low-friction for financial entry.
@@ -240,6 +260,7 @@ Fields should feel native and low-friction for financial entry.
 Navigation changes shape by device but keeps the same vocabulary of icons, active tint, and compact labels.
 
 - **Desktop Sidebar:** 256px expanded or 72px collapsed, sidebar background at 80% opacity with backdrop blur, active items use primary text plus a primary tint block and thin border.
+- **Mobile Header:** Safe-area aware, large-title synchronized, with logo fading away as the page title collapses.
 - **Mobile Tab Bar:** Floating full-pill dock, max-width 24rem, safe-area aware, five items only. Active item uses primary text and a primary tint pill; inactive items stay muted until hover/tap.
 - **Command Entry:** Search affordance uses muted background, thin border, and monospace keyboard hints.
 
@@ -249,18 +270,19 @@ Dialogs use popover surfaces, rounded-xl corners, thin rings, and compact text. 
 
 ### Charts
 
-Charts should be quiet until touched. Use emerald for the primary series, then cyan, indigo, purple, pink, and extended OKLCH spectrum colors for categories. Crosshair, range chips, and sticky value callouts must prioritize readability over decorative animation.
+Charts should be quiet until touched. Use schema chart tokens for all series. Crosshair, range chips, and sticky value callouts must prioritize readability over decorative animation. Heatmaps and trend states should use semantic gain/loss tokens with iconography or labels when direction matters.
 
 ## 6. Do's and Don'ts
 
 ### Do:
 
-- **Do** use the system token vocabulary from `src/app/globals.css` for colors, radius, motion, and theme variants.
-- **Do** keep emerald rare and meaningful: action, selection, positive movement, primary chart series.
+- **Do** use the system token vocabulary from `src/app/globals.css` for colors, radius, motion, schema variants, and theme variants.
+- **Do** keep accent color rare and meaningful: action, selection, positive movement, primary chart series, or current schema identity.
 - **Do** preserve native mobile behavior: large titles, bottom tab bar, bottom sheets, swipe actions, haptics, safe areas, and pull-to-refresh.
 - **Do** use tabular numbers and stable width containers for money, percentages, and chart callouts.
 - **Do** provide hover, focus-visible, active, disabled, loading, error, empty, compact, privacy, dark, and reduced-motion states for product components.
 - **Do** keep chart palettes distinct and role-based. Data can be colorful; chrome should stay restrained.
+- **Do** treat Color Schema as the only color customization surface.
 
 ### Don't:
 
@@ -271,3 +293,4 @@ Charts should be quiet until touched. Use emerald for the primary series, then c
 - **Don't** use web dialogs where a bottom sheet is expected on mobile.
 - **Don't** use side-stripe borders, gradient text, hero-metric marketing layouts, or repeated identical icon-card grids in new work.
 - **Don't** use pure black, pure white, full-saturation inactive states, or color as decoration without a data or state role.
+- **Don't** add separate up/down color settings, icon-style variants, or locale-driven direction colors.

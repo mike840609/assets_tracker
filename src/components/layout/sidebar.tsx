@@ -24,6 +24,7 @@ import { useTranslations } from "next-intl";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import { hapticTick } from "@/lib/haptics";
 import { useCallback, useEffect, useSyncExternalStore, useState, useTransition } from "react";
+import { AppIcon } from "./app-icon";
 
 const SIDEBAR_STORAGE_KEY = "asset-tracker:sidebar-collapsed";
 const SIDEBAR_SHORTCUT_HINT = "Ctrl+\\ (⌘\\ on Mac)";
@@ -94,34 +95,10 @@ export function Sidebar({
     >
       <div className={cn("pt-6 pb-3 border-b border-border/50", collapsed ? "px-3" : "px-6")}>
         <div className={cn("flex items-center", collapsed ? "justify-center" : "gap-3")}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 32 32"
-            fill="none"
+          <AppIcon
+            gradientId="sidebar-icon-g"
             className="h-8 w-8 shrink-0 drop-shadow-lg dark:drop-shadow-[0_4px_12px_rgba(52,211,153,0.25)]"
-          >
-            <defs>
-              <linearGradient id="sidebar-icon-g" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#34d399" />
-                <stop offset="100%" stopColor="#065f46" />
-              </linearGradient>
-            </defs>
-            <rect width="32" height="32" rx="9" fill="url(#sidebar-icon-g)" />
-            <path
-              d="M8 20 L13.5 13.5 L17.5 17.5 L24 10"
-              stroke="white"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M20 10 L24 10 L24 14"
-              stroke="white"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          />
           {!collapsed && (
             <div>
               <h1 className="text-xl font-bold tracking-tight text-foreground">{t("app.name")}</h1>

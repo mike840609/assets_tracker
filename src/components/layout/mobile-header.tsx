@@ -9,6 +9,7 @@ import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import { useLargeTitle } from "./large-title-context";
 import { usePathname, useRouter } from "next/navigation";
 import { hapticTick } from "@/lib/haptics";
+import { AppIcon } from "./app-icon";
 
 function getPageTitle(pathname: string, nav: (k: string) => string): string {
   if (pathname === "/") return nav("dashboard");
@@ -69,34 +70,10 @@ export function MobileHeader() {
           !isVisible && "opacity-0 pointer-events-none -translate-y-1 scale-95",
         )}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 32 32"
-          fill="none"
+        <AppIcon
+          gradientId="mobile-icon-g"
           className="h-6 w-6 shrink-0 drop-shadow-lg dark:drop-shadow-[0_3px_10px_rgba(52,211,153,0.25)]"
-        >
-          <defs>
-            <linearGradient id="mobile-icon-g" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#34d399" />
-              <stop offset="100%" stopColor="#065f46" />
-            </linearGradient>
-          </defs>
-          <rect width="32" height="32" rx="9" fill="url(#mobile-icon-g)" />
-          <path
-            d="M8 20 L13.5 13.5 L17.5 17.5 L24 10"
-            stroke="white"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M20 10 L24 10 L24 14"
-            stroke="white"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        />
         <div className="flex flex-col min-w-0">
           <h1 className="text-lg font-bold tracking-tight text-foreground truncate">
             {t("app.name")}

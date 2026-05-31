@@ -109,12 +109,6 @@
       "amber": "琥珀金",
       "rose": "玫瑰紅"
     },
-    "stockColorScheme": "漲跌顏色",
-    "stockColorSchemeDescription": "選擇代表上漲的顏色。",
-    "stockColorSchemes": {
-      "GREEN_UP": "綠漲紅跌（西方）",
-      "RED_UP": "紅漲綠跌（東亞）"
-    },
     "signOut": "登出",
     "signOutDesc": "安全地登出此裝置上的帳戶。",
     "dangerZone": "危險區域"
@@ -133,9 +127,7 @@
     "exchangeRatesRefreshed": "匯率已更新",
     "failed": "失敗",
     "languageUpdated": "語言已更新",
-    "languageFailed": "更新語言失敗",
-    "stockColorSchemeUpdated": "已更新漲跌顏色",
-    "stockColorSchemeFailed": "更新漲跌顏色失敗"
+    "languageFailed": "更新語言失敗"
   },
   "dashboard": {
     "title": "儀表板",
