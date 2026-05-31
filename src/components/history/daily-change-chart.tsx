@@ -42,6 +42,7 @@ type DailyChangePoint = {
 type Props = {
   snapshots: SnapshotRow[];
   baseCurrency: string;
+  className?: string;
 };
 
 type TooltipPayload = {
@@ -100,7 +101,7 @@ function DailyChangeTooltip({
   );
 }
 
-export function DailyChangeChart({ snapshots, baseCurrency }: Props) {
+export function DailyChangeChart({ snapshots, baseCurrency, className }: Props) {
   const t = useTranslations("history");
   const format = useFormatter();
   const { privacyMode } = usePrivacyMode();
@@ -147,32 +148,32 @@ export function DailyChangeChart({ snapshots, baseCurrency }: Props) {
   const hasAnyChange = data.some((point) => point.hasSnapshot && point.hasPreviousSnapshot);
 
   return (
-    <Card>
+    <Card className={cn("flex h-full flex-col", className)}>
       <CardHeader className="pb-2 px-4">
         <CardTitle className="text-base font-medium text-foreground">
           {t("dailyChange30")}
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-4 pb-4">
+      <CardContent className="flex flex-1 flex-col px-4 pb-4">
         {!hasAnyChange ? (
-          <div className="h-[180px] flex items-center justify-center text-center text-sm text-muted-foreground">
+          <div className="flex flex-1 min-h-[180px] items-center justify-center text-center text-sm text-muted-foreground">
             {t("dailyChangeNoData")}
           </div>
         ) : !mounted ? (
-          <div className="h-[180px]" />
+          <div className="flex-1 min-h-[180px]" />
         ) : (
           <div
             role="img"
             aria-label={t("dailyChange30")}
             aria-hidden={privacyMode || undefined}
             className={cn(
-              "relative h-[180px] transition-[filter] duration-300",
+              "relative flex-1 min-h-[180px] transition-[filter] duration-300",
               privacyMode && "blur-sm pointer-events-none select-none",
             )}
           >
             <ResponsiveContainer
               width="100%"
-              height={180}
+              height="100%"
               minWidth={0}
               initialDimension={{ width: 1, height: 180 }}
             >

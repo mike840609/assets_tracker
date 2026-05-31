@@ -54,7 +54,7 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-base font-medium">{t("title")}</h2>
+        <h2 className="text-base font-medium">{t("tableTitle")}</h2>
         <FreshnessBadge kind="snapshot" timestamp={latestSnapshotAt} />
       </div>
       {monthGroups.length === 0 ? (

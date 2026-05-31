@@ -320,7 +320,20 @@
     "noData": "尚無快照。請從儀表板建立快照以開始追蹤歷史。",
     "noDataForRange": "此範圍內無資料。",
     "noSnapshot": "無快照",
-    "noPreviousSnapshot": "無前一筆快照可比較"
+    "noPreviousSnapshot": "無前一筆快照可比較",
+    "tableTitle": "所有快照",
+    "summaryTitle": "摘要",
+    "allTimeHigh": "歷史新高",
+    "allTimeLow": "歷史新低",
+    "sinceFirst": "自首次快照以來",
+    "last30Days": "近 30 日",
+    "bestDay": "最佳單日",
+    "worstDay": "最差單日",
+    "upDownDays": "上漲 / 下跌天數",
+    "fromHigh": "距歷史新高",
+    "atHigh": "正處於歷史新高",
+    "trackingSince": "自 {date} 起追蹤",
+    "snapshotsCount": "{count} 筆快照"
   },
   "netWorthCard": {
     "netWorth": "淨資產",

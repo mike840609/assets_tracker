@@ -320,7 +320,20 @@
     "noData": "No snapshots yet. Take a snapshot from the dashboard to start tracking.",
     "noDataForRange": "No data for this range.",
     "noSnapshot": "No snapshot",
-    "noPreviousSnapshot": "No previous snapshot to compare"
+    "noPreviousSnapshot": "No previous snapshot to compare",
+    "tableTitle": "All Snapshots",
+    "summaryTitle": "Summary",
+    "allTimeHigh": "All-time high",
+    "allTimeLow": "All-time low",
+    "sinceFirst": "Since first snapshot",
+    "last30Days": "Last 30 days",
+    "bestDay": "Best day",
+    "worstDay": "Worst day",
+    "upDownDays": "Up / down days",
+    "fromHigh": "From all-time high",
+    "atHigh": "At all-time high",
+    "trackingSince": "Tracking since {date}",
+    "snapshotsCount": "{count, plural, one {# snapshot} other {# snapshots}}"
   },
   "netWorthCard": {
     "netWorth": "Net Worth",

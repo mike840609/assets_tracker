@@ -5,7 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import { HistoryPullRefresh } from "@/components/history/history-pull-refresh";
 import { HistoryView } from "@/components/history/history-view";
-import { getNormalizedHistory } from "@/lib/services/history-service";
+import { getFullNormalizedHistory } from "@/lib/services/history-service";
 
 const CLIENT_NAMESPACES = ["trendChart", "history", "freshness"];
 
@@ -16,7 +16,7 @@ async function HistoryContent() {
   const settingsP = getOrCreateSettings(userId);
   const [allMessages, snapshots, settings] = await Promise.all([
     getMessages(),
-    settingsP.then((s) => getNormalizedHistory(userId, s.baseCurrency)),
+    settingsP.then((s) => getFullNormalizedHistory(userId, s.baseCurrency)),
     settingsP,
   ]);
 
@@ -27,7 +27,6 @@ async function HistoryContent() {
           snapshots={snapshots}
           baseCurrency={settings.baseCurrency}
           showTitle
-          hideTrendRangeFilter
           className="animate-in fade-in duration-200"
         />
       </HistoryPullRefresh>
