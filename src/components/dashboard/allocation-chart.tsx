@@ -11,16 +11,18 @@ import { formatCurrency } from "@/lib/currencies";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import type { NetWorthSummary } from "@/lib/types";
 
+// Schema-aware spectrum: --chart-1..5 re-tint with the selected color schema
+// (chart-1 is the accent), --chart-6..9 stay as the supplementary spectrum.
 const COLORS = [
-  "oklch(0.72 0.19 155)", // Emerald
-  "oklch(0.70 0.15 220)", // Sky blue
-  "oklch(0.65 0.18 270)", // Indigo
-  "oklch(0.72 0.17 310)", // Fuchsia
-  "oklch(0.78 0.16 65)", // Amber
-  "oklch(0.68 0.14 25)", // Coral
-  "oklch(0.75 0.12 180)", // Teal
-  "oklch(0.60 0.16 330)", // Rose
-  "oklch(0.80 0.14 100)", // Lime
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--chart-6)",
+  "var(--chart-7)",
+  "var(--chart-8)",
+  "var(--chart-9)",
 ];
 
 export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
@@ -123,8 +125,10 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                           x2="1"
                           y2="1"
                         >
-                          <stop offset="0%" stopColor={color} stopOpacity={0.95} />
-                          <stop offset="100%" stopColor={color} stopOpacity={0.65} />
+                          {/* var() resolves in the CSS `stop-color` property (style),
+                              not in the SVG presentation attribute. */}
+                          <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.95 }} />
+                          <stop offset="100%" style={{ stopColor: color, stopOpacity: 0.65 }} />
                         </linearGradient>
                       ))}
                     </defs>
