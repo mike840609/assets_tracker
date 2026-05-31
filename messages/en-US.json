@@ -443,6 +443,9 @@
     "assets": "Assets",
     "liabilities": "Liabilities",
     "netWorth": "Net Worth",
+    "totalNetWorth": "Total Net Worth",
+    "noAccountsTitle": "No accounts yet",
+    "noAccountsDesc": "Add your first account to start tracking your net worth and balances.",
     "nAccounts": "{count, plural, one {# account} other {# accounts}}",
     "nHoldings": "{count, plural, one {# holding} other {# holdings}}",
     "deleteConfirm": "Delete this account? This cannot be undone.",
@@ -587,7 +590,9 @@
     "updateFailed": "Failed to update account",
     "labelAccountName": "Account Name",
     "placeholderAccountName": "e.g. Chase Checking",
-    "showMore": "Show {count} more"
+    "showMore": "Show {count} more",
+    "dangerZone": "Danger Zone",
+    "deleteAccountPermanently": "Delete this account"
   },
   "dataManagement": {
     "title": "Data Management",
