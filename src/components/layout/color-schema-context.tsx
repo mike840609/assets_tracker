@@ -9,19 +9,16 @@ import {
   useState,
   startTransition,
 } from "react";
+import {
+  APP_ICON_FALLBACK_END,
+  APP_ICON_FALLBACK_START,
+  APP_ICON_FAVICON_RADIUS,
+  createAppIconSvg,
+} from "./app-icon";
 
 export type ColorSchema = "emerald" | "anthropic" | "ocean" | "violet" | "amber" | "rose";
 
 const VALID_SCHEMAS: ColorSchema[] = ["emerald", "anthropic", "ocean", "violet", "amber", "rose"];
-
-const ICON_PALETTES: Record<ColorSchema, { start: string; end: string }> = {
-  emerald: { start: "#34d399", end: "#065f46" },
-  anthropic: { start: "#e8916e", end: "#9a3412" },
-  ocean: { start: "#60a5fa", end: "#075985" },
-  violet: { start: "#a78bfa", end: "#5b21b6" },
-  amber: { start: "#fbbf24", end: "#92400e" },
-  rose: { start: "#fb7185", end: "#9f1239" },
-};
 
 interface ColorSchemaContextType {
   colorSchema: ColorSchema;
@@ -35,15 +32,27 @@ const ColorSchemaContext = createContext<ColorSchemaContextType>({
 
 const STORAGE_KEY = "asset-tracker:color-schema";
 
-function createFaviconHref(schema: ColorSchema) {
-  const palette = ICON_PALETTES[schema];
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${palette.start}"/><stop offset="100%" stop-color="${palette.end}"/></linearGradient></defs><rect width="32" height="32" rx="6" fill="url(#g)"/><path d="M8 20 L13.5 13.5 L17.5 17.5 L24 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 10 L24 10 L24 14" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+function getAppIconPalette() {
+  const styles = getComputedStyle(document.documentElement);
+
+  return {
+    start: styles.getPropertyValue("--app-icon-gradient-start").trim() || APP_ICON_FALLBACK_START,
+    end: styles.getPropertyValue("--app-icon-gradient-end").trim() || APP_ICON_FALLBACK_END,
+  };
+}
+
+function createFaviconHref() {
+  const palette = getAppIconPalette();
+  const svg = createAppIconSvg({
+    ...palette,
+    radius: APP_ICON_FAVICON_RADIUS,
+  });
 
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-function applyFavicon(schema: ColorSchema) {
-  const href = createFaviconHref(schema);
+function applyFavicon() {
+  const href = createFaviconHref();
   const existing = document.querySelector<HTMLLinkElement>(
     'link[data-color-schema-favicon="true"]',
   );
@@ -66,7 +75,7 @@ function applySchema(schema: ColorSchema) {
   } else {
     document.documentElement.dataset.colorSchema = schema;
   }
-  applyFavicon(schema);
+  applyFavicon();
 }
 
 export function ColorSchemaProvider({ children }: { children: React.ReactNode }) {
