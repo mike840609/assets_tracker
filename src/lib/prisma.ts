@@ -1,17 +1,27 @@
 import "server-only";
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
+import pg from "pg";
 import { DATABASE_URL } from "@/lib/env";
-
-// Enable WebSocket connections for non-edge environments (Node.js)
-neonConfig.webSocketConstructor = ws;
 
 function createPrismaClient() {
   const connectionString = DATABASE_URL;
-  // PrismaNeon takes a PoolConfig and manages the pool internally
-  const adapter = new PrismaNeon({ connectionString });
+  const isNeon = connectionString.includes("neon.tech");
+
+  let adapter;
+  if (isNeon) {
+    // Enable WebSocket connections for non-edge environments (Node.js)
+    neonConfig.webSocketConstructor = ws;
+    adapter = new PrismaNeon({ connectionString });
+  } else {
+    // Standard PostgreSQL database (e.g. local Docker PG)
+    const pool = new pg.Pool({ connectionString });
+    adapter = new PrismaPg(pool);
+  }
+
   const client = new PrismaClient({ adapter });
 
   return client.$extends({

@@ -10,6 +10,19 @@ type AnyRecord = Record<string, unknown> & { [key: string]: any };
 export const customPrismaAdapter = {
   ...PrismaAdapter(prisma),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  createUser: async (data: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = await prisma.user.create({ data: data as any });
+    await prisma.setting.create({
+      data: {
+        userId: user.id,
+        locale: "en-US",
+        baseCurrency: "USD",
+      },
+    });
+    return user;
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   linkAccount: (data: AnyRecord) => prisma.authAccount.create({ data: data as any }) as any,
   unlinkAccount: (provider_providerAccountId: ProviderAccountId) =>
     prisma.authAccount.delete({
