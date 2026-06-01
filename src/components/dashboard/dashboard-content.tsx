@@ -35,9 +35,9 @@ const fetchPreviousSnapshot = cache((userId: string) =>
 
 function NetWorthSkeleton() {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
       {/* Primary: Net Worth */}
-      <Card className="col-span-2 lg:col-span-1 rounded-2xl">
+      <Card className="col-span-2 rounded-2xl">
         <CardContent className="h-full p-4 sm:p-6 flex flex-col justify-center">
           <div className="flex items-center gap-2.5 mb-1.5">
             <Skeleton className="h-8 w-8 rounded-full shrink-0" />

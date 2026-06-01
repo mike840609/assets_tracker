@@ -40,7 +40,8 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
         value: Math.round(exposure.value * 100) / 100,
         percentage: total > 0 ? ((exposure.value / total) * 100).toFixed(1) : "0",
       }))
-      .filter((d) => d.value > 0);
+      .filter((d) => d.value > 0)
+      .sort((a, b) => b.value - a.value);
   }, [summary.currencyExposure]);
 
   const handleMouseEnter = useCallback((_: unknown, index: number) => setActiveIndex(index), []);
@@ -134,6 +135,8 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                       onAnimationEnd={onAnimationEnd}
                       onMouseEnter={handleMouseEnter}
                       onMouseLeave={handleMouseLeave}
+                      onTouchStart={handleMouseEnter}
+                      onTouchEnd={handleMouseLeave}
                       stroke="none"
                       shape={renderShape}
                     >
@@ -141,8 +144,13 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                         content={({ viewBox }) => {
                           if (viewBox && "cx" in viewBox && "cy" in viewBox) {
                             const activeItem = activeIndex >= 0 ? data[activeIndex] : null;
-                            const displayPct = activeItem ? `${activeItem.percentage}%` : "100%";
-                            const displayLabel = activeItem ? activeItem.name : t("total");
+                            // Center holds the currency count by default (the metric
+                            // that sets this donut apart from the allocation donut),
+                            // and the slice's share + code on hover.
+                            const displayValue = activeItem
+                              ? `${activeItem.percentage}%`
+                              : data.length;
+                            const displayLabel = activeItem ? activeItem.name : t("currencies");
 
                             return (
                               <text
@@ -157,7 +165,7 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
                                   className="fill-foreground font-bold"
                                   style={{ fontSize: "16px" }}
                                 >
-                                  {displayPct}
+                                  {displayValue}
                                 </tspan>
                                 <tspan
                                   x={viewBox.cx}

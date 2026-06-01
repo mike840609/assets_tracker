@@ -102,10 +102,11 @@ export function NetWorthCard({
   return (
     <div
       data-testid="net-worth-card"
-      className={`grid grid-cols-2 lg:grid-cols-3 ${isCompact ? "gap-2 sm:gap-3" : "gap-3 sm:gap-6"} animate-in fade-in slide-in-from-bottom-4 motion-normal fill-mode-both`}
+      className={`grid grid-cols-2 lg:grid-cols-4 ${isCompact ? "gap-2 sm:gap-3" : "gap-3 sm:gap-6"} animate-in fade-in slide-in-from-bottom-4 motion-normal fill-mode-both`}
     >
-      {/* Primary Hero Metric: Net Worth */}
-      <Card className="col-span-2 lg:col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm relative min-w-0">
+      {/* Primary Hero Metric: Net Worth — spans half the row on desktop so it
+          leads the hierarchy by footprint, not just styling */}
+      <Card className="col-span-2 glass card-gradient rounded-2xl overflow-hidden shadow-sm relative min-w-0">
         <div className={meshClass} />
         <div className="net-worth-card-accent absolute inset-x-0 bottom-0 h-1 opacity-100 transition-opacity" />
         <CardContent
