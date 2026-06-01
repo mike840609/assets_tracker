@@ -397,8 +397,7 @@
   "currencyExposure": {
     "title": "貨幣曝險",
     "noExposure": "找不到用於計算曝險的資產。",
-    "total": "總計",
-    "currencies": "貨幣"
+    "total": "總計"
   },
   "accountsSummary": {
     "title": "所有帳戶",

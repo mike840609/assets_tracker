@@ -397,8 +397,7 @@
   "currencyExposure": {
     "title": "Currency Exposure",
     "noExposure": "No assets found to compute exposure.",
-    "total": "Total",
-    "currencies": "Currencies"
+    "total": "Total"
   },
   "accountsSummary": {
     "title": "All Accounts",
