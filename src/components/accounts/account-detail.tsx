@@ -264,8 +264,8 @@ export function AccountDetail({
     <>
       {/* Mobile Back Nav */}
       <div className="flex items-center gap-1.5 mb-4 md:hidden">
-        <Link 
-          href="/accounts" 
+        <Link
+          href="/accounts"
           className="inline-flex items-center gap-0.5 text-sm font-medium text-primary hover:text-primary/80 active:text-primary/60 transition-colors -ml-1"
           transitionTypes={["nav-back"]}
         >
@@ -329,7 +329,8 @@ export function AccountDetail({
               {t(`common.${account.type.toLowerCase()}`, { defaultValue: account.type })}
             </Badge>
             <span className="text-sm text-muted-foreground">
-              {t(`categories.${account.category}`, { defaultValue: account.category })} · {account.currency}
+              {t(`categories.${account.category}`, { defaultValue: account.category })} ·{" "}
+              {account.currency}
             </span>
           </div>
         </div>
@@ -366,12 +367,17 @@ export function AccountDetail({
                   </span>
                 )}
               </h3>
-              <Button size="sm" variant="ghost" className="h-8 text-primary px-2" onClick={() => setShowHoldingForm(true)}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 text-primary px-2"
+                onClick={() => setShowHoldingForm(true)}
+              >
                 <Plus className="h-4 w-4 mr-1.5" />
                 {t("accountDetail.addHolding")}
               </Button>
             </div>
-            
+
             {holdingsWithValue.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center rounded-2xl border border-dashed border-border/60 bg-muted/10">
                 <div className="bg-primary/10 p-3 rounded-full mb-3">
@@ -389,77 +395,77 @@ export function AccountDetail({
               <>
                 {holdingsWithValue.length > 1 && (
                   <div className="sticky top-14 z-10 bg-background/90 backdrop-blur-sm border-b border-border/40 mb-2 py-2 flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs text-muted-foreground shrink-0">Sort:</span>
-                      {(
-                        [
-                          {
-                            field: "marketValue" as HoldingSortField,
-                            label: t("accountDetail.colValue"),
-                          },
-                          {
-                            field: "symbol" as HoldingSortField,
-                            label: t("accountDetail.colSymbol"),
-                          },
-                          {
-                            field: "percentage" as HoldingSortField,
-                            label: t("accountDetail.colPercentage"),
-                          },
-                          {
-                            field: "quantity" as HoldingSortField,
-                            label: t("accountDetail.colQty"),
-                          },
-                        ] as { field: HoldingSortField; label: string }[]
-                      ).map(({ field, label }) => (
-                        <button
-                          key={field}
-                          onClick={() => handleSort(field)}
-                          className={`text-xs px-3 py-2 sm:px-2.5 sm:py-1 rounded-full border transition-colors ${
-                            sortField === field
-                              ? "border-primary/40 bg-primary/10 text-primary font-medium"
-                              : "border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40"
-                          }`}
-                        >
-                          {label}
-                          {sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
-                    <AnimatePresence initial={false}>
-                      {visibleMobileHoldings.map((h, index) => (
-                        <motion.div
-                          key={h.id}
-                          layout={shouldReduceMotion ? false : "position"}
-                          initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
-                          transition={shouldReduceMotion ? { duration: 0 } : springConfig}
-                        >
-                          {index > 0 && <div className="h-px bg-border/60 mx-4" />}
-                          <HoldingRow
-                            holding={h}
-                            totalValue={totalHoldingsValue}
-                            accountCurrency={account.currency}
-                            onEdit={setEditingHolding}
-                            onDelete={deleteHolding}
-                          />
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
+                    <span className="text-xs text-muted-foreground shrink-0">Sort:</span>
+                    {(
+                      [
+                        {
+                          field: "marketValue" as HoldingSortField,
+                          label: t("accountDetail.colValue"),
+                        },
+                        {
+                          field: "symbol" as HoldingSortField,
+                          label: t("accountDetail.colSymbol"),
+                        },
+                        {
+                          field: "percentage" as HoldingSortField,
+                          label: t("accountDetail.colPercentage"),
+                        },
+                        {
+                          field: "quantity" as HoldingSortField,
+                          label: t("accountDetail.colQty"),
+                        },
+                      ] as { field: HoldingSortField; label: string }[]
+                    ).map(({ field, label }) => (
+                      <button
+                        key={field}
+                        onClick={() => handleSort(field)}
+                        className={`text-xs px-3 py-2 sm:px-2.5 sm:py-1 rounded-full border transition-colors ${
+                          sortField === field
+                            ? "border-primary/40 bg-primary/10 text-primary font-medium"
+                            : "border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40"
+                        }`}
+                      >
+                        {label}
+                        {sortField === field ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
+                      </button>
+                    ))}
                   </div>
-                  {!showAllMobileHoldings && filteredSortedHoldings.length > 20 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowAllMobileHoldings(true)}
-                      className="w-full mt-2"
-                    >
-                      {t("accountDetail.showMore", { count: filteredSortedHoldings.length - 20 })}
-                    </Button>
-                  )}
-                </>
-              )}
+                )}
+                <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
+                  <AnimatePresence initial={false}>
+                    {visibleMobileHoldings.map((h, index) => (
+                      <motion.div
+                        key={h.id}
+                        layout={shouldReduceMotion ? false : "position"}
+                        initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
+                        transition={shouldReduceMotion ? { duration: 0 } : springConfig}
+                      >
+                        {index > 0 && <div className="h-px bg-border/60 mx-4" />}
+                        <HoldingRow
+                          holding={h}
+                          totalValue={totalHoldingsValue}
+                          accountCurrency={account.currency}
+                          onEdit={setEditingHolding}
+                          onDelete={deleteHolding}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+                {!showAllMobileHoldings && filteredSortedHoldings.length > 20 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllMobileHoldings(true)}
+                    className="w-full mt-2"
+                  >
+                    {t("accountDetail.showMore", { count: filteredSortedHoldings.length - 20 })}
+                  </Button>
+                )}
+              </>
+            )}
           </div>
 
           {/* Desktop: data table */}

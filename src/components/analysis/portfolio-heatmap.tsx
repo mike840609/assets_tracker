@@ -12,18 +12,11 @@ import { useContainerSize } from "@/hooks/use-container-size";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { formatCurrency } from "@/lib/currencies";
 import { cn } from "@/lib/utils";
+import { ACCOUNT_HEATMAP_COLORS as HEATMAP_COLORS } from "@/lib/account-colors";
 import type { NetWorthSummary } from "@/lib/types";
 
 const HIDDEN = "***";
 const CASH_ID = "cash";
-const HEATMAP_COLORS = [
-  "var(--primary)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-9)",
-  "var(--chart-8)",
-  "var(--chart-4)",
-];
 const ACCOUNT_TILE_TONE = 70;
 const CHILD_COLOR_MIX_TARGETS = [
   "var(--chart-8)",

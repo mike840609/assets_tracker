@@ -57,6 +57,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { formatCurrency } from "@/lib/currencies";
+import { buildAssetAccountColorMap } from "@/lib/account-colors";
 import { springConfig } from "@/lib/motion";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -203,12 +204,16 @@ export function AccountsList({
   priceMap,
   ratesMap = {},
   baseCurrency = "USD",
+  overview,
 }: {
   accounts: SerializedAccountWithHoldings[];
   archivedAccounts: SerializedAccountWithHoldings[];
   priceMap: Record<string, number>;
   ratesMap?: Record<string, number>;
   baseCurrency?: string;
+  /** Optional overview block (e.g. the portfolio heatmap) rendered below the
+   *  account list as an allocation synthesis. Hidden during manage-order mode. */
+  overview?: React.ReactNode;
 }) {
   const router = useRouter();
   const t = useTranslations();
@@ -264,6 +269,16 @@ export function AccountsList({
   const totalLiabilities = useMemo(
     () => liabilities.reduce((sum, account) => sum + (accountBaseValues[account.id] ?? 0), 0),
     [liabilities, accountBaseValues],
+  );
+
+  // Same per-account hue the heatmap uses, so each asset row's allocation bar
+  // reads as the 1D analog of its tile.
+  const assetColorMap = useMemo(
+    () =>
+      buildAssetAccountColorMap(
+        assets.map((account) => ({ id: account.id, value: accountBaseValues[account.id] ?? 0 })),
+      ),
+    [assets, accountBaseValues],
   );
 
   const assetsByCategory = useMemo(() => {
@@ -470,15 +485,18 @@ export function AccountsList({
               {t("accountsList.totalNetWorth", { defaultValue: "Total Net Worth" })}
             </h3>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl md:text-4xl font-bold tabular-nums tracking-tight text-foreground" aria-live="polite">
+              <span
+                className="text-3xl md:text-4xl font-bold tabular-nums tracking-tight text-foreground"
+                aria-live="polite"
+              >
                 {privacyMode ? HIDDEN : formatCurrency(netWorth, baseCurrency)}
               </span>
-              <span className="text-sm font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+              <span className="text-sm font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-sm">
                 {baseCurrency}
               </span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {manageMode ? (
               <>
@@ -488,16 +506,27 @@ export function AccountsList({
                 </Button>
                 <Button onClick={saveManageOrder} disabled={savingOrder}>
                   <Save className="h-4 w-4 mr-1.5" />
-                  {savingOrder ? t("common.saving", { defaultValue: "Saving..." }) : t("common.save")}
+                  {savingOrder
+                    ? t("common.saving", { defaultValue: "Saving..." })
+                    : t("common.save")}
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="outline" className="hidden md:inline-flex" onClick={() => setShowQuickAdd(true)}>
+                <Button
+                  variant="outline"
+                  className="hidden md:inline-flex"
+                  onClick={() => setShowQuickAdd(true)}
+                >
                   <Plus className="h-4 w-4 mr-1.5" />
                   {t("accountsList.addItem", { defaultValue: "Add Item" })}
                 </Button>
-                <Button variant="outline" className="hidden md:inline-flex" onClick={enterManageMode} disabled={accounts.length === 0}>
+                <Button
+                  variant="outline"
+                  className="hidden md:inline-flex"
+                  onClick={enterManageMode}
+                  disabled={accounts.length === 0}
+                >
                   <ArrowUpDown className="h-4 w-4 mr-1.5" />
                   {t("accountsList.manageOrder")}
                 </Button>
@@ -530,7 +559,10 @@ export function AccountsList({
                 {t("accountsList.noAccountsTitle", { defaultValue: "No accounts yet" })}
               </h3>
               <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-                {t("accountsList.noAccountsDesc", { defaultValue: "Add your first account to start tracking your net worth and balances." })}
+                {t("accountsList.noAccountsDesc", {
+                  defaultValue:
+                    "Add your first account to start tracking your net worth and balances.",
+                })}
               </p>
               <Button onClick={() => setShowForm(true)}>
                 <Plus className="h-4 w-4 mr-1.5" />
@@ -594,6 +626,7 @@ export function AccountsList({
                           isDeleting={deletingId === account.id}
                           isUpdating={updatingId === account.id}
                           allocationDenominator={totalAssets}
+                          barColor={assetColorMap[account.id]}
                         />
                       ))}
                     </>
@@ -645,11 +678,20 @@ export function AccountsList({
                 {/* Mobile quick actions */}
                 {!manageMode && (
                   <div className="flex md:hidden gap-2">
-                    <Button variant="outline" className="flex-1" onClick={() => setShowQuickAdd(true)}>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setShowQuickAdd(true)}
+                    >
                       <Plus className="h-4 w-4 mr-1.5" />
                       {t("accountsList.addItem", { defaultValue: "Add Item" })}
                     </Button>
-                    <Button variant="outline" className="flex-1" onClick={enterManageMode} disabled={accounts.length === 0}>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={enterManageMode}
+                      disabled={accounts.length === 0}
+                    >
                       <ArrowUpDown className="h-4 w-4 mr-1.5" />
                       {t("accountsList.manageOrder")}
                     </Button>
@@ -657,13 +699,20 @@ export function AccountsList({
                 )}
                 {manageMode && (
                   <div className="flex md:hidden gap-2">
-                    <Button variant="outline" className="flex-1" onClick={cancelManageMode} disabled={savingOrder}>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={cancelManageMode}
+                      disabled={savingOrder}
+                    >
                       <X className="h-4 w-4 mr-1.5" />
                       {t("common.cancel")}
                     </Button>
                     <Button className="flex-1" onClick={saveManageOrder} disabled={savingOrder}>
                       <Save className="h-4 w-4 mr-1.5" />
-                      {savingOrder ? t("common.saving", { defaultValue: "Saving..." }) : t("common.save")}
+                      {savingOrder
+                        ? t("common.saving", { defaultValue: "Saving..." })
+                        : t("common.save")}
                     </Button>
                   </div>
                 )}
@@ -721,6 +770,8 @@ export function AccountsList({
               )}
             </div>
           </div>
+
+          {overview}
 
           {archivedAccounts.length > 0 && (
             <div className="rounded-xl border overflow-hidden">
@@ -1002,6 +1053,7 @@ function DesktopAccountRow({
   isDeleting,
   isUpdating,
   allocationDenominator,
+  barColor,
 }: {
   account: SerializedAccountWithHoldings;
   baseValue: number;
@@ -1015,6 +1067,8 @@ function DesktopAccountRow({
   isDeleting: boolean;
   isUpdating: boolean;
   allocationDenominator: number;
+  /** Per-account heatmap hue; tints the allocation bar to match the tile. */
+  barColor?: string;
 }) {
   const { privacyMode } = usePrivacyMode();
   const t = useTranslations();
@@ -1029,10 +1083,19 @@ function DesktopAccountRow({
   return (
     <tr className="group hover:bg-muted/40 cursor-pointer transition-colors" onClick={onNavigate}>
       <td className="px-4 py-3.5 font-medium max-w-[220px] xl:max-w-[280px]">
-        <span className="truncate block" title={account.name}>
-          {account.isPinned && <Pin className="inline h-3 w-3 mr-1 text-amber-600" />}
+        <Link
+          href={`/accounts/${account.id}`}
+          prefetch={false}
+          transitionTypes={["nav-forward"]}
+          onClick={(e) => e.stopPropagation()}
+          className="truncate block rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          title={account.name}
+        >
+          {account.isPinned && (
+            <Pin className="inline h-3 w-3 mr-1 text-amber-500 dark:text-amber-400" />
+          )}
           {account.name}
-        </span>
+        </Link>
       </td>
       <td className="px-4 py-3.5">
         <span
@@ -1072,10 +1135,17 @@ function DesktopAccountRow({
             {privacyMode ? "—" : pct !== null ? `${pct.toFixed(1)}%` : "—"}
           </span>
           {!privacyMode && pct !== null && (
-            <div className="w-14 h-1 bg-muted rounded-full overflow-hidden">
+            <div
+              className="w-14 h-1 bg-muted rounded-full overflow-hidden"
+              style={
+                barColor
+                  ? { backgroundColor: `color-mix(in oklch, ${barColor} 16%, var(--muted))` }
+                  : undefined
+              }
+            >
               <div
                 className="h-full bg-primary rounded-full"
-                style={{ width: `${Math.min(pct, 100)}%` }}
+                style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: barColor }}
               />
             </div>
           )}
@@ -1084,7 +1154,7 @@ function DesktopAccountRow({
       <td className="px-2 py-3.5 w-10 text-center" onClick={(e) => e.stopPropagation()}>
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
+            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100 data-[state=open]:opacity-100 hover:bg-accent hover:text-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             disabled={isDeleting || isUpdating}
           >
             <MoreHorizontal className="h-4 w-4" />
@@ -1179,13 +1249,17 @@ function MobileAccountRow({
   return (
     <div className="relative group">
       <Link href={`/accounts/${account.id}`} prefetch={false} transitionTypes={["nav-forward"]}>
-        <div className={`flex items-center gap-3 ${isCompact ? "px-4 py-2.5" : "px-4 py-3.5"} bg-card hover:bg-muted/40 active:bg-muted/60 transition-colors`}>
+        <div
+          className={`flex items-center gap-3 ${isCompact ? "px-4 py-2.5" : "px-4 py-3.5"} bg-card hover:bg-muted/40 active:bg-muted/60 transition-colors`}
+        >
           <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-muted/60 shrink-0">
             <CategoryIcon className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              {account.isPinned && <Pin className="h-3 w-3 text-amber-500 shrink-0" aria-hidden />}
+              {account.isPinned && (
+                <Pin className="h-3 w-3 text-amber-500 dark:text-amber-400 shrink-0" aria-hidden />
+              )}
               <p className="font-medium text-sm truncate">{account.name}</p>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -1208,10 +1282,13 @@ function MobileAccountRow({
           <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
         </div>
       </Link>
-      <div className="absolute top-1/2 -translate-y-1/2 right-10 z-10" onClick={(e) => e.preventDefault()}>
+      <div
+        className="absolute top-1/2 -translate-y-1/2 right-10 z-10"
+        onClick={(e) => e.preventDefault()}
+      >
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
+            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100 data-[state=open]:opacity-100 hover:bg-accent hover:text-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             disabled={isDeleting || isUpdating}
           >
             <MoreHorizontal className="h-4 w-4" />
@@ -1427,7 +1504,7 @@ function AccountCardWithHoldings({
                     aria-label={t("accountsList.pinned")}
                     className="h-4 gap-0 px-1"
                   >
-                    <Pin className="h-2.5 w-2.5 text-amber-600" aria-hidden />
+                    <Pin className="h-2.5 w-2.5 text-amber-500 dark:text-amber-400" aria-hidden />
                   </Badge>
                 )}
                 <CardTitle className="truncate">{account.name}</CardTitle>
@@ -1478,7 +1555,7 @@ function AccountCardWithHoldings({
       <div className="absolute top-2 right-2 z-10" onClick={(e) => e.preventDefault()}>
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-accent-foreground transition-opacity"
+            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100 data-[state=open]:opacity-100 hover:bg-accent hover:text-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             disabled={isDeleting || isUpdating}
           >
             <MoreHorizontal className="h-4 w-4" />
