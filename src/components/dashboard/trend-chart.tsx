@@ -19,7 +19,7 @@ import {
 import { useContainerSize } from "@/hooks/use-container-size";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
-import { formatCurrency } from "@/lib/currencies";
+import { formatCurrency, getCurrencySymbol } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
@@ -155,6 +155,7 @@ export function TrendChart({
 
   const selectedRange = ranges.find((r) => r.label === range)!;
   const isPercentMode = pctMode === "on";
+  const currencySymbol = getCurrencySymbol(baseCurrency);
 
   const xTickFormatter = useCallback((v: string) => {
     const d = new Date(v);
@@ -205,7 +206,9 @@ export function TrendChart({
     <Card className="relative h-full flex flex-col pb-0">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 pb-2 px-4">
         <div className="flex flex-col gap-1 min-w-0">
-          <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
+          <CardTitle asChild className="text-foreground">
+            <h2>{t("title")}</h2>
+          </CardTitle>
           {periodChange && (
             <div
               aria-label={
@@ -254,18 +257,36 @@ export function TrendChart({
               </button>
             ))}
             <div className="mx-1 h-3 w-px bg-border" />
-            <button
-              onClick={() => setPctMode(isPercentMode ? "off" : "on")}
-              aria-pressed={isPercentMode}
-              title={t("pctToggleTitle")}
-              className={`px-2 py-0.5 text-xs rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                isPercentMode
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
+            <div
+              role="group"
+              aria-label={t("valueModeLabel")}
+              className="inline-flex items-center rounded-full bg-muted p-0.5"
             >
-              %
-            </button>
+              <button
+                onClick={() => setPctMode("off")}
+                aria-pressed={!isPercentMode}
+                title={t("absToggleTitle")}
+                className={`px-2 py-0.5 text-xs rounded-full tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  !isPercentMode
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {currencySymbol}
+              </button>
+              <button
+                onClick={() => setPctMode("on")}
+                aria-pressed={isPercentMode}
+                title={t("pctToggleTitle")}
+                className={`px-2 py-0.5 text-xs rounded-full tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  isPercentMode
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                %
+              </button>
+            </div>
           </div>
         )}
       </CardHeader>

@@ -168,7 +168,15 @@ async function NetWorthSection({ userId, baseCurrency }: { userId: string; baseC
     }
   }
 
-  return <NetWorthCard summary={summary} previousNetWorth={previousNetWorth} />;
+  return (
+    <NetWorthCard
+      summary={summary}
+      previousNetWorth={previousNetWorth}
+      previousSnapshotDate={
+        previousNetWorth !== undefined ? previousSnapshot?.date?.toISOString() : undefined
+      }
+    />
+  );
 }
 
 /**
