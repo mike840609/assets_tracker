@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { useReducedMotion } from "framer-motion";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PieChart, Pie, Cell, Sector, Label } from "recharts";
+import { useContainerWidth } from "@/hooks/use-container-size";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
+import { useChartAnimation } from "@/hooks/use-chart-animation";
 import type { NetWorthSummary } from "@/lib/types";
 
 // Schema-aware spectrum (see allocation-chart). Rotated to start at --chart-3
-// so this module stays visually distinct from the allocation donut beside it.
+// so this donut stays visually distinct from the allocation donut beside it.
 const COLORS = [
   "var(--chart-3)",
   "var(--chart-4)",
@@ -23,19 +25,12 @@ const COLORS = [
 ];
 
 export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const containerWidth = useContainerWidth(containerRef);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const t = useTranslations("currencyExposure");
   const { privacyMode } = usePrivacyMode();
-  const reduceMotion = useReducedMotion();
-
-  // Wipe the proportion bar in from the left once after mount (a horizontal
-  // reveal, distinct from the allocation donut's radial sweep). Reduced motion
-  // lands at full width immediately.
-  const [grown, setGrown] = useState(false);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setGrown(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
+  const { isAnimationActive, onAnimationEnd } = useChartAnimation();
 
   const data = useMemo(() => {
     const total = summary.currencyExposure.reduce((acc, curr) => acc + curr.value, 0);
@@ -45,9 +40,47 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
         value: Math.round(exposure.value * 100) / 100,
         percentage: total > 0 ? ((exposure.value / total) * 100).toFixed(1) : "0",
       }))
-      .filter((d) => d.value > 0)
-      .sort((a, b) => b.value - a.value);
+      .filter((d) => d.value > 0);
   }, [summary.currencyExposure]);
+
+  const handleMouseEnter = useCallback((_: unknown, index: number) => setActiveIndex(index), []);
+  const handleMouseLeave = useCallback(() => setActiveIndex(-1), []);
+
+  /* Custom shape function that expands the hovered slice */
+  const renderShape = useCallback(
+    (props: {
+      cx: number;
+      cy: number;
+      innerRadius: number;
+      outerRadius: number;
+      startAngle: number;
+      endAngle: number;
+      fill?: string;
+      index: number;
+    }) => {
+      const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, index } = props;
+      const isActive = index === activeIndex;
+      return (
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={isActive ? innerRadius - 3 : innerRadius}
+          outerRadius={isActive ? outerRadius + 8 : outerRadius}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+          cornerRadius={4}
+          style={{
+            filter: isActive ? "drop-shadow(0px 6px 12px rgba(0,0,0,0.25))" : "none",
+            transition: "all 200ms ease-out",
+            outline: "none",
+            cursor: "pointer",
+          }}
+        />
+      );
+    },
+    [activeIndex],
+  );
 
   return (
     <Card>
@@ -63,79 +96,133 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
           </div>
         ) : (
           <div
+            ref={containerRef}
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
-            {/* Proportion bar — segments sized by share, hover-linked to the list */}
-            <div
-              className="flex w-full h-3 gap-0.5 overflow-hidden rounded-full bg-muted/40 ring-1 ring-inset ring-foreground/5"
-              style={{
-                transform: reduceMotion || grown ? "scaleX(1)" : "scaleX(0)",
-                transformOrigin: "left",
-                transition: reduceMotion ? "none" : "transform 600ms cubic-bezier(0.16,1,0.3,1)",
-              }}
-            >
-              {data.map((item, index) => {
-                const dimmed = activeIndex !== -1 && activeIndex !== index;
-                return (
-                  <button
-                    key={item.name}
-                    type="button"
-                    aria-label={`${item.name} ${item.percentage}%`}
-                    onMouseEnter={() => setActiveIndex(index)}
-                    onMouseLeave={() => setActiveIndex(-1)}
-                    onFocus={() => setActiveIndex(index)}
-                    onBlur={() => setActiveIndex(-1)}
-                    onTouchStart={() => setActiveIndex(index)}
-                    onTouchEnd={() => setActiveIndex(-1)}
-                    className="h-full min-w-[3px] cursor-pointer transition-opacity duration-200 first:rounded-l-full last:rounded-r-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    style={{
-                      flexGrow: item.value,
-                      flexBasis: 0,
-                      background: COLORS[index % COLORS.length],
-                      opacity: dimmed ? 0.35 : 1,
-                    }}
-                  />
-                );
-              })}
-            </div>
+            {/* Chart on top, Legend below */}
+            <div className="flex flex-col items-center">
+              {/* Donut chart */}
+              <div className="w-full h-[180px]">
+                {containerWidth > 0 && (
+                  <PieChart width={containerWidth} height={180}>
+                    <defs>
+                      {COLORS.map((color, index) => (
+                        <linearGradient
+                          key={`grad-${index}`}
+                          id={`expo-grad-${index}`}
+                          x1="0"
+                          y1="0"
+                          x2="1"
+                          y2="1"
+                        >
+                          {/* var() resolves in the CSS `stop-color` property (style),
+                              not in the SVG presentation attribute. */}
+                          <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.95 }} />
+                          <stop offset="100%" style={{ stopColor: color, stopOpacity: 0.65 }} />
+                        </linearGradient>
+                      ))}
+                    </defs>
+                    <Pie
+                      data={data}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={72}
+                      paddingAngle={2}
+                      dataKey="value"
+                      isAnimationActive={isAnimationActive}
+                      onAnimationEnd={onAnimationEnd}
+                      onMouseEnter={handleMouseEnter}
+                      onMouseLeave={handleMouseLeave}
+                      stroke="none"
+                      shape={renderShape}
+                    >
+                      <Label
+                        content={({ viewBox }) => {
+                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                            const activeItem = activeIndex >= 0 ? data[activeIndex] : null;
+                            const displayPct = activeItem ? `${activeItem.percentage}%` : "100%";
+                            const displayLabel = activeItem ? activeItem.name : t("total");
 
-            {/* Ranked list */}
-            <div className="w-full space-y-1 pt-3">
-              {data.map((item, index) => {
-                const isActive = activeIndex === index;
-                return (
-                  <div
-                    key={item.name}
-                    className={`group flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer transition-all duration-200 ${
-                      isActive ? "bg-accent/80 shadow-sm scale-[1.01]" : "hover:bg-accent/50"
-                    }`}
-                    onMouseEnter={() => setActiveIndex(index)}
-                    onMouseLeave={() => setActiveIndex(-1)}
-                  >
+                            return (
+                              <text
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy || 0) - 6}
+                                  className="fill-foreground font-bold"
+                                  style={{ fontSize: "16px" }}
+                                >
+                                  {displayPct}
+                                </tspan>
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy || 0) + 12}
+                                  className="fill-muted-foreground"
+                                  style={{ fontSize: "10px" }}
+                                >
+                                  {displayLabel.length > 10
+                                    ? displayLabel.slice(0, 10) + "…"
+                                    : displayLabel}
+                                </tspan>
+                              </text>
+                            );
+                          }
+                        }}
+                      />
+                      {data.map((_, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={`url(#expo-grad-${index % COLORS.length})`}
+                        />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                )}
+              </div>
+
+              {/* Custom legend below */}
+              <div className="w-full space-y-1 pt-1">
+                {data.map((item, index) => {
+                  const isActive = activeIndex === index;
+                  return (
                     <div
-                      className={`w-2.5 h-2.5 rounded-full shrink-0 transition-transform duration-200 ${isActive ? "scale-125" : ""}`}
-                      style={{ background: COLORS[index % COLORS.length] }}
-                    />
-                    <span className="text-sm text-foreground font-medium truncate flex-1 min-w-0">
-                      {item.name}
-                    </span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-xs tabular-nums text-muted-foreground font-medium">
-                        {privacyMode ? "••••" : formatCurrency(item.value, summary.baseCurrency)}
+                      key={item.name}
+                      className={`group flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer transition-all duration-200 ${
+                        isActive ? "bg-accent/80 shadow-sm scale-[1.01]" : "hover:bg-accent/50"
+                      }`}
+                      onMouseEnter={() => setActiveIndex(index)}
+                      onMouseLeave={() => setActiveIndex(-1)}
+                    >
+                      <div
+                        className={`w-2.5 h-2.5 rounded-full shrink-0 transition-transform duration-200 ${isActive ? "scale-125" : ""}`}
+                        style={{ background: COLORS[index % COLORS.length] }}
+                      />
+                      <span className="text-sm text-foreground font-medium truncate flex-1 min-w-0">
+                        {item.name}
                       </span>
-                      <span
-                        className={`text-[11px] tabular-nums font-semibold px-1.5 py-0.5 rounded-full transition-colors duration-200 ${
-                          isActive
-                            ? "bg-foreground/10 text-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {item.percentage}%
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-xs tabular-nums text-muted-foreground font-medium">
+                          {privacyMode ? "••••" : formatCurrency(item.value, summary.baseCurrency)}
+                        </span>
+                        <span
+                          className={`text-[11px] tabular-nums font-semibold px-1.5 py-0.5 rounded-full transition-colors duration-200 ${
+                            isActive
+                              ? "bg-foreground/10 text-foreground"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {item.percentage}%
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
