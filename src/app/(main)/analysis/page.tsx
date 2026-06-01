@@ -15,19 +15,14 @@ async function AnalysisContent() {
   const userId = session.user.id;
 
   const settingsP = getOrCreateSettings(userId);
-  const [
-    t,
-    messages,
-    locale,
-    { snapshots, cashFlowData, rawHistory, accountCashFlow, summary },
-    settings,
-  ] = await Promise.all([
-    getTranslations("analysis"),
-    getMessages(),
-    getLocale(),
-    settingsP.then((s) => getCachedAnalysisPayload(userId, s.baseCurrency)),
-    settingsP,
-  ]);
+  const [t, messages, locale, { snapshots, cashFlowData, rawHistory, accountCashFlow }, settings] =
+    await Promise.all([
+      getTranslations("analysis"),
+      getMessages(),
+      getLocale(),
+      settingsP.then((s) => getCachedAnalysisPayload(userId, s.baseCurrency)),
+      settingsP,
+    ]);
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
@@ -39,7 +34,6 @@ async function AnalysisContent() {
           cashFlowData={cashFlowData}
           rawHistory={rawHistory}
           accountCashFlow={accountCashFlow}
-          summary={summary}
           baseCurrency={settings.baseCurrency}
           locale={locale}
         />
