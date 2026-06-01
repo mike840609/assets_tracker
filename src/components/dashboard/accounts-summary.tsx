@@ -183,7 +183,9 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   return (
     <section className="space-y-4">
       <div className="flex flex-row flex-wrap items-center justify-between gap-2 px-1">
-        <h2 className="text-lg font-semibold tracking-tight">{t("accountsSummary.title")}</h2>
+        <h2 className="font-heading text-base leading-snug font-medium">
+          {t("accountsSummary.title")}
+        </h2>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
           {sortOptions.map(({ field, label }) => (
             <button

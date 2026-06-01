@@ -359,7 +359,8 @@
   "netWorthCard": {
     "netWorth": "淨資產",
     "totalAssets": "總資產",
-    "totalLiabilities": "總負債"
+    "totalLiabilities": "總負債",
+    "sinceSnapshot": "自 {date}"
   },
   "dashboardActions": {
     "pricesUpdated": "價格更新於 {age}",
@@ -384,7 +385,9 @@
     "title": "淨資產趨勢",
     "noData": "尚無資料。新增帳戶後，淨資產將於每日午夜（UTC+8）自動記錄。",
     "seriesName": "淨資產",
-    "pctToggleTitle": "切換百分比報酬視圖"
+    "pctToggleTitle": "切換百分比報酬視圖",
+    "absToggleTitle": "顯示絕對數值",
+    "valueModeLabel": "數值顯示模式"
   },
   "allocationChart": {
     "title": "資產配置",

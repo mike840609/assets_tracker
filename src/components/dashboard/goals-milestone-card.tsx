@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useReducedMotion } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { Target, ArrowRight, CheckCircle2 } from "lucide-react";
 import type { GoalWithProgress } from "@/lib/types";
@@ -45,7 +45,9 @@ export function GoalsMilestoneCard({
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <div className="flex items-center gap-2">
           <Target className="h-4 w-4 text-primary" />
-          <p className="text-sm font-medium">{t("title")}</p>
+          <CardTitle asChild>
+            <h2>{t("title")}</h2>
+          </CardTitle>
         </div>
         <Link
           href="/goals"

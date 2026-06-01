@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
 import { useCountUp } from "@/hooks/use-count-up";
@@ -65,12 +65,15 @@ function FitCurrency({
 export function NetWorthCard({
   summary,
   previousNetWorth,
+  previousSnapshotDate,
 }: {
   summary: NetWorthSummary;
   previousNetWorth?: number;
+  previousSnapshotDate?: string;
 }) {
   const { totalAssets, totalLiabilities, netWorth, baseCurrency } = summary;
   const t = useTranslations("netWorthCard");
+  const locale = useLocale();
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
   const isCompact = density === "compact";
@@ -88,16 +91,22 @@ export function NetWorthCard({
   const bgDeltaColor =
     delta === null ? "" : isPositive ? "bg-[var(--gain)]/10" : "bg-[var(--loss)]/10";
   const deltaSign = delta !== null && delta > 0 ? "+" : "";
+  const snapshotLabel = previousSnapshotDate
+    ? new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" }).format(
+        new Date(previousSnapshotDate),
+      )
+    : null;
   const meshClass =
     delta === null ? "hero-mesh-neutral" : isPositive ? "hero-mesh-positive" : "hero-mesh-negative";
 
   return (
     <div
       data-testid="net-worth-card"
-      className={`grid grid-cols-2 lg:grid-cols-3 ${isCompact ? "gap-2 sm:gap-3" : "gap-3 sm:gap-6"} animate-in fade-in slide-in-from-bottom-4 motion-normal fill-mode-both`}
+      className={`grid grid-cols-2 lg:grid-cols-4 ${isCompact ? "gap-2 sm:gap-3" : "gap-3 sm:gap-6"} animate-in fade-in slide-in-from-bottom-4 motion-normal fill-mode-both`}
     >
-      {/* Primary Hero Metric: Net Worth */}
-      <Card className="col-span-2 lg:col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all motion-normal hover:-translate-y-1 relative group min-w-0">
+      {/* Primary Hero Metric: Net Worth — spans half the row on desktop so it
+          leads the hierarchy by footprint, not just styling */}
+      <Card className="col-span-2 glass card-gradient rounded-2xl overflow-hidden shadow-sm relative min-w-0">
         <div className={meshClass} />
         <div className="net-worth-card-accent absolute inset-x-0 bottom-0 h-1 opacity-100 transition-opacity" />
         <CardContent
@@ -112,38 +121,45 @@ export function NetWorthCard({
             </p>
           </div>
           <p
-            className="text-2xl sm:text-3xl font-bold text-foreground mt-1 whitespace-nowrap tabular-nums truncate"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mt-1 whitespace-nowrap tabular-nums truncate"
             style={{ letterSpacing: "-0.02em" }}
             title={privacyMode ? undefined : formatCurrency(netWorth, baseCurrency)}
           >
             {privacyMode ? HIDDEN : formatCurrency(animatedNetWorth, baseCurrency)}
           </p>
           {!privacyMode && delta !== null && pct !== null && (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <div
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${bgDeltaColor} ${deltaColor} max-w-full transition-all group-hover:scale-105 cursor-default tabular-nums`}
-              >
-                {isPositive ? (
-                  <TrendingUp className="h-3.5 w-3.5 shrink-0" />
-                ) : (
-                  <TrendingDown className="h-3.5 w-3.5 shrink-0" />
-                )}
-                <span className="truncate">
+            <div className="mt-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <div
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${bgDeltaColor} ${deltaColor} max-w-full cursor-default tabular-nums`}
+                >
+                  {isPositive ? (
+                    <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+                  ) : (
+                    <TrendingDown className="h-3.5 w-3.5 shrink-0" />
+                  )}
+                  <span className="truncate">
+                    {deltaSign}
+                    {formatCurrency(delta, baseCurrency)}
+                  </span>
+                </div>
+                <span className={`text-xs font-semibold tabular-nums ${deltaColor}`}>
                   {deltaSign}
-                  {formatCurrency(delta, baseCurrency)}
+                  {pct.toFixed(2)}%
                 </span>
               </div>
-              <span className={`text-xs font-semibold tabular-nums ${deltaColor}`}>
-                {deltaSign}
-                {pct.toFixed(2)}%
-              </span>
+              {snapshotLabel && (
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  {t("sinceSnapshot", { date: snapshotLabel })}
+                </p>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Secondary Metrics: Assets */}
-      <Card className="col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all motion-normal hover:-translate-y-1 min-w-0">
+      {/* Secondary Metrics: Assets — quiet wash so the hero leads */}
+      <Card className="col-span-1 rounded-2xl bg-muted/30 min-w-0">
         <CardContent
           className={`${isCompact ? "p-2.5 sm:p-3" : "p-4 sm:p-6"} h-full flex flex-col justify-center min-w-0`}
         >
@@ -162,8 +178,8 @@ export function NetWorthCard({
         </CardContent>
       </Card>
 
-      {/* Secondary Metrics: Liabilities */}
-      <Card className="col-span-1 glass card-gradient rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all motion-normal hover:-translate-y-1 min-w-0">
+      {/* Secondary Metrics: Liabilities — quiet wash so the hero leads */}
+      <Card className="col-span-1 rounded-2xl bg-muted/30 min-w-0">
         <CardContent
           className={`${isCompact ? "p-2.5 sm:p-3" : "p-4 sm:p-6"} h-full flex flex-col justify-center min-w-0`}
         >
