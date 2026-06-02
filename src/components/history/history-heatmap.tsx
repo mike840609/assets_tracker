@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useFormatter } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
@@ -49,6 +49,7 @@ type Props = {
 
 export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   const format = useFormatter();
+  const t = useTranslations("history");
   const { privacyMode } = usePrivacyMode();
   const [tooltip, setTooltip] = useState<{ day: GridDay; x: number; y: number } | null>(null);
   const tooltipLabels = labels ?? { netWorth: "Net Worth", change: "Change" };
@@ -187,11 +188,30 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   return (
     <div
       className={cn(
-        "w-full transition-[filter] duration-300",
+        "relative w-full transition-[filter] duration-300",
         privacyMode && "blur-sm pointer-events-none select-none",
       )}
       aria-hidden={privacyMode || undefined}
     >
+      {/* Intensity legend: decodes what each shade means. Absolutely positioned in
+          the month-label band (top-right) so it adds no height — keeps the trend
+          card, whose footer this is, at its original size. */}
+      <div
+        className="pointer-events-none absolute right-0 top-0 z-10 flex items-center gap-1.5 bg-card/80 pl-2 text-[10px] text-muted-foreground/70 backdrop-blur-[2px]"
+        aria-label={`${t("legendLoss")} – ${t("legendGain")}`}
+      >
+        <span aria-hidden="true">{t("legendLoss")}</span>
+        <span className="size-[10px] rounded-[2px] bg-[var(--loss)]" aria-hidden="true" />
+        <span className="size-[10px] rounded-[2px] bg-[var(--loss)]/50" aria-hidden="true" />
+        <span
+          className="size-[10px] rounded-[2px] bg-muted/40 dark:bg-muted/20"
+          aria-hidden="true"
+        />
+        <span className="size-[10px] rounded-[2px] bg-[var(--gain)]/50" aria-hidden="true" />
+        <span className="size-[10px] rounded-[2px] bg-[var(--gain)]" aria-hidden="true" />
+        <span aria-hidden="true">{t("legendGain")}</span>
+      </div>
+
       {/*
         Relative wrapper lets the fade overlay sit on top of the scroll container
         without affecting layout. The fade uses mask-image on the scroll div itself
@@ -199,6 +219,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
       */}
       <div
         ref={scrollContainerRef}
+        title={t("scrollMonths")}
         className="overflow-x-auto scrollbar-none pb-1 [mask-image:linear-gradient(to_right,black_0%,black_88%,transparent_100%)]"
       >
         <div className="inline-flex flex-col min-w-max">
