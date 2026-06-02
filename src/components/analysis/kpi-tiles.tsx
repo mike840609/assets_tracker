@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -27,21 +28,27 @@ function Tile({
   tone?: "positive" | "negative" | "neutral";
   isCompact: boolean;
 }) {
-  const valueClass =
-    tone === "positive"
-      ? "text-[var(--gain)]"
-      : tone === "negative"
-        ? "text-[var(--loss)]"
-        : "text-foreground";
+  // Data-first restraint: positives stay ink so the strip never reads as one
+  // saturated block; only a real loss recolors the number. Direction is carried
+  // by a caret (icon, not color alone) per the gain/loss design rule.
+  const valueClass = tone === "negative" ? "text-[var(--loss)]" : "text-foreground";
+  const DirIcon = tone === "positive" ? ArrowUpRight : tone === "negative" ? ArrowDownRight : null;
+  const iconClass = tone === "positive" ? "text-[var(--gain)]" : "text-[var(--loss)]";
   return (
     <Card size={isCompact ? "sm" : "default"} className="min-w-0">
       <CardContent className={isCompact ? "space-y-1 min-w-0" : "space-y-1.5 min-w-0"}>
         <div className="text-xs text-muted-foreground font-medium truncate">{title}</div>
         <div className="overflow-x-auto scrollbar-none">
           <div
-            className={`${isCompact ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"} font-semibold tracking-tight tabular-nums whitespace-nowrap ${valueClass}`}
+            className={`flex items-center gap-1 ${isCompact ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"} font-semibold tracking-tight tabular-nums whitespace-nowrap ${valueClass}`}
           >
-            {value}
+            {DirIcon && (
+              <DirIcon
+                className={`${iconClass} ${isCompact ? "size-4" : "size-5"} shrink-0`}
+                aria-hidden
+              />
+            )}
+            <span>{value}</span>
           </div>
         </div>
         {subtitle && (
@@ -92,6 +99,15 @@ export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
       ? formatMonthLabel(kpis.worst.monthKey, locale)
       : undefined;
 
+  // When every month shares a sign, a "Worst Month" can be a gain (and a "Best
+  // Month" a loss). Relabel to match the data so the title and value agree.
+  const bestTitle =
+    !privacyMode && kpis.best && kpis.best.deltaNetWorth < 0 ? t("smallestLoss") : t("bestMonth");
+  const worstTitle =
+    !privacyMode && kpis.worst && kpis.worst.deltaNetWorth >= 0
+      ? t("smallestGain")
+      : t("worstMonth");
+
   const ytdSub = privacyMode
     ? undefined
     : kpis.ytdPct === null
@@ -101,14 +117,14 @@ export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
   return (
     <div className={`grid grid-cols-2 ${isCompact ? "gap-2" : "gap-3 sm:gap-4"} md:grid-cols-4`}>
       <Tile
-        title={t("bestMonth")}
+        title={bestTitle}
         value={bestValue}
         subtitle={bestSub}
         tone={privacyMode ? "neutral" : kpis.best ? toneFor(kpis.best.deltaNetWorth) : "neutral"}
         isCompact={isCompact}
       />
       <Tile
-        title={t("worstMonth")}
+        title={worstTitle}
         value={worstValue}
         subtitle={worstSub}
         tone={privacyMode ? "neutral" : kpis.worst ? toneFor(kpis.worst.deltaNetWorth) : "neutral"}

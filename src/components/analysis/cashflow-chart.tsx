@@ -4,6 +4,7 @@ import { useEffect, useState, startTransition } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartEmptyState } from "./chart-empty-state";
 import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
@@ -102,12 +103,7 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
       </CardHeader>
       <CardContent className="px-2 sm:px-4 pb-4">
         {buckets.length === 0 ? (
-          <div
-            className="flex items-center justify-center text-muted-foreground text-sm"
-            style={{ height: chartHeight }}
-          >
-            {t("noData")}
-          </div>
+          <ChartEmptyState message={t("noData")} hint={t("emptyHint")} />
         ) : !mounted ? (
           <div style={{ height: chartHeight }} />
         ) : (
