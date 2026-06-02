@@ -188,28 +188,33 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   return (
     <div
       className={cn(
-        "relative w-full transition-[filter] duration-300",
+        "w-full transition-[filter] duration-300",
         privacyMode && "blur-sm pointer-events-none select-none",
       )}
       aria-hidden={privacyMode || undefined}
     >
-      {/* Intensity legend: decodes what each shade means. Absolutely positioned in
-          the month-label band (top-right) so it adds no height — keeps the trend
-          card, whose footer this is, at its original size. */}
-      <div
-        className="pointer-events-none absolute right-0 top-0 z-10 flex items-center gap-1.5 bg-card/80 pl-2 text-[10px] text-muted-foreground/70 backdrop-blur-[2px]"
-        aria-label={`${t("legendLoss")} – ${t("legendGain")}`}
-      >
-        <span aria-hidden="true">{t("legendLoss")}</span>
-        <span className="size-[10px] rounded-[2px] bg-[var(--loss)]" aria-hidden="true" />
-        <span className="size-[10px] rounded-[2px] bg-[var(--loss)]/50" aria-hidden="true" />
-        <span
-          className="size-[10px] rounded-[2px] bg-muted/40 dark:bg-muted/20"
-          aria-hidden="true"
-        />
-        <span className="size-[10px] rounded-[2px] bg-[var(--gain)]/50" aria-hidden="true" />
-        <span className="size-[10px] rounded-[2px] bg-[var(--gain)]" aria-hidden="true" />
-        <span aria-hidden="true">{t("legendGain")}</span>
+      {/* Header: year label on the left, intensity legend on the right. Sits
+          above the grid (not overlaid) so it never collides with the month
+          labels, and gives the heatmap a visible title. */}
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <span className="text-xs font-medium text-muted-foreground">
+          {t("activityYear", { year: currentYear })}
+        </span>
+        <div
+          className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70"
+          aria-label={`${t("legendLoss")} – ${t("legendGain")}`}
+        >
+          <span aria-hidden="true">{t("legendLoss")}</span>
+          <span className="size-[10px] rounded-[2px] bg-[var(--loss)]" aria-hidden="true" />
+          <span className="size-[10px] rounded-[2px] bg-[var(--loss)]/50" aria-hidden="true" />
+          <span
+            className="size-[10px] rounded-[2px] bg-muted/40 dark:bg-muted/20"
+            aria-hidden="true"
+          />
+          <span className="size-[10px] rounded-[2px] bg-[var(--gain)]/50" aria-hidden="true" />
+          <span className="size-[10px] rounded-[2px] bg-[var(--gain)]" aria-hidden="true" />
+          <span aria-hidden="true">{t("legendGain")}</span>
+        </div>
       </div>
 
       {/*
