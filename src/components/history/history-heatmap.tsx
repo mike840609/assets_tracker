@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useFormatter } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
@@ -49,6 +49,7 @@ type Props = {
 
 export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   const format = useFormatter();
+  const t = useTranslations("history");
   const { privacyMode } = usePrivacyMode();
   const [tooltip, setTooltip] = useState<{ day: GridDay; x: number; y: number } | null>(null);
   const tooltipLabels = labels ?? { netWorth: "Net Worth", change: "Change" };
@@ -192,6 +193,30 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
       )}
       aria-hidden={privacyMode || undefined}
     >
+      {/* Header: year label on the left, intensity legend on the right. Sits
+          above the grid (not overlaid) so it never collides with the month
+          labels, and gives the heatmap a visible title. */}
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <span className="text-xs font-medium text-muted-foreground">
+          {t("activityYear", { year: currentYear })}
+        </span>
+        <div
+          className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70"
+          aria-label={`${t("legendLoss")} – ${t("legendGain")}`}
+        >
+          <span aria-hidden="true">{t("legendLoss")}</span>
+          <span className="size-[10px] rounded-[2px] bg-[var(--loss)]" aria-hidden="true" />
+          <span className="size-[10px] rounded-[2px] bg-[var(--loss)]/50" aria-hidden="true" />
+          <span
+            className="size-[10px] rounded-[2px] bg-muted/40 dark:bg-muted/20"
+            aria-hidden="true"
+          />
+          <span className="size-[10px] rounded-[2px] bg-[var(--gain)]/50" aria-hidden="true" />
+          <span className="size-[10px] rounded-[2px] bg-[var(--gain)]" aria-hidden="true" />
+          <span aria-hidden="true">{t("legendGain")}</span>
+        </div>
+      </div>
+
       {/*
         Relative wrapper lets the fade overlay sit on top of the scroll container
         without affecting layout. The fade uses mask-image on the scroll div itself

@@ -22,14 +22,25 @@ export default function HistoryLoading() {
           <div className="bg-card border border-border/50 rounded-xl shadow-sm">
             <div className="p-4 space-y-4">
               <Skeleton className="h-5 w-24" />
-              <div className="grid grid-cols-2 gap-x-4 gap-y-5">
-                {[...Array(8)].map((_, i) => (
+              {/* Lead block: large current value + supporting line */}
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-7 w-32" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <div className="h-px bg-border/60" />
+              {/* Demoted secondary grid: 6 two-line stats + a full-width tally */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+                {[...Array(6)].map((_, i) => (
                   <div key={i} className="space-y-1.5">
                     <Skeleton className="h-3 w-20" />
                     <Skeleton className="h-5 w-16" />
-                    <Skeleton className="h-3 w-12" />
                   </div>
                 ))}
+                <div className="col-span-2 space-y-1.5">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-5 w-16" />
+                </div>
               </div>
             </div>
           </div>
@@ -42,15 +53,21 @@ export default function HistoryLoading() {
         </div>
       </div>
 
-      {/* History table card */}
-      <div className="bg-card border border-border/50 rounded-xl p-1 card-gradient">
-        <div className="p-5 space-y-3">
-          <div className="flex items-center justify-between mb-2">
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-5 w-24 rounded-full" />
+      {/* History ledger: title row + a month-grouped card (mirrors HistoryTable) */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-5 w-24 rounded-full" />
+        </div>
+        <Skeleton className="h-3 w-28" />
+        <div className="rounded-2xl border border-border/40 bg-card overflow-hidden">
+          <div className="px-4 py-2 bg-muted/30 border-b border-border/40">
+            <Skeleton className="h-3 w-full max-w-md" />
           </div>
           {[...Array(7)].map((_, i) => (
-            <Skeleton key={i} className="h-10" />
+            <div key={i} className="px-4 py-3.5 border-b border-border/40 last:border-b-0">
+              <Skeleton className="h-5 w-full" />
+            </div>
           ))}
         </div>
       </div>

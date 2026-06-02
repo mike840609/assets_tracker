@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowRight, LineChart } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { TrendChart } from "@/components/dashboard/trend-chart";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { FreshnessBadge } from "@/components/ui/freshness-badge";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
 import { DailyChangeChart } from "./daily-change-chart";
@@ -31,6 +34,27 @@ export function HistoryView({
 
   const firstSnapshot = snapshots[0];
   const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
+
+  if (snapshots.length === 0) {
+    return (
+      <div className={cn("space-y-4 md:space-y-8", className)}>
+        {showTitle && <LargeTitleHeading>{t("title")}</LargeTitleHeading>}
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/10 px-6 py-16 text-center">
+          <div className="mb-4 rounded-full bg-primary/10 p-4">
+            <LineChart className="size-6 text-primary" aria-hidden="true" />
+          </div>
+          <h2 className="mb-1.5 text-lg font-semibold text-foreground">{t("emptyTitle")}</h2>
+          <p className="mb-6 max-w-md text-pretty text-sm leading-relaxed text-muted-foreground">
+            {t("emptyDesc")}
+          </p>
+          <Link href="/" className={buttonVariants()}>
+            {t("emptyCta")}
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("space-y-4 md:space-y-8", className)}>

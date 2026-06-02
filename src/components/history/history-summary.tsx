@@ -96,6 +96,7 @@ export function HistorySummary({ snapshots, baseCurrency, className }: Props) {
     const worstLoss: DayMove | null = worst && worst.value < 0 ? worst : null;
 
     return {
+      current: last.netWorth,
       athValue,
       athDate,
       atlValue,
@@ -133,70 +134,88 @@ export function HistorySummary({ snapshots, baseCurrency, className }: Props) {
       <CardHeader className="px-4 pb-3">
         <CardTitle className="text-base font-medium text-foreground">{t("summaryTitle")}</CardTitle>
       </CardHeader>
-      <CardContent className="grid grid-cols-2 gap-x-4 gap-y-5 px-4 pb-4">
-        <Stat
-          label={t("allTimeHigh")}
-          value={money(stats.athValue)}
-          sub={shortDate(stats.athDate)}
-        />
-        <Stat
-          label={t("allTimeLow")}
-          value={money(stats.atlValue)}
-          sub={shortDate(stats.atlDate)}
-        />
-
-        <Stat
-          label={t("sinceFirst")}
-          value={stats.hasSpan ? signedMoney(stats.changeAbs) : "—"}
-          valueClass={stats.hasSpan ? tone(stats.changeAbs) : "text-muted-foreground"}
-          sub={stats.hasSpan && stats.changePct !== null ? signedPct(stats.changePct) : undefined}
-          subClass={tone(stats.changeAbs)}
-        />
-        <Stat
-          label={t("last30Days")}
-          value={stats.recent30Abs !== null ? signedMoney(stats.recent30Abs) : "—"}
-          valueClass={
-            stats.recent30Abs !== null ? tone(stats.recent30Abs) : "text-muted-foreground"
-          }
-          sub={stats.recent30Pct !== null ? signedPct(stats.recent30Pct) : undefined}
-          subClass={stats.recent30Abs !== null ? tone(stats.recent30Abs) : undefined}
-        />
-
-        <Stat
-          label={t("bestDay")}
-          value={stats.best ? signedMoney(stats.best.value) : "—"}
-          valueClass={stats.best ? "text-[var(--gain)]" : "text-muted-foreground"}
-          sub={stats.best ? shortDate(stats.best.date) : undefined}
-        />
-        <Stat
-          label={t("worstDay")}
-          value={stats.worst ? signedMoney(stats.worst.value) : "—"}
-          valueClass={stats.worst ? "text-[var(--loss)]" : "text-muted-foreground"}
-          sub={stats.worst ? shortDate(stats.worst.date) : undefined}
-        />
-
-        <Stat
-          label={t("fromHigh")}
-          value={
-            stats.atHigh
+      <CardContent className="px-4 pb-4">
+        {/* Lead block: the one number that answers "where do I stand", with the
+            drawdown from peak as its supporting line. Everything below is demoted. */}
+        <div className="flex flex-col gap-0.5 pb-3">
+          <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            {t("current")}
+          </span>
+          <span className="text-2xl font-semibold leading-none tabular-nums text-foreground">
+            {money(stats.current)}
+          </span>
+          <span
+            className={cn(
+              "mt-1 text-xs tabular-nums",
+              stats.atHigh ? "text-[var(--gain)]" : "text-[var(--loss)]",
+            )}
+          >
+            {stats.atHigh
               ? t("atHigh")
-              : stats.drawdownPct !== null
-                ? signedPct(stats.drawdownPct)
-                : signedMoney(stats.drawdownAbs)
-          }
-          valueClass={stats.atHigh ? "text-[var(--gain)]" : "text-[var(--loss)]"}
-          sub={stats.atHigh ? undefined : signedMoney(stats.drawdownAbs)}
-        />
-        <Stat
-          label={t("upDownDays")}
-          value={
-            <>
-              <span className="text-[var(--gain)]">{stats.upDays}</span>
-              <span className="text-muted-foreground"> / </span>
-              <span className="text-[var(--loss)]">{stats.downDays}</span>
-            </>
-          }
-        />
+              : `${t("fromHigh")} ${
+                  stats.drawdownPct !== null
+                    ? signedPct(stats.drawdownPct)
+                    : signedMoney(stats.drawdownAbs)
+                }`}
+          </span>
+        </div>
+
+        <div className="h-px bg-border/60" aria-hidden="true" />
+
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-3">
+          <Stat
+            label={t("sinceFirst")}
+            value={stats.hasSpan ? signedMoney(stats.changeAbs) : "—"}
+            valueClass={stats.hasSpan ? tone(stats.changeAbs) : "text-muted-foreground"}
+            sub={stats.hasSpan && stats.changePct !== null ? signedPct(stats.changePct) : undefined}
+            subClass={tone(stats.changeAbs)}
+          />
+          <Stat
+            label={t("last30Days")}
+            value={stats.recent30Abs !== null ? signedMoney(stats.recent30Abs) : "—"}
+            valueClass={
+              stats.recent30Abs !== null ? tone(stats.recent30Abs) : "text-muted-foreground"
+            }
+            sub={stats.recent30Pct !== null ? signedPct(stats.recent30Pct) : undefined}
+            subClass={stats.recent30Abs !== null ? tone(stats.recent30Abs) : undefined}
+          />
+
+          <Stat
+            label={t("allTimeHigh")}
+            value={money(stats.athValue)}
+            sub={shortDate(stats.athDate)}
+          />
+          <Stat
+            label={t("allTimeLow")}
+            value={money(stats.atlValue)}
+            sub={shortDate(stats.atlDate)}
+          />
+
+          <Stat
+            label={t("bestDay")}
+            value={stats.best ? signedMoney(stats.best.value) : "—"}
+            valueClass={stats.best ? "text-[var(--gain)]" : "text-muted-foreground"}
+            sub={stats.best ? shortDate(stats.best.date) : undefined}
+          />
+          <Stat
+            label={t("worstDay")}
+            value={stats.worst ? signedMoney(stats.worst.value) : "—"}
+            valueClass={stats.worst ? "text-[var(--loss)]" : "text-muted-foreground"}
+            sub={stats.worst ? shortDate(stats.worst.date) : undefined}
+          />
+
+          <Stat
+            className="col-span-2"
+            label={t("upDownDays")}
+            value={
+              <>
+                <span className="text-[var(--gain)]">{stats.upDays}</span>
+                <span className="text-muted-foreground"> / </span>
+                <span className="text-[var(--loss)]">{stats.downDays}</span>
+              </>
+            }
+          />
+        </div>
       </CardContent>
     </Card>
   );
@@ -208,15 +227,17 @@ function Stat({
   valueClass,
   sub,
   subClass,
+  className,
 }: {
   label: string;
   value: ReactNode;
   valueClass?: string;
   sub?: string;
   subClass?: string;
+  className?: string;
 }) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className={cn("flex flex-col gap-0.5", className)}>
       <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
