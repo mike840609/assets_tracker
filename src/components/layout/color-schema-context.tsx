@@ -22,11 +22,13 @@ const VALID_SCHEMAS: ColorSchema[] = ["emerald", "anthropic", "ocean", "violet",
 
 interface ColorSchemaContextType {
   colorSchema: ColorSchema;
+  isReady: boolean;
   setColorSchema: (schema: ColorSchema) => void;
 }
 
 const ColorSchemaContext = createContext<ColorSchemaContextType>({
   colorSchema: "emerald",
+  isReady: false,
   setColorSchema: () => {},
 });
 
@@ -99,7 +101,7 @@ export function ColorSchemaProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const value = useMemo(
-    () => ({ colorSchema: mounted ? colorSchema : "emerald", setColorSchema }),
+    () => ({ colorSchema: mounted ? colorSchema : "emerald", isReady: mounted, setColorSchema }),
     [mounted, colorSchema, setColorSchema],
   );
 

@@ -1,9 +1,180 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import type { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
+import { refreshExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
 import { dataImportSchema } from "@/lib/validators";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 import { log } from "@/lib/logger";
+
+const MISSING_ACCOUNT_GOAL_MESSAGE =
+  "Import backup contains an account-scoped goal that references a missing account.";
+const MISSING_EXCHANGE_RATE_MESSAGE =
+  "Import backup contains mixed-currency snapshots, but the required exchange rate could not be loaded.";
+
+type ImportData = z.infer<typeof dataImportSchema>;
+type ImportGoal = NonNullable<ImportData["goals"]>[number];
+type ImportSnapshot = NonNullable<ImportData["snapshots"]>[number];
+
+function validateAccountGoalReferences(importData: ImportData) {
+  const accountIds = new Set(
+    importData.accounts
+      .map((account) => account.id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0),
+  );
+
+  for (const goal of importData.goals ?? []) {
+    if (goal.scope !== "ACCOUNT") continue;
+    if (!goal.scopeRefId || !accountIds.has(goal.scopeRefId)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function remapGoalScopeRefId(goal: ImportGoal, accountIdMap: Map<string, string>) {
+  if (goal.scope !== "ACCOUNT") return goal.scopeRefId ?? null;
+  return accountIdMap.get(goal.scopeRefId ?? "") ?? null;
+}
+
+function dedupeSnapshots(snapshots: ImportSnapshot[] | undefined, targetBaseCurrency: string) {
+  const deduped = new Map<string, ImportSnapshot>();
+
+  for (const snapshot of snapshots ?? []) {
+    const date = new Date(snapshot.date);
+    const key = date.toISOString().slice(0, 10);
+    const existing = deduped.get(key);
+    if (!existing || snapshot.baseCurrency === targetBaseCurrency) {
+      deduped.set(key, snapshot);
+    }
+  }
+
+  return Array.from(deduped.values());
+}
+
+function collectImportCurrencies(importData: ImportData, targetBaseCurrency: string) {
+  const currencies = new Set<string>(["USD", targetBaseCurrency]);
+
+  for (const account of importData.accounts) {
+    currencies.add(account.currency);
+    for (const holding of account.holdings ?? []) currencies.add(holding.currency);
+  }
+
+  for (const snapshot of importData.snapshots ?? []) {
+    currencies.add(snapshot.baseCurrency);
+    const breakdown = snapshot.breakdown;
+    if (!breakdown || typeof breakdown !== "object" || Array.isArray(breakdown)) continue;
+
+    for (const entry of Object.values(breakdown)) {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+      const currency = (entry as { currency?: unknown }).currency;
+      if (typeof currency === "string" && currency.length === 3) currencies.add(currency);
+    }
+  }
+
+  return currencies;
+}
+
+async function loadExchangeRateMap() {
+  const rates = await prisma.exchangeRate.findMany({
+    select: { fromCurrency: true, toCurrency: true, rate: true },
+  });
+
+  return new Map(
+    rates.map((rate) => [`${rate.fromCurrency}_${rate.toCurrency}`, Number(rate.rate)]),
+  );
+}
+
+async function getImportRateMap(importData: ImportData, targetBaseCurrency: string) {
+  const currencies = collectImportCurrencies(importData, targetBaseCurrency);
+  await Promise.all([...currencies].map((currency) => refreshExchangeRates(currency)));
+  revalidateTag("exchange-rates", "max");
+
+  const rateMap = await loadExchangeRateMap();
+  for (const currency of currencies) {
+    if (!resolveRate(rateMap, currency, targetBaseCurrency)) return null;
+  }
+
+  return rateMap;
+}
+
+function remapSnapshotBreakdown(
+  value: ImportSnapshot["breakdown"],
+  accountIdMap: Map<string, string>,
+): ImportSnapshot["breakdown"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+
+  const remapped: Record<string, unknown> = {};
+  for (const [accountId, entry] of Object.entries(value)) {
+    remapped[accountIdMap.get(accountId) ?? accountId] = entry;
+  }
+
+  return remapped;
+}
+
+function normalizeSnapshotBreakdown(
+  value: ImportSnapshot["breakdown"],
+): Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return Prisma.JsonNull;
+  return value as Prisma.InputJsonValue;
+}
+
+function normalizeSnapshotBreakdownCurrency(
+  value: ImportSnapshot["breakdown"],
+  rateMap: Map<string, number>,
+  targetBaseCurrency: string,
+): ImportSnapshot["breakdown"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+
+  const normalized: Record<string, unknown> = {};
+  for (const [accountId, entry] of Object.entries(value)) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      normalized[accountId] = entry;
+      continue;
+    }
+
+    const rawEntry = entry as { value?: unknown; currency?: unknown };
+    const currency = typeof rawEntry.currency === "string" ? rawEntry.currency : "USD";
+    const rate = resolveRate(rateMap, currency, targetBaseCurrency);
+    const valueNumber =
+      typeof rawEntry.value === "number" ? rawEntry.value : Number(rawEntry.value ?? 0);
+
+    normalized[accountId] = {
+      ...rawEntry,
+      value: rate ? valueNumber * rate : rawEntry.value,
+      currency: rate ? targetBaseCurrency : currency,
+    };
+  }
+
+  return normalized;
+}
+
+function normalizeSnapshotAmount(
+  value: string | number,
+  fromCurrency: string,
+  targetBaseCurrency: string,
+  rateMap: Map<string, number>,
+) {
+  const rate = resolveRate(rateMap, fromCurrency, targetBaseCurrency) ?? 1;
+  return Number(value) * rate;
+}
+
+function invalidateImportCaches(userId: string) {
+  revalidateTag("accounts", "max");
+  revalidateTag(`accounts:${userId}`, { expire: 0 });
+  revalidateTag("goals", "max");
+  revalidateTag(`goals:${userId}`, "max");
+  revalidateTag("settings", "max");
+  revalidateTag(`settings:${userId}`, "max");
+  revalidateTag("snapshots", "max");
+  revalidateTag("net-worth", "max");
+  revalidateTag(`net-worth:${userId}`, { expire: 0 });
+  revalidateTag(`history:${userId}`, { expire: 0 });
+}
 
 export const GET = withAuth(async (_req, _ctx, userId) => {
   try {
@@ -57,9 +228,20 @@ export const POST = withAuth(async (request, _ctx, userId) => {
     }
 
     const importData = parsed.data;
+    if (!validateAccountGoalReferences(importData)) {
+      return failure(MISSING_ACCOUNT_GOAL_MESSAGE, 400);
+    }
+
+    const targetBaseCurrency = importData.settings?.baseCurrency ?? "USD";
+    const rateMap = await getImportRateMap(importData, targetBaseCurrency);
+    if (!rateMap) {
+      return failure(MISSING_EXCHANGE_RATE_MESSAGE, 400);
+    }
 
     await prisma.$transaction(
       async (tx) => {
+        const accountIdMap = new Map<string, string>();
+
         // 1. Delete existing data for the user (Cascades should handle holdings and transactions)
         await tx.account.deleteMany({ where: { userId } });
         await tx.netWorthSnapshot.deleteMany({ where: { userId } });
@@ -98,6 +280,8 @@ export const POST = withAuth(async (request, _ctx, userId) => {
               updatedAt: acc.updatedAt,
             },
           });
+
+          if (acc.id) accountIdMap.set(acc.id, newAccount.id);
 
           // Holdings
           if (Array.isArray(acc.holdings)) {
@@ -151,19 +335,42 @@ export const POST = withAuth(async (request, _ctx, userId) => {
         }
 
         // 4. Import snapshots
-        if (Array.isArray(importData.snapshots) && importData.snapshots.length > 0) {
+        const snapshots = dedupeSnapshots(importData.snapshots, targetBaseCurrency);
+        if (snapshots.length > 0) {
           await tx.netWorthSnapshot.createMany({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            data: importData.snapshots.map((s: any) => ({
-              userId,
-              date: new Date(s.date),
-              totalAssets: s.totalAssets,
-              totalLiabilities: s.totalLiabilities,
-              netWorth: s.netWorth,
-              baseCurrency: s.baseCurrency,
-              breakdown: s.breakdown,
-              createdAt: s.createdAt,
-            })),
+            data: snapshots.map((s) => {
+              return {
+                userId,
+                date: new Date(s.date),
+                totalAssets: normalizeSnapshotAmount(
+                  s.totalAssets,
+                  s.baseCurrency,
+                  targetBaseCurrency,
+                  rateMap,
+                ),
+                totalLiabilities: normalizeSnapshotAmount(
+                  s.totalLiabilities,
+                  s.baseCurrency,
+                  targetBaseCurrency,
+                  rateMap,
+                ),
+                netWorth: normalizeSnapshotAmount(
+                  s.netWorth,
+                  s.baseCurrency,
+                  targetBaseCurrency,
+                  rateMap,
+                ),
+                baseCurrency: targetBaseCurrency,
+                breakdown: normalizeSnapshotBreakdown(
+                  normalizeSnapshotBreakdownCurrency(
+                    remapSnapshotBreakdown(s.breakdown, accountIdMap),
+                    rateMap,
+                    targetBaseCurrency,
+                  ),
+                ),
+                createdAt: s.createdAt,
+              };
+            }),
           });
         }
 
@@ -177,7 +384,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
               targetCurrency: g.targetCurrency,
               targetDate: g.targetDate ? new Date(g.targetDate) : null,
               scope: g.scope,
-              scopeRefId: g.scopeRefId ?? null,
+              scopeRefId: remapGoalScopeRefId(g, accountIdMap),
               ...(g.createdAt && { createdAt: new Date(g.createdAt) }),
               ...(g.updatedAt && { updatedAt: new Date(g.updatedAt) }),
             })),
@@ -187,7 +394,18 @@ export const POST = withAuth(async (request, _ctx, userId) => {
       { timeout: 30000 },
     );
 
-    return ok({ ok: true });
+    invalidateImportCaches(userId);
+
+    const response = ok({ ok: true });
+    if (importData.settings?.locale) {
+      response.cookies.set("NEXT_LOCALE", importData.settings.locale, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
+    }
+
+    return response;
   } catch (error) {
     log.error("import.failed", { error: String(error) });
     return failure("Failed to import data", 500);

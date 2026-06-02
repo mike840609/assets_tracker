@@ -181,6 +181,7 @@ export const dataImportSchema = z.object({
     .nullable(),
   accounts: z.array(
     z.object({
+      id: z.string().optional(),
       name: z.string().min(1),
       type: z.enum(ACCOUNT_TYPES),
       category: z.enum(ACCOUNT_CATEGORIES),

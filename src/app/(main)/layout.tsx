@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { Sidebar, MobileNav } from "@/components/layout/sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { MobileMainShell } from "@/components/layout/mobile-main-shell";
@@ -22,6 +23,9 @@ export default async function MainLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSession();
+  if (!session?.user?.id) redirect("/login?stale-session=1");
+
   return (
     <div className="contents">
       <DensityProvider>

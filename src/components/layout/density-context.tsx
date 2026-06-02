@@ -14,11 +14,13 @@ export type Density = "comfortable" | "compact";
 
 interface DensityContextType {
   density: Density;
+  isReady: boolean;
   setDensity: (density: Density) => void;
 }
 
 const DensityContext = createContext<DensityContextType>({
   density: "comfortable",
+  isReady: false,
   setDensity: () => {},
 });
 
@@ -42,7 +44,7 @@ export function DensityProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ density: mounted ? density : "comfortable", setDensity }),
+    () => ({ density: mounted ? density : "comfortable", isReady: mounted, setDensity }),
     [mounted, density, setDensity],
   );
 
