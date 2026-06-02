@@ -1,6 +1,7 @@
 import "server-only";
 import { auth } from "@/auth";
 import { failure } from "@/lib/api-responses";
+import { userExists } from "@/lib/auth-user";
 
 export function withAuth<Ctx = unknown>(
   handler: (req: Request, ctx: Ctx, userId: string) => Promise<Response>,
@@ -8,6 +9,7 @@ export function withAuth<Ctx = unknown>(
   return async (req: Request, ctx: Ctx): Promise<Response> => {
     const session = await auth();
     if (!session?.user?.id) return failure("Unauthorized", 401);
+    if (!(await userExists(session.user.id))) return failure("Unauthorized", 401);
     return handler(req, ctx, session.user.id);
   };
 }

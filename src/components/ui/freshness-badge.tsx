@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Camera, Clock } from "lucide-react";
+import { Camera, Clock, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/lib/format-relative-time";
 
-type FreshnessKind = "price" | "snapshot";
+type FreshnessKind = "price" | "rates" | "snapshot";
 
 interface FreshnessBadgeProps {
   timestamp: Date | string | null | undefined;
@@ -38,10 +38,15 @@ export function FreshnessBadge({
   if (!timestamp) return null;
 
   const age = formatRelativeTime(timestamp, locale, now);
-  const Icon = kind === "snapshot" ? Camera : Clock;
-  const longKey = kind === "snapshot" ? "snapshot" : "pricesUpdated";
-  const shortKey = kind === "snapshot" ? "snapshotMobile" : "pricesUpdatedMobile";
-  // Explain the cadence so the age reads as "auto, recurring" rather than stale.
+  const Icon = kind === "snapshot" ? Camera : kind === "rates" ? RefreshCw : Clock;
+  const longKey =
+    kind === "snapshot" ? "snapshot" : kind === "rates" ? "ratesUpdated" : "pricesUpdated";
+  const shortKey =
+    kind === "snapshot"
+      ? "snapshotMobile"
+      : kind === "rates"
+        ? "ratesUpdatedMobile"
+        : "pricesUpdatedMobile";
   const hint = kind === "snapshot" ? t("snapshotHint") : undefined;
   const tone =
     kind === "snapshot"

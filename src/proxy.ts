@@ -57,7 +57,9 @@ export default auth((req) => {
     return Response.redirect(newUrl);
   }
 
-  if (isLoggedIn && req.nextUrl.pathname === "/login") {
+  const isStaleSessionRecovery = req.nextUrl.searchParams.has("stale-session");
+
+  if (isLoggedIn && req.nextUrl.pathname === "/login" && !isStaleSessionRecovery) {
     const newUrl = new URL("/", req.nextUrl.origin);
     return Response.redirect(newUrl);
   }

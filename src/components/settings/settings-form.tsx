@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Select,
   SelectContent,
@@ -11,13 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CURRENCIES } from "@/lib/currencies";
+import { FreshnessBadge } from "@/components/ui/freshness-badge";
+import { CURRENCIES, getLocaleDefaultCurrency } from "@/lib/currencies";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 import { useDensity, type Density } from "@/components/layout/density-context";
 import { useColorSchema, type ColorSchema } from "@/components/layout/color-schema-context";
-import { Check } from "lucide-react";
+import { Check, ChevronsUpDown, Clock, RefreshCw, Save } from "lucide-react";
 
 const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
   { id: "emerald", light: "#22c55e", dark: "#4ade80" },
@@ -28,12 +37,106 @@ const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
   { id: "rose", light: "#f43f5e", dark: "#fb7185" },
 ];
 
+type Currency = (typeof CURRENCIES)[number];
+
+function formatCurrencyLabel(currency: Currency) {
+  return `${currency.code} — ${currency.name} (${currency.symbol})`;
+}
+
+function subscribeToHydrationReady() {
+  return () => {};
+}
+
+function getHydratedSnapshot() {
+  return true;
+}
+
+function getServerHydratedSnapshot() {
+  return false;
+}
+
+function CurrencyPicker({
+  value,
+  locale,
+  onChange,
+}: {
+  value: string;
+  locale: Locale;
+  onChange: (value: string) => void;
+}) {
+  const t = useTranslations("settings");
+  const [open, setOpen] = useState(false);
+  const selectedCurrency = CURRENCIES.find((currency) => currency.code === value) ?? CURRENCIES[0];
+  const defaultCode = getLocaleDefaultCurrency(locale);
+  const recommended = CURRENCIES.filter(
+    (currency) => currency.code === defaultCode || currency.code === value,
+  );
+  const otherCurrencies = CURRENCIES.filter(
+    (currency) => !recommended.some((item) => item.code === currency.code),
+  );
+
+  const renderCurrencyItem = (currency: Currency) => (
+    <CommandItem
+      key={currency.code}
+      value={`${currency.code} ${currency.name} ${currency.symbol}`}
+      data-checked={currency.code === value ? "true" : undefined}
+      onSelect={() => {
+        onChange(currency.code);
+        setOpen(false);
+      }}
+    >
+      <span className="w-11 shrink-0 font-medium tabular-nums">{currency.code}</span>
+      <span className="min-w-0 flex-1 truncate text-muted-foreground">{currency.name}</span>
+      <span className="shrink-0 text-xs text-muted-foreground">{currency.symbol}</span>
+    </CommandItem>
+  );
+
+  return (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        className="h-9 w-full justify-between gap-3 sm:w-[240px]"
+      >
+        <span className="min-w-0 truncate text-left font-normal">
+          {formatCurrencyLabel(selectedCurrency)}
+        </span>
+        <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      </Button>
+      <CommandDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={t("currencySearchTitle")}
+        description={t("currencySearchDescription")}
+        className="top-[22%] translate-y-0 sm:max-w-md"
+      >
+        <CommandInput placeholder={t("currencySearchPlaceholder")} />
+        <CommandList>
+          <CommandEmpty>{t("currencySearchEmpty")}</CommandEmpty>
+          <CommandGroup heading={t("recommendedCurrency")}>
+            {recommended.map(renderCurrencyItem)}
+          </CommandGroup>
+          <CommandGroup heading={t("allCurrencies")}>
+            {otherCurrencies.map(renderCurrencyItem)}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
+    </>
+  );
+}
+
 export function SettingsForm({
   currentCurrency,
   currentLocale,
+  lastPriceUpdate,
+  lastExchangeRateUpdate,
 }: {
   currentCurrency: string;
   currentLocale: string;
+  lastPriceUpdate?: string | null;
+  lastExchangeRateUpdate?: string | null;
 }) {
   const router = useRouter();
   const t = useTranslations();
@@ -45,72 +148,84 @@ export function SettingsForm({
       : DEFAULT_LOCALE;
   const [currency, setCurrency] = useState(currentCurrency);
   const [locale, setLocale] = useState<Locale>(resolvedActiveLocale);
-  const { density, setDensity } = useDensity();
-  const { colorSchema, setColorSchema } = useColorSchema();
+  const { density, isReady: isDensityReady, setDensity } = useDensity();
+  const { colorSchema, isReady: isColorSchemaReady, setColorSchema } = useColorSchema();
+  const isHydrated = useSyncExternalStore(
+    subscribeToHydrationReady,
+    getHydratedSnapshot,
+    getServerHydratedSnapshot,
+  );
   const [saving, setSaving] = useState(false);
-  const [savingLocale, setSavingLocale] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [clientPriceRefreshAt, setClientPriceRefreshAt] = useState<string | null>(null);
+  const [clientRatesRefreshAt, setClientRatesRefreshAt] = useState<string | null>(null);
 
-  async function saveCurrency() {
+  const preferencesChanged = currency !== currentCurrency || locale !== resolvedActiveLocale;
+  const effectiveLastPriceUpdate =
+    clientPriceRefreshAt && (!lastPriceUpdate || clientPriceRefreshAt > lastPriceUpdate)
+      ? clientPriceRefreshAt
+      : lastPriceUpdate;
+  const effectiveLastRatesUpdate =
+    clientRatesRefreshAt &&
+    (!lastExchangeRateUpdate || clientRatesRefreshAt > lastExchangeRateUpdate)
+      ? clientRatesRefreshAt
+      : lastExchangeRateUpdate;
+
+  async function savePreferences() {
+    if (!preferencesChanged) return;
     setSaving(true);
     try {
+      const payload: { baseCurrency?: string; locale?: Locale } = {};
+      if (currency !== currentCurrency) payload.baseCurrency = currency;
+      if (locale !== resolvedActiveLocale) payload.locale = locale;
+
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ baseCurrency: currency }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      toast.success(t("toast.currencyUpdated"));
-      router.refresh();
+      toast.success(t("toast.preferencesUpdated"));
+      if (payload.locale) {
+        // Delay so the toast is visible before the full reload
+        setTimeout(() => window.location.reload(), 800);
+      } else {
+        router.refresh();
+      }
     } catch {
-      toast.error(t("toast.currencyFailed"));
+      toast.error(t("toast.preferencesFailed"));
     } finally {
       setSaving(false);
     }
   }
 
-  async function saveLocale() {
-    setSavingLocale(true);
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locale }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      toast.success(t("toast.languageUpdated"));
-      // Delay so the toast is visible before the full reload
-      setTimeout(() => window.location.reload(), 800);
-    } catch {
-      toast.error(t("toast.languageFailed"));
-    } finally {
-      setSavingLocale(false);
-    }
-  }
-
-  async function refreshPrices() {
+  async function refreshMarketData() {
     setRefreshing(true);
     try {
-      const res = await fetch("/api/prices/refresh", { method: "POST" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const { data } = await res.json();
-      toast.success(t("toast.pricesUpdated", { count: data.updated }));
+      const [priceRes, ratesRes] = await Promise.all([
+        fetch("/api/prices/refresh", { method: "POST" }),
+        fetch("/api/exchange-rates/refresh", { method: "POST" }),
+      ]);
+      if (!priceRes.ok || !ratesRes.ok) throw new Error("Refresh failed");
+      const [{ data: priceData }, { data: ratesData }] = await Promise.all([
+        priceRes.json(),
+        ratesRes.json(),
+      ]);
+      const refreshedAt = new Date().toISOString();
+      setClientPriceRefreshAt(refreshedAt);
+      setClientRatesRefreshAt(refreshedAt);
+      window.dispatchEvent(new CustomEvent("prices:refreshed"));
+      toast.success(
+        t("toast.marketDataUpdated", {
+          prices: priceData.updated,
+          rates: ratesData.updated,
+        }),
+      );
       router.refresh();
     } catch {
-      toast.error(t("toast.pricesFailed"));
+      toast.error(t("toast.marketDataFailed"));
     } finally {
       setRefreshing(false);
-    }
-  }
-
-  async function refreshExchangeRates() {
-    try {
-      const res = await fetch("/api/exchange-rates/refresh", { method: "POST" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      toast.success(t("toast.exchangeRatesRefreshed"));
-      router.refresh();
-    } catch {
-      toast.error(t("toast.failed"));
     }
   }
 
@@ -124,32 +239,12 @@ export function SettingsForm({
             {/* Currency Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
               <div className="space-y-1">
-                <label htmlFor="currency-select" className="text-sm font-medium">
-                  {t("settings.baseCurrency")}
-                </label>
+                <p className="text-sm font-medium">{t("settings.baseCurrency")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("settings.baseCurrencyDescription")}
+                </p>
               </div>
-              <div className="flex items-center gap-2 sm:w-auto w-full">
-                <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
-                  <SelectTrigger id="currency-select" className="flex-1 sm:flex-none sm:w-[200px]">
-                    <SelectValue>
-                      {(() => {
-                        const c = CURRENCIES.find((c) => c.code === currency);
-                        return c ? `${c.code} — ${c.name} (${c.symbol})` : currency;
-                      })()}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map((c) => (
-                      <SelectItem key={c.code} value={c.code}>
-                        {c.code} — {c.name} ({c.symbol})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button onClick={saveCurrency} disabled={saving || currency === currentCurrency}>
-                  {saving ? t("settings.saving") : t("settings.save")}
-                </Button>
-              </div>
+              <CurrencyPicker value={currency} locale={locale} onChange={setCurrency} />
             </div>
 
             {/* Language Row */}
@@ -173,12 +268,6 @@ export function SettingsForm({
                     ))}
                   </SelectContent>
                 </Select>
-                <Button
-                  onClick={saveLocale}
-                  disabled={savingLocale || locale === resolvedActiveLocale}
-                >
-                  {savingLocale ? t("settings.saving") : t("settings.save")}
-                </Button>
               </div>
             </div>
 
@@ -189,28 +278,32 @@ export function SettingsForm({
                 <p className="text-sm text-muted-foreground">{t("settings.densityDescription")}</p>
               </div>
               <div className="w-fit flex items-center gap-1 rounded-lg border p-1 bg-muted/30">
-                {(["comfortable", "compact"] as Density[]).map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDensity(d)}
-                    className={`px-3 py-1.5 min-h-[44px] md:min-h-0 flex items-center justify-center rounded-md text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                      density === d
-                        ? "bg-background border border-border shadow-sm text-foreground font-semibold"
-                        : "border border-transparent text-muted-foreground font-medium hover:text-foreground"
-                    }`}
-                    aria-pressed={density === d}
-                  >
-                    {d === "comfortable"
-                      ? t("settings.densityComfortable")
-                      : t("settings.densityCompact")}
-                  </button>
-                ))}
+                {(["comfortable", "compact"] as Density[]).map((d) => {
+                  const isActive = isHydrated && isDensityReady && density === d;
+
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDensity(d)}
+                      className={`px-3 py-1.5 min-h-[44px] md:min-h-0 flex items-center justify-center rounded-md text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                        isActive
+                          ? "bg-background border border-border shadow-sm text-foreground font-semibold"
+                          : "border border-transparent text-muted-foreground font-medium hover:text-foreground"
+                      }`}
+                      aria-pressed={isActive}
+                    >
+                      {d === "comfortable"
+                        ? t("settings.densityComfortable")
+                        : t("settings.densityCompact")}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Color Schema Row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
               <div className="space-y-1">
                 <p className="text-sm font-medium">{t("settings.colorSchema")}</p>
                 <p className="text-sm text-muted-foreground">
@@ -218,29 +311,54 @@ export function SettingsForm({
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {COLOR_SCHEMAS.map((schema) => (
-                  <button
-                    key={schema.id}
-                    type="button"
-                    onClick={() => setColorSchema(schema.id)}
-                    title={t(`settings.colorSchemas.${schema.id}`)}
-                    aria-label={t(`settings.colorSchemas.${schema.id}`)}
-                    aria-pressed={colorSchema === schema.id}
-                    className={`relative w-11 h-11 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                      colorSchema === schema.id
-                        ? "ring-2 ring-offset-2 ring-foreground scale-110"
-                        : "opacity-70 hover:opacity-100 hover:scale-105"
-                    }`}
-                    style={{
-                      background: `linear-gradient(135deg, ${schema.light} 50%, ${schema.dark} 50%)`,
-                    }}
-                  >
-                    {colorSchema === schema.id && (
-                      <Check className="absolute inset-0 m-auto w-3.5 h-3.5 text-white drop-shadow" />
-                    )}
-                  </button>
-                ))}
+                {COLOR_SCHEMAS.map((schema) => {
+                  const isActive = isHydrated && isColorSchemaReady && colorSchema === schema.id;
+
+                  return (
+                    <button
+                      key={schema.id}
+                      type="button"
+                      onClick={() => setColorSchema(schema.id)}
+                      title={t(`settings.colorSchemas.${schema.id}`)}
+                      aria-label={t(`settings.colorSchemas.${schema.id}`)}
+                      aria-pressed={isActive}
+                      className={`relative w-11 h-11 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                        isActive
+                          ? "ring-2 ring-offset-2 ring-foreground scale-110"
+                          : "opacity-70 hover:opacity-100 hover:scale-105"
+                      }`}
+                      style={{
+                        background: `linear-gradient(135deg, ${schema.light} 50%, ${schema.dark} 50%)`,
+                      }}
+                    >
+                      {isActive && (
+                        <Check className="absolute inset-0 m-auto w-3.5 h-3.5 text-white drop-shadow" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
+            </div>
+
+            <div className="flex flex-col gap-3 bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                {preferencesChanged
+                  ? t("settings.preferencesUnsaved")
+                  : t("settings.preferencesSaved")}
+              </p>
+              <Button
+                type="button"
+                onClick={savePreferences}
+                disabled={saving || !preferencesChanged}
+                className="w-full sm:w-auto sm:min-w-[150px]"
+              >
+                {saving ? (
+                  <RefreshCw className="mr-2 size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Save className="mr-2 size-4" aria-hidden="true" />
+                )}
+                {saving ? t("settings.saving") : t("settings.saveChanges")}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -253,32 +371,41 @@ export function SettingsForm({
         </h3>
         <Card className="overflow-hidden p-0">
           <CardContent className="p-0">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">{t("settings.syncPricesTitle")}</p>
-                <p className="text-sm text-muted-foreground">{t("settings.syncPricesDesc")}</p>
+            <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-2">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">{t("settings.syncMarketDataTitle")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("settings.syncMarketDataDesc")}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  {effectiveLastPriceUpdate ? (
+                    <FreshnessBadge kind="price" timestamp={effectiveLastPriceUpdate} />
+                  ) : (
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="size-3" aria-hidden="true" />
+                      {t("settings.noPriceUpdate")}
+                    </span>
+                  )}
+                  {effectiveLastRatesUpdate ? (
+                    <FreshnessBadge kind="rates" timestamp={effectiveLastRatesUpdate} />
+                  ) : (
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="size-3" aria-hidden="true" />
+                      {t("settings.noRateUpdate")}
+                    </span>
+                  )}
+                </div>
               </div>
               <Button
                 variant="outline"
-                onClick={refreshPrices}
+                onClick={refreshMarketData}
                 disabled={refreshing}
                 className="w-full sm:w-auto min-w-[150px]"
               >
-                {refreshing ? t("settings.refreshing") : t("settings.btnRefresh")}
-              </Button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">{t("settings.syncRatesTitle")}</p>
-                <p className="text-sm text-muted-foreground">{t("settings.syncRatesDesc")}</p>
-              </div>
-              <Button
-                variant="outline"
-                onClick={refreshExchangeRates}
-                className="w-full sm:w-auto min-w-[150px]"
-              >
-                {t("settings.btnRefresh")}
+                <RefreshCw className={`mr-2 size-4 ${refreshing ? "animate-spin" : ""}`} />
+                {refreshing ? t("settings.refreshing") : t("settings.btnRefreshMarketData")}
               </Button>
             </div>
           </CardContent>
