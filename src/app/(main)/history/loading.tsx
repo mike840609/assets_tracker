@@ -12,10 +12,9 @@ export default function HistoryLoading() {
       {/* Hero row — trend (8) + rail (4): summary over daily change */}
       <div className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12">
         <div className="lg:col-span-8 bg-card border border-border/50 rounded-xl shadow-sm">
-          <div className="px-4 pt-4 pb-2 space-y-4">
+          <div className="px-4 pt-4 pb-4 space-y-4">
             <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-[240px] rounded-lg" />
-            <Skeleton className="h-[88px] rounded-lg" />
+            <Skeleton className="h-[300px] rounded-lg" />
           </div>
         </div>
         <div className="flex flex-col gap-3 sm:gap-6 lg:col-span-4">
