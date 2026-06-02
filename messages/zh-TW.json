@@ -385,12 +385,13 @@
     "pricesUpdatedMobile": "{age}",
     "snapshot": "快照於 {age}",
     "snapshotMobile": "{age}",
+    "snapshotHint": "系統每天會自動建立一次快照。",
     "noData": "尚無資料",
     "refreshing": "更新中..."
   },
   "trendChart": {
     "title": "淨資產趨勢",
-    "noData": "尚無資料。新增帳戶後，淨資產將於每日午夜（UTC+8）自動記錄。",
+    "noData": "尚無資料。新增帳戶後，系統每天會自動記錄你的淨資產。",
     "seriesName": "淨資產",
     "pctToggleTitle": "切換百分比報酬視圖",
     "absToggleTitle": "顯示絕對數值",

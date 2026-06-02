@@ -41,6 +41,8 @@ export function FreshnessBadge({
   const Icon = kind === "snapshot" ? Camera : Clock;
   const longKey = kind === "snapshot" ? "snapshot" : "pricesUpdated";
   const shortKey = kind === "snapshot" ? "snapshotMobile" : "pricesUpdatedMobile";
+  // Explain the cadence so the age reads as "auto, recurring" rather than stale.
+  const hint = kind === "snapshot" ? t("snapshotHint") : undefined;
   const tone =
     kind === "snapshot"
       ? "border-border/70 bg-muted/30"
@@ -53,6 +55,7 @@ export function FreshnessBadge({
         tone,
         className,
       )}
+      title={hint}
       aria-live="polite"
     >
       <Icon className="h-3 w-3 shrink-0" />
