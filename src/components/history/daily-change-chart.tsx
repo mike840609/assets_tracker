@@ -156,18 +156,18 @@ export function DailyChangeChart({ snapshots, baseCurrency, className }: Props) 
       </CardHeader>
       <CardContent className="flex flex-1 flex-col px-4 pb-4">
         {!hasAnyChange ? (
-          <div className="flex flex-1 min-h-[130px] items-center justify-center text-center text-sm text-muted-foreground">
+          <div className="flex flex-1 min-h-[180px] items-center justify-center text-center text-sm text-muted-foreground">
             {t("dailyChangeNoData")}
           </div>
         ) : !mounted ? (
-          <div className="flex-1 min-h-[130px]" />
+          <div className="flex-1 min-h-[180px]" />
         ) : (
           <div
             role="img"
             aria-label={t("dailyChange30")}
             aria-hidden={privacyMode || undefined}
             className={cn(
-              "relative flex-1 min-h-[130px] transition-[filter] duration-300",
+              "relative flex-1 min-h-[180px] transition-[filter] duration-300",
               privacyMode && "blur-sm pointer-events-none select-none",
             )}
           >

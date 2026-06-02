@@ -9,13 +9,12 @@ export default function HistoryLoading() {
         <Skeleton className="h-4 w-48 rounded" />
       </div>
 
-      {/* Hero row — trend (8) + rail (4): summary over daily change.
-          Trend card capped at 420px (lg) and row top-aligned, mirroring HistoryView. */}
-      <div className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12 lg:items-start">
-        <div className="lg:col-span-8 lg:h-[420px] bg-card border border-border/50 rounded-xl shadow-sm">
-          <div className="flex h-full flex-col px-4 pt-4 pb-2 gap-4">
+      {/* Hero row — trend (8) + rail (4): summary over daily change */}
+      <div className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-8 bg-card border border-border/50 rounded-xl shadow-sm">
+          <div className="px-4 pt-4 pb-2 space-y-4">
             <Skeleton className="h-5 w-40" />
-            <Skeleton className="flex-1 min-h-[200px] rounded-lg" />
+            <Skeleton className="h-[240px] rounded-lg" />
             <Skeleton className="h-[88px] rounded-lg" />
           </div>
         </div>
@@ -48,7 +47,7 @@ export default function HistoryLoading() {
           <div className="flex-1 bg-card border border-border/50 rounded-xl shadow-sm">
             <div className="px-4 pt-4 pb-4 space-y-4">
               <Skeleton className="h-5 w-44" />
-              <Skeleton className="h-[130px] rounded-lg" />
+              <Skeleton className="h-[180px] rounded-lg" />
             </div>
           </div>
         </div>

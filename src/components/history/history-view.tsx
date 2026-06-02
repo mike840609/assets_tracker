@@ -84,8 +84,8 @@ export function HistoryView({
 
       {/* Hero row: trend + heatmap hold the width; the rail stacks the derived
           summary over recent daily volatility, mirroring the dashboard's 8/4 split. */}
-      <div className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12 lg:items-start">
-        <div className="min-w-0 lg:col-span-8 lg:h-[420px]">
+      <div className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12">
+        <div className="min-w-0 lg:col-span-8">
           <TrendChart
             snapshots={snapshots}
             baseCurrency={baseCurrency}
