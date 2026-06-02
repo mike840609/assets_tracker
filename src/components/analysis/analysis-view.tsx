@@ -35,6 +35,7 @@ import {
 } from "./lazy-analysis-charts";
 import { KpiTiles } from "./kpi-tiles";
 import { TopMoversList } from "./top-movers-list";
+import { AnalysisEmptyState } from "./analysis-empty-state";
 
 interface Props {
   snapshots: NormalizedSnapshot[];
@@ -63,6 +64,20 @@ function rangeCutoff(months: number): Date {
   return d;
 }
 
+// First-visit default. YTD is the conventional choice, but it reads as a near-empty
+// chart when there is little history or the year just started, so widen in those cases.
+// A persisted user choice always wins over this (see usePersistedRange).
+function pickDefaultRange(snapshots: NormalizedSnapshot[]): RangeLabel {
+  if (snapshots.length === 0) return "YTD";
+  const first = new Date(snapshots[0].date);
+  const now = new Date();
+  const historyMonths =
+    (now.getFullYear() - first.getFullYear()) * 12 + now.getMonth() - first.getMonth() + 1;
+  if (historyMonths <= 6) return "All";
+  if (now.getMonth() < 3) return "6M"; // Jan–Mar: YTD would be a thin 1–3 month slice
+  return "YTD";
+}
+
 export function AnalysisView({
   snapshots,
   cashFlowData,
@@ -75,7 +90,12 @@ export function AnalysisView({
   const tNav = useTranslations("nav");
   const { density } = useDensity();
   const isCompact = density === "compact";
-  const [range, setRange] = usePersistedRange<RangeLabel>("analysis-view", "YTD");
+  // Keep the side-by-side gap equal to the vertical rhythm between stacked rows
+  const gridGapClass = isCompact ? "gap-3" : "gap-6";
+  const [range, setRange] = usePersistedRange<RangeLabel>(
+    "analysis-view",
+    pickDefaultRange(snapshots),
+  );
   const shouldReduceMotion = useReducedMotion();
   const rangeFadeTransition = shouldReduceMotion
     ? { duration: 0 }
@@ -106,7 +126,9 @@ export function AnalysisView({
     if (selected.months === 0) {
       const year = now.getFullYear();
       const rangeStart = new Date(Date.UTC(year, 0, 1));
-      const rangeEnd = new Date(Date.UTC(year, 11, 1));
+      // End at the current month, not December, so the axis doesn't pad half a
+      // year of empty future months into the chart.
+      const rangeEnd = new Date(Date.UTC(year, now.getMonth(), 1));
       const rangeStartIso = `${year}-01-01`;
       return {
         filteredSnapshots: snapshots.filter((s) => s.date >= rangeStartIso),
@@ -242,9 +264,7 @@ export function AnalysisView({
         </div>
 
         {!hasData ? (
-          <Card className="border border-dashed border-border/60 bg-card/50 ring-0 p-12 text-center text-sm text-muted-foreground">
-            {t("noData")}
-          </Card>
+          <AnalysisEmptyState hasAccounts={rawHistory.accounts.length > 0} />
         ) : (
           <motion.div
             key={range}
@@ -254,6 +274,8 @@ export function AnalysisView({
             className={isCompact ? "space-y-3" : "space-y-6"}
           >
             <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
+
+            {/* Hero: "what changed" — the headline question, anchors the page full-width */}
             <Card size={isCompact ? "sm" : "default"}>
               <LazyMonthlyChangeChart
                 buckets={buckets}
@@ -261,26 +283,36 @@ export function AnalysisView({
                 locale={locale}
               />
             </Card>
-            <Card size={isCompact ? "sm" : "default"}>
-              <LazyAssetsLiabilitiesChart
-                buckets={buckets}
-                baseCurrency={baseCurrency}
-                locale={locale}
-              />
-            </Card>
-            <Card size={isCompact ? "sm" : "default"}>
-              <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
-            </Card>
-            <Card size={isCompact ? "sm" : "default"}>
-              <LazyAttributionChart items={attributionItems} baseCurrency={baseCurrency} />
-            </Card>
-            <Card size={isCompact ? "sm" : "default"}>
-              <LazyCategoryTrendChart
-                data={categoryHistory}
-                baseCurrency={baseCurrency}
-                locale={locale}
-              />
-            </Card>
+
+            {/* Position & contributions over time — paired side-by-side on desktop */}
+            <div className={cn("grid", gridGapClass, "xl:grid-cols-2 xl:items-start")}>
+              <Card size={isCompact ? "sm" : "default"}>
+                <LazyAssetsLiabilitiesChart
+                  buckets={buckets}
+                  baseCurrency={baseCurrency}
+                  locale={locale}
+                />
+              </Card>
+              <Card size={isCompact ? "sm" : "default"}>
+                <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+              </Card>
+            </div>
+
+            {/* Composition & per-account drivers — paired side-by-side on desktop */}
+            <div className={cn("grid", gridGapClass, "xl:grid-cols-2 xl:items-start")}>
+              <Card size={isCompact ? "sm" : "default"}>
+                <LazyCategoryTrendChart
+                  data={categoryHistory}
+                  baseCurrency={baseCurrency}
+                  locale={locale}
+                />
+              </Card>
+              <Card size={isCompact ? "sm" : "default"}>
+                <LazyAttributionChart items={attributionItems} baseCurrency={baseCurrency} />
+              </Card>
+            </div>
+
+            {/* Per-account detail — full-width table reads best wide */}
             <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
           </motion.div>
         )}

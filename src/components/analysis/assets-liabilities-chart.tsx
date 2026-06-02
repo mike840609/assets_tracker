@@ -4,13 +4,8 @@ import { useEffect, useState, startTransition } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  type ChartConfig,
-} from "@/components/ui/chart";
+import { ChartEmptyState } from "./chart-empty-state";
+import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -102,71 +97,88 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
         <CardTitle className="text-base font-medium text-foreground">
           {t("assetsVsLiabilities")}
         </CardTitle>
+        <p className="text-xs text-muted-foreground">{t("assetsVsLiabilitiesSubtitle")}</p>
       </CardHeader>
       <CardContent className="px-2 sm:px-4 pb-4">
         {data.length === 0 ? (
-          <div
-            className="flex items-center justify-center text-muted-foreground text-sm"
-            style={{ height: chartHeight }}
-          >
-            {t("noData")}
-          </div>
+          <ChartEmptyState message={t("noData")} hint={t("emptyHint")} />
         ) : !mounted ? (
           <div style={{ height: chartHeight }} />
         ) : (
           <div
-            role="img"
-            aria-label={t("assetsVsLiabilities")}
             aria-hidden={privacyMode || undefined}
             className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
           >
-            <ChartContainer
-              config={config}
-              className="w-full"
-              style={{ height: chartHeight }}
-              initialDimension={{ width: 1, height: chartHeight }}
+            <div className="flex items-center gap-4 mb-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ background: "var(--gain)" }}
+                />
+                {t("seriesAssets")}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ background: "var(--loss)" }}
+                />
+                {t("seriesLiabilities")}
+              </span>
+            </div>
+            <div
+              role="img"
+              aria-label={`${t("assetsVsLiabilities")}, ${t("assetsVsLiabilitiesSubtitle")}`}
             >
-              <BarChart
-                data={data}
-                margin={{ top: 10, right: 4, left: 0, bottom: 20 }}
-                {...crosshairHandlers}
+              <ChartContainer
+                config={config}
+                className="w-full"
+                style={{ height: chartHeight }}
+                initialDimension={{ width: 1, height: chartHeight }}
               >
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 12 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                />
-                <YAxis
-                  width={50}
-                  tick={{ fontSize: 12 }}
-                  tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
-                />
-                <ChartTooltip
-                  cursor={{ fill: "var(--muted)", opacity: 0.3 }}
-                  content={
-                    <AssetsTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />
-                  }
-                />
-                <ChartLegend content={<ChartLegendContent />} wrapperStyle={{ paddingBottom: 4 }} />
-                <Bar
-                  dataKey="assets"
-                  fill="var(--color-assets)"
-                  radius={[4, 4, 0, 0]}
-                  isAnimationActive={isAnimationActive}
-                  onAnimationEnd={onAnimationEnd}
-                />
-                <Bar
-                  dataKey="liabilities"
-                  fill="var(--color-liabilities)"
-                  radius={[4, 4, 0, 0]}
-                  isAnimationActive={isAnimationActive}
-                  onAnimationEnd={onAnimationEnd}
-                />
-              </BarChart>
-            </ChartContainer>
+                <BarChart
+                  data={data}
+                  margin={{ top: 10, right: 4, left: 0, bottom: 20 }}
+                  {...crosshairHandlers}
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 12 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis
+                    width={50}
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
+                  />
+                  <ChartTooltip
+                    cursor={{ fill: "var(--muted)", opacity: 0.3 }}
+                    content={
+                      <AssetsTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />
+                    }
+                  />
+                  <Bar
+                    dataKey="assets"
+                    fill="var(--color-assets)"
+                    radius={[4, 4, 0, 0]}
+                    isAnimationActive={isAnimationActive}
+                    onAnimationEnd={onAnimationEnd}
+                  />
+                  <Bar
+                    dataKey="liabilities"
+                    fill="var(--color-liabilities)"
+                    radius={[4, 4, 0, 0]}
+                    isAnimationActive={isAnimationActive}
+                    onAnimationEnd={onAnimationEnd}
+                  />
+                </BarChart>
+              </ChartContainer>
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">{t("assetsVsLiabilitiesNote")}</p>
           </div>
         )}
       </CardContent>

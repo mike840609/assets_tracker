@@ -1,9 +1,20 @@
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function AnalysisLoading() {
-  const chartHeights = [280, 280, 280, 200, 280];
+function ChartSkeleton({ height }: { height: number }) {
+  return (
+    <Card>
+      <div className="pb-2 px-2 sm:px-4">
+        <Skeleton className="h-5 w-40" />
+      </div>
+      <div className="px-2 sm:px-4 pb-4">
+        <Skeleton style={{ height }} />
+      </div>
+    </Card>
+  );
+}
 
+export default function AnalysisLoading() {
   return (
     <div className="space-y-4 md:space-y-8">
       {/* Title — matches LargeTitleHeading (text-4xl md:text-3xl) */}
@@ -34,8 +45,8 @@ export default function AnalysisLoading() {
           {/* KPI tiles — mirrors KpiTiles: 2-col on mobile, 4-col at md */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <Card key={i} size="sm">
-                <div className="px-3 space-y-1.5">
+              <Card key={i}>
+                <div className="px-4 space-y-1.5">
                   <Skeleton className="h-3 w-24" />
                   <Skeleton className="h-7 w-36 max-w-full" />
                   {i !== 2 && <Skeleton className="h-3 w-20" />}
@@ -44,17 +55,18 @@ export default function AnalysisLoading() {
             ))}
           </div>
 
-          {/* Charts stack — mirrors the shadcn Card + lazy chart skeletons */}
-          {chartHeights.map((height, i) => (
-            <Card key={i}>
-              <div className="pb-2 px-2 sm:px-4">
-                <Skeleton className="h-5 w-40" />
-              </div>
-              <div className="px-2 sm:px-4 pb-4">
-                <Skeleton style={{ height }} />
-              </div>
-            </Card>
-          ))}
+          {/* Hero chart — full width */}
+          <ChartSkeleton height={280} />
+
+          {/* Two paired chart rows — single column on mobile, 2-col on desktop */}
+          <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+            <ChartSkeleton height={280} />
+            <ChartSkeleton height={280} />
+          </div>
+          <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+            <ChartSkeleton height={280} />
+            <ChartSkeleton height={200} />
+          </div>
 
           {/* Top movers list — card with horizontally scrollable table rows */}
           <Card>

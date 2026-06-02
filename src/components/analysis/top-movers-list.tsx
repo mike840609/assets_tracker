@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartEmptyState } from "./chart-empty-state";
 import {
   Table,
   TableBody,
@@ -36,9 +37,7 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
       </CardHeader>
       <CardContent>
         {movers.length === 0 ? (
-          <div className="py-10 text-center text-sm text-muted-foreground">
-            {t("topMoversNoData")}
-          </div>
+          <ChartEmptyState message={t("topMoversNoData")} hint={t("emptyHint")} />
         ) : (
           <Table>
             <TableHeader>
