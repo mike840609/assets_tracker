@@ -200,6 +200,8 @@
     "subtitle": "Month-over-month breakdown of your net worth.",
     "monthlyChange": "Monthly Net Worth Change",
     "assetsVsLiabilities": "Assets vs. Liabilities by Month",
+    "assetsVsLiabilitiesSubtitle": "What you own versus what you owe each month.",
+    "assetsVsLiabilitiesNote": "The gap between the bars is your net worth.",
     "bestMonth": "Best Month",
     "worstMonth": "Worst Month",
     "smallestGain": "Smallest Gain",

@@ -200,6 +200,8 @@
     "subtitle": "按月檢視您的淨資產變化。",
     "monthlyChange": "每月淨資產變化",
     "assetsVsLiabilities": "每月資產與負債",
+    "assetsVsLiabilitiesSubtitle": "每月你擁有的資產與負債的對比。",
+    "assetsVsLiabilitiesNote": "兩條長條之間的差距即為你的淨資產。",
     "bestMonth": "最佳月份",
     "worstMonth": "最差月份",
     "smallestGain": "最小漲幅",
