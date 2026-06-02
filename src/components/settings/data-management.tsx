@@ -3,7 +3,14 @@
 import { useState, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { UploadIcon, Loader2Icon, AlertTriangleIcon, CheckCircleIcon } from "lucide-react";
+import {
+  UploadIcon,
+  Loader2Icon,
+  AlertTriangleIcon,
+  CheckCircleIcon,
+  CalendarDaysIcon,
+  CoinsIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +30,10 @@ const CONFIRMATION_TEXT = "REPLACE";
 type ImportPreview = {
   version: string | null;
   exportedAt: string | null;
+  baseCurrency: string | null;
+  snapshotStart: string | null;
+  snapshotEnd: string | null;
+  snapshotCurrencies: string[];
   fileName: string;
   fileSize: string;
   accounts: number;
@@ -46,11 +57,24 @@ function countArray(value: unknown) {
   return Array.isArray(value) ? value.length : 0;
 }
 
+function getString(value: unknown) {
+  return typeof value === "string" ? value : null;
+}
+
+function formatBackupDate(value: string | null, locale: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date);
+}
+
 function buildImportPreview(data: unknown, file: File): ImportPreview | null {
   if (!isRecord(data) || !Array.isArray(data.accounts)) return null;
 
   let holdings = 0;
   let transactions = 0;
+  const snapshotDates: string[] = [];
+  const snapshotCurrencies = new Set<string>();
 
   for (const account of data.accounts) {
     if (!isRecord(account)) continue;
@@ -63,9 +87,28 @@ function buildImportPreview(data: unknown, file: File): ImportPreview | null {
     }
   }
 
+  if (Array.isArray(data.snapshots)) {
+    for (const snapshot of data.snapshots) {
+      if (!isRecord(snapshot)) continue;
+      const date = getString(snapshot.date);
+      const currency = getString(snapshot.baseCurrency);
+      if (date) snapshotDates.push(date);
+      if (currency) snapshotCurrencies.add(currency);
+    }
+  }
+
+  snapshotDates.sort();
+
+  const settings = isRecord(data.settings) ? data.settings : null;
+  const baseCurrency = settings ? getString(settings.baseCurrency) : null;
+
   return {
-    version: typeof data.version === "string" ? data.version : null,
-    exportedAt: typeof data.exportedAt === "string" ? data.exportedAt : null,
+    version: getString(data.version),
+    exportedAt: getString(data.exportedAt),
+    baseCurrency,
+    snapshotStart: snapshotDates[0] ?? null,
+    snapshotEnd: snapshotDates.at(-1) ?? null,
+    snapshotCurrencies: Array.from(snapshotCurrencies).sort(),
     fileName: file.name,
     fileSize: formatFileSize(file.size),
     accounts: data.accounts.length,
@@ -110,6 +153,19 @@ export function DataManagement() {
   })();
 
   const confirmationMatches = confirmation.trim() === CONFIRMATION_TEXT;
+  const formattedSnapshotStart = formatBackupDate(importPreview?.snapshotStart ?? null, locale);
+  const formattedSnapshotEnd = formatBackupDate(importPreview?.snapshotEnd ?? null, locale);
+  const snapshotRange =
+    formattedSnapshotStart && formattedSnapshotEnd
+      ? formattedSnapshotStart === formattedSnapshotEnd
+        ? formattedSnapshotStart
+        : t("snapshotRangeValue", { start: formattedSnapshotStart, end: formattedSnapshotEnd })
+      : t("noExportDate");
+  const snapshotCurrencyList =
+    importPreview && importPreview.snapshotCurrencies.length > 0
+      ? importPreview.snapshotCurrencies.join(", ")
+      : t("unknownVersion");
+  const hasMixedSnapshotCurrencies = (importPreview?.snapshotCurrencies.length ?? 0) > 1;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -160,14 +216,12 @@ export function DataManagement() {
       });
 
       if (!response.ok) {
-        const body = await response.json();
+        const body = await response.json().catch(() => null);
         throw new Error(body.error?.message || "Import failed");
       }
 
       setShowSuccessDialog(true);
     } catch (error: unknown) {
-      // eslint-disable-next-line no-console
-      console.error(error);
       setImportError((error instanceof Error ? error.message : null) || t("importFailed"));
       setShowErrorDialog(true);
     } finally {
@@ -221,10 +275,10 @@ export function DataManagement() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangleIcon className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangleIcon className="h-5 w-5 text-destructive" />
               {t("confirmImportTitle")}
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
@@ -270,8 +324,39 @@ export function DataManagement() {
                   </div>
                 </dl>
               </div>
-              <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
-                {t("replaceWarning")}
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="rounded-lg border bg-background p-3">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CoinsIcon className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                    {t("restoreCurrency")}
+                  </div>
+                  <p className="mt-1 text-sm font-medium tabular-nums">
+                    {importPreview.baseCurrency ?? t("unknownVersion")}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t("snapshotCurrencies", { currencies: snapshotCurrencyList })}
+                  </p>
+                </div>
+                <div className="rounded-lg border bg-background p-3">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CalendarDaysIcon className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                    {t("snapshotRange")}
+                  </div>
+                  <p className="mt-1 text-sm font-medium">{snapshotRange}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t("snapshotCountMeta", { count: importPreview.snapshots })}
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm text-foreground">
+                <p>{t("replaceWarning")}</p>
+                {hasMixedSnapshotCurrencies && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {t("mixedCurrencyNormalization", {
+                      currency: importPreview.baseCurrency ?? t("unknownVersion"),
+                    })}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="replace-confirmation">{t("typeToConfirmLabel")}</Label>
@@ -353,10 +438,14 @@ export function DataManagement() {
               {t("importSuccessMessage")}
             </DialogDescription>
           </DialogHeader>
+          <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+            {t("importSuccessNextStep")}
+          </div>
           <DialogFooter>
-            <Button className="w-full" onClick={() => window.location.reload()}>
-              {t("done")}
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              {t("stayInSettings")}
             </Button>
+            <Button onClick={() => window.location.assign("/")}>{t("reviewDashboard")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
