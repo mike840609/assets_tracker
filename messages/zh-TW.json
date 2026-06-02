@@ -362,8 +362,7 @@
     "emptyCta": "前往儀表板",
     "activityYear": "{year} 年活動",
     "legendLoss": "下跌",
-    "legendGain": "上漲",
-    "scrollMonths": "捲動以查看更早的月份"
+    "legendGain": "上漲"
   },
   "netWorthCard": {
     "netWorth": "淨資產",

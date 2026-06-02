@@ -224,7 +224,6 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
       */}
       <div
         ref={scrollContainerRef}
-        title={t("scrollMonths")}
         className="overflow-x-auto scrollbar-none pb-1 [mask-image:linear-gradient(to_right,black_0%,black_88%,transparent_100%)]"
       >
         <div className="inline-flex flex-col min-w-max">

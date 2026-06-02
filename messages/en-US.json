@@ -362,8 +362,7 @@
     "emptyCta": "Go to dashboard",
     "activityYear": "{year} activity",
     "legendLoss": "Loss",
-    "legendGain": "Gain",
-    "scrollMonths": "Scroll to see earlier months"
+    "legendGain": "Gain"
   },
   "netWorthCard": {
     "netWorth": "Net Worth",
