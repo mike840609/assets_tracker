@@ -4,17 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, Reorder, useDragControls, useReducedMotion } from "framer-motion";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Reorder, useDragControls } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -58,7 +48,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { formatCurrency } from "@/lib/currencies";
 import { buildAssetAccountColorMap } from "@/lib/account-colors";
-import { springConfig } from "@/lib/motion";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -129,18 +118,6 @@ const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string
     text: "text-gray-700 dark:text-gray-300",
   },
 };
-
-const CATEGORY_ORDER = [
-  "BANK",
-  "BROKERAGE",
-  "CRYPTO_WALLET",
-  "PROPERTY",
-  "VEHICLE",
-  "CREDIT_CARD",
-  "LOAN",
-  "MORTGAGE",
-  "OTHER",
-];
 
 type AccountType = "ASSET" | "LIABILITY";
 
@@ -227,11 +204,6 @@ export function AccountsList({
   const [savingOrder, setSavingOrder] = useState(false);
   const [draftAssets, setDraftAssets] = useState<ReorderDraftAccount[]>([]);
   const [draftLiabilities, setDraftLiabilities] = useState<ReorderDraftAccount[]>([]);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => {
-    const all = new Set<string>();
-    for (const account of accounts) all.add(`${account.type}_${account.category}`);
-    return all;
-  });
 
   useEffect(() => {
     const handler = () => setShowForm(true);
@@ -245,8 +217,11 @@ export function AccountsList({
     return () => window.removeEventListener("add-item", handler);
   }, []);
 
-  const assets = accounts.filter((account) => account.type === "ASSET");
-  const liabilities = accounts.filter((account) => account.type === "LIABILITY");
+  const assets = useMemo(() => accounts.filter((account) => account.type === "ASSET"), [accounts]);
+  const liabilities = useMemo(
+    () => accounts.filter((account) => account.type === "LIABILITY"),
+    [accounts],
+  );
 
   const accountBaseValues = useMemo(() => {
     const map: Record<string, number> = {};
@@ -280,40 +255,6 @@ export function AccountsList({
       ),
     [assets, accountBaseValues],
   );
-
-  const assetsByCategory = useMemo(() => {
-    const grouped: Record<string, SerializedAccountWithHoldings[]> = {};
-    for (const account of assets) {
-      if (!grouped[account.category]) grouped[account.category] = [];
-      grouped[account.category].push(account);
-    }
-    return CATEGORY_ORDER.filter((category) => grouped[category]?.length > 0).map((category) => ({
-      category,
-      accounts: grouped[category],
-    }));
-  }, [assets]);
-
-  const liabilitiesByCategory = useMemo(() => {
-    const grouped: Record<string, SerializedAccountWithHoldings[]> = {};
-    for (const account of liabilities) {
-      if (!grouped[account.category]) grouped[account.category] = [];
-      grouped[account.category].push(account);
-    }
-    return CATEGORY_ORDER.filter((category) => grouped[category]?.length > 0).map((category) => ({
-      category,
-      accounts: grouped[category],
-    }));
-  }, [liabilities]);
-
-  function toggleCategory(type: string, category: string) {
-    const key = `${type}_${category}`;
-    setExpandedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }
 
   async function patchAccount(
     id: string,
@@ -1286,273 +1227,6 @@ function MobileAccountRow({
         className="absolute top-1/2 -translate-y-1/2 right-10 z-10"
         onClick={(e) => e.preventDefault()}
       >
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100 data-[state=open]:opacity-100 hover:bg-accent hover:text-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            disabled={isDeleting || isUpdating}
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onTogglePin(account)}>
-              {account.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
-              {account.isPinned ? t("accountsList.unpin") : t("accountsList.pin")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onArchive(account)}>
-              <Archive className="h-4 w-4" />
-              {t("accountsList.archive")}
-            </DropdownMenuItem>
-            <DropdownMenuItem variant="destructive" onClick={() => onDelete(account.id)}>
-              <Trash2 className="h-4 w-4" />
-              {isDeleting ? t("common.deleting") : t("common.delete")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
-  );
-}
-
-function CategorySection({
-  category,
-  accounts,
-  priceMap,
-  ratesMap,
-  baseCurrency,
-  isExpanded,
-  onToggleExpand,
-  onDelete,
-  onTogglePin,
-  onArchive,
-  deletingId,
-  updatingId,
-}: {
-  category: string;
-  accounts: SerializedAccountWithHoldings[];
-  priceMap: Record<string, number>;
-  ratesMap: Record<string, number>;
-  baseCurrency: string;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
-  onDelete: (id: string) => void;
-  onTogglePin: (account: SerializedAccountWithHoldings) => void;
-  onArchive: (account: SerializedAccountWithHoldings) => void;
-  deletingId: string | null;
-  updatingId: string | null;
-}) {
-  const t = useTranslations();
-  const { privacyMode } = usePrivacyMode();
-  const { density } = useDensity();
-  const isCompact = density === "compact";
-  const colors = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.OTHER;
-  const label = t(`categories.${category}`, { defaultValue: category });
-
-  const totalInBaseCurrency = useMemo(() => {
-    let total = 0;
-    for (const account of accounts) {
-      const value = getAccountValue(account, priceMap, ratesMap);
-      const rate =
-        account.currency === baseCurrency
-          ? 1
-          : (ratesMap[`${account.currency}_${baseCurrency}`] ?? 1);
-      total += value * rate;
-    }
-    return total;
-  }, [accounts, priceMap, ratesMap, baseCurrency]);
-
-  const totalHoldings = accounts.reduce((sum, account) => sum + account.holdings.length, 0);
-  const shouldReduceMotion = useReducedMotion();
-
-  const CategoryIcon = CATEGORY_ICONS[category] ?? Folder;
-
-  return (
-    <div
-      className={`rounded-xl border overflow-hidden transition-all motion-normal ${colors.border} ${isExpanded ? "shadow-md" : "shadow-sm hover:shadow-md"}`}
-    >
-      <button
-        onClick={onToggleExpand}
-        className={`w-full text-left ${isCompact ? "px-4 py-2.5" : "px-5 py-4"} flex items-center justify-between transition-colors ${colors.bg} hover:brightness-95 dark:hover:brightness-110`}
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <CategoryIcon className={`h-5 w-5 flex-shrink-0 ${colors.text}`} />
-          <div className="min-w-0">
-            <p className={`font-semibold text-base ${colors.text}`}>{label}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {t("accountsList.nAccounts", { count: accounts.length })}
-              {totalHoldings > 0 && category !== "BANK" && (
-                <span>
-                  {" · "}
-                  {t("accountsList.nHoldings", { count: totalHoldings })}
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <div className="text-right">
-            <p className="text-sm font-bold tabular-nums">
-              {privacyMode ? HIDDEN : formatCurrency(totalInBaseCurrency, baseCurrency)}
-            </p>
-          </div>
-          <ChevronDown
-            className={`w-5 h-5 text-muted-foreground transition-transform motion-normal ${isExpanded ? "rotate-180" : ""}`}
-          />
-        </div>
-      </button>
-
-      <div
-        className={`grid transition-all motion-normal ${isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
-      >
-        <div className="overflow-hidden">
-          <div
-            className={`${isCompact ? "px-3 py-2.5 space-y-2" : "px-4 py-4 space-y-3"} bg-background/50`}
-          >
-            <AnimatePresence initial={false}>
-              {accounts.map((account) => (
-                <motion.div
-                  key={account.id}
-                  layout={shouldReduceMotion ? false : "position"}
-                  initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
-                  transition={shouldReduceMotion ? { duration: 0 } : springConfig}
-                >
-                  <AccountCardWithHoldings
-                    account={account}
-                    priceMap={priceMap}
-                    ratesMap={ratesMap}
-                    baseCurrency={baseCurrency}
-                    onDelete={onDelete}
-                    onTogglePin={onTogglePin}
-                    onArchive={onArchive}
-                    isDeleting={deletingId === account.id}
-                    isUpdating={updatingId === account.id}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AccountCardWithHoldings({
-  account,
-  priceMap,
-  ratesMap,
-  baseCurrency,
-  onDelete,
-  onTogglePin,
-  onArchive,
-  isDeleting,
-  isUpdating,
-}: {
-  account: SerializedAccountWithHoldings;
-  priceMap: Record<string, number>;
-  ratesMap: Record<string, number>;
-  baseCurrency: string;
-  onDelete: (id: string) => void;
-  onTogglePin: (account: SerializedAccountWithHoldings) => void;
-  onArchive: (account: SerializedAccountWithHoldings) => void;
-  isDeleting: boolean;
-  isUpdating: boolean;
-}) {
-  const { privacyMode } = usePrivacyMode();
-  const { density } = useDensity();
-  const t = useTranslations();
-  const isCompact = density === "compact";
-  const displayValue = getAccountValue(account, priceMap, ratesMap);
-  const displayCurrency = account.currency;
-  const rate =
-    displayCurrency === baseCurrency ? 1 : (ratesMap[`${displayCurrency}_${baseCurrency}`] ?? 1);
-  const convertedValue = displayValue * rate;
-
-  const holdingsWithValue = account.holdings.map((holding) => {
-    const price = priceMap[holding.symbol] ?? null;
-    const hc = holding.currency || "USD";
-    const hRate = hc === account.currency ? 1 : (ratesMap[`${hc}_${account.currency}`] ?? 1);
-    const multiplier = holding.assetType === "OPTION" ? (holding.contractMultiplier ?? 100) : 1;
-    const marketValue = price !== null ? price * holding.quantity * multiplier * hRate : null;
-    return { ...holding, currentPrice: price, marketValue };
-  });
-
-  const isBank = account.category === "BANK";
-  const hasHoldings = !isBank && holdingsWithValue.length > 0;
-
-  const subtitle = hasHoldings
-    ? t("accountsList.nHoldings", { count: account.holdings.length }) +
-      (account.cashBalance > 0
-        ? ` · ${privacyMode ? HIDDEN : formatCurrency(account.cashBalance, account.currency)} ${t("accountsList.cashLabel")}`
-        : "")
-    : null;
-
-  return (
-    <div className="relative group">
-      <Link href={`/accounts/${account.id}`} prefetch={false} transitionTypes={["nav-forward"]}>
-        <Card
-          size={isCompact ? "sm" : "default"}
-          className="cursor-pointer transition-all hover:shadow-md hover:ring-foreground/20"
-        >
-          <CardHeader>
-            <div className="min-w-0 space-y-1">
-              <div className="flex items-center gap-1.5">
-                {account.isPinned && (
-                  <Badge
-                    variant="secondary"
-                    aria-label={t("accountsList.pinned")}
-                    className="h-4 gap-0 px-1"
-                  >
-                    <Pin className="h-2.5 w-2.5 text-amber-500 dark:text-amber-400" aria-hidden />
-                  </Badge>
-                )}
-                <CardTitle className="truncate">{account.name}</CardTitle>
-              </div>
-              {subtitle && <CardDescription className="text-xs">{subtitle}</CardDescription>}
-            </div>
-            <CardAction className="flex flex-col items-end">
-              <p className="text-lg font-bold tabular-nums text-foreground">
-                {privacyMode ? HIDDEN : formatCurrency(convertedValue, baseCurrency)}
-              </p>
-              {displayCurrency !== baseCurrency ? (
-                <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
-                  {privacyMode ? HIDDEN : formatCurrency(displayValue, displayCurrency)}
-                </p>
-              ) : (
-                <Badge variant="outline" className="mt-0.5 font-mono">
-                  {baseCurrency}
-                </Badge>
-              )}
-            </CardAction>
-          </CardHeader>
-          {hasHoldings && (
-            <CardContent>
-              {holdingsWithValue.map((holding, idx) => (
-                <div key={holding.id}>
-                  {idx > 0 && <Separator className="bg-border/40" />}
-                  <div className="flex items-center justify-between gap-2 py-1.5">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-xs font-mono font-medium text-muted-foreground w-16 flex-shrink-0 truncate">
-                        {holding.symbol}
-                      </span>
-                      <span className="text-sm truncate">{holding.name}</span>
-                    </div>
-                    <span className="text-sm font-medium tabular-nums w-20 text-right flex-shrink-0">
-                      {privacyMode
-                        ? HIDDEN
-                        : holding.marketValue !== null
-                          ? formatCurrency(holding.marketValue, account.currency)
-                          : "—"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          )}
-        </Card>
-      </Link>
-      <div className="absolute top-2 right-2 z-10" onClick={(e) => e.preventDefault()}>
         <DropdownMenu>
           <DropdownMenuTrigger
             className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100 data-[state=open]:opacity-100 hover:bg-accent hover:text-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
