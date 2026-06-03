@@ -43,6 +43,8 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -80,6 +82,11 @@
   --accent-foreground: oklch(0.2 0.02 260);
   --destructive: oklch(0.6 0.18 20);
   --destructive-foreground: oklch(0.98 0 0);
+  /* Caution / data-quality status: distinct from --destructive (error) and the
+     schema primary. Stable amber across schemas, overridden only where it would
+     collide with the primary (Amber schema). Tuned to >=4.5:1 as text on bg. */
+  --warning: oklch(0.55 0.12 72);
+  --warning-foreground: oklch(0.99 0.01 80);
   --border: oklch(0.9 0.02 260);
   --input: oklch(0.9 0.02 260);
   --ring: oklch(0.6 0.16 150);
@@ -132,6 +139,8 @@
   --accent-foreground: oklch(0.96 0.01 190);
   --destructive: oklch(0.7 0.19 20);
   --destructive-foreground: oklch(0.98 0 0);
+  --warning: oklch(0.82 0.13 80);
+  --warning-foreground: oklch(0.18 0.03 80);
   --border: oklch(0.3 0.038 200);
   --input: oklch(0.22 0.038 200);
   --ring: oklch(0.8 0.17 170);
@@ -692,6 +701,8 @@ html[data-vt-theme]::view-transition-new(root) {
      same color for direction. A cool blue loss gives the strongest warm/cool
      split while staying off the locale red-up/green-up axis. */
   --loss: oklch(0.56 0.14 245);
+  /* primary is amber ~65 here, so shift warning toward orange to stay distinct */
+  --warning: oklch(0.55 0.15 50);
   --app-icon-gradient-start: #fbbf24;
   --app-icon-gradient-end: #92400e;
 }
@@ -719,6 +730,7 @@ html[data-vt-theme]::view-transition-new(root) {
   --chart-4: oklch(0.82 0.14 110);
   --chart-5: oklch(0.86 0.12 150);
   --loss: oklch(0.78 0.15 245);
+  --warning: oklch(0.8 0.15 50);
 }
 [data-color-schema="amber"] body {
   background-image:
@@ -784,6 +796,15 @@ html[data-vt-theme]::view-transition-new(root) {
   background-image:
     radial-gradient(ellipse 80% 50% at 50% -10%, oklch(0.76 0.18 15 / 0.08), transparent),
     radial-gradient(ellipse 60% 40% at 100% 80%, oklch(0.8 0.14 330 / 0.05), transparent);
+}
+
+/* Warning toast lane — the warning icon is configured in sonner.tsx; tint it and
+   the border with --warning so toast.warning() reads as caution, not error. */
+[data-sonner-toast][data-type="warning"] [data-icon] {
+  color: var(--warning);
+}
+[data-sonner-toast][data-type="warning"] {
+  border-color: color-mix(in oklch, var(--warning) 40%, var(--border));
 }
 
 /* Sonner toast action button — theme-aware outline style */

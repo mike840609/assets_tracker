@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, TriangleAlert } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { Treemap, type TreemapNode } from "recharts";
@@ -596,7 +596,8 @@ export function PortfolioHeatmap({
             </div>
 
             {unpricedCount > 0 && !privacyMode && (
-              <p className="text-xs text-muted-foreground">
+              <p className="flex items-center gap-1.5 text-xs text-warning">
+                <TriangleAlert className="size-3.5 shrink-0" aria-hidden />
                 {t("heatmapUnpricedNote", { count: unpricedCount })}
               </p>
             )}

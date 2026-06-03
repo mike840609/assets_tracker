@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Camera, Clock, RefreshCw } from "lucide-react";
+import { Camera, Clock, RefreshCw, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/lib/format-relative-time";
 
@@ -38,7 +38,17 @@ export function FreshnessBadge({
   if (!timestamp) return null;
 
   const age = formatRelativeTime(timestamp, locale, now);
-  const Icon = kind === "snapshot" ? Camera : kind === "rates" ? RefreshCw : Clock;
+  // Price/rates refresh daily; older than 3 days reads as a trust caution (the
+  // 72h window clears normal weekend gaps). Snapshots are point-in-time, never "stale".
+  const STALE_MS = 72 * 60 * 60 * 1000;
+  const isStale = kind !== "snapshot" && now - new Date(timestamp).getTime() > STALE_MS;
+  const Icon = isStale
+    ? TriangleAlert
+    : kind === "snapshot"
+      ? Camera
+      : kind === "rates"
+        ? RefreshCw
+        : Clock;
   const longKey =
     kind === "snapshot" ? "snapshot" : kind === "rates" ? "ratesUpdated" : "pricesUpdated";
   const shortKey =
@@ -48,8 +58,9 @@ export function FreshnessBadge({
         ? "ratesUpdatedMobile"
         : "pricesUpdatedMobile";
   const hint = kind === "snapshot" ? t("snapshotHint") : undefined;
-  const tone =
-    kind === "snapshot"
+  const tone = isStale
+    ? "border-warning/35 bg-warning/10 text-warning"
+    : kind === "snapshot"
       ? "border-border/70 bg-muted/30"
       : "border-primary/25 bg-primary/5 text-primary";
 
