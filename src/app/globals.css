@@ -311,11 +311,15 @@
     );
 }
 
+/* The hero card's bottom accent is a literal gain → loss sweep, sitting directly
+   under the assets (--gain) and liabilities (--loss) figures. It must use --loss,
+   not --chart-2: in schemas where loss is decoupled from chart-2 the two would
+   otherwise show different "loss" colors on the same card. */
 .net-worth-card-accent {
   background: linear-gradient(
     90deg,
     var(--gain),
-    color-mix(in oklch, var(--chart-2) 72%, var(--background))
+    color-mix(in oklch, var(--loss) 72%, var(--background))
   );
 }
 
