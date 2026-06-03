@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useMemo, useState, useRef, useEffect, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useFormatter, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -169,6 +169,14 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
     [format],
   );
 
+  // "You are here" marker: the date the user orients around in the year grid.
+  const todayString = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate(),
+    ).padStart(2, "0")}`;
+  }, []);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // On mount, position the scroll so today sits near the right edge of the visible window.
@@ -274,6 +282,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                     }
 
                     const canShowDetails = day.hasSnapshot && !day.isFuture;
+                    const isToday = day.dateString === todayString;
 
                     const dateLabel = format.dateTime(day.date, { dateStyle: "medium" });
                     const cellLabel = day.isFuture
@@ -293,7 +302,11 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                           }`
                         : `${dateLabel}, no snapshot`;
 
-                    let bgClass = "bg-muted/40 dark:bg-muted/20";
+                    // Future days sit fainter than past days with no snapshot, so the grid
+                    // visibly bounds how far the tracking history actually reaches.
+                    let bgClass = day.isFuture
+                      ? "bg-muted/20 dark:bg-muted/10"
+                      : "bg-muted/40 dark:bg-muted/20";
                     if (!day.isFuture && day.hasSnapshot) {
                       if (day.change !== null && day.change < 0) {
                         const intensity = maxNeg > 0 ? Math.abs(day.change) / maxNeg : 1;
@@ -318,24 +331,18 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                         key={cIdx}
                         role="gridcell"
                         aria-colindex={cIdx + 1}
-                        aria-label={cellLabel}
+                        aria-label={isToday ? `${cellLabel}, today` : cellLabel}
                         aria-selected={tooltip?.day.dateString === day.dateString}
                         tabIndex={canShowDetails ? 0 : -1}
                         onPointerEnter={
                           canShowDetails
                             ? (e) => {
-                                if (e.pointerType === "mouse") {
-                                  setTooltip({ day, x: e.clientX, y: e.clientY });
-                                }
-                              }
-                            : undefined
-                        }
-                        onPointerMove={
-                          canShowDetails
-                            ? (e) => {
-                                if (e.pointerType === "mouse") {
-                                  setTooltip({ day, x: e.clientX, y: e.clientY });
-                                }
+                                // Anchor at the cell center (like keyboard focus) instead of
+                                // tracking the cursor: a 10px cell makes per-pixel tooltip
+                                // movement imperceptible, and dropping onPointerMove avoids
+                                // re-rendering the whole grid on every mouse move.
+                                if (e.pointerType === "mouse")
+                                  showTooltipAtElement(day, e.currentTarget);
                               }
                             : undefined
                         }
@@ -352,11 +359,16 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                             : undefined
                         }
                         onBlur={canShowDetails ? () => setTooltip(null) : undefined}
+                        style={{ "--col": cIdx } as CSSProperties}
                         className={cn(
                           "w-[10px] h-[10px] rounded-[2px]",
+                          // Only the year-to-date fills in; the blank future months stay put.
+                          !day.isFuture && "history-cell-in",
                           canShowDetails &&
                             "cursor-pointer transition-transform hover:scale-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-1",
                           bgClass,
+                          // Neutral ink ring marks today: orientation, not a gain/loss signal.
+                          isToday && "ring-1 ring-foreground/60 dark:ring-foreground/70",
                         )}
                       />
                     );
