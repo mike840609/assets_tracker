@@ -346,7 +346,9 @@ export function PortfolioHeatmap({
         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
           <div>
             <p className="text-muted-foreground">{detailShareLabel}</p>
-            <p className="tabular-nums font-medium">{formatPercent(detailShare)}</p>
+            <p className="tabular-nums font-medium">
+              {privacyMode ? HIDDEN : formatPercent(detailShare)}
+            </p>
           </div>
           <div className="text-right">
             <p className="text-muted-foreground">{summary.baseCurrency}</p>
@@ -361,16 +363,20 @@ export function PortfolioHeatmap({
           className="mt-3 h-1.5 overflow-hidden rounded-full ring-1 ring-border/40"
           style={{ backgroundColor: tintFill(currentDetail.color, 10) }}
         >
-          <div
-            className={cn(
-              "h-full rounded-full",
-              shouldReduceMotion ? "transition-none" : "transition-[width] duration-300 ease-out",
-            )}
-            style={{
-              width: `${Math.min(100, Math.max(0, detailShare))}%`,
-              backgroundColor: detailFill,
-            }}
-          />
+          {/* The fill width encodes the share, so suppress it in privacy mode to
+              match the hidden percentage above (same pattern as accounts-list). */}
+          {!privacyMode && (
+            <div
+              className={cn(
+                "h-full rounded-full",
+                shouldReduceMotion ? "transition-none" : "transition-[width] duration-300 ease-out",
+              )}
+              style={{
+                width: `${Math.min(100, Math.max(0, detailShare))}%`,
+                backgroundColor: detailFill,
+              }}
+            />
+          )}
         </div>
       </div>
     ) : null;
@@ -394,7 +400,7 @@ export function PortfolioHeatmap({
         <span className="min-w-0">
           <span className="block truncate text-sm font-medium">{currentDetail.name}</span>
           <span className="block text-xs text-muted-foreground tabular-nums">
-            {formatPercent(detailShare)}
+            {privacyMode ? HIDDEN : formatPercent(detailShare)}
           </span>
         </span>
         <span className="max-w-24 truncate text-right text-xs font-medium tabular-nums">
@@ -525,7 +531,7 @@ export function PortfolioHeatmap({
                             )}
                           >
                             <span className="shrink-0 text-muted-foreground tabular-nums">
-                              {formatPercent(child.accountShare ?? 0)}
+                              {privacyMode ? HIDDEN : formatPercent(child.accountShare ?? 0)}
                             </span>
                             <span className="min-w-0 truncate font-medium tabular-nums">
                               {privacyMode
@@ -579,7 +585,7 @@ export function PortfolioHeatmap({
                             </span>
                           </span>
                           <span className="block text-xs text-muted-foreground tabular-nums">
-                            {formatPercent(account.portfolioShare)}
+                            {privacyMode ? HIDDEN : formatPercent(account.portfolioShare)}
                           </span>
                         </span>
                       </button>

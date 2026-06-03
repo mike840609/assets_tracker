@@ -159,7 +159,8 @@ The default palette is a cool financial neutral field with emerald as the active
 ### Semantic Direction
 
 - `--gain` and `--loss` are semantic tokens controlled by the active color schema. Do not add Taiwan/US red-up or green-up switches.
-- Positive and negative states must remain visually distinct through color, icon direction, labels, and context.
+- `--gain` always follows the schema identity (`--chart-1`). `--loss` defaults to `--chart-2`, but a schema whose `chart-1`/`chart-2` hues sit too close (Ocean, Violet, Amber, Rose all started within ~20–40°) overrides `--loss` with a distinct counter-hue so direction stays legible. Keep loss off the red/green axis (cool, non-locale) rather than forcing a red down-color.
+- Positive and negative states must remain visually distinct through color, icon direction, labels, and context. The diverging history heatmap (gain and loss tiles in one grid) is the binding constraint: any new schema must keep gain↔loss separated there.
 - App marks use `--app-icon-gradient-start` and `--app-icon-gradient-end`, a dedicated highlight-to-deep pair that preserves the original dimensional icon style while changing hue by schema.
 
 ### Named Rules
