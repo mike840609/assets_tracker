@@ -27,14 +27,29 @@ import { useCallback, useEffect, useSyncExternalStore, useState, useTransition }
 import { AppIcon } from "./app-icon";
 
 const SIDEBAR_STORAGE_KEY = "asset-tracker:sidebar-collapsed";
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // one year
 const SIDEBAR_SHORTCUT_HINT = "Ctrl+\\ (⌘\\ on Mac)";
+
+// Mirror the collapsed flag into a cookie so the server can render the correct
+// width on the next load (localStorage is client-only, which is what caused the
+// expanded→collapsed flash on reload). localStorage stays the source of truth for
+// in-session reads and cross-tab `storage` events.
+function persistCollapsed(value: boolean) {
+  const raw = value ? "1" : "0";
+  window.localStorage.setItem(SIDEBAR_STORAGE_KEY, raw);
+  document.cookie = `${SIDEBAR_STORAGE_KEY}=${raw}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}; samesite=lax`;
+}
 
 export function Sidebar({
   userImage,
   userName,
+  defaultCollapsed = false,
 }: {
   userImage?: string | null;
   userName?: string | null;
+  /** SSR seed read from the sidebar cookie, so the first paint matches the
+   *  user's saved preference instead of always rendering expanded. */
+  defaultCollapsed?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -51,12 +66,23 @@ export function Sidebar({
       };
     },
     () => window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1",
-    () => false,
+    // Server + hydration snapshot: the cookie value the server already rendered
+    // with. Matching it here means no post-hydration width swap (no flash).
+    () => defaultCollapsed,
   );
 
+  // Keep the cookie aligned with localStorage on mount, covering users who saved
+  // the preference before the cookie existed (otherwise their first reload after
+  // this change would still flash once).
+  useEffect(() => {
+    const stored = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    if (stored === "1" || stored === "0") {
+      document.cookie = `${SIDEBAR_STORAGE_KEY}=${stored}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}; samesite=lax`;
+    }
+  }, []);
+
   const toggleCollapsed = useCallback(() => {
-    const next = !collapsed;
-    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, next ? "1" : "0");
+    persistCollapsed(!collapsed);
     window.dispatchEvent(new Event("sidebar-collapsed-change"));
   }, [collapsed]);
 

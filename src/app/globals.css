@@ -379,6 +379,46 @@
   animation: skeleton-shimmer 1.6s ease-in-out infinite;
 }
 
+/* ─── History tab entrance motion ────────────────────────────────────────────
+   The activity calendar materializes column-by-column (oldest → newest) so a
+   year of net-worth activity reads as time accumulating rather than appearing
+   all at once; the summary rail's figures rise in alongside it. Both are
+   one-shot, transform/opacity only, and gated for reduced motion below.
+   `backwards` fill holds the from-state through the per-item stagger delay,
+   then reverts to the element's natural state — so the cell's hover-scale
+   transition keeps working after the reveal finishes. */
+@keyframes history-cell-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.history-cell-in {
+  animation: history-cell-in 320ms var(--ease-out-expo) backwards;
+  animation-delay: calc(var(--col, 0) * 10ms);
+}
+
+@keyframes history-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.history-rise-in {
+  animation: history-rise-in var(--duration-normal) var(--ease-out-expo) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
 /* Decorative, continuously-looping effects must not run when the user has
    asked for reduced motion (WCAG 2.3.3) — the mesh stays as a static wash. */
 @media (prefers-reduced-motion: reduce) {
@@ -392,6 +432,19 @@
   }
   .ios-tab-pop {
     animation: none;
+  }
+  .history-cell-in,
+  .history-rise-in {
+    animation: none;
+  }
+  /* tw-animate-css ships no reduced-motion guard of its own, so the dashboard's
+     tiered slide-in cascade (and every other `animate-in` reveal) would play in
+     full for users who asked the OS to minimize motion. Neutralize the enter/exit
+     utilities; their at-rest state is the fully-visible final frame, so content
+     simply appears instead of sliding. */
+  .animate-in,
+  .animate-out {
+    animation: none !important;
   }
 }
 

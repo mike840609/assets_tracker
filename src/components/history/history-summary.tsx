@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -137,7 +137,10 @@ export function HistorySummary({ snapshots, baseCurrency, className }: Props) {
       <CardContent className="px-4 pb-4">
         {/* Lead block: the one number that answers "where do I stand", with the
             drawdown from peak as its supporting line. Everything below is demoted. */}
-        <div className="flex flex-col gap-0.5 pb-3">
+        <div
+          className="history-rise-in flex flex-col gap-0.5 pb-3"
+          style={{ "--i": 0 } as CSSProperties}
+        >
           <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             {t("current")}
           </span>
@@ -164,6 +167,7 @@ export function HistorySummary({ snapshots, baseCurrency, className }: Props) {
 
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-3">
           <Stat
+            style={{ "--i": 1 } as CSSProperties}
             label={t("sinceFirst")}
             value={stats.hasSpan ? signedMoney(stats.changeAbs) : "—"}
             valueClass={stats.hasSpan ? tone(stats.changeAbs) : "text-muted-foreground"}
@@ -171,6 +175,7 @@ export function HistorySummary({ snapshots, baseCurrency, className }: Props) {
             subClass={tone(stats.changeAbs)}
           />
           <Stat
+            style={{ "--i": 2 } as CSSProperties}
             label={t("last30Days")}
             value={stats.recent30Abs !== null ? signedMoney(stats.recent30Abs) : "—"}
             valueClass={
@@ -181,23 +186,27 @@ export function HistorySummary({ snapshots, baseCurrency, className }: Props) {
           />
 
           <Stat
+            style={{ "--i": 3 } as CSSProperties}
             label={t("allTimeHigh")}
             value={money(stats.athValue)}
             sub={shortDate(stats.athDate)}
           />
           <Stat
+            style={{ "--i": 4 } as CSSProperties}
             label={t("allTimeLow")}
             value={money(stats.atlValue)}
             sub={shortDate(stats.atlDate)}
           />
 
           <Stat
+            style={{ "--i": 5 } as CSSProperties}
             label={t("bestDay")}
             value={stats.best ? signedMoney(stats.best.value) : "—"}
             valueClass={stats.best ? "text-[var(--gain)]" : "text-muted-foreground"}
             sub={stats.best ? shortDate(stats.best.date) : undefined}
           />
           <Stat
+            style={{ "--i": 6 } as CSSProperties}
             label={t("worstDay")}
             value={stats.worst ? signedMoney(stats.worst.value) : "—"}
             valueClass={stats.worst ? "text-[var(--loss)]" : "text-muted-foreground"}
@@ -206,6 +215,7 @@ export function HistorySummary({ snapshots, baseCurrency, className }: Props) {
 
           <Stat
             className="col-span-2"
+            style={{ "--i": 7 } as CSSProperties}
             label={t("upDownDays")}
             value={
               <>
@@ -228,6 +238,7 @@ function Stat({
   sub,
   subClass,
   className,
+  style,
 }: {
   label: string;
   value: ReactNode;
@@ -235,9 +246,10 @@ function Stat({
   sub?: string;
   subClass?: string;
   className?: string;
+  style?: CSSProperties;
 }) {
   return (
-    <div className={cn("flex flex-col gap-0.5", className)}>
+    <div className={cn("history-rise-in flex flex-col gap-0.5", className)} style={style}>
       <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </span>

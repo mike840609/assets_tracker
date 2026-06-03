@@ -104,12 +104,19 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                   const changePositive = row.change !== null && row.change > 0;
                   const changeNegative = row.change !== null && row.change < 0;
                   return (
-                    <div key={row.id}>
+                    // content-visibility skips layout/paint for rows scrolled out of the
+                    // ledger's viewport; the intrinsic-size hint keeps the scrollbar stable.
+                    // Heavy users accrue hundreds of daily snapshots, so this bounds paint
+                    // cost to the visible window instead of the whole series.
+                    <div
+                      key={row.id}
+                      className="[contain-intrinsic-size:auto_3.5rem] [content-visibility:auto]"
+                    >
                       {index > 0 && <div aria-hidden="true" className="h-px bg-border/60 mx-4" />}
                       <div
                         role="row"
                         className={cn(
-                          "flex flex-col gap-1 px-4 md:grid md:grid-cols-[100px_1fr_1fr_120px] md:gap-4 md:items-center",
+                          "flex flex-col gap-1 px-4 transition-colors hover:bg-muted/30 md:grid md:grid-cols-[100px_1fr_1fr_120px] md:gap-4 md:items-center",
                           isCompact ? "py-2" : "py-3.5",
                         )}
                       >
