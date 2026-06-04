@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Camera, Clock, RefreshCw, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatRelativeTime } from "@/lib/format-relative-time";
+import { formatRelativeTime, formatRelativeTimeShort } from "@/lib/format-relative-time";
 
 type FreshnessKind = "price" | "rates" | "snapshot";
 
@@ -38,6 +38,7 @@ export function FreshnessBadge({
   if (!timestamp) return null;
 
   const age = formatRelativeTime(timestamp, locale, now);
+  const shortAge = formatRelativeTimeShort(timestamp, locale, now);
   // Price/rates refresh daily; older than 3 days reads as a trust caution (the
   // 72h window clears normal weekend gaps). Snapshots are point-in-time, never "stale".
   const STALE_MS = 72 * 60 * 60 * 1000;
@@ -57,6 +58,10 @@ export function FreshnessBadge({
       : kind === "rates"
         ? "ratesUpdatedMobile"
         : "pricesUpdatedMobile";
+  // Full localized sentence ("Prices updated 3 days ago") — used as the accessible
+  // name so screen readers always get the subject, even when the visible chip is
+  // abbreviated to "Prices 3d" on mobile.
+  const fullLabel = t(longKey, { age });
   const hint = kind === "snapshot" ? t("snapshotHint") : undefined;
   const tone = isStale
     ? "border-warning/35 bg-warning/10 text-warning"
@@ -72,16 +77,17 @@ export function FreshnessBadge({
         className,
       )}
       title={hint}
+      aria-label={fullLabel}
       aria-live="polite"
     >
-      <Icon className="h-3 w-3 shrink-0" />
+      <Icon className="h-3 w-3 shrink-0" aria-hidden="true" />
       {mobileShort ? (
         <>
-          <span className="sm:hidden">{t(shortKey, { age })}</span>
-          <span className="hidden sm:inline">{t(longKey, { age })}</span>
+          <span className="sm:hidden">{t(shortKey, { age: shortAge })}</span>
+          <span className="hidden sm:inline">{fullLabel}</span>
         </>
       ) : (
-        <span>{t(longKey, { age })}</span>
+        <span>{fullLabel}</span>
       )}
     </span>
   );

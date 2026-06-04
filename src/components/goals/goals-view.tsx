@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -27,7 +27,27 @@ export function GoalsView({
   const t = useTranslations("goals");
   const tNav = useTranslations("nav");
   const [createOpen, setCreateOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"goals" | "projections">("goals");
+  // Deep link: the dashboard's "View projections" link points at /goals#projections
+  // so the Projections sub-view opens directly. useSyncExternalStore reads the hash
+  // with a server snapshot of "" so SSR and hydration agree; a manual switch sets
+  // `override`, which wins and rewrites the hash for shareable, Back-friendly URLs.
+  const hash = useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener("hashchange", onChange);
+      return () => window.removeEventListener("hashchange", onChange);
+    },
+    () => window.location.hash,
+    () => "",
+  );
+  const [override, setOverride] = useState<"goals" | "projections" | null>(null);
+  const activeTab: "goals" | "projections" =
+    override ?? (hash === "#projections" ? "projections" : "goals");
+
+  const handleTabChange = (tab: "goals" | "projections") => {
+    setOverride(tab);
+    const base = window.location.pathname + window.location.search;
+    window.history.replaceState(null, "", tab === "projections" ? `${base}#projections` : base);
+  };
 
   return (
     <div className="space-y-4">
@@ -38,7 +58,7 @@ export function GoalsView({
             key={tab}
             role="tab"
             type="button"
-            onClick={() => setActiveTab(tab)}
+            onClick={() => handleTabChange(tab)}
             aria-selected={activeTab === tab}
             tabIndex={activeTab === tab ? 0 : -1}
             className={cn(

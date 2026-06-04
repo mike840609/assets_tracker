@@ -248,6 +248,10 @@
   .ios-tab-pop {
     animation: ios-tab-pop 320ms var(--ease-spring) both;
   }
+
+  .float-soft {
+    animation: float-soft 3.2s ease-in-out infinite;
+  }
 }
 
 .hero-mesh-neutral,
@@ -354,6 +358,19 @@
   }
 }
 
+/* Empty-state illustration drift: a gentle, symmetric float (transform-only, no
+   bounce or overshoot) that keeps a first-run screen feeling alive without
+   pulling focus. ease-in-out so it settles softly at both extremes. */
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
 /* ─── Skeleton loading shimmer ───────────────────────────────────────────────
    A highlight band sweeps across placeholders so the loading state is obvious
    rather than reading as a static gray block. Applied via [data-slot="skeleton"]
@@ -431,6 +448,9 @@
     animation: none;
   }
   .ios-tab-pop {
+    animation: none;
+  }
+  .float-soft {
     animation: none;
   }
   .history-cell-in,

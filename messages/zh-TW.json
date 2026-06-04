@@ -27,7 +27,7 @@
     "togglePrivacy": "切換隱私模式",
     "refreshPrices": "更新價格",
     "createNew": "新增帳戶或持倉（僅限帳戶頁面）",
-    "addItem": "新增項目 / 持倉（僅限帳戶頁面）",
+    "addItem": "新增持倉（僅限帳戶頁面）",
     "signOut": "登出",
     "searchHint": "搜尋..."
   },
@@ -175,7 +175,8 @@
     "title": "儀表板",
     "emptyTitle": "歡迎使用資產追蹤器",
     "emptyDescription": "從新增第一個帳戶開始——銀行帳戶、券商、加密貨幣錢包，或任何您想追蹤的項目。",
-    "emptyAction": "新增第一個帳戶"
+    "emptyAction": "新增第一個帳戶",
+    "viewFullHistory": "查看完整歷史"
   },
   "accounts": {
     "title": "帳戶"
@@ -235,7 +236,10 @@
     "title": "目標",
     "viewAll": "查看全部（{count}）",
     "allCompleted": "所有目標已達成！",
-    "due": "到期：{date}"
+    "due": "到期：{date}",
+    "viewProjection": "查看財務預測",
+    "projectionTitle": "財務預測",
+    "projectionHint": "估算您何時能達到財務獨立。"
   },
   "analysis": {
     "title": "分析",
@@ -434,11 +438,11 @@
   },
   "freshness": {
     "pricesUpdated": "價格更新於 {age}",
-    "pricesUpdatedMobile": "{age}",
+    "pricesUpdatedMobile": "價格 {age}",
     "ratesUpdated": "匯率更新於 {age}",
-    "ratesUpdatedMobile": "{age}",
+    "ratesUpdatedMobile": "匯率 {age}",
     "snapshot": "快照於 {age}",
-    "snapshotMobile": "{age}",
+    "snapshotMobile": "快照 {age}",
     "snapshotHint": "系統每天會自動建立一次快照。",
     "noData": "尚無資料",
     "refreshing": "更新中..."
@@ -473,7 +477,7 @@
     "total": "小計"
   },
   "accountsList": {
-    "addItem": "新增項目",
+    "addItem": "新增持倉",
     "addAccount": "新增帳戶",
     "manageOrder": "管理排序",
     "manageOrderHint": "拖曳帳戶即可重新排序。已釘選帳戶會固定在未釘選帳戶上方。",
