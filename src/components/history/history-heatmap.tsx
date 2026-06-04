@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useRef, useEffect, type CSSProperties } from "react";
+import { useCallback, useMemo, useState, useRef, useEffect, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useFormatter, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -194,6 +194,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   }, []);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const dismissTooltip = useCallback(() => setTooltip(null), []);
 
   // On mount, position the scroll so today sits near the right edge of the visible window.
   // This shows recent activity immediately without requiring the user to scroll on mobile.
@@ -208,6 +209,34 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
     const rect = element.getBoundingClientRect();
     setTooltip({ day, x: rect.left + rect.width / 2, y: rect.top });
   };
+
+  // The tooltip is portaled and fixed to the viewport. On touch devices, a
+  // focused cell can keep it alive after the page scrolls away, so any viewport
+  // or heatmap movement should dismiss it instead of leaving a stale float.
+  useEffect(() => {
+    if (!tooltip) return;
+
+    const heatmapScroller = scrollContainerRef.current;
+    const pageScroller = document.querySelector("main");
+
+    heatmapScroller?.addEventListener("scroll", dismissTooltip, { passive: true });
+    pageScroller?.addEventListener("scroll", dismissTooltip, { passive: true });
+    window.addEventListener("scroll", dismissTooltip, { passive: true });
+    window.addEventListener("touchmove", dismissTooltip, { passive: true });
+    window.addEventListener("wheel", dismissTooltip, { passive: true });
+    window.addEventListener("resize", dismissTooltip);
+    window.addEventListener("orientationchange", dismissTooltip);
+
+    return () => {
+      heatmapScroller?.removeEventListener("scroll", dismissTooltip);
+      pageScroller?.removeEventListener("scroll", dismissTooltip);
+      window.removeEventListener("scroll", dismissTooltip);
+      window.removeEventListener("touchmove", dismissTooltip);
+      window.removeEventListener("wheel", dismissTooltip);
+      window.removeEventListener("resize", dismissTooltip);
+      window.removeEventListener("orientationchange", dismissTooltip);
+    };
+  }, [dismissTooltip, tooltip]);
 
   return (
     <div
