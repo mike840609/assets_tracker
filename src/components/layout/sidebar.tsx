@@ -29,6 +29,15 @@ import { AppIcon } from "./app-icon";
 const SIDEBAR_STORAGE_KEY = "asset-tracker:sidebar-collapsed";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // one year
 const SIDEBAR_SHORTCUT_HINT = "Ctrl+\\ (⌘\\ on Mac)";
+const TOP_LEVEL_NAV_HREFS = [
+  "/",
+  "/accounts",
+  "/goals",
+  "/analysis",
+  "/projections",
+  "/history",
+  "/settings",
+];
 
 // Mirror the collapsed flag into a cookie so the server can render the correct
 // width on the next load (localStorage is client-only, which is what caused the
@@ -80,6 +89,12 @@ export function Sidebar({
       document.cookie = `${SIDEBAR_STORAGE_KEY}=${stored}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}; samesite=lax`;
     }
   }, []);
+
+  useEffect(() => {
+    for (const href of TOP_LEVEL_NAV_HREFS) {
+      router.prefetch(href);
+    }
+  }, [router]);
 
   const toggleCollapsed = useCallback(() => {
     persistCollapsed(!collapsed);
@@ -165,7 +180,6 @@ export function Sidebar({
             <Link
               key={item.href}
               href={item.href}
-              prefetch={false}
               onMouseEnter={() => router.prefetch(item.href)}
               onFocus={() => router.prefetch(item.href)}
               title={collapsed ? item.label : undefined}
