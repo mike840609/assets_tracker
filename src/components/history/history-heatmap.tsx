@@ -10,16 +10,26 @@ import { formatCurrency } from "@/lib/currencies";
 const CELL_PX = 10;
 const GAP_PX = 4;
 const COL_WIDTH = CELL_PX + GAP_PX;
+const CALENDAR_TIME_ZONE = "UTC";
+
+function calendarDate(year: number, monthIndex: number, day: number) {
+  return new Date(Date.UTC(year, monthIndex, day));
+}
+
+function calendarDateFromString(dateString: string) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return calendarDate(year, month - 1, day);
+}
 
 // Fixed reference dates for day-of-week label generation
 const DOW_REF: (Date | null)[] = [
-  new Date(2024, 0, 7), // Sun
+  calendarDate(2024, 0, 7), // Sun
   null,
-  new Date(2024, 0, 9), // Tue
+  calendarDate(2024, 0, 9), // Tue
   null,
-  new Date(2024, 0, 11), // Thu
+  calendarDate(2024, 0, 11), // Thu
   null,
-  new Date(2024, 0, 13), // Sat
+  calendarDate(2024, 0, 13), // Sat
 ];
 
 type SnapshotRow = {
@@ -119,7 +129,10 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
           currentMonth = current.getMonth();
           mLabels.push({
             col: Math.floor(i / 7),
-            label: format.dateTime(current, { month: "short" }),
+            label: format.dateTime(calendarDate(year, current.getMonth(), 1), {
+              month: "short",
+              timeZone: CALENDAR_TIME_ZONE,
+            }),
           });
         }
 
@@ -165,7 +178,10 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   }, [gridDays, weeksToShow]);
 
   const daysOfWeek = useMemo(
-    () => DOW_REF.map((d) => (d ? format.dateTime(d, { weekday: "narrow" }) : "")),
+    () =>
+      DOW_REF.map((d) =>
+        d ? format.dateTime(d, { weekday: "narrow", timeZone: CALENDAR_TIME_ZONE }) : "",
+      ),
     [format],
   );
 
@@ -284,7 +300,10 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                     const canShowDetails = day.hasSnapshot && !day.isFuture;
                     const isToday = day.dateString === todayString;
 
-                    const dateLabel = format.dateTime(day.date, { dateStyle: "medium" });
+                    const dateLabel = format.dateTime(calendarDateFromString(day.dateString), {
+                      dateStyle: "medium",
+                      timeZone: CALENDAR_TIME_ZONE,
+                    });
                     const cellLabel = day.isFuture
                       ? `${dateLabel}, no data yet`
                       : day.hasSnapshot
@@ -389,7 +408,10 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
             style={{ left: tooltip.x, top: tooltip.y }}
           >
             <p className="border-b border-border/40 pb-1 text-xs font-semibold text-foreground/90">
-              {format.dateTime(tooltip.day.date, { dateStyle: "medium" })}
+              {format.dateTime(calendarDateFromString(tooltip.day.dateString), {
+                dateStyle: "medium",
+                timeZone: CALENDAR_TIME_ZONE,
+              })}
             </p>
             <div className="mt-1.5 space-y-1">
               <div className="flex items-center justify-between gap-6 text-[11px] leading-relaxed">
