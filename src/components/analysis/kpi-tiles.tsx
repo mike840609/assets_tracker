@@ -79,20 +79,20 @@ function LeadMetric({
         : "bg-muted text-muted-foreground";
 
   return (
-    <div className="min-w-0 space-y-2">
+    <div className="min-w-0 space-y-1.5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
             <CalendarDays className="size-3.5 shrink-0" aria-hidden />
             <span className="truncate">{title}</span>
           </div>
-          <div className="mt-0.5 truncate text-[11px] leading-tight text-muted-foreground/80">
+          <div className="mt-0.5 truncate text-[10px] leading-tight text-muted-foreground/80">
             {helper}
           </div>
         </div>
         {!privacyMode && pct && (
           <span
-            className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${pillClass}`}
+            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${pillClass}`}
           >
             {pct}
           </span>
@@ -101,10 +101,10 @@ function LeadMetric({
       <div className="overflow-x-auto scrollbar-none">
         <div
           className={`flex items-center gap-1.5 font-semibold tracking-tight tabular-nums whitespace-nowrap ${
-            isCompact ? "text-2xl" : "text-2xl sm:text-3xl"
+            isCompact ? "text-xl" : "text-xl sm:text-2xl"
           } ${tone === "negative" ? "text-[var(--loss)]" : "text-foreground"}`}
         >
-          <DirectionCaret tone={tone} className={isCompact ? "size-5" : "size-6"} />
+          <DirectionCaret tone={tone} className={isCompact ? "size-4" : "size-5"} />
           <span>
             {privacyMode ? (
               "***"
@@ -144,7 +144,7 @@ function MetricRow({
   return (
     <div
       className={`grid min-w-0 grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-start gap-3 border-t border-border/60 ${
-        isCompact ? "py-2" : "py-3"
+        isCompact ? "py-1.5" : "py-2"
       }`}
     >
       <div className="min-w-0">
@@ -159,7 +159,7 @@ function MetricRow({
         <div className="overflow-x-auto scrollbar-none">
           <div
             className={`flex items-center justify-end gap-1 font-semibold tracking-tight tabular-nums whitespace-nowrap ${
-              isCompact ? "text-sm" : "text-base"
+              isCompact ? "text-xs" : "text-sm"
             } ${tone === "negative" ? "text-[var(--loss)]" : "text-foreground"}`}
           >
             <DirectionCaret tone={tone} className="size-4" />
@@ -205,7 +205,7 @@ export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel }: Props) {
       : `${kpis.ytdPct >= 0 ? "+" : ""}${kpis.ytdPct.toFixed(1)}%`;
 
   return (
-    <div className={isCompact ? "min-w-0 space-y-3" : "min-w-0 space-y-4"}>
+    <div className={isCompact ? "min-w-0 space-y-2.5" : "min-w-0 space-y-3"}>
       {/* Lead: the year headline. Fixed to YTD regardless of the range selector,
           so it stays the stable answer to "how's the year going". */}
       <LeadMetric

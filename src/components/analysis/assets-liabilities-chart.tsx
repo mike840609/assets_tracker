@@ -141,16 +141,16 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
               >
                 <BarChart
                   data={data}
-                  margin={{ top: 10, right: 4, left: 0, bottom: 20 }}
+                  margin={{ top: 8, right: 4, left: 0, bottom: 12 }}
                   {...crosshairHandlers}
                 >
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis
                     dataKey="label"
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 11 }}
                     angle={-45}
                     textAnchor="end"
-                    height={60}
+                    height={44}
                   />
                   <YAxis
                     width={50}
@@ -180,7 +180,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                 </BarChart>
               </ChartContainer>
             </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">{t("assetsVsLiabilitiesNote")}</p>
+            <p className="sr-only">{t("assetsVsLiabilitiesNote")}</p>
           </div>
         )}
       </CardContent>

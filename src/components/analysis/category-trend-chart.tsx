@@ -140,17 +140,17 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
             >
               <LineChart
                 data={chartData}
-                margin={{ top: 10, right: 4, left: 0, bottom: 20 }}
+                margin={{ top: 8, right: 4, left: 0, bottom: 12 }}
                 {...crosshairHandlers}
               >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="label"
                   padding={{ left: 16, right: 16 }}
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 11 }}
                   angle={-45}
                   textAnchor="end"
-                  height={60}
+                  height={48}
                 />
                 <YAxis
                   width={50}

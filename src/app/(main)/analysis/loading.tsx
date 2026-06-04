@@ -54,7 +54,7 @@ export default function AnalysisLoading() {
                 </div>
               </div>
               <div className="min-w-0 border-t border-border/60 bg-muted/20 px-4 py-4 xl:border-t-0 xl:border-l xl:bg-muted/25">
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-3">
                       <div className="space-y-1.5">
@@ -63,14 +63,14 @@ export default function AnalysisLoading() {
                       </div>
                       <Skeleton className="h-5 w-16 rounded-full" />
                     </div>
-                    <Skeleton className="h-8 w-44 max-w-full" />
+                    <Skeleton className="h-7 w-40 max-w-full" />
                   </div>
                   <div>
                     <Skeleton className="mb-1.5 h-3 w-32" />
                     {[...Array(3)].map((_, i) => (
                       <div
                         key={i}
-                        className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-start gap-3 border-t border-border/60 py-3"
+                        className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-start gap-3 border-t border-border/60 py-2"
                       >
                         <div className="space-y-1.5">
                           <Skeleton className="h-3 w-20 max-w-full" />
