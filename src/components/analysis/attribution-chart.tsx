@@ -114,10 +114,7 @@ export function AttributionChart({ items, baseCurrency }: Props) {
   // largest bar at the top of the chart.
   const chartData = [...items].reverse();
 
-  const chartHeight = Math.max(
-    isCompact ? 180 : 200,
-    chartData.length * (isCompact ? 30 : 36) + 40,
-  );
+  const chartHeight = isCompact ? 180 : 200;
 
   return (
     <>
@@ -125,23 +122,28 @@ export function AttributionChart({ items, baseCurrency }: Props) {
         <CardTitle className="text-base font-medium text-foreground">{t("attribution")}</CardTitle>
         <p className="text-xs text-muted-foreground">{t("attributionSubtitle")}</p>
       </CardHeader>
-      <CardContent className="px-2 sm:px-4 pb-4">
+      <CardContent className="flex flex-1 flex-col px-2 pb-4 sm:px-4">
         {items.length === 0 ? (
           <ChartEmptyState message={t("attributionNoData")} hint={t("emptyHint")} />
         ) : !mounted ? (
-          <div style={{ height: chartHeight }} />
+          <div className="min-h-0 flex-1" style={{ minHeight: chartHeight }} />
         ) : (
           <div
             aria-hidden={privacyMode || undefined}
-            className={`${isCompact ? "space-y-3" : "space-y-4"} transition-[filter] duration-300 ${
+            className={`flex min-h-0 flex-1 flex-col ${isCompact ? "gap-3" : "gap-4"} transition-[filter] duration-300 ${
               privacyMode ? "blur-sm pointer-events-none select-none" : ""
             }`}
+            style={{ minHeight: chartHeight }}
           >
-            <div role="img" aria-label={`${t("attribution")}, ${t("attributionSubtitle")}`}>
+            <div
+              role="img"
+              aria-label={`${t("attribution")}, ${t("attributionSubtitle")}`}
+              className="min-h-0 flex-1"
+            >
               <ChartContainer
                 config={attributionConfig}
                 className="w-full"
-                style={{ height: chartHeight }}
+                style={{ height: "100%" }}
                 initialDimension={{ width: 1, height: chartHeight }}
               >
                 <BarChart

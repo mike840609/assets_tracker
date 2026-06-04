@@ -89,7 +89,7 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
-  const chartHeight = density === "compact" ? 240 : 280;
+  const chartHeight = density === "compact" ? 180 : 200;
   const [mounted, setMounted] = useState(false);
   const { handlers: crosshairHandlers } = useChartCrosshair();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
@@ -101,15 +101,16 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
         <CardTitle className="text-base font-medium text-foreground">{t("cashFlow")}</CardTitle>
         <p className="text-xs text-muted-foreground">{t("cashFlowSubtitle")}</p>
       </CardHeader>
-      <CardContent className="px-2 sm:px-4 pb-4">
+      <CardContent className="flex flex-1 flex-col px-2 pb-4 sm:px-4">
         {buckets.length === 0 ? (
           <ChartEmptyState message={t("noData")} hint={t("emptyHint")} />
         ) : !mounted ? (
-          <div style={{ height: chartHeight }} />
+          <div className="min-h-0 flex-1" style={{ minHeight: chartHeight }} />
         ) : (
           <div
             aria-hidden={privacyMode || undefined}
-            className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+            className={`relative flex min-h-0 flex-1 flex-col transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+            style={{ minHeight: chartHeight }}
           >
             <div className="flex items-center gap-4 mb-2 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
@@ -129,11 +130,15 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
                 {t("seriesMarket")}
               </span>
             </div>
-            <div role="img" aria-label={`${t("cashFlow")}, ${t("cashFlowSubtitle")}`}>
+            <div
+              role="img"
+              aria-label={`${t("cashFlow")}, ${t("cashFlowSubtitle")}`}
+              className="min-h-0 flex-1"
+            >
               <ChartContainer
                 config={cashflowConfig}
                 className="w-full"
-                style={{ height: chartHeight }}
+                style={{ height: "100%" }}
                 initialDimension={{ width: 1, height: chartHeight }}
               >
                 <BarChart

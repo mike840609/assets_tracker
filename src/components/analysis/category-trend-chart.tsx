@@ -83,7 +83,7 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
   const tCat = useTranslations("categories");
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
-  const chartHeight = density === "compact" ? 240 : 280;
+  const chartHeight = density === "compact" ? 180 : 200;
   const [mounted, setMounted] = useState(false);
   const { handlers: crosshairHandlers } = useChartCrosshair();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
@@ -119,21 +119,22 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
         </CardTitle>
         <p className="text-xs text-muted-foreground">{t("categoryTrendSubtitle")}</p>
       </CardHeader>
-      <CardContent className="px-2 sm:px-4 pb-4">
+      <CardContent className="flex flex-1 flex-col px-2 pb-4 sm:px-4">
         {categories.length === 0 ? (
           <ChartEmptyState message={t("noData")} hint={t("emptyHint")} />
         ) : !mounted ? (
-          <div style={{ height: chartHeight }} />
+          <div className="min-h-0 flex-1" style={{ minHeight: chartHeight }} />
         ) : (
           <div
             role="img"
             aria-label={ariaLabel}
             aria-hidden={privacyMode || undefined}
-            className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+            className={`relative min-h-0 flex-1 transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+            style={{ minHeight: chartHeight }}
           >
             <ResponsiveContainer
               width="100%"
-              height={chartHeight}
+              height="100%"
               minWidth={0}
               initialDimension={{ width: 1, height: chartHeight }}
             >

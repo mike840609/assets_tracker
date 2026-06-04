@@ -73,7 +73,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
-  const chartHeight = density === "compact" ? 240 : 280;
+  const chartHeight = density === "compact" ? 160 : 180;
   const [mounted, setMounted] = useState(false);
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   const { handlers: crosshairHandlers } = useChartCrosshair();
@@ -99,17 +99,18 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
         </CardTitle>
         <p className="text-xs text-muted-foreground">{t("assetsVsLiabilitiesSubtitle")}</p>
       </CardHeader>
-      <CardContent className="px-2 sm:px-4 pb-4">
+      <CardContent className="flex flex-1 flex-col px-2 pb-4 sm:px-4">
         {data.length === 0 ? (
           <ChartEmptyState message={t("noData")} hint={t("emptyHint")} />
         ) : !mounted ? (
-          <div style={{ height: chartHeight }} />
+          <div className="min-h-0 flex-1" style={{ minHeight: chartHeight }} />
         ) : (
           <div
             aria-hidden={privacyMode || undefined}
-            className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+            className={`relative flex min-h-0 flex-1 flex-col transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+            style={{ minHeight: chartHeight }}
           >
-            <div className="flex items-center gap-4 mb-2 text-xs text-muted-foreground">
+            <div className="mb-1 flex items-center gap-4 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 <span
                   aria-hidden
@@ -130,11 +131,12 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
             <div
               role="img"
               aria-label={`${t("assetsVsLiabilities")}, ${t("assetsVsLiabilitiesSubtitle")}`}
+              className="min-h-0 flex-1"
             >
               <ChartContainer
                 config={config}
                 className="w-full"
-                style={{ height: chartHeight }}
+                style={{ height: "100%" }}
                 initialDimension={{ width: 1, height: chartHeight }}
               >
                 <BarChart
@@ -178,7 +180,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                 </BarChart>
               </ChartContainer>
             </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">{t("assetsVsLiabilitiesNote")}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">{t("assetsVsLiabilitiesNote")}</p>
           </div>
         )}
       </CardContent>

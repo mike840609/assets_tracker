@@ -1,8 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { ArrowDownRight, ArrowUpRight, CalendarDays } from "lucide-react";
 import { formatCurrency } from "@/lib/currencies";
 import { useCountUp } from "@/hooks/use-count-up";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -14,6 +13,7 @@ interface Props {
   kpis: AnalysisKpis;
   baseCurrency: string;
   locale: string;
+  rangeLabel: string;
 }
 
 type Tone = "positive" | "negative" | "neutral";
@@ -27,18 +27,10 @@ function toneFor(n: number): Tone {
 // Settles the figure to its value the way the dashboard hero does, so the strip
 // reads as "freshly computed" on load and on each range change. Width is stable
 // (tabular-nums) and the hook returns the final value under reduced motion.
-function CountUpMoney({
-  amount,
-  currency,
-  compact = false,
-}: {
-  amount: number;
-  currency: string;
-  compact?: boolean;
-}) {
+function CountUpMoney({ amount, currency }: { amount: number; currency: string }) {
   const value = useCountUp(amount, 700);
   const sign = amount > 0 ? "+" : "";
-  return <>{`${sign}${formatCurrency(value, currency, compact)}`}</>;
+  return <>{`${sign}${formatCurrency(value, currency)}`}</>;
 }
 
 // Direction is carried by a caret (icon, not color alone) per the gain/loss rule.
@@ -61,8 +53,9 @@ function DirectionCaret({ tone, className }: { tone: Tone; className?: string })
  * the left, its rate sits as a pill on the right. This is the focal point the
  * four equal tiles used to lack.
  */
-function HeroTile({
+function LeadMetric({
   title,
+  helper,
   amount,
   pct,
   currency,
@@ -70,6 +63,7 @@ function HeroTile({
   isCompact,
 }: {
   title: string;
+  helper: string;
   amount: number | null;
   pct: string | null;
   currency: string;
@@ -85,29 +79,15 @@ function HeroTile({
         : "bg-muted text-muted-foreground";
 
   return (
-    <Card className="min-w-0">
-      <CardContent
-        className={`flex items-center justify-between gap-3 ${isCompact ? "py-3" : "py-4"}`}
-      >
-        <div className="min-w-0 space-y-1">
-          <div className="text-xs font-medium text-muted-foreground">{title}</div>
-          <div className="overflow-x-auto scrollbar-none">
-            <div
-              className={`flex items-center gap-1.5 font-semibold tracking-tight tabular-nums whitespace-nowrap ${
-                isCompact ? "text-2xl" : "text-2xl sm:text-3xl"
-              } ${tone === "negative" ? "text-[var(--loss)]" : "text-foreground"}`}
-            >
-              <DirectionCaret tone={tone} className={isCompact ? "size-5" : "size-6"} />
-              <span>
-                {privacyMode ? (
-                  "***"
-                ) : amount === null ? (
-                  "—"
-                ) : (
-                  <CountUpMoney amount={amount} currency={currency} />
-                )}
-              </span>
-            </div>
+    <div className="min-w-0 space-y-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <CalendarDays className="size-3.5 shrink-0" aria-hidden />
+            <span className="truncate">{title}</span>
+          </div>
+          <div className="mt-0.5 truncate text-[11px] leading-tight text-muted-foreground/80">
+            {helper}
           </div>
         </div>
         {!privacyMode && pct && (
@@ -117,8 +97,26 @@ function HeroTile({
             {pct}
           </span>
         )}
-      </CardContent>
-    </Card>
+      </div>
+      <div className="overflow-x-auto scrollbar-none">
+        <div
+          className={`flex items-center gap-1.5 font-semibold tracking-tight tabular-nums whitespace-nowrap ${
+            isCompact ? "text-2xl" : "text-2xl sm:text-3xl"
+          } ${tone === "negative" ? "text-[var(--loss)]" : "text-foreground"}`}
+        >
+          <DirectionCaret tone={tone} className={isCompact ? "size-5" : "size-6"} />
+          <span>
+            {privacyMode ? (
+              "***"
+            ) : amount === null ? (
+              "—"
+            ) : (
+              <CountUpMoney amount={amount} currency={currency} />
+            )}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -126,7 +124,7 @@ function HeroTile({
  * Supporting metric. Smaller than the hero; three of these read as a peer cluster
  * (the monthly-change distribution) beneath the year headline.
  */
-function Tile({
+function MetricRow({
   title,
   amount,
   currency,
@@ -144,13 +142,24 @@ function Tile({
   isCompact: boolean;
 }) {
   return (
-    <Card size="sm" className="min-w-0">
-      <CardContent className={isCompact ? "space-y-0.5 min-w-0" : "space-y-1 min-w-0"}>
-        <div className="truncate text-xs font-medium text-muted-foreground">{title}</div>
+    <div
+      className={`grid min-w-0 grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-start gap-3 border-t border-border/60 ${
+        isCompact ? "py-2" : "py-3"
+      }`}
+    >
+      <div className="min-w-0">
+        <div className="truncate text-xs font-medium text-muted-foreground/90">{title}</div>
+        {subtitle && (
+          <div className="mt-0.5 truncate text-[11px] leading-tight tabular-nums text-muted-foreground">
+            {subtitle}
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 text-right">
         <div className="overflow-x-auto scrollbar-none">
           <div
-            className={`flex items-center gap-1 font-semibold tracking-tight tabular-nums whitespace-nowrap ${
-              isCompact ? "text-sm" : "text-base sm:text-lg"
+            className={`flex items-center justify-end gap-1 font-semibold tracking-tight tabular-nums whitespace-nowrap ${
+              isCompact ? "text-sm" : "text-base"
             } ${tone === "negative" ? "text-[var(--loss)]" : "text-foreground"}`}
           >
             <DirectionCaret tone={tone} className="size-4" />
@@ -160,20 +169,17 @@ function Tile({
               ) : amount === null ? (
                 "—"
               ) : (
-                <CountUpMoney amount={amount} currency={currency} compact />
+                <CountUpMoney amount={amount} currency={currency} />
               )}
             </span>
           </div>
         </div>
-        {subtitle && (
-          <div className="truncate text-xs tabular-nums text-muted-foreground">{subtitle}</div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
-export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
+export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
@@ -199,11 +205,12 @@ export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
       : `${kpis.ytdPct >= 0 ? "+" : ""}${kpis.ytdPct.toFixed(1)}%`;
 
   return (
-    <div className={isCompact ? "space-y-2" : "space-y-3 sm:space-y-4"}>
+    <div className={isCompact ? "min-w-0 space-y-3" : "min-w-0 space-y-4"}>
       {/* Lead: the year headline. Fixed to YTD regardless of the range selector,
           so it stays the stable answer to "how's the year going". */}
-      <HeroTile
+      <LeadMetric
         title={t("ytdGrowth")}
+        helper={t("ytdFixedHint")}
         amount={kpis.ytdDelta}
         pct={ytdPct}
         currency={baseCurrency}
@@ -213,8 +220,11 @@ export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
 
       {/* Supporting cluster: the monthly-change distribution over the selected
           range (the range chips drive these three, not the YTD lead). */}
-      <div className={`grid grid-cols-3 ${isCompact ? "gap-2" : "gap-2 sm:gap-3"}`}>
-        <Tile
+      <div className="min-w-0">
+        <div className="truncate text-xs font-medium text-muted-foreground">
+          {t("selectedRangeMetrics", { range: rangeLabel })}
+        </div>
+        <MetricRow
           title={t("avgMonthly")}
           amount={kpis.avgMonthlyDelta}
           currency={baseCurrency}
@@ -222,7 +232,7 @@ export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
           tone={privacyMode ? "neutral" : toneFor(kpis.avgMonthlyDelta)}
           isCompact={isCompact}
         />
-        <Tile
+        <MetricRow
           title={bestTitle}
           amount={kpis.best ? kpis.best.deltaNetWorth : null}
           currency={baseCurrency}
@@ -231,7 +241,7 @@ export function KpiTiles({ kpis, baseCurrency, locale }: Props) {
           tone={privacyMode ? "neutral" : kpis.best ? toneFor(kpis.best.deltaNetWorth) : "neutral"}
           isCompact={isCompact}
         />
-        <Tile
+        <MetricRow
           title={worstTitle}
           amount={kpis.worst ? kpis.worst.deltaNetWorth : null}
           currency={baseCurrency}
