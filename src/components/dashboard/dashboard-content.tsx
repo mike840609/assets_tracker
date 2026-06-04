@@ -266,8 +266,8 @@ async function AccountsSummarySection({
 }
 
 /**
- * Portfolio account heatmap.
- * Sits between current exposure and the full account list as a visual bridge.
+ * Portfolio composition heatmap.
+ * Sits between current exposure and account detail as a visual bridge.
  */
 async function PortfolioHeatmapSection({
   userId,
@@ -405,7 +405,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
         </Suspense>
       </div>
 
-      {/* Tier 3 — "what it's made of": portfolio heatmap (8) + currency donut (4) */}
+      {/* Tier 3 — "what it's made of": portfolio composition (8) + currency donut (4) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
         <div className="min-w-0 lg:col-span-8">
           <Suspense fallback={<PortfolioHeatmapSkeleton />}>

@@ -188,7 +188,7 @@ export function AccountsList({
   priceMap: Record<string, number>;
   ratesMap?: Record<string, number>;
   baseCurrency?: string;
-  /** Optional overview block (e.g. the portfolio heatmap) rendered below the
+  /** Optional overview block (e.g. portfolio composition) rendered before the
    *  account list as an allocation synthesis. Hidden during manage-order mode. */
   overview?: React.ReactNode;
 }) {
@@ -512,6 +512,8 @@ export function AccountsList({
             </div>
           )}
 
+          {accounts.length > 0 && overview}
+
           {accounts.length > 0 && (
             <div className="hidden lg:block rounded-xl border overflow-hidden">
               <table className="w-full text-sm">
@@ -711,8 +713,6 @@ export function AccountsList({
               )}
             </div>
           </div>
-
-          {overview}
 
           {archivedAccounts.length > 0 && (
             <div className="rounded-xl border overflow-hidden">

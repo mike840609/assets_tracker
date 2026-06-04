@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ChevronLeft, TriangleAlert } from "lucide-react";
+import { ChevronLeft, EyeOff, TriangleAlert } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { Treemap, type TreemapNode } from "recharts";
@@ -46,6 +46,7 @@ type RenderNode = TreemapNode & HeatmapNode;
 
 type HeatmapTileProps = TreemapNode & {
   activeNodeId: string | null;
+  compactLabels: boolean;
 };
 
 function formatPercent(value: number): string {
@@ -101,9 +102,10 @@ function HeatmapTile(props: HeatmapTileProps) {
   const width = Number(node.width ?? 0);
   const height = Number(node.height ?? 0);
   const isActive = node.id === props.activeNodeId;
-  const showLabel = width > 70 && height > 38;
-  const showShare = width > 98 && height > 58;
-  const maxChars = Math.max(3, Math.floor((width - 18) / 7));
+  const showLabel = props.compactLabels ? width > 92 && height > 44 : width > 70 && height > 38;
+  const showShare = !props.compactLabels && width > 98 && height > 58;
+  const labelOffset = props.compactLabels ? 8 : 10;
+  const maxChars = Math.max(3, Math.floor((width - labelOffset * 2) / 7));
   const share = nodeShare(node);
 
   if (!node.color || !Number.isFinite(node.value) || node.value <= 0) return null;
@@ -152,7 +154,7 @@ function HeatmapTile(props: HeatmapTileProps) {
         />
       )}
       {showLabel && (
-        <text x={x + 10} y={y + 19} pointerEvents="none">
+        <text x={x + labelOffset} y={y + (props.compactLabels ? 18 : 19)} pointerEvents="none">
           <tspan fill="var(--heatmap-tile-label)" className="text-[11px] font-semibold">
             {shorten(node.name, maxChars)}
           </tspan>
@@ -169,6 +171,35 @@ function HeatmapTile(props: HeatmapTileProps) {
         </text>
       )}
     </g>
+  );
+}
+
+function PrivacyHeatmapPlaceholder() {
+  const blocks = [
+    "col-span-3 row-span-4",
+    "col-span-2 row-span-2",
+    "col-span-2 row-span-2",
+    "col-span-1 row-span-2",
+    "col-span-1 row-span-1",
+    "col-span-1 row-span-1",
+  ];
+
+  return (
+    <div className="absolute inset-0 p-px" aria-hidden>
+      <div className="grid h-full grid-cols-6 grid-rows-4 gap-px">
+        {blocks.map((span, index) => (
+          <div
+            key={index}
+            className={cn(
+              "min-h-0 min-w-0 bg-muted/45",
+              index % 2 === 0 ? "bg-muted/50" : "bg-muted/30",
+              span,
+            )}
+          />
+        ))}
+      </div>
+      <div className="absolute inset-0 bg-card/45 backdrop-blur-[2px]" />
+    </div>
   );
 }
 
@@ -217,19 +248,26 @@ export function PortfolioHeatmap({
   const shouldReduceMotion = useReducedMotion();
   const chartSummaryId = useId();
   const chartRef = useRef<HTMLDivElement>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [activeNode, setActiveNode] = useState<HeatmapNode | null>(null);
   const { width: chartWidth, height: chartContainerHeight } = useContainerSize(chartRef);
+  const hasVisibleSelection = !privacyMode && selectedAccountId !== null;
   const baseChartHeight = useMemo(() => {
     if (chartWidth === 0) return isCompact ? 220 : 280;
+    if (isPhone) {
+      const ratio = hasVisibleSelection ? 0.52 : 0.5;
+      return Math.max(168, Math.min(212, Math.round(chartWidth * ratio)));
+    }
     if (chartWidth < 420) return Math.max(190, Math.round(chartWidth * 0.62));
     if (chartWidth < 760) return Math.max(240, Math.round(chartWidth * 0.55));
     return isCompact ? 220 : 280;
-  }, [chartWidth, isCompact]);
+  }, [chartWidth, hasVisibleSelection, isCompact, isPhone]);
   // In fillHeight mode the container stretches to the taller side panel; render the
   // treemap at that measured height so it consumes the gap instead of leaving it blank.
   const chartHeight =
-    fillHeight && chartContainerHeight > baseChartHeight ? chartContainerHeight : baseChartHeight;
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-  const [activeNode, setActiveNode] = useState<HeatmapNode | null>(null);
+    fillHeight && !isPhone && chartContainerHeight > baseChartHeight
+      ? chartContainerHeight
+      : baseChartHeight;
 
   const accounts = useMemo(() => {
     const assetAccounts = summary.accounts
@@ -276,7 +314,9 @@ export function PortfolioHeatmap({
     });
   }, [summary.accounts, summary.totalAssets, t]);
 
-  const selectedAccount = accounts.find((account) => account.id === selectedAccountId) ?? null;
+  const selectedAccount = privacyMode
+    ? null
+    : (accounts.find((account) => account.id === selectedAccountId) ?? null);
   const topLevelChartData = useMemo(
     () =>
       accounts.map(({ children: _children, ...account }) => ({
@@ -287,7 +327,7 @@ export function PortfolioHeatmap({
   const chartData = selectedAccount?.children?.length
     ? selectedAccount.children
     : topLevelChartData;
-  const currentDetail = activeNode ?? selectedAccount ?? accounts[0] ?? null;
+  const currentDetail = privacyMode ? null : (activeNode ?? selectedAccount ?? accounts[0] ?? null);
   const unpricedCount = accounts.reduce((sum, account) => sum + (account.unpricedCount ?? 0), 0);
 
   const handleNodeClick = (node: TreemapNode) => {
@@ -385,7 +425,7 @@ export function PortfolioHeatmap({
     currentDetail ? (
       <div
         className={cn(
-          "grid min-h-11 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border px-2.5 py-2",
+          "grid min-h-11 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border px-2.5 py-2 shadow-sm shadow-foreground/5",
           className,
         )}
         style={{
@@ -409,21 +449,50 @@ export function PortfolioHeatmap({
       </div>
     ) : null;
 
+  const renderPrivacyPanel = (className?: string) => (
+    <div
+      className={cn(
+        "flex min-h-28 flex-col justify-center rounded-xl border border-border/60 bg-muted/10 p-3 text-sm",
+        className,
+      )}
+    >
+      <div className="flex items-start gap-2">
+        <span className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <EyeOff className="size-3.5" aria-hidden />
+        </span>
+        <span className="min-w-0 space-y-1">
+          <span className="block font-medium text-foreground">{t("heatmapPrivacyMode")}</span>
+          <span className="block text-xs leading-5 text-muted-foreground">
+            {t("heatmapPrivacyDescription")}
+          </span>
+        </span>
+      </div>
+    </div>
+  );
+
   return (
     <Card size={isCompact ? "sm" : "default"} style={heatmapStyle}>
       <CardHeader className="pb-0">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <CardTitle>{t("heatmapTitle")}</CardTitle>
             <CardDescription>{t("heatmapSubtitle")}</CardDescription>
           </div>
-          <div className="w-fit max-w-full shrink-0 rounded-lg border border-border/60 bg-background/60 px-2.5 py-1.5 text-xs text-muted-foreground">
-            <span className="font-medium">{t("heatmapTotalAssetsLabel")}</span>{" "}
-            <span className="tabular-nums text-foreground">
-              {privacyMode
-                ? HIDDEN
-                : formatCurrency(summary.totalAssets, summary.baseCurrency, true)}
-            </span>
+          <div className="flex w-full max-w-full shrink-0 flex-col gap-2 sm:w-auto sm:items-end">
+            <div className="w-full rounded-lg border border-border/60 bg-background/60 px-2.5 py-1.5 text-xs text-muted-foreground sm:w-fit">
+              <span className="font-medium">{t("heatmapTotalAssetsLabel")}</span>{" "}
+              <span className="tabular-nums text-foreground">
+                {privacyMode
+                  ? HIDDEN
+                  : formatCurrency(summary.totalAssets, summary.baseCurrency, true)}
+              </span>
+            </div>
+            {unpricedCount > 0 && !privacyMode && (
+              <div className="inline-flex w-full max-w-full items-start gap-1.5 rounded-lg border border-warning/25 bg-warning/10 px-2.5 py-1.5 text-xs text-warning sm:w-fit sm:max-w-[18rem]">
+                <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                <span>{t("heatmapUnpricedNote", { count: unpricedCount })}</span>
+              </div>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -434,44 +503,68 @@ export function PortfolioHeatmap({
           </div>
         ) : (
           <>
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
               <div className={cn("min-w-0", fillHeight && "lg:flex lg:flex-col")}>
                 <div className="mb-2 flex min-h-8 items-center gap-2 overflow-hidden">
-                  {selectedAccount && (
-                    <button
-                      type="button"
-                      onClick={clearSelection}
-                      aria-label={t("heatmapBackLabel", { account: selectedAccount.name })}
-                      className="inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-lg border border-border/70 bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:min-h-8 lg:px-2"
-                    >
-                      <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
-                      <span className="truncate">{selectedAccount.name}</span>
-                    </button>
+                  {!privacyMode && selectedAccount && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={clearSelection}
+                        aria-label={t("heatmapBackLabel", { account: selectedAccount.name })}
+                        className="inline-flex min-h-11 max-w-full shrink-0 items-center gap-1.5 rounded-lg border border-border/70 bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:min-h-8 lg:px-2"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+                        <span className="truncate">{t("heatmapBackToAccounts")}</span>
+                      </button>
+                      <p className="min-w-0 truncate text-xs font-medium text-muted-foreground">
+                        {t("heatmapHoldingsMode", { account: selectedAccount.name })}
+                      </p>
+                    </>
                   )}
-                  {!selectedAccount && (
+                  {privacyMode && (
                     <p className="text-xs font-medium text-muted-foreground">
-                      {t("heatmapPortfolioShare")}
+                      {t("heatmapPrivacyMode")}
+                    </p>
+                  )}
+                  {!privacyMode && !selectedAccount && (
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {t("heatmapAccountAllocation")}
                     </p>
                   )}
                 </div>
-                {selectedAccount ? renderMobileDetailStrip("mb-3 sm:hidden") : null}
+                {!privacyMode && renderMobileDetailStrip("mb-3 sm:hidden")}
                 <div
                   ref={chartRef}
                   className={cn(
-                    "relative min-h-[190px] overflow-hidden bg-[color-mix(in_oklch,var(--muted)_24%,var(--card))] ring-1 ring-border/60 transition-[filter] duration-300 sm:min-h-[240px]",
+                    "relative min-h-[168px] overflow-hidden bg-[color-mix(in_oklch,var(--muted)_24%,var(--card))] ring-1 ring-border/60 sm:min-h-[240px]",
                     fillHeight ? "lg:flex-1" : "lg:min-h-0",
-                    privacyMode && "blur-sm pointer-events-none select-none",
                   )}
                   style={fillHeight ? { minHeight: baseChartHeight } : undefined}
-                  role={privacyMode ? undefined : "img"}
-                  aria-label={privacyMode ? undefined : chartLabel}
+                  role={privacyMode ? "status" : "img"}
+                  aria-label={privacyMode ? t("heatmapPrivacyTitle") : chartLabel}
                   aria-describedby={privacyMode ? undefined : chartSummaryId}
-                  aria-hidden={privacyMode || undefined}
                 >
-                  <p id={chartSummaryId} className="sr-only">
-                    {chartSummary}
-                  </p>
-                  {chartWidth > 0 && (
+                  {!privacyMode && (
+                    <p id={chartSummaryId} className="sr-only">
+                      {chartSummary}
+                    </p>
+                  )}
+                  {privacyMode ? (
+                    <>
+                      <PrivacyHeatmapPlaceholder />
+                      <div className="absolute inset-0 flex items-center justify-center p-4 text-center">
+                        <div className="max-w-[18rem] rounded-lg border border-border/60 bg-card/90 px-3 py-2 shadow-sm">
+                          <p className="text-sm font-medium text-foreground">
+                            {t("heatmapPrivacyTitle")}
+                          </p>
+                          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                            {t("heatmapPrivacyDescription")}
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  ) : chartWidth > 0 ? (
                     <Treemap
                       width={chartWidth}
                       height={chartHeight}
@@ -480,7 +573,11 @@ export function PortfolioHeatmap({
                       nameKey="name"
                       type="flat"
                       content={(props) => (
-                        <HeatmapTile {...props} activeNodeId={activeNode?.id ?? null} />
+                        <HeatmapTile
+                          {...props}
+                          activeNodeId={activeNode?.id ?? null}
+                          compactLabels={isPhone}
+                        />
                       )}
                       isAnimationActive={shouldReduceMotion ? false : "auto"}
                       isUpdateAnimationActive={shouldReduceMotion ? false : "auto"}
@@ -489,15 +586,19 @@ export function PortfolioHeatmap({
                       onMouseEnter={(node) => setActiveNode(node as RenderNode)}
                       onClick={handleNodeClick}
                     />
-                  )}
+                  ) : null}
                 </div>
               </div>
 
               <div className="min-w-0 space-y-3">
-                {renderDetailCard("hidden sm:block")}
+                {privacyMode
+                  ? renderPrivacyPanel("hidden sm:flex")
+                  : renderDetailCard("hidden sm:block")}
 
-                {selectedAccount?.children && selectedAccount.children.length > 0 ? (
-                  <div className="max-h-[22rem] space-y-1 overflow-y-auto rounded-xl border border-border/60 bg-muted/10 p-1 sm:max-h-[18rem] lg:max-h-[23rem]">
+                {!privacyMode &&
+                selectedAccount?.children &&
+                selectedAccount.children.length > 0 ? (
+                  <div className="max-h-[15rem] space-y-1 overflow-y-auto rounded-xl border border-border/60 bg-muted/10 p-1 sm:max-h-[18rem] lg:max-h-[23rem]">
                     {selectedAccount.children.map((child) => (
                       <button
                         key={child.id}
@@ -543,64 +644,73 @@ export function PortfolioHeatmap({
                       </button>
                     ))}
                   </div>
-                ) : (
-                  <div className="flex snap-x gap-2 overflow-x-auto pb-1 pr-1 sm:grid sm:max-h-[18rem] sm:grid-cols-2 sm:gap-1.5 sm:overflow-x-visible sm:overflow-y-auto lg:block lg:max-h-[23rem] lg:space-y-1.5">
-                    {accounts.map((account) => (
-                      <button
-                        key={account.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedAccountId(account.id);
-                          setActiveNode(account);
-                        }}
-                        onFocus={() => setActiveNode(account)}
-                        onMouseEnter={() => setActiveNode(account)}
-                        aria-pressed={selectedAccountId === account.id}
-                        className={cn(
-                          "grid min-h-11 w-40 shrink-0 snap-start grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-full md:min-h-10",
-                          activeNode?.id === account.id || selectedAccountId === account.id
-                            ? "border-[color:var(--heatmap-active-border)] bg-[color:var(--heatmap-active-bg)]"
-                            : "border-transparent hover:bg-muted/60",
-                        )}
-                        style={
-                          {
-                            "--heatmap-active-bg": tintFill(account.color, 12),
-                            "--heatmap-active-border": borderTint(account.color, 34),
-                          } as CSSProperties
-                        }
-                      >
-                        <span
-                          className="h-2.5 w-2.5 shrink-0 rounded-[3px] ring-1 ring-foreground/10"
-                          style={{ backgroundColor: tileFill(account.color, false, account.tone) }}
-                        />
-                        <span className="min-w-0">
-                          <span className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2 lg:flex-col lg:items-stretch xl:flex-row xl:items-baseline">
-                            <span className="block truncate text-sm font-medium">
-                              {account.name}
+                ) : !privacyMode ? (
+                  <div className="relative sm:contents">
+                    <div
+                      className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 pr-2 overscroll-x-contain scrollbar-none sm:mx-0 sm:grid sm:max-h-[18rem] sm:grid-cols-2 sm:gap-1.5 sm:overflow-x-visible sm:overflow-y-auto sm:px-0 lg:block lg:max-h-[23rem] lg:space-y-1.5"
+                      style={
+                        isPhone
+                          ? ({
+                              WebkitMaskImage:
+                                "linear-gradient(to right, black calc(100% - 2rem), transparent)",
+                              maskImage:
+                                "linear-gradient(to right, black calc(100% - 2rem), transparent)",
+                            } as CSSProperties)
+                          : undefined
+                      }
+                    >
+                      {accounts.map((account) => (
+                        <button
+                          key={account.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedAccountId(account.id);
+                            setActiveNode(account);
+                          }}
+                          onFocus={() => setActiveNode(account)}
+                          onMouseEnter={() => setActiveNode(account)}
+                          aria-pressed={selectedAccountId === account.id}
+                          className={cn(
+                            "grid min-h-11 w-40 shrink-0 snap-start grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-full md:min-h-10",
+                            activeNode?.id === account.id || selectedAccountId === account.id
+                              ? "border-[color:var(--heatmap-active-border)] bg-[color:var(--heatmap-active-bg)]"
+                              : "border-transparent hover:bg-muted/60",
+                          )}
+                          style={
+                            {
+                              "--heatmap-active-bg": tintFill(account.color, 12),
+                              "--heatmap-active-border": borderTint(account.color, 34),
+                            } as CSSProperties
+                          }
+                        >
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-[3px] ring-1 ring-foreground/10"
+                            style={{
+                              backgroundColor: tileFill(account.color, false, account.tone),
+                            }}
+                          />
+                          <span className="min-w-0">
+                            <span className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2 lg:flex-col lg:items-stretch xl:flex-row xl:items-baseline">
+                              <span className="block truncate text-sm font-medium">
+                                {account.name}
+                              </span>
+                              <span className="shrink-0 truncate text-xs font-medium tabular-nums sm:max-w-[46%] sm:text-right lg:max-w-none lg:text-left xl:max-w-[46%] xl:text-right">
+                                {privacyMode
+                                  ? HIDDEN
+                                  : formatCurrency(account.value, summary.baseCurrency, true)}
+                              </span>
                             </span>
-                            <span className="shrink-0 truncate text-xs font-medium tabular-nums sm:max-w-[46%] sm:text-right lg:max-w-none lg:text-left xl:max-w-[46%] xl:text-right">
-                              {privacyMode
-                                ? HIDDEN
-                                : formatCurrency(account.value, summary.baseCurrency, true)}
+                            <span className="block text-xs text-muted-foreground tabular-nums">
+                              {privacyMode ? HIDDEN : formatPercent(account.portfolioShare)}
                             </span>
                           </span>
-                          <span className="block text-xs text-muted-foreground tabular-nums">
-                            {privacyMode ? HIDDEN : formatPercent(account.portfolioShare)}
-                          </span>
-                        </span>
-                      </button>
-                    ))}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
-
-            {unpricedCount > 0 && !privacyMode && (
-              <p className="flex items-center gap-1.5 text-xs text-warning">
-                <TriangleAlert className="size-3.5 shrink-0" aria-hidden />
-                {t("heatmapUnpricedNote", { count: unpricedCount })}
-              </p>
-            )}
           </>
         )}
       </CardContent>
