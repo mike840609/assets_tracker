@@ -16,6 +16,7 @@ import { HistoryHeatmap } from "@/components/history/history-heatmap";
 import { computeGoalsWithProgress } from "@/lib/services/goal-service";
 import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
 import { GoalsMilestoneCard } from "@/components/dashboard/goals-milestone-card";
+import { ProjectionEntryCard } from "@/components/dashboard/projection-entry-card";
 import { PortfolioHeatmap } from "@/components/analysis/portfolio-heatmap";
 import Link from "next/link";
 import { ArrowRight, History } from "lucide-react";
@@ -220,7 +221,10 @@ async function GoalsMilestoneSection({
   baseCurrency: string;
 }) {
   const goalsWithProgress = await computeGoalsWithProgress(userId, baseCurrency);
-  if (goalsWithProgress.length === 0) return null;
+  // No goals: the planning rail would otherwise be empty and Projections (a
+  // sub-tab of /goals) would have no dashboard scent. Surface a projection entry
+  // instead so the feature stays discoverable for goal-less users.
+  if (goalsWithProgress.length === 0) return <ProjectionEntryCard />;
 
   // Prefer soonest deadline; fall back to highest progress
   const active = goalsWithProgress.filter((g) => !g.isCompleted);

@@ -237,7 +237,9 @@
     "viewAll": "查看全部（{count}）",
     "allCompleted": "所有目標已達成！",
     "due": "到期：{date}",
-    "viewProjection": "查看財務預測"
+    "viewProjection": "查看財務預測",
+    "projectionTitle": "財務預測",
+    "projectionHint": "估算您何時能達到財務獨立。"
   },
   "analysis": {
     "title": "分析",

@@ -237,7 +237,9 @@
     "viewAll": "View all ({count})",
     "allCompleted": "All goals completed!",
     "due": "Due {date}",
-    "viewProjection": "View projections"
+    "viewProjection": "View projections",
+    "projectionTitle": "Projections",
+    "projectionHint": "Estimate when you'll reach financial independence."
   },
   "analysis": {
     "title": "Analysis",
