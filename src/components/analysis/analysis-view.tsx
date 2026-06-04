@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { motion, useReducedMotion } from "framer-motion";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
@@ -214,7 +214,28 @@ export function AnalysisView({
   const hasData = snapshots.length > 0;
   const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
 
-  const [activeTab, setActiveTab] = useState<"analysis" | "history">("analysis");
+  // Deep link: the dashboard's "View full history" link points at /analysis#history
+  // so the History sub-view opens directly. useSyncExternalStore reads the hash with
+  // a server snapshot of "" so SSR and hydration agree (no mismatch), then the client
+  // settles on the real hash. A manual tab switch sets `override`, which wins and
+  // rewrites the hash so the URL stays shareable and Back is predictable.
+  const hash = useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener("hashchange", onChange);
+      return () => window.removeEventListener("hashchange", onChange);
+    },
+    () => window.location.hash,
+    () => "",
+  );
+  const [override, setOverride] = useState<"analysis" | "history" | null>(null);
+  const activeTab: "analysis" | "history" =
+    override ?? (hash === "#history" ? "history" : "analysis");
+
+  const handleTabChange = (tab: "analysis" | "history") => {
+    setOverride(tab);
+    const base = window.location.pathname + window.location.search;
+    window.history.replaceState(null, "", tab === "history" ? `${base}#history` : base);
+  };
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [isStuck, setIsStuck] = useState(false);
@@ -235,7 +256,7 @@ export function AnalysisView({
         variant="underline"
         options={tabOptions}
         value={activeTab}
-        onValueChange={setActiveTab}
+        onValueChange={handleTabChange}
         className="md:hidden"
         aria-label={tNav("analysis")}
       />

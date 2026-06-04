@@ -27,7 +27,7 @@
     "togglePrivacy": "Toggle privacy mode",
     "refreshPrices": "Refresh prices",
     "createNew": "New account or holding (Accounts page only)",
-    "addItem": "Add item / holding (Accounts page only)",
+    "addItem": "Add holding (Accounts page only)",
     "signOut": "Sign Out",
     "searchHint": "Search..."
   },
@@ -175,7 +175,8 @@
     "title": "Dashboard",
     "emptyTitle": "Welcome to Assets Tracker",
     "emptyDescription": "Start by adding your first account — a bank account, brokerage, crypto wallet, or anything else you want to track.",
-    "emptyAction": "Add your first account"
+    "emptyAction": "Add your first account",
+    "viewFullHistory": "View full history"
   },
   "accounts": {
     "title": "Accounts"
@@ -235,7 +236,8 @@
     "title": "Goals",
     "viewAll": "View all ({count})",
     "allCompleted": "All goals completed!",
-    "due": "Due {date}"
+    "due": "Due {date}",
+    "viewProjection": "View projections"
   },
   "analysis": {
     "title": "Analysis",
@@ -434,11 +436,11 @@
   },
   "freshness": {
     "pricesUpdated": "Prices updated {age}",
-    "pricesUpdatedMobile": "{age}",
+    "pricesUpdatedMobile": "Prices {age}",
     "ratesUpdated": "Rates updated {age}",
-    "ratesUpdatedMobile": "{age}",
+    "ratesUpdatedMobile": "Rates {age}",
     "snapshot": "Snapshot {age}",
-    "snapshotMobile": "{age}",
+    "snapshotMobile": "Snapshot {age}",
     "snapshotHint": "A new snapshot is captured automatically each day.",
     "noData": "No data yet",
     "refreshing": "Refreshing..."
@@ -473,7 +475,7 @@
     "total": "Total"
   },
   "accountsList": {
-    "addItem": "Add Item",
+    "addItem": "Add Holding",
     "addAccount": "Add Account",
     "manageOrder": "Manage Order",
     "manageOrderHint": "Drag accounts to reorder. Pinned accounts always stay above unpinned ones.",

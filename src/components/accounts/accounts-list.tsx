@@ -460,7 +460,7 @@ export function AccountsList({
                   onClick={() => setShowQuickAdd(true)}
                 >
                   <Plus className="h-4 w-4 mr-1.5" />
-                  {t("accountsList.addItem", { defaultValue: "Add Item" })}
+                  {t("accountsList.addItem", { defaultValue: "Add Holding" })}
                 </Button>
                 <Button
                   variant="outline"
@@ -625,7 +625,7 @@ export function AccountsList({
                       onClick={() => setShowQuickAdd(true)}
                     >
                       <Plus className="h-4 w-4 mr-1.5" />
-                      {t("accountsList.addItem", { defaultValue: "Add Item" })}
+                      {t("accountsList.addItem", { defaultValue: "Add Holding" })}
                     </Button>
                     <Button
                       variant="outline"

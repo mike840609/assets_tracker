@@ -18,6 +18,7 @@ import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
 import { GoalsMilestoneCard } from "@/components/dashboard/goals-milestone-card";
 import { PortfolioHeatmap } from "@/components/analysis/portfolio-heatmap";
 import Link from "next/link";
+import { ArrowRight, History } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -307,7 +308,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
       <div className="flex flex-col items-center justify-center py-12 md:py-24 gap-4 md:gap-6 text-center animate-in fade-in zoom-in-95 motion-normal">
         <div className="rounded-full bg-primary/10 p-8 shadow-sm">
           <svg
-            className="h-12 w-12 text-primary animate-bounce-slow"
+            className="h-12 w-12 text-primary float-soft"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
@@ -335,6 +336,8 @@ export async function DashboardContent({ userId }: { userId: string }) {
     );
   }
 
+  const t = await getTranslations("dashboard");
+
   return (
     <>
       {/* Actions stream first — lightweight metadata, no summary needed */}
@@ -354,7 +357,24 @@ export async function DashboardContent({ userId }: { userId: string }) {
             <TrendChartSection
               baseCurrency={baseCurrency}
               snapshots={snapshots}
-              footer={<HistoryHeatmap snapshots={snapshots} baseCurrency={baseCurrency} />}
+              footer={
+                <>
+                  <HistoryHeatmap snapshots={snapshots} baseCurrency={baseCurrency} />
+                  {/* Mobile-only entry point — History is a sub-tab of /analysis, so
+                      the tab bar gives it no scent. The trend chart is the preview;
+                      this names the destination. Desktop uses the sidebar route. */}
+                  <Link
+                    href="/analysis#history"
+                    className="md:hidden mt-3 flex items-center justify-between gap-2 rounded-sm border-t border-border/40 pt-3 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <History className="h-3.5 w-3.5" aria-hidden="true" />
+                      {t("viewFullHistory")}
+                    </span>
+                    <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                  </Link>
+                </>
+              }
             />
           </Suspense>
         </div>

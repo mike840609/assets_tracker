@@ -6,7 +6,7 @@ import { useReducedMotion } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currencies";
-import { Target, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Target, ArrowRight, CheckCircle2, TrendingUp } from "lucide-react";
 import type { GoalWithProgress } from "@/lib/types";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 
@@ -108,6 +108,20 @@ export function GoalsMilestoneCard({
             )}
           </div>
         )}
+
+        {/* Mobile-only entry point — Projections is a sub-tab of /goals, so the
+            tab bar gives it no scent. Surface it here, where Goals already lives
+            on the dashboard. Desktop reaches Projections via the sidebar. */}
+        <Link
+          href="/goals#projections"
+          className="md:hidden mt-3 flex items-center justify-between gap-2 rounded-sm border-t border-border/40 pt-3 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <span className="flex items-center gap-1.5">
+            <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+            {t("viewProjection")}
+          </span>
+          <ArrowRight className="h-3 w-3" aria-hidden="true" />
+        </Link>
       </CardContent>
     </Card>
   );
