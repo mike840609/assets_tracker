@@ -100,6 +100,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
         <CardTitle className="text-base font-medium text-foreground">
           {t("monthlyChange")}
         </CardTitle>
+        <p className="text-xs text-muted-foreground">{t("monthlyChangeSubtitle")}</p>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col px-2 pb-4 sm:px-4">
         {data.length === 0 ? (
@@ -109,7 +110,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
         ) : (
           <div
             role="img"
-            aria-label={t("monthlyChange")}
+            aria-label={`${t("monthlyChange")}, ${t("monthlyChangeSubtitle")}`}
             aria-hidden={privacyMode || undefined}
             className={`relative min-h-0 flex-1 transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
             style={{ minHeight: chartHeight }}
