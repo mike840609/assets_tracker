@@ -255,6 +255,7 @@
     "smallestLoss": "Smallest Loss",
     "avgMonthly": "Avg. Monthly Change",
     "ytdGrowth": "Year to date",
+    "ytdFixedSection": "Fixed YTD baseline",
     "ytdFixedHint": "Latest snapshot vs. year-start baseline",
     "selectedRangeMetrics": "Selected range: {range}",
     "seriesAssets": "Assets",

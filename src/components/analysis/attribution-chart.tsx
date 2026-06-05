@@ -135,6 +135,24 @@ export function AttributionChart({ items, baseCurrency }: Props) {
             }`}
             style={{ minHeight: chartHeight }}
           >
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ background: "var(--chart-2)" }}
+                />
+                {t("attrCash")}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ background: "var(--gain)" }}
+                />
+                {t("attrMarket")}
+              </span>
+            </div>
             <div
               role="img"
               aria-label={`${t("attribution")}, ${t("attributionSubtitle")}`}
@@ -181,15 +199,34 @@ export function AttributionChart({ items, baseCurrency }: Props) {
                     }
                   />
                   <Bar
-                    dataKey="totalDelta"
+                    dataKey="cashContribution"
+                    name={t("attrCash")}
+                    stackId="split"
+                    radius={[0, 0, 0, 0]}
+                    isAnimationActive={isAnimationActive}
+                    onAnimationEnd={onAnimationEnd}
+                  >
+                    {chartData.map((item) => (
+                      <Cell
+                        key={`cash-${item.accountId}`}
+                        fill="var(--chart-2)"
+                        opacity={Math.abs(item.cashContribution) > 0 ? 0.85 : 0.25}
+                      />
+                    ))}
+                  </Bar>
+                  <Bar
+                    dataKey="marketPerformance"
+                    name={t("attrMarket")}
+                    stackId="split"
                     radius={[0, 4, 4, 0]}
                     isAnimationActive={isAnimationActive}
                     onAnimationEnd={onAnimationEnd}
                   >
                     {chartData.map((item) => (
                       <Cell
-                        key={item.accountId}
-                        fill={item.totalDelta >= 0 ? "var(--gain)" : "var(--loss)"}
+                        key={`market-${item.accountId}`}
+                        fill={item.marketPerformance >= 0 ? "var(--gain)" : "var(--loss)"}
+                        opacity={Math.abs(item.marketPerformance) > 0 ? 1 : 0.25}
                       />
                     ))}
                   </Bar>

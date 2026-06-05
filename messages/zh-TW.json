@@ -255,6 +255,7 @@
     "smallestLoss": "最小跌幅",
     "avgMonthly": "月平均變化",
     "ytdGrowth": "年初至今",
+    "ytdFixedSection": "固定年初至今基準",
     "ytdFixedHint": "最新快照相對年初基準",
     "selectedRangeMetrics": "所選期間：{range}",
     "seriesAssets": "資產",

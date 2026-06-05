@@ -302,7 +302,7 @@ export function AnalysisView({
             {/* Balance-sheet trend leads the analysis; KPI context stays as the info rail. */}
             <section aria-label={t("assetsVsLiabilities")} className="min-w-0">
               <Card size="sm" className="h-full !py-0">
-                <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-stretch 2xl:grid-cols-[minmax(0,1fr)_18rem]">
+                <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-stretch 2xl:grid-cols-[minmax(0,1fr)_22rem]">
                   <div className="min-w-0 py-4 group-data-[size=sm]/card:py-3">
                     <LazyAssetsLiabilitiesChart
                       buckets={buckets}

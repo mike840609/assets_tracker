@@ -6,6 +6,7 @@ import { formatCurrency } from "@/lib/currencies";
 import { useCountUp } from "@/hooks/use-count-up";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
+import { cn } from "@/lib/utils";
 import type { AnalysisKpis } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 
@@ -48,6 +49,56 @@ function DirectionCaret({ tone, className }: { tone: Tone; className?: string })
   return null;
 }
 
+function MoneyValue({
+  amount,
+  currency,
+  privacyMode,
+  tone,
+  isCompact,
+  emphasis = "supporting",
+  align = "left",
+}: {
+  amount: number | null;
+  currency: string;
+  privacyMode: boolean;
+  tone: Tone;
+  isCompact: boolean;
+  emphasis?: "lead" | "supporting";
+  align?: "left" | "right";
+}) {
+  const isLead = emphasis === "lead";
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 max-w-full items-start gap-1.5 font-semibold tabular-nums",
+        align === "right" && "justify-end text-right",
+        isLead
+          ? isCompact
+            ? "text-xl"
+            : "text-xl sm:text-2xl"
+          : isCompact
+            ? "text-xs"
+            : "text-sm",
+        tone === "negative" ? "text-[var(--loss)]" : "text-foreground",
+      )}
+    >
+      <DirectionCaret
+        tone={tone}
+        className={isLead ? (isCompact ? "size-4" : "size-5") : "size-4"}
+      />
+      <span className="min-w-0 max-w-full leading-tight break-words [overflow-wrap:anywhere]">
+        {privacyMode ? (
+          "***"
+        ) : amount === null ? (
+          "—"
+        ) : (
+          <CountUpMoney amount={amount} currency={currency} />
+        )}
+      </span>
+    </div>
+  );
+}
+
 /**
  * Lead metric. Full-width band that anchors the strip: the value reads large on
  * the left, its rate sits as a pill on the right. This is the focal point the
@@ -82,13 +133,11 @@ function LeadMetric({
     <div className="min-w-0 space-y-1.5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+          <div className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-foreground">
             <CalendarDays className="size-3.5 shrink-0" aria-hidden />
-            <span className="truncate">{title}</span>
+            <span>{title}</span>
           </div>
-          <div className="mt-0.5 truncate text-[10px] leading-tight text-muted-foreground/80">
-            {helper}
-          </div>
+          <div className="mt-0.5 text-[11px] leading-tight text-muted-foreground">{helper}</div>
         </div>
         {!privacyMode && pct && (
           <span
@@ -98,24 +147,14 @@ function LeadMetric({
           </span>
         )}
       </div>
-      <div className="overflow-x-auto scrollbar-none">
-        <div
-          className={`flex items-center gap-1.5 font-semibold tracking-tight tabular-nums whitespace-nowrap ${
-            isCompact ? "text-xl" : "text-xl sm:text-2xl"
-          } ${tone === "negative" ? "text-[var(--loss)]" : "text-foreground"}`}
-        >
-          <DirectionCaret tone={tone} className={isCompact ? "size-4" : "size-5"} />
-          <span>
-            {privacyMode ? (
-              "***"
-            ) : amount === null ? (
-              "—"
-            ) : (
-              <CountUpMoney amount={amount} currency={currency} />
-            )}
-          </span>
-        </div>
-      </div>
+      <MoneyValue
+        amount={amount}
+        currency={currency}
+        privacyMode={privacyMode}
+        tone={tone}
+        isCompact={isCompact}
+        emphasis="lead"
+      />
     </div>
   );
 }
@@ -143,37 +182,27 @@ function MetricRow({
 }) {
   return (
     <div
-      className={`grid min-w-0 grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-start gap-3 border-t border-border/60 ${
+      className={`grid min-w-0 grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] items-start gap-3 border-t border-border/60 ${
         isCompact ? "py-1.5" : "py-2"
       }`}
     >
       <div className="min-w-0">
-        <div className="truncate text-xs font-medium text-muted-foreground/90">{title}</div>
+        <div className="text-xs font-medium leading-tight text-muted-foreground/90">{title}</div>
         {subtitle && (
-          <div className="mt-0.5 truncate text-[11px] leading-tight tabular-nums text-muted-foreground">
+          <div className="mt-0.5 text-[11px] leading-tight tabular-nums text-muted-foreground">
             {subtitle}
           </div>
         )}
       </div>
       <div className="min-w-0 text-right">
-        <div className="overflow-x-auto scrollbar-none">
-          <div
-            className={`flex items-center justify-end gap-1 font-semibold tracking-tight tabular-nums whitespace-nowrap ${
-              isCompact ? "text-xs" : "text-sm"
-            } ${tone === "negative" ? "text-[var(--loss)]" : "text-foreground"}`}
-          >
-            <DirectionCaret tone={tone} className="size-4" />
-            <span>
-              {privacyMode ? (
-                "***"
-              ) : amount === null ? (
-                "—"
-              ) : (
-                <CountUpMoney amount={amount} currency={currency} />
-              )}
-            </span>
-          </div>
-        </div>
+        <MoneyValue
+          amount={amount}
+          currency={currency}
+          privacyMode={privacyMode}
+          tone={tone}
+          isCompact={isCompact}
+          align="right"
+        />
       </div>
     </div>
   );
@@ -205,23 +234,33 @@ export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel }: Props) {
       : `${kpis.ytdPct >= 0 ? "+" : ""}${kpis.ytdPct.toFixed(1)}%`;
 
   return (
-    <div className={isCompact ? "min-w-0 space-y-2.5" : "min-w-0 space-y-3"}>
-      {/* Lead: the year headline. Fixed to YTD regardless of the range selector,
-          so it stays the stable answer to "how's the year going". */}
-      <LeadMetric
-        title={t("ytdGrowth")}
-        helper={t("ytdFixedHint")}
-        amount={kpis.ytdDelta}
-        pct={ytdPct}
-        currency={baseCurrency}
-        privacyMode={privacyMode}
-        isCompact={isCompact}
-      />
+    <div className={isCompact ? "min-w-0 space-y-3" : "min-w-0 space-y-3.5"}>
+      <section className="min-w-0" aria-label={t("ytdFixedSection")}>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="text-[11px] font-semibold text-muted-foreground">
+            {t("ytdFixedSection")}
+          </div>
+          <div className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+            {t("rangeYTD")}
+          </div>
+        </div>
+        {/* Fixed regardless of the range selector, so it stays the stable answer to "how's the year going". */}
+        <LeadMetric
+          title={t("ytdGrowth")}
+          helper={t("ytdFixedHint")}
+          amount={kpis.ytdDelta}
+          pct={ytdPct}
+          currency={baseCurrency}
+          privacyMode={privacyMode}
+          isCompact={isCompact}
+        />
+      </section>
 
-      {/* Supporting cluster: the monthly-change distribution over the selected
-          range (the range chips drive these three, not the YTD lead). */}
-      <div className="min-w-0">
-        <div className="truncate text-xs font-medium text-muted-foreground">
+      <section
+        className="min-w-0 border-t border-border/70 pt-3"
+        aria-label={t("selectedRangeMetrics", { range: rangeLabel })}
+      >
+        <div className="text-xs font-semibold text-foreground">
           {t("selectedRangeMetrics", { range: rangeLabel })}
         </div>
         <MetricRow
@@ -252,7 +291,7 @@ export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel }: Props) {
           }
           isCompact={isCompact}
         />
-      </div>
+      </section>
     </div>
   );
 }
