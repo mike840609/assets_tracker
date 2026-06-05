@@ -15,7 +15,7 @@ import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartEmptyState } from "./chart-empty-state";
 import { formatCurrency } from "@/lib/currencies";
-import { formatChartTick } from "@/lib/chart-formatters";
+import { formatChartTick, getMonthTickInterval } from "@/lib/chart-formatters";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
@@ -35,6 +35,7 @@ const CATEGORY_COLORS = [
   "var(--chart-8)",
   "var(--chart-9)",
 ];
+const MAX_VISIBLE_CATEGORIES = 5;
 
 interface Props {
   data: CategoryDataPoint[];
@@ -83,7 +84,7 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
   const tCat = useTranslations("categories");
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
-  const chartHeight = density === "compact" ? 240 : 280;
+  const chartHeight = density === "compact" ? 180 : 200;
   const [mounted, setMounted] = useState(false);
   const { handlers: crosshairHandlers } = useChartCrosshair();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
@@ -96,14 +97,25 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
     ),
   );
 
+  const rankedCategories = categories
+    .map((cat) => {
+      const latest = Number(data.at(-1)?.[cat] ?? 0);
+      const peak = Math.max(...data.map((d) => Number(d[cat] ?? 0)));
+      return { cat, latest, peak };
+    })
+    .sort((a, b) => b.latest - a.latest || b.peak - a.peak);
+  const visibleCategories = rankedCategories.slice(0, MAX_VISIBLE_CATEGORIES).map(({ cat }) => cat);
+  const hiddenCategoryCount = Math.max(0, categories.length - visibleCategories.length);
   const chartData = data.map((d) => ({
-    ...d,
+    monthKey: d.monthKey,
     label: formatMonthLabel(d.monthKey as string, locale),
+    ...Object.fromEntries(visibleCategories.map((cat) => [cat, Number(d[cat] ?? 0)])),
   }));
+  const xAxisInterval = getMonthTickInterval(chartData.length, density === "compact" ? 5 : 6);
 
   // Compose aria-label: title + subtitle + visible category list, so AT users
   // get the series enumeration that role="img" hides from the inline Legend.
-  const categoryNames = categories
+  const categoryNames = visibleCategories
     .map((cat) => tCat(cat as Parameters<typeof tCat>[0], { defaultValue: cat }))
     .join(", ");
   const ariaLabel =
@@ -117,39 +129,48 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
         <CardTitle className="text-base font-medium text-foreground">
           {t("categoryTrend")}
         </CardTitle>
-        <p className="text-xs text-muted-foreground">{t("categoryTrendSubtitle")}</p>
+        <p className="text-xs text-muted-foreground">
+          {hiddenCategoryCount > 0
+            ? t("categoryTrendSubtitleLimited", {
+                count: visibleCategories.length,
+                total: categories.length,
+              })
+            : t("categoryTrendSubtitle")}
+        </p>
       </CardHeader>
-      <CardContent className="px-2 sm:px-4 pb-4">
-        {categories.length === 0 ? (
+      <CardContent className="flex flex-1 flex-col px-2 pb-4 sm:px-4">
+        {visibleCategories.length === 0 ? (
           <ChartEmptyState message={t("noData")} hint={t("emptyHint")} />
         ) : !mounted ? (
-          <div style={{ height: chartHeight }} />
+          <div className="min-h-0 flex-1" style={{ minHeight: chartHeight }} />
         ) : (
           <div
             role="img"
             aria-label={ariaLabel}
             aria-hidden={privacyMode || undefined}
-            className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+            className={`relative min-h-0 flex-1 transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+            style={{ minHeight: chartHeight }}
           >
             <ResponsiveContainer
               width="100%"
-              height={chartHeight}
+              height="100%"
               minWidth={0}
               initialDimension={{ width: 1, height: chartHeight }}
             >
               <LineChart
                 data={chartData}
-                margin={{ top: 10, right: 4, left: 0, bottom: 20 }}
+                margin={{ top: 8, right: 4, left: 0, bottom: 12 }}
                 {...crosshairHandlers}
               >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="label"
+                  interval={xAxisInterval}
                   padding={{ left: 16, right: 16 }}
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 11 }}
                   angle={-45}
                   textAnchor="end"
-                  height={60}
+                  height={48}
                 />
                 <YAxis
                   width={50}
@@ -170,7 +191,7 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
                     width: "100%",
                   }}
                 />
-                {categories.map((cat, idx) => (
+                {visibleCategories.map((cat, idx) => (
                   <Line
                     key={cat}
                     type="monotone"

@@ -32,9 +32,9 @@ export default function AnalysisLoading() {
         </div>
 
         {/* Sticky freshness + range selector */}
-        <div className="sticky top-[env(safe-area-inset-top)] md:top-0 z-40 flex items-center justify-between gap-2 py-2">
+        <div className="sticky top-[env(safe-area-inset-top)] md:top-0 z-40 flex items-center justify-between gap-2 py-2 md:-mx-2 md:px-2">
           <Skeleton className="h-5 w-24 rounded-full" />
-          <div className="inline-flex gap-1 rounded-full p-1">
+          <div className="inline-flex gap-1 rounded-full p-1 ring-1 ring-border/50">
             {[...Array(5)].map((_, i) => (
               <Skeleton key={i} className="h-8 w-10 sm:h-6 sm:w-9" />
             ))}
@@ -42,30 +42,59 @@ export default function AnalysisLoading() {
         </div>
 
         <div className="space-y-6">
-          {/* KPI tiles — mirrors KpiTiles: 2-col on mobile, 4-col at md */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i}>
-                <div className="px-4 space-y-1.5">
-                  <Skeleton className="h-3 w-24" />
-                  <Skeleton className="h-7 w-36 max-w-full" />
-                  {i !== 2 && <Skeleton className="h-3 w-20" />}
+          {/* Lead balance-sheet chart with integrated KPI rail */}
+          <Card className="!py-0">
+            <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-stretch 2xl:grid-cols-[minmax(0,1fr)_18rem]">
+              <div className="min-w-0 py-4">
+                <div className="pb-2 px-2 sm:px-4">
+                  <Skeleton className="h-5 w-40" />
                 </div>
-              </Card>
-            ))}
-          </div>
+                <div className="px-2 sm:px-4 pb-4">
+                  <Skeleton style={{ height: 180 }} />
+                </div>
+              </div>
+              <div className="min-w-0 border-t border-border/60 bg-muted/20 px-4 py-4 xl:border-t-0 xl:border-l xl:bg-muted/25">
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-3 w-28" />
+                      </div>
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </div>
+                    <Skeleton className="h-7 w-40 max-w-full" />
+                  </div>
+                  <div>
+                    <Skeleton className="mb-1.5 h-3 w-32" />
+                    {[...Array(3)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-start gap-3 border-t border-border/60 py-2"
+                      >
+                        <div className="space-y-1.5">
+                          <Skeleton className="h-3 w-20 max-w-full" />
+                          {i !== 0 && <Skeleton className="h-3 w-12" />}
+                        </div>
+                        <Skeleton className="ml-auto h-5 w-28 max-w-full" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
 
-          {/* Hero chart — full width */}
-          <ChartSkeleton height={280} />
-
-          {/* Two paired chart rows — single column on mobile, 2-col on desktop */}
-          <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
-            <ChartSkeleton height={280} />
-            <ChartSkeleton height={280} />
-          </div>
-          <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
-            <ChartSkeleton height={280} />
-            <ChartSkeleton height={200} />
+          {/* Secondary charts — grouped into movement, then composition */}
+          <div className="space-y-4">
+            <div className="grid gap-6 xl:grid-cols-2">
+              <ChartSkeleton height={200} />
+              <ChartSkeleton height={200} />
+            </div>
+            <div className="grid gap-6 xl:grid-cols-2">
+              <ChartSkeleton height={200} />
+              <ChartSkeleton height={200} />
+            </div>
           </div>
 
           {/* Top movers list — card with horizontally scrollable table rows */}

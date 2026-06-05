@@ -90,8 +90,9 @@ export function AnalysisView({
   const tNav = useTranslations("nav");
   const { density } = useDensity();
   const isCompact = density === "compact";
-  // Keep the side-by-side gap equal to the vertical rhythm between stacked rows
+  // Keep side-by-side gaps equal to the vertical rhythm between stacked rows.
   const gridGapClass = isCompact ? "gap-3" : "gap-6";
+  const stackGapClass = isCompact ? "space-y-3" : "space-y-6";
   const [range, setRange] = usePersistedRange<RangeLabel>(
     "analysis-view",
     pickDefaultRange(snapshots),
@@ -113,6 +114,7 @@ export function AnalysisView({
     value: r.label,
     label: t(rangeLabelKey[r.label] as Parameters<typeof t>[0]),
   }));
+  const activeRangeLabel = t(rangeLabelKey[range] as Parameters<typeof t>[0]);
 
   const tabOptions: SegmentedOption<"analysis" | "history">[] = [
     { value: "analysis", label: tNav("analysis") },
@@ -266,7 +268,14 @@ export function AnalysisView({
         {/* Sentinel: when this scrolls off-screen the range bar is stuck */}
         <div ref={sentinelRef} className="h-px -mt-px" aria-hidden />
         {/* Range selector — floats as a compact pill while scrolling */}
-        <div className="sticky top-[env(safe-area-inset-top)] md:top-0 z-40 flex items-center justify-between gap-2 py-2">
+        <div
+          className={cn(
+            "sticky top-[env(safe-area-inset-top)] md:top-0 z-40 flex items-center justify-between gap-2 py-2",
+            "md:-mx-2 md:px-2 md:transition-[background-color,box-shadow,backdrop-filter]",
+            isStuck &&
+              "bg-background/80 dark:bg-card/80 backdrop-blur-md shadow-sm ring-1 ring-border/50",
+          )}
+        >
           <FreshnessBadge kind="snapshot" timestamp={latestSnapshotAt} mobileShort />
           <SegmentedControl
             variant="pill"
@@ -275,11 +284,7 @@ export function AnalysisView({
             value={range}
             onValueChange={setRange}
             aria-label={t("title")}
-            className={cn(
-              "transition-[background-color,box-shadow,backdrop-filter]",
-              isStuck &&
-                "bg-background/80 dark:bg-card/80 backdrop-blur-md shadow-sm ring-1 ring-border/50",
-            )}
+            className="bg-background/80 dark:bg-card/70 ring-1 ring-border/50 backdrop-blur-md"
             itemClassName="px-3 py-2 sm:px-2 sm:py-1"
           />
         </div>
@@ -292,45 +297,86 @@ export function AnalysisView({
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={rangeFadeTransition}
-            className={isCompact ? "space-y-3" : "space-y-6"}
+            className={stackGapClass}
           >
-            <KpiTiles kpis={kpis} baseCurrency={baseCurrency} locale={locale} />
+            {/* Balance-sheet trend leads the analysis; KPI context stays as the info rail. */}
+            <section aria-label={t("assetsVsLiabilities")} className="min-w-0">
+              <Card size="sm" className="h-full !py-0">
+                <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-stretch 2xl:grid-cols-[minmax(0,1fr)_22rem]">
+                  <div className="min-w-0 py-4 group-data-[size=sm]/card:py-3">
+                    <LazyAssetsLiabilitiesChart
+                      buckets={buckets}
+                      baseCurrency={baseCurrency}
+                      locale={locale}
+                    />
+                  </div>
+                  <div className="min-w-0 border-t border-border/60 bg-muted/20 px-4 py-4 xl:border-t-0 xl:border-l xl:bg-muted/25 group-data-[size=sm]/card:px-3 group-data-[size=sm]/card:py-3">
+                    <KpiTiles
+                      kpis={kpis}
+                      baseCurrency={baseCurrency}
+                      locale={locale}
+                      rangeLabel={activeRangeLabel}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </section>
 
-            {/* Hero: "what changed" — the headline question, anchors the page full-width */}
-            <Card size={isCompact ? "sm" : "default"}>
-              <LazyMonthlyChangeChart
-                buckets={buckets}
-                baseCurrency={baseCurrency}
-                locale={locale}
-              />
-            </Card>
+            {/* Secondary analysis is grouped by question: movement first, then composition. */}
+            <div className={isCompact ? "space-y-3" : "space-y-4"}>
+              <section
+                aria-label={`${t("monthlyChange")} / ${t("cashFlow")}`}
+                className={isCompact ? "space-y-2" : "space-y-3"}
+              >
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <div>
+                    <h2 className="text-sm font-semibold text-foreground">
+                      {t("movementSectionTitle")}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">{t("movementSectionSubtitle")}</p>
+                  </div>
+                </div>
+                <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>
+                  <Card size="sm" className="h-full">
+                    <LazyMonthlyChangeChart
+                      buckets={buckets}
+                      baseCurrency={baseCurrency}
+                      locale={locale}
+                    />
+                  </Card>
+                  <Card size="sm" className="h-full">
+                    <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+                  </Card>
+                </div>
+              </section>
 
-            {/* Position & contributions over time — paired side-by-side on desktop */}
-            <div className={cn("grid", gridGapClass, "xl:grid-cols-2 xl:items-start")}>
-              <Card size={isCompact ? "sm" : "default"}>
-                <LazyAssetsLiabilitiesChart
-                  buckets={buckets}
-                  baseCurrency={baseCurrency}
-                  locale={locale}
-                />
-              </Card>
-              <Card size={isCompact ? "sm" : "default"}>
-                <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
-              </Card>
-            </div>
-
-            {/* Composition & per-account drivers — paired side-by-side on desktop */}
-            <div className={cn("grid", gridGapClass, "xl:grid-cols-2 xl:items-start")}>
-              <Card size={isCompact ? "sm" : "default"}>
-                <LazyCategoryTrendChart
-                  data={categoryHistory}
-                  baseCurrency={baseCurrency}
-                  locale={locale}
-                />
-              </Card>
-              <Card size={isCompact ? "sm" : "default"}>
-                <LazyAttributionChart items={attributionItems} baseCurrency={baseCurrency} />
-              </Card>
+              <section
+                aria-label={`${t("categoryTrend")} / ${t("attribution")}`}
+                className={isCompact ? "space-y-2" : "space-y-3"}
+              >
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <div>
+                    <h2 className="text-sm font-semibold text-foreground">
+                      {t("compositionSectionTitle")}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {t("compositionSectionSubtitle")}
+                    </p>
+                  </div>
+                </div>
+                <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>
+                  <Card size="sm" className="h-full">
+                    <LazyCategoryTrendChart
+                      data={categoryHistory}
+                      baseCurrency={baseCurrency}
+                      locale={locale}
+                    />
+                  </Card>
+                  <Card size="sm" className="h-full">
+                    <LazyAttributionChart items={attributionItems} baseCurrency={baseCurrency} />
+                  </Card>
+                </div>
+              </section>
             </div>
 
             {/* Per-account detail — full-width table reads best wide */}

@@ -114,10 +114,7 @@ export function AttributionChart({ items, baseCurrency }: Props) {
   // largest bar at the top of the chart.
   const chartData = [...items].reverse();
 
-  const chartHeight = Math.max(
-    isCompact ? 180 : 200,
-    chartData.length * (isCompact ? 30 : 36) + 40,
-  );
+  const chartHeight = isCompact ? 180 : 200;
 
   return (
     <>
@@ -125,23 +122,46 @@ export function AttributionChart({ items, baseCurrency }: Props) {
         <CardTitle className="text-base font-medium text-foreground">{t("attribution")}</CardTitle>
         <p className="text-xs text-muted-foreground">{t("attributionSubtitle")}</p>
       </CardHeader>
-      <CardContent className="px-2 sm:px-4 pb-4">
+      <CardContent className="flex flex-1 flex-col px-2 pb-4 sm:px-4">
         {items.length === 0 ? (
           <ChartEmptyState message={t("attributionNoData")} hint={t("emptyHint")} />
         ) : !mounted ? (
-          <div style={{ height: chartHeight }} />
+          <div className="min-h-0 flex-1" style={{ minHeight: chartHeight }} />
         ) : (
           <div
             aria-hidden={privacyMode || undefined}
-            className={`${isCompact ? "space-y-3" : "space-y-4"} transition-[filter] duration-300 ${
+            className={`flex min-h-0 flex-1 flex-col ${isCompact ? "gap-3" : "gap-4"} transition-[filter] duration-300 ${
               privacyMode ? "blur-sm pointer-events-none select-none" : ""
             }`}
+            style={{ minHeight: chartHeight }}
           >
-            <div role="img" aria-label={`${t("attribution")}, ${t("attributionSubtitle")}`}>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ background: "var(--chart-2)" }}
+                />
+                {t("attrCash")}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ background: "var(--gain)" }}
+                />
+                {t("attrMarket")}
+              </span>
+            </div>
+            <div
+              role="img"
+              aria-label={`${t("attribution")}, ${t("attributionSubtitle")}`}
+              className="min-h-0 flex-1"
+            >
               <ChartContainer
                 config={attributionConfig}
                 className="w-full"
-                style={{ height: chartHeight }}
+                style={{ height: "100%" }}
                 initialDimension={{ width: 1, height: chartHeight }}
               >
                 <BarChart
@@ -179,15 +199,34 @@ export function AttributionChart({ items, baseCurrency }: Props) {
                     }
                   />
                   <Bar
-                    dataKey="totalDelta"
+                    dataKey="cashContribution"
+                    name={t("attrCash")}
+                    stackId="split"
+                    radius={[0, 0, 0, 0]}
+                    isAnimationActive={isAnimationActive}
+                    onAnimationEnd={onAnimationEnd}
+                  >
+                    {chartData.map((item) => (
+                      <Cell
+                        key={`cash-${item.accountId}`}
+                        fill="var(--chart-2)"
+                        opacity={Math.abs(item.cashContribution) > 0 ? 0.85 : 0.25}
+                      />
+                    ))}
+                  </Bar>
+                  <Bar
+                    dataKey="marketPerformance"
+                    name={t("attrMarket")}
+                    stackId="split"
                     radius={[0, 4, 4, 0]}
                     isAnimationActive={isAnimationActive}
                     onAnimationEnd={onAnimationEnd}
                   >
                     {chartData.map((item) => (
                       <Cell
-                        key={item.accountId}
-                        fill={item.totalDelta >= 0 ? "var(--gain)" : "var(--loss)"}
+                        key={`market-${item.accountId}`}
+                        fill={item.marketPerformance >= 0 ? "var(--gain)" : "var(--loss)"}
+                        opacity={Math.abs(item.marketPerformance) > 0 ? 1 : 0.25}
                       />
                     ))}
                   </Bar>

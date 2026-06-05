@@ -5,17 +5,17 @@ import { CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDensity } from "@/components/layout/density-context";
 
-function ChartSkeleton({ height = 280 }: { height?: number }) {
+function ChartSkeleton({ height = 200 }: { height?: number }) {
   const { density } = useDensity();
-  const skeletonHeight = density === "compact" ? Math.max(180, height - 40) : height;
+  const skeletonHeight = density === "compact" ? Math.max(140, height - 20) : height;
 
   return (
     <>
       <CardHeader className="pb-2 px-2 sm:px-4">
         <Skeleton className="h-5 w-40" />
       </CardHeader>
-      <CardContent className="px-2 sm:px-4 pb-4">
-        <Skeleton style={{ height: skeletonHeight }} />
+      <CardContent className="flex flex-1 flex-col px-2 pb-4 sm:px-4">
+        <Skeleton className="min-h-0 flex-1" style={{ minHeight: skeletonHeight }} />
       </CardContent>
     </>
   );
@@ -28,7 +28,7 @@ export const LazyMonthlyChangeChart = dynamic(
 
 export const LazyAssetsLiabilitiesChart = dynamic(
   () => import("./assets-liabilities-chart").then((m) => m.AssetsLiabilitiesChart),
-  { loading: () => <ChartSkeleton /> },
+  { loading: () => <ChartSkeleton height={180} /> },
 );
 
 export const LazyCashFlowChart = dynamic(
@@ -43,5 +43,5 @@ export const LazyCategoryTrendChart = dynamic(
 
 export const LazyAttributionChart = dynamic(
   () => import("./attribution-chart").then((m) => m.AttributionChart),
-  { loading: () => <ChartSkeleton height={200} /> },
+  { loading: () => <ChartSkeleton /> },
 );

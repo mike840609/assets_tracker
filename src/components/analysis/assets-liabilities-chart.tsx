@@ -7,7 +7,7 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartEmptyState } from "./chart-empty-state";
 import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/currencies";
-import { formatChartTick } from "@/lib/chart-formatters";
+import { formatChartTick, getMonthTickInterval } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
@@ -73,7 +73,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
-  const chartHeight = density === "compact" ? 240 : 280;
+  const chartHeight = density === "compact" ? 160 : 180;
   const [mounted, setMounted] = useState(false);
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   const { handlers: crosshairHandlers } = useChartCrosshair();
@@ -90,6 +90,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
     liabilities: b.totalLiabilities,
     isEmpty: b.isEmpty,
   }));
+  const xAxisInterval = getMonthTickInterval(data.length, density === "compact" ? 5 : 6);
 
   return (
     <>
@@ -99,17 +100,18 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
         </CardTitle>
         <p className="text-xs text-muted-foreground">{t("assetsVsLiabilitiesSubtitle")}</p>
       </CardHeader>
-      <CardContent className="px-2 sm:px-4 pb-4">
+      <CardContent className="flex flex-1 flex-col px-2 pb-4 sm:px-4">
         {data.length === 0 ? (
           <ChartEmptyState message={t("noData")} hint={t("emptyHint")} />
         ) : !mounted ? (
-          <div style={{ height: chartHeight }} />
+          <div className="min-h-0 flex-1" style={{ minHeight: chartHeight }} />
         ) : (
           <div
             aria-hidden={privacyMode || undefined}
-            className={`relative transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+            className={`relative flex min-h-0 flex-1 flex-col transition-[filter] duration-300 ${privacyMode ? "blur-sm pointer-events-none select-none" : ""}`}
+            style={{ minHeight: chartHeight }}
           >
-            <div className="flex items-center gap-4 mb-2 text-xs text-muted-foreground">
+            <div className="mb-1 flex items-center gap-4 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 <span
                   aria-hidden
@@ -130,25 +132,27 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
             <div
               role="img"
               aria-label={`${t("assetsVsLiabilities")}, ${t("assetsVsLiabilitiesSubtitle")}`}
+              className="min-h-0 flex-1"
             >
               <ChartContainer
                 config={config}
                 className="w-full"
-                style={{ height: chartHeight }}
+                style={{ height: "100%" }}
                 initialDimension={{ width: 1, height: chartHeight }}
               >
                 <BarChart
                   data={data}
-                  margin={{ top: 10, right: 4, left: 0, bottom: 20 }}
+                  margin={{ top: 8, right: 4, left: 0, bottom: 12 }}
                   {...crosshairHandlers}
                 >
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis
                     dataKey="label"
-                    tick={{ fontSize: 12 }}
+                    interval={xAxisInterval}
+                    tick={{ fontSize: 11 }}
                     angle={-45}
                     textAnchor="end"
-                    height={60}
+                    height={44}
                   />
                   <YAxis
                     width={50}
@@ -178,7 +182,7 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
                 </BarChart>
               </ChartContainer>
             </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">{t("assetsVsLiabilitiesNote")}</p>
+            <p className="sr-only">{t("assetsVsLiabilitiesNote")}</p>
           </div>
         )}
       </CardContent>
