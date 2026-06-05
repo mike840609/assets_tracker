@@ -326,34 +326,56 @@ export function AnalysisView({
             <div className={isCompact ? "space-y-3" : "space-y-4"}>
               <section
                 aria-label={`${t("monthlyChange")} / ${t("cashFlow")}`}
-                className={cn("grid", gridGapClass, "xl:grid-cols-2")}
+                className={isCompact ? "space-y-2" : "space-y-3"}
               >
-                <Card size="sm" className="h-full">
-                  <LazyMonthlyChangeChart
-                    buckets={buckets}
-                    baseCurrency={baseCurrency}
-                    locale={locale}
-                  />
-                </Card>
-                <Card size="sm" className="h-full">
-                  <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
-                </Card>
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <div>
+                    <h2 className="text-sm font-semibold text-foreground">
+                      {t("movementSectionTitle")}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">{t("movementSectionSubtitle")}</p>
+                  </div>
+                </div>
+                <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>
+                  <Card size="sm" className="h-full">
+                    <LazyMonthlyChangeChart
+                      buckets={buckets}
+                      baseCurrency={baseCurrency}
+                      locale={locale}
+                    />
+                  </Card>
+                  <Card size="sm" className="h-full">
+                    <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+                  </Card>
+                </div>
               </section>
 
               <section
                 aria-label={`${t("categoryTrend")} / ${t("attribution")}`}
-                className={cn("grid", gridGapClass, "xl:grid-cols-2")}
+                className={isCompact ? "space-y-2" : "space-y-3"}
               >
-                <Card size="sm" className="h-full">
-                  <LazyCategoryTrendChart
-                    data={categoryHistory}
-                    baseCurrency={baseCurrency}
-                    locale={locale}
-                  />
-                </Card>
-                <Card size="sm" className="h-full">
-                  <LazyAttributionChart items={attributionItems} baseCurrency={baseCurrency} />
-                </Card>
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <div>
+                    <h2 className="text-sm font-semibold text-foreground">
+                      {t("compositionSectionTitle")}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {t("compositionSectionSubtitle")}
+                    </p>
+                  </div>
+                </div>
+                <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>
+                  <Card size="sm" className="h-full">
+                    <LazyCategoryTrendChart
+                      data={categoryHistory}
+                      baseCurrency={baseCurrency}
+                      locale={locale}
+                    />
+                  </Card>
+                  <Card size="sm" className="h-full">
+                    <LazyAttributionChart items={attributionItems} baseCurrency={baseCurrency} />
+                  </Card>
+                </div>
               </section>
             </div>
 

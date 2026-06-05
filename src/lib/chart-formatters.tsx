@@ -8,6 +8,11 @@ export function formatChartTick(v: number): string {
       : String(Math.round(v));
 }
 
+export function getMonthTickInterval(pointCount: number, targetTicks = 6): number {
+  if (pointCount <= targetTicks) return 0;
+  return Math.max(0, Math.ceil(pointCount / targetTicks) - 1);
+}
+
 /** Currency formatter for area/line chart tooltips (e.g. TrendChart). */
 export function createCurrencyTooltipFormatter(currency: string) {
   return (value: unknown) => formatCurrency(Number(value ?? 0), currency);

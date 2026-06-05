@@ -7,7 +7,7 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartEmptyState } from "./chart-empty-state";
 import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/currencies";
-import { formatChartTick } from "@/lib/chart-formatters";
+import { formatChartTick, getMonthTickInterval } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
 import type { MonthlyBucket } from "@/lib/services/analysis-service";
@@ -93,6 +93,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
   useEffect(() => startTransition(() => setMounted(true)), []);
 
   const data = buckets.map((b) => ({ ...b, label: formatMonthLabel(b.monthKey, locale) }));
+  const xAxisInterval = getMonthTickInterval(data.length, density === "compact" ? 5 : 6);
 
   return (
     <>
@@ -129,6 +130,7 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="label"
+                  interval={xAxisInterval}
                   tick={{ fontSize: 11 }}
                   angle={-45}
                   textAnchor="end"
