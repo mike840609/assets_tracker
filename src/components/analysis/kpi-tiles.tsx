@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ArrowDownRight, ArrowUpRight, CalendarDays } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, CalendarDays, Info } from "lucide-react";
 import { formatCurrency } from "@/lib/currencies";
 import { useCountUp } from "@/hooks/use-count-up";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -130,7 +130,7 @@ function LeadMetric({
         : "bg-muted text-muted-foreground";
 
   return (
-    <div className="min-w-0 space-y-1.5">
+    <div className="min-w-0 space-y-2">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-foreground">
@@ -139,6 +139,16 @@ function LeadMetric({
           </div>
           <div className="mt-0.5 text-[11px] leading-tight text-muted-foreground">{helper}</div>
         </div>
+      </div>
+      <div className="flex min-w-0 flex-wrap items-end justify-between gap-2">
+        <MoneyValue
+          amount={amount}
+          currency={currency}
+          privacyMode={privacyMode}
+          tone={tone}
+          isCompact={isCompact}
+          emphasis="lead"
+        />
         {!privacyMode && pct && (
           <span
             className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${pillClass}`}
@@ -147,14 +157,6 @@ function LeadMetric({
           </span>
         )}
       </div>
-      <MoneyValue
-        amount={amount}
-        currency={currency}
-        privacyMode={privacyMode}
-        tone={tone}
-        isCompact={isCompact}
-        emphasis="lead"
-      />
     </div>
   );
 }
@@ -182,8 +184,8 @@ function MetricRow({
 }) {
   return (
     <div
-      className={`grid min-w-0 grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] items-start gap-3 border-t border-border/60 ${
-        isCompact ? "py-1.5" : "py-2"
+      className={`grid min-w-0 grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-start gap-3 ${
+        isCompact ? "py-1.5" : "py-2.5"
       }`}
     >
       <div className="min-w-0">
@@ -234,8 +236,25 @@ export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel }: Props) {
       : `${kpis.ytdPct >= 0 ? "+" : ""}${kpis.ytdPct.toFixed(1)}%`;
 
   return (
-    <div className={isCompact ? "min-w-0 space-y-3" : "min-w-0 space-y-3.5"}>
-      <section className="min-w-0" aria-label={t("ytdFixedSection")}>
+    <div className={cn("flex h-full min-w-0 flex-col", isCompact ? "gap-3" : "gap-4")}>
+      <div className="min-w-0 space-y-1">
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <h2 className="min-w-0 text-sm font-semibold leading-tight text-foreground">
+            {t("analysisSummary")}
+          </h2>
+          <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/70">
+            {rangeLabel}
+          </span>
+        </div>
+        <p className="text-xs leading-snug text-muted-foreground">
+          {t("analysisSummarySubtitle", { range: rangeLabel })}
+        </p>
+      </div>
+
+      <section
+        className={cn("min-w-0 border-t border-border/70", isCompact ? "pt-2.5" : "pt-3")}
+        aria-label={t("ytdFixedSection")}
+      >
         <div className="mb-2 flex items-center justify-between gap-2">
           <div className="text-[11px] font-semibold text-muted-foreground">
             {t("ytdFixedSection")}
@@ -257,41 +276,60 @@ export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel }: Props) {
       </section>
 
       <section
-        className="min-w-0 border-t border-border/70 pt-3"
+        className={cn("min-w-0 border-t border-border/70", isCompact ? "pt-2.5" : "pt-3")}
         aria-label={t("selectedRangeMetrics", { range: rangeLabel })}
       >
-        <div className="text-xs font-semibold text-foreground">
-          {t("selectedRangeMetrics", { range: rangeLabel })}
+        <div className="flex min-w-0 items-baseline justify-between gap-3">
+          <div className="text-xs font-semibold text-foreground">
+            {t("selectedRangeMetrics", { range: rangeLabel })}
+          </div>
+          <div className="text-[11px] font-medium text-muted-foreground">
+            {t("rangeDistribution")}
+          </div>
         </div>
-        <MetricRow
-          title={t("avgMonthly")}
-          amount={kpis.avgMonthlyDelta}
-          currency={baseCurrency}
-          privacyMode={privacyMode}
-          tone={privacyMode ? "neutral" : toneFor(kpis.avgMonthlyDelta)}
-          isCompact={isCompact}
-        />
-        <MetricRow
-          title={bestTitle}
-          amount={kpis.best ? kpis.best.deltaNetWorth : null}
-          currency={baseCurrency}
-          privacyMode={privacyMode}
-          subtitle={bestSub}
-          tone={privacyMode ? "neutral" : kpis.best ? toneFor(kpis.best.deltaNetWorth) : "neutral"}
-          isCompact={isCompact}
-        />
-        <MetricRow
-          title={worstTitle}
-          amount={kpis.worst ? kpis.worst.deltaNetWorth : null}
-          currency={baseCurrency}
-          privacyMode={privacyMode}
-          subtitle={worstSub}
-          tone={
-            privacyMode ? "neutral" : kpis.worst ? toneFor(kpis.worst.deltaNetWorth) : "neutral"
-          }
-          isCompact={isCompact}
-        />
+        <div className="mt-1 divide-y divide-border/60">
+          <MetricRow
+            title={t("avgMonthly")}
+            amount={kpis.avgMonthlyDelta}
+            currency={baseCurrency}
+            privacyMode={privacyMode}
+            tone={privacyMode ? "neutral" : toneFor(kpis.avgMonthlyDelta)}
+            isCompact={isCompact}
+          />
+          <MetricRow
+            title={bestTitle}
+            amount={kpis.best ? kpis.best.deltaNetWorth : null}
+            currency={baseCurrency}
+            privacyMode={privacyMode}
+            subtitle={bestSub}
+            tone={
+              privacyMode ? "neutral" : kpis.best ? toneFor(kpis.best.deltaNetWorth) : "neutral"
+            }
+            isCompact={isCompact}
+          />
+          <MetricRow
+            title={worstTitle}
+            amount={kpis.worst ? kpis.worst.deltaNetWorth : null}
+            currency={baseCurrency}
+            privacyMode={privacyMode}
+            subtitle={worstSub}
+            tone={
+              privacyMode ? "neutral" : kpis.worst ? toneFor(kpis.worst.deltaNetWorth) : "neutral"
+            }
+            isCompact={isCompact}
+          />
+        </div>
       </section>
+
+      <div className="mt-auto border-t border-border/70 pt-3">
+        <div className="flex items-start gap-2 text-xs leading-snug text-muted-foreground">
+          <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          <div className="min-w-0">
+            <div className="font-medium text-foreground">{t("methodologyShortTitle")}</div>
+            <p className="mt-0.5">{t("kpiMethodology", { range: rangeLabel })}</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
