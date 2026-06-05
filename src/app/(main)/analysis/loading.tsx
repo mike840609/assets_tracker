@@ -44,7 +44,7 @@ export default function AnalysisLoading() {
         <div className="space-y-6">
           {/* Lead balance-sheet chart with integrated KPI rail */}
           <Card className="!py-0">
-            <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-stretch">
+            <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-stretch 2xl:grid-cols-[minmax(0,1fr)_18rem]">
               <div className="min-w-0 py-4">
                 <div className="pb-2 px-2 sm:px-4">
                   <Skeleton className="h-5 w-40" />
@@ -85,12 +85,16 @@ export default function AnalysisLoading() {
             </div>
           </Card>
 
-          {/* Secondary charts — equal cards below the lead chart */}
-          <div className="grid gap-6 xl:grid-cols-2">
-            <ChartSkeleton height={200} />
-            <ChartSkeleton height={200} />
-            <ChartSkeleton height={200} />
-            <ChartSkeleton height={200} />
+          {/* Secondary charts — grouped into movement, then composition */}
+          <div className="space-y-4">
+            <div className="grid gap-6 xl:grid-cols-2">
+              <ChartSkeleton height={200} />
+              <ChartSkeleton height={200} />
+            </div>
+            <div className="grid gap-6 xl:grid-cols-2">
+              <ChartSkeleton height={200} />
+              <ChartSkeleton height={200} />
+            </div>
           </div>
 
           {/* Top movers list — card with horizontally scrollable table rows */}

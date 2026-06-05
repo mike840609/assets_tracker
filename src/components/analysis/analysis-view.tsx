@@ -302,7 +302,7 @@ export function AnalysisView({
             {/* Balance-sheet trend leads the analysis; KPI context stays as the info rail. */}
             <section aria-label={t("assetsVsLiabilities")} className="min-w-0">
               <Card size="sm" className="h-full !py-0">
-                <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-stretch">
+                <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-stretch 2xl:grid-cols-[minmax(0,1fr)_18rem]">
                   <div className="min-w-0 py-4 group-data-[size=sm]/card:py-3">
                     <LazyAssetsLiabilitiesChart
                       buckets={buckets}
@@ -322,32 +322,40 @@ export function AnalysisView({
               </Card>
             </section>
 
-            {/* Secondary charts: equal columns and stretched cards for consistent scan height. */}
-            <section
-              aria-label={`${t("monthlyChange")} / ${t("cashFlow")} / ${t("categoryTrend")}`}
-              className={cn("grid", gridGapClass, "xl:grid-cols-2")}
-            >
-              <Card size="sm" className="h-full">
-                <LazyMonthlyChangeChart
-                  buckets={buckets}
-                  baseCurrency={baseCurrency}
-                  locale={locale}
-                />
-              </Card>
-              <Card size="sm" className="h-full">
-                <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
-              </Card>
-              <Card size="sm" className="h-full">
-                <LazyCategoryTrendChart
-                  data={categoryHistory}
-                  baseCurrency={baseCurrency}
-                  locale={locale}
-                />
-              </Card>
-              <Card size="sm" className="h-full">
-                <LazyAttributionChart items={attributionItems} baseCurrency={baseCurrency} />
-              </Card>
-            </section>
+            {/* Secondary analysis is grouped by question: movement first, then composition. */}
+            <div className={isCompact ? "space-y-3" : "space-y-4"}>
+              <section
+                aria-label={`${t("monthlyChange")} / ${t("cashFlow")}`}
+                className={cn("grid", gridGapClass, "xl:grid-cols-2")}
+              >
+                <Card size="sm" className="h-full">
+                  <LazyMonthlyChangeChart
+                    buckets={buckets}
+                    baseCurrency={baseCurrency}
+                    locale={locale}
+                  />
+                </Card>
+                <Card size="sm" className="h-full">
+                  <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+                </Card>
+              </section>
+
+              <section
+                aria-label={`${t("categoryTrend")} / ${t("attribution")}`}
+                className={cn("grid", gridGapClass, "xl:grid-cols-2")}
+              >
+                <Card size="sm" className="h-full">
+                  <LazyCategoryTrendChart
+                    data={categoryHistory}
+                    baseCurrency={baseCurrency}
+                    locale={locale}
+                  />
+                </Card>
+                <Card size="sm" className="h-full">
+                  <LazyAttributionChart items={attributionItems} baseCurrency={baseCurrency} />
+                </Card>
+              </section>
+            </div>
 
             {/* Per-account detail — full-width table reads best wide */}
             <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
