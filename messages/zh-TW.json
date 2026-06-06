@@ -352,6 +352,8 @@
     "chartFIRETarget": "FIRE 目標",
     "noData": "建立淨資產快照以開始預測。",
     "emptyHint": "預測模型會使用您的實際歷史資料來推算未來的成長。",
+    "emptyCtaDashboard": "前往儀表板",
+    "emptyCtaAddAccount": "新增第一個帳戶",
     "enterExpenses": "請在上方輸入年支出",
     "howItWorks": "如何使用",
     "step1Title": "設定目標",
@@ -439,6 +441,8 @@
     "emptyHint": "系統每天擷取快照，自動建立您的歷史記錄。",
     "emptyDesc": "淨資產每日會記錄一次快照。建立第一筆後，趨勢圖、活動日曆與完整明細都會顯示在這裡。系統每日會自動建立快照，您也可以立即從儀表板手動建立一筆。",
     "emptyCta": "前往儀表板",
+    "emptyCtaDashboard": "前往儀表板",
+    "emptyCtaAddAccount": "新增第一個帳戶",
     "activityYear": "{year} 年活動",
     "legendLoss": "下跌",
     "legendGain": "上漲"

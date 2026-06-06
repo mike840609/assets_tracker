@@ -371,6 +371,23 @@
   }
 }
 
+/* Organic breathing animation for background mockups in empty states. 
+   Creates a subtle scaling effect to make the static UI feel alive. */
+@keyframes mockup-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.5;
+  }
+}
+.animate-mockup-breathe {
+  animation: mockup-breathe 8s ease-in-out infinite;
+}
+
 /* ─── Skeleton loading shimmer ───────────────────────────────────────────────
    A highlight band sweeps across placeholders so the loading state is obvious
    rather than reading as a static gray block. Applied via [data-slot="skeleton"]

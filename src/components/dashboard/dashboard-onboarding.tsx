@@ -13,7 +13,7 @@ export async function DashboardOnboarding() {
         This demonstrates the value of the product (the "aha moment") immediately.
       */}
       <div
-        className="absolute inset-0 z-0 flex flex-col gap-6 overflow-hidden opacity-40 mix-blend-luminosity blur-[6px] pointer-events-none select-none transition-all duration-1000"
+        className="absolute inset-0 z-0 flex flex-col gap-6 overflow-hidden opacity-40 mix-blend-luminosity blur-[6px] pointer-events-none select-none transition-all duration-1000 animate-mockup-breathe"
         aria-hidden="true"
       >
         <div className="flex items-center justify-end mb-2">
@@ -93,7 +93,9 @@ export async function DashboardOnboarding() {
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t("emptyTitle")}</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            {t("emptyTitle")}
+          </h2>
           <p className="text-base text-muted-foreground leading-relaxed balance-text">
             {t("emptyDescription")}
           </p>
@@ -110,9 +112,7 @@ export async function DashboardOnboarding() {
         </div>
 
         {/* Security / Trust snippet below the CTA */}
-        <p className="text-xs text-muted-foreground/70">
-          {t("emptyHint")}
-        </p>
+        <p className="text-xs text-muted-foreground/70">{t("emptyHint")}</p>
       </div>
     </div>
   );

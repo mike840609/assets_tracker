@@ -495,7 +495,7 @@ export function AccountsList({
             <div className="relative isolate flex min-h-[55vh] flex-col overflow-hidden rounded-2xl border border-border/40 bg-muted/5">
               {/* Background Mockup */}
               <div
-                className="absolute inset-0 z-0 flex flex-col gap-4 p-4 sm:p-6 opacity-40 mix-blend-luminosity blur-[6px] pointer-events-none select-none"
+                className="absolute inset-0 z-0 flex flex-col gap-4 p-4 sm:p-6 opacity-40 mix-blend-luminosity blur-[6px] pointer-events-none select-none animate-mockup-breathe"
                 aria-hidden="true"
               >
                 {/* Mock summary row */}
@@ -514,13 +514,23 @@ export function AccountsList({
                 <div className="rounded-xl border border-border/40 overflow-hidden flex-1">
                   <div className="h-10 bg-muted/30 flex items-center gap-6 px-4">
                     {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="h-3.5 bg-muted/50 rounded" style={{ width: `${40 + i * 12}px` }} />
+                      <div
+                        key={i}
+                        className="h-3.5 bg-muted/50 rounded"
+                        style={{ width: `${40 + i * 12}px` }}
+                      />
                     ))}
                   </div>
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-14 border-t border-border/30 flex items-center gap-6 px-4">
+                    <div
+                      key={i}
+                      className="h-14 border-t border-border/30 flex items-center gap-6 px-4"
+                    >
                       <div className="h-8 w-8 rounded-full bg-muted/30" />
-                      <div className="h-4 bg-muted/40 rounded" style={{ width: `${60 + i * 20}px` }} />
+                      <div
+                        className="h-4 bg-muted/40 rounded"
+                        style={{ width: `${60 + i * 20}px` }}
+                      />
                       <div className="h-4 w-16 bg-muted/30 rounded" />
                       <div className="flex-1" />
                       <div className="h-4 w-20 bg-muted/40 rounded" />
@@ -558,7 +568,9 @@ export function AccountsList({
                 </div>
 
                 <p className="text-xs text-muted-foreground/70">
-                  {t("accountsList.noAccountsHint", { defaultValue: "Your data is stored securely and never shared." })}
+                  {t("accountsList.noAccountsHint", {
+                    defaultValue: "Your data is stored securely and never shared.",
+                  })}
                 </p>
               </div>
             </div>

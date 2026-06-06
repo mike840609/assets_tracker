@@ -15,7 +15,7 @@ export function GoalsOnboarding({ onAdd }: GoalsOnboardingProps) {
     <div className="relative isolate flex min-h-[50vh] flex-col overflow-hidden rounded-2xl border border-border/40 bg-muted/5 mt-4">
       {/* Background Mockup */}
       <div
-        className="absolute inset-0 z-0 flex flex-col gap-4 p-4 sm:p-6 opacity-40 mix-blend-luminosity blur-[5px] pointer-events-none select-none transition-all duration-1000"
+        className="absolute inset-0 z-0 flex flex-col gap-4 p-4 sm:p-6 opacity-40 mix-blend-luminosity blur-[5px] pointer-events-none select-none transition-all duration-1000 animate-mockup-breathe"
         aria-hidden="true"
       >
         <div className="h-32 w-full rounded-xl bg-card border border-border/40 p-5 flex flex-col justify-between shadow-sm">
@@ -61,9 +61,11 @@ export function GoalsOnboarding({ onAdd }: GoalsOnboardingProps) {
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 shadow-sm ring-1 ring-primary/20">
           <Target className="h-8 w-8 text-primary" />
         </div>
-        
+
         <div className="space-y-2">
-          <h3 className="text-xl font-semibold tracking-tight text-foreground">{t("emptyTitle")}</h3>
+          <h3 className="text-xl font-semibold tracking-tight text-foreground">
+            {t("emptyTitle")}
+          </h3>
           <p className="text-sm text-muted-foreground leading-relaxed balance-text">
             {t("emptyDescription")}
           </p>
@@ -79,9 +81,7 @@ export function GoalsOnboarding({ onAdd }: GoalsOnboardingProps) {
           </Button>
         </div>
 
-        <p className="text-xs text-muted-foreground/70">
-          {t("emptyHint")}
-        </p>
+        <p className="text-xs text-muted-foreground/70">{t("emptyHint")}</p>
       </div>
     </div>
   );

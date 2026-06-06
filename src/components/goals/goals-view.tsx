@@ -114,7 +114,11 @@ export function GoalsView({
 
       {activeTab === "projections" && (
         <div role="tabpanel" className="md:hidden">
-          <ProjectionView projectionData={projectionData} baseCurrency={baseCurrency} hasAccounts={accounts.length > 0} />
+          <ProjectionView
+            projectionData={projectionData}
+            baseCurrency={baseCurrency}
+            hasAccounts={accounts.length > 0}
+          />
         </div>
       )}
     </div>

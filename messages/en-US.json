@@ -352,6 +352,8 @@
     "chartFIRETarget": "FIRE Target",
     "noData": "Take a net worth snapshot to start projecting.",
     "emptyHint": "Projections use your real history to model future growth.",
+    "emptyCtaDashboard": "Go to dashboard",
+    "emptyCtaAddAccount": "Add your first account",
     "enterExpenses": "Enter annual expenses above",
     "howItWorks": "How it works",
     "step1Title": "Set your target",
@@ -439,6 +441,8 @@
     "emptyHint": "A snapshot is captured daily, so your history builds automatically.",
     "emptyDesc": "Net worth is captured once a day as a snapshot. After your first one, your trend, activity calendar, and full ledger appear here. Snapshots run automatically each day; you can also trigger one now from the dashboard.",
     "emptyCta": "Go to dashboard",
+    "emptyCtaDashboard": "Go to dashboard",
+    "emptyCtaAddAccount": "Add your first account",
     "activityYear": "{year} activity",
     "legendLoss": "Loss",
     "legendGain": "Gain"
