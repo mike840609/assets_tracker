@@ -87,7 +87,7 @@ export async function DashboardOnboarding() {
         Foreground CTA Modal 
         A focused card that floats over the blurred dashboard.
       */}
-      <div className="relative z-10 m-auto mt-[12vh] flex max-w-[440px] flex-col items-center gap-6 rounded-2xl border border-border/50 bg-background/95 p-8 text-center shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
+      <div className="relative z-10 m-auto mt-[12vh] flex max-w-[440px] flex-col items-center gap-6 rounded-2xl border border-border/50 bg-background/95 p-8 text-center shadow-md backdrop-blur-xl animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
         <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 shadow-sm ring-1 ring-primary/20">
           <TrendingUp className="h-10 w-10 text-primary" />
         </div>
@@ -112,7 +112,7 @@ export async function DashboardOnboarding() {
         </div>
 
         {/* Security / Trust snippet below the CTA */}
-        <p className="text-xs text-muted-foreground/70">{t("emptyHint")}</p>
+        <p className="text-xs text-muted-foreground">{t("emptyHint")}</p>
       </div>
     </div>
   );

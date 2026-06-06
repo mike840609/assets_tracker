@@ -66,7 +66,7 @@ export function AnalysisEmptyState({ hasAccounts }: { hasAccounts: boolean }) {
       </div>
 
       {/* CTA Overlay */}
-      <div className="relative z-10 m-auto flex max-w-[440px] flex-col items-center gap-6 rounded-2xl border border-border/50 bg-background/95 p-8 text-center shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
+      <div className="relative z-10 m-auto flex max-w-[440px] flex-col items-center gap-6 rounded-2xl border border-border/50 bg-background/95 p-8 text-center shadow-md backdrop-blur-xl animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 shadow-sm ring-1 ring-primary/20">
           <LineChart className="h-8 w-8 text-primary" strokeWidth={1.5} />
         </div>
@@ -92,7 +92,7 @@ export function AnalysisEmptyState({ hasAccounts }: { hasAccounts: boolean }) {
           </Link>
         </div>
 
-        <p className="text-pretty text-xs text-muted-foreground/70">{t("emptyHint")}</p>
+        <p className="text-pretty text-xs text-muted-foreground">{t("emptyHint")}</p>
       </div>
     </div>
   );
