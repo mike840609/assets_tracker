@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ChevronLeft, EyeOff, TriangleAlert } from "lucide-react";
+import { ChevronLeft, TriangleAlert } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { Treemap, type TreemapNode } from "recharts";
@@ -174,35 +174,6 @@ function HeatmapTile(props: HeatmapTileProps) {
   );
 }
 
-function PrivacyHeatmapPlaceholder() {
-  const blocks = [
-    "col-span-3 row-span-4",
-    "col-span-2 row-span-2",
-    "col-span-2 row-span-2",
-    "col-span-1 row-span-2",
-    "col-span-1 row-span-1",
-    "col-span-1 row-span-1",
-  ];
-
-  return (
-    <div className="absolute inset-0 p-px" aria-hidden>
-      <div className="grid h-full grid-cols-6 grid-rows-4 gap-px">
-        {blocks.map((span, index) => (
-          <div
-            key={index}
-            className={cn(
-              "min-h-0 min-w-0 bg-muted/45",
-              index % 2 === 0 ? "bg-muted/50" : "bg-muted/30",
-              span,
-            )}
-          />
-        ))}
-      </div>
-      <div className="absolute inset-0 bg-card/45 backdrop-blur-[2px]" />
-    </div>
-  );
-}
-
 function accountChildren(account: NetWorthSummary["accounts"][number], cashLabel: string) {
   const holdings = account.holdings
     .filter((holding) => (holding.marketValueInBaseCurrency ?? 0) > 0)
@@ -251,7 +222,7 @@ export function PortfolioHeatmap({
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [activeNode, setActiveNode] = useState<HeatmapNode | null>(null);
   const { width: chartWidth, height: chartContainerHeight } = useContainerSize(chartRef);
-  const hasVisibleSelection = !privacyMode && selectedAccountId !== null;
+  const hasVisibleSelection = selectedAccountId !== null;
   const baseChartHeight = useMemo(() => {
     if (chartWidth === 0) return isCompact ? 220 : 280;
     if (isPhone) {
@@ -314,9 +285,7 @@ export function PortfolioHeatmap({
     });
   }, [summary.accounts, summary.totalAssets, t]);
 
-  const selectedAccount = privacyMode
-    ? null
-    : (accounts.find((account) => account.id === selectedAccountId) ?? null);
+  const selectedAccount = accounts.find((account) => account.id === selectedAccountId) ?? null;
   const topLevelChartData = useMemo(
     () =>
       accounts.map(({ children: _children, ...account }) => ({
@@ -327,7 +296,7 @@ export function PortfolioHeatmap({
   const chartData = selectedAccount?.children?.length
     ? selectedAccount.children
     : topLevelChartData;
-  const currentDetail = privacyMode ? null : (activeNode ?? selectedAccount ?? accounts[0] ?? null);
+  const currentDetail = activeNode ?? selectedAccount ?? accounts[0] ?? null;
   const unpricedCount = accounts.reduce((sum, account) => sum + (account.unpricedCount ?? 0), 0);
 
   const handleNodeClick = (node: TreemapNode) => {
@@ -449,27 +418,6 @@ export function PortfolioHeatmap({
       </div>
     ) : null;
 
-  const renderPrivacyPanel = (className?: string) => (
-    <div
-      className={cn(
-        "flex min-h-28 flex-col justify-center rounded-xl border border-border/60 bg-muted/10 p-3 text-sm",
-        className,
-      )}
-    >
-      <div className="flex items-start gap-2">
-        <span className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-          <EyeOff className="size-3.5" aria-hidden />
-        </span>
-        <span className="min-w-0 space-y-1">
-          <span className="block font-medium text-foreground">{t("heatmapPrivacyMode")}</span>
-          <span className="block text-xs leading-5 text-muted-foreground">
-            {t("heatmapPrivacyDescription")}
-          </span>
-        </span>
-      </div>
-    </div>
-  );
-
   return (
     <Card size={isCompact ? "sm" : "default"} style={heatmapStyle}>
       <CardHeader className="pb-0">
@@ -506,7 +454,7 @@ export function PortfolioHeatmap({
             <div className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
               <div className={cn("min-w-0", fillHeight && "lg:flex lg:flex-col")}>
                 <div className="mb-2 flex min-h-8 items-center gap-2 overflow-hidden">
-                  {!privacyMode && selectedAccount && (
+                  {selectedAccount && (
                     <>
                       <button
                         type="button"
@@ -522,49 +470,30 @@ export function PortfolioHeatmap({
                       </p>
                     </>
                   )}
-                  {privacyMode && (
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {t("heatmapPrivacyMode")}
-                    </p>
-                  )}
-                  {!privacyMode && !selectedAccount && (
+                  {!selectedAccount && (
                     <p className="text-xs font-medium text-muted-foreground">
                       {t("heatmapAccountAllocation")}
                     </p>
                   )}
                 </div>
-                {!privacyMode && renderMobileDetailStrip("mb-3 sm:hidden")}
+                {renderMobileDetailStrip("mb-3 sm:hidden")}
                 <div
                   ref={chartRef}
+                  aria-hidden={privacyMode || undefined}
                   className={cn(
-                    "relative min-h-[168px] overflow-hidden bg-[color-mix(in_oklch,var(--muted)_24%,var(--card))] ring-1 ring-border/60 sm:min-h-[240px]",
+                    "relative min-h-[168px] overflow-hidden bg-[color-mix(in_oklch,var(--muted)_24%,var(--card))] ring-1 ring-border/60 sm:min-h-[240px] transition-[filter] duration-300",
                     fillHeight ? "lg:flex-1" : "lg:min-h-0",
+                    privacyMode && "blur-sm pointer-events-none select-none",
                   )}
                   style={fillHeight ? { minHeight: baseChartHeight } : undefined}
-                  role={privacyMode ? "status" : "img"}
-                  aria-label={privacyMode ? t("heatmapPrivacyTitle") : chartLabel}
-                  aria-describedby={privacyMode ? undefined : chartSummaryId}
+                  role="img"
+                  aria-label={chartLabel}
+                  aria-describedby={chartSummaryId}
                 >
-                  {!privacyMode && (
-                    <p id={chartSummaryId} className="sr-only">
-                      {chartSummary}
-                    </p>
-                  )}
-                  {privacyMode ? (
-                    <>
-                      <PrivacyHeatmapPlaceholder />
-                      <div className="absolute inset-0 flex items-center justify-center p-4 text-center">
-                        <div className="max-w-[18rem] rounded-lg border border-border/60 bg-card/90 px-3 py-2 shadow-sm">
-                          <p className="text-sm font-medium text-foreground">
-                            {t("heatmapPrivacyTitle")}
-                          </p>
-                          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                            {t("heatmapPrivacyDescription")}
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  ) : chartWidth > 0 ? (
+                  <p id={chartSummaryId} className="sr-only">
+                    {chartSummary}
+                  </p>
+                  {chartWidth > 0 ? (
                     <Treemap
                       width={chartWidth}
                       height={chartHeight}
@@ -591,13 +520,9 @@ export function PortfolioHeatmap({
               </div>
 
               <div className="min-w-0 space-y-3">
-                {privacyMode
-                  ? renderPrivacyPanel("hidden sm:flex")
-                  : renderDetailCard("hidden sm:block")}
+                {renderDetailCard("hidden sm:block")}
 
-                {!privacyMode &&
-                selectedAccount?.children &&
-                selectedAccount.children.length > 0 ? (
+                {selectedAccount?.children && selectedAccount.children.length > 0 ? (
                   <div className="max-h-[15rem] space-y-1 overflow-y-auto rounded-xl border border-border/60 bg-muted/10 p-1 sm:max-h-[18rem] lg:max-h-[23rem]">
                     {selectedAccount.children.map((child) => (
                       <button
@@ -644,7 +569,7 @@ export function PortfolioHeatmap({
                       </button>
                     ))}
                   </div>
-                ) : !privacyMode ? (
+                ) : (
                   <div className="relative sm:contents">
                     <div
                       className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 pr-2 overscroll-x-contain scrollbar-none sm:mx-0 sm:grid sm:max-h-[18rem] sm:grid-cols-2 sm:gap-1.5 sm:overflow-x-visible sm:overflow-y-auto sm:px-0 lg:block lg:max-h-[23rem] lg:space-y-1.5"
@@ -708,7 +633,7 @@ export function PortfolioHeatmap({
                       ))}
                     </div>
                   </div>
-                ) : null}
+                )}
               </div>
             </div>
           </>
