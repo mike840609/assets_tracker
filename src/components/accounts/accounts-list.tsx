@@ -492,23 +492,75 @@ export function AccountsList({
       ) : (
         <>
           {accounts.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 px-4 text-center border rounded-xl bg-muted/10 border-dashed">
-              <div className="bg-primary/10 p-4 rounded-full mb-4">
-                <Plus className="w-6 h-6 text-primary" />
+            <div className="relative isolate flex min-h-[55vh] flex-col overflow-hidden rounded-2xl border border-border/40 bg-muted/5">
+              {/* Background Mockup */}
+              <div
+                className="absolute inset-0 z-0 flex flex-col gap-4 p-4 sm:p-6 opacity-40 mix-blend-luminosity blur-[6px] pointer-events-none select-none"
+                aria-hidden="true"
+              >
+                {/* Mock summary row */}
+                <div className="flex items-end justify-between pb-4 border-b border-border/40">
+                  <div className="space-y-2">
+                    <div className="h-4 w-24 bg-muted/40 rounded" />
+                    <div className="h-8 w-44 bg-muted/60 rounded" />
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="h-9 w-28 bg-muted/30 rounded-lg" />
+                    <div className="h-9 w-32 bg-primary/20 rounded-lg" />
+                  </div>
+                </div>
+
+                {/* Mock table */}
+                <div className="rounded-xl border border-border/40 overflow-hidden flex-1">
+                  <div className="h-10 bg-muted/30 flex items-center gap-6 px-4">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="h-3.5 bg-muted/50 rounded" style={{ width: `${40 + i * 12}px` }} />
+                    ))}
+                  </div>
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-14 border-t border-border/30 flex items-center gap-6 px-4">
+                      <div className="h-8 w-8 rounded-full bg-muted/30" />
+                      <div className="h-4 bg-muted/40 rounded" style={{ width: `${60 + i * 20}px` }} />
+                      <div className="h-4 w-16 bg-muted/30 rounded" />
+                      <div className="flex-1" />
+                      <div className="h-4 w-20 bg-muted/40 rounded" />
+                    </div>
+                  ))}
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-1">
-                {t("accountsList.noAccountsTitle", { defaultValue: "No accounts yet" })}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-                {t("accountsList.noAccountsDesc", {
-                  defaultValue:
-                    "Add your first account to start tracking your net worth and balances.",
-                })}
-              </p>
-              <Button onClick={() => setShowForm(true)}>
-                <Plus className="h-4 w-4 mr-1.5" />
-                {t("accountsList.addAccount")}
-              </Button>
+
+              {/* CTA Overlay */}
+              <div className="relative z-10 m-auto flex max-w-[420px] flex-col items-center gap-6 rounded-2xl border border-border/50 bg-background/95 p-8 text-center shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 shadow-sm ring-1 ring-primary/20">
+                  <Plus className="h-8 w-8 text-primary" />
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold tracking-tight text-foreground">
+                    {t("accountsList.noAccountsTitle", { defaultValue: "No accounts yet" })}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed balance-text">
+                    {t("accountsList.noAccountsDesc", {
+                      defaultValue:
+                        "Add your first account to start tracking your net worth and balances.",
+                    })}
+                  </p>
+                </div>
+
+                <div className="w-full pt-2">
+                  <Button
+                    onClick={() => setShowForm(true)}
+                    className="w-full h-11 gap-2 rounded-xl text-sm font-medium shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98]"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t("accountsList.addAccount")}
+                  </Button>
+                </div>
+
+                <p className="text-xs text-muted-foreground/70">
+                  {t("accountsList.noAccountsHint", { defaultValue: "Your data is stored securely and never shared." })}
+                </p>
+              </div>
             </div>
           )}
 

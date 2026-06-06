@@ -14,6 +14,7 @@ import { useCountUp } from "@/hooks/use-count-up";
 import type { ProjectionData } from "@/lib/services/projection-service";
 import type { ChartPoint } from "./projection-chart";
 import { LazyProjectionChart } from "./lazy-projection-chart";
+import { ProjectionOnboarding } from "./projection-onboarding";
 
 const GUIDE_STORAGE_KEY = "asset-tracker:projections-guide-open";
 const MAX_YEARS = 60;
@@ -295,9 +296,10 @@ function MilestoneTimeline({
 interface Props {
   projectionData: ProjectionData;
   baseCurrency: string;
+  hasAccounts?: boolean;
 }
 
-export function ProjectionView({ projectionData, baseCurrency }: Props) {
+export function ProjectionView({ projectionData, baseCurrency, hasAccounts }: Props) {
   const { latestNetWorth, trailing12mSavings, annualSnapshots, hasData } = projectionData;
   const t = useTranslations("projections");
   const { privacyMode } = usePrivacyMode();
@@ -390,11 +392,7 @@ export function ProjectionView({ projectionData, baseCurrency }: Props) {
   const mask = (s: string) => (privacyMode ? "***" : s);
 
   if (!hasData) {
-    return (
-      <div className="rounded-xl border border-dashed border-border/60 bg-card/50 p-12 text-center text-sm text-muted-foreground">
-        {t("noData")}
-      </div>
-    );
+    return <ProjectionOnboarding hasAccounts={hasAccounts} />;
   }
 
   const hasExpenses = annualExpenses > 0;

@@ -6,6 +6,7 @@ import { pickMessages } from "@/lib/i18n-utils";
 import { HistoryPullRefresh } from "@/components/history/history-pull-refresh";
 import { HistoryView } from "@/components/history/history-view";
 import { getFullNormalizedHistory } from "@/lib/services/history-service";
+import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
 
 const CLIENT_NAMESPACES = ["trendChart", "history", "freshness"];
 
@@ -14,9 +15,10 @@ async function HistoryContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
   const settingsP = getOrCreateSettings(userId);
-  const [allMessages, snapshots, settings] = await Promise.all([
+  const [allMessages, snapshots, accounts, settings] = await Promise.all([
     getMessages(),
     settingsP.then((s) => getFullNormalizedHistory(userId, s.baseCurrency)),
+    fetchUserAccountsWithHoldings(userId),
     settingsP,
   ]);
 
@@ -26,6 +28,7 @@ async function HistoryContent() {
         <HistoryView
           snapshots={snapshots}
           baseCurrency={settings.baseCurrency}
+          hasAccounts={accounts.length > 0}
           showTitle
           className="animate-in fade-in duration-200"
         />

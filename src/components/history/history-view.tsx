@@ -13,10 +13,12 @@ import { DailyChangeChart } from "./daily-change-chart";
 import { HistoryHeatmap } from "./history-heatmap";
 import { HistorySummary } from "./history-summary";
 import { HistoryTable } from "./history-table";
+import { HistoryOnboarding } from "./history-onboarding";
 
 type Props = {
   snapshots: NormalizedSnapshot[];
   baseCurrency: string;
+  hasAccounts?: boolean;
   showTitle?: boolean;
   hideTrendRangeFilter?: boolean;
   className?: string;
@@ -25,6 +27,7 @@ type Props = {
 export function HistoryView({
   snapshots,
   baseCurrency,
+  hasAccounts,
   showTitle = false,
   hideTrendRangeFilter = false,
   className,
@@ -39,19 +42,7 @@ export function HistoryView({
     return (
       <div className={cn("space-y-4 md:space-y-8", className)}>
         {showTitle && <LargeTitleHeading>{t("title")}</LargeTitleHeading>}
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/10 px-6 py-16 text-center">
-          <div className="mb-4 rounded-full bg-primary/10 p-4">
-            <LineChart className="size-6 text-primary" aria-hidden="true" />
-          </div>
-          <h2 className="mb-1.5 text-lg font-semibold text-foreground">{t("emptyTitle")}</h2>
-          <p className="mb-6 max-w-md text-pretty text-sm leading-relaxed text-muted-foreground">
-            {t("emptyDesc")}
-          </p>
-          <Link href="/" className={buttonVariants()}>
-            {t("emptyCta")}
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </Link>
-        </div>
+        <HistoryOnboarding hasAccounts={hasAccounts} />
       </div>
     );
   }

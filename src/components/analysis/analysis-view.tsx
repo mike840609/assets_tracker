@@ -385,9 +385,8 @@ export function AnalysisView({
         )}
       </div>
 
-      {/* History tab content — mobile only */}
       {activeTab === "history" && (
-        <HistoryView snapshots={snapshots} baseCurrency={baseCurrency} className="md:hidden" />
+        <HistoryView snapshots={snapshots} baseCurrency={baseCurrency} hasAccounts={rawHistory.accounts.length > 0} className="md:hidden" />
       )}
     </div>
   );
