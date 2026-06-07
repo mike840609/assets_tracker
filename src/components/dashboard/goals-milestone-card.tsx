@@ -42,20 +42,22 @@ export function GoalsMilestoneCard({
 
   return (
     <Card>
-      <CardHeader className="pb-2 flex flex-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Target className="h-4 w-4 text-primary" />
-          <CardTitle asChild>
-            <h2>{t("title")}</h2>
-          </CardTitle>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <Target className="h-4 w-4 shrink-0 text-primary" />
+            <CardTitle asChild>
+              <h2 className="truncate">{t("title")}</h2>
+            </CardTitle>
+          </div>
+          <Link
+            href="/goals"
+            className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            {t("viewAll", { count: totalGoals })}
+            <ArrowRight className="h-3 w-3" aria-hidden="true" />
+          </Link>
         </div>
-        <Link
-          href="/goals"
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {t("viewAll", { count: totalGoals })}
-          <ArrowRight className="h-3 w-3" />
-        </Link>
       </CardHeader>
 
       <CardContent className="pt-0">

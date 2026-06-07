@@ -18,12 +18,14 @@ import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
 import { GoalsMilestoneCard } from "@/components/dashboard/goals-milestone-card";
 import { ProjectionEntryCard } from "@/components/dashboard/projection-entry-card";
 import { PortfolioHeatmap } from "@/components/analysis/portfolio-heatmap";
+import { WatchlistCard } from "@/components/dashboard/watchlist-card";
 import Link from "next/link";
 import { ArrowRight, History } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardOnboarding } from "./dashboard-onboarding";
+import { getCachedTrackedStocks } from "@/lib/services/stock-watch-service";
 import type { GoalWithProgress } from "@/lib/types";
 
 const fetchPreviousSnapshot = cache((userId: string) =>
@@ -249,6 +251,12 @@ async function GoalsMilestoneSection({
   );
 }
 
+async function WatchlistSection({ userId }: { userId: string }) {
+  const stocks = await getCachedTrackedStocks(userId);
+
+  return <WatchlistCard stocks={stocks} />;
+}
+
 /**
  * Accounts summary table.
  * Shares the same cached summary (data-cache dedup).
@@ -356,6 +364,9 @@ export async function DashboardContent({ userId }: { userId: string }) {
         <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4">
           <Suspense fallback={null}>
             <GoalsMilestoneSection userId={userId} baseCurrency={baseCurrency} />
+          </Suspense>
+          <Suspense fallback={<ChartCardSkeleton />}>
+            <WatchlistSection userId={userId} />
           </Suspense>
           {/* Allocation lives in the desktop rail; on mobile it joins the donut pair below */}
           <div className="hidden lg:block">
