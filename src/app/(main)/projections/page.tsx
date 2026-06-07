@@ -6,6 +6,7 @@ import { getProjectionData } from "@/lib/services/projection-service";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { ProjectionView } from "@/components/projections/projection-view";
+import { prisma } from "@/lib/prisma";
 
 const CLIENT_NAMESPACES = ["projections"];
 
@@ -15,11 +16,12 @@ async function ProjectionsContent() {
   const userId = session.user.id;
 
   const settingsP = getOrCreateSettings(userId);
-  const [t, messages, projectionData, settings] = await Promise.all([
+  const [t, messages, projectionData, settings, accountCount] = await Promise.all([
     getTranslations("projections"),
     getMessages(),
     settingsP.then((s) => getProjectionData(userId, s.baseCurrency)),
     settingsP,
+    prisma.account.count({ where: { userId, isActive: true } }),
   ]);
 
   return (
@@ -27,7 +29,11 @@ async function ProjectionsContent() {
       <div className="space-y-4 md:space-y-8 animate-in fade-in duration-200">
         <LargeTitleHeading>{t("title")}</LargeTitleHeading>
 
-        <ProjectionView projectionData={projectionData} baseCurrency={settings.baseCurrency} />
+        <ProjectionView
+          projectionData={projectionData}
+          baseCurrency={settings.baseCurrency}
+          hasAccounts={accountCount > 0}
+        />
       </div>
     </NextIntlClientProvider>
   );

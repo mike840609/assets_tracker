@@ -1,118 +1,200 @@
-import Link from "next/link";
-import { getTranslations } from "next-intl/server";
-import { Plus, Wallet, PieChart, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+"use client";
 
-export async function DashboardOnboarding() {
-  const t = await getTranslations("dashboard");
+import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
+import {
+  Plus,
+  Wallet,
+  TrendingUp,
+  Activity,
+  BarChart3,
+  Building2,
+  ChevronRight,
+} from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+export function DashboardOnboarding() {
+  const t = useTranslations("dashboard");
+  const locale = useLocale();
+  const isZh = locale.startsWith("zh");
+
+  // Localized checklist copy
+  const checklist = {
+    title: isZh ? "開始使用資產追蹤器" : "Get Started with Assets Tracker",
+    subtitle: isZh
+      ? "完成以下步驟以完全解鎖您的儀表板和圖表。"
+      : "Complete these steps to fully unlock your dashboard and charts.",
+    progress: (completed: number) =>
+      isZh ? `已完成 ${completed} / 3 個步驟` : `${completed} of 3 steps completed`,
+    steps: [
+      {
+        num: 1,
+        title: isZh ? "連結您的第一個帳戶" : "Connect your first account",
+        desc: isZh
+          ? "連結銀行帳戶、投資或加密貨幣錢包以計算淨資產。"
+          : "Link bank accounts, investments, or crypto wallets to compute net worth.",
+        action: isZh ? "新增帳戶" : "Add Account",
+        href: "/accounts",
+      },
+      {
+        num: 2,
+        title: isZh ? "設定一個目標" : "Establish a target goal",
+        desc: isZh
+          ? "設定儲蓄、投資或淨資產目標以追蹤整體進度。"
+          : "Set savings, investment, or net worth milestones to track overall progress.",
+        action: isZh ? "建立目標" : "Create Goal",
+        href: "/goals",
+      },
+      {
+        num: 3,
+        title: isZh ? "分析資產表現" : "Analyze asset performance",
+        desc: isZh
+          ? "累積每日快照以檢視投資組合分配和歷史成長。"
+          : "Accrue snapshots to review portfolio allocation and historical growth.",
+        action: isZh ? "檢視分析" : "Review Analysis",
+        href: "/analysis",
+      },
+    ],
+  };
 
   return (
-    <div className="relative isolate flex min-h-[75vh] flex-col">
-      {/* 
-        Background Mockup: A blurred, desaturated preview of the real dashboard 
-        This demonstrates the value of the product (the "aha moment") immediately.
-      */}
+    <div className="relative isolate flex min-h-[75vh] flex-col items-center justify-center overflow-hidden rounded-2xl border border-border/40 bg-card mt-4 shadow-sm p-6 sm:p-12">
+      {/* Background Mockup */}
       <div
-        className="absolute inset-0 z-0 flex flex-col gap-6 overflow-hidden opacity-40 mix-blend-luminosity blur-[6px] pointer-events-none select-none transition-all duration-1000"
+        className="absolute inset-0 z-0 flex flex-col gap-6 p-8 opacity-25 blur-[6px] pointer-events-none select-none transition-all duration-700"
         aria-hidden="true"
       >
-        <div className="flex items-center justify-end mb-2">
+        {/* Mock Topbar */}
+        <div className="flex justify-between items-center w-full mb-2">
+          <div className="h-6 w-36 rounded bg-muted/70" />
           <div className="h-8 w-28 rounded-md bg-muted/60" />
         </div>
 
-        {/* Mock Net Worth Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-          <Card className="col-span-2 rounded-2xl bg-card border-border/40 shadow-sm">
-            <CardContent className="h-full p-4 sm:p-6 flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-1.5">
+        {/* Mock Net Worth Summary */}
+        <div className="grid grid-cols-3 gap-6 w-full">
+          <Card className="col-span-3 rounded-xl bg-background border-border/50 shadow-sm">
+            <CardContent className="p-6 flex flex-col justify-center">
+              <div className="flex items-center gap-2 mb-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  <Wallet className="h-4 w-4 text-primary/60" />
+                  <Wallet className="h-4 w-4 text-primary" />
                 </div>
-                <div className="h-4 w-20 rounded bg-muted/60" />
+                <div className="h-4 w-28 rounded bg-muted/60" />
               </div>
-              <div className="h-8 w-40 rounded bg-foreground/20 mt-1" />
-              <div className="h-5 w-28 rounded bg-emerald-500/20 mt-3" />
+              <div className="h-8 w-48 rounded bg-foreground/20 mt-1" />
+              <div className="flex items-center gap-2 mt-4">
+                <div className="h-4 w-32 rounded bg-[var(--gain)]/20" />
+                <div className="h-4 w-20 rounded bg-muted/50" />
+              </div>
             </CardContent>
           </Card>
-          {[0, 1].map((i) => (
-            <Card key={i} className="col-span-1 rounded-2xl bg-card border-border/40 shadow-sm">
-              <CardContent className="h-full p-4 sm:p-6 flex flex-col justify-center">
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <div className="h-4 w-4 rounded-sm bg-muted/60" />
-                  <div className="h-4 w-16 rounded bg-muted/60" />
-                </div>
-                <div className="h-6 w-24 rounded bg-foreground/20 mt-1" />
-              </CardContent>
-            </Card>
-          ))}
         </div>
 
-        {/* Mock Charts & Goals Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6">
-          <div className="lg:col-span-8">
-            <Card className="h-[320px] bg-card border-border/40 shadow-sm">
-              <CardHeader className="pb-2">
-                <div className="h-5 w-32 rounded bg-muted/60" />
-              </CardHeader>
-              <CardContent className="flex flex-col justify-end h-[calc(100%-60px)]">
-                {/* Abstract Area Chart Mock */}
-                <div className="w-full h-[180px] bg-gradient-to-t from-primary/10 to-transparent rounded-t-sm border-t border-primary/20 relative">
-                  <div className="absolute inset-x-0 bottom-0 h-px bg-muted-foreground/20" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="flex flex-col gap-3 sm:gap-6 lg:col-span-4">
-            <Card className="h-[120px] bg-card border-border/40 shadow-sm">
-              <CardContent className="h-full p-4 sm:p-6 flex flex-col justify-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="h-5 w-5 rounded-full bg-primary/10" />
-                  <div className="h-4 w-24 rounded bg-muted/60" />
-                </div>
-                <div className="h-2 w-full rounded-full bg-muted/30 overflow-hidden">
-                  <div className="h-full w-[65%] bg-primary/40 rounded-full" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="flex-1 min-h-[176px] bg-card border-border/40 shadow-sm">
-              <CardContent className="h-full flex items-center justify-center p-6">
-                <div className="h-28 w-28 rounded-full border-[12px] border-muted/30 border-t-primary/30 border-r-primary/20" />
-              </CardContent>
-            </Card>
-          </div>
+        {/* Mock Grid (Performance & Allocation) */}
+        <div className="grid grid-cols-2 gap-6 w-full">
+          <Card className="rounded-xl bg-background border-border/50 shadow-sm h-44">
+            <CardHeader className="p-4 pb-0">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-muted-foreground" />
+                <div className="h-4 w-24 rounded bg-muted/60" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-4 h-[calc(100%-2.5rem)] flex items-end relative overflow-hidden">
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-primary/20 to-transparent border-t border-primary/40" />
+            </CardContent>
+          </Card>
+          <Card className="rounded-xl bg-background border-border/50 shadow-sm h-44">
+            <CardHeader className="p-4 pb-0">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <div className="h-4 w-24 rounded bg-muted/60" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 flex items-center justify-center h-[calc(100%-2.5rem)]">
+              <div className="h-20 w-20 rounded-full border-[10px] border-muted/30 border-t-primary border-r-primary/60" />
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Mock Accounts List */}
+        <Card className="rounded-xl bg-background border-border/50 shadow-sm w-full p-6 flex flex-col gap-4">
+          <div className="h-4 w-24 rounded bg-muted/60" />
+          <div className="space-y-3">
+            {[
+              { name: "Chase Checking", val: "$12,450.00" },
+              { name: "Fidelity Brokerage", val: "$98,200.00" },
+              { name: "Coinbase Wallet", val: "$13,850.00" },
+            ].map((acc, i) => (
+              <div
+                key={i}
+                className="flex justify-between items-center border-b border-border/20 pb-2 last:border-0 last:pb-0"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded bg-muted/50 flex items-center justify-center">
+                    <Building2 className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="text-sm font-medium text-foreground/75">{acc.name}</div>
+                </div>
+                <div className="font-mono text-sm font-semibold">{acc.val}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
       </div>
 
-      {/* 
-        Foreground CTA Modal 
-        A focused card that floats over the blurred dashboard.
-      */}
-      <div className="relative z-10 m-auto mt-[12vh] flex max-w-[440px] flex-col items-center gap-6 rounded-2xl border border-border/50 bg-background/95 p-8 text-center shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
-        <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 shadow-sm ring-1 ring-primary/20">
-          <TrendingUp className="h-10 w-10 text-primary" />
+      {/* Foreground CTA Checklist Overlay Card */}
+      <div className="relative z-10 flex w-full max-w-[500px] flex-col gap-6 rounded-2xl border border-border/50 bg-background/95 p-8 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
+              <TrendingUp className="h-5 w-5 text-primary" />
+            </div>
+            <h2 className="text-xl font-bold tracking-tight text-foreground">{checklist.title}</h2>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">{checklist.subtitle}</p>
         </div>
 
-        <div className="space-y-3">
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-            {t("emptyTitle")}
-          </h2>
-          <p className="text-base text-muted-foreground leading-relaxed balance-text">
-            {t("emptyDescription")}
-          </p>
+        {/* Progress Tracker */}
+        <div className="space-y-2 border-y border-border/40 py-4">
+          <div className="flex justify-between text-xs font-semibold text-muted-foreground">
+            <span>{checklist.progress(0)}</span>
+            <span>0%</span>
+          </div>
+          <div className="h-1.5 w-full bg-muted/60 rounded-full overflow-hidden">
+            <div className="h-full w-0 bg-primary transition-all duration-500" />
+          </div>
         </div>
 
-        <div className="w-full pt-2">
-          <Link
-            href="/accounts"
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-8 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98]"
-          >
-            <Plus className="h-4 w-4" />
-            {t("emptyAction")}
-          </Link>
+        {/* Steps List */}
+        <div className="flex flex-col gap-4">
+          {checklist.steps.map((step) => (
+            <div
+              key={step.num}
+              className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted/10 transition-colors"
+            >
+              <div className="w-5 h-5 rounded-full border border-muted-foreground/30 flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0 mt-0.5">
+                {step.num}
+              </div>
+              <div className="flex-1 flex flex-col gap-1">
+                <div className="text-sm font-semibold text-foreground/90 leading-tight">
+                  {step.title}
+                </div>
+                <div className="text-xs text-muted-foreground leading-normal">{step.desc}</div>
+              </div>
+              <Link
+                href={step.href}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "h-7 rounded-lg text-xs font-semibold px-2.5 gap-1 shrink-0 select-none hover:bg-primary hover:text-primary-foreground border-border/60 transition-all",
+                )}
+              >
+                {step.action}
+                <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+          ))}
         </div>
-
-        {/* Security / Trust snippet below the CTA */}
-        <p className="text-xs text-muted-foreground/70">{t("emptyHint")}</p>
       </div>
     </div>
   );
