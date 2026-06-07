@@ -279,14 +279,8 @@ export function DashboardOnboarding() {
               </p>
             </div>
           </div>
-          <div className="space-y-3 rounded-xl bg-muted/50 p-3 text-sm">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">{t("aside.progressLabel")}</span>
-              <span className="font-mono font-semibold text-foreground">0/3</span>
-            </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-background">
-              <div className="h-full w-0 rounded-full bg-primary" />
-            </div>
+          <div className="space-y-1.5 rounded-xl bg-muted/50 p-3 text-sm">
+            <p className="text-xs font-medium text-primary">{t("aside.progressLabel")}</p>
             <p className="text-xs leading-5 text-muted-foreground">{t("aside.progressHint")}</p>
           </div>
         </div>

@@ -1,153 +1,159 @@
 "use client";
 
-import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowRight, Sparkles } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { CalendarClock, SlidersHorizontal, Sparkles, Target, WalletCards } from "lucide-react";
+import { FirstRunSurface } from "@/components/onboarding/first-run-surface";
 
 export function ProjectionOnboarding({ hasAccounts }: { hasAccounts?: boolean }) {
-  const t = useTranslations("projections");
-  const cta =
-    (hasAccounts ?? true)
-      ? { href: "/", label: t("emptyCtaDashboard", { defaultValue: "Go to dashboard" }) }
-      : {
-          href: "/accounts",
-          label: t("emptyCtaAddAccount", { defaultValue: "Add your first account" }),
-        };
+  const readyForSnapshots = hasAccounts ?? true;
+  const t = useTranslations("projections.onboarding");
+  const milestones = [
+    { title: t("preview.milestoneOne.title"), value: t("preview.milestoneOne.value") },
+    { title: t("preview.milestoneTwo.title"), value: t("preview.milestoneTwo.value") },
+    { title: t("preview.milestoneThree.title"), value: t("preview.milestoneThree.value") },
+  ];
+  const assumptions = [
+    {
+      label: t("preview.assumptions.expenses"),
+      value: t("preview.values.expenses"),
+      width: "40%",
+    },
+    {
+      label: t("preview.assumptions.savings"),
+      value: t("preview.values.savings"),
+      width: "66%",
+    },
+    {
+      label: t("preview.assumptions.return"),
+      value: t("preview.values.return"),
+      width: "52%",
+    },
+    {
+      label: t("preview.assumptions.inflation"),
+      value: t("preview.values.inflation"),
+      width: "28%",
+    },
+  ];
 
-  return (
-    <div className="relative isolate flex min-h-[75vh] flex-col items-center justify-center overflow-hidden rounded-2xl border border-border/40 bg-card mt-4 shadow-sm p-6 sm:p-12">
-      {/* Background Mockup */}
-      <div
-        className="absolute inset-0 z-0 flex flex-col gap-6 p-8 opacity-30 blur-[6px] pointer-events-none select-none transition-all duration-700"
-        aria-hidden="true"
-      >
-        {/* Mock Topbar */}
-        <div className="flex justify-between items-center w-full mb-2">
-          <div className="h-6 w-44 rounded bg-muted/70" />
-          <div className="h-8 w-24 rounded-md bg-muted/60" />
-        </div>
-
-        {/* Mock Projections Layout */}
-        <div className="flex flex-col lg:flex-row gap-6 w-full flex-1">
-          {/* Main Chart Column */}
-          <div className="flex-1 flex flex-col gap-6">
-            <Card className="rounded-xl bg-background border-border/50 shadow-sm h-28 flex flex-col p-6 pb-2 justify-between">
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <div className="h-4 w-28 rounded bg-muted/60" />
-                  <div className="h-6 w-36 rounded bg-foreground/20 mt-1" />
-                </div>
-                <div className="bg-[var(--gain)]/15 text-[var(--gain)] px-3 py-1 rounded-md text-[10px] font-semibold">
-                  +12% vs goal
-                </div>
-              </div>
-            </Card>
-
-            <Card className="rounded-xl bg-background border-border/50 shadow-sm h-44 overflow-hidden flex flex-col">
-              <div className="flex-1 relative w-full flex items-end">
-                <div className="absolute inset-0 z-0 flex flex-col justify-center py-6">
-                  <div className="w-full h-px border-t border-dashed border-border/40" />
-                </div>
-                {/* Simulated projection chart lines */}
-                <div
-                  className="w-full h-[60%] bg-muted/30 relative z-10"
-                  style={{
-                    clipPath:
-                      "polygon(0 100%, 0 80%, 20% 75%, 40% 65%, 60% 50%, 80% 30%, 100% 0, 100% 100%)",
-                  }}
-                />
-                <div
-                  className="w-full h-[90%] bg-gradient-to-t from-primary/20 to-transparent absolute bottom-0 left-0 z-20"
-                  style={{
-                    clipPath:
-                      "polygon(0 100%, 0 70%, 20% 55%, 40% 40%, 60% 25%, 80% 10%, 100% 0, 100% 100%)",
-                  }}
-                >
-                  <div
-                    className="absolute top-0 right-0 w-full h-0.5 bg-primary origin-left"
-                    style={{
-                      clipPath:
-                        "polygon(0 70%, 20% 55%, 40% 40%, 60% 25%, 80% 10%, 100% 0, 100% 100%, 0 100%)",
-                    }}
-                  />
-                </div>
-              </div>
-            </Card>
+  const preview = (
+    <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="rounded-xl border border-border/70 bg-background/80 p-4 sm:p-5">
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-foreground">{t("preview.chartTitle")}</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              {t("preview.chartSubtitle")}
+            </p>
           </div>
-
-          {/* Side Assumptions Column */}
-          <Card className="w-56 rounded-xl bg-background border-border/50 shadow-sm p-6 flex flex-col gap-6">
-            <div className="h-4 w-24 rounded bg-muted/60" />
-            <div className="space-y-6">
-              {[
-                { label: "Annual Return", val: "7.0%" },
-                { label: "Inflation", val: "2.5%" },
-                { label: "Savings Rate", val: "15%" },
-              ].map((item, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="flex justify-between text-[10px]">
-                    <span className="text-muted-foreground">{item.label}</span>
-                    <span className="font-semibold">{item.val}</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-muted/50 rounded-full" />
-                </div>
-              ))}
-            </div>
-          </Card>
+          <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+            {t("preview.lens")}
+          </span>
         </div>
 
-        {/* Mock Projection Milestones Table */}
-        <Card className="rounded-xl bg-background border-border/50 shadow-sm w-full p-6 flex flex-col gap-4">
-          <div className="h-4 w-36 rounded bg-muted/60" />
-          <div className="grid grid-cols-3 gap-6">
-            {[
-              { age: "Age 45", val: "$325,000" },
-              { age: "Age 55", val: "$1,180,000" },
-              { age: "Age 65", val: "$3,250,000" },
-            ].map((milestone, i) => (
+        <div className="relative h-64 overflow-hidden rounded-lg border border-border/60 bg-card/70">
+          <div className="absolute inset-0 grid grid-rows-4">
+            {[0, 1, 2, 3].map((line) => (
+              <span key={line} className="border-b border-dashed border-border/50" />
+            ))}
+          </div>
+          <div className="absolute inset-x-5 top-9 border-t border-dashed border-[var(--gain)]/60" />
+          <div
+            className="absolute inset-x-0 bottom-0 h-48 bg-muted/45"
+            style={{
+              clipPath:
+                "polygon(0 82%, 16% 76%, 32% 70%, 48% 60%, 64% 46%, 82% 28%, 100% 16%, 100% 100%, 0 100%)",
+            }}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 h-56 bg-primary/15"
+            style={{
+              clipPath:
+                "polygon(0 88%, 16% 80%, 32% 70%, 48% 54%, 64% 36%, 82% 18%, 100% 6%, 100% 100%, 0 100%)",
+            }}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 h-56 border-t-2 border-primary"
+            style={{
+              clipPath:
+                "polygon(0 88%, 16% 80%, 32% 70%, 48% 54%, 64% 36%, 82% 18%, 100% 6%, 100% 10%, 0 92%)",
+            }}
+          />
+          <div className="absolute bottom-5 left-5 right-5 grid grid-cols-3 gap-2">
+            {milestones.map((milestone) => (
               <div
-                key={i}
-                className="flex flex-col gap-1 border-r border-border/20 last:border-0 pr-4"
+                key={milestone.title}
+                className="rounded-lg bg-background/90 px-3 py-2 text-xs shadow-sm ring-1 ring-border/70"
               >
-                <div className="text-xs text-muted-foreground font-medium">{milestone.age}</div>
-                <div className="font-mono text-base font-semibold">{milestone.val}</div>
+                <p className="font-medium text-foreground">{milestone.title}</p>
+                <p className="mt-1 font-mono text-muted-foreground">{milestone.value}</p>
               </div>
             ))}
           </div>
-        </Card>
+        </div>
       </div>
 
-      {/* Foreground CTA Overlay Card */}
-      <div className="relative z-10 flex max-w-[460px] flex-col items-center gap-6 rounded-2xl border border-border/50 bg-background/95 p-8 text-center shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 shadow-sm ring-1 ring-primary/20">
-          <Sparkles className="h-8 w-8 text-primary" />
+      <div className="rounded-xl border border-border/70 bg-background/80 p-4">
+        <div className="mb-5 flex items-center gap-2 text-sm font-medium text-foreground">
+          <SlidersHorizontal className="h-4 w-4 text-primary" aria-hidden="true" />
+          <span>{t("preview.assumptionsTitle")}</span>
         </div>
-
-        <div className="space-y-3">
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground balance-text">
-            {t("title")}
-          </h2>
-          <p className="text-base text-muted-foreground leading-relaxed">{t("noData")}</p>
+        <div className="space-y-4">
+          {assumptions.map((assumption) => (
+            <div key={assumption.label} className="space-y-2">
+              <div className="flex justify-between gap-3 text-xs">
+                <span className="text-muted-foreground">{assumption.label}</span>
+                <span className="font-mono font-medium text-foreground">{assumption.value}</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary"
+                  style={{ width: assumption.width }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
-
-        <div className="w-full pt-2">
-          <Link
-            href={cta.href}
-            className={cn(
-              buttonVariants({ size: "lg" }),
-              "w-full sm:w-auto gap-2 rounded-xl text-base font-medium transition-all active:scale-[0.98]",
-            )}
-          >
-            {cta.label}
-            <ArrowRight className="h-5 w-5" />
-          </Link>
-        </div>
-
-        <p className="text-xs lg:text-sm text-muted-foreground">{t("emptyHint")}</p>
       </div>
     </div>
+  );
+
+  return (
+    <FirstRunSurface
+      eyebrow={t("eyebrow")}
+      title={t(readyForSnapshots ? "titleWithAccounts" : "titleNoAccounts")}
+      description={t(readyForSnapshots ? "descriptionWithAccounts" : "descriptionNoAccounts")}
+      primaryAction={{
+        label: t(readyForSnapshots ? "primaryWithAccounts" : "primaryNoAccounts"),
+        href: readyForSnapshots ? "/" : "/accounts",
+        icon: readyForSnapshots ? Sparkles : WalletCards,
+      }}
+      preview={preview}
+      activeStepIndex={readyForSnapshots ? 1 : 0}
+      steps={[
+        {
+          title: t("steps.accounts.title"),
+          description: t("steps.accounts.description"),
+          icon: WalletCards,
+        },
+        {
+          title: t("steps.history.title"),
+          description: t("steps.history.description"),
+          icon: CalendarClock,
+        },
+        {
+          title: t("steps.assumptions.title"),
+          description: t("steps.assumptions.description"),
+          icon: Target,
+        },
+      ]}
+      aside={{
+        title: t("aside.title"),
+        description: t("aside.description"),
+        progressLabel: t("aside.progressLabel"),
+        progressHint: t(
+          readyForSnapshots ? "aside.progressHintWithAccounts" : "aside.progressHintNoAccounts",
+        ),
+      }}
+    />
   );
 }

@@ -213,7 +213,7 @@
       "aside": {
         "title": "接下來會解鎖什麼",
         "description": "帳戶建立後，這裡會變成追蹤變化、配置、曝險、目標與表現的即時儀表板。",
-        "progressLabel": "設定進度",
+        "progressLabel": "下一步",
         "progressHint": "新增第一個帳戶後，儀表板圖表會立即啟用。"
       }
     }
@@ -228,6 +228,39 @@
     "emptyTitle": "尚無目標",
     "emptyDescription": "設定目標 — 例如「在 2030 年達到 100 萬美元淨資產」 — 並在此處追蹤進度。",
     "emptyHint": "建立目標以持續追蹤您的里程碑。",
+    "onboarding": {
+      "eyebrow": "用目標開始規劃",
+      "title": "把一個數字變成可追蹤的里程碑。",
+      "description": "建立含有目標金額、範圍與選填日期的目標，讓進度能隨著餘額變化保持可見。",
+      "primaryAction": "建立目標",
+      "preview": {
+        "cardTitle": "目標預覽",
+        "cardSubtitle": "設定目標與對應來源後，進度會顯示在這裡。",
+        "status": "可設定",
+        "progress": "進度",
+        "scopeTitle": "目標範圍"
+      },
+      "steps": {
+        "goal": {
+          "title": "設定目標",
+          "description": "命名里程碑並輸入金額。"
+        },
+        "scope": {
+          "title": "選擇範圍",
+          "description": "追蹤淨資產、資產、類別或單一帳戶。"
+        },
+        "deadline": {
+          "title": "加入日期",
+          "description": "有時間限制時設定期限。"
+        }
+      },
+      "aside": {
+        "title": "目標帶來什麼",
+        "description": "目標會讓儀表板出現規劃區，也讓財務預測更容易判讀。",
+        "progressLabel": "下一步",
+        "progressHint": "目標可以立即使用既有帳戶，也可以等待之後新增的帳戶。"
+      }
+    },
     "ofTarget": "/ {target}",
     "completed": "已達成",
     "confirmDelete": "確定刪除此目標？",
@@ -319,6 +352,43 @@
     "emptyBody": "累積每日快照後，這個頁面會呈現月底資產、淨資產變化、現金流與帳戶歸因。",
     "emptyCtaAddAccount": "新增第一個帳戶",
     "emptyCtaDashboard": "查看儀表板",
+    "onboarding": {
+      "eyebrow": "分析設定",
+      "titleNoAccounts": "先建立真正分析需要的基礎",
+      "titleWithAccounts": "分析正在等待歷史資料",
+      "descriptionNoAccounts": "新增想追蹤的帳戶後，快照會把它們轉成變動、現金流與歸因視圖。",
+      "descriptionWithAccounts": "帳戶已準備好。累積快照後，這裡會成為檢視變動、組成與帳戶貢獻的精簡工作台。",
+      "primaryNoAccounts": "新增帳戶",
+      "primaryWithAccounts": "查看儀表板",
+      "preview": {
+        "trendTitle": "資產與負債",
+        "trendSubtitle": "月底快照會成為分析的主軸。",
+        "range": "今年",
+        "cashFlowTitle": "現金流拆分",
+        "attributionTitle": "帳戶歸因"
+      },
+      "steps": {
+        "accounts": {
+          "title": "新增帳戶",
+          "description": "選擇要送進工作台的餘額與持倉。"
+        },
+        "snapshots": {
+          "title": "擷取快照",
+          "description": "每日紀錄會形成每張圖表的月底基準。"
+        },
+        "read": {
+          "title": "解讀變動",
+          "description": "比較現金流、市場變動與帳戶層級歸因。"
+        }
+      },
+      "aside": {
+        "title": "分析需要一段軌跡",
+        "description": "在有足夠歷史可以比較期初、期末與每月價值前，這個頁面會保持安靜。",
+        "progressLabel": "下一步",
+        "progressHintNoAccounts": "先從帳戶開始；之後系統會接手快照節奏。",
+        "progressHintWithAccounts": "帳戶已連接。等第一批快照建立後，就能回來查看變動與組成。"
+      }
+    },
     "noDataMonth": "無資料",
     "rangeYTD": "今年",
     "range6M": "6個月",
@@ -373,6 +443,66 @@
     "emptyHint": "資產預測是根據您目前的儲蓄和投資表現所估算。",
     "emptyCtaAddAccount": "新增第一個帳戶",
     "emptyCtaDashboard": "前往儀表板",
+    "onboarding": {
+      "eyebrow": "預測設定",
+      "titleNoAccounts": "先給預測引擎一個投資組合",
+      "titleWithAccounts": "預測正在等待歷史資料",
+      "descriptionNoAccounts": "先新增帳戶，模型才有目前淨資產、儲蓄軌跡與真實投資組合可作為起點。",
+      "descriptionWithAccounts": "帳戶已準備好。有快照後，這裡就能估算里程碑、FIRE 時間與假設敏感度。",
+      "primaryNoAccounts": "新增帳戶",
+      "primaryWithAccounts": "前往儀表板",
+      "preview": {
+        "chartTitle": "未來路徑",
+        "chartSubtitle": "歷史淨資產會錨定預測曲線。",
+        "lens": "實質價值",
+        "milestoneOne": {
+          "title": "第 5 年",
+          "value": "$325k"
+        },
+        "milestoneTwo": {
+          "title": "第 10 年",
+          "value": "$780k"
+        },
+        "milestoneThree": {
+          "title": "FI 目標",
+          "value": "$1.8m"
+        },
+        "assumptionsTitle": "假設條件",
+        "assumptions": {
+          "expenses": "支出",
+          "savings": "儲蓄",
+          "return": "報酬",
+          "inflation": "通膨"
+        },
+        "values": {
+          "expenses": "$72k",
+          "savings": "$28k",
+          "return": "7.0%",
+          "inflation": "2.5%"
+        }
+      },
+      "steps": {
+        "accounts": {
+          "title": "新增帳戶",
+          "description": "使用啟用中的餘額作為模型起點。"
+        },
+        "history": {
+          "title": "建立歷史",
+          "description": "快照會為圖表提供真實錨點與儲蓄脈絡。"
+        },
+        "assumptions": {
+          "title": "調整輸入",
+          "description": "調整支出、儲蓄、報酬、通膨與提款率。"
+        }
+      },
+      "aside": {
+        "title": "預測從證據開始",
+        "description": "當預測以已記錄的淨資產為基礎，而不是空白估計時，才會更有用。",
+        "progressLabel": "下一步",
+        "progressHintNoAccounts": "先新增投資組合，歷史與假設才有真實資料可用。",
+        "progressHintWithAccounts": "帳戶已連接。擷取快照後即可啟用模型。"
+      }
+    },
     "fireNumber": "FIRE 目標金額",
     "currentNetWorth": "目前淨資產",
     "progressToFire": "FIRE 達成進度",
@@ -482,6 +612,43 @@
     "emptyCtaAddAccount": "新增第一個帳戶",
     "emptyCtaDashboard": "前往儀表板",
     "emptyCta": "前往儀表板",
+    "onboarding": {
+      "eyebrow": "歷史設定",
+      "titleNoAccounts": "先用帳戶開啟這本分類帳",
+      "titleWithAccounts": "歷史正在等待快照",
+      "descriptionNoAccounts": "新增想追蹤的帳戶後，每次快照都會成為淨資產分類帳中的一筆日期紀錄。",
+      "descriptionWithAccounts": "帳戶已準備好。快照執行後，這裡會顯示趨勢線、活動月曆與每一筆變化。",
+      "primaryNoAccounts": "新增帳戶",
+      "primaryWithAccounts": "前往儀表板",
+      "preview": {
+        "chartTitle": "淨資產軌跡",
+        "chartSubtitle": "每次快照都會成為曲線上的一個點。",
+        "tooltipTitle": "最新快照",
+        "calendarTitle": "活動月曆",
+        "tableTitle": "快照分類帳"
+      },
+      "steps": {
+        "accounts": {
+          "title": "新增帳戶",
+          "description": "定義哪些餘額要納入分類帳。"
+        },
+        "snapshots": {
+          "title": "擷取快照",
+          "description": "每日紀錄會建立圖表背後的日期歷史。"
+        },
+        "ledger": {
+          "title": "檢視變化",
+          "description": "掃描漲跌、歷史高低點與每一筆儲存紀錄。"
+        }
+      },
+      "aside": {
+        "title": "歷史是資料來源",
+        "description": "在至少有一筆淨資產快照前，這個頁面會刻意保持安靜。",
+        "progressLabel": "下一步",
+        "progressHintNoAccounts": "先新增帳戶，快照才有餘額可以記錄。",
+        "progressHintWithAccounts": "帳戶已連接。從儀表板建立第一筆快照。"
+      }
+    },
     "activityYear": "{year} 年活動",
     "legendLoss": "下跌",
     "legendGain": "上漲"
@@ -575,6 +742,41 @@
     "noAccountsTitle": "尚無帳戶",
     "noAccountsDesc": "新增您的第一個帳戶以開始追蹤您的淨資產和餘額。",
     "noAccountsHint": "您的資料會安全儲存，絕不會被分享。",
+    "onboarding": {
+      "eyebrow": "從一個帳戶開始",
+      "title": "建立支撐所有圖表的帳戶台帳。",
+      "description": "新增銀行、券商、不動產、錢包或負債帳戶，讓資產追蹤器能用真實餘額計算總額。",
+      "primaryAction": "新增帳戶",
+      "preview": {
+        "ledgerTitle": "帳戶台帳",
+        "ledgerSubtitle": "餘額會依帳戶、貨幣與類型分組。",
+        "private": "私密",
+        "colAccount": "帳戶",
+        "colCurrency": "貨幣",
+        "colValue": "市值",
+        "mixTitle": "儀表板將讀取的資料"
+      },
+      "steps": {
+        "account": {
+          "title": "命名帳戶",
+          "description": "選擇清楚的名稱與帳戶類型。"
+        },
+        "currency": {
+          "title": "設定貨幣",
+          "description": "使用帳戶原生貨幣以準確換算。"
+        },
+        "balance": {
+          "title": "輸入餘額",
+          "description": "先從現金開始，需要時再加入持倉。"
+        }
+      },
+      "aside": {
+        "title": "為什麼先做這一步",
+        "description": "帳戶是淨資產、配置、曝險、歷史、目標與分析的資料來源。",
+        "progressLabel": "下一步",
+        "progressHint": "一個帳戶即可解鎖儀表板，並讓其他分頁取得真實資料。"
+      }
+    },
     "nAccounts": "{count} 個帳戶",
     "nHoldings": "{count} 個持倉",
     "deleteConfirm": "確定要刪除此帳戶？此操作無法復原。",
@@ -841,6 +1043,41 @@
     "emptyTitle": "尚未追蹤股票",
     "emptyBody": "新增股票並記錄價格、日期與備註，即可與最新市場價格比較。",
     "emptyHint": "新增股票以將您的買入價格與即時市場價格進行對比。",
+    "onboarding": {
+      "eyebrow": "追蹤一檔股票",
+      "title": "用自己的參考價格建立自選清單。",
+      "description": "新增股票代號，記錄您在意的價格與日期，接著與更新後的市場資料比較。",
+      "primaryAction": "新增股票",
+      "preview": {
+        "watchlistTitle": "自選清單預覽",
+        "watchlistSubtitle": "每一列都會比較您的記錄價格與最新報價。",
+        "manual": "手動記錄",
+        "colSymbol": "代號",
+        "colRecord": "記錄",
+        "colChange": "變動",
+        "detailTitle": "追蹤股票細節"
+      },
+      "steps": {
+        "search": {
+          "title": "搜尋代號",
+          "description": "找到您想追蹤的上市股票。"
+        },
+        "record": {
+          "title": "設定價格",
+          "description": "使用買入價格、觀察價格或投資假設錨點。"
+        },
+        "date": {
+          "title": "加入日期",
+          "description": "應用程式會從這個起點衡量變化。"
+        }
+      },
+      "aside": {
+        "title": "獨立於帳戶之外",
+        "description": "自選清單可以先追蹤想法，之後再把它們加入帳戶持倉。",
+        "progressLabel": "下一步",
+        "progressHint": "一檔股票即可建立第一列自選資料。"
+      }
+    },
     "searchLabel": "搜尋股票",
     "searchPlaceholder": "例如 Apple、台積電、NVDA...",
     "selectedStock": "已選股票",

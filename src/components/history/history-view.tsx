@@ -1,12 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowRight, LineChart } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { TrendChart } from "@/components/dashboard/trend-chart";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { FreshnessBadge } from "@/components/ui/freshness-badge";
-import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { HistoryOnboarding } from "./history-onboarding";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
