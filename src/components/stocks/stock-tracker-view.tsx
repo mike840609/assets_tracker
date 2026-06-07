@@ -411,11 +411,17 @@ function StockRow({
           >
             {stock.symbol}
           </span>
-          <Badge variant="outline" className="text-[10px]">
+          <Badge
+            variant="outline"
+            className="border-primary/20 bg-primary/5 text-[10px] font-medium text-primary/90"
+          >
             {stock.currency}
           </Badge>
           {stock.exchange && (
-            <Badge variant="secondary" className="max-w-40 truncate text-[10px]">
+            <Badge
+              variant="secondary"
+              className="max-w-40 truncate bg-muted/40 text-[10px] font-medium text-muted-foreground"
+            >
               {stock.exchange}
             </Badge>
           )}
@@ -428,11 +434,6 @@ function StockRow({
         >
           {stock.name}
         </p>
-        {compact && noteText && (
-          <p className="mt-1 truncate text-xs leading-4 text-muted-foreground">
-            <span className="text-muted-foreground/70">{t("note")}:</span> {noteText}
-          </p>
-        )}
       </div>
     );
   }
@@ -464,9 +465,12 @@ function StockRow({
   }
 
   return (
-    <Card size="sm" className="overflow-visible md:py-2">
+    <Card
+      size="sm"
+      className="overflow-visible transition-colors hover:border-primary/20 hover:bg-primary/[0.02] md:py-2"
+    >
       <CardContent className="space-y-3 md:px-3">
-        <div className="hidden items-center gap-3 md:grid md:grid-cols-[minmax(190px,1.45fr)_minmax(118px,0.85fr)_minmax(122px,0.9fr)_minmax(112px,0.8fr)_minmax(104px,0.72fr)_1.75rem]">
+        <div className="hidden items-center gap-3 md:grid md:grid-cols-[minmax(190px,1.6fr)_minmax(118px,0.9fr)_minmax(122px,0.9fr)_minmax(120px,0.9fr)_1.75rem]">
           {renderIdentity(true)}
 
           <div className="min-w-0">
@@ -485,113 +489,97 @@ function StockRow({
             <p className="mt-0.5 truncate font-mono text-sm font-semibold tabular-nums">
               {latestPrice ?? t("unavailable")}
             </p>
-            {stock.latestPriceUpdatedAt ? (
-              <FreshnessBadge
-                kind="price"
-                timestamp={stock.latestPriceUpdatedAt}
-                mobileShort
-                className="mt-1 max-w-full"
-              />
-            ) : (
+            {!stock.latestPriceUpdatedAt && (
               <p className="mt-0.5 truncate text-[11px] leading-4 text-muted-foreground">
                 {t("noLatestPrice")}
               </p>
             )}
           </div>
 
-          <div
-            className={cn("min-w-0", stock.change !== null && (isGain ? "text-gain" : "text-loss"))}
-          >
+          <div className="min-w-0">
             <p className="text-[11px] font-medium text-muted-foreground">{t("change")}</p>
-            <p className="mt-0.5 flex items-center gap-1 truncate font-mono text-sm font-semibold tabular-nums">
-              {stock.change !== null && <DirectionIcon className="h-3.5 w-3.5 shrink-0" />}
-              {change ?? t("unavailable")}
-            </p>
-          </div>
-
-          <div
-            className={cn(
-              "min-w-0",
-              stock.changePercent !== null && (isGain ? "text-gain" : "text-loss"),
-            )}
-          >
-            <p className="text-[11px] font-medium text-muted-foreground">{t("changePercent")}</p>
-            <p className="mt-0.5 truncate font-mono text-sm font-semibold tabular-nums">
-              {percent ?? t("unavailable")}
-            </p>
+            <div className="mt-1 flex flex-col items-start gap-1">
+              {stock.changePercent !== null ? (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-sm font-semibold tabular-nums leading-none",
+                    isGain ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss",
+                  )}
+                >
+                  <DirectionIcon className="h-3.5 w-3.5 shrink-0" />
+                  {percent}
+                </span>
+              ) : (
+                <p className="font-mono text-sm font-semibold tabular-nums text-muted-foreground">
+                  {t("unavailable")}
+                </p>
+              )}
+              {stock.change !== null && (
+                <p className="truncate font-mono text-[11px] font-medium tabular-nums text-muted-foreground">
+                  {change}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="justify-self-end">{renderActions()}</div>
         </div>
 
-        <div className="flex items-start justify-between gap-3 md:hidden">
-          {renderIdentity()}
-          {renderActions()}
-        </div>
-
-        <div className="space-y-2 md:hidden">
-          <div className="rounded-lg border border-border/60 bg-muted/25 p-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">{t("latestPrice")}</p>
-                <p className="mt-1 truncate font-mono text-lg font-semibold leading-6 tabular-nums">
-                  {latestPrice ?? t("unavailable")}
-                </p>
-              </div>
-              <div
-                className={cn(
-                  "min-w-0 shrink-0 text-right",
-                  (stock.change !== null || stock.changePercent !== null) &&
-                    (isGain ? "text-gain" : "text-loss"),
+        <div className="flex flex-col gap-3.5 md:hidden">
+          <div className="flex items-start justify-between gap-4">
+            {renderIdentity()}
+            
+            <div className="min-w-0 shrink-0 flex flex-col items-end">
+              <div>
+                {stock.changePercent !== null ? (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-3 py-1.5 font-mono text-base font-bold tabular-nums leading-none",
+                      isGain ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss",
+                    )}
+                  >
+                    <DirectionIcon className="h-4 w-4 shrink-0" />
+                    {percent}
+                  </span>
+                ) : (
+                  <p className="font-mono text-base font-bold tabular-nums text-muted-foreground">
+                    {t("unavailable")}
+                  </p>
                 )}
-              >
-                <p className="text-xs opacity-80">{t("change")}</p>
-                <p className="mt-1 flex items-center justify-end gap-1 font-mono text-sm font-semibold tabular-nums">
-                  {stock.change !== null && <DirectionIcon className="h-3.5 w-3.5 shrink-0" />}
-                  {change ?? t("unavailable")}
-                </p>
-                <p className="mt-0.5 font-mono text-sm font-semibold tabular-nums">
-                  {percent ?? t("unavailable")}
-                </p>
               </div>
-            </div>
-            {stock.latestPriceUpdatedAt ? (
-              <FreshnessBadge
-                kind="price"
-                timestamp={stock.latestPriceUpdatedAt}
-                mobileShort
-                className="mt-2"
-              />
-            ) : (
-              <p className="mt-2 text-xs text-muted-foreground">{t("noLatestPrice")}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div className="min-w-0 rounded-lg bg-muted/30 p-2.5">
-              <p className="text-xs text-muted-foreground">{t("recorded")}</p>
-              <p className="mt-1 truncate font-mono text-sm font-semibold tabular-nums">
-                {recordPrice}
+              <p className="mt-1.5 font-mono text-sm font-medium tabular-nums text-muted-foreground">
+                {latestPrice ?? t("unavailable")}
               </p>
             </div>
-            <div className="min-w-0 rounded-lg bg-muted/30 p-2.5">
-              <p className="truncate text-xs text-muted-foreground">
+          </div>
+
+          <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/30 px-3 py-2.5">
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground/80">{t("recorded")}:</span>{" "}
+                <span className="font-mono font-medium text-foreground/90">{recordPrice}</span>
+              </p>
+              <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">
                 {format.date(stock.recordDate)}
+                {recordPeriodLabel && ` • ${recordPeriodLabel}`}
               </p>
-              {recordPeriodLabel && (
-                <p className="mt-1 truncate text-xs text-muted-foreground">{recordPeriodLabel}</p>
-              )}
             </div>
+            <div className="shrink-0">{renderActions()}</div>
           </div>
 
-          {noteText && (
-            <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
-              <p className="truncate text-sm text-muted-foreground">
-                <span className="text-xs text-muted-foreground/75">{t("note")}:</span> {noteText}
-              </p>
-            </div>
+          {!stock.latestPriceUpdatedAt && (
+            <p className="text-[11px] text-muted-foreground">{t("noLatestPrice")}</p>
           )}
         </div>
+
+        {noteText && (
+          <div className="rounded-lg border border-primary/10 bg-primary/5 px-3 py-2.5">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+              <span className="mr-2 text-xs font-medium text-primary/70">{t("note")}:</span>
+              {noteText}
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -605,6 +593,18 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
   const [editingStock, setEditingStock] = useState<SerializedTrackedStock | null>(null);
   const [deletingStock, setDeletingStock] = useState<SerializedTrackedStock | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Derive the most recent price update timestamp across all stocks.
+  // Since all prices are refreshed in the same batch, they share one timestamp.
+  const latestPriceTimestamp = useMemo(() => {
+    let newest: string | null = null;
+    for (const stock of stocks) {
+      if (stock.latestPriceUpdatedAt && (!newest || stock.latestPriceUpdatedAt > newest)) {
+        newest = stock.latestPriceUpdatedAt;
+      }
+    }
+    return newest;
+  }, [stocks]);
 
   async function refreshPrices() {
     hapticTick();
@@ -640,9 +640,18 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <ChartCandlestick className="h-4 w-4 text-primary" />
-          <span>{t("trackedCount", { count: stocks.length })}</span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <ChartCandlestick className="h-4 w-4" />
+            </div>
+            <span className="text-sm font-medium text-foreground">
+              {t("trackedCount", { count: stocks.length })}
+            </span>
+          </div>
+          {latestPriceTimestamp && (
+            <FreshnessBadge kind="price" timestamp={latestPriceTimestamp} mobileShort />
+          )}
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex">
           <Button
