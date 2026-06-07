@@ -46,7 +46,7 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 import { StocksOnboarding } from "./stocks-onboarding";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { hapticTick } from "@/lib/haptics";
-import { cn } from "@/lib/utils";
+import { cn, daysBetweenDates, localToday } from "@/lib/utils";
 import type { SerializedTrackedStock } from "@/lib/services/stock-watch-service";
 
 type QuoteResponse = {
@@ -60,12 +60,6 @@ type QuoteResponse = {
 
 const HIDDEN = "***";
 
-function localToday() {
-  const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 10);
-}
-
 function parseMoney(value: string) {
   const normalized = value.replace(/,/g, "").trim();
   if (!normalized) return null;
@@ -75,16 +69,6 @@ function parseMoney(value: string) {
 
 function formatNumberInput(value: number) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 8 }).format(value);
-}
-
-function dateToLocalTime(value: string) {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day).getTime();
-}
-
-function daysBetweenDates(startDate: string, endDate: string) {
-  const DAY_MS = 24 * 60 * 60 * 1000;
-  return Math.max(0, Math.floor((dateToLocalTime(endDate) - dateToLocalTime(startDate)) / DAY_MS));
 }
 
 function useFormatters() {
@@ -528,7 +512,7 @@ function StockRow({
         <div className="flex flex-col gap-3.5 md:hidden">
           <div className="flex items-start justify-between gap-4">
             {renderIdentity()}
-            
+
             <div className="min-w-0 shrink-0 flex flex-col items-end">
               <div>
                 {stock.changePercent !== null ? (
