@@ -12,6 +12,7 @@ import { ProjectionView } from "@/components/projections/projection-view";
 import { StockTrackerView } from "@/components/stocks/stock-tracker-view";
 import { GoalCard } from "./goal-card";
 import { GoalFormDialog } from "./goal-form-dialog";
+import { GoalsOnboarding } from "./goals-onboarding";
 
 type MobilePlanTab = "watchlist" | "goals" | "projections";
 
@@ -101,19 +102,7 @@ export function GoalsView({
           </div>
 
           {goalsWithProgress.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
-              <div className="rounded-full bg-muted p-6">
-                <Target className="h-10 w-10 text-muted-foreground" />
-              </div>
-              <div className="space-y-1 max-w-xs">
-                <p className="font-semibold">{t("emptyTitle")}</p>
-                <p className="text-sm text-muted-foreground">{t("emptyDescription")}</p>
-              </div>
-              <Button onClick={() => setCreateOpen(true)} variant="outline" className="gap-2">
-                <Plus className="h-4 w-4" />
-                {t("addGoal")}
-              </Button>
-            </div>
+            <GoalsOnboarding onAdd={() => setCreateOpen(true)} />
           ) : (
             <div className="grid gap-4">
               {goalsWithProgress.map((data) => (

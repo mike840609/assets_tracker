@@ -177,8 +177,9 @@
     "title": "儀表板",
     "emptyTitle": "歡迎使用資產追蹤器",
     "emptyDescription": "從新增第一個帳戶開始——銀行帳戶、券商、加密貨幣錢包，或任何您想追蹤的項目。",
-    "emptyAction": "新增第一個帳戶",
-    "viewFullHistory": "查看完整歷史"
+    "emptyAction": "新增您的第一個帳戶",
+    "emptyHint": "系統每日擷取快照，隨著歷史累積，圖表會逐漸顯示。",
+    "viewFullHistory": "查看完整歷史記錄"
   },
   "accounts": {
     "title": "帳戶"
@@ -188,7 +189,8 @@
     "subtitle": "設定並追蹤您的淨資產里程碑。",
     "addGoal": "新增目標",
     "emptyTitle": "尚無目標",
-    "emptyDescription": "設定一個目標，例如「2030 年前淨資產達 1 百萬」，在此追蹤進度。",
+    "emptyDescription": "設定目標 — 例如「在 2030 年達到 100 萬美元淨資產」 — 並在此處追蹤進度。",
+    "emptyHint": "建立目標以持續追蹤您的里程碑。",
     "ofTarget": "/ {target}",
     "completed": "已達成",
     "confirmDelete": "確定刪除此目標？",
@@ -329,8 +331,11 @@
     "attrMarket": "市場"
   },
   "projections": {
-    "title": "財務預測",
-    "subtitle": "估算您何時能達到財務獨立。",
+    "title": "資產預測",
+    "subtitle": "估算何時達到財務獨立。",
+    "emptyHint": "資產預測是根據您目前的儲蓄和投資表現所估算。",
+    "emptyCtaAddAccount": "新增第一個帳戶",
+    "emptyCtaDashboard": "前往儀表板",
     "fireNumber": "FIRE 目標金額",
     "currentNetWorth": "目前淨資產",
     "progressToFire": "FIRE 達成進度",
@@ -435,7 +440,10 @@
     "trackingSince": "自 {date} 起追蹤",
     "snapshotsCount": "{count} 筆快照",
     "emptyTitle": "尚無歷史記錄",
-    "emptyDesc": "淨資產每日會記錄一次快照。建立第一筆後，趨勢圖、活動日曆與完整明細都會顯示在這裡。系統每日會自動建立快照，您也可以立即從儀表板手動建立一筆。",
+    "emptyDesc": "每日擷取一次淨值快照。第一份快照完成後，您的趨勢、活動月曆和完整分類帳就會顯示在此處。快照每日自動執行，您也可以立即從儀表板手動觸發。",
+    "emptyHint": "系統每日擷取快照，隨著歷史累積，圖表會逐漸顯示。",
+    "emptyCtaAddAccount": "新增第一個帳戶",
+    "emptyCtaDashboard": "前往儀表板",
     "emptyCta": "前往儀表板",
     "activityYear": "{year} 年活動",
     "legendLoss": "下跌",
@@ -795,6 +803,7 @@
     "trackedCount": "{count, plural, =0 {尚未追蹤股票} =1 {1 檔追蹤股票} other {# 檔追蹤股票}}",
     "emptyTitle": "尚未追蹤股票",
     "emptyBody": "新增股票並記錄價格、日期與備註，即可與最新市場價格比較。",
+    "emptyHint": "新增股票以將您的買入價格與即時市場價格進行對比。",
     "searchLabel": "搜尋股票",
     "searchPlaceholder": "例如 Apple、台積電、NVDA...",
     "selectedStock": "已選股票",

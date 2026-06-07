@@ -43,6 +43,7 @@ import { HoldingSearch, type SearchResult } from "@/components/accounts/holding-
 import { DiscardConfirmDialog } from "@/components/discard-confirm-dialog";
 import { useDiscardGuard } from "@/hooks/use-discard-guard";
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import { StocksOnboarding } from "./stocks-onboarding";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { hapticTick } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
@@ -667,23 +668,12 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
       </div>
 
       {stocks.length === 0 ? (
-        <div className="rounded-xl border border-dashed bg-card px-4 py-12 text-center">
-          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <ChartCandlestick className="h-5 w-5" />
-          </div>
-          <h2 className="mt-4 text-base font-semibold">{t("emptyTitle")}</h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">{t("emptyBody")}</p>
-          <Button
-            className="mt-5"
-            onClick={() => {
-              setEditingStock(null);
-              setFormOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4" />
-            {t("addStock")}
-          </Button>
-        </div>
+        <StocksOnboarding
+          onAdd={() => {
+            setEditingStock(null);
+            setFormOpen(true);
+          }}
+        />
       ) : (
         <div className="space-y-3 md:space-y-2">
           {stocks.map((stock) => (

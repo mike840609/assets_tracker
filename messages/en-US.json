@@ -178,6 +178,7 @@
     "emptyTitle": "Welcome to Assets Tracker",
     "emptyDescription": "Start by adding your first account — a bank account, brokerage, crypto wallet, or anything else you want to track.",
     "emptyAction": "Add your first account",
+    "emptyHint": "Snapshots are captured daily, so charts fill in as your history grows.",
     "viewFullHistory": "View full history"
   },
   "accounts": {
@@ -189,6 +190,7 @@
     "addGoal": "New Goal",
     "emptyTitle": "No goals yet",
     "emptyDescription": "Set a target — like \"$1M net worth by 2030\" — and track your progress here.",
+    "emptyHint": "Establish goals to track your milestones over time.",
     "ofTarget": "of {target}",
     "completed": "Completed",
     "confirmDelete": "Delete this goal?",
@@ -331,6 +333,9 @@
   "projections": {
     "title": "Projections",
     "subtitle": "Estimate when you'll reach financial independence.",
+    "emptyHint": "Projections are estimates based on your current savings and performance.",
+    "emptyCtaAddAccount": "Add your first account",
+    "emptyCtaDashboard": "Go to dashboard",
     "fireNumber": "FIRE Number",
     "currentNetWorth": "Current Net Worth",
     "progressToFire": "Progress to FIRE",
@@ -436,6 +441,9 @@
     "snapshotsCount": "{count, plural, one {# snapshot} other {# snapshots}}",
     "emptyTitle": "No history yet",
     "emptyDesc": "Net worth is captured once a day as a snapshot. After your first one, your trend, activity calendar, and full ledger appear here. Snapshots run automatically each day; you can also trigger one now from the dashboard.",
+    "emptyHint": "Snapshots are captured daily, so charts fill in as your history grows.",
+    "emptyCtaAddAccount": "Add your first account",
+    "emptyCtaDashboard": "Go to dashboard",
     "emptyCta": "Go to dashboard",
     "activityYear": "{year} activity",
     "legendLoss": "Loss",
@@ -795,6 +803,7 @@
     "trackedCount": "{count, plural, =0 {No tracked stocks} =1 {1 tracked stock} other {# tracked stocks}}",
     "emptyTitle": "No stocks tracked yet",
     "emptyBody": "Add a stock with a record price, date, and note to compare it with the latest market price.",
+    "emptyHint": "Add stocks to compare historical purchase price with live market feed.",
     "searchLabel": "Search stock",
     "searchPlaceholder": "e.g. Apple, TSMC, NVDA...",
     "selectedStock": "Selected stock",

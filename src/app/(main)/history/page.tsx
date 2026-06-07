@@ -6,6 +6,7 @@ import { pickMessages } from "@/lib/i18n-utils";
 import { HistoryPullRefresh } from "@/components/history/history-pull-refresh";
 import { HistoryView } from "@/components/history/history-view";
 import { getFullNormalizedHistory } from "@/lib/services/history-service";
+import { prisma } from "@/lib/prisma";
 
 const CLIENT_NAMESPACES = ["trendChart", "history", "freshness"];
 
@@ -14,10 +15,11 @@ async function HistoryContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
   const settingsP = getOrCreateSettings(userId);
-  const [allMessages, snapshots, settings] = await Promise.all([
+  const [allMessages, snapshots, settings, accountCount] = await Promise.all([
     getMessages(),
     settingsP.then((s) => getFullNormalizedHistory(userId, s.baseCurrency)),
     settingsP,
+    prisma.account.count({ where: { userId, isActive: true } }),
   ]);
 
   return (
@@ -28,6 +30,7 @@ async function HistoryContent() {
           baseCurrency={settings.baseCurrency}
           showTitle
           className="animate-in fade-in duration-200"
+          hasAccounts={accountCount > 0}
         />
       </HistoryPullRefresh>
     </NextIntlClientProvider>

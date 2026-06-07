@@ -23,6 +23,7 @@ import { ArrowRight, History } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardOnboarding } from "./dashboard-onboarding";
 import type { GoalWithProgress } from "@/lib/types";
 
 const fetchPreviousSnapshot = cache((userId: string) =>
@@ -307,37 +308,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
   });
 
   if (accountCount === 0) {
-    const t = await getTranslations("dashboard");
-    return (
-      <div className="flex flex-col items-center justify-center py-12 md:py-24 gap-4 md:gap-6 text-center animate-in fade-in zoom-in-95 motion-normal">
-        <div className="rounded-full bg-primary/10 p-8 shadow-sm">
-          <svg
-            className="h-12 w-12 text-primary float-soft"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"
-            />
-          </svg>
-        </div>
-        <div className="space-y-2 max-w-sm">
-          <h3 className="text-2xl font-bold tracking-tight">{t("emptyTitle")}</h3>
-          <p className="text-muted-foreground text-base">{t("emptyDescription")}</p>
-        </div>
-        <Link
-          href="/accounts"
-          className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 hover:scale-105 transition-all"
-        >
-          {t("emptyAction")}
-        </Link>
-      </div>
-    );
+    return <DashboardOnboarding />;
   }
 
   const t = await getTranslations("dashboard");
