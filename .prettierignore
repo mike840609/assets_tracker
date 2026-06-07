@@ -1,6 +1,8 @@
 node_modules
 .next
 .agents
+.claude/skills
+.github/skills
 out
 build
 coverage

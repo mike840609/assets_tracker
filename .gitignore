@@ -49,6 +49,8 @@ next-env.d.ts
 # claude 
 .claude/worktrees
 .agents/skills
+.claude/skills
+.github/skills
 
 # Impeccable design-review snapshots (local artifacts)
 .impeccable/

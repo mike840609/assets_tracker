@@ -220,12 +220,34 @@ export async function refreshPricesForUser(userId: string): Promise<{
   updated: number;
   errors: string[];
 }> {
-  const holdings = await prisma.holding.findMany({
-    where: { account: { userId } },
-    select: { symbol: true, assetType: true },
-    distinct: ["symbol"],
-  });
-  return refreshPricesForHoldings(holdings);
+  const [holdings, trackedStocks] = await Promise.all([
+    prisma.holding.findMany({
+      where: { account: { userId } },
+      select: { symbol: true, assetType: true },
+      distinct: ["symbol"],
+    }),
+    prisma.stockWatchItem.findMany({
+      where: { userId },
+      select: { symbol: true },
+      distinct: ["symbol"],
+    }),
+  ]);
+
+  const holdingKeys = new Set(holdings.map((holding) => holding.symbol));
+  const stockWatchHoldings = trackedStocks
+    .filter((stock) => !holdingKeys.has(stock.symbol))
+    .map((stock) => ({ symbol: stock.symbol, assetType: "STOCK" }));
+
+  return refreshPricesForHoldings([...holdings, ...stockWatchHoldings]);
+}
+
+export async function refreshPricesForStockSymbols(symbols: string[]): Promise<{
+  updated: number;
+  errors: string[];
+}> {
+  const uniqueSymbols = [...new Set(symbols.map((symbol) => symbol.toUpperCase()))];
+  if (uniqueSymbols.length === 0) return { updated: 0, errors: [] };
+  return refreshPricesForHoldings(uniqueSymbols.map((symbol) => ({ symbol, assetType: "STOCK" })));
 }
 
 async function refreshPricesForHoldings(

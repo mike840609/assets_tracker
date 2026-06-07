@@ -3,8 +3,6 @@ export function formatRelativeTime(
   locale: string,
   now: number = Date.now(),
 ): string {
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
-
   let localDate: Date;
   if (date instanceof Date) {
     localDate = date;
@@ -15,6 +13,34 @@ export function formatRelativeTime(
 
   const diffInSeconds = Math.round((localDate.getTime() - now) / 1000);
   const absDiff = Math.abs(diffInSeconds);
+  const isZh = locale.toLowerCase().startsWith("zh");
+
+  if (isZh) {
+    if (absDiff < 60) return "剛剛";
+
+    let value: number;
+    let unit: string;
+    if (absDiff < 3600) {
+      value = Math.round(absDiff / 60);
+      unit = "分鐘";
+    } else if (absDiff < 86400) {
+      value = Math.round(absDiff / 3600);
+      unit = "小時";
+    } else if (absDiff < 2592000) {
+      value = Math.round(absDiff / 86400);
+      unit = "天";
+    } else if (absDiff < 31536000) {
+      value = Math.round(absDiff / 2592000);
+      unit = "個月";
+    } else {
+      value = Math.round(absDiff / 31536000);
+      unit = "年";
+    }
+
+    return diffInSeconds < 0 ? `${value}${unit}前` : `${value}${unit}後`;
+  }
+
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
 
   if (absDiff < 60) return rtf.format(Math.sign(diffInSeconds) * absDiff, "second");
   if (absDiff < 3600) return rtf.format(Math.round(diffInSeconds / 60), "minute");

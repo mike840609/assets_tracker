@@ -11,6 +11,9 @@ export default function GoalsLoading() {
         {/* Mobile-only tab switcher — mirrors GoalsView's underline tabs */}
         <div className="md:hidden flex border-b">
           <div className="px-4 pb-2 -mb-px border-b-2 border-primary">
+            <Skeleton className="h-4 w-20" />
+          </div>
+          <div className="px-4 pb-2">
             <Skeleton className="h-4 w-12" />
           </div>
           <div className="px-4 pb-2">

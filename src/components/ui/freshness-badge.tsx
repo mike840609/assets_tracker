@@ -23,11 +23,16 @@ export function FreshnessBadge({
 }: FreshnessBadgeProps) {
   const t = useTranslations("freshness");
   const locale = useLocale();
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
-    return () => window.clearInterval(timer);
+    const updateNow = () => setNow(Date.now());
+    const initialTimer = window.setTimeout(updateNow, 0);
+    const intervalTimer = window.setInterval(updateNow, 30_000);
+    return () => {
+      window.clearTimeout(initialTimer);
+      window.clearInterval(intervalTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -37,12 +42,13 @@ export function FreshnessBadge({
 
   if (!timestamp) return null;
 
-  const age = formatRelativeTime(timestamp, locale, now);
-  const shortAge = formatRelativeTimeShort(timestamp, locale, now);
+  const displayNow = now ?? new Date(timestamp).getTime();
+  const age = formatRelativeTime(timestamp, locale, displayNow);
+  const shortAge = formatRelativeTimeShort(timestamp, locale, displayNow);
   // Price/rates refresh daily; older than 3 days reads as a trust caution (the
   // 72h window clears normal weekend gaps). Snapshots are point-in-time, never "stale".
   const STALE_MS = 72 * 60 * 60 * 1000;
-  const isStale = kind !== "snapshot" && now - new Date(timestamp).getTime() > STALE_MS;
+  const isStale = kind !== "snapshot" && displayNow - new Date(timestamp).getTime() > STALE_MS;
   const Icon = isStale
     ? TriangleAlert
     : kind === "snapshot"

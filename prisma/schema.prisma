@@ -135,6 +135,24 @@ model PriceCache {
   @@index([updatedAt])
 }
 
+model StockWatchItem {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol      String
+  name        String
+  exchange    String   @default("")
+  currency    String   @default("USD")
+  recordPrice Decimal  @db.Decimal(18, 8)
+  recordDate  DateTime @db.Date
+  note        String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, symbol])
+  @@index([userId, createdAt(sort: Desc)])
+}
+
 model ExchangeRate {
   id           String   @id
   fromCurrency String
@@ -193,10 +211,11 @@ model User {
   accounts      AuthAccount[]
   sessions      Session[]
 
-  appSettings Setting?
-  appAccounts Account[]
-  snapshots   NetWorthSnapshot[]
-  goals       Goal[]
+  appSettings     Setting?
+  appAccounts     Account[]
+  snapshots       NetWorthSnapshot[]
+  goals           Goal[]
+  stockWatchItems StockWatchItem[]
 }
 
 model AuthAccount {

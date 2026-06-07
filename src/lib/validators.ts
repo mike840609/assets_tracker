@@ -168,6 +168,31 @@ export const createGoalSchema = z.object({
 
 export const updateGoalSchema = createGoalSchema.partial();
 
+const stockWatchItemFields = {
+  symbol: z
+    .string()
+    .min(1, "Symbol is required")
+    .max(32)
+    .transform((s) => s.toUpperCase()),
+  name: z.string().min(1, "Name is required").max(120),
+  exchange: z.string().max(80).default(""),
+  currency: z.string().length(3).default("USD"),
+  recordPrice: z.number().positive("Record price must be positive"),
+  recordDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD"),
+  note: z.string().max(2000).optional().nullable(),
+};
+
+export const createStockWatchItemSchema = z.object(stockWatchItemFields);
+
+export const updateStockWatchItemSchema = z.object({
+  name: stockWatchItemFields.name.optional(),
+  exchange: stockWatchItemFields.exchange.optional(),
+  currency: stockWatchItemFields.currency.optional(),
+  recordPrice: stockWatchItemFields.recordPrice.optional(),
+  recordDate: stockWatchItemFields.recordDate.optional(),
+  note: stockWatchItemFields.note,
+});
+
 const decimalSchema = z.union([z.string(), z.number()]);
 
 export const dataImportSchema = z.object({
