@@ -63,9 +63,7 @@ function WatchlistRow({ stock }: { stock: SerializedTrackedStock }) {
   const t = useTranslations("stocks");
   const format = useMarketFormatters();
   const currency = stock.latestPriceCurrency ?? stock.currency;
-  const latestPrice = format.money(stock.latestPrice, currency);
   const changePercent = format.percent(stock.changePercent);
-  const hasDirection = stock.change !== null || stock.changePercent !== null;
   const isGain = (stock.change ?? stock.changePercent ?? 0) >= 0;
   const DirectionIcon = isGain ? TrendingUp : TrendingDown;
 
