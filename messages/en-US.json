@@ -179,7 +179,44 @@
     "emptyDescription": "Start by adding your first account — a bank account, brokerage, crypto wallet, or anything else you want to track.",
     "emptyAction": "Add your first account",
     "emptyHint": "Snapshots are captured daily, so charts fill in as your history grows.",
-    "viewFullHistory": "View full history"
+    "viewFullHistory": "View full history",
+    "onboarding": {
+      "eyebrow": "Private by default",
+      "title": "Your dashboard is ready for the first account.",
+      "description": "Add one account to start calculating net worth, allocation, currency exposure, and history from the same source of truth.",
+      "primaryAction": "Add account",
+      "preview": {
+        "netWorth": "Net worth",
+        "noValue": "No net worth value yet",
+        "private": "Values hidden",
+        "trend": "Net worth trend",
+        "awaitingData": "Waiting for account data",
+        "chartLabel": "Preview of the net worth trend chart before account data is added",
+        "accounts": "Accounts",
+        "allocation": "Allocation",
+        "empty": "Empty"
+      },
+      "steps": {
+        "account": {
+          "title": "Add one account",
+          "description": "Start with a bank, brokerage, wallet, property, or liability."
+        },
+        "currency": {
+          "title": "Confirm currency",
+          "description": "Choose the base currency used for totals and converted values."
+        },
+        "history": {
+          "title": "Build history",
+          "description": "Daily snapshots fill charts after your first tracked balance."
+        }
+      },
+      "aside": {
+        "title": "What unlocks next",
+        "description": "Once an account exists, this view becomes your live cockpit for changes, allocation, exposure, goals, and performance.",
+        "progressLabel": "Next step",
+        "progressHint": "The first account unlocks dashboard charts immediately."
+      }
+    }
   },
   "accounts": {
     "title": "Accounts"
@@ -191,6 +228,39 @@
     "emptyTitle": "No goals yet",
     "emptyDescription": "Set a target — like \"$1M net worth by 2030\" — and track your progress here.",
     "emptyHint": "Establish goals to track your milestones over time.",
+    "onboarding": {
+      "eyebrow": "Plan with a target",
+      "title": "Turn a number into a trackable milestone.",
+      "description": "Create a goal with a target amount, scope, and optional date so progress can stay visible while balances change.",
+      "primaryAction": "Create goal",
+      "preview": {
+        "cardTitle": "Goal preview",
+        "cardSubtitle": "Progress appears after the goal has a target and a matching source.",
+        "status": "Ready",
+        "progress": "Progress",
+        "scopeTitle": "Goal scope"
+      },
+      "steps": {
+        "goal": {
+          "title": "Set target",
+          "description": "Name the milestone and enter the amount."
+        },
+        "scope": {
+          "title": "Choose scope",
+          "description": "Track net worth, assets, a category, or one account."
+        },
+        "deadline": {
+          "title": "Add date",
+          "description": "Use a deadline when timing matters."
+        }
+      },
+      "aside": {
+        "title": "What goals add",
+        "description": "Goals give the dashboard a planning rail and make projections easier to interpret.",
+        "progressLabel": "Next step",
+        "progressHint": "A goal can use existing accounts immediately, or wait for accounts added later."
+      }
+    },
     "ofTarget": "of {target}",
     "completed": "Completed",
     "confirmDelete": "Delete this goal?",
@@ -282,6 +352,43 @@
     "emptyBody": "Once daily snapshots accrue, this tab shows month-end assets, net-worth change, cash flow, and account attribution.",
     "emptyCtaAddAccount": "Add your first account",
     "emptyCtaDashboard": "View your dashboard",
+    "onboarding": {
+      "eyebrow": "Analysis setup",
+      "titleNoAccounts": "Build the base for real analysis",
+      "titleWithAccounts": "Analysis is waiting on history",
+      "descriptionNoAccounts": "Add the accounts you want tracked, then snapshots turn them into movement, cash flow, and attribution views.",
+      "descriptionWithAccounts": "Your accounts are ready. Once snapshots accumulate, this page becomes a compact read on movement, composition, and account contribution.",
+      "primaryNoAccounts": "Add account",
+      "primaryWithAccounts": "View dashboard",
+      "preview": {
+        "trendTitle": "Assets vs. liabilities",
+        "trendSubtitle": "Month-end snapshots become the analysis spine.",
+        "range": "YTD",
+        "cashFlowTitle": "Cash flow split",
+        "attributionTitle": "Account attribution"
+      },
+      "steps": {
+        "accounts": {
+          "title": "Add accounts",
+          "description": "Choose the balances and holdings that should feed the cockpit."
+        },
+        "snapshots": {
+          "title": "Capture snapshots",
+          "description": "Daily records create the month-end baselines for every chart."
+        },
+        "read": {
+          "title": "Read movement",
+          "description": "Compare cash flow, market movement, and account-level attribution."
+        }
+      },
+      "aside": {
+        "title": "Analysis needs a trail",
+        "description": "This tab stays quiet until there is enough history to compare beginning, ending, and monthly values.",
+        "progressLabel": "Next step",
+        "progressHintNoAccounts": "Start with accounts; the system handles the snapshot rhythm after that.",
+        "progressHintWithAccounts": "Accounts are connected. Let the first snapshots land, then return for movement and composition."
+      }
+    },
     "noDataMonth": "No data",
     "rangeYTD": "YTD",
     "range6M": "6M",
@@ -336,6 +443,66 @@
     "emptyHint": "Projections are estimates based on your current savings and performance.",
     "emptyCtaAddAccount": "Add your first account",
     "emptyCtaDashboard": "Go to dashboard",
+    "onboarding": {
+      "eyebrow": "Projection setup",
+      "titleNoAccounts": "Give the projection engine a portfolio",
+      "titleWithAccounts": "Projections are waiting on history",
+      "descriptionNoAccounts": "Add accounts first so the model has a current net worth, savings trail, and a real portfolio to project from.",
+      "descriptionWithAccounts": "Your accounts are ready. Once snapshots exist, this page can estimate milestones, FIRE timing, and assumption sensitivity.",
+      "primaryNoAccounts": "Add account",
+      "primaryWithAccounts": "View dashboard",
+      "preview": {
+        "chartTitle": "Future path",
+        "chartSubtitle": "Historical net worth anchors the projected curve.",
+        "lens": "Real value",
+        "milestoneOne": {
+          "title": "Year 5",
+          "value": "$325k"
+        },
+        "milestoneTwo": {
+          "title": "Year 10",
+          "value": "$780k"
+        },
+        "milestoneThree": {
+          "title": "FI target",
+          "value": "$1.8m"
+        },
+        "assumptionsTitle": "Assumptions",
+        "assumptions": {
+          "expenses": "Expenses",
+          "savings": "Savings",
+          "return": "Return",
+          "inflation": "Inflation"
+        },
+        "values": {
+          "expenses": "$72k",
+          "savings": "$28k",
+          "return": "7.0%",
+          "inflation": "2.5%"
+        }
+      },
+      "steps": {
+        "accounts": {
+          "title": "Add accounts",
+          "description": "Use active balances as the starting point for the model."
+        },
+        "history": {
+          "title": "Build history",
+          "description": "Snapshots give the chart real anchors and savings context."
+        },
+        "assumptions": {
+          "title": "Tune inputs",
+          "description": "Adjust expenses, savings, return, inflation, and withdrawal rate."
+        }
+      },
+      "aside": {
+        "title": "A projection starts with evidence",
+        "description": "The forecast stays useful when it is grounded in recorded net worth instead of a blank estimate.",
+        "progressLabel": "Next step",
+        "progressHintNoAccounts": "Add the portfolio first; history and assumptions will have something real to work with.",
+        "progressHintWithAccounts": "Accounts are connected. Capture snapshots to unlock the model."
+      }
+    },
     "fireNumber": "FIRE Number",
     "currentNetWorth": "Current Net Worth",
     "progressToFire": "Progress to FIRE",
@@ -445,6 +612,43 @@
     "emptyCtaAddAccount": "Add your first account",
     "emptyCtaDashboard": "Go to dashboard",
     "emptyCta": "Go to dashboard",
+    "onboarding": {
+      "eyebrow": "History setup",
+      "titleNoAccounts": "Start the ledger with your accounts",
+      "titleWithAccounts": "History is waiting for snapshots",
+      "descriptionNoAccounts": "Add the accounts you want tracked, then each snapshot becomes a dated row in the net-worth ledger.",
+      "descriptionWithAccounts": "Your accounts are ready. Once snapshots run, this page shows the trend line, activity calendar, and every recorded change.",
+      "primaryNoAccounts": "Add account",
+      "primaryWithAccounts": "View dashboard",
+      "preview": {
+        "chartTitle": "Net worth trail",
+        "chartSubtitle": "Each snapshot becomes a point on the curve.",
+        "tooltipTitle": "Latest snapshot",
+        "calendarTitle": "Activity calendar",
+        "tableTitle": "Snapshot ledger"
+      },
+      "steps": {
+        "accounts": {
+          "title": "Add accounts",
+          "description": "Define which balances belong in the ledger."
+        },
+        "snapshots": {
+          "title": "Capture snapshots",
+          "description": "Daily records create the dated history behind the chart."
+        },
+        "ledger": {
+          "title": "Review changes",
+          "description": "Scan gains, losses, highs, lows, and every saved row."
+        }
+      },
+      "aside": {
+        "title": "History is the source of truth",
+        "description": "The page stays intentionally quiet until there is at least one recorded net-worth snapshot.",
+        "progressLabel": "Next step",
+        "progressHintNoAccounts": "Add accounts first so snapshots have balances to record.",
+        "progressHintWithAccounts": "Accounts are connected. Use the dashboard to create the first snapshot."
+      }
+    },
     "activityYear": "{year} activity",
     "legendLoss": "Loss",
     "legendGain": "Gain"
@@ -538,6 +742,41 @@
     "noAccountsTitle": "No accounts yet",
     "noAccountsDesc": "Add your first account to start tracking your net worth and balances.",
     "noAccountsHint": "Your data is stored securely and never shared.",
+    "onboarding": {
+      "eyebrow": "Start with one account",
+      "title": "Build the ledger that powers every chart.",
+      "description": "Add a bank, brokerage, property, wallet, or liability so Assets Tracker can calculate totals from real balances.",
+      "primaryAction": "Add account",
+      "preview": {
+        "ledgerTitle": "Account ledger",
+        "ledgerSubtitle": "Balances stay grouped by account, currency, and type.",
+        "private": "Private",
+        "colAccount": "Account",
+        "colCurrency": "Currency",
+        "colValue": "Value",
+        "mixTitle": "What the dashboard will read"
+      },
+      "steps": {
+        "account": {
+          "title": "Name the account",
+          "description": "Choose a clear name and account type."
+        },
+        "currency": {
+          "title": "Set currency",
+          "description": "Use the account's native currency for accurate conversion."
+        },
+        "balance": {
+          "title": "Enter balance",
+          "description": "Start with cash, then add holdings when needed."
+        }
+      },
+      "aside": {
+        "title": "Why this comes first",
+        "description": "Accounts are the source for net worth, allocation, exposure, history, goals, and analysis.",
+        "progressLabel": "Next step",
+        "progressHint": "One account unlocks the dashboard and gives the other tabs real data."
+      }
+    },
     "nAccounts": "{count, plural, one {# account} other {# accounts}}",
     "nHoldings": "{count, plural, one {# holding} other {# holdings}}",
     "deleteConfirm": "Delete this account? This cannot be undone.",
@@ -804,6 +1043,41 @@
     "emptyTitle": "No stocks tracked yet",
     "emptyBody": "Add a stock with a record price, date, and note to compare it with the latest market price.",
     "emptyHint": "Add stocks to compare historical purchase price with live market feed.",
+    "onboarding": {
+      "eyebrow": "Track one symbol",
+      "title": "Start a watchlist from your own reference price.",
+      "description": "Add a ticker, record the price and date you care about, then compare it with refreshed market data.",
+      "primaryAction": "Add stock",
+      "preview": {
+        "watchlistTitle": "Watchlist preview",
+        "watchlistSubtitle": "Each row compares your recorded price with the latest quote.",
+        "manual": "Manual record",
+        "colSymbol": "Symbol",
+        "colRecord": "Record",
+        "colChange": "Change",
+        "detailTitle": "Tracked stock detail"
+      },
+      "steps": {
+        "search": {
+          "title": "Search ticker",
+          "description": "Find the listed stock you want to follow."
+        },
+        "record": {
+          "title": "Set price",
+          "description": "Use a purchase price, watch price, or thesis anchor."
+        },
+        "date": {
+          "title": "Add date",
+          "description": "The app measures change from that starting point."
+        }
+      },
+      "aside": {
+        "title": "Separate from accounts",
+        "description": "The watchlist can track ideas before they become holdings in an account.",
+        "progressLabel": "Next step",
+        "progressHint": "One symbol creates the first watchlist row."
+      }
+    },
     "searchLabel": "Search stock",
     "searchPlaceholder": "e.g. Apple, TSMC, NVDA...",
     "selectedStock": "Selected stock",

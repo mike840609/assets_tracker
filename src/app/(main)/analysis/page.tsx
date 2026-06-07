@@ -6,6 +6,7 @@ import { getCachedAnalysisPayload } from "@/lib/services/analysis-payload-servic
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AnalysisView } from "@/components/analysis/analysis-view";
+import { prisma } from "@/lib/prisma";
 
 const CLIENT_NAMESPACES = ["analysis", "categories", "nav", "trendChart", "history", "freshness"];
 
@@ -15,14 +16,21 @@ async function AnalysisContent() {
   const userId = session.user.id;
 
   const settingsP = getOrCreateSettings(userId);
-  const [t, messages, locale, { snapshots, cashFlowData, rawHistory, accountCashFlow }, settings] =
-    await Promise.all([
-      getTranslations("analysis"),
-      getMessages(),
-      getLocale(),
-      settingsP.then((s) => getCachedAnalysisPayload(userId, s.baseCurrency)),
-      settingsP,
-    ]);
+  const [
+    t,
+    messages,
+    locale,
+    { snapshots, cashFlowData, rawHistory, accountCashFlow },
+    settings,
+    accountCount,
+  ] = await Promise.all([
+    getTranslations("analysis"),
+    getMessages(),
+    getLocale(),
+    settingsP.then((s) => getCachedAnalysisPayload(userId, s.baseCurrency)),
+    settingsP,
+    prisma.account.count({ where: { userId, isActive: true } }),
+  ]);
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
@@ -36,6 +44,7 @@ async function AnalysisContent() {
           accountCashFlow={accountCashFlow}
           baseCurrency={settings.baseCurrency}
           locale={locale}
+          hasAccounts={accountCount > 0}
         />
       </div>
     </NextIntlClientProvider>

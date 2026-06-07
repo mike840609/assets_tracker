@@ -7,6 +7,7 @@ import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 
 const CLIENT_NAMESPACES = [
+  "dashboard",
   "dashboardActions",
   "freshness",
   "history",

@@ -1,201 +1,290 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import {
-  Plus,
-  Wallet,
-  TrendingUp,
-  Activity,
+  ArrowRight,
   BarChart3,
-  Building2,
-  ChevronRight,
+  CircleDollarSign,
+  Clock3,
+  Landmark,
+  Plus,
+  ShieldCheck,
+  Sparkles,
+  Wallet,
 } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export function DashboardOnboarding() {
-  const t = useTranslations("dashboard");
-  const locale = useLocale();
-  const isZh = locale.startsWith("zh");
+const previewRows = [
+  { key: "bank", tone: "bg-primary/12 text-primary", width: "w-32" },
+  { key: "brokerage", tone: "bg-chart-2/12 text-chart-2", width: "w-40" },
+  { key: "other", tone: "bg-chart-3/12 text-chart-3", width: "w-28" },
+] as const;
 
-  // Localized checklist copy
-  const checklist = {
-    title: isZh ? "開始使用資產追蹤器" : "Get Started with Assets Tracker",
-    subtitle: isZh
-      ? "完成以下步驟以完全解鎖您的儀表板和圖表。"
-      : "Complete these steps to fully unlock your dashboard and charts.",
-    progress: (completed: number) =>
-      isZh ? `已完成 ${completed} / 3 個步驟` : `${completed} of 3 steps completed`,
-    steps: [
-      {
-        num: 1,
-        title: isZh ? "連結您的第一個帳戶" : "Connect your first account",
-        desc: isZh
-          ? "連結銀行帳戶、投資或加密貨幣錢包以計算淨資產。"
-          : "Link bank accounts, investments, or crypto wallets to compute net worth.",
-        action: isZh ? "新增帳戶" : "Add Account",
-        href: "/accounts",
-      },
-      {
-        num: 2,
-        title: isZh ? "設定一個目標" : "Establish a target goal",
-        desc: isZh
-          ? "設定儲蓄、投資或淨資產目標以追蹤整體進度。"
-          : "Set savings, investment, or net worth milestones to track overall progress.",
-        action: isZh ? "建立目標" : "Create Goal",
-        href: "/goals",
-      },
-      {
-        num: 3,
-        title: isZh ? "分析資產表現" : "Analyze asset performance",
-        desc: isZh
-          ? "累積每日快照以檢視投資組合分配和歷史成長。"
-          : "Accrue snapshots to review portfolio allocation and historical growth.",
-        action: isZh ? "檢視分析" : "Review Analysis",
-        href: "/analysis",
-      },
-    ],
-  };
+const setupSteps = [
+  {
+    key: "account",
+    icon: Wallet,
+    href: "/accounts",
+    primary: true,
+  },
+  {
+    key: "currency",
+    icon: CircleDollarSign,
+    href: "/settings",
+    primary: false,
+  },
+  {
+    key: "history",
+    icon: Clock3,
+    href: "/analysis#history",
+    primary: false,
+  },
+] as const;
+
+export function DashboardOnboarding() {
+  const t = useTranslations("dashboard.onboarding");
 
   return (
-    <div className="relative isolate flex min-h-[75vh] flex-col items-center justify-center overflow-hidden rounded-2xl border border-border/40 bg-card mt-4 shadow-sm p-6 sm:p-12">
-      {/* Background Mockup */}
-      <div
-        className="absolute inset-0 z-0 flex flex-col gap-6 p-8 opacity-25 blur-[6px] pointer-events-none select-none transition-all duration-700"
-        aria-hidden="true"
-      >
-        {/* Mock Topbar */}
-        <div className="flex justify-between items-center w-full mb-2">
-          <div className="h-6 w-36 rounded bg-muted/70" />
-          <div className="h-8 w-28 rounded-md bg-muted/60" />
-        </div>
-
-        {/* Mock Net Worth Summary */}
-        <div className="grid grid-cols-3 gap-6 w-full">
-          <Card className="col-span-3 rounded-xl bg-background border-border/50 shadow-sm">
-            <CardContent className="p-6 flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  <Wallet className="h-4 w-4 text-primary" />
-                </div>
-                <div className="h-4 w-28 rounded bg-muted/60" />
+    <section
+      aria-labelledby="dashboard-onboarding-title"
+      className="mt-4 grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]"
+    >
+      <div className="relative overflow-hidden rounded-2xl bg-card text-card-foreground ring-1 ring-foreground/10">
+        <div className="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(ellipse_at_top,color-mix(in_oklch,var(--primary)_12%,transparent),transparent_68%)]" />
+        <div className="relative flex min-h-full flex-col gap-4 p-4 sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="max-w-[56ch] space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                <span>{t("eyebrow")}</span>
               </div>
-              <div className="h-8 w-48 rounded bg-foreground/20 mt-1" />
-              <div className="flex items-center gap-2 mt-4">
-                <div className="h-4 w-32 rounded bg-[var(--gain)]/20" />
-                <div className="h-4 w-20 rounded bg-muted/50" />
+              <div className="space-y-2">
+                <h2
+                  id="dashboard-onboarding-title"
+                  className="text-balance text-2xl font-bold leading-tight tracking-[-0.02em] text-foreground"
+                >
+                  {t("title")}
+                </h2>
+                <p className="text-pretty text-sm leading-6 text-muted-foreground sm:text-base">
+                  {t("description")}
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Mock Grid (Performance & Allocation) */}
-        <div className="grid grid-cols-2 gap-6 w-full">
-          <Card className="rounded-xl bg-background border-border/50 shadow-sm h-44">
-            <CardHeader className="p-4 pb-0">
-              <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-muted-foreground" />
-                <div className="h-4 w-24 rounded bg-muted/60" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-4 h-[calc(100%-2.5rem)] flex items-end relative overflow-hidden">
-              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-primary/20 to-transparent border-t border-primary/40" />
-            </CardContent>
-          </Card>
-          <Card className="rounded-xl bg-background border-border/50 shadow-sm h-44">
-            <CardHeader className="p-4 pb-0">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                <div className="h-4 w-24 rounded bg-muted/60" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 flex items-center justify-center h-[calc(100%-2.5rem)]">
-              <div className="h-20 w-20 rounded-full border-[10px] border-muted/30 border-t-primary border-r-primary/60" />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Mock Accounts List */}
-        <Card className="rounded-xl bg-background border-border/50 shadow-sm w-full p-6 flex flex-col gap-4">
-          <div className="h-4 w-24 rounded bg-muted/60" />
-          <div className="space-y-3">
-            {[
-              { name: "Chase Checking", val: "$12,450.00" },
-              { name: "Fidelity Brokerage", val: "$98,200.00" },
-              { name: "Coinbase Wallet", val: "$13,850.00" },
-            ].map((acc, i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center border-b border-border/20 pb-2 last:border-0 last:pb-0"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded bg-muted/50 flex items-center justify-center">
-                    <Building2 className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                  <div className="text-sm font-medium text-foreground/75">{acc.name}</div>
-                </div>
-                <div className="font-mono text-sm font-semibold">{acc.val}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Foreground CTA Checklist Overlay Card */}
-      <div className="relative z-10 flex w-full max-w-[500px] flex-col gap-6 rounded-2xl border border-border/50 bg-background/95 p-8 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
-              <TrendingUp className="h-5 w-5 text-primary" />
             </div>
-            <h2 className="text-xl font-bold tracking-tight text-foreground">{checklist.title}</h2>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">{checklist.subtitle}</p>
-        </div>
-
-        {/* Progress Tracker */}
-        <div className="space-y-2 border-y border-border/40 py-4">
-          <div className="flex justify-between text-xs font-semibold text-muted-foreground">
-            <span>{checklist.progress(0)}</span>
-            <span>0%</span>
-          </div>
-          <div className="h-1.5 w-full bg-muted/60 rounded-full overflow-hidden">
-            <div className="h-full w-0 bg-primary transition-all duration-500" />
-          </div>
-        </div>
-
-        {/* Steps List */}
-        <div className="flex flex-col gap-4">
-          {checklist.steps.map((step) => (
-            <div
-              key={step.num}
-              className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted/10 transition-colors"
+            <Link
+              href="/accounts"
+              className={cn(buttonVariants({ size: "lg" }), "w-full sm:w-auto")}
             >
-              <div className="w-5 h-5 rounded-full border border-muted-foreground/30 flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0 mt-0.5">
-                {step.num}
-              </div>
-              <div className="flex-1 flex flex-col gap-1">
-                <div className="text-sm font-semibold text-foreground/90 leading-tight">
-                  {step.title}
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              {t("primaryAction")}
+            </Link>
+          </div>
+
+          <div className="grid flex-1 gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
+            <div className="flex min-h-[18rem] flex-col justify-between rounded-xl border border-border/70 bg-background/80 p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Wallet className="h-4 w-4" aria-hidden="true" />
+                    <span>{t("preview.netWorth")}</span>
+                  </div>
+                  <div className="font-mono text-3xl font-semibold leading-none tracking-[-0.02em] text-foreground sm:text-4xl">
+                    <span aria-hidden="true">••••••</span>
+                    <span className="sr-only">{t("preview.noValue")}</span>
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground leading-normal">{step.desc}</div>
+                <div className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                  {t("preview.private")}
+                </div>
+              </div>
+
+              <div className="relative mt-5 h-36 overflow-hidden rounded-xl border border-border/60 bg-card/70 p-4">
+                <div className="absolute inset-x-4 top-4 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{t("preview.trend")}</span>
+                  <span>{t("preview.awaitingData")}</span>
+                </div>
+                <svg
+                  className="absolute inset-x-4 bottom-3 h-24 w-[calc(100%-2rem)] overflow-visible"
+                  viewBox="0 0 420 120"
+                  role="img"
+                  aria-label={t("preview.chartLabel")}
+                >
+                  <defs>
+                    <linearGradient id="onboarding-chart-fill" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.18" />
+                      <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  {[22, 52, 82, 112].map((y) => (
+                    <line
+                      key={y}
+                      x1="0"
+                      x2="420"
+                      y1={y}
+                      y2={y}
+                      stroke="currentColor"
+                      strokeOpacity="0.08"
+                    />
+                  ))}
+                  <path
+                    d="M0 92 C 64 88, 82 64, 138 70 S 220 104, 272 62 S 348 36, 420 44 L 420 120 L 0 120 Z"
+                    fill="url(#onboarding-chart-fill)"
+                  />
+                  <path
+                    d="M0 92 C 64 88, 82 64, 138 70 S 220 104, 272 62 S 348 36, 420 44"
+                    fill="none"
+                    stroke="var(--primary)"
+                    strokeLinecap="round"
+                    strokeWidth="3"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              <div className="rounded-xl border border-border/70 bg-background/80 p-3.5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Landmark className="h-4 w-4 text-primary" aria-hidden="true" />
+                    <span>{t("preview.accounts")}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{t("preview.empty")}</span>
+                </div>
+                <div className="space-y-3">
+                  {previewRows.map((row) => (
+                    <div key={row.key} className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div
+                          className={cn(
+                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
+                            row.tone,
+                          )}
+                        >
+                          <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                        </div>
+                        <div className={cn("h-3 rounded-full bg-muted", row.width)} />
+                      </div>
+                      <div className="h-3 w-12 rounded-full bg-muted" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border/70 bg-background/80 p-3.5">
+                <div className="mb-4 flex items-center gap-2 text-sm font-medium text-foreground">
+                  <BarChart3 className="h-4 w-4 text-primary" aria-hidden="true" />
+                  <span>{t("preview.allocation")}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div
+                    className="h-20 w-20 shrink-0 rounded-full"
+                    style={{
+                      background:
+                        "conic-gradient(var(--primary) 0 42%, var(--chart-2) 42% 70%, var(--chart-3) 70% 100%)",
+                    }}
+                    aria-hidden="true"
+                  >
+                    <div className="m-3.5 h-[3.25rem] w-[3.25rem] rounded-full bg-background" />
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    {["primary", "chart2", "chart3"].map((item, index) => (
+                      <div key={item} className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "h-2 w-2 rounded-full",
+                            index === 0 && "bg-primary",
+                            index === 1 && "bg-chart-2",
+                            index === 2 && "bg-chart-3",
+                          )}
+                        />
+                        <div className="h-2.5 flex-1 rounded-full bg-muted" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 sm:p-4">
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <div className="grid gap-2 sm:grid-cols-3">
+                {setupSteps.map((step, index) => {
+                  const Icon = step.icon;
+
+                  return (
+                    <Link
+                      key={step.key}
+                      href={step.href}
+                      className={cn(
+                        "group flex min-h-14 items-start gap-3 rounded-lg p-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                        step.primary
+                          ? "bg-background shadow-sm ring-1 ring-foreground/10 hover:bg-card"
+                          : "hover:bg-background/70",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+                          step.primary
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-background text-muted-foreground ring-1 ring-foreground/10",
+                        )}
+                      >
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 space-y-1">
+                        <span className="flex items-center gap-2 text-sm font-semibold leading-tight text-foreground">
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {index + 1}
+                          </span>
+                          {t(`steps.${step.key}.title`)}
+                        </span>
+                        <span className="block text-pretty text-xs leading-5 text-muted-foreground md:hidden 2xl:block">
+                          {t(`steps.${step.key}.description`)}
+                        </span>
+                      </span>
+                    </Link>
+                  );
+                })}
               </div>
               <Link
-                href={step.href}
+                href="/accounts"
                 className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                  "h-7 rounded-lg text-xs font-semibold px-2.5 gap-1 shrink-0 select-none hover:bg-primary hover:text-primary-foreground border-border/60 transition-all",
+                  buttonVariants(),
+                  "w-full justify-between sm:justify-center lg:w-auto",
                 )}
               >
-                {step.action}
-                <ChevronRight className="w-3 h-3" />
+                {t("primaryAction")}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
-          ))}
+          </div>
         </div>
       </div>
-    </div>
+
+      <aside className="rounded-2xl bg-card p-4 ring-1 ring-foreground/10 lg:p-5">
+        <div className="flex h-full flex-col justify-between gap-8">
+          <div className="space-y-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Sparkles className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-base font-semibold leading-snug text-foreground">
+                {t("aside.title")}
+              </h3>
+              <p className="text-pretty text-sm leading-6 text-muted-foreground">
+                {t("aside.description")}
+              </p>
+            </div>
+          </div>
+          <div className="space-y-1.5 rounded-xl bg-muted/50 p-3 text-sm">
+            <p className="text-xs font-medium text-primary">{t("aside.progressLabel")}</p>
+            <p className="text-xs leading-5 text-muted-foreground">{t("aside.progressHint")}</p>
+          </div>
+        </div>
+      </aside>
+    </section>
   );
 }

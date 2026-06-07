@@ -44,6 +44,7 @@ interface Props {
   accountCashFlow: AccountMonthlyContribution[];
   baseCurrency: string;
   locale: string;
+  hasAccounts: boolean;
 }
 
 const ranges = [
@@ -85,6 +86,7 @@ export function AnalysisView({
   accountCashFlow,
   baseCurrency,
   locale,
+  hasAccounts,
 }: Props) {
   const t = useTranslations("analysis");
   const tNav = useTranslations("nav");
@@ -290,7 +292,7 @@ export function AnalysisView({
         </div>
 
         {!hasData ? (
-          <AnalysisEmptyState hasAccounts={rawHistory.accounts.length > 0} />
+          <AnalysisEmptyState hasAccounts={hasAccounts} />
         ) : (
           <motion.div
             key={range}
