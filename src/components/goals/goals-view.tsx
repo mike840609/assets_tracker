@@ -7,15 +7,20 @@ import { cn } from "@/lib/utils";
 import { Plus, Target } from "lucide-react";
 import type { GoalWithProgress, SerializedAccount } from "@/lib/types";
 import type { ProjectionData } from "@/lib/services/projection-service";
+import type { SerializedTrackedStock } from "@/lib/services/stock-watch-service";
 import { ProjectionView } from "@/components/projections/projection-view";
+import { StockTrackerView } from "@/components/stocks/stock-tracker-view";
 import { GoalCard } from "./goal-card";
 import { GoalFormDialog } from "./goal-form-dialog";
+
+type MobilePlanTab = "watchlist" | "goals" | "projections";
 
 interface GoalsViewProps {
   goalsWithProgress: GoalWithProgress[];
   baseCurrency: string;
   accounts: SerializedAccount[];
   projectionData: ProjectionData;
+  stocks: SerializedTrackedStock[];
 }
 
 export function GoalsView({
@@ -23,6 +28,7 @@ export function GoalsView({
   baseCurrency,
   accounts,
   projectionData,
+  stocks,
 }: GoalsViewProps) {
   const t = useTranslations("goals");
   const tNav = useTranslations("nav");
@@ -39,21 +45,22 @@ export function GoalsView({
     () => window.location.hash,
     () => "",
   );
-  const [override, setOverride] = useState<"goals" | "projections" | null>(null);
-  const activeTab: "goals" | "projections" =
-    override ?? (hash === "#projections" ? "projections" : "goals");
+  const [override, setOverride] = useState<MobilePlanTab | null>(null);
+  const hashTab: MobilePlanTab =
+    hash === "#projections" ? "projections" : hash === "#goals" ? "goals" : "watchlist";
+  const activeTab: MobilePlanTab = override ?? hashTab;
 
-  const handleTabChange = (tab: "goals" | "projections") => {
+  const handleTabChange = (tab: MobilePlanTab) => {
     setOverride(tab);
     const base = window.location.pathname + window.location.search;
-    window.history.replaceState(null, "", tab === "projections" ? `${base}#projections` : base);
+    window.history.replaceState(null, "", tab === "watchlist" ? base : `${base}#${tab}`);
   };
 
   return (
     <div className="space-y-4">
       {/* Mobile-only tab switcher */}
       <div role="tablist" className="md:hidden flex border-b">
-        {(["goals", "projections"] as const).map((tab) => (
+        {(["watchlist", "goals", "projections"] as const).map((tab) => (
           <button
             key={tab}
             role="tab"
@@ -68,13 +75,20 @@ export function GoalsView({
                 : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
-            {tNav(tab)}
+            {tab === "watchlist" ? tNav("stocks") : tNav(tab)}
           </button>
         ))}
       </div>
 
+      {/* Watchlist tab — mobile only */}
+      {activeTab === "watchlist" && (
+        <div role="tabpanel" className="md:hidden">
+          <StockTrackerView stocks={stocks} />
+        </div>
+      )}
+
       {/* Goals tab — always visible on desktop, conditional on mobile */}
-      <div role="tabpanel" className={activeTab === "projections" ? "hidden md:block" : "block"}>
+      <div role="tabpanel" className={activeTab === "goals" ? "block" : "hidden md:block"}>
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>

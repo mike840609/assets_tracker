@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   BarChart3,
+  ChartCandlestick,
   Copy,
   History,
   LayoutDashboard,
@@ -45,10 +46,11 @@ export function DesktopCommandPalette() {
       { href: "/", label: t("nav.dashboard"), icon: LayoutDashboard, kbd: "1" },
       { href: "/accounts", label: t("nav.accounts"), icon: Copy, kbd: "2" },
       { href: "/goals", label: t("nav.goals"), icon: Target, kbd: "3" },
-      { href: "/analysis", label: t("nav.analysis"), icon: BarChart3, kbd: "4" },
-      { href: "/projections", label: t("nav.projections"), icon: TrendingUp, kbd: "5" },
-      { href: "/history", label: t("nav.history"), icon: History, kbd: "6" },
-      { href: "/settings", label: t("nav.settings"), icon: Settings, kbd: "7" },
+      { href: "/stocks", label: t("nav.stocks"), icon: ChartCandlestick, kbd: "4" },
+      { href: "/analysis", label: t("nav.analysis"), icon: BarChart3, kbd: "5" },
+      { href: "/projections", label: t("nav.projections"), icon: TrendingUp, kbd: "6" },
+      { href: "/history", label: t("nav.history"), icon: History, kbd: "7" },
+      { href: "/settings", label: t("nav.settings"), icon: Settings, kbd: "8" },
     ],
     [t],
   );
@@ -112,7 +114,7 @@ export function DesktopCommandPalette() {
         return;
       }
 
-      if (/^[1-7]$/.test(e.key)) {
+      if (/^[1-8]$/.test(e.key)) {
         const item = navItems[Number(e.key) - 1];
         if (item) {
           router.push(item.href);
@@ -126,6 +128,7 @@ export function DesktopCommandPalette() {
         if (e.key.toLowerCase() === "d") router.push("/");
         if (e.key.toLowerCase() === "a") router.push("/accounts");
         if (e.key.toLowerCase() === "g") router.push("/goals");
+        if (e.key.toLowerCase() === "t") router.push("/stocks");
         if (e.key.toLowerCase() === "n") router.push("/analysis");
         if (e.key.toLowerCase() === "p") router.push("/projections");
         if (e.key.toLowerCase() === "h") router.push("/history");
@@ -183,9 +186,9 @@ export function DesktopCommandPalette() {
             {t("commandPalette.openPalette")}
             <CommandShortcut>?</CommandShortcut>
           </CommandItem>
-          <CommandItem value={`shortcut 1 2 3 4 5 6 7 navigation`}>
+          <CommandItem value={`shortcut 1 2 3 4 5 6 7 8 navigation`}>
             {t("commandPalette.navigateTabs")}
-            <CommandShortcut>1-7</CommandShortcut>
+            <CommandShortcut>1-8</CommandShortcut>
           </CommandItem>
           <CommandItem value={`shortcut ${goShortcut} go to`}>
             {t("commandPalette.goToShortcut")}

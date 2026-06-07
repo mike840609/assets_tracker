@@ -14,6 +14,8 @@ import { AppIcon } from "./app-icon";
 function getPageTitle(pathname: string, nav: (k: string) => string): string {
   if (pathname === "/") return nav("dashboard");
   if (pathname.startsWith("/accounts")) return nav("accounts");
+  if (pathname.startsWith("/goals")) return nav("plan");
+  if (pathname.startsWith("/stocks")) return nav("stocks");
   if (pathname.startsWith("/analysis")) return nav("analysis");
   if (pathname.startsWith("/history")) return nav("history");
   if (pathname.startsWith("/settings")) return nav("settings");

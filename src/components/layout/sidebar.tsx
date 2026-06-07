@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   BarChart3,
+  ChartCandlestick,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -33,6 +34,7 @@ const TOP_LEVEL_NAV_HREFS = [
   "/",
   "/accounts",
   "/goals",
+  "/stocks",
   "/analysis",
   "/projections",
   "/history",
@@ -121,6 +123,7 @@ export function Sidebar({
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
     { label: t("nav.accounts"), href: "/accounts", icon: Copy },
     { label: t("nav.goals"), href: "/goals", icon: Target },
+    { label: t("nav.stocks"), href: "/stocks", icon: ChartCandlestick },
     { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
     { label: t("nav.projections"), href: "/projections", icon: TrendingUp },
     { label: t("nav.history"), href: "/history", icon: History },
@@ -273,7 +276,7 @@ export function MobileNav() {
   const navItems = [
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
     { label: t("nav.accounts"), href: "/accounts", icon: Copy },
-    { label: t("nav.goals"), href: "/goals", icon: Target },
+    { label: t("nav.plan"), href: "/goals", icon: Target },
     { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
     { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];

@@ -19,6 +19,7 @@ interface HoldingSearchProps {
   label?: string;
   placeholder?: string;
   autoFocus?: boolean;
+  allowedTypes?: string[];
 }
 
 export function HoldingSearch({
@@ -26,6 +27,7 @@ export function HoldingSearch({
   label = "Search by name or ticker symbol",
   placeholder = "e.g. Apple, TSMC, 2330, BTC...",
   autoFocus = false,
+  allowedTypes,
 }: HoldingSearchProps) {
   const t = useTranslations("holdingSearch");
   const [query, setQuery] = useState("");
@@ -99,9 +101,12 @@ export function HoldingSearch({
           return;
         }
         const { data }: { data: SearchResult[] } = await res.json();
-        setResults(data);
+        const filtered = allowedTypes
+          ? data.filter((result) => allowedTypes.includes(result.type))
+          : data;
+        setResults(filtered);
         setActiveIndex(-1);
-        setShowResults(data.length > 0);
+        setShowResults(filtered.length > 0);
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setResults([]);
@@ -113,7 +118,7 @@ export function HoldingSearch({
         if (abortRef.current === controller) setSearching(false);
       }
     },
-    [t],
+    [allowedTypes, t],
   );
 
   function handleQueryChange(value: string) {
