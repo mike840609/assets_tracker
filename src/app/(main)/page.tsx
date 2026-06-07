@@ -17,6 +17,7 @@ const CLIENT_NAMESPACES = [
   "accountsSummary",
   "netWorthCard",
   "goalsMilestone",
+  "stocks",
   "analysis",
   "categories",
   "common",

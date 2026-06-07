@@ -1115,7 +1115,12 @@
     "saving": "儲存中...",
     "deleteStock": "刪除股票",
     "changeStock": "更換",
-    "manualRecord": "手動記錄"
+    "manualRecord": "手動記錄",
+    "viewAll": "查看全部",
+    "viewAllAria": "查看完整自選股",
+    "dashboardEmptyTitle": "尚未建立自選股",
+    "dashboardEmptyBody": "先把投資想法獨立追蹤，之後再加入帳戶持倉。",
+    "dashboardPreviewCount": "顯示 {count} 檔中的 {shown} 檔自選股"
   },
   "transactionHistory": {
     "title": "交易紀錄",

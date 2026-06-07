@@ -1115,7 +1115,12 @@
     "saving": "Saving...",
     "deleteStock": "Delete stock",
     "changeStock": "Change",
-    "manualRecord": "Manual record"
+    "manualRecord": "Manual record",
+    "viewAll": "View all",
+    "viewAllAria": "View full watchlist",
+    "dashboardEmptyTitle": "No watchlist yet",
+    "dashboardEmptyBody": "Track ideas separately from accounts before they become holdings.",
+    "dashboardPreviewCount": "Showing {shown} of {count} tracked stocks"
   },
   "transactionHistory": {
     "title": "Transaction History",

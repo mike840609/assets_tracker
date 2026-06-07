@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   BarChart3,
@@ -28,18 +27,32 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command";
-import { usePrivacyMode } from "./privacy-mode-context";
 
-export function DesktopCommandPalette() {
-  const [open, setOpen] = useState(false);
+interface DesktopCommandPaletteDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onNavigate: (href: string) => void;
+  onTogglePrivacy: () => void;
+  onToggleSidebar: () => void;
+  onRefreshPrices: () => void;
+  onCreateNew: () => void;
+  onAddItem: () => void;
+}
+
+export function DesktopCommandPaletteDialog({
+  open,
+  onOpenChange,
+  onNavigate,
+  onTogglePrivacy,
+  onToggleSidebar,
+  onRefreshPrices,
+  onCreateNew,
+  onAddItem,
+}: DesktopCommandPaletteDialogProps) {
   const [isMac] = useState(
     () => typeof window !== "undefined" && navigator.userAgent.includes("Mac"),
   );
-  const router = useRouter();
   const t = useTranslations();
-  const { togglePrivacyMode } = usePrivacyMode();
-  const pendingGoTo = useRef(false);
-  const goToTimeoutRef = useRef<number | null>(null);
 
   const navItems = useMemo(
     () => [
@@ -55,117 +68,6 @@ export function DesktopCommandPalette() {
     [t],
   );
 
-  const triggerRefresh = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("prices:refresh"));
-  }, []);
-  const toggleSidebar = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("sidebar:toggle"));
-  }, []);
-  const triggerNewItem = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("new-item"));
-  }, []);
-  const triggerAddItem = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("add-item"));
-  }, []);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (!window.matchMedia("(min-width: 768px)").matches) return;
-
-      const target = e.target as HTMLElement | null;
-      if (target?.closest("input,textarea,[contenteditable=true]")) return;
-
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setOpen((v) => !v);
-        return;
-      }
-
-      if ((e.metaKey || e.ctrlKey) && e.code === "Semicolon") {
-        e.preventDefault();
-        togglePrivacyMode();
-        return;
-      }
-
-      if ((e.metaKey || e.ctrlKey) && e.code === "Quote") {
-        e.preventDefault();
-        triggerRefresh();
-        return;
-      }
-
-      if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
-        e.preventDefault();
-        toggleSidebar();
-        return;
-      }
-
-      if (e.key === "?") {
-        setOpen((v) => !v);
-        return;
-      }
-
-      if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
-        triggerNewItem();
-        return;
-      }
-
-      if (e.key.toLowerCase() === "i" && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
-        triggerAddItem();
-        return;
-      }
-
-      if (/^[1-8]$/.test(e.key)) {
-        const item = navItems[Number(e.key) - 1];
-        if (item) {
-          router.push(item.href);
-          setOpen(false);
-        }
-        return;
-      }
-
-      if (pendingGoTo.current) {
-        pendingGoTo.current = false;
-        if (e.key.toLowerCase() === "d") router.push("/");
-        if (e.key.toLowerCase() === "a") router.push("/accounts");
-        if (e.key.toLowerCase() === "g") router.push("/goals");
-        if (e.key.toLowerCase() === "t") router.push("/stocks");
-        if (e.key.toLowerCase() === "n") router.push("/analysis");
-        if (e.key.toLowerCase() === "p") router.push("/projections");
-        if (e.key.toLowerCase() === "h") router.push("/history");
-        if (e.key.toLowerCase() === "s") router.push("/settings");
-        setOpen(false);
-        return;
-      }
-
-      if (e.key.toLowerCase() === "g") {
-        pendingGoTo.current = true;
-        if (goToTimeoutRef.current !== null) window.clearTimeout(goToTimeoutRef.current);
-        goToTimeoutRef.current = window.setTimeout(() => {
-          pendingGoTo.current = false;
-          goToTimeoutRef.current = null;
-        }, 900);
-      }
-    };
-
-    const onOpen = () => setOpen(true);
-
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("command-palette:open", onOpen);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("command-palette:open", onOpen);
-      if (goToTimeoutRef.current !== null) window.clearTimeout(goToTimeoutRef.current);
-    };
-  }, [
-    navItems,
-    router,
-    togglePrivacyMode,
-    triggerRefresh,
-    toggleSidebar,
-    triggerNewItem,
-    triggerAddItem,
-  ]);
-
   const privacyShortcut = isMac ? "⌘;" : "Ctrl+;";
   const refreshShortcut = isMac ? "⌘'" : "Ctrl+'";
   const sidebarShortcut = isMac ? "⌘\\" : "Ctrl+\\";
@@ -173,7 +75,7 @@ export function DesktopCommandPalette() {
   const goShortcut = t("commandPalette.goSequence");
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen} className="top-[22%] translate-y-0">
+    <CommandDialog open={open} onOpenChange={onOpenChange} className="top-[22%] translate-y-0">
       <CommandInput placeholder={t("commandPalette.placeholder")} />
       <CommandList className="max-h-[70vh]">
         <CommandEmpty>{t("commandPalette.noResults")}</CommandEmpty>
@@ -202,8 +104,8 @@ export function DesktopCommandPalette() {
               <CommandItem
                 key={item.href}
                 onSelect={() => {
-                  router.push(item.href);
-                  setOpen(false);
+                  onNavigate(item.href);
+                  onOpenChange(false);
                 }}
               >
                 <Icon className="mr-2 h-4 w-4" />
@@ -216,8 +118,8 @@ export function DesktopCommandPalette() {
         <CommandGroup heading={t("commandPalette.groupActions")}>
           <CommandItem
             onSelect={() => {
-              togglePrivacyMode();
-              setOpen(false);
+              onTogglePrivacy();
+              onOpenChange(false);
             }}
           >
             <Shield className="mr-2 h-4 w-4" />
@@ -226,8 +128,8 @@ export function DesktopCommandPalette() {
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              toggleSidebar();
-              setOpen(false);
+              onToggleSidebar();
+              onOpenChange(false);
             }}
           >
             <PanelLeftClose className="mr-2 h-4 w-4" />
@@ -236,8 +138,8 @@ export function DesktopCommandPalette() {
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              triggerRefresh();
-              setOpen(false);
+              onRefreshPrices();
+              onOpenChange(false);
             }}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
@@ -246,8 +148,8 @@ export function DesktopCommandPalette() {
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              triggerNewItem();
-              setOpen(false);
+              onCreateNew();
+              onOpenChange(false);
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -256,8 +158,8 @@ export function DesktopCommandPalette() {
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              triggerAddItem();
-              setOpen(false);
+              onAddItem();
+              onOpenChange(false);
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -266,7 +168,7 @@ export function DesktopCommandPalette() {
           </CommandItem>
           <CommandItem
             onSelect={() => {
-              setOpen(false);
+              onOpenChange(false);
               signOut({ callbackUrl: "/login" });
             }}
           >
