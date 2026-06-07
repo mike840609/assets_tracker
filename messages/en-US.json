@@ -179,7 +179,44 @@
     "emptyDescription": "Start by adding your first account — a bank account, brokerage, crypto wallet, or anything else you want to track.",
     "emptyAction": "Add your first account",
     "emptyHint": "Snapshots are captured daily, so charts fill in as your history grows.",
-    "viewFullHistory": "View full history"
+    "viewFullHistory": "View full history",
+    "onboarding": {
+      "eyebrow": "Private by default",
+      "title": "Your dashboard is ready for the first account.",
+      "description": "Add one account to start calculating net worth, allocation, currency exposure, and history from the same source of truth.",
+      "primaryAction": "Add account",
+      "preview": {
+        "netWorth": "Net worth",
+        "noValue": "No net worth value yet",
+        "private": "Values hidden",
+        "trend": "Net worth trend",
+        "awaitingData": "Waiting for account data",
+        "chartLabel": "Preview of the net worth trend chart before account data is added",
+        "accounts": "Accounts",
+        "allocation": "Allocation",
+        "empty": "Empty"
+      },
+      "steps": {
+        "account": {
+          "title": "Add one account",
+          "description": "Start with a bank, brokerage, wallet, property, or liability."
+        },
+        "currency": {
+          "title": "Confirm currency",
+          "description": "Choose the base currency used for totals and converted values."
+        },
+        "history": {
+          "title": "Build history",
+          "description": "Daily snapshots fill charts after your first tracked balance."
+        }
+      },
+      "aside": {
+        "title": "What unlocks next",
+        "description": "Once an account exists, this view becomes your live cockpit for changes, allocation, exposure, goals, and performance.",
+        "progressLabel": "Setup progress",
+        "progressHint": "The first account unlocks dashboard charts immediately."
+      }
+    }
   },
   "accounts": {
     "title": "Accounts"

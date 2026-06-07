@@ -179,7 +179,44 @@
     "emptyDescription": "從新增第一個帳戶開始——銀行帳戶、券商、加密貨幣錢包，或任何您想追蹤的項目。",
     "emptyAction": "新增您的第一個帳戶",
     "emptyHint": "系統每日擷取快照，隨著歷史累積，圖表會逐漸顯示。",
-    "viewFullHistory": "查看完整歷史記錄"
+    "viewFullHistory": "查看完整歷史記錄",
+    "onboarding": {
+      "eyebrow": "預設保護隱私",
+      "title": "儀表板已準備好加入第一個帳戶。",
+      "description": "新增一個帳戶後，就能從同一份資料開始計算淨資產、配置、貨幣曝險與歷史走勢。",
+      "primaryAction": "新增帳戶",
+      "preview": {
+        "netWorth": "淨資產",
+        "noValue": "尚無淨資產數值",
+        "private": "金額已隱藏",
+        "trend": "淨資產走勢",
+        "awaitingData": "等待帳戶資料",
+        "chartLabel": "加入帳戶資料前的淨資產走勢圖預覽",
+        "accounts": "帳戶",
+        "allocation": "配置",
+        "empty": "尚無資料"
+      },
+      "steps": {
+        "account": {
+          "title": "新增一個帳戶",
+          "description": "可從銀行、券商、錢包、不動產或負債開始。"
+        },
+        "currency": {
+          "title": "確認基礎貨幣",
+          "description": "選擇總額與換算數值要使用的貨幣。"
+        },
+        "history": {
+          "title": "累積歷史",
+          "description": "第一筆餘額建立後，每日快照會逐漸填滿圖表。"
+        }
+      },
+      "aside": {
+        "title": "接下來會解鎖什麼",
+        "description": "帳戶建立後，這裡會變成追蹤變化、配置、曝險、目標與表現的即時儀表板。",
+        "progressLabel": "設定進度",
+        "progressHint": "新增第一個帳戶後，儀表板圖表會立即啟用。"
+      }
+    }
   },
   "accounts": {
     "title": "帳戶"
