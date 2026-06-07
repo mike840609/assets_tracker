@@ -1,12 +1,12 @@
 "use client";
-
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { ArrowRight, ChartCandlestick, Plus, TrendingDown, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
-import { cn } from "@/lib/utils";
+import { cn, daysBetweenDates, localToday } from "@/lib/utils";
 import type { SerializedTrackedStock } from "@/lib/services/stock-watch-service";
 
 const HIDDEN = "***";
@@ -63,11 +63,19 @@ function WatchlistRow({ stock }: { stock: SerializedTrackedStock }) {
   const t = useTranslations("stocks");
   const format = useMarketFormatters();
   const currency = stock.latestPriceCurrency ?? stock.currency;
-  const latestPrice = format.money(stock.latestPrice, currency);
   const changePercent = format.percent(stock.changePercent);
-  const hasDirection = stock.change !== null || stock.changePercent !== null;
   const isGain = (stock.change ?? stock.changePercent ?? 0) >= 0;
   const DirectionIcon = isGain ? TrendingUp : TrendingDown;
+
+  const [today, setToday] = useState<string | null>(null);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setToday(localToday()), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const recordPeriodDays = today ? daysBetweenDates(stock.recordDate, today) : null;
+  const recordPeriodLabel =
+    recordPeriodDays !== null ? t("recordPeriod", { days: recordPeriodDays }) : null;
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-border/50 py-2.5 first:border-t-0 first:pt-0 last:pb-0">
@@ -76,25 +84,36 @@ function WatchlistRow({ stock }: { stock: SerializedTrackedStock }) {
           <span className="truncate font-mono text-sm font-semibold tracking-normal">
             {stock.symbol}
           </span>
-          <Badge variant="outline" className="text-[10px]">
+          <Badge
+            variant="outline"
+            className="border-primary/20 bg-primary/5 text-[10px] font-medium text-primary/90"
+          >
             {stock.currency}
           </Badge>
         </div>
         <p className="mt-1 truncate text-xs leading-4 text-muted-foreground">{stock.name}</p>
       </div>
 
-      <div className="min-w-0 text-right">
-        <p className="truncate font-mono text-sm font-semibold tabular-nums">
-          {latestPrice ?? t("unavailable")}
-        </p>
-        <p
-          className={cn(
-            "mt-1 flex items-center justify-end gap-1 font-mono text-xs font-semibold tabular-nums text-muted-foreground",
-            hasDirection && (isGain ? "text-gain" : "text-loss"),
+      <div className="min-w-0 flex shrink-0 flex-col items-end">
+        <div>
+          {stock.changePercent !== null ? (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-[13px] font-semibold tabular-nums leading-none",
+                isGain ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss",
+              )}
+            >
+              <DirectionIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
+              {changePercent}
+            </span>
+          ) : (
+            <span className="font-mono text-[13px] font-semibold tabular-nums text-muted-foreground">
+              {t("unavailable")}
+            </span>
           )}
-        >
-          {hasDirection && <DirectionIcon className="h-3 w-3 shrink-0" aria-hidden="true" />}
-          {changePercent ?? t("noLatestPrice")}
+        </div>
+        <p className="mt-1 font-mono text-[11px] font-medium text-muted-foreground tabular-nums">
+          {recordPeriodLabel ?? t("unavailable")}
         </p>
       </div>
     </div>
