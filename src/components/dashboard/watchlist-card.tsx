@@ -100,7 +100,9 @@ function WatchlistRow({ stock }: { stock: SerializedTrackedStock }) {
             <span
               className={cn(
                 "inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-[13px] font-semibold tabular-nums leading-none",
-                isGain ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss",
+                isGain
+                  ? "bg-[var(--gain)]/15 text-[var(--gain)]"
+                  : "bg-[var(--loss)]/15 text-[var(--loss)]",
               )}
             >
               <DirectionIcon className="h-3 w-3 shrink-0" aria-hidden="true" />

@@ -366,6 +366,7 @@ function StockRow({
   const format = useFormatters();
   const currency = stock.latestPriceCurrency ?? stock.currency;
   const isGain = (stock.change ?? 0) >= 0;
+  const hasDirection = stock.changePercent !== null;
   const DirectionIcon = isGain ? TrendingUp : TrendingDown;
   const latestPrice = format.money(stock.latestPrice, currency);
   const recordPrice = format.money(stock.recordPrice, stock.currency);
@@ -451,7 +452,14 @@ function StockRow({
   return (
     <Card
       size="sm"
-      className="overflow-visible transition-colors hover:border-primary/20 hover:bg-primary/[0.02] md:py-2"
+      className={cn(
+        "overflow-visible transition-colors md:py-2",
+        hasDirection
+          ? isGain
+            ? "border-[var(--gain)]/35 bg-[var(--gain)]/5 hover:border-[var(--gain)]/60 hover:bg-[var(--gain)]/8"
+            : "border-[var(--loss)]/35 bg-[var(--loss)]/5 hover:border-[var(--loss)]/60 hover:bg-[var(--loss)]/8"
+          : "hover:border-primary/20 hover:bg-primary/[0.02]",
+      )}
     >
       <CardContent className="space-y-3 md:px-3">
         <div className="hidden items-center gap-3 md:grid md:grid-cols-[minmax(190px,1.6fr)_minmax(118px,0.9fr)_minmax(122px,0.9fr)_minmax(120px,0.9fr)_1.75rem]">
@@ -486,8 +494,10 @@ function StockRow({
               {stock.changePercent !== null ? (
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-sm font-semibold tabular-nums leading-none",
-                    isGain ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss",
+                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-sm font-semibold tabular-nums leading-none ring-1 ring-inset",
+                    isGain
+                      ? "bg-[var(--gain)]/15 text-[var(--gain)] ring-[var(--gain)]/25"
+                      : "bg-[var(--loss)]/15 text-[var(--loss)] ring-[var(--loss)]/25",
                   )}
                 >
                   <DirectionIcon className="h-3.5 w-3.5 shrink-0" />
@@ -518,8 +528,10 @@ function StockRow({
                 {stock.changePercent !== null ? (
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-full px-3 py-1.5 font-mono text-base font-bold tabular-nums leading-none",
-                      isGain ? "bg-gain/15 text-gain" : "bg-loss/15 text-loss",
+                      "inline-flex items-center gap-1 rounded-full px-3 py-1.5 font-mono text-base font-bold tabular-nums leading-none ring-1 ring-inset",
+                      isGain
+                        ? "bg-[var(--gain)]/15 text-[var(--gain)] ring-[var(--gain)]/25"
+                        : "bg-[var(--loss)]/15 text-[var(--loss)] ring-[var(--loss)]/25",
                     )}
                   >
                     <DirectionIcon className="h-4 w-4 shrink-0" />
@@ -557,9 +569,9 @@ function StockRow({
         </div>
 
         {noteText && (
-          <div className="rounded-lg border border-primary/10 bg-primary/5 px-3 py-2.5">
+          <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-2.5">
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-              <span className="mr-2 text-xs font-medium text-primary/70">{t("note")}:</span>
+              <span className="mr-2 text-xs font-medium text-muted-foreground">{t("note")}:</span>
               {noteText}
             </p>
           </div>

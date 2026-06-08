@@ -1082,6 +1082,7 @@
     "searchLabel": "Search stock",
     "searchPlaceholder": "e.g. Apple, TSMC, NVDA...",
     "selectedStock": "Selected stock",
+    "symbol": "Symbol",
     "recordPrice": "Record price",
     "recordPriceInvalid": "Enter a positive record price.",
     "recordDate": "Record date",

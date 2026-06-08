@@ -1082,6 +1082,7 @@
     "searchLabel": "搜尋股票",
     "searchPlaceholder": "例如 Apple、台積電、NVDA...",
     "selectedStock": "已選股票",
+    "symbol": "股票代號",
     "recordPrice": "記錄價格",
     "recordPriceInvalid": "請輸入大於 0 的記錄價格。",
     "recordDate": "記錄日期",
