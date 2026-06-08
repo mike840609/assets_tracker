@@ -61,6 +61,11 @@ function NetWorthSkeleton() {
               <Skeleton className="h-3.5 sm:h-4 w-16" />
             </div>
             <Skeleton className="h-5 sm:h-6 w-24 max-w-full mt-1" />
+            <Skeleton className="h-1.5 w-full rounded-full mt-3 sm:mt-4" />
+            <div className="mt-1.5 flex items-center justify-between">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-3 w-8" />
+            </div>
           </CardContent>
         </Card>
       ))}
@@ -333,7 +338,10 @@ export async function DashboardContent({ userId }: { userId: string }) {
         <NetWorthSection userId={userId} baseCurrency={baseCurrency} />
       </Suspense>
 
-      {/* Tier 2 — "what changed": trend chart (8) + goals/allocation rail (4) */}
+      {/* Tier 2 — "what changed": trend chart (8) + goals/watchlist rail (4).
+          The rail is intentionally short (two cards) so the trend card, which
+          stretches to match it, stays a compact height rather than ballooning
+          to a three-card rail. Allocation moved to the donut row below. */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 animate-in fade-in slide-in-from-bottom-8 motion-slow fill-mode-both delay-75">
         <div className="min-w-0 lg:col-span-8">
           <Suspense fallback={<TrendChartSkeleton />}>
@@ -368,36 +376,28 @@ export async function DashboardContent({ userId }: { userId: string }) {
           <Suspense fallback={<ChartCardSkeleton />}>
             <WatchlistSection userId={userId} />
           </Suspense>
-          {/* Allocation lives in the desktop rail; on mobile it joins the donut pair below */}
-          <div className="hidden lg:block">
-            <Suspense fallback={<ChartCardSkeleton />}>
-              <AllocationSection userId={userId} baseCurrency={baseCurrency} />
-            </Suspense>
-          </div>
         </div>
       </div>
 
-      {/* Mobile-only — keep the two donuts side by side below the desktop breakpoint */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:hidden animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
-        <Suspense fallback={<ChartCardSkeleton />}>
-          <AllocationSection userId={userId} baseCurrency={baseCurrency} />
-        </Suspense>
-        <Suspense fallback={<ChartCardSkeleton />}>
-          <CurrencySection userId={userId} baseCurrency={baseCurrency} />
-        </Suspense>
-      </div>
-
-      {/* Tier 3 — "what it's made of": portfolio composition (8) + currency donut (4) */}
+      {/* Tier 3 — "what it's made of": the portfolio treemap (wide) sits beside a
+          stacked allocation + currency-exposure column so the short currency card
+          no longer leaves a gap. Source order is allocation → currency → portfolio
+          (the phone reading order); on desktop the donut stack is placed in the
+          right column and the treemap fills the left, same row. */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
-        <div className="min-w-0 lg:col-span-8">
-          <Suspense fallback={<PortfolioHeatmapSkeleton />}>
-            <PortfolioHeatmapSection userId={userId} baseCurrency={baseCurrency} />
+        <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
+          <Suspense fallback={<ChartCardSkeleton />}>
+            <AllocationSection userId={userId} baseCurrency={baseCurrency} />
           </Suspense>
-        </div>
-        {/* Currency lives in the desktop rail; on mobile it joins the donut pair above */}
-        <div className="hidden min-w-0 lg:col-span-4 lg:block">
           <Suspense fallback={<ChartCardSkeleton />}>
             <CurrencySection userId={userId} baseCurrency={baseCurrency} />
+          </Suspense>
+        </div>
+        {/* Force the treemap card to fill the row so its bottom aligns with the
+            stacked allocation + currency column to its right. */}
+        <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 [&>*]:min-h-0 [&>*]:flex-1">
+          <Suspense fallback={<PortfolioHeatmapSkeleton />}>
+            <PortfolioHeatmapSection userId={userId} baseCurrency={baseCurrency} />
           </Suspense>
         </div>
       </div>

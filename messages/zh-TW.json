@@ -657,7 +657,8 @@
     "netWorth": "淨資產",
     "totalAssets": "總資產",
     "totalLiabilities": "總負債",
-    "sinceSnapshot": "自 {date}"
+    "sinceSnapshot": "自 {date}",
+    "accountCount": "{count, plural, =0 {無帳戶} other {# 個帳戶}}"
   },
   "dashboardActions": {
     "pricesUpdated": "價格更新於 {age}",

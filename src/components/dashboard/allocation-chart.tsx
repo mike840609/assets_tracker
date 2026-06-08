@@ -53,6 +53,8 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
       .sort((a, b) => b.value - a.value);
   }, [summary.accounts, t]);
 
+  const total = useMemo(() => data.reduce((sum, d) => sum + d.value, 0), [data]);
+
   const handleMouseEnter = useCallback((_: unknown, index: number) => setActiveIndex(index), []);
   const handleMouseLeave = useCallback(() => setActiveIndex(-1), []);
 
@@ -153,7 +155,11 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                         content={({ viewBox }) => {
                           if (viewBox && "cx" in viewBox && "cy" in viewBox) {
                             const activeItem = activeIndex >= 0 ? data[activeIndex] : null;
-                            const displayPct = activeItem ? `${activeItem.percentage}%` : "100%";
+                            const displayPct = activeItem
+                              ? `${activeItem.percentage}%`
+                              : privacyMode
+                                ? "••••"
+                                : formatCurrency(total, summary.baseCurrency, true);
                             const displayLabel = activeItem
                               ? activeItem.name
                               : t("allocationChart.total");
