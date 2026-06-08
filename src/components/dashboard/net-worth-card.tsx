@@ -62,6 +62,45 @@ function FitCurrency({
   );
 }
 
+/**
+ * Slim share-of-gross meter shown under the Assets / Liabilities figures.
+ * `share` is a 0–100 percentage; the fill is floored to a visible sliver so a
+ * tiny share still registers. The percentage caption is suppressed in privacy
+ * mode (the account count stays, since a count leaks no balances).
+ */
+function CompositionMeter({
+  share,
+  caption,
+  tone,
+  privacy,
+}: {
+  share: number;
+  caption: string;
+  tone: "gain" | "loss";
+  privacy: boolean;
+}) {
+  const color = tone === "gain" ? "var(--gain)" : "var(--loss)";
+  return (
+    <div className="mt-3 sm:mt-4">
+      <div
+        className="h-1.5 w-full overflow-hidden rounded-full bg-foreground/10"
+        role="presentation"
+      >
+        <div
+          className="h-full rounded-full motion-safe:transition-[width] motion-safe:duration-700 motion-safe:ease-out"
+          style={{ width: `${Math.max(share, 3)}%`, backgroundColor: color, opacity: 0.7 }}
+        />
+      </div>
+      <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] tabular-nums text-muted-foreground">
+        <span className="truncate">{caption}</span>
+        {!privacy && (
+          <span className="shrink-0 font-medium text-foreground/70">{share.toFixed(0)}%</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function NetWorthCard({
   summary,
   previousNetWorth,
@@ -98,6 +137,15 @@ export function NetWorthCard({
     : null;
   const meshClass =
     delta === null ? "hero-mesh-neutral" : isPositive ? "hero-mesh-positive" : "hero-mesh-negative";
+
+  // Gross = assets + liabilities. Each secondary card carries a slim meter of
+  // its share of gross so the two cards read as complementary halves of the
+  // net-worth equation rather than two isolated numbers.
+  const gross = totalAssets + totalLiabilities;
+  const assetsShare = gross > 0 ? (totalAssets / gross) * 100 : 0;
+  const liabilitiesShare = gross > 0 ? (totalLiabilities / gross) * 100 : 0;
+  const assetCount = summary.accounts.filter((a) => a.type === "ASSET").length;
+  const liabilityCount = summary.accounts.filter((a) => a.type === "LIABILITY").length;
 
   return (
     <div
@@ -175,6 +223,14 @@ export function NetWorthCard({
             privacy={privacyMode}
             className="relative text-lg sm:text-2xl font-semibold text-[var(--gain)] mt-1 whitespace-nowrap tabular-nums truncate"
           />
+          {!isCompact && (
+            <CompositionMeter
+              share={assetsShare}
+              caption={t("accountCount", { count: assetCount })}
+              tone="gain"
+              privacy={privacyMode}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -195,6 +251,14 @@ export function NetWorthCard({
             privacy={privacyMode}
             className="relative text-lg sm:text-2xl font-semibold text-[var(--loss)] mt-1 whitespace-nowrap tabular-nums truncate"
           />
+          {!isCompact && (
+            <CompositionMeter
+              share={liabilitiesShare}
+              caption={t("accountCount", { count: liabilityCount })}
+              tone="loss"
+              privacy={privacyMode}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

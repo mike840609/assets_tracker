@@ -657,7 +657,8 @@
     "netWorth": "Net Worth",
     "totalAssets": "Total Assets",
     "totalLiabilities": "Total Liabilities",
-    "sinceSnapshot": "since {date}"
+    "sinceSnapshot": "since {date}",
+    "accountCount": "{count, plural, =0 {no accounts} one {# account} other {# accounts}}"
   },
   "dashboardActions": {
     "pricesUpdated": "Prices updated {age}",

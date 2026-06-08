@@ -202,6 +202,27 @@ export function TrendChart({
     return { delta, pct };
   }, [filtered]);
 
+  // Fit the Y-axis to the visible range (with breathing room) instead of
+  // anchoring at zero. Net-worth series rarely approach zero, so a 0-based
+  // axis spends most of the canvas on empty space and flattens the trend.
+  // Percent mode already centers on its own baseline, so leave it to recharts.
+  const yDomain = useMemo<[number, number] | undefined>(() => {
+    if (isPercentMode || filtered.length === 0) return undefined;
+    let min = Infinity;
+    let max = -Infinity;
+    for (const s of filtered) {
+      if (s.netWorth < min) min = s.netWorth;
+      if (s.netWorth > max) max = s.netWorth;
+    }
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return undefined;
+    if (min === max) {
+      const pad = Math.abs(min) * 0.05 || 1;
+      return [min - pad, max + pad];
+    }
+    const pad = (max - min) * 0.18;
+    return [min - pad, max + pad];
+  }, [filtered, isPercentMode]);
+
   return (
     <Card className="relative h-full flex flex-col pb-0">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 pb-2 px-4">
@@ -324,7 +345,12 @@ export function TrendChart({
                     textAnchor="end"
                     tickFormatter={xTickFormatter}
                   />
-                  <YAxis width={42} tick={{ fontSize: 12 }} tickFormatter={yTickFormatter} />
+                  <YAxis
+                    width={42}
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={yTickFormatter}
+                    domain={yDomain ?? ["auto", "auto"]}
+                  />
                   <Tooltip
                     cursor={false}
                     content={
