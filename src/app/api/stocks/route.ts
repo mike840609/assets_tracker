@@ -30,6 +30,16 @@ export const POST = withAuth(async (request, _ctx, userId) => {
   const quote = await fetchEquityQuote(symbol);
   if (!quote) return failure("Only stock symbols can be tracked.", 400);
 
+  // Yahoo may canonicalize the symbol (e.g. BRK.B → BRK-B); the row is created
+  // with quote.symbol, so the dedupe check must cover that form too.
+  if (quote.symbol !== symbol) {
+    const existingCanonical = await prisma.stockWatchItem.findUnique({
+      where: { userId_symbol: { userId, symbol: quote.symbol } },
+      select: { id: true },
+    });
+    if (existingCanonical) return failure("This stock is already tracked.", 409);
+  }
+
   const item = await prisma.stockWatchItem.create({
     data: {
       userId,

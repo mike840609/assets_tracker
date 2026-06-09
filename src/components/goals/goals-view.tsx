@@ -4,7 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Plus, Target } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { GoalWithProgress, SerializedAccount } from "@/lib/types";
 import type { ProjectionData } from "@/lib/services/projection-service";
 import type { SerializedTrackedStock } from "@/lib/services/stock-watch-service";
