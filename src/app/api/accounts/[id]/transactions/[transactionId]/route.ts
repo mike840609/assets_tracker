@@ -109,18 +109,13 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
     if (amountError) return failure(amountError, 400);
 
     // Recompute balance delta whenever amount or type changes.
+    let delta = 0;
     if (data.amount !== undefined || data.type !== undefined) {
       const oldTx = { type: cashTx.type, amount: Number(cashTx.amount) };
-      const delta = calculateBalanceDelta(oldTx, nextCashTx);
-      if (delta !== 0) {
-        await prisma.account.update({
-          where: { id: accountId },
-          data: { cashBalance: { increment: delta } },
-        });
-      }
+      delta = calculateBalanceDelta(oldTx, nextCashTx);
     }
 
-    const updatedTx = await prisma.cashTransaction.update({
+    const txUpdate = prisma.cashTransaction.update({
       where: { id: transactionId },
       data: {
         ...(data.amount !== undefined && { amount: data.amount }),
@@ -129,6 +124,17 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
         ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
       },
     });
+
+    const [updatedTx] =
+      delta !== 0
+        ? await prisma.$transaction([
+            txUpdate,
+            prisma.account.update({
+              where: { id: accountId },
+              data: { cashBalance: { increment: delta } },
+            }),
+          ])
+        : [await txUpdate];
 
     invalidateAccountCaches(userId);
     return ok(updatedTx);
@@ -187,12 +193,13 @@ export const DELETE = withAuth<TxCtx>(async (_request, { params }, userId) => {
     }
 
     const delta = calculateBalanceDelta({ type: cashTx.type, amount: Number(cashTx.amount) }, null);
-    await prisma.account.update({
-      where: { id: accountId },
-      data: { cashBalance: { increment: delta } },
-    });
-
-    await prisma.cashTransaction.delete({ where: { id: transactionId } });
+    await prisma.$transaction([
+      prisma.cashTransaction.delete({ where: { id: transactionId } }),
+      prisma.account.update({
+        where: { id: accountId },
+        data: { cashBalance: { increment: delta } },
+      }),
+    ]);
     invalidateAccountCaches(userId);
     return ok({ ok: true });
   }

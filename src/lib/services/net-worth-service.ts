@@ -187,6 +187,7 @@ async function computeNetWorthSummary(
     baseCurrency,
     currencyExposure,
     accounts: accountsWithValue,
+    unresolvedRatePairs: [...warnedPairs],
   };
 }
 

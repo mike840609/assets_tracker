@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createSnapshot } from "@/lib/services/snapshot-service";
@@ -7,9 +8,14 @@ import { ok, failure } from "@/lib/api-responses";
 import { CRON_SECRET } from "@/lib/env";
 import { log } from "@/lib/logger";
 
+function isAuthorized(request: Request): boolean {
+  const provided = Buffer.from(request.headers.get("authorization") ?? "");
+  const expected = Buffer.from(`Bearer ${CRON_SECRET}`);
+  return provided.length === expected.length && timingSafeEqual(provided, expected);
+}
+
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+  if (!isAuthorized(request)) {
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -77,14 +83,30 @@ export async function GET(request: Request) {
       include: { appSettings: true },
     });
 
-    // 3. Create snapshots for each user (in parallel)
-    const snapshots = await Promise.all(
+    // 3. Create snapshots for each user (in parallel, isolated so one
+    // user's failure — e.g. unresolved exchange rates — doesn't reject
+    // snapshots already written for everyone else)
+    const results = await Promise.allSettled(
       users.map((user) => {
         const baseCurrency = user.appSettings?.baseCurrency ?? "USD";
         log.info("cron.snapshot.create", { userId: user.id, baseCurrency });
         return createSnapshot(user.id, baseCurrency);
       }),
     );
+
+    const snapshotIds: string[] = [];
+    const failures: { userId: string; error: string }[] = [];
+    results.forEach((result, i) => {
+      if (result.status === "fulfilled") {
+        snapshotIds.push(result.value.id);
+      } else {
+        failures.push({ userId: users[i].id, error: String(result.reason) });
+        log.error("cron.snapshot.user_failed", {
+          userId: users[i].id,
+          error: String(result.reason),
+        });
+      }
+    });
 
     // 4. Invalidate snapshot/history caches now that new rows exist
     revalidateTag("snapshots", "max");
@@ -93,8 +115,9 @@ export async function GET(request: Request) {
     }
 
     return ok({
-      success: true,
-      snapshotIds: snapshots.map((s) => s.id),
+      success: failures.length === 0,
+      snapshotIds,
+      failures,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

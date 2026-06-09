@@ -84,6 +84,12 @@ export type NetWorthSummary = {
   baseCurrency: string;
   currencyExposure: { currency: string; value: number }[];
   accounts: AccountWithValue[];
+  /**
+   * Currency pairs (as "FROM_TO") that could not be resolved and fell back
+   * to a 1:1 rate. Render paths tolerate this; persistence paths
+   * (snapshots) must treat a non-empty list as a hard error.
+   */
+  unresolvedRatePairs: string[];
 };
 
 export type AllocationItem = {
