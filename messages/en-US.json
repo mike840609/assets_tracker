@@ -1111,6 +1111,7 @@
     "deleteBody": "This removes its recorded price, date, and note.",
     "deleteSuccess": "Deleted {symbol}",
     "deleteFailed": "Failed to delete stock",
+    "deleting": "Deleting...",
     "refreshSuccess": "Updated {count} prices",
     "refreshFailed": "Failed to refresh stock prices",
     "saveStock": "Save stock",

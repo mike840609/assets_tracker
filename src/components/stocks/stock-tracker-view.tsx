@@ -4,6 +4,7 @@ import { startTransition, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
+  ArrowRight,
   ChartCandlestick,
   MoreHorizontal,
   Pencil,
@@ -306,6 +307,7 @@ function StockForm({
           onChange={(event) => setNote(event.target.value)}
           placeholder={t("notePlaceholder")}
           rows={4}
+          maxLength={2000}
         />
       </div>
 
@@ -368,6 +370,13 @@ function StockRow({
   const isGain = (stock.change ?? 0) >= 0;
   const hasDirection = stock.changePercent !== null;
   const DirectionIcon = isGain ? TrendingUp : TrendingDown;
+  // Deepened schema hue for the secondary directional cues (connector arrow,
+  // absolute change). Null when there's no quote, so those stay neutral gray.
+  const directionInk = hasDirection
+    ? isGain
+      ? "text-[var(--gain-ink)]"
+      : "text-[var(--loss-ink)]"
+    : null;
   const latestPrice = format.money(stock.latestPrice, currency);
   const recordPrice = format.money(stock.recordPrice, stock.currency);
   const change = format.money(stock.change, currency);
@@ -462,24 +471,32 @@ function StockRow({
       )}
     >
       <CardContent className="space-y-3 md:px-3">
-        <div className="hidden items-center gap-3 md:grid md:grid-cols-[minmax(190px,1.6fr)_minmax(118px,0.9fr)_minmax(122px,0.9fr)_minmax(120px,0.9fr)_1.75rem]">
+        <div className="hidden items-center gap-5 md:grid md:grid-cols-[minmax(180px,1.5fr)_minmax(280px,1.3fr)_minmax(116px,auto)_1.75rem]">
           {renderIdentity(true)}
 
+          {/* Price journey: the recorded reference price, then the live quote it's measured against. */}
           <div className="min-w-0">
-            <p className="text-[11px] font-medium text-muted-foreground">{t("recorded")}</p>
-            <p className="mt-0.5 truncate font-mono text-sm font-semibold tabular-nums">
-              {recordPrice}
+            <p className="text-[11px] font-medium text-muted-foreground">
+              {t("recorded")}
+              <ArrowRight className="mx-1.5 inline h-3 w-3 -translate-y-px text-muted-foreground/40" />
+              {t("latestPrice")}
             </p>
-            <div className="mt-0.5 space-y-0.5 text-[11px] leading-4 text-muted-foreground">
-              <p className="truncate">{format.date(stock.recordDate)}</p>
-              {recordPeriodLabel && <p className="truncate">{recordPeriodLabel}</p>}
-            </div>
-          </div>
-
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium text-muted-foreground">{t("latestPrice")}</p>
-            <p className="mt-0.5 truncate font-mono text-sm font-semibold tabular-nums">
-              {latestPrice ?? t("unavailable")}
+            {/* flex-wrap (not truncate): a long price must never be clipped mid-number. */}
+            <p className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono tabular-nums">
+              <span className="text-sm font-medium text-muted-foreground">{recordPrice}</span>
+              <ArrowRight
+                className={cn(
+                  "h-3.5 w-3.5 shrink-0 translate-y-0.5",
+                  directionInk ?? "text-muted-foreground/40",
+                )}
+              />
+              <span className="text-base font-semibold text-foreground">
+                {latestPrice ?? t("unavailable")}
+              </span>
+            </p>
+            <p className="mt-1 truncate text-[11px] leading-4 text-muted-foreground/80">
+              {format.date(stock.recordDate)}
+              {recordPeriodLabel && ` · ${recordPeriodLabel}`}
             </p>
             {!stock.latestPriceUpdatedAt && (
               <p className="mt-0.5 truncate text-[11px] leading-4 text-muted-foreground">
@@ -488,32 +505,35 @@ function StockRow({
             )}
           </div>
 
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium text-muted-foreground">{t("change")}</p>
-            <div className="mt-1 flex flex-col items-start gap-1">
-              {stock.changePercent !== null ? (
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-sm font-semibold tabular-nums leading-none ring-1 ring-inset",
-                    isGain
-                      ? "bg-[var(--gain)]/15 text-[var(--gain)] ring-[var(--gain)]/25"
-                      : "bg-[var(--loss)]/15 text-[var(--loss)] ring-[var(--loss)]/25",
-                  )}
-                >
-                  <DirectionIcon className="h-3.5 w-3.5 shrink-0" />
-                  {percent}
-                </span>
-              ) : (
-                <p className="font-mono text-sm font-semibold tabular-nums text-muted-foreground">
-                  {t("unavailable")}
-                </p>
-              )}
-              {stock.change !== null && (
-                <p className="truncate font-mono text-[11px] font-medium tabular-nums text-muted-foreground">
-                  {change}
-                </p>
-              )}
-            </div>
+          {/* Change: the payoff, anchored to the row's right edge so pills line up down the list. */}
+          <div className="flex flex-col items-end gap-1 justify-self-end">
+            {stock.changePercent !== null ? (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-sm font-semibold tabular-nums leading-none ring-1 ring-inset",
+                  isGain
+                    ? "bg-[var(--gain)]/15 text-[var(--gain)] ring-[var(--gain)]/25"
+                    : "bg-[var(--loss)]/15 text-[var(--loss)] ring-[var(--loss)]/25",
+                )}
+              >
+                <DirectionIcon className="h-3.5 w-3.5 shrink-0" />
+                {percent}
+              </span>
+            ) : (
+              <p className="font-mono text-sm font-semibold tabular-nums text-muted-foreground">
+                {t("unavailable")}
+              </p>
+            )}
+            {stock.change !== null && (
+              <p
+                className={cn(
+                  "font-mono text-[11px] font-medium tabular-nums",
+                  directionInk ?? "text-muted-foreground",
+                )}
+              >
+                {change}
+              </p>
+            )}
           </div>
 
           <div className="justify-self-end">{renderActions()}</div>
@@ -523,29 +543,37 @@ function StockRow({
           <div className="flex items-start justify-between gap-4">
             {renderIdentity()}
 
-            <div className="min-w-0 shrink-0 flex flex-col items-end">
-              <div>
-                {stock.changePercent !== null ? (
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-full px-3 py-1.5 font-mono text-base font-bold tabular-nums leading-none ring-1 ring-inset",
-                      isGain
-                        ? "bg-[var(--gain)]/15 text-[var(--gain)] ring-[var(--gain)]/25"
-                        : "bg-[var(--loss)]/15 text-[var(--loss)] ring-[var(--loss)]/25",
-                    )}
-                  >
-                    <DirectionIcon className="h-4 w-4 shrink-0" />
-                    {percent}
-                  </span>
-                ) : (
-                  <p className="font-mono text-base font-bold tabular-nums text-muted-foreground">
-                    {t("unavailable")}
-                  </p>
-                )}
-              </div>
-              <p className="mt-1.5 font-mono text-sm font-medium tabular-nums text-muted-foreground">
+            <div className="flex min-w-0 shrink-0 flex-col items-end">
+              {stock.changePercent !== null ? (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-3 py-1.5 font-mono text-base font-bold tabular-nums leading-none ring-1 ring-inset",
+                    isGain
+                      ? "bg-[var(--gain)]/15 text-[var(--gain)] ring-[var(--gain)]/25"
+                      : "bg-[var(--loss)]/15 text-[var(--loss)] ring-[var(--loss)]/25",
+                  )}
+                >
+                  <DirectionIcon className="h-4 w-4 shrink-0" />
+                  {percent}
+                </span>
+              ) : (
+                <p className="font-mono text-base font-bold tabular-nums text-muted-foreground">
+                  {t("unavailable")}
+                </p>
+              )}
+              <p className="mt-2 font-mono text-base font-semibold tabular-nums text-foreground">
                 {latestPrice ?? t("unavailable")}
               </p>
+              {change && (
+                <p
+                  className={cn(
+                    "mt-0.5 font-mono text-[11px] font-medium tabular-nums",
+                    directionInk ?? "text-muted-foreground",
+                  )}
+                >
+                  {change}
+                </p>
+              )}
             </div>
           </div>
 
@@ -570,7 +598,7 @@ function StockRow({
 
         {noteText && (
           <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-2.5">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
               <span className="mr-2 text-xs font-medium text-muted-foreground">{t("note")}:</span>
               {noteText}
             </p>
@@ -588,6 +616,7 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
   const [formOpen, setFormOpen] = useState(false);
   const [editingStock, setEditingStock] = useState<SerializedTrackedStock | null>(null);
   const [deletingStock, setDeletingStock] = useState<SerializedTrackedStock | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   // Derive the most recent price update timestamp across all stocks.
@@ -620,8 +649,9 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
   }
 
   async function deleteStock() {
-    if (!deletingStock) return;
+    if (!deletingStock || isDeleting) return;
     const stock = deletingStock;
+    setIsDeleting(true);
     try {
       const res = await fetch(`/api/stocks/${stock.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("delete failed");
@@ -629,7 +659,10 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
       setDeletingStock(null);
       startTransition(() => router.refresh());
     } catch {
+      // Keep the dialog open so the user can retry; only success dismisses it.
       toast.error(t("deleteFailed"));
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -704,7 +737,10 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
         />
       )}
 
-      <AlertDialog open={!!deletingStock} onOpenChange={(open) => !open && setDeletingStock(null)}>
+      <AlertDialog
+        open={!!deletingStock}
+        onOpenChange={(open) => !open && !isDeleting && setDeletingStock(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -715,8 +751,16 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
             <AlertDialogDescription>{t("deleteBody")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{common("cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={deleteStock}>{t("deleteStock")}</AlertDialogAction>
+            <AlertDialogCancel disabled={isDeleting}>{common("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              onClick={(event) => {
+                event.preventDefault();
+                deleteStock();
+              }}
+            >
+              {isDeleting ? t("deleting") : t("deleteStock")}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
