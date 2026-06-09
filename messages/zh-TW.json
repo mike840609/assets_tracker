@@ -1111,6 +1111,7 @@
     "deleteBody": "這會移除記錄價格、日期與備註。",
     "deleteSuccess": "已刪除 {symbol}",
     "deleteFailed": "刪除股票失敗",
+    "deleting": "刪除中...",
     "refreshSuccess": "已更新 {count} 筆價格",
     "refreshFailed": "更新股票價格失敗",
     "saveStock": "儲存股票",

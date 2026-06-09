@@ -108,6 +108,13 @@
      --loss with a distinct counter-hue so positive vs negative stay legible. */
   --gain: var(--chart-1);
   --loss: var(--chart-2);
+  /* Deepened directional hues for small text and connector accents. The bright
+     --gain/--loss chips clear 3:1 as large/pill text but not 4.5:1 as 11px body
+     (e.g. cyan loss on the light canvas is ~2.97:1). Mixing 30% toward the ink
+     end lifts both themes and every schema past 4.5:1 while keeping the hue read.
+     Defined once: lazy var() substitution re-resolves per cascaded theme/schema. */
+  --gain-ink: color-mix(in oklab, var(--gain), var(--foreground) 30%);
+  --loss-ink: color-mix(in oklab, var(--loss), var(--foreground) 30%);
   --app-icon-gradient-start: #34d399;
   --app-icon-gradient-end: #065f46;
 
