@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored agent skills — not part of the app source.
+    ".agents/**",
   ]),
   // Disallow raw console calls — use src/lib/logger.ts instead (server) or eslint-disable for client components
   {

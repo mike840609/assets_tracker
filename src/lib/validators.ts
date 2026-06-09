@@ -157,11 +157,7 @@ export const createGoalSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   targetAmount: z.number().positive("Target must be positive"),
   targetCurrency: z.string().length(3).default("USD"),
-  targetDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD")
-    .optional()
-    .nullable(),
+  targetDate: z.iso.date("Must be a valid YYYY-MM-DD date").optional().nullable(),
   scope: z.enum(GOAL_SCOPES),
   scopeRefId: z.string().min(1).optional().nullable(),
 });
@@ -178,7 +174,7 @@ const stockWatchItemFields = {
   exchange: z.string().max(80).default(""),
   currency: z.string().length(3).default("USD"),
   recordPrice: z.number().positive("Record price must be positive"),
-  recordDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD"),
+  recordDate: z.iso.date("Must be a valid YYYY-MM-DD date"),
   note: z.string().max(2000).optional().nullable(),
 };
 

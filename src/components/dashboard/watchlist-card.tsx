@@ -38,15 +38,6 @@ function useMarketFormatters() {
   const { privacyMode } = usePrivacyMode();
 
   return {
-    money(value: number | null, currency: string) {
-      if (privacyMode) return HIDDEN;
-      if (value === null) return null;
-      return new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency,
-        maximumFractionDigits: Math.abs(value) >= 100 ? 2 : 4,
-      }).format(value);
-    },
     percent(value: number | null) {
       if (privacyMode) return HIDDEN;
       if (value === null) return null;
@@ -62,7 +53,6 @@ function useMarketFormatters() {
 function WatchlistRow({ stock }: { stock: SerializedTrackedStock }) {
   const t = useTranslations("stocks");
   const format = useMarketFormatters();
-  const currency = stock.latestPriceCurrency ?? stock.currency;
   const changePercent = format.percent(stock.changePercent);
   const isGain = (stock.change ?? stock.changePercent ?? 0) >= 0;
   const DirectionIcon = isGain ? TrendingUp : TrendingDown;

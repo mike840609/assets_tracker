@@ -1,5 +1,5 @@
 import "server-only";
-import { revalidateTag } from "next/cache";
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { refreshPricesForStockSymbols } from "@/lib/services/price-service";
 import { getYahooClient } from "@/lib/services/yahoo-client";
@@ -49,7 +49,11 @@ function withLatestPrice(
   price?: { price: number; currency: string; updatedAt: Date },
 ): SerializedTrackedStock {
   const latestPrice = price?.price ?? null;
-  const change = latestPrice === null ? null : latestPrice - item.recordPrice;
+  // Change math is only meaningful when the cached quote is denominated in the
+  // same currency the record price was captured in (PriceCache is shared with
+  // the holdings pipeline, so the currencies can diverge).
+  const comparable = latestPrice !== null && price?.currency === item.currency;
+  const change = comparable ? latestPrice - item.recordPrice : null;
   const changePercent =
     change === null || item.recordPrice === 0 ? null : (change / item.recordPrice) * 100;
 
@@ -64,6 +68,13 @@ function withLatestPrice(
 }
 
 export async function getCachedTrackedStocks(userId: string): Promise<SerializedTrackedStock[]> {
+  "use cache";
+  cacheTag("stocks");
+  cacheTag(`stocks:${userId}`);
+  // Also reads PriceCache, so any price refresh (cron, holdings, manual) must
+  // invalidate this read via the shared "prices" tag.
+  cacheTag("prices");
+  cacheLife("hours");
   const items = await prisma.stockWatchItem.findMany({
     where: { userId },
     orderBy: [{ createdAt: "desc" }, { symbol: "asc" }],
