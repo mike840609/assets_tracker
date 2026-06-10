@@ -119,6 +119,9 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 // Negative-lookahead exclusions:
 //   - Next/Vercel internals + cron + file-based metadata (already excluded before P1).
 //   - robots.txt / sitemap.xml served from `public/`.
+//   - PWA assets sw.js + manifest.webmanifest: the browser fetches these without
+//     credentials, so they must resolve to 200 (not a /login redirect) or Chrome's
+//     installability check fails and the install prompt never appears.
 //   - Public legal pages, so they can render without NextAuth cookie work.
 //   - Common bot/scanner probes observed in production logs and in the wild:
 //     wp-admin/wp-login/wp-content/wp-includes/wordpress, xmlrpc, cgi-bin,
@@ -130,6 +133,6 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 // component carrying them is excluded.
 export const config = {
   matcher: [
-    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms|wp-admin|wp-login|wp-content|wp-includes|wordpress|xmlrpc|cgi-bin|cmd_|phpmyadmin|adminer|vendor/phpunit|.*\\.php|.*\\.aspx?|.*\\.jsp|.*\\.cgi|.*\\.env|.*\\.git|.*\\.svn|.*\\.htaccess|.*\\.htpasswd).*)",
+    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|manifest\\.webmanifest|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms|wp-admin|wp-login|wp-content|wp-includes|wordpress|xmlrpc|cgi-bin|cmd_|phpmyadmin|adminer|vendor/phpunit|.*\\.php|.*\\.aspx?|.*\\.jsp|.*\\.cgi|.*\\.env|.*\\.git|.*\\.svn|.*\\.htaccess|.*\\.htpasswd).*)",
   ],
 };
