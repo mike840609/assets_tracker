@@ -598,6 +598,43 @@ This lets the i18n + locale promises start immediately in parallel with the sett
 
 ---
 
+## Performance Audit — 2026-06-10 (PE20–PE29)
+
+**Scope reviewed:** code merged since the 2026-05-18 pass — stocks tracker, goals, refresh throttling, `analysis-payload-service` — plus re-render patterns in the analysis chart layer.
+**Method:** direct code reads, then an independent model review pass that confirmed/refuted each finding (one false positive caught, two fixes strengthened).
+
+### Implemented in this pass
+
+| ID   | Finding                                                                                                                                                                                    | Fix                                                                                                                                                                                                                                                                        | Status |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| PE20 | `warmStockPrice` re-queried `PriceCache` immediately after upserting the same row (`stock-watch-service.ts`)                                                                               | Use the `upsert()` return value (`select` price/currency/updatedAt); drop the follow-up `findUnique`. 1 DB round-trip saved per warmed symbol                                                                                                                              | ✅     |
+| PE21 | `where: undefined` when a user has zero holdings fetched the **entire** global `PriceCache` table (`net-worth-service.ts`)                                                                 | Skip the query and use `[]` when `userSymbols` is empty (same guard as `stock-watch-service.ts`)                                                                                                                                                                           | ✅     |
+| PE22 | `getMonthlyCashFlow` and `getAccountMonthlyCashFlow` ran identical queries (accounts + full cashTransaction scan + rates), differing only in grouping; both called together by `/analysis` | `getMonthlyCashFlow` is now a thin in-memory aggregator over `getAccountMonthlyCashFlow` (sum per `monthKey`); its own `"use cache"` dropped — the inner function carries the same tags. Halves the cash-flow queries behind `/analysis`                                   | ✅     |
+| PE23 | Expired-option cron sweep ran N separate `$transaction`s in `Promise.all` (2N statements)                                                                                                  | One `$transaction([createMany, updateMany])` — 2 statements total. Conscious semantics change to all-or-nothing (acceptable: cron retries daily)                                                                                                                           | ✅     |
+| PE24 | Analysis charts rebuilt their data transforms every render, and `AnalysisView` re-renders all charts on every sticky-header `isStuck` scroll toggle and crosshair hover                    | `useMemo` on the transforms (`monthly-change`, `assets-liabilities`, `category-trend` — the heaviest with its O(categories×points) scan — and `attribution`) + `React.memo` on the 5 chart components (props are already referentially stable from `AnalysisView`'s memos) | ✅     |
+
+### Deferred (tracked, not implemented)
+
+- **PE25 — per-chart `ResizeObserver`** (`use-container-size.ts`): already partly mitigated by `initialDimension` hints; consolidation/debounce deferred pending visual regression checks.
+- **PE26 — analysis tab stays CSS-`hidden` on mobile** (`analysis-view.tsx`): `display:none` subtrees don't repaint and `HistoryView` is conditionally mounted; unmounting would restart chart animations. Low urgency.
+- **PE27 — cascaded `useMemo` chain on range change** (`analysis-view.tsx:126-216`): correctly dependency-keyed; collapse only after profiling shows it matters.
+- **PE28 — `ssr: false` on lazy charts**: charts SSR only their `!mounted` placeholder branch already, so the flip changes little; interacts with the PPR shell and open CLS item V23.
+- **PE29 — unbounded cashTransaction scan** in `getAccountMonthlyCashFlow`: fetches the user's full cash-transaction history on each cache fill; could be date-floored or pushed to SQL `GROUP BY`. Cached hourly, not urgent.
+
+### Evaluated and rejected (recorded so they aren't re-flagged)
+
+- **Index on `ExchangeRate(fromCurrency, toCurrency)`** — `@@unique` is already backed by a unique B-tree index in Postgres; an `@@index` would be a pure duplicate.
+- **Compound `(symbol, updatedAt)` index on `PriceCache`** — `symbol` is `@id`; the `symbol IN (...) AND updatedAt >= cutoff` freshness query resolves via PK probes and filters the few matched rows. Compound index = write cost, no read benefit.
+- **`pickMessages` i18n payload trimming** — already optimal for next-intl.
+- **`cashflow-chart.tsx` unmemoized transform** — false positive: `data={buckets}` passes through untransformed (labels are precomputed in `AnalysisView`). It still received `React.memo` under PE24.
+
+### Verification
+
+- `npm run format:check` / `lint` / `typecheck` — see commit.
+- PE22 output equivalence: per-account aggregation reproduces the old `MonthlyContribution[]` exactly (same EDIT exclusion, sign convention, month key set, and `localeCompare` sort); only float summation order differs (~1e-10).
+
+---
+
 ### Related docs
 
 - `docs/LOG.md` — engineering log.

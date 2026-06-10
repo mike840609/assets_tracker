@@ -71,10 +71,13 @@ async function computeNetWorthSummary(
 
   // Phase 2: fetch only the prices needed for this user's holdings
   const userSymbols = accounts.flatMap((a) => a.holdings.map((h) => h.symbol));
-  const prices = await prisma.priceCache.findMany({
-    where: userSymbols.length > 0 ? { symbol: { in: userSymbols } } : undefined,
-    select: { symbol: true, price: true, currency: true },
-  });
+  const prices =
+    userSymbols.length > 0
+      ? await prisma.priceCache.findMany({
+          where: { symbol: { in: userSymbols } },
+          select: { symbol: true, price: true, currency: true },
+        })
+      : [];
 
   const priceMap = Object.fromEntries(
     prices.map((p) => [p.symbol, { price: Number(p.price), currency: p.currency }]),

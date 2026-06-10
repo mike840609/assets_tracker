@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, startTransition } from "react";
+import { memo, useEffect, useMemo, useState, startTransition } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,7 +69,11 @@ function AssetsTooltip({
   );
 }
 
-export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props) {
+export const AssetsLiabilitiesChart = memo(function AssetsLiabilitiesChart({
+  buckets,
+  baseCurrency,
+  locale,
+}: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
@@ -79,17 +83,24 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
   const { handlers: crosshairHandlers } = useChartCrosshair();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
-  const config: ChartConfig = {
-    assets: { label: t("seriesAssets"), color: "var(--gain)" },
-    liabilities: { label: t("seriesLiabilities"), color: "var(--loss)" },
-  };
+  const config: ChartConfig = useMemo(
+    () => ({
+      assets: { label: t("seriesAssets"), color: "var(--gain)" },
+      liabilities: { label: t("seriesLiabilities"), color: "var(--loss)" },
+    }),
+    [t],
+  );
 
-  const data = buckets.map((b) => ({
-    label: formatMonthLabel(b.monthKey, locale),
-    assets: b.totalAssets,
-    liabilities: b.totalLiabilities,
-    isEmpty: b.isEmpty,
-  }));
+  const data = useMemo(
+    () =>
+      buckets.map((b) => ({
+        label: formatMonthLabel(b.monthKey, locale),
+        assets: b.totalAssets,
+        liabilities: b.totalLiabilities,
+        isEmpty: b.isEmpty,
+      })),
+    [buckets, locale],
+  );
   const xAxisInterval = getMonthTickInterval(data.length, density === "compact" ? 5 : 6);
 
   return (
@@ -188,4 +199,4 @@ export function AssetsLiabilitiesChart({ buckets, baseCurrency, locale }: Props)
       </CardContent>
     </>
   );
-}
+});

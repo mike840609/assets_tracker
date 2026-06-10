@@ -1,8 +1,20 @@
 import NextAuth from "next-auth";
 import authConfig from "./auth.config";
 import { NextResponse } from "next/server";
+import type { NextFetchEvent, NextRequest } from "next/server";
 
 const { auth } = NextAuth(authConfig);
+
+const PUBLIC_ROUTES = ["/login", "/privacy", "/terms"];
+
+// NextAuth v5 default session-cookie names: the `__Secure-` prefix is used
+// when the app runs over https (production), the bare name over http (dev).
+// Must stay in sync with NextAuth defaults — we set no custom cookie config.
+const SESSION_COOKIE_NAMES = ["__Secure-authjs.session-token", "authjs.session-token"];
+
+function hasSessionCookie(req: NextRequest): boolean {
+  return SESSION_COOKIE_NAMES.some((name) => req.cookies.has(name));
+}
 
 // ---------------------------------------------------------------------------
 // R3 — Inline rate limiter for /api/auth/* (20 req/min per IP).
@@ -41,16 +53,26 @@ function _authRateLimit(request: Request): Response | null {
 }
 // ---------------------------------------------------------------------------
 
-export default auth((req) => {
-  // Rate-limit auth callbacks before any NextAuth processing.
-  if (req.nextUrl.pathname.startsWith("/api/auth")) {
-    const limited = _authRateLimit(req);
-    if (limited) return limited;
-    return;
-  }
+// On first visit (no locale cookie), detect from Accept-Language and set cookie
+function localeCookieResponse(req: NextRequest): NextResponse | undefined {
+  const localeCookie = req.cookies.get("NEXT_LOCALE")?.value;
+  if (localeCookie) return undefined;
 
+  const acceptLanguage = req.headers.get("accept-language") ?? "";
+  const locale = acceptLanguage.toLowerCase().includes("zh") ? "zh-TW" : "en-US";
+  const response = NextResponse.next();
+  response.cookies.set("NEXT_LOCALE", locale, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
+  return response;
+}
+
+// Slow path: a session cookie is present, so pay the JWT decode to validate it.
+const authMiddleware = auth((req) => {
   const isLoggedIn = !!req.auth;
-  const isPublicRoute = ["/login", "/privacy", "/terms"].includes(req.nextUrl.pathname);
+  const isPublicRoute = PUBLIC_ROUTES.includes(req.nextUrl.pathname);
 
   if (!isLoggedIn && !isPublicRoute) {
     const newUrl = new URL("/login", req.nextUrl.origin);
@@ -64,20 +86,35 @@ export default auth((req) => {
     return Response.redirect(newUrl);
   }
 
-  // On first visit (no locale cookie), detect from Accept-Language and set cookie
-  const localeCookie = req.cookies.get("NEXT_LOCALE")?.value;
-  if (!localeCookie) {
-    const acceptLanguage = req.headers.get("accept-language") ?? "";
-    const locale = acceptLanguage.toLowerCase().includes("zh") ? "zh-TW" : "en-US";
-    const response = NextResponse.next();
-    response.cookies.set("NEXT_LOCALE", locale, {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365,
-      sameSite: "lax",
-    });
-    return response;
-  }
+  return localeCookieResponse(req);
 });
+
+export default function middleware(req: NextRequest, event: NextFetchEvent) {
+  // Rate-limit auth callbacks before any NextAuth processing.
+  if (req.nextUrl.pathname.startsWith("/api/auth")) {
+    const limited = _authRateLimit(req);
+    if (limited) return limited;
+    return;
+  }
+
+  // P4 fast path: no session cookie means the request is anonymous — decide
+  // redirect vs. pass-through from the cookie header alone, without invoking
+  // NextAuth's JWT decode. Bot traffic that survives the matcher lands here.
+  if (!hasSessionCookie(req)) {
+    if (!PUBLIC_ROUTES.includes(req.nextUrl.pathname)) {
+      return Response.redirect(new URL("/login", req.nextUrl.origin));
+    }
+    return localeCookieResponse(req);
+  }
+
+  // NextAuth types the wrapped handler for route-handler contexts too, so the
+  // middleware NextFetchEvent needs a cast — it's what auth() receives when
+  // exported as middleware directly.
+  return authMiddleware(
+    req as Parameters<typeof authMiddleware>[0],
+    event as unknown as Parameters<typeof authMiddleware>[1],
+  );
+}
 
 // Negative-lookahead exclusions:
 //   - Next/Vercel internals + cron + file-based metadata (already excluded before P1).

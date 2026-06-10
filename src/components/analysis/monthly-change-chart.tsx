@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, startTransition } from "react";
+import { memo, useEffect, useMemo, useState, startTransition } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,7 +82,11 @@ function ChangeTooltip({
 
 const monthlyChangeConfig = {} satisfies ChartConfig;
 
-export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
+export const MonthlyChangeChart = memo(function MonthlyChangeChart({
+  buckets,
+  baseCurrency,
+  locale,
+}: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
@@ -92,7 +96,10 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
-  const data = buckets.map((b) => ({ ...b, label: formatMonthLabel(b.monthKey, locale) }));
+  const data = useMemo(
+    () => buckets.map((b) => ({ ...b, label: formatMonthLabel(b.monthKey, locale) })),
+    [buckets, locale],
+  );
   const xAxisInterval = getMonthTickInterval(data.length, density === "compact" ? 5 : 6);
 
   return (
@@ -174,4 +181,4 @@ export function MonthlyChangeChart({ buckets, baseCurrency, locale }: Props) {
       </CardContent>
     </>
   );
-}
+});

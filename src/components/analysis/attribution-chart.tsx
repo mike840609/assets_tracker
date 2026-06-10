@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, startTransition } from "react";
+import { memo, useEffect, useMemo, useState, startTransition } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, XAxis, YAxis } from "recharts";
 import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,7 +93,7 @@ const truncate = (s: string) =>
 
 const attributionConfig = {} satisfies ChartConfig;
 
-export function AttributionChart({ items, baseCurrency }: Props) {
+export const AttributionChart = memo(function AttributionChart({ items, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const tCat = useTranslations("categories");
   const { privacyMode } = usePrivacyMode();
@@ -106,13 +106,17 @@ export function AttributionChart({ items, baseCurrency }: Props) {
   const getCategoryLabel = (cat: string) =>
     tCat(cat as Parameters<typeof tCat>[0], { defaultValue: cat });
 
-  const totalCash = items.reduce((s, i) => s + i.cashContribution, 0);
-  const totalMarket = items.reduce((s, i) => s + i.marketPerformance, 0);
-  const totalDelta = items.reduce((s, i) => s + i.totalDelta, 0);
-
-  // Recharts vertical layout renders bottom-to-top, so reverse to put the
-  // largest bar at the top of the chart.
-  const chartData = [...items].reverse();
+  const { totalCash, totalMarket, totalDelta, chartData } = useMemo(
+    () => ({
+      totalCash: items.reduce((s, i) => s + i.cashContribution, 0),
+      totalMarket: items.reduce((s, i) => s + i.marketPerformance, 0),
+      totalDelta: items.reduce((s, i) => s + i.totalDelta, 0),
+      // Recharts vertical layout renders bottom-to-top, so reverse to put the
+      // largest bar at the top of the chart.
+      chartData: [...items].reverse(),
+    }),
+    [items],
+  );
 
   const chartHeight = isCompact ? 180 : 200;
 
@@ -277,4 +281,4 @@ export function AttributionChart({ items, baseCurrency }: Props) {
       </CardContent>
     </>
   );
-}
+});

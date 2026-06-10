@@ -345,6 +345,8 @@ Ordered by **expected Active-CPU saved per change**, given the bot-dominated tra
 
 #### P4 — Skip middleware JWT decode on requests that are obviously unauthenticated
 
+> **Status: ✅ Done 2026-06-10.** `src/proxy.ts` exports a plain `middleware()` that checks for the NextAuth session cookie (`__Secure-authjs.session-token` / `authjs.session-token`, kept in `SESSION_COOKIE_NAMES`) before invoking the `auth()`-wrapped handler. Anonymous requests get the login redirect (or locale-cookie pass-through on public routes) with zero JWT crypto; only requests carrying a session cookie pay the decode. Verified locally: anonymous `/` and `/accounts` → 302 `/login`; bogus session cookie → decode path → 302 `/login`; locale detection intact.
+
 **Effect:** Medium-High. Today middleware calls `auth()` for every non-excluded path, even when there is no session cookie at all. A fast `request.cookies.get(SESSION_COOKIE)` check before invoking NextAuth can short-circuit anonymous requests to the redirect path without JWT crypto work.
 
 - File: `src/proxy.ts`. Replace the `default auth((req) => …)` wrapping with a plain `default function middleware(req)` that:
