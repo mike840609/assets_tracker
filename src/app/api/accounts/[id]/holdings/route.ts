@@ -85,44 +85,35 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
     }
   }
 
-  // Check if holding already exists in this account
-  const existing = await prisma.holding.findUnique({
-    where: { accountId_symbol: { accountId: id, symbol: parsed.data.symbol } },
-  });
+  // Atomic upsert: increment on the existing row avoids the read-modify-write
+  // race when two adds for the same symbol land concurrently, and the BUY log
+  // commits with the holding so the audit trail can't diverge.
+  const holding = await prisma.$transaction(async (tx) => {
+    const upserted = await tx.holding.upsert({
+      where: { accountId_symbol: { accountId: id, symbol: parsed.data.symbol } },
+      update: { quantity: { increment: parsed.data.quantity } },
+      create: optionMetadata
+        ? {
+            accountId: id,
+            symbol: parsed.data.symbol,
+            name: optionMetadata.name,
+            quantity: parsed.data.quantity,
+            currency: optionMetadata.currency,
+            assetType: "OPTION",
+            underlyingSymbol: optionMetadata.underlyingSymbol,
+            optionType: optionMetadata.optionType,
+            strike: optionMetadata.strike,
+            expiration: optionMetadata.expiration,
+            contractMultiplier: optionMetadata.contractMultiplier,
+          }
+        : { accountId: id, ...parsed.data },
+    });
 
-  let holding;
-  if (existing) {
-    // Add to existing holding quantity
-    const newQuantity = Number(existing.quantity) + parsed.data.quantity;
-    holding = await prisma.holding.update({
-      where: { id: existing.id },
-      data: { quantity: newQuantity },
+    await tx.holdingTransaction.create({
+      data: { holdingId: upserted.id, type: "BUY", quantity: parsed.data.quantity },
     });
-  } else if (optionMetadata) {
-    holding = await prisma.holding.create({
-      data: {
-        accountId: id,
-        symbol: parsed.data.symbol,
-        name: optionMetadata.name,
-        quantity: parsed.data.quantity,
-        currency: optionMetadata.currency,
-        assetType: "OPTION",
-        underlyingSymbol: optionMetadata.underlyingSymbol,
-        optionType: optionMetadata.optionType,
-        strike: optionMetadata.strike,
-        expiration: optionMetadata.expiration,
-        contractMultiplier: optionMetadata.contractMultiplier,
-      },
-    });
-  } else {
-    holding = await prisma.holding.create({
-      data: { accountId: id, ...parsed.data },
-    });
-  }
 
-  // Log the transaction
-  await prisma.holdingTransaction.create({
-    data: { holdingId: holding.id, type: "BUY", quantity: parsed.data.quantity },
+    return upserted;
   });
 
   // Auto-fetch the market price for the holding
@@ -163,22 +154,27 @@ export const PATCH = withAuth<IdCtx>(async (request, _ctx, userId) => {
   });
   if (!existing) return failure("Not found", 404);
 
-  // Log quantity change as EDIT transaction
-  if (data.quantity !== undefined) {
-    const diff = data.quantity - Number(existing.quantity);
-    if (diff !== 0) {
-      await prisma.holdingTransaction.create({
-        data: {
-          holdingId: id,
-          type: "EDIT",
-          quantity: diff,
-          note: `Quantity changed from ${Number(existing.quantity)} to ${data.quantity}`,
-        },
-      });
-    }
-  }
+  // Update and EDIT audit log commit together — a failed update must not
+  // leave a phantom EDIT transaction behind.
+  const holding = await prisma.$transaction(async (tx) => {
+    const updated = await tx.holding.update({ where: { id }, data });
 
-  const holding = await prisma.holding.update({ where: { id }, data });
+    if (data.quantity !== undefined) {
+      const diff = data.quantity - Number(existing.quantity);
+      if (diff !== 0) {
+        await tx.holdingTransaction.create({
+          data: {
+            holdingId: id,
+            type: "EDIT",
+            quantity: diff,
+            note: `Quantity changed from ${Number(existing.quantity)} to ${data.quantity}`,
+          },
+        });
+      }
+    }
+
+    return updated;
+  });
   invalidateUserCaches(userId);
   return ok(holding);
 });
