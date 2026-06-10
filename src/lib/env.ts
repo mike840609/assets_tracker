@@ -56,8 +56,10 @@ if (!parsedEnv.success) {
   throw new Error(`Invalid environment variables:\n${issues}`);
 }
 
+/** @public Documented entry point — prefer named exports below, but `env` is part of the API. */
 export const env = parsedEnv.data;
 
+/** @public AUTH_SECRET is read by NextAuth from process.env; exported here so the validated set stays complete. */
 export const {
   DATABASE_URL,
   AUTH_SECRET,

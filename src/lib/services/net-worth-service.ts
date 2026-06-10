@@ -207,10 +207,3 @@ export const getCachedNetWorthSummary = cache((userId: string, baseCurrency: str
     },
   )(),
 );
-
-/**
- * Alias kept for backward-compatibility with snapshot-service and other callers.
- * Routes that mutate data should call `revalidateTag("net-worth")` afterward so
- * the next dashboard load receives a fresh computation.
- */
-export const getNetWorthSummary = getCachedNetWorthSummary;

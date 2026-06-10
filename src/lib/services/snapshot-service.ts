@@ -1,9 +1,9 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { getNetWorthSummary } from "./net-worth-service";
+import { getCachedNetWorthSummary } from "./net-worth-service";
 
 export async function createSnapshot(userId: string, baseCurrency: string) {
-  const summary = await getNetWorthSummary(userId, baseCurrency);
+  const summary = await getCachedNetWorthSummary(userId, baseCurrency);
   const snapshotTakenAt = new Date();
   const today = new Date(snapshotTakenAt);
   today.setHours(0, 0, 0, 0);

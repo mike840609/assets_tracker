@@ -7,7 +7,7 @@
  * acceptable trade-off until Upstash / Vercel KV is wired in.
  *
  * Usage:
- *   const limited = rateLimitCheck(request, { limit: 60, windowMs: 60_000 });
+ *   const limited = rateLimitCheckWithPrune(request, { limit: 60, windowMs: 60_000 });
  *   if (limited) return limited;          // 429 response
  */
 
@@ -45,7 +45,7 @@ function getClientIp(request: Request): string {
  *
  * @returns A 429 Response if the limit is exceeded, otherwise `null`.
  */
-export function rateLimitCheck(request: Request, options: RateLimitOptions): Response | null {
+function rateLimitCheck(request: Request, options: RateLimitOptions): Response | null {
   const { limit, windowMs = 60_000, prefix = "rl" } = options;
   const id = options.key ?? getClientIp(request);
   const key = `${prefix}:${id}`;
@@ -93,11 +93,10 @@ function maybePrune() {
 }
 
 // Attach prune to the check function so callers don't need to think about it.
-const _originalCheck = rateLimitCheck;
 export function rateLimitCheckWithPrune(
   request: Request,
   options: RateLimitOptions,
 ): Response | null {
   maybePrune();
-  return _originalCheck(request, options);
+  return rateLimitCheck(request, options);
 }

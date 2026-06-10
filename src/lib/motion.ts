@@ -10,9 +10,3 @@ export const springConfig: Transition = {
   stiffness: 300,
   damping: 30,
 };
-
-export const bouncySpringConfig: Transition = {
-  type: "spring",
-  stiffness: 400,
-  damping: 25,
-};
