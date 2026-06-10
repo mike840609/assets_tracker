@@ -196,7 +196,9 @@ export const GET = withAuth(async (_req, _ctx, userId) => {
     if (!data) return failure("User not found", 404);
 
     const exportData = {
-      version: "1.1",
+      // 1.2: holding transactions may carry `price`, cash transactions
+      // may carry `currency` (both optional; 1.1 backups import unchanged).
+      version: "1.2",
       exportedAt: new Date().toISOString(),
       settings: data.appSettings,
       accounts: data.appAccounts,
