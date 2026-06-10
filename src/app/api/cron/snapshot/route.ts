@@ -43,9 +43,12 @@ export async function GET(request: Request) {
       revalidateTag("accounts", "max");
     }
 
-    // 1a. Warm the ExchangeRate cache so render paths never need to fetch
-    // live rates inline. Refresh in parallel for every source currency in
-    // use across users (account.currency, holding.currency, baseCurrency).
+    // 1. Warm the ExchangeRate cache (so render paths never need to fetch
+    // live rates inline) and refresh all prices, in parallel. Rates cover
+    // every source currency in use across users (account.currency,
+    // holding.currency, baseCurrency). The two refreshes hit independent
+    // external APIs (FX providers vs Yahoo/CoinGecko) and neither reads the
+    // other's output, so overlapping them buys headroom under maxDuration.
     const [accountCurrencies, holdingCurrencies, settings] = await Promise.all([
       prisma.account.findMany({ select: { currency: true }, distinct: ["currency"] }),
       prisma.holding.findMany({ select: { currency: true }, distinct: ["currency"] }),
@@ -56,16 +59,15 @@ export async function GET(request: Request) {
     for (const row of holdingCurrencies) if (row.currency) sourceCurrencies.add(row.currency);
     for (const row of settings) sourceCurrencies.add(row.baseCurrency);
     log.info("cron.rates.refresh", { count: sourceCurrencies.size });
+    log.info("cron.prices.refresh");
     // force: snapshots must be computed from current rates; the manual-refresh
     // freshness gate doesn't apply to the cron.
-    await Promise.all([...sourceCurrencies].map((c) => refreshExchangeRates(c, { force: true })));
-    revalidateTag("exchange-rates", "max");
-    revalidateTag("net-worth", "max");
-
-    // 1b. Refresh all prices to ensure the snapshot is accurate
-    log.info("cron.prices.refresh");
-    await refreshAllPrices();
+    await Promise.all([
+      ...[...sourceCurrencies].map((c) => refreshExchangeRates(c, { force: true })),
+      refreshAllPrices(),
+    ]);
     // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
+    revalidateTag("exchange-rates", "max");
     revalidateTag("net-worth", "max");
     revalidateTag("prices", "max");
     revalidateTag("prices:crypto", "max");
