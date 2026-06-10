@@ -171,7 +171,9 @@
     "languageUpdated": "Language updated",
     "languageFailed": "Failed to update language",
     "preferencesUpdated": "Settings updated",
-    "preferencesFailed": "Failed to update settings"
+    "preferencesFailed": "Failed to update settings",
+    "marketDataFresh": "Market data is already up to date",
+    "refreshCooldown": "Please wait {seconds}s before refreshing"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -669,7 +671,9 @@
     "refreshPrices": "Refresh Prices",
     "refreshing": "Refreshing...",
     "refreshSuccess": "Updated {count} prices & exchange rates",
-    "refreshFailed": "Failed to refresh prices"
+    "refreshFailed": "Failed to refresh prices",
+    "alreadyFresh": "Prices are already up to date — try again in {seconds}s",
+    "cooldownWait": "Please wait {seconds}s before refreshing"
   },
   "freshness": {
     "pricesUpdated": "Prices updated {age}",
@@ -1123,7 +1127,9 @@
     "viewAllAria": "View full watchlist",
     "dashboardEmptyTitle": "No watchlist yet",
     "dashboardEmptyBody": "Track ideas separately from accounts before they become holdings.",
-    "dashboardPreviewCount": "Showing {shown} of {count} tracked stocks"
+    "dashboardPreviewCount": "Showing {shown} of {count} tracked stocks",
+    "alreadyFresh": "Watchlist prices are already up to date",
+    "refreshCooldown": "Please wait {seconds}s before refreshing"
   },
   "transactionHistory": {
     "title": "Transaction History",

@@ -2,14 +2,26 @@ import "server-only";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getYahooClient } from "@/lib/services/yahoo-client";
+import { PRICE_REFRESH_TTL_MS } from "@/lib/refresh-policy";
 import { log, withTiming } from "@/lib/logger";
 
 const FETCH_TIMEOUT_MS = 5_000;
 const RETRY_DELAYS_MS = [500, 1_500]; // 2 retries: 500 ms then 1.5 s
 
-// Symbols whose PriceCache row is newer than this are skipped on refresh,
-// so rapid repeat refreshes (button + pull-to-refresh) don't re-hit Yahoo.
-const PRICE_REFRESH_TTL_MS = 60 * 1000;
+export type RefreshPricesResult = {
+  updated: number;
+  /** Symbols skipped because their cached price was younger than the TTL. */
+  skippedFresh: number;
+  errors: string[];
+  /** When the earliest skipped symbol becomes stale; null unless everything was skipped. */
+  nextRefreshAt: string | null;
+  retryAfterSeconds: number | null;
+};
+
+export type RefreshPricesOptions = {
+  /** Bypass the freshness gate (cron path — snapshots need current prices). */
+  force?: boolean;
+};
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -209,21 +221,18 @@ export async function getCachedPricesForSymbols(
   return all.filter((p) => symbolSet.has(p.symbol));
 }
 
-export async function refreshAllPrices(): Promise<{
-  updated: number;
-  errors: string[];
-}> {
+export async function refreshAllPrices(): Promise<RefreshPricesResult> {
   const holdings = await prisma.holding.findMany({
     select: { symbol: true, assetType: true },
     distinct: ["symbol"],
   });
-  return refreshPricesForHoldings(holdings);
+  return refreshPricesForHoldings(holdings, { force: true });
 }
 
-export async function refreshPricesForUser(userId: string): Promise<{
-  updated: number;
-  errors: string[];
-}> {
+export async function refreshPricesForUser(
+  userId: string,
+  opts: RefreshPricesOptions = {},
+): Promise<RefreshPricesResult> {
   const [holdings, trackedStocks] = await Promise.all([
     prisma.holding.findMany({
       where: { account: { userId } },
@@ -242,38 +251,84 @@ export async function refreshPricesForUser(userId: string): Promise<{
     .filter((stock) => !holdingKeys.has(stock.symbol))
     .map((stock) => ({ symbol: stock.symbol, assetType: "STOCK" }));
 
-  return refreshPricesForHoldings([...holdings, ...stockWatchHoldings]);
+  return refreshPricesForHoldings([...holdings, ...stockWatchHoldings], opts);
 }
 
-export async function refreshPricesForStockSymbols(symbols: string[]): Promise<{
-  updated: number;
-  errors: string[];
-}> {
+export async function refreshPricesForStockSymbols(
+  symbols: string[],
+  opts: RefreshPricesOptions = {},
+): Promise<RefreshPricesResult> {
   const uniqueSymbols = [...new Set(symbols.map((symbol) => symbol.toUpperCase()))];
-  if (uniqueSymbols.length === 0) return { updated: 0, errors: [] };
-  return refreshPricesForHoldings(uniqueSymbols.map((symbol) => ({ symbol, assetType: "STOCK" })));
+  if (uniqueSymbols.length === 0) {
+    return {
+      updated: 0,
+      skippedFresh: 0,
+      errors: [],
+      nextRefreshAt: null,
+      retryAfterSeconds: null,
+    };
+  }
+  return refreshPricesForHoldings(
+    uniqueSymbols.map((symbol) => ({ symbol, assetType: "STOCK" })),
+    opts,
+  );
 }
 
 async function refreshPricesForHoldings(
   holdings: { symbol: string; assetType: string }[],
-): Promise<{
-  updated: number;
-  errors: string[];
-}> {
-  if (holdings.length === 0) return { updated: 0, errors: [] };
+  opts: RefreshPricesOptions = {},
+): Promise<RefreshPricesResult> {
+  if (holdings.length === 0) {
+    return {
+      updated: 0,
+      skippedFresh: 0,
+      errors: [],
+      nextRefreshAt: null,
+      retryAfterSeconds: null,
+    };
+  }
 
-  const freshRows = await prisma.priceCache.findMany({
-    where: {
-      symbol: { in: holdings.map((h) => h.symbol) },
-      updatedAt: { gte: new Date(Date.now() - PRICE_REFRESH_TTL_MS) },
-    },
-    select: { symbol: true },
-  });
-  if (freshRows.length > 0) {
-    const freshSymbols = new Set(freshRows.map((row) => row.symbol));
-    log.info("price.refresh.skipped_fresh", { count: freshSymbols.size });
-    holdings = holdings.filter((h) => !freshSymbols.has(h.symbol));
-    if (holdings.length === 0) return { updated: 0, errors: [] };
+  // Freshness gate: drop symbols whose cached price is younger than the TTL
+  // so repeated manual refreshes don't re-hit Yahoo/CoinGecko. The DB
+  // updatedAt is the shared source of truth across serverless instances.
+  let skippedFresh = 0;
+  let earliestFreshUpdatedAt: Date | null = null;
+  if (!opts.force) {
+    const freshRows = await prisma.priceCache.findMany({
+      where: {
+        symbol: { in: holdings.map((h) => h.symbol) },
+        updatedAt: { gte: new Date(Date.now() - PRICE_REFRESH_TTL_MS) },
+      },
+      select: { symbol: true, updatedAt: true },
+    });
+    if (freshRows.length > 0) {
+      const freshSymbols = new Set(freshRows.map((row) => row.symbol));
+      skippedFresh = freshSymbols.size;
+      log.info("price.refresh.skipped_fresh", { count: skippedFresh });
+      for (const row of freshRows) {
+        if (!earliestFreshUpdatedAt || row.updatedAt < earliestFreshUpdatedAt) {
+          earliestFreshUpdatedAt = row.updatedAt;
+        }
+      }
+      holdings = holdings.filter((h) => !freshSymbols.has(h.symbol));
+      if (holdings.length === 0) {
+        // Everything is fresh. Tell the caller when a retry will actually do
+        // something, in server-computed seconds so clients don't have to
+        // trust their own clock.
+        const nextRefreshAt = earliestFreshUpdatedAt
+          ? new Date(earliestFreshUpdatedAt.getTime() + PRICE_REFRESH_TTL_MS)
+          : null;
+        return {
+          updated: 0,
+          skippedFresh,
+          errors: [],
+          nextRefreshAt: nextRefreshAt?.toISOString() ?? null,
+          retryAfterSeconds: nextRefreshAt
+            ? Math.max(1, Math.ceil((nextRefreshAt.getTime() - Date.now()) / 1000))
+            : null,
+        };
+      }
+    }
   }
 
   const stockSymbols = holdings
@@ -293,7 +348,9 @@ async function refreshPricesForHoldings(
   const allPrices = new Map([...stockPrices, ...cryptoPrices]);
 
   const entries = [...allPrices];
-  if (entries.length === 0) return { updated: 0, errors: [] };
+  if (entries.length === 0) {
+    return { updated: 0, skippedFresh, errors: [], nextRefreshAt: null, retryAfterSeconds: null };
+  }
 
   try {
     const params: unknown[] = [];
@@ -317,5 +374,5 @@ async function refreshPricesForHoldings(
     errors.push(`Bulk upsert failed: ${String(error)}`);
   }
 
-  return { updated, errors };
+  return { updated, skippedFresh, errors, nextRefreshAt: null, retryAfterSeconds: null };
 }

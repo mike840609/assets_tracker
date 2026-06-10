@@ -60,7 +60,9 @@ export async function GET(request: Request) {
     for (const row of holdingCurrencies) if (row.currency) sourceCurrencies.add(row.currency);
     for (const row of settings) sourceCurrencies.add(row.baseCurrency);
     log.info("cron.rates.refresh", { count: sourceCurrencies.size });
-    await Promise.all([...sourceCurrencies].map((c) => refreshExchangeRates(c)));
+    // force: snapshots must be computed from current rates; the manual-refresh
+    // freshness gate doesn't apply to the cron.
+    await Promise.all([...sourceCurrencies].map((c) => refreshExchangeRates(c, { force: true })));
     revalidateTag("exchange-rates", "max");
     revalidateTag("net-worth", "max");
 

@@ -3,6 +3,7 @@ import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { refreshPricesForStockSymbols } from "@/lib/services/price-service";
 import { getYahooClient } from "@/lib/services/yahoo-client";
+import { PRICE_REFRESH_TTL_MS } from "@/lib/refresh-policy";
 import { log } from "@/lib/logger";
 import type { StockWatchItem } from "@/generated/prisma/client";
 
@@ -139,6 +140,21 @@ export async function warmStockPrice(symbol: string): Promise<{
   updatedAt: string;
 } | null> {
   const normalized = symbol.toUpperCase();
+
+  // Freshness gate: serve the cached price without a Yahoo round-trip when
+  // it's younger than the shared TTL.
+  const existing = await prisma.priceCache.findUnique({
+    where: { symbol: normalized },
+    select: { price: true, currency: true, updatedAt: true },
+  });
+  if (existing && Date.now() - existing.updatedAt.getTime() < PRICE_REFRESH_TTL_MS) {
+    return {
+      price: Number(existing.price),
+      currency: existing.currency,
+      updatedAt: existing.updatedAt.toISOString(),
+    };
+  }
+
   const quote = await fetchEquityQuote(normalized);
   const result = quote ? { price: quote.price, currency: quote.currency } : null;
   if (!result) return null;
@@ -163,17 +179,15 @@ export async function warmStockPrice(symbol: string): Promise<{
   };
 }
 
-export async function refreshTrackedStockPrices(userId: string): Promise<{
-  updated: number;
-  errors: string[];
-}> {
+export async function refreshTrackedStockPrices(userId: string) {
   const stocks = await prisma.stockWatchItem.findMany({
     where: { userId },
     select: { symbol: true },
     distinct: ["symbol"],
   });
   const result = await refreshPricesForStockSymbols(stocks.map((stock) => stock.symbol));
-  invalidateStockWatchCaches(userId);
+  // Skip the cache bust when nothing changed (e.g. everything was fresh).
+  if (result.updated > 0) invalidateStockWatchCaches(userId);
   return result;
 }
 

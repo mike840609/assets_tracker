@@ -171,7 +171,9 @@
     "languageUpdated": "語言已更新",
     "languageFailed": "更新語言失敗",
     "preferencesUpdated": "設定已更新",
-    "preferencesFailed": "更新設定失敗"
+    "preferencesFailed": "更新設定失敗",
+    "marketDataFresh": "市場資料已是最新",
+    "refreshCooldown": "請稍候 {seconds} 秒後再重新整理"
   },
   "dashboard": {
     "title": "儀表板",
@@ -669,7 +671,9 @@
     "refreshPrices": "更新價格",
     "refreshing": "更新中...",
     "refreshSuccess": "已更新 {count} 個價格和匯率",
-    "refreshFailed": "更新價格失敗"
+    "refreshFailed": "更新價格失敗",
+    "alreadyFresh": "價格已是最新 — 請於 {seconds} 秒後再試",
+    "cooldownWait": "請稍候 {seconds} 秒後再重新整理"
   },
   "freshness": {
     "pricesUpdated": "價格更新於 {age}",
@@ -1123,7 +1127,9 @@
     "viewAllAria": "查看完整自選股",
     "dashboardEmptyTitle": "尚未建立自選股",
     "dashboardEmptyBody": "先把投資想法獨立追蹤，之後再加入帳戶持倉。",
-    "dashboardPreviewCount": "顯示 {count} 檔中的 {shown} 檔自選股"
+    "dashboardPreviewCount": "顯示 {count} 檔中的 {shown} 檔自選股",
+    "alreadyFresh": "追蹤清單價格已是最新",
+    "refreshCooldown": "請稍候 {seconds} 秒後再重新整理"
   },
   "transactionHistory": {
     "title": "交易紀錄",

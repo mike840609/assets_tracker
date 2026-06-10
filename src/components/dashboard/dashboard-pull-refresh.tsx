@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { refreshMarketData } from "@/lib/refresh-client";
 import { PullToRefresh } from "@/components/layout/pull-to-refresh";
 
 export function DashboardPullRefresh({ children }: { children: React.ReactNode }) {
@@ -11,18 +12,21 @@ export function DashboardPullRefresh({ children }: { children: React.ReactNode }
   const t = useTranslations("dashboardActions");
 
   const onRefresh = useCallback(async () => {
-    try {
-      const [priceRes, ratesRes] = await Promise.all([
-        fetch("/api/prices/refresh", { method: "POST" }),
-        fetch("/api/exchange-rates/refresh", { method: "POST" }),
-      ]);
-      if (!priceRes.ok || !ratesRes.ok) throw new Error("Refresh failed");
-      const { data: priceData } = await priceRes.json();
-      toast.success(t("refreshSuccess", { count: priceData.updated }));
-      window.dispatchEvent(new CustomEvent("prices:refreshed"));
-      router.refresh();
-    } catch {
-      toast.error(t("refreshFailed"));
+    const outcome = await refreshMarketData();
+    switch (outcome.status) {
+      case "updated":
+        toast.success(t("refreshSuccess", { count: outcome.prices }));
+        router.refresh();
+        break;
+      case "fresh":
+        toast.info(t("alreadyFresh", { seconds: outcome.retryAfterSeconds }));
+        break;
+      case "cooldown":
+        toast.info(t("cooldownWait", { seconds: outcome.retryAfterSeconds }));
+        break;
+      case "error":
+        toast.error(t("refreshFailed"));
+        break;
     }
   }, [router, t]);
 

@@ -47,6 +47,7 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 import { StocksOnboarding } from "./stocks-onboarding";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { hapticTick } from "@/lib/haptics";
+import { CLIENT_REFRESH_COOLDOWN_MS } from "@/lib/refresh-policy";
 import { cn, daysBetweenDates, localToday } from "@/lib/utils";
 import type { SerializedTrackedStock } from "@/lib/services/stock-watch-service";
 
@@ -618,6 +619,22 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
   const [deletingStock, setDeletingStock] = useState<SerializedTrackedStock | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+
+  // 1s tick while a cooldown is active so the button re-enables on time.
+  useEffect(() => {
+    if (cooldownUntil <= now) return;
+    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [cooldownUntil, now]);
+
+  const coolingDown = cooldownUntil > now;
+
+  function startCooldown(seconds: number) {
+    setCooldownUntil(Date.now() + seconds * 1000);
+    setNow(Date.now());
+  }
 
   // Derive the most recent price update timestamp across all stocks.
   // Since all prices are refreshed in the same batch, they share one timestamp.
@@ -636,8 +653,23 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
     setRefreshing(true);
     try {
       const res = await fetch("/api/stocks/refresh", { method: "POST" });
+      if (res.status === 429) {
+        const retryAfter = Number(res.headers.get("Retry-After"));
+        const seconds =
+          Number.isFinite(retryAfter) && retryAfter > 0
+            ? Math.ceil(retryAfter)
+            : Math.ceil(CLIENT_REFRESH_COOLDOWN_MS / 1000);
+        startCooldown(seconds);
+        toast.info(t("refreshCooldown", { seconds }));
+        return;
+      }
       if (!res.ok) throw new Error("refresh failed");
-      const { data }: { data: { updated: number } } = await res.json();
+      const { data }: { data: { updated: number; skippedFresh?: number } } = await res.json();
+      startCooldown(Math.ceil(CLIENT_REFRESH_COOLDOWN_MS / 1000));
+      if (data.updated === 0 && (data.skippedFresh ?? 0) > 0) {
+        toast.info(t("alreadyFresh"));
+        return;
+      }
       toast.success(t("refreshSuccess", { count: data.updated }));
       window.dispatchEvent(new CustomEvent("prices:refreshed"));
       startTransition(() => router.refresh());
@@ -686,7 +718,7 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
           <Button
             variant="outline"
             onClick={refreshPrices}
-            disabled={refreshing || stocks.length === 0}
+            disabled={refreshing || coolingDown || stocks.length === 0}
             className="w-full sm:w-auto"
           >
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
