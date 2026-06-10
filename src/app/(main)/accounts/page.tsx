@@ -30,18 +30,25 @@ async function AccountsContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
   // Run all independent queries in parallel (translations + data). The net-worth
-  // summary that backs the heatmap depends on the base currency, so it chains off
-  // the settings read rather than blocking the whole batch.
+  // summary that backs the heatmap depends on the base currency, and the cached
+  // price read depends on the user's holding symbols, so they chain off the
+  // settings/accounts reads rather than blocking the whole batch.
   const settingsP = getOrCreateSettings(userId);
-  const [t, messages, accounts, archivedAccounts, settings, allRatesMap, summary] =
+  const accountsP = fetchUserAccountsWithHoldings(userId);
+  const [t, messages, accounts, archivedAccounts, settings, allRatesMap, summary, cachedPrices] =
     await Promise.all([
       getTranslations("accounts"),
       getMessages(),
-      fetchUserAccountsWithHoldings(userId),
+      accountsP,
       fetchUserArchivedAccountsWithHoldings(userId),
       settingsP,
       getAllExchangeRates(),
       settingsP.then((s) => getCachedNetWorthSummary(userId, s.baseCurrency)),
+      accountsP.then((accounts) =>
+        getCachedPricesForSymbols([
+          ...new Set(accounts.flatMap((a) => a.holdings.map((h) => h.symbol))),
+        ]),
+      ),
     ]);
 
   const baseCurrency = settings.baseCurrency;
@@ -49,9 +56,6 @@ async function AccountsContent() {
     (account) => account.type === "ASSET" && account.totalValueInBaseCurrency > 0,
   );
 
-  // Fetch cached prices for this user's holding symbols only
-  const allSymbols = [...new Set(accounts.flatMap((a) => a.holdings.map((h) => h.symbol)))];
-  const cachedPrices = await getCachedPricesForSymbols(allSymbols);
   const priceMap: Record<string, number> = Object.fromEntries(
     cachedPrices.map((p) => [p.symbol, p.price]),
   );
