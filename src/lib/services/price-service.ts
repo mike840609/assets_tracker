@@ -209,21 +209,36 @@ export async function getCachedPricesForSymbols(
   return all.filter((p) => symbolSet.has(p.symbol));
 }
 
-export async function refreshAllPrices(): Promise<{
+export type PriceRefreshResult = {
   updated: number;
+  /** Symbols skipped because their cached price was within the refresh TTL. */
+  skipped: number;
   errors: string[];
-}> {
-  const holdings = await prisma.holding.findMany({
-    select: { symbol: true, assetType: true },
-    distinct: ["symbol"],
-  });
-  return refreshPricesForHoldings(holdings);
+};
+
+export async function refreshAllPrices(): Promise<PriceRefreshResult> {
+  // Watchlist symbols are included so their cached prices don't silently
+  // age until a user happens to trigger refreshPricesForUser.
+  const [holdings, trackedStocks] = await Promise.all([
+    prisma.holding.findMany({
+      select: { symbol: true, assetType: true },
+      distinct: ["symbol"],
+    }),
+    prisma.stockWatchItem.findMany({
+      select: { symbol: true },
+      distinct: ["symbol"],
+    }),
+  ]);
+
+  const holdingKeys = new Set(holdings.map((holding) => holding.symbol));
+  const stockWatchHoldings = trackedStocks
+    .filter((stock) => !holdingKeys.has(stock.symbol))
+    .map((stock) => ({ symbol: stock.symbol, assetType: "STOCK" }));
+
+  return refreshPricesForHoldings([...holdings, ...stockWatchHoldings]);
 }
 
-export async function refreshPricesForUser(userId: string): Promise<{
-  updated: number;
-  errors: string[];
-}> {
+export async function refreshPricesForUser(userId: string): Promise<PriceRefreshResult> {
   const [holdings, trackedStocks] = await Promise.all([
     prisma.holding.findMany({
       where: { account: { userId } },
@@ -245,23 +260,18 @@ export async function refreshPricesForUser(userId: string): Promise<{
   return refreshPricesForHoldings([...holdings, ...stockWatchHoldings]);
 }
 
-export async function refreshPricesForStockSymbols(symbols: string[]): Promise<{
-  updated: number;
-  errors: string[];
-}> {
+export async function refreshPricesForStockSymbols(symbols: string[]): Promise<PriceRefreshResult> {
   const uniqueSymbols = [...new Set(symbols.map((symbol) => symbol.toUpperCase()))];
-  if (uniqueSymbols.length === 0) return { updated: 0, errors: [] };
+  if (uniqueSymbols.length === 0) return { updated: 0, skipped: 0, errors: [] };
   return refreshPricesForHoldings(uniqueSymbols.map((symbol) => ({ symbol, assetType: "STOCK" })));
 }
 
 async function refreshPricesForHoldings(
   holdings: { symbol: string; assetType: string }[],
-): Promise<{
-  updated: number;
-  errors: string[];
-}> {
-  if (holdings.length === 0) return { updated: 0, errors: [] };
+): Promise<PriceRefreshResult> {
+  if (holdings.length === 0) return { updated: 0, skipped: 0, errors: [] };
 
+  let skipped = 0;
   const freshRows = await prisma.priceCache.findMany({
     where: {
       symbol: { in: holdings.map((h) => h.symbol) },
@@ -271,9 +281,10 @@ async function refreshPricesForHoldings(
   });
   if (freshRows.length > 0) {
     const freshSymbols = new Set(freshRows.map((row) => row.symbol));
-    log.info("price.refresh.skipped_fresh", { count: freshSymbols.size });
+    skipped = freshSymbols.size;
+    log.info("price.refresh.skipped_fresh", { count: skipped });
     holdings = holdings.filter((h) => !freshSymbols.has(h.symbol));
-    if (holdings.length === 0) return { updated: 0, errors: [] };
+    if (holdings.length === 0) return { updated: 0, skipped, errors: [] };
   }
 
   const stockSymbols = holdings
@@ -293,7 +304,15 @@ async function refreshPricesForHoldings(
   const allPrices = new Map([...stockPrices, ...cryptoPrices]);
 
   const entries = [...allPrices];
-  if (entries.length === 0) return { updated: 0, errors: [] };
+  if (entries.length === 0) {
+    // Every fetch came back empty — report it instead of a silent success
+    // so callers (cron, manual refresh) can tell "all fresh" from "all failed".
+    const requested = stockSymbols.length + cryptoSymbols.length;
+    if (requested > 0) {
+      errors.push(`No prices returned for any of ${requested} symbol(s)`);
+    }
+    return { updated: 0, skipped, errors };
+  }
 
   try {
     const params: unknown[] = [];
@@ -317,5 +336,5 @@ async function refreshPricesForHoldings(
     errors.push(`Bulk upsert failed: ${String(error)}`);
   }
 
-  return { updated, errors };
+  return { updated, skipped, errors };
 }

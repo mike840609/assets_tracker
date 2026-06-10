@@ -637,8 +637,18 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
     try {
       const res = await fetch("/api/stocks/refresh", { method: "POST" });
       if (!res.ok) throw new Error("refresh failed");
-      const { data }: { data: { updated: number } } = await res.json();
-      toast.success(t("refreshSuccess", { count: data.updated }));
+      const { data }: { data: { updated: number; skipped: number; errors: string[] } } =
+        await res.json();
+      if (data.updated > 0) {
+        toast.success(t("refreshSuccess", { count: data.updated }));
+      } else if (data.errors?.length) {
+        // Fetch failed for every symbol — don't dress it up as a success
+        toast.error(t("refreshFailed"));
+      } else {
+        // Everything was inside the refresh TTL — "0 updated" reads like a
+        // failure, so say what actually happened
+        toast.success(t("refreshUpToDate"));
+      }
       window.dispatchEvent(new CustomEvent("prices:refreshed"));
       startTransition(() => router.refresh());
     } catch {
