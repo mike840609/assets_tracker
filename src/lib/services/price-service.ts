@@ -7,6 +7,10 @@ import { log, withTiming } from "@/lib/logger";
 const FETCH_TIMEOUT_MS = 5_000;
 const RETRY_DELAYS_MS = [500, 1_500]; // 2 retries: 500 ms then 1.5 s
 
+// Symbols whose PriceCache row is newer than this are skipped on refresh,
+// so rapid repeat refreshes (button + pull-to-refresh) don't re-hit Yahoo.
+const PRICE_REFRESH_TTL_MS = 2 * 60 * 1000;
+
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -256,6 +260,22 @@ async function refreshPricesForHoldings(
   updated: number;
   errors: string[];
 }> {
+  if (holdings.length === 0) return { updated: 0, errors: [] };
+
+  const freshRows = await prisma.priceCache.findMany({
+    where: {
+      symbol: { in: holdings.map((h) => h.symbol) },
+      updatedAt: { gte: new Date(Date.now() - PRICE_REFRESH_TTL_MS) },
+    },
+    select: { symbol: true },
+  });
+  if (freshRows.length > 0) {
+    const freshSymbols = new Set(freshRows.map((row) => row.symbol));
+    log.info("price.refresh.skipped_fresh", { count: freshSymbols.size });
+    holdings = holdings.filter((h) => !freshSymbols.has(h.symbol));
+    if (holdings.length === 0) return { updated: 0, errors: [] };
+  }
+
   const stockSymbols = holdings
     .filter((h) => ["STOCK", "ETF", "MUTUAL_FUND", "BOND", "OPTION"].includes(h.assetType))
     .map((h) => h.symbol);
