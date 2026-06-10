@@ -33,10 +33,6 @@ export class OptionError extends Error {
 
 const OCC_REGEX = /^([A-Z][A-Z0-9.\-]{0,5})(\d{2})(\d{2})(\d{2})([CP])(\d{8})$/;
 
-export function isOccSymbol(raw: string): boolean {
-  return OCC_REGEX.test(raw.trim().toUpperCase());
-}
-
 export function tryParseOccSymbol(raw: string): ParsedOption | null {
   try {
     return parseOccSymbol(raw);

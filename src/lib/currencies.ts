@@ -21,8 +21,6 @@ export const CURRENCIES = [
   { code: "THB", name: "Thai Baht", symbol: "฿" },
 ] as const;
 
-export type CurrencyCode = (typeof CURRENCIES)[number]["code"];
-
 export function getCurrencySymbol(code: string): string {
   const currency = CURRENCIES.find((c) => c.code === code);
   return currency?.symbol ?? code;

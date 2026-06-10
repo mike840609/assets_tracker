@@ -7,9 +7,9 @@ import { registerSwipeRow, closeOtherSwipeRows } from "@/lib/swipe-row-registry"
 import { springConfig } from "@/lib/motion";
 import { LucideIcon } from "lucide-react";
 
-export const REVEAL_WIDTH = 144;
-export const SNAP_THRESHOLD = REVEAL_WIDTH * 0.4;
-export const FULL_SWIPE = REVEAL_WIDTH + 80;
+const REVEAL_WIDTH = 144;
+const SNAP_THRESHOLD = REVEAL_WIDTH * 0.4;
+const FULL_SWIPE = REVEAL_WIDTH + 80;
 const ACTION_WIDTH = 60;
 
 export interface SwipeAction {

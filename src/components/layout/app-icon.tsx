@@ -1,4 +1,4 @@
-export const APP_ICON_APP_RADIUS = 9;
+const APP_ICON_APP_RADIUS = 9;
 export const APP_ICON_FAVICON_RADIUS = 6;
 export const APP_ICON_FALLBACK_START = "#34d399";
 export const APP_ICON_FALLBACK_END = "#065f46";

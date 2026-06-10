@@ -9,6 +9,8 @@ import type { Account, Goal, Holding, HoldingTransaction } from "@/generated/pri
  * - Decimal fields → number
  * - Date fields   → string (ISO)
  * - All other fields pass through unchanged
+ *
+ * @public Building block for new serialized model types.
  */
 export type Serialized<T, DecimalKeys extends keyof T = never, DateKeys extends keyof T = never> = {
   [K in keyof T]: K extends DecimalKeys ? number : K extends DateKeys ? string : T[K];
@@ -19,7 +21,7 @@ export type Serialized<T, DecimalKeys extends keyof T = never, DateKeys extends 
  * Coerces Decimal fields via Number() and Date fields via .toISOString().
  * Safe to pass from Server Components to Client Components.
  */
-export function serializeModel<T extends object, D extends keyof T, Dt extends keyof T>(
+function serializeModel<T extends object, D extends keyof T, Dt extends keyof T>(
   obj: T,
   opts: { decimals: readonly D[]; dates: readonly Dt[] },
 ): Serialized<T, D, Dt> {
@@ -86,17 +88,11 @@ export type NetWorthSummary = {
   accounts: AccountWithValue[];
 };
 
-export type AllocationItem = {
-  category: string;
-  value: number;
-  percentage: number;
-  color: string;
-};
-
 // ---------------------------------------------------------------------------
 // Serialization helpers
 // ---------------------------------------------------------------------------
 
+/** @public Documented serialization helper (see CLAUDE.md — RSC → Client serialization). */
 export function serializeAccount(account: Account): SerializedAccount {
   return serializeModel(account, {
     decimals: ["cashBalance"] as const,
@@ -104,6 +100,7 @@ export function serializeAccount(account: Account): SerializedAccount {
   });
 }
 
+/** @public Documented serialization helper (see CLAUDE.md — RSC → Client serialization). */
 export function serializeHolding(holding: Holding): SerializedHolding {
   const result: Record<string, unknown> = {};
   for (const key of Object.keys(holding) as (keyof Holding)[]) {

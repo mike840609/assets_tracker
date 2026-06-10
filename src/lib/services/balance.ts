@@ -29,7 +29,7 @@ export function calculateBalanceDelta(
   return (newTx ? toSign(newTx) : 0) - (oldTx ? toSign(oldTx) : 0);
 }
 
-export function getHoldingQuantityEffect(tx: HoldingTxInput): number {
+function getHoldingQuantityEffect(tx: HoldingTxInput): number {
   if (tx.type === "BUY") return Math.abs(tx.quantity);
   if (tx.type === "SELL") return -Math.abs(tx.quantity);
   return tx.quantity; // EDIT: quantity is the explicit adjustment delta

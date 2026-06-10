@@ -11,7 +11,7 @@ export function localToday() {
   return local.toISOString().slice(0, 10);
 }
 
-export function dateToLocalTime(value: string) {
+function dateToLocalTime(value: string) {
   const [year, month, day] = value.split("-").map(Number);
   return new Date(year, month - 1, day).getTime();
 }

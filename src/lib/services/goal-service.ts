@@ -19,7 +19,7 @@ async function fetchUserGoalsInner(userId: string): Promise<SerializedGoal[]> {
   return goals.map(serializeGoal);
 }
 
-export const fetchUserGoals = cache(fetchUserGoalsInner);
+const fetchUserGoals = cache(fetchUserGoalsInner);
 
 function getCurrentAmount(goal: SerializedGoal, summary: NetWorthSummary): number {
   switch (goal.scope) {

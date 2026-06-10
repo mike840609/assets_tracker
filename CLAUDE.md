@@ -126,7 +126,7 @@ src/
 
 ### Cache model (`cacheComponents: true`)
 
-`next.config.ts` enables `cacheComponents: true` (Next.js 16's dynamic-IO / PPR-era cache flag). Service-layer reads throughout `src/lib/services/` use the `"use cache"` directive with `cacheTag("...")` — see `getNetWorthSummary`, `getNormalizedHistory`, settings, and the `/analysis` + `/history` reads (landed per `docs/VERCEL_ANALYSIS.md` V18/V26/V27). Follow the same pattern for new server reads; then invalidate from mutation routes via `revalidateTag(...)`.
+`next.config.ts` enables `cacheComponents: true` (Next.js 16's dynamic-IO / PPR-era cache flag). Service-layer reads throughout `src/lib/services/` use the `"use cache"` directive with `cacheTag("...")` — see `getCachedNetWorthSummary`, `getNormalizedHistory`, settings, and the `/analysis` + `/history` reads (landed per `docs/VERCEL_ANALYSIS.md` V18/V26/V27). Follow the same pattern for new server reads; then invalidate from mutation routes via `revalidateTag(...)`.
 
 `next.config.ts` also declares `serverExternalPackages: ["ws", "@neondatabase/serverless"]`. Any new server-only dep that imports Node built-ins (fs, net, tls) must be added here or the build breaks with Edge-incompat errors.
 
@@ -188,13 +188,13 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 
 - Stored in `ExchangeRate` table
 - `getAllExchangeRates()` bulk-loads all rates into a Map
-- `resolveRate()` handles identity (same currency) and inverse rates
-- Missing rates are fetched lazily and saved
+- `resolveRate()` handles identity (same currency), inverse rates, and USD cross-rate derivation
+- Rates are warmed by the daily cron and `refreshExchangeRates()` (manual refresh / on-write); read paths never fetch externally — unresolvable pairs fall back to 1 with a warning
 
 **Net worth calculation** (`src/lib/services/net-worth-service.ts`):
 
-- Two-pass algorithm: first pass collects missing rate pairs, second pass computes values after batch-fetching missing rates
-- `getNetWorthSummary(userId, baseCurrency)` returns fully computed `NetWorthSummary`
+- Two-pass algorithm: first pass prices holdings, second pass converts values using the preloaded rate map
+- `getCachedNetWorthSummary(userId, baseCurrency)` returns fully computed `NetWorthSummary`
 
 **Other services in `src/lib/services/`:**
 
@@ -217,7 +217,7 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 - `src/lib/env.ts` — Zod-validated typed env. Import `env` (or named exports like `DATABASE_URL`) from here rather than reading `process.env` directly. Fails fast at startup with a clear error if required vars are missing.
 - `src/lib/logger.ts` — structured JSON logger (`log.info / warn / error / debug`). Server-only. All API routes and services should use this instead of `console.*`.
 - `src/lib/enums.ts` — runtime arrays of enum values: `ACCOUNT_TYPES`, `ACCOUNT_CATEGORIES`, `HOLDING_ASSET_TYPES`. Import from here for dropdowns, Zod `.enum()`, etc.
-- `src/lib/chart-formatters.tsx` — `formatChartTick(v)`: shared Recharts Y-axis formatter (K/M suffixes). Import instead of writing inline formatters.
+- `src/lib/chart-formatters.ts` — `formatChartTick(v)`: shared Recharts Y-axis formatter (K/M suffixes). Import instead of writing inline formatters.
 - `src/lib/i18n-utils.ts` — `pickMessages(messages, namespaces)`: limits which i18n namespaces are serialized into HTML for `NextIntlClientProvider`. Always use this when passing messages to a client boundary.
 
 ### Daily Snapshot Cron

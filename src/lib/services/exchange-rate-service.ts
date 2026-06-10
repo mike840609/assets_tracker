@@ -76,8 +76,7 @@ function crossRateViaUsd(
 
 /**
  * Resolve a rate from a pre-loaded map, falling back to inverse, then
- * to a USD cross rate. Use this instead of getExchangeRate when you
- * already have the map.
+ * to a USD cross rate.
  */
 export function resolveRate(
   rateMap: Map<string, number>,
@@ -107,7 +106,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T
  * Fetch exchange rates from external APIs with a timeout guard.
  * Returns {} if all sources fail or timeout.
  */
-export async function fetchExchangeRates(base: string): Promise<Record<string, number>> {
+async function fetchExchangeRates(base: string): Promise<Record<string, number>> {
   const doFetch = async (): Promise<Record<string, number>> => {
     // Try frankfurter.app first (ECB data, reliable but limited currencies)
     try {
@@ -157,23 +156,6 @@ export async function fetchExchangeRates(base: string): Promise<Record<string, n
 }
 
 /**
- * Upsert a single exchange rate into the DB.
- * Errors are caught and logged as warnings so callers are never blocked.
- */
-async function persistExchangeRate(from: string, to: string, rate: number): Promise<void> {
-  const id = `${from}_${to}`;
-  try {
-    await prisma.exchangeRate.upsert({
-      where: { id },
-      update: { rate, updatedAt: new Date() },
-      create: { id, fromCurrency: from, toCurrency: to, rate },
-    });
-  } catch (error) {
-    log.warn("rates.persist.failed", { from, to, error: String(error) });
-  }
-}
-
-/**
  * Refresh all exchange rates for a base currency and persist to DB.
  * Uses batched concurrent upserts instead of sequential writes.
  *
@@ -220,120 +202,4 @@ export async function refreshExchangeRates(
   // Stamp only after a successful persist so failed refreshes retry.
   lastRateRefreshAt.set(baseCurrency, Date.now());
   return { updated: entries.length, skippedFresh: false, nextRefreshAt: null };
-}
-
-/**
- * Get a single exchange rate, checking the DB first then fetching live
- * as a last resort. Wrapped with a timeout so external API failures
- * don't block page rendering — falls back to 1 if timed out.
- * Memoised per server render via React cache().
- */
-export const getExchangeRate = cache(async function getExchangeRate(
-  from: string,
-  to: string,
-): Promise<number> {
-  if (from === to) return 1;
-
-  // Fast path: check DB via primary key (id = "${from}_${to}")
-  const direct = await prisma.exchangeRate.findUnique({ where: { id: `${from}_${to}` } });
-  if (direct) return Number(direct.rate);
-
-  const inverse = await prisma.exchangeRate.findUnique({ where: { id: `${to}_${from}` } });
-  if (inverse) return 1 / Number(inverse.rate);
-
-  // Derive via USD before hitting external APIs — the daily cron warms
-  // USD rates for every in-use currency, so this is usually available.
-  const usdLegs = await prisma.exchangeRate.findMany({
-    where: { id: { in: [`USD_${from}`, `${from}_USD`, `USD_${to}`, `${to}_USD`] } },
-    select: { id: true, rate: true },
-  });
-  const legMap = new Map(usdLegs.map((r) => [r.id, Number(r.rate)]));
-  const derived = crossRateViaUsd((key) => legMap.get(key), from, to);
-  if (derived !== undefined) return derived;
-
-  // Slow path: fetch from external APIs (with timeout)
-  const fetchAndStore = async (): Promise<number> => {
-    const rates = await fetchExchangeRates(from);
-    if (rates[to]) {
-      // Fire-and-forget: don't block on persisting
-      void persistExchangeRate(from, to, rates[to]);
-      return rates[to];
-    }
-
-    const reverseRates = await fetchExchangeRates(to);
-    if (reverseRates[from]) {
-      const rate = 1 / reverseRates[from];
-      void persistExchangeRate(from, to, rate);
-      return rate;
-    }
-
-    return 1; // No rate found
-  };
-
-  const rate = await withTimeout(fetchAndStore(), RATE_FETCH_TIMEOUT_MS, 1);
-  if (rate === 1 && from !== to) {
-    log.warn("rates.timeout", { from, to });
-  }
-  return rate;
-});
-
-/**
- * Resolve missing exchange rate pairs with a global timeout.
- * Groups pairs by source currency to minimise external API calls
- * (one fetchExchangeRates per unique source instead of per pair).
- * Pairs still unresolved after the timeout are derived via USD cross
- * rates; only pairs with no conversion path at all default to 1.
- */
-export async function resolveMissingRates(
-  missingPairs: Array<[string, string]>,
-  ratesMap: Record<string, number>,
-  timeoutMs: number = RATE_FETCH_TIMEOUT_MS,
-): Promise<void> {
-  if (missingPairs.length === 0) return;
-
-  const uniquePairs = [...new Set(missingPairs.map(([f, t]) => `${f}_${t}`))];
-
-  // Group by source currency to batch external API calls
-  const bySource = new Map<string, string[]>();
-  for (const key of uniquePairs) {
-    const [from, to] = key.split("_");
-    let targets = bySource.get(from);
-    if (!targets) {
-      targets = [];
-      bySource.set(from, targets);
-    }
-    targets.push(to);
-  }
-
-  const resolveAll = Promise.all(
-    [...bySource.entries()].map(async ([from, targets]) => {
-      const rates = await fetchExchangeRates(from);
-      for (const to of targets) {
-        const key = `${from}_${to}`;
-        if (rates[to] !== undefined) {
-          ratesMap[key] = rates[to];
-          // Fire-and-forget persist
-          void persistExchangeRate(from, to, rates[to]);
-        }
-      }
-    }),
-  );
-
-  await withTimeout(resolveAll, timeoutMs, undefined);
-
-  // Derive still-unresolved pairs via USD from rates we already have;
-  // only fall back to 1 when no conversion path exists at all.
-  for (const key of uniquePairs) {
-    if (ratesMap[key] === undefined) {
-      const [from, to] = key.split("_");
-      const derived = crossRateViaUsd((k) => ratesMap[k], from, to);
-      if (derived !== undefined) {
-        ratesMap[key] = derived;
-        log.info("rates.derived_cross", { key });
-      } else {
-        ratesMap[key] = 1;
-        log.warn("rates.unresolved", { key });
-      }
-    }
-  }
 }
