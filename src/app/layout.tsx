@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+import Script from "next/script";
 import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { ColorSchemaProvider } from "@/components/layout/color-schema-context";
@@ -311,6 +312,11 @@ export default function RootLayout({
             ) : null}
           </ColorSchemaProvider>
         </ThemeProvider>
+        <Script id="pwa-sw" strategy="afterInteractive">{`
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+          }
+        `}</Script>
       </body>
     </html>
   );

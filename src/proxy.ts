@@ -130,6 +130,6 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 // component carrying them is excluded.
 export const config = {
   matcher: [
-    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms|wp-admin|wp-login|wp-content|wp-includes|wordpress|xmlrpc|cgi-bin|cmd_|phpmyadmin|adminer|vendor/phpunit|.*\\.php|.*\\.aspx?|.*\\.jsp|.*\\.cgi|.*\\.env|.*\\.git|.*\\.svn|.*\\.htaccess|.*\\.htpasswd).*)",
+    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms|wp-admin|wp-login|wp-content|wp-includes|wordpress|xmlrpc|cgi-bin|cmd_|phpmyadmin|adminer|vendor/phpunit|.*\\.php|.*\\.aspx?|.*\\.jsp|.*\\.cgi|.*\\.env|.*\\.git|.*\\.svn|.*\\.htaccess|.*\\.htpasswd).*)",
   ],
 };
