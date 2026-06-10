@@ -303,28 +303,30 @@ async function PortfolioHeatmapSection({
 
 export async function DashboardContent({ userId }: { userId: string }) {
   // Settings are data-cached (30s TTL) — resolves near-instantly on cache hit
-  const settings = await getOrCreateSettings(userId);
-  const baseCurrency = settings.baseCurrency;
+  const settingsP = getOrCreateSettings(userId);
 
   // Pre-warm React caches for the inner sections
   void fetchUserAccountsWithHoldings(userId);
   void getAllExchangeRates();
 
-  // Fetch snapshot history once — shared by TrendChartSection and HistoryHeatmap.
-  // getNormalizedHistory is "use cache" with cacheLife("hours"), so this is a
+  // Run the remaining reads in parallel — only the snapshot history depends on
+  // settings (for baseCurrency); the account count and translations are
+  // independent, so nothing here waits on anything it doesn't need.
+  // getNormalizedHistory is "use cache" with cacheLife("hours"), so the
+  // snapshot fetch — shared by TrendChartSection and HistoryHeatmap — is a
   // cache read on warm requests. No extra DB query on repeat renders.
-  const snapshots = await getNormalizedHistory(userId, baseCurrency);
-
-  // Fast check: does this user have any active accounts?
-  const accountCount = await prisma.account.count({
-    where: { userId, isActive: true },
-  });
+  const [settings, snapshots, accountCount, t] = await Promise.all([
+    settingsP,
+    settingsP.then((s) => getNormalizedHistory(userId, s.baseCurrency)),
+    // Fast check: does this user have any active accounts?
+    prisma.account.count({ where: { userId, isActive: true } }),
+    getTranslations("dashboard"),
+  ]);
+  const baseCurrency = settings.baseCurrency;
 
   if (accountCount === 0) {
     return <DashboardOnboarding />;
   }
-
-  const t = await getTranslations("dashboard");
 
   return (
     <>
