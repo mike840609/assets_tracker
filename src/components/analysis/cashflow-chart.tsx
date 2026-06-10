@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, startTransition } from "react";
+import { memo, useEffect, useState, startTransition } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,7 +85,7 @@ function CashFlowTooltip({
 
 const cashflowConfig = {} satisfies ChartConfig;
 
-export function CashFlowChart({ buckets, baseCurrency }: Props) {
+export const CashFlowChart = memo(function CashFlowChart({ buckets, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
@@ -218,4 +218,4 @@ export function CashFlowChart({ buckets, baseCurrency }: Props) {
       </CardContent>
     </>
   );
-}
+});

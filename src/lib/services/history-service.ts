@@ -335,36 +335,14 @@ export async function getMonthlyCashFlow(
   userId: string,
   baseCurrency: string,
 ): Promise<MonthlyContribution[]> {
-  "use cache";
-  cacheTag(`accounts:${userId}`);
-  cacheTag(`history:${userId}`);
-  cacheLife("hours");
-
-  const [accounts, allRatesMap] = await Promise.all([
-    prisma.account.findMany({ where: { userId }, select: { id: true, currency: true } }),
-    getAllExchangeRates(),
-  ]);
-
-  const accountCurrencyMap = new Map(accounts.map((a) => [a.id, a.currency]));
-
-  const transactions = await prisma.cashTransaction.findMany({
-    where: {
-      accountId: { in: accounts.map((a) => a.id) },
-      type: { in: ["DEPOSIT", "WITHDRAWAL"] },
-    },
-    select: { amount: true, type: true, createdAt: true, accountId: true },
-    orderBy: { createdAt: "asc" },
-  });
+  // Thin reduction over getAccountMonthlyCashFlow (cached with the same tags),
+  // so callers needing both views share a single query fill instead of running
+  // the identical accounts + cashTransaction scan twice.
+  const perAccount = await getAccountMonthlyCashFlow(userId, baseCurrency);
 
   const byMonth = new Map<string, number>();
-
-  for (const tx of transactions) {
-    const monthKey = tx.createdAt.toISOString().slice(0, 7); // "YYYY-MM"
-    const currency = accountCurrencyMap.get(tx.accountId) ?? "USD";
-    const rate = resolveRate(allRatesMap, currency, baseCurrency) ?? 1;
-    const amount = Number(tx.amount) * rate;
-    const signed = tx.type === "DEPOSIT" ? amount : -amount;
-    byMonth.set(monthKey, (byMonth.get(monthKey) ?? 0) + signed);
+  for (const entry of perAccount) {
+    byMonth.set(entry.monthKey, (byMonth.get(entry.monthKey) ?? 0) + entry.contributions);
   }
 
   return Array.from(byMonth.entries())

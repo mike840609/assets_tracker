@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, startTransition } from "react";
+import { memo, useEffect, useMemo, useState, startTransition } from "react";
 import {
   CartesianGrid,
   Line,
@@ -79,7 +79,11 @@ function CategoryTooltip({
   );
 }
 
-export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
+export const CategoryTrendChart = memo(function CategoryTrendChart({
+  data,
+  baseCurrency,
+  locale,
+}: Props) {
   const t = useTranslations("analysis");
   const tCat = useTranslations("categories");
   const { privacyMode } = usePrivacyMode();
@@ -90,27 +94,32 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
-  // Collect unique categories present in the data, preserving insertion order.
-  const categories = Array.from(
-    new Set(
-      data.flatMap((d) => Object.keys(d).filter((k) => k !== "monthKey" && Number(d[k]) > 0)),
-    ),
-  );
+  const { categories, visibleCategories, chartData } = useMemo(() => {
+    // Collect unique categories present in the data, preserving insertion order.
+    const categories = Array.from(
+      new Set(
+        data.flatMap((d) => Object.keys(d).filter((k) => k !== "monthKey" && Number(d[k]) > 0)),
+      ),
+    );
 
-  const rankedCategories = categories
-    .map((cat) => {
-      const latest = Number(data.at(-1)?.[cat] ?? 0);
-      const peak = Math.max(...data.map((d) => Number(d[cat] ?? 0)));
-      return { cat, latest, peak };
-    })
-    .sort((a, b) => b.latest - a.latest || b.peak - a.peak);
-  const visibleCategories = rankedCategories.slice(0, MAX_VISIBLE_CATEGORIES).map(({ cat }) => cat);
+    const rankedCategories = categories
+      .map((cat) => {
+        const latest = Number(data.at(-1)?.[cat] ?? 0);
+        const peak = Math.max(...data.map((d) => Number(d[cat] ?? 0)));
+        return { cat, latest, peak };
+      })
+      .sort((a, b) => b.latest - a.latest || b.peak - a.peak);
+    const visibleCategories = rankedCategories
+      .slice(0, MAX_VISIBLE_CATEGORIES)
+      .map(({ cat }) => cat);
+    const chartData = data.map((d) => ({
+      monthKey: d.monthKey,
+      label: formatMonthLabel(d.monthKey as string, locale),
+      ...Object.fromEntries(visibleCategories.map((cat) => [cat, Number(d[cat] ?? 0)])),
+    }));
+    return { categories, visibleCategories, chartData };
+  }, [data, locale]);
   const hiddenCategoryCount = Math.max(0, categories.length - visibleCategories.length);
-  const chartData = data.map((d) => ({
-    monthKey: d.monthKey,
-    label: formatMonthLabel(d.monthKey as string, locale),
-    ...Object.fromEntries(visibleCategories.map((cat) => [cat, Number(d[cat] ?? 0)])),
-  }));
   const xAxisInterval = getMonthTickInterval(chartData.length, density === "compact" ? 5 : 6);
 
   // Compose aria-label: title + subtitle + visible category list, so AT users
@@ -212,4 +221,4 @@ export function CategoryTrendChart({ data, baseCurrency, locale }: Props) {
       </CardContent>
     </>
   );
-}
+});

@@ -159,19 +159,14 @@ export async function warmStockPrice(symbol: string): Promise<{
   const result = quote ? { price: quote.price, currency: quote.currency } : null;
   if (!result) return null;
 
-  await prisma.priceCache.upsert({
+  const cached = await prisma.priceCache.upsert({
     where: { symbol: normalized },
     update: { price: result.price, currency: result.currency, updatedAt: new Date() },
     create: { symbol: normalized, price: result.price, currency: result.currency },
+    select: { price: true, currency: true, updatedAt: true },
   });
   revalidateTag("prices", "max");
 
-  const cached = await prisma.priceCache.findUnique({
-    where: { symbol: normalized },
-    select: { price: true, currency: true, updatedAt: true },
-  });
-
-  if (!cached) return null;
   return {
     price: Number(cached.price),
     currency: cached.currency,
