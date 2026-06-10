@@ -256,6 +256,44 @@ async function GoalsMilestoneSection({
   );
 }
 
+/**
+ * Trend chart + history heatmap — streams behind its Suspense boundary so the
+ * dashboard shell never waits on snapshot history. getNormalizedHistory is
+ * "use cache" with cacheLife("hours"), so the snapshot fetch — shared by
+ * TrendChartSection and HistoryHeatmap — is a cache read on warm requests.
+ */
+async function TrendSection({ userId, baseCurrency }: { userId: string; baseCurrency: string }) {
+  const [snapshots, t] = await Promise.all([
+    getNormalizedHistory(userId, baseCurrency),
+    getTranslations("dashboard"),
+  ]);
+
+  return (
+    <TrendChartSection
+      baseCurrency={baseCurrency}
+      snapshots={snapshots}
+      footer={
+        <>
+          <HistoryHeatmap snapshots={snapshots} baseCurrency={baseCurrency} />
+          {/* Mobile-only entry point — History is a sub-tab of /analysis, so
+              the tab bar gives it no scent. The trend chart is the preview;
+              this names the destination. Desktop uses the sidebar route. */}
+          <Link
+            href="/analysis#history"
+            className="md:hidden mt-3 flex items-center justify-between gap-2 rounded-sm border-t border-border/40 pt-3 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            <span className="flex items-center gap-1.5">
+              <History className="h-3.5 w-3.5" aria-hidden="true" />
+              {t("viewFullHistory")}
+            </span>
+            <ArrowRight className="h-3 w-3" aria-hidden="true" />
+          </Link>
+        </>
+      }
+    />
+  );
+}
+
 async function WatchlistSection({ userId }: { userId: string }) {
   const stocks = await getCachedTrackedStocks(userId);
 
@@ -309,18 +347,13 @@ export async function DashboardContent({ userId }: { userId: string }) {
   void fetchUserAccountsWithHoldings(userId);
   void getAllExchangeRates();
 
-  // Run the remaining reads in parallel — only the snapshot history depends on
-  // settings (for baseCurrency); the account count and translations are
-  // independent, so nothing here waits on anything it doesn't need.
-  // getNormalizedHistory is "use cache" with cacheLife("hours"), so the
-  // snapshot fetch — shared by TrendChartSection and HistoryHeatmap — is a
-  // cache read on warm requests. No extra DB query on repeat renders.
-  const [settings, snapshots, accountCount, t] = await Promise.all([
+  // First paint waits only on settings + the account count — everything else
+  // (including the snapshot history, now inside TrendSection) streams behind
+  // its own Suspense boundary.
+  const [settings, accountCount] = await Promise.all([
     settingsP,
-    settingsP.then((s) => getNormalizedHistory(userId, s.baseCurrency)),
     // Fast check: does this user have any active accounts?
     prisma.account.count({ where: { userId, isActive: true } }),
-    getTranslations("dashboard"),
   ]);
   const baseCurrency = settings.baseCurrency;
 
@@ -347,28 +380,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 animate-in fade-in slide-in-from-bottom-8 motion-slow fill-mode-both delay-75">
         <div className="min-w-0 lg:col-span-8">
           <Suspense fallback={<TrendChartSkeleton />}>
-            <TrendChartSection
-              baseCurrency={baseCurrency}
-              snapshots={snapshots}
-              footer={
-                <>
-                  <HistoryHeatmap snapshots={snapshots} baseCurrency={baseCurrency} />
-                  {/* Mobile-only entry point — History is a sub-tab of /analysis, so
-                      the tab bar gives it no scent. The trend chart is the preview;
-                      this names the destination. Desktop uses the sidebar route. */}
-                  <Link
-                    href="/analysis#history"
-                    className="md:hidden mt-3 flex items-center justify-between gap-2 rounded-sm border-t border-border/40 pt-3 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <History className="h-3.5 w-3.5" aria-hidden="true" />
-                      {t("viewFullHistory")}
-                    </span>
-                    <ArrowRight className="h-3 w-3" aria-hidden="true" />
-                  </Link>
-                </>
-              }
-            />
+            <TrendSection userId={userId} baseCurrency={baseCurrency} />
           </Suspense>
         </div>
         <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4">
