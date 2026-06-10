@@ -21,24 +21,31 @@ const CLIENT_NAMESPACES = [
 async function AccountDetailContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  // Kick off independent queries before awaiting the account
+  // Kick off all queries at their true dependency depth: rates/messages/session
+  // are independent; the detail + accounts fetches chain off the session, and
+  // the price map chains off the detail's symbols. One await resolves them all.
   const ratesP = getAllExchangeRates();
   const messagesP = getMessages();
   const sessionP = getSession();
+  const detailP = sessionP.then((s) => (s?.user?.id ? getAccountDetail(s.user.id, id) : null));
+  const allAccountsP = sessionP.then((s) =>
+    s?.user?.id ? fetchUserAccountsWithHoldings(s.user.id) : [],
+  );
+  const priceMapP = detailP.then((d) =>
+    d ? getAccountPriceMap(d.holdings.map((h) => h.symbol)) : {},
+  );
 
-  const [session, allRatesMap, messages] = await Promise.all([sessionP, ratesP, messagesP]);
-
-  const userId = session?.user?.id;
-  if (!userId) notFound();
-
-  const [serialized, allAccounts] = await Promise.all([
-    getAccountDetail(userId, id),
-    fetchUserAccountsWithHoldings(userId),
+  const [session, allRatesMap, messages, serialized, allAccounts, priceMap] = await Promise.all([
+    sessionP,
+    ratesP,
+    messagesP,
+    detailP,
+    allAccountsP,
+    priceMapP,
   ]);
-  if (!serialized) notFound();
 
-  const symbols = serialized.holdings.map((h) => h.symbol);
-  const priceMap = await getAccountPriceMap(symbols);
+  if (!session?.user?.id) notFound();
+  if (!serialized) notFound();
 
   // Build rates map from bulk-loaded data. Render path is read-only
   // against ExchangeRate — missing pairs fall back to 1 (rates are warmed
