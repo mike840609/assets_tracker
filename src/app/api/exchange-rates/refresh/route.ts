@@ -2,9 +2,19 @@ import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { withAuth } from "@/lib/api-handler";
+import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
 import { ok } from "@/lib/api-responses";
 
-export const POST = withAuth(async (_request, _ctx, userId) => {
+export const POST = withAuth(async (request, _ctx, userId) => {
+  // Per-user secondary defense; the service-level FX freshness gate is the
+  // primary one (upstream sources update at day grain anyway).
+  const limited = rateLimitCheckWithPrune(request, {
+    limit: 5,
+    prefix: "rates-refresh",
+    key: userId,
+  });
+  if (limited) return limited;
+
   const settings = await prisma.setting.findUnique({ where: { userId } });
   const baseCurrency = settings?.baseCurrency ?? "USD";
 
@@ -19,12 +29,31 @@ export const POST = withAuth(async (_request, _ctx, userId) => {
     refreshExchangeRates(baseCurrency),
     ...otherCurrencies.map((currency) => refreshExchangeRates(currency)),
   ]);
-  const totalUpdated = results.reduce((a, b) => a + b, 0);
+  const totalUpdated = results.reduce((sum, r) => sum + r.updated, 0);
+  const skippedFresh = results.filter((r) => r.skippedFresh).length;
+  // Earliest moment a retry would actually fetch something.
+  const nextRefreshAt =
+    results
+      .map((r) => r.nextRefreshAt)
+      .filter((v): v is string => v !== null)
+      .sort()[0] ?? null;
+  const retryAfterSeconds = nextRefreshAt
+    ? Math.max(1, Math.ceil((Date.parse(nextRefreshAt) - Date.now()) / 1000))
+    : null;
 
-  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
-  revalidateTag("exchange-rates", "max");
-  revalidateTag("net-worth", "max");
-  revalidateTag(`net-worth:${userId}`, "max");
-  revalidateTag(`history:${userId}`, "max");
-  return ok({ updated: totalUpdated, baseCurrency });
+  // Only bust caches when something actually changed.
+  if (totalUpdated > 0) {
+    // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
+    revalidateTag("exchange-rates", "max");
+    revalidateTag("net-worth", "max");
+    revalidateTag(`net-worth:${userId}`, "max");
+    revalidateTag(`history:${userId}`, "max");
+  }
+  return ok({
+    updated: totalUpdated,
+    skippedFresh,
+    baseCurrency,
+    nextRefreshAt,
+    retryAfterSeconds,
+  });
 });

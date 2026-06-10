@@ -18,6 +18,11 @@ interface RateLimitOptions {
   windowMs?: number;
   /** Identifier prefix to namespace the key in the shared store. */
   prefix?: string;
+  /**
+   * Explicit identity to limit on (e.g. userId for authenticated routes).
+   * Falls back to the client IP when omitted.
+   */
+  key?: string;
 }
 
 interface WindowEntry {
@@ -42,8 +47,8 @@ function getClientIp(request: Request): string {
  */
 export function rateLimitCheck(request: Request, options: RateLimitOptions): Response | null {
   const { limit, windowMs = 60_000, prefix = "rl" } = options;
-  const ip = getClientIp(request);
-  const key = `${prefix}:${ip}`;
+  const id = options.key ?? getClientIp(request);
+  const key = `${prefix}:${id}`;
   const now = Date.now();
 
   const entry = store.get(key);

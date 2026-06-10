@@ -20,6 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FreshnessBadge } from "@/components/ui/freshness-badge";
+import { refreshMarketData as requestMarketDataRefresh } from "@/lib/refresh-client";
+import { useRefreshCooldown } from "@/hooks/use-refresh-cooldown";
 import { CURRENCIES, getLocaleDefaultCurrency } from "@/lib/currencies";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
@@ -157,6 +159,7 @@ export function SettingsForm({
   );
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const { coolingDown, secondsLeft } = useRefreshCooldown();
   const [clientPriceRefreshAt, setClientPriceRefreshAt] = useState<string | null>(null);
   const [clientRatesRefreshAt, setClientRatesRefreshAt] = useState<string | null>(null);
 
@@ -202,28 +205,31 @@ export function SettingsForm({
   async function refreshMarketData() {
     setRefreshing(true);
     try {
-      const [priceRes, ratesRes] = await Promise.all([
-        fetch("/api/prices/refresh", { method: "POST" }),
-        fetch("/api/exchange-rates/refresh", { method: "POST" }),
-      ]);
-      if (!priceRes.ok || !ratesRes.ok) throw new Error("Refresh failed");
-      const [{ data: priceData }, { data: ratesData }] = await Promise.all([
-        priceRes.json(),
-        ratesRes.json(),
-      ]);
-      const refreshedAt = new Date().toISOString();
-      setClientPriceRefreshAt(refreshedAt);
-      setClientRatesRefreshAt(refreshedAt);
-      window.dispatchEvent(new CustomEvent("prices:refreshed"));
-      toast.success(
-        t("toast.marketDataUpdated", {
-          prices: priceData.updated,
-          rates: ratesData.updated,
-        }),
-      );
-      router.refresh();
-    } catch {
-      toast.error(t("toast.marketDataFailed"));
+      const outcome = await requestMarketDataRefresh();
+      switch (outcome.status) {
+        case "updated": {
+          const refreshedAt = new Date().toISOString();
+          setClientPriceRefreshAt(refreshedAt);
+          setClientRatesRefreshAt(refreshedAt);
+          toast.success(
+            t("toast.marketDataUpdated", {
+              prices: outcome.prices,
+              rates: outcome.rates,
+            }),
+          );
+          router.refresh();
+          break;
+        }
+        case "fresh":
+          toast.info(t("toast.marketDataFresh"));
+          break;
+        case "cooldown":
+          toast.info(t("toast.refreshCooldown", { seconds: outcome.retryAfterSeconds }));
+          break;
+        case "error":
+          toast.error(t("toast.marketDataFailed"));
+          break;
+      }
     } finally {
       setRefreshing(false);
     }
@@ -401,7 +407,10 @@ export function SettingsForm({
               <Button
                 variant="outline"
                 onClick={refreshMarketData}
-                disabled={refreshing}
+                disabled={refreshing || coolingDown}
+                title={
+                  coolingDown ? t("toast.refreshCooldown", { seconds: secondsLeft }) : undefined
+                }
                 className="w-full sm:w-auto min-w-[150px]"
               >
                 <RefreshCw className={`mr-2 size-4 ${refreshing ? "animate-spin" : ""}`} />

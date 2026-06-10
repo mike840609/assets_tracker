@@ -2,16 +2,19 @@ import "server-only";
 import { cache } from "react";
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { FX_REFRESH_TTL_MS } from "@/lib/refresh-policy";
 import { log, withTiming } from "@/lib/logger";
+
+export type RefreshRatesResult = {
+  updated: number;
+  /** True when the base currency's rates were fresh and no fetch happened. */
+  skippedFresh: boolean;
+  /** When the rates become stale again; null unless skippedFresh. */
+  nextRefreshAt: string | null;
+};
 
 /** How long to wait (ms) before giving up on external rate APIs */
 const RATE_FETCH_TIMEOUT_MS = 1200;
-
-// Skip the external refresh entirely when this base currency was refreshed
-// within this window — FX sources update at most a few times a day
-// (Frankfurter/ECB once per business day), so refreshing on every
-// dashboard interaction buys nothing.
-const RATE_REFRESH_TTL_MS = 60 * 60 * 1000;
 
 // In-process memo of the last successful refresh per base currency, so the
 // staleness check costs no DB read (same warm-instance pattern as
@@ -173,18 +176,30 @@ async function persistExchangeRate(from: string, to: string, rate: number): Prom
 /**
  * Refresh all exchange rates for a base currency and persist to DB.
  * Uses batched concurrent upserts instead of sequential writes.
+ *
+ * Unless `force` (cron path), skips the external fetch entirely when this
+ * base currency was refreshed within FX_REFRESH_TTL_MS — FX sources update
+ * at most a few times a day, so refreshing on every dashboard interaction
+ * buys nothing.
  */
-export async function refreshExchangeRates(baseCurrency: string): Promise<number> {
+export async function refreshExchangeRates(
+  baseCurrency: string,
+  opts: { force?: boolean } = {},
+): Promise<RefreshRatesResult> {
   const last = lastRateRefreshAt.get(baseCurrency);
-  if (last !== undefined && Date.now() - last < RATE_REFRESH_TTL_MS) {
+  if (!opts.force && last !== undefined && Date.now() - last < FX_REFRESH_TTL_MS) {
     log.info("rates.refresh.skipped_fresh", { base: baseCurrency });
-    return 0;
+    return {
+      updated: 0,
+      skippedFresh: true,
+      nextRefreshAt: new Date(last + FX_REFRESH_TTL_MS).toISOString(),
+    };
   }
 
   const rates = await fetchExchangeRates(baseCurrency);
   const entries = Object.entries(rates);
 
-  if (entries.length === 0) return 0;
+  if (entries.length === 0) return { updated: 0, skippedFresh: false, nextRefreshAt: null };
 
   const params: unknown[] = [];
   const placeholders = entries.map(([toCurrency, rate]) => {
@@ -204,7 +219,7 @@ export async function refreshExchangeRates(baseCurrency: string): Promise<number
 
   // Stamp only after a successful persist so failed refreshes retry.
   lastRateRefreshAt.set(baseCurrency, Date.now());
-  return entries.length;
+  return { updated: entries.length, skippedFresh: false, nextRefreshAt: null };
 }
 
 /**

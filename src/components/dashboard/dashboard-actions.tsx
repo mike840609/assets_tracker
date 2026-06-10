@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { hapticTick } from "@/lib/haptics";
+import { refreshMarketData } from "@/lib/refresh-client";
+import { useRefreshCooldown } from "@/hooks/use-refresh-cooldown";
 import { FreshnessBadge } from "@/components/ui/freshness-badge";
 
 interface DashboardActionsProps {
@@ -20,23 +22,29 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
   const t = useTranslations("dashboardActions");
   const [refreshing, setRefreshing] = useState(false);
   const [clientRefreshAt, setClientRefreshAt] = useState<string | null>(null);
+  const { coolingDown, secondsLeft } = useRefreshCooldown();
 
   const handleRefreshPrices = useCallback(async () => {
     hapticTick();
     setRefreshing(true);
     try {
-      const [priceRes, ratesRes] = await Promise.all([
-        fetch("/api/prices/refresh", { method: "POST" }),
-        fetch("/api/exchange-rates/refresh", { method: "POST" }),
-      ]);
-      if (!priceRes.ok || !ratesRes.ok) throw new Error("Refresh failed");
-      const { data: priceData } = await priceRes.json();
-      toast.success(t("refreshSuccess", { count: priceData.updated }));
-      setClientRefreshAt(new Date().toISOString());
-      window.dispatchEvent(new CustomEvent("prices:refreshed"));
-      router.refresh();
-    } catch {
-      toast.error(t("refreshFailed"));
+      const outcome = await refreshMarketData();
+      switch (outcome.status) {
+        case "updated":
+          toast.success(t("refreshSuccess", { count: outcome.prices }));
+          setClientRefreshAt(new Date().toISOString());
+          router.refresh();
+          break;
+        case "fresh":
+          toast.info(t("alreadyFresh", { seconds: outcome.retryAfterSeconds }));
+          break;
+        case "cooldown":
+          toast.info(t("cooldownWait", { seconds: outcome.retryAfterSeconds }));
+          break;
+        case "error":
+          toast.error(t("refreshFailed"));
+          break;
+      }
     } finally {
       setRefreshing(false);
     }
@@ -89,7 +97,8 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
           variant="outline"
           size="sm"
           onClick={handleRefreshPrices}
-          disabled={refreshing}
+          disabled={refreshing || coolingDown}
+          title={coolingDown ? t("cooldownWait", { seconds: secondsLeft }) : undefined}
           className="gap-2 rounded-full px-5 border-primary/20 bg-primary/5 hover:bg-primary/15 text-primary hover:text-primary transition-all shadow-sm hover:shadow"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
