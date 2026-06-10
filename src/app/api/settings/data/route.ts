@@ -196,7 +196,9 @@ export const GET = withAuth(async (_req, _ctx, userId) => {
     if (!data) return failure("User not found", 404);
 
     const exportData = {
-      version: "1.1",
+      // 1.2: holding transactions may carry `price`, cash transactions
+      // may carry `currency` (both optional; 1.1 backups import unchanged).
+      version: "1.2",
       exportedAt: new Date().toISOString(),
       settings: data.appSettings,
       accounts: data.appAccounts,
@@ -311,6 +313,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
                     holdingId: newHolding.id,
                     type: t.type,
                     quantity: t.quantity,
+                    price: t.price ?? null,
                     note: t.note,
                     createdAt: t.createdAt,
                   })),
@@ -327,6 +330,9 @@ export const POST = withAuth(async (request, _ctx, userId) => {
                 accountId: newAccount.id,
                 type: t.type,
                 amount: t.amount,
+                // Legacy backups predate the currency column — assume the
+                // account's currency, which is what readers fall back to.
+                currency: t.currency ?? acc.currency,
                 note: t.note,
                 createdAt: t.createdAt,
               })),

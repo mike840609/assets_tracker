@@ -233,6 +233,7 @@ export const dataImportSchema = z.object({
                 z.object({
                   type: z.enum(HOLDING_TRANSACTION_TYPES),
                   quantity: decimalSchema,
+                  price: decimalSchema.optional().nullable(),
                   note: z.string().optional().nullable(),
                   createdAt: z.string().optional(),
                 }),
@@ -246,6 +247,7 @@ export const dataImportSchema = z.object({
           z.object({
             type: z.enum(CASH_TRANSACTION_TYPES),
             amount: decimalSchema,
+            currency: z.string().length(3).optional().nullable(),
             note: z.string().optional().nullable(),
             createdAt: z.string().optional(),
           }),

@@ -102,6 +102,8 @@ model HoldingTransaction {
   holding   Holding         @relation(fields: [holdingId], references: [id], onDelete: Cascade)
   type      TransactionType
   quantity  Decimal         @db.Decimal(18, 8)
+  /// Market price per unit at transaction time (best effort; null when unknown).
+  price     Decimal?        @db.Decimal(18, 8)
   note      String?
   createdAt DateTime        @default(now())
 
@@ -120,6 +122,8 @@ model CashTransaction {
   account   Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
   type      CashTransactionType
   amount    Decimal             @db.Decimal(18, 8)
+  /// Account currency at write time (null on legacy rows; fall back to account.currency).
+  currency  String?
   note      String?
   createdAt DateTime            @default(now())
 

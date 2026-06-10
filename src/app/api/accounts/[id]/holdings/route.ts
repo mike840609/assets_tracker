@@ -85,6 +85,20 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
     }
   }
 
+  // Best-effort market price fetch BEFORE the write so the BUY log can
+  // record the price at transaction time. A fetch failure never blocks
+  // the holding creation — the log's price is simply null.
+  let quote: { price: number; currency: string } | undefined;
+  try {
+    const isCrypto = parsed.data.assetType === "CRYPTO";
+    const priceResults = isCrypto
+      ? await fetchCryptoPrices([parsed.data.symbol])
+      : await fetchStockPrices([parsed.data.symbol]);
+    quote = priceResults.get(parsed.data.symbol);
+  } catch (error) {
+    log.error("holdings.price_fetch.failed", { symbol: parsed.data.symbol, error: String(error) });
+  }
+
   // Atomic upsert: increment on the existing row avoids the read-modify-write
   // race when two adds for the same symbol land concurrently, and the BUY log
   // commits with the holding so the audit trail can't diverge.
@@ -110,31 +124,29 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
     });
 
     await tx.holdingTransaction.create({
-      data: { holdingId: upserted.id, type: "BUY", quantity: parsed.data.quantity },
+      data: {
+        holdingId: upserted.id,
+        type: "BUY",
+        quantity: parsed.data.quantity,
+        price: quote?.price ?? null,
+      },
     });
 
     return upserted;
   });
 
-  // Auto-fetch the market price for the holding
-  try {
-    const isCrypto = parsed.data.assetType === "CRYPTO";
-    const priceResults = isCrypto
-      ? await fetchCryptoPrices([holding.symbol])
-      : await fetchStockPrices([holding.symbol]);
-
-    const result = priceResults.get(holding.symbol);
-    if (result) {
+  if (quote) {
+    try {
       await prisma.priceCache.upsert({
         where: { symbol: holding.symbol },
-        update: { price: result.price, currency: result.currency, updatedAt: new Date() },
-        create: { symbol: holding.symbol, price: result.price, currency: result.currency },
+        update: { price: quote.price, currency: quote.currency, updatedAt: new Date() },
+        create: { symbol: holding.symbol, price: quote.price, currency: quote.currency },
       });
       revalidateTag("prices", "max");
+    } catch (error) {
+      // Non-blocking: the holding and BUY log are already committed
+      log.error("holdings.price_cache.failed", { symbol: holding.symbol, error: String(error) });
     }
-  } catch (error) {
-    // Non-blocking: if price fetch fails, holding is still created
-    log.error("holdings.price_fetch.failed", { symbol: holding.symbol, error: String(error) });
   }
 
   invalidateUserCaches(userId);

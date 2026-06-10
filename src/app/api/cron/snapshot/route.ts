@@ -34,6 +34,7 @@ export async function GET(request: Request) {
                 holdingId: h.id,
                 type: "SELL",
                 quantity: Number(h.quantity),
+                price: 0,
                 note: "Expired",
               },
             }),

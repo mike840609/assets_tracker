@@ -20,7 +20,7 @@ export const POST = withAuth(
     if (!account) return failure("Account not found", 404);
 
     const transaction = await prisma.cashTransaction.create({
-      data: { accountId: id, type, amount, note },
+      data: { accountId: id, type, amount, note, currency: account.currency },
     });
 
     const delta = calculateBalanceDelta(null, { type, amount });

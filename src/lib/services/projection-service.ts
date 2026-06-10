@@ -79,12 +79,14 @@ export async function getProjectionData(
       type: { in: ["DEPOSIT", "WITHDRAWAL"] },
       createdAt: { gte: twelveMonthsAgo },
     },
-    select: { amount: true, type: true, accountId: true },
+    select: { amount: true, type: true, currency: true, accountId: true },
   });
 
   let trailing12mSavings = 0;
   for (const tx of transactions) {
-    const currency = accountCurrencyMap.get(tx.accountId) ?? "USD";
+    // Prefer the currency captured at write time; legacy rows (null) fall
+    // back to the account's current currency.
+    const currency = tx.currency ?? accountCurrencyMap.get(tx.accountId) ?? "USD";
     const rate = resolveRate(allRatesMap, currency, baseCurrency) ?? 1;
     const amount = Number(tx.amount) * rate;
     trailing12mSavings += tx.type === "DEPOSIT" ? amount : -amount;
