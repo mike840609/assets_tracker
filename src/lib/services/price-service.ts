@@ -9,7 +9,7 @@ const RETRY_DELAYS_MS = [500, 1_500]; // 2 retries: 500 ms then 1.5 s
 
 // Symbols whose PriceCache row is newer than this are skipped on refresh,
 // so rapid repeat refreshes (button + pull-to-refresh) don't re-hit Yahoo.
-const PRICE_REFRESH_TTL_MS = 2 * 60 * 1000;
+const PRICE_REFRESH_TTL_MS = 60 * 1000;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));

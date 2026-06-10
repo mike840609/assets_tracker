@@ -7,11 +7,16 @@ import { log, withTiming } from "@/lib/logger";
 /** How long to wait (ms) before giving up on external rate APIs */
 const RATE_FETCH_TIMEOUT_MS = 1200;
 
-// Skip the external refresh entirely when the base currency's rates were
-// persisted within this window — FX sources update at most a few times a
-// day (Frankfurter/ECB once per business day), so refreshing on every
+// Skip the external refresh entirely when this base currency was refreshed
+// within this window — FX sources update at most a few times a day
+// (Frankfurter/ECB once per business day), so refreshing on every
 // dashboard interaction buys nothing.
 const RATE_REFRESH_TTL_MS = 60 * 60 * 1000;
+
+// In-process memo of the last successful refresh per base currency, so the
+// staleness check costs no DB read (same warm-instance pattern as
+// lib/rate-limit.ts). Cold starts simply refresh once and re-prime it.
+const lastRateRefreshAt = new Map<string, number>();
 
 /**
  * Cache Components read of all exchange rates.
@@ -146,12 +151,8 @@ async function persistExchangeRate(from: string, to: string, rate: number): Prom
  * Uses batched concurrent upserts instead of sequential writes.
  */
 export async function refreshExchangeRates(baseCurrency: string): Promise<number> {
-  const newest = await prisma.exchangeRate.findFirst({
-    where: { fromCurrency: baseCurrency },
-    orderBy: { updatedAt: "desc" },
-    select: { updatedAt: true },
-  });
-  if (newest && Date.now() - newest.updatedAt.getTime() < RATE_REFRESH_TTL_MS) {
+  const last = lastRateRefreshAt.get(baseCurrency);
+  if (last !== undefined && Date.now() - last < RATE_REFRESH_TTL_MS) {
     log.info("rates.refresh.skipped_fresh", { base: baseCurrency });
     return 0;
   }
@@ -177,6 +178,8 @@ export async function refreshExchangeRates(baseCurrency: string): Promise<number
     ...params,
   );
 
+  // Stamp only after a successful persist so failed refreshes retry.
+  lastRateRefreshAt.set(baseCurrency, Date.now());
   return entries.length;
 }
 
