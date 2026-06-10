@@ -18,7 +18,16 @@ export function DashboardPullRefresh({ children }: { children: React.ReactNode }
       ]);
       if (!priceRes.ok || !ratesRes.ok) throw new Error("Refresh failed");
       const { data: priceData } = await priceRes.json();
-      toast.success(t("refreshSuccess", { count: priceData.updated }));
+      if (priceData.updated > 0) {
+        toast.success(t("refreshSuccess", { count: priceData.updated }));
+      } else if (priceData.errors?.length) {
+        // Fetch failed for every symbol — don't dress it up as a success
+        toast.error(t("refreshFailed"));
+      } else {
+        // Everything was inside the refresh TTL — "0 updated" reads like a
+        // failure, so say what actually happened
+        toast.success(t("refreshUpToDate"));
+      }
       window.dispatchEvent(new CustomEvent("prices:refreshed"));
       router.refresh();
     } catch {

@@ -215,12 +215,21 @@ export function SettingsForm({
       setClientPriceRefreshAt(refreshedAt);
       setClientRatesRefreshAt(refreshedAt);
       window.dispatchEvent(new CustomEvent("prices:refreshed"));
-      toast.success(
-        t("toast.marketDataUpdated", {
-          prices: priceData.updated,
-          rates: ratesData.updated,
-        }),
-      );
+      if (priceData.updated === 0 && priceData.errors?.length) {
+        // Price fetch failed for every symbol — don't dress it up as a success
+        toast.error(t("toast.marketDataFailed"));
+      } else if (priceData.updated === 0 && ratesData.updated === 0) {
+        // Both inside their refresh TTLs — "Updated 0 prices and 0 rates"
+        // reads like a failure, so say what actually happened
+        toast.success(t("toast.marketDataUpToDate"));
+      } else {
+        toast.success(
+          t("toast.marketDataUpdated", {
+            prices: priceData.updated,
+            rates: ratesData.updated,
+          }),
+        );
+      }
       router.refresh();
     } catch {
       toast.error(t("toast.marketDataFailed"));

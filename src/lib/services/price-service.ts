@@ -209,10 +209,14 @@ export async function getCachedPricesForSymbols(
   return all.filter((p) => symbolSet.has(p.symbol));
 }
 
-export async function refreshAllPrices(): Promise<{
+export type PriceRefreshResult = {
   updated: number;
+  /** Symbols skipped because their cached price was within the refresh TTL. */
+  skipped: number;
   errors: string[];
-}> {
+};
+
+export async function refreshAllPrices(): Promise<PriceRefreshResult> {
   // Watchlist symbols are included so their cached prices don't silently
   // age until a user happens to trigger refreshPricesForUser.
   const [holdings, trackedStocks] = await Promise.all([
@@ -234,10 +238,7 @@ export async function refreshAllPrices(): Promise<{
   return refreshPricesForHoldings([...holdings, ...stockWatchHoldings]);
 }
 
-export async function refreshPricesForUser(userId: string): Promise<{
-  updated: number;
-  errors: string[];
-}> {
+export async function refreshPricesForUser(userId: string): Promise<PriceRefreshResult> {
   const [holdings, trackedStocks] = await Promise.all([
     prisma.holding.findMany({
       where: { account: { userId } },
@@ -259,23 +260,18 @@ export async function refreshPricesForUser(userId: string): Promise<{
   return refreshPricesForHoldings([...holdings, ...stockWatchHoldings]);
 }
 
-export async function refreshPricesForStockSymbols(symbols: string[]): Promise<{
-  updated: number;
-  errors: string[];
-}> {
+export async function refreshPricesForStockSymbols(symbols: string[]): Promise<PriceRefreshResult> {
   const uniqueSymbols = [...new Set(symbols.map((symbol) => symbol.toUpperCase()))];
-  if (uniqueSymbols.length === 0) return { updated: 0, errors: [] };
+  if (uniqueSymbols.length === 0) return { updated: 0, skipped: 0, errors: [] };
   return refreshPricesForHoldings(uniqueSymbols.map((symbol) => ({ symbol, assetType: "STOCK" })));
 }
 
 async function refreshPricesForHoldings(
   holdings: { symbol: string; assetType: string }[],
-): Promise<{
-  updated: number;
-  errors: string[];
-}> {
-  if (holdings.length === 0) return { updated: 0, errors: [] };
+): Promise<PriceRefreshResult> {
+  if (holdings.length === 0) return { updated: 0, skipped: 0, errors: [] };
 
+  let skipped = 0;
   const freshRows = await prisma.priceCache.findMany({
     where: {
       symbol: { in: holdings.map((h) => h.symbol) },
@@ -285,9 +281,10 @@ async function refreshPricesForHoldings(
   });
   if (freshRows.length > 0) {
     const freshSymbols = new Set(freshRows.map((row) => row.symbol));
-    log.info("price.refresh.skipped_fresh", { count: freshSymbols.size });
+    skipped = freshSymbols.size;
+    log.info("price.refresh.skipped_fresh", { count: skipped });
     holdings = holdings.filter((h) => !freshSymbols.has(h.symbol));
-    if (holdings.length === 0) return { updated: 0, errors: [] };
+    if (holdings.length === 0) return { updated: 0, skipped, errors: [] };
   }
 
   const stockSymbols = holdings
@@ -314,7 +311,7 @@ async function refreshPricesForHoldings(
     if (requested > 0) {
       errors.push(`No prices returned for any of ${requested} symbol(s)`);
     }
-    return { updated: 0, errors };
+    return { updated: 0, skipped, errors };
   }
 
   try {
@@ -339,5 +336,5 @@ async function refreshPricesForHoldings(
     errors.push(`Bulk upsert failed: ${String(error)}`);
   }
 
-  return { updated, errors };
+  return { updated, skipped, errors };
 }

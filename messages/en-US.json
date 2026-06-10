@@ -163,6 +163,7 @@
     "pricesUpdated": "Updated {count} prices",
     "pricesFailed": "Failed to refresh prices",
     "marketDataUpdated": "Updated {prices} prices and {rates} exchange rates",
+    "marketDataUpToDate": "Market data already up to date",
     "marketDataFailed": "Failed to refresh market data",
     "snapshotCreated": "Snapshot created",
     "snapshotFailed": "Failed to create snapshot",
@@ -669,6 +670,7 @@
     "refreshPrices": "Refresh Prices",
     "refreshing": "Refreshing...",
     "refreshSuccess": "Updated {count} prices & exchange rates",
+    "refreshUpToDate": "Prices already up to date",
     "refreshFailed": "Failed to refresh prices"
   },
   "freshness": {
@@ -1113,6 +1115,7 @@
     "deleteFailed": "Failed to delete stock",
     "deleting": "Deleting...",
     "refreshSuccess": "Updated {count} prices",
+    "refreshUpToDate": "Stock prices already up to date",
     "refreshFailed": "Failed to refresh stock prices",
     "saveStock": "Save stock",
     "saving": "Saving...",

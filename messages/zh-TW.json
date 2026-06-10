@@ -163,6 +163,7 @@
     "pricesUpdated": "已更新 {count} 個價格",
     "pricesFailed": "更新價格失敗",
     "marketDataUpdated": "已更新 {prices} 個價格與 {rates} 筆匯率",
+    "marketDataUpToDate": "市場資料已是最新",
     "marketDataFailed": "更新市場資料失敗",
     "snapshotCreated": "快照已建立",
     "snapshotFailed": "建立快照失敗",
@@ -669,6 +670,7 @@
     "refreshPrices": "更新價格",
     "refreshing": "更新中...",
     "refreshSuccess": "已更新 {count} 個價格和匯率",
+    "refreshUpToDate": "價格已是最新",
     "refreshFailed": "更新價格失敗"
   },
   "freshness": {
@@ -1113,6 +1115,7 @@
     "deleteFailed": "刪除股票失敗",
     "deleting": "刪除中...",
     "refreshSuccess": "已更新 {count} 筆價格",
+    "refreshUpToDate": "股價已是最新",
     "refreshFailed": "更新股票價格失敗",
     "saveStock": "儲存股票",
     "saving": "儲存中...",

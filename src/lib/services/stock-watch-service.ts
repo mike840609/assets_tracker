@@ -1,7 +1,10 @@
 import "server-only";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { refreshPricesForStockSymbols } from "@/lib/services/price-service";
+import {
+  refreshPricesForStockSymbols,
+  type PriceRefreshResult,
+} from "@/lib/services/price-service";
 import { getYahooClient } from "@/lib/services/yahoo-client";
 import { log } from "@/lib/logger";
 import type { StockWatchItem } from "@/generated/prisma/client";
@@ -163,10 +166,7 @@ export async function warmStockPrice(symbol: string): Promise<{
   };
 }
 
-export async function refreshTrackedStockPrices(userId: string): Promise<{
-  updated: number;
-  errors: string[];
-}> {
+export async function refreshTrackedStockPrices(userId: string): Promise<PriceRefreshResult> {
   const stocks = await prisma.stockWatchItem.findMany({
     where: { userId },
     select: { symbol: true },
