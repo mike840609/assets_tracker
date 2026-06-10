@@ -69,8 +69,8 @@ export async function GET(request: Request) {
     log.info("cron.prices.refresh");
     const priceResult = await refreshAllPrices();
     if (priceResult.errors.length > 0) {
-      // Snapshots still proceed on cached prices; the catch-up cron run
-      // retries with fresh data and the upsert overwrites today's rows.
+      // Snapshots still proceed on cached prices — a stale data point
+      // beats a missing one.
       log.warn("cron.prices.refresh_errors", {
         updated: priceResult.updated,
         errors: priceResult.errors,
@@ -86,30 +86,41 @@ export async function GET(request: Request) {
       include: { appSettings: true },
     });
 
-    // 3. Create snapshots for each user (in parallel), isolating failures —
-    // cron has no retry, so one bad user must not cost everyone else
-    // their daily snapshot.
-    const results = await Promise.allSettled(
-      users.map((user) => {
-        const baseCurrency = user.appSettings?.baseCurrency ?? "USD";
-        log.info("cron.snapshot.create", { userId: user.id, baseCurrency });
-        return createSnapshot(user.id, baseCurrency);
-      }),
-    );
+    type SnapshotUser = (typeof users)[number];
 
-    const snapshotIds: string[] = [];
-    const failedUserIds: string[] = [];
-    results.forEach((result, i) => {
-      if (result.status === "fulfilled") {
-        snapshotIds.push(result.value.id);
-      } else {
-        failedUserIds.push(users[i].id);
-        log.error("cron.snapshot.user_failed", {
-          userId: users[i].id,
-          error: String(result.reason),
-        });
-      }
-    });
+    // 3. Create snapshots for each user (in parallel), isolating failures —
+    // one bad user must not cost everyone else their daily snapshot.
+    const runSnapshots = async (batch: SnapshotUser[]) => {
+      const settled = await Promise.allSettled(
+        batch.map((user) => createSnapshot(user.id, user.appSettings?.baseCurrency ?? "USD")),
+      );
+      const ids: string[] = [];
+      const failed: { user: SnapshotUser; reason: unknown }[] = [];
+      settled.forEach((result, i) => {
+        if (result.status === "fulfilled") ids.push(result.value.id);
+        else failed.push({ user: batch[i], reason: result.reason });
+      });
+      return { ids, failed };
+    };
+
+    const first = await runSnapshots(users);
+    const snapshotIds = first.ids;
+    let failures = first.failed;
+
+    // One in-route retry: the Hobby plan allows a single daily cron, so
+    // transient failures (DB hiccup, fetch blip) get their second chance
+    // here rather than via a second scheduled run.
+    if (failures.length > 0) {
+      log.warn("cron.snapshot.retrying", { count: failures.length });
+      const retry = await runSnapshots(failures.map((f) => f.user));
+      snapshotIds.push(...retry.ids);
+      failures = retry.failed;
+    }
+
+    const failedUserIds = failures.map((f) => f.user.id);
+    for (const f of failures) {
+      log.error("cron.snapshot.user_failed", { userId: f.user.id, error: String(f.reason) });
+    }
 
     if (users.length > 0 && snapshotIds.length === 0) {
       // Total failure: 500 so cron monitoring flags the run as failed.

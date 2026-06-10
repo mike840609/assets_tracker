@@ -6,10 +6,6 @@
     {
       "path": "/api/cron/snapshot",
       "schedule": "30 21 * * *"
-    },
-    {
-      "path": "/api/cron/snapshot",
-      "schedule": "30 23 * * *"
     }
   ],
   "functions": {
