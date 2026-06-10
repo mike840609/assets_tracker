@@ -298,7 +298,7 @@ export async function getAccountMonthlyCashFlow(
       accountId: { in: accounts.map((a) => a.id) },
       type: { in: ["DEPOSIT", "WITHDRAWAL"] },
     },
-    select: { amount: true, type: true, createdAt: true, accountId: true },
+    select: { amount: true, type: true, currency: true, createdAt: true, accountId: true },
     orderBy: { createdAt: "asc" },
   });
 
@@ -307,7 +307,9 @@ export async function getAccountMonthlyCashFlow(
   for (const tx of transactions) {
     const monthKey = tx.createdAt.toISOString().slice(0, 7);
     const key = `${tx.accountId}::${monthKey}`;
-    const currency = accountCurrencyMap.get(tx.accountId) ?? "USD";
+    // Prefer the currency captured at write time; legacy rows (null) fall
+    // back to the account's current currency.
+    const currency = tx.currency ?? accountCurrencyMap.get(tx.accountId) ?? "USD";
     const rate = resolveRate(allRatesMap, currency, baseCurrency) ?? 1;
     const amount = Number(tx.amount) * rate;
     const signed = tx.type === "DEPOSIT" ? amount : -amount;
@@ -352,7 +354,7 @@ export async function getMonthlyCashFlow(
       accountId: { in: accounts.map((a) => a.id) },
       type: { in: ["DEPOSIT", "WITHDRAWAL"] },
     },
-    select: { amount: true, type: true, createdAt: true, accountId: true },
+    select: { amount: true, type: true, currency: true, createdAt: true, accountId: true },
     orderBy: { createdAt: "asc" },
   });
 
@@ -360,7 +362,9 @@ export async function getMonthlyCashFlow(
 
   for (const tx of transactions) {
     const monthKey = tx.createdAt.toISOString().slice(0, 7); // "YYYY-MM"
-    const currency = accountCurrencyMap.get(tx.accountId) ?? "USD";
+    // Prefer the currency captured at write time; legacy rows (null) fall
+    // back to the account's current currency.
+    const currency = tx.currency ?? accountCurrencyMap.get(tx.accountId) ?? "USD";
     const rate = resolveRate(allRatesMap, currency, baseCurrency) ?? 1;
     const amount = Number(tx.amount) * rate;
     const signed = tx.type === "DEPOSIT" ? amount : -amount;

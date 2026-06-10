@@ -42,6 +42,9 @@ export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
         accountId: id,
         type: "EDIT",
         amount: diff,
+        // The new balance is denominated in the currency the account will
+        // have after this update, so capture that one.
+        currency: parsed.data.currency ?? existingAccount.currency,
         note: body.note || `Manual balance update (${diff > 0 ? "+" : ""}${diff})`,
       },
     });

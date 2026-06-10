@@ -311,6 +311,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
                     holdingId: newHolding.id,
                     type: t.type,
                     quantity: t.quantity,
+                    price: t.price ?? null,
                     note: t.note,
                     createdAt: t.createdAt,
                   })),
@@ -327,6 +328,9 @@ export const POST = withAuth(async (request, _ctx, userId) => {
                 accountId: newAccount.id,
                 type: t.type,
                 amount: t.amount,
+                // Legacy backups predate the currency column — assume the
+                // account's currency, which is what readers fall back to.
+                currency: t.currency ?? acc.currency,
                 note: t.note,
                 createdAt: t.createdAt,
               })),
