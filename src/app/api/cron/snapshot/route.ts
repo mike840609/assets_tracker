@@ -5,7 +5,10 @@ import { refreshAllPrices } from "@/lib/services/price-service";
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { ok, failure } from "@/lib/api-responses";
 import { CRON_SECRET } from "@/lib/env";
-import { log } from "@/lib/logger";
+import { log, withTiming } from "@/lib/logger";
+
+/** Bounded fan-out: each snapshot runs several queries against the pool. */
+const SNAPSHOT_CONCURRENCY = 5;
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -23,27 +26,30 @@ export async function GET(request: Request) {
         expiration: { lt: today },
         quantity: { gt: 0 },
       },
+      select: { id: true, quantity: true },
     });
     if (expiredOptions.length > 0) {
-      log.info("cron.options.expire", { count: expiredOptions.length });
-      await Promise.all(
-        expiredOptions.map((h) =>
+      // One atomic batch (two statements) instead of a transaction per
+      // option — bounded round-trips and the whole sweep commits together.
+      await withTiming(
+        "cron.phase.options_sweep",
+        () =>
           prisma.$transaction([
-            prisma.holdingTransaction.create({
-              data: {
+            prisma.holdingTransaction.createMany({
+              data: expiredOptions.map((h) => ({
                 holdingId: h.id,
-                type: "SELL",
-                quantity: Number(h.quantity),
+                type: "SELL" as const,
+                quantity: h.quantity,
                 price: 0,
                 note: "Expired",
-              },
+              })),
             }),
-            prisma.holding.update({
-              where: { id: h.id },
+            prisma.holding.updateMany({
+              where: { id: { in: expiredOptions.map((h) => h.id) } },
               data: { quantity: 0 },
             }),
           ]),
-        ),
+        { count: expiredOptions.length },
       );
       revalidateTag("accounts", "max");
     }
@@ -60,14 +66,16 @@ export async function GET(request: Request) {
     for (const row of accountCurrencies) sourceCurrencies.add(row.currency);
     for (const row of holdingCurrencies) if (row.currency) sourceCurrencies.add(row.currency);
     for (const row of settings) sourceCurrencies.add(row.baseCurrency);
-    log.info("cron.rates.refresh", { count: sourceCurrencies.size });
-    await Promise.all([...sourceCurrencies].map((c) => refreshExchangeRates(c)));
+    await withTiming(
+      "cron.phase.rates_refresh",
+      () => Promise.all([...sourceCurrencies].map((c) => refreshExchangeRates(c))),
+      { count: sourceCurrencies.size },
+    );
     revalidateTag("exchange-rates", "max");
     revalidateTag("net-worth", "max");
 
     // 1b. Refresh all prices to ensure the snapshot is accurate
-    log.info("cron.prices.refresh");
-    const priceResult = await refreshAllPrices();
+    const priceResult = await withTiming("cron.phase.prices_refresh", () => refreshAllPrices());
     if (priceResult.errors.length > 0) {
       // Snapshots still proceed on cached prices — a stale data point
       // beats a missing one.
@@ -81,41 +89,54 @@ export async function GET(request: Request) {
     revalidateTag("prices", "max");
     revalidateTag("prices:crypto", "max");
 
-    // 2. Get all users and their settings
+    // 2. Snapshot only users with at least one active account — everyone
+    // else would just accumulate pointless netWorth: 0 rows.
     const users = await prisma.user.findMany({
+      where: { appAccounts: { some: { isActive: true } } },
       include: { appSettings: true },
     });
 
     type SnapshotUser = (typeof users)[number];
 
-    // 3. Create snapshots for each user (in parallel), isolating failures —
-    // one bad user must not cost everyone else their daily snapshot.
+    // 3. Create snapshots in bounded batches, isolating failures — one bad
+    // user must not cost everyone else their daily snapshot.
     const runSnapshots = async (batch: SnapshotUser[]) => {
-      const settled = await Promise.allSettled(
-        batch.map((user) => createSnapshot(user.id, user.appSettings?.baseCurrency ?? "USD")),
-      );
       const ids: string[] = [];
       const failed: { user: SnapshotUser; reason: unknown }[] = [];
-      settled.forEach((result, i) => {
-        if (result.status === "fulfilled") ids.push(result.value.id);
-        else failed.push({ user: batch[i], reason: result.reason });
-      });
+      for (let i = 0; i < batch.length; i += SNAPSHOT_CONCURRENCY) {
+        const chunk = batch.slice(i, i + SNAPSHOT_CONCURRENCY);
+        const settled = await Promise.allSettled(
+          chunk.map((user) => createSnapshot(user.id, user.appSettings?.baseCurrency ?? "USD")),
+        );
+        settled.forEach((result, j) => {
+          if (result.status === "fulfilled") ids.push(result.value.id);
+          else failed.push({ user: chunk[j], reason: result.reason });
+        });
+      }
       return { ids, failed };
     };
 
-    const first = await runSnapshots(users);
-    const snapshotIds = first.ids;
-    let failures = first.failed;
+    const { snapshotIds, failures } = await withTiming(
+      "cron.phase.snapshots",
+      async () => {
+        const first = await runSnapshots(users);
+        const ids = first.ids;
+        let failed = first.failed;
 
-    // One in-route retry: the Hobby plan allows a single daily cron, so
-    // transient failures (DB hiccup, fetch blip) get their second chance
-    // here rather than via a second scheduled run.
-    if (failures.length > 0) {
-      log.warn("cron.snapshot.retrying", { count: failures.length });
-      const retry = await runSnapshots(failures.map((f) => f.user));
-      snapshotIds.push(...retry.ids);
-      failures = retry.failed;
-    }
+        // One in-route retry: the Hobby plan allows a single daily cron, so
+        // transient failures (DB hiccup, fetch blip) get their second chance
+        // here rather than via a second scheduled run.
+        if (failed.length > 0) {
+          log.warn("cron.snapshot.retrying", { count: failed.length });
+          const retry = await runSnapshots(failed.map((f) => f.user));
+          ids.push(...retry.ids);
+          failed = retry.failed;
+        }
+
+        return { snapshotIds: ids, failures: failed };
+      },
+      { userCount: users.length },
+    );
 
     const failedUserIds = failures.map((f) => f.user.id);
     for (const f of failures) {
