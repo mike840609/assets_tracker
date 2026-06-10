@@ -108,26 +108,30 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
     const amountError = getCashTransactionAmountError(nextCashTx);
     if (amountError) return failure(amountError, 400);
 
-    // Recompute balance delta whenever amount or type changes.
-    if (data.amount !== undefined || data.type !== undefined) {
-      const oldTx = { type: cashTx.type, amount: Number(cashTx.amount) };
-      const delta = calculateBalanceDelta(oldTx, nextCashTx);
-      if (delta !== 0) {
-        await prisma.account.update({
-          where: { id: accountId },
-          data: { cashBalance: { increment: delta } },
-        });
+    // Balance adjustment and transaction update commit atomically so a
+    // failure can't leave the cash balance out of sync with the ledger.
+    const updatedTx = await prisma.$transaction(async (tx) => {
+      // Recompute balance delta whenever amount or type changes.
+      if (data.amount !== undefined || data.type !== undefined) {
+        const oldTx = { type: cashTx.type, amount: Number(cashTx.amount) };
+        const delta = calculateBalanceDelta(oldTx, nextCashTx);
+        if (delta !== 0) {
+          await tx.account.update({
+            where: { id: accountId },
+            data: { cashBalance: { increment: delta } },
+          });
+        }
       }
-    }
 
-    const updatedTx = await prisma.cashTransaction.update({
-      where: { id: transactionId },
-      data: {
-        ...(data.amount !== undefined && { amount: data.amount }),
-        ...(data.type !== undefined && { type: data.type }),
-        ...(data.note !== undefined && { note: data.note }),
-        ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
-      },
+      return tx.cashTransaction.update({
+        where: { id: transactionId },
+        data: {
+          ...(data.amount !== undefined && { amount: data.amount }),
+          ...(data.type !== undefined && { type: data.type }),
+          ...(data.note !== undefined && { note: data.note }),
+          ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
+        },
+      });
     });
 
     invalidateAccountCaches(userId);
@@ -187,12 +191,13 @@ export const DELETE = withAuth<TxCtx>(async (_request, { params }, userId) => {
     }
 
     const delta = calculateBalanceDelta({ type: cashTx.type, amount: Number(cashTx.amount) }, null);
-    await prisma.account.update({
-      where: { id: accountId },
-      data: { cashBalance: { increment: delta } },
-    });
-
-    await prisma.cashTransaction.delete({ where: { id: transactionId } });
+    await prisma.$transaction([
+      prisma.account.update({
+        where: { id: accountId },
+        data: { cashBalance: { increment: delta } },
+      }),
+      prisma.cashTransaction.delete({ where: { id: transactionId } }),
+    ]);
     invalidateAccountCaches(userId);
     return ok({ ok: true });
   }
