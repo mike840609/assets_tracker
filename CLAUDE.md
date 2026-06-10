@@ -25,6 +25,19 @@ A personal net-worth / asset tracking application built with **Next.js 16** (App
 | Validation | Zod 4                                            |
 | Fonts      | Geist Sans / Geist Mono via `next/font/google`   |
 
+## Hosting Constraints (Free Plans)
+
+The app is deployed on **Vercel Hobby** and **Neon Free** — both free tiers. Any implementation must fit inside their limits:
+
+- **Vercel Hobby**
+  - **Only one cron job** is allowed, and the daily snapshot owns it (`vercel.json` must keep a single `crons` entry — adding a second one breaks the deploy). Anything that needs scheduled retries or follow-up work must live _inside_ that single run (see the in-route retry in `/api/cron/snapshot`) or use an external trigger (e.g. a GitHub Actions schedule calling the endpoint with `CRON_SECRET`).
+  - Cron timing is **best-effort** — the run can fire up to ~an hour late, and failed runs are **not retried** automatically.
+  - Function `maxDuration` caps at **60s**; long pipelines must budget their phases.
+- **Neon Free**
+  - Compute **autosuspends when idle** — expect cold-start latency on the first query of a request; don't treat a slow first query as a regression.
+  - The connection pool is small: **bound any parallel query fan-out** (chunked batches instead of unbounded `Promise.all`, batched statements over per-row transactions) and avoid long-running interactive transactions.
+  - Storage/compute quotas are limited — avoid designs that accumulate unbounded rows (prefer upserts for daily data, prune or skip pointless rows).
+
 ## Commands
 
 ```bash
