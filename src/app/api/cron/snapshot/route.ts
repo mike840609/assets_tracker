@@ -67,7 +67,15 @@ export async function GET(request: Request) {
 
     // 1b. Refresh all prices to ensure the snapshot is accurate
     log.info("cron.prices.refresh");
-    await refreshAllPrices();
+    const priceResult = await refreshAllPrices();
+    if (priceResult.errors.length > 0) {
+      // Snapshots still proceed on cached prices; the catch-up cron run
+      // retries with fresh data and the upsert overwrites today's rows.
+      log.warn("cron.prices.refresh_errors", {
+        updated: priceResult.updated,
+        errors: priceResult.errors,
+      });
+    }
     // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
     revalidateTag("net-worth", "max");
     revalidateTag("prices", "max");
@@ -78,14 +86,36 @@ export async function GET(request: Request) {
       include: { appSettings: true },
     });
 
-    // 3. Create snapshots for each user (in parallel)
-    const snapshots = await Promise.all(
+    // 3. Create snapshots for each user (in parallel), isolating failures —
+    // cron has no retry, so one bad user must not cost everyone else
+    // their daily snapshot.
+    const results = await Promise.allSettled(
       users.map((user) => {
         const baseCurrency = user.appSettings?.baseCurrency ?? "USD";
         log.info("cron.snapshot.create", { userId: user.id, baseCurrency });
         return createSnapshot(user.id, baseCurrency);
       }),
     );
+
+    const snapshotIds: string[] = [];
+    const failedUserIds: string[] = [];
+    results.forEach((result, i) => {
+      if (result.status === "fulfilled") {
+        snapshotIds.push(result.value.id);
+      } else {
+        failedUserIds.push(users[i].id);
+        log.error("cron.snapshot.user_failed", {
+          userId: users[i].id,
+          error: String(result.reason),
+        });
+      }
+    });
+
+    if (users.length > 0 && snapshotIds.length === 0) {
+      // Total failure: 500 so cron monitoring flags the run as failed.
+      log.error("cron.snapshot.all_failed", { userCount: users.length });
+      return failure("All snapshots failed", 500);
+    }
 
     // 4. Invalidate snapshot/history caches now that new rows exist
     revalidateTag("snapshots", "max");
@@ -94,8 +124,10 @@ export async function GET(request: Request) {
     }
 
     return ok({
-      success: true,
-      snapshotIds: snapshots.map((s) => s.id),
+      success: failedUserIds.length === 0,
+      snapshotIds,
+      ...(failedUserIds.length > 0 && { failedUserIds }),
+      priceRefresh: { updated: priceResult.updated, errors: priceResult.errors },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

@@ -213,11 +213,25 @@ export async function refreshAllPrices(): Promise<{
   updated: number;
   errors: string[];
 }> {
-  const holdings = await prisma.holding.findMany({
-    select: { symbol: true, assetType: true },
-    distinct: ["symbol"],
-  });
-  return refreshPricesForHoldings(holdings);
+  // Watchlist symbols are included so their cached prices don't silently
+  // age until a user happens to trigger refreshPricesForUser.
+  const [holdings, trackedStocks] = await Promise.all([
+    prisma.holding.findMany({
+      select: { symbol: true, assetType: true },
+      distinct: ["symbol"],
+    }),
+    prisma.stockWatchItem.findMany({
+      select: { symbol: true },
+      distinct: ["symbol"],
+    }),
+  ]);
+
+  const holdingKeys = new Set(holdings.map((holding) => holding.symbol));
+  const stockWatchHoldings = trackedStocks
+    .filter((stock) => !holdingKeys.has(stock.symbol))
+    .map((stock) => ({ symbol: stock.symbol, assetType: "STOCK" }));
+
+  return refreshPricesForHoldings([...holdings, ...stockWatchHoldings]);
 }
 
 export async function refreshPricesForUser(userId: string): Promise<{
@@ -293,7 +307,15 @@ async function refreshPricesForHoldings(
   const allPrices = new Map([...stockPrices, ...cryptoPrices]);
 
   const entries = [...allPrices];
-  if (entries.length === 0) return { updated: 0, errors: [] };
+  if (entries.length === 0) {
+    // Every fetch came back empty — report it instead of a silent success
+    // so callers (cron, manual refresh) can tell "all fresh" from "all failed".
+    const requested = stockSymbols.length + cryptoSymbols.length;
+    if (requested > 0) {
+      errors.push(`No prices returned for any of ${requested} symbol(s)`);
+    }
+    return { updated: 0, errors };
+  }
 
   try {
     const params: unknown[] = [];
