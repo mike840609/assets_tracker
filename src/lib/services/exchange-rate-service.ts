@@ -38,8 +38,32 @@ export const getAllExchangeRates = cache(async (): Promise<Map<string, number>> 
 });
 
 /**
- * Resolve a rate from a pre-loaded map, falling back to inverse.
- * Use this instead of getExchangeRate when you already have the map.
+ * Derive a cross rate via USD from already-known rates, e.g.
+ * TWD→EUR = (USD→EUR) / (USD→TWD). The daily cron warms USD rates for
+ * every in-use currency, so this resolves most pairs that lack a direct
+ * or inverse entry — without an external fetch.
+ */
+function crossRateViaUsd(
+  get: (key: string) => number | undefined,
+  from: string,
+  to: string,
+): number | undefined {
+  const leg = (currency: string): number | undefined => {
+    const direct = get(`USD_${currency}`);
+    if (direct !== undefined) return direct;
+    const inverse = get(`${currency}_USD`);
+    return inverse !== undefined && inverse !== 0 ? 1 / inverse : undefined;
+  };
+  const usdToFrom = leg(from);
+  const usdToTo = leg(to);
+  if (usdToFrom === undefined || usdToTo === undefined || usdToFrom === 0) return undefined;
+  return usdToTo / usdToFrom;
+}
+
+/**
+ * Resolve a rate from a pre-loaded map, falling back to inverse, then
+ * to a USD cross rate. Use this instead of getExchangeRate when you
+ * already have the map.
  */
 export function resolveRate(
   rateMap: Map<string, number>,
@@ -51,7 +75,7 @@ export function resolveRate(
   if (direct !== undefined) return direct;
   const inverse = rateMap.get(`${to}_${from}`);
   if (inverse !== undefined) return 1 / inverse;
-  return undefined;
+  return crossRateViaUsd((key) => rateMap.get(key), from, to);
 }
 
 /**
@@ -183,6 +207,16 @@ export const getExchangeRate = cache(async function getExchangeRate(
   const inverse = await prisma.exchangeRate.findUnique({ where: { id: `${to}_${from}` } });
   if (inverse) return 1 / Number(inverse.rate);
 
+  // Derive via USD before hitting external APIs — the daily cron warms
+  // USD rates for every in-use currency, so this is usually available.
+  const usdLegs = await prisma.exchangeRate.findMany({
+    where: { id: { in: [`USD_${from}`, `${from}_USD`, `USD_${to}`, `${to}_USD`] } },
+    select: { id: true, rate: true },
+  });
+  const legMap = new Map(usdLegs.map((r) => [r.id, Number(r.rate)]));
+  const derived = crossRateViaUsd((key) => legMap.get(key), from, to);
+  if (derived !== undefined) return derived;
+
   // Slow path: fetch from external APIs (with timeout)
   const fetchAndStore = async (): Promise<number> => {
     const rates = await fetchExchangeRates(from);
@@ -213,7 +247,8 @@ export const getExchangeRate = cache(async function getExchangeRate(
  * Resolve missing exchange rate pairs with a global timeout.
  * Groups pairs by source currency to minimise external API calls
  * (one fetchExchangeRates per unique source instead of per pair).
- * If resolution takes too long, unresolved pairs default to 1.
+ * Pairs still unresolved after the timeout are derived via USD cross
+ * rates; only pairs with no conversion path at all default to 1.
  */
 export async function resolveMissingRates(
   missingPairs: Array<[string, string]>,
@@ -252,11 +287,19 @@ export async function resolveMissingRates(
 
   await withTimeout(resolveAll, timeoutMs, undefined);
 
-  // Fill any still-unresolved pairs with 1
+  // Derive still-unresolved pairs via USD from rates we already have;
+  // only fall back to 1 when no conversion path exists at all.
   for (const key of uniquePairs) {
     if (ratesMap[key] === undefined) {
-      ratesMap[key] = 1;
-      log.warn("rates.unresolved", { key });
+      const [from, to] = key.split("_");
+      const derived = crossRateViaUsd((k) => ratesMap[k], from, to);
+      if (derived !== undefined) {
+        ratesMap[key] = derived;
+        log.info("rates.derived_cross", { key });
+      } else {
+        ratesMap[key] = 1;
+        log.warn("rates.unresolved", { key });
+      }
     }
   }
 }
