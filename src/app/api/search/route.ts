@@ -74,6 +74,12 @@ function inferCurrency(symbol: string, exchange: string): string {
   return exchangeCurrencyMap[exchange] || "USD";
 }
 
+function rankResult(r: SearchResult): number {
+  if (r.symbol.endsWith(".TW") || r.symbol.endsWith(".TWO")) return 0;
+  if (r.currency === "USD") return 1;
+  return 2;
+}
+
 // NOTE: this intentionally does NOT swallow errors. A thrown error (Yahoo down,
 // network failure) must propagate so the handler can return a non-200 and the
 // caller can tell "search is broken" apart from "no matches". Errors also aren't
@@ -107,7 +113,8 @@ const cachedYahooSearch = unstable_cache(
         exchange: (q.exchDisp as string) || (q.exchange as string) || "",
         type: mapQuoteType(q.quoteType as string),
         currency: inferCurrency(q.symbol as string, (q.exchange as string) || ""),
-      }));
+      }))
+      .sort((a: SearchResult, b: SearchResult) => rankResult(a) - rankResult(b));
   },
   ["yahoo-search"],
   { revalidate: 3600 },
