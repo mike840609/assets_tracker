@@ -5,7 +5,7 @@ import { ok, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 
 function invalidateGoalCaches(userId: string) {
-  revalidateTag(`goals:${userId}`, "max");
+  revalidateTag(`goals:${userId}`, { expire: 0 });
 }
 
 export const GET = withAuth(async (_req, _ctx, userId) => {

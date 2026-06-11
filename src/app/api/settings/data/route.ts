@@ -91,7 +91,7 @@ async function loadExchangeRateMap() {
 async function getImportRateMap(importData: ImportData, targetBaseCurrency: string) {
   const currencies = collectImportCurrencies(importData, targetBaseCurrency);
   await Promise.all([...currencies].map((currency) => refreshExchangeRates(currency)));
-  revalidateTag("exchange-rates", "max");
+  revalidateTag("exchange-rates", { expire: 0 });
 
   const rateMap = await loadExchangeRateMap();
   for (const currency of currencies) {
@@ -164,14 +164,14 @@ function normalizeSnapshotAmount(
 }
 
 function invalidateImportCaches(userId: string) {
-  revalidateTag("accounts", "max");
+  revalidateTag("accounts", { expire: 0 });
   revalidateTag(`accounts:${userId}`, { expire: 0 });
-  revalidateTag("goals", "max");
-  revalidateTag(`goals:${userId}`, "max");
-  revalidateTag("settings", "max");
-  revalidateTag(`settings:${userId}`, "max");
-  revalidateTag("snapshots", "max");
-  revalidateTag("net-worth", "max");
+  revalidateTag("goals", { expire: 0 });
+  revalidateTag(`goals:${userId}`, { expire: 0 });
+  revalidateTag("settings", { expire: 0 });
+  revalidateTag(`settings:${userId}`, { expire: 0 });
+  revalidateTag("snapshots", { expire: 0 });
+  revalidateTag("net-worth", { expire: 0 });
   revalidateTag(`net-worth:${userId}`, { expire: 0 });
   revalidateTag(`history:${userId}`, { expire: 0 });
 }

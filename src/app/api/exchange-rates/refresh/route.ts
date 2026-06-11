@@ -43,11 +43,11 @@ export const POST = withAuth(async (request, _ctx, userId) => {
 
   // Only bust caches when something actually changed.
   if (totalUpdated > 0) {
-    // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
-    revalidateTag("exchange-rates", "max");
-    revalidateTag("net-worth", "max");
-    revalidateTag(`net-worth:${userId}`, "max");
-    revalidateTag(`history:${userId}`, "max");
+    // User-initiated refresh: expire immediately so the next read is fresh.
+    revalidateTag("exchange-rates", { expire: 0 });
+    revalidateTag("net-worth", { expire: 0 });
+    revalidateTag(`net-worth:${userId}`, { expire: 0 });
+    revalidateTag(`history:${userId}`, { expire: 0 });
   }
   return ok({
     updated: totalUpdated,

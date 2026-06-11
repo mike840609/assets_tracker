@@ -13,5 +13,11 @@ export const GET = withAuth(async (request, _ctx, userId) => {
   if (to) options.to = new Date(to);
 
   const snapshots = await getFullNormalizedHistory(userId, baseCurrency, options);
-  return ok(snapshots);
+  // Per-user data: `private` keeps it out of shared caches while letting the
+  // browser reuse the response briefly (snapshots only change once a day).
+  return ok(snapshots, {
+    headers: {
+      "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+    },
+  });
 });

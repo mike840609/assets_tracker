@@ -7,7 +7,7 @@ import { withAuth } from "@/lib/api-handler";
 type IdCtx = { params: Promise<{ id: string }> };
 
 function invalidateGoalCaches(userId: string) {
-  revalidateTag(`goals:${userId}`, "max");
+  revalidateTag(`goals:${userId}`, { expire: 0 });
 }
 
 export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {

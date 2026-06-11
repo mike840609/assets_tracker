@@ -44,7 +44,7 @@ The existing `docs/` folder has trackers (PERFORMANCE, PLATFORM, UI*UX, CODE_QUA
 | S14                                | Custom account ordering (drag-reorder + `sortOrder`)                   | M      | 🟡     | ❌     | fresh                  |
 | S15                                | Dividend / income tracking (`IncomeEvent` model)                       | L      | 🟡     | ❌     | fresh                  |
 | S16                                | Expand crypto symbol coverage beyond ~20 CoinGecko entries             | S      | 🟡     | ❌     | fresh                  |
-| S17                                | `Cache-Control` on `/api/snapshots`, `/api/exchange-rates`             | S      | 🟡     | ❌     | V17 / V18              |
+| S17                                | `Cache-Control` on `/api/snapshots`, `/api/exchange-rates`             | S      | 🟡     | ✅     | V17 / V18              |
 | S18                                | Bundle-size CI gate (PR-fail if main grows >5%)                        | S      | 🟡     | ❌     | V22 / V33              |
 | S19                                | Preconnect to `va.vercel-scripts.com`                                  | XS     | 🟡     | ❌     | V28                    |
 | S20                                | Vercel Skew Protection on (**promote to Tier 1** — bundle with F6)     | XS     | 🟡     | ❌     | V35                    |
@@ -202,9 +202,9 @@ New `IncomeEvent { id, holdingId, type: DIVIDEND|COUPON|INTEREST, amount, curren
 
 #### S17 — API caching headers
 
-**S | 🟡 | ❌ — closes V17 / V18**
+**S | 🟡 | ✅ Done (2026-06-11) — closes V17 / V18**
 
-`GET /api/snapshots` and `GET /api/exchange-rates` are pure reads. Add `Cache-Control: private, max-age=60, stale-while-revalidate=300`. Pairs with the existing `revalidateTag` invalidation — clients get instant repeat reads, mutations still bust.
+`GET /api/snapshots` and `GET /api/exchange-rates` are pure reads. Add `Cache-Control: private, max-age=60, stale-while-revalidate=300`. Pairs with the existing `revalidateTag` invalidation — clients get instant repeat reads, mutations still bust. `/api/exchange-rates` shipped earlier (`public, s-maxage=3600, stale-while-revalidate=86400`); `/api/snapshots` (`private, max-age=60, stale-while-revalidate=300`) completes the item.
 
 #### S18 — Bundle-size CI gate
 
