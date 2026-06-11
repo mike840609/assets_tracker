@@ -45,10 +45,10 @@ The existing `docs/` folder has trackers (PERFORMANCE, PLATFORM, UI*UX, CODE_QUA
 | S15                                | Dividend / income tracking (`IncomeEvent` model)                       | L      | 🟡     | ❌     | fresh                  |
 | S16                                | Expand crypto symbol coverage beyond ~20 CoinGecko entries             | S      | 🟡     | ❌     | fresh                  |
 | S17                                | `Cache-Control` on `/api/snapshots`, `/api/exchange-rates`             | S      | 🟡     | ✅     | V17 / V18              |
-| S18                                | Bundle-size CI gate (PR-fail if main grows >5%)                        | S      | 🟡     | ❌     | V22 / V33              |
-| S19                                | Preconnect to `va.vercel-scripts.com`                                  | XS     | 🟡     | ❌     | V28                    |
+| S18                                | Bundle-size CI gate (PR-fail if main grows >5%)                        | S      | 🟡     | ✅     | V22 / V33              |
+| S19                                | Preconnect to `va.vercel-scripts.com`                                  | XS     | 🟡     | ✅     | V28                    |
 | S20                                | Vercel Skew Protection on (**promote to Tier 1** — bundle with F6)     | XS     | 🟡     | ❌     | V35                    |
-| S21                                | Chart CLS reserve (explicit `min-height` on lazy charts)               | XS     | 🟡     | ❌     | V23                    |
+| S21                                | Chart CLS reserve (explicit `min-height` on lazy charts)               | XS     | 🟡     | ✅     | V23                    |
 | S22                                | Holding price-alert thresholds (email / web push)                      | L      | 🟡     | ❌     | fresh                  |
 | S23                                | Tax-lot tracking (FIFO / specific-lot cost basis)                      | L      | 🟡     | ❌     | fresh                  |
 | **Tier 3 — Polish & DX**           |                                                                        |        |        |        |
@@ -208,15 +208,15 @@ New `IncomeEvent { id, holdingId, type: DIVIDEND|COUPON|INTEREST, amount, curren
 
 #### S18 — Bundle-size CI gate
 
-**S | 🟡 | ❌ — closes V22 / V33**
+**S | 🟡 | ✅ Done (2026-06-11) — closes V22 / V33**
 
-`@next/bundle-analyzer` already runs locally. Wire a GitHub Action that compares main-chunk size against the base branch and fails the PR if growth >5%. Prevents bundle regressions from creeping back after B1–B15 closure.
+Shipped as `scripts/ci/bundle-size.mjs` (zero-dep; gzips all `.js`/`.css` under `.next/static`) plus a PR-only `bundle-size` job in `.github/workflows/ci.yml`. Master pushes save a `bundle-baseline.json` via `actions/cache`; PRs build, measure, and fail at >5% total-gzip growth (soft-pass with a `::warning::` when the baseline is missing — first run or cache eviction — so it self-heals on the next master push). Deliberate growth: the gate only blocks the introducing PR; the baseline absorbs the growth after merge.
 
 #### S19 — Preconnect to `va.vercel-scripts.com`
 
-**XS | 🟡 | ❌ — closes V28**
+**XS | 🟡 | ✅ Done (verified 2026-06-11, docs were stale) — closes V28**
 
-Add `<link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin>` to root layout `<head>`. Web Vitals beacon currently does a cold DNS+TLS handshake on every fresh session.
+Already shipped: `src/app/layout.tsx:288-289` has `<link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin="anonymous" />` plus a `dns-prefetch` fallback (and `dns-prefetch` for the exchange-rate APIs).
 
 #### S20 — Vercel Skew Protection
 
@@ -228,9 +228,9 @@ Enable in Vercel project settings + read `x-deployment-id` header in client. Pre
 
 #### S21 — Chart CLS reserve
 
-**XS | 🟡 | ❌ — closes V23**
+**XS | 🟡 | ✅ Done (verified 2026-06-11, docs were stale) — closes V23**
 
-Dynamic-imported charts (`AllocationChart`, `CurrencyExposureChart`, `TrendChart`) currently shift layout when they hydrate. Add explicit `min-height` to their wrappers matching the rendered height. Pure CSS, no behavior change.
+Height reserves shipped via fixed-height chart skeletons and Recharts `initialDimension`: lazy analysis charts render sized fallbacks (`src/components/analysis/lazy-analysis-charts.tsx`), the dashboard trend chart has a dedicated skeleton (`src/components/dashboard/trend-chart-skeleton.tsx`), and `src/components/ui/chart.tsx` plumbs `initialDimension` into `ResponsiveContainer` so charts occupy their final height on first paint.
 
 #### S22 — Holding price-alert thresholds
 

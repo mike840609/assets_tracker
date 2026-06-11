@@ -119,3 +119,56 @@ jobs:
             nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma', 'next.config.ts') }}-
 
       - run: npm run build
+
+      - name: Measure bundle baseline
+        run: node scripts/ci/bundle-size.mjs --write bundle-baseline.json
+
+      - name: Save bundle baseline
+        uses: actions/cache/save@v4
+        with:
+          path: bundle-baseline.json
+          key: bundle-baseline-${{ github.sha }}
+
+  bundle-size:
+    name: Bundle size
+    if: github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '[skip ci]') && !contains(github.event.pull_request.body || '', '[skip ci]')
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            src/generated/prisma
+            ~/.cache/prisma
+          key: deps-${{ runner.os }}-node22-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
+
+      - name: Restore Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma', 'next.config.ts') }}-${{ github.sha }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma', 'next.config.ts') }}-
+
+      - run: npm run build
+
+      - name: Measure head bundle
+        run: node scripts/ci/bundle-size.mjs --write bundle-head.json
+
+      - name: Restore bundle baseline
+        uses: actions/cache/restore@v4
+        with:
+          path: bundle-baseline.json
+          key: bundle-baseline-pr-${{ github.sha }}
+          restore-keys: |
+            bundle-baseline-
+
+      - name: Compare against baseline
+        run: node scripts/ci/bundle-size.mjs --compare bundle-baseline.json --against bundle-head.json --max-growth 0.05
