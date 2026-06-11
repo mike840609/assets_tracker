@@ -25,6 +25,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
     revalidateTag(`net-worth:${userId}`, { expire: 0 });
     revalidateTag("prices", { expire: 0 });
     revalidateTag("prices:crypto", { expire: 0 });
+    revalidateTag(`accounts:${userId}`, { expire: 0 });
   }
   return ok(result);
 });
