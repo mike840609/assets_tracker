@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { cacheLife, cacheTag, unstable_cache } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAllExchangeRates, resolveRate } from "./exchange-rate-service";
 import { serializeAccountWithHoldings } from "@/lib/types";
@@ -194,19 +194,23 @@ async function computeNetWorthSummary(
 }
 
 /**
- * Cached version of net worth summary (5-minute TTL).
+ * Cached version of net worth summary (`"use cache"`, "hours" profile —
+ * freshness is driven by tag invalidation rather than the TTL, since every
+ * mutation route revalidates `net-worth:${userId}` or `net-worth`).
  * Tagged both broadly (`net-worth`) and per-user (`net-worth:${userId}`)
  * so global invalidators (cron snapshot, price refresh) keep working
  * while per-user mutations (account/holding writes) can scope their
  * invalidation. React cache() dedupes per-render.
  */
-export const getCachedNetWorthSummary = cache((userId: string, baseCurrency: string) =>
-  unstable_cache(
-    () => computeNetWorthSummary(userId, baseCurrency),
-    ["net-worth-summary", userId, baseCurrency],
-    {
-      revalidate: 300,
-      tags: ["net-worth", `net-worth:${userId}`],
-    },
-  )(),
-);
+async function getCachedNetWorthSummaryInner(
+  userId: string,
+  baseCurrency: string,
+): Promise<NetWorthSummary> {
+  "use cache";
+  cacheTag("net-worth");
+  cacheTag(`net-worth:${userId}`);
+  cacheLife("hours");
+  return computeNetWorthSummary(userId, baseCurrency);
+}
+
+export const getCachedNetWorthSummary = cache(getCachedNetWorthSummaryInner);
