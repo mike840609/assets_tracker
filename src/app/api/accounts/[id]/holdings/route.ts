@@ -24,7 +24,7 @@ async function maybeWarmExchangeRate(currency: string) {
     });
     if (existing) return;
     await refreshExchangeRates(currency);
-    revalidateTag("exchange-rates", "max");
+    revalidateTag("exchange-rates", { expire: 0 });
   } catch (error) {
     log.warn("rates.warm.failed", { currency, error: String(error) });
   }
@@ -130,7 +130,7 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
         update: { price: result.price, currency: result.currency, updatedAt: new Date() },
         create: { symbol: holding.symbol, price: result.price, currency: result.currency },
       });
-      revalidateTag("prices", "max");
+      revalidateTag("prices", { expire: 0 });
     }
   } catch (error) {
     // Non-blocking: if price fetch fails, holding is still created

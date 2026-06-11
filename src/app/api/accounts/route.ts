@@ -6,6 +6,10 @@ import { withAuth } from "@/lib/api-handler";
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { log } from "@/lib/logger";
 
+// revalidateTag convention (applies to all mutation routes): direct
+// user-initiated mutations use `{ expire: 0 }` so the very next read is fresh
+// (blocking revalidate); background jobs (cron) use `"max"` for
+// stale-while-revalidate semantics. See node_modules/next/dist/docs revalidateTag.
 function invalidateUserCaches(userId: string) {
   revalidateTag(`accounts:${userId}`, { expire: 0 });
   revalidateTag(`net-worth:${userId}`, { expire: 0 });
@@ -21,7 +25,7 @@ async function maybeWarmExchangeRate(currency: string) {
     });
     if (existing) return;
     await refreshExchangeRates(currency);
-    revalidateTag("exchange-rates", "max");
+    revalidateTag("exchange-rates", { expire: 0 });
   } catch (error) {
     log.warn("rates.warm.failed", { currency, error: String(error) });
   }

@@ -11,7 +11,7 @@ async function fetchUserGoalsInner(userId: string): Promise<SerializedGoal[]> {
   "use cache";
   cacheTag("goals");
   cacheTag(`goals:${userId}`);
-  cacheLife("minutes");
+  cacheLife("hours");
   const goals = await prisma.goal.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },

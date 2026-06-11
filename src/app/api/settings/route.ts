@@ -15,7 +15,7 @@ async function maybeWarmExchangeRate(currency: string) {
     });
     if (existing) return;
     await refreshExchangeRates(currency);
-    revalidateTag("exchange-rates", "max");
+    revalidateTag("exchange-rates", { expire: 0 });
   } catch (error) {
     log.warn("rates.warm.failed", { currency, error: String(error) });
   }
@@ -44,12 +44,11 @@ export const PATCH = withAuth(async (request, _ctx, userId) => {
     },
   });
 
-  // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
-  revalidateTag(`settings:${userId}`, "max");
+  revalidateTag(`settings:${userId}`, { expire: 0 });
   // If the base currency changed, the cached net-worth summary for this
   // user is stale (values are denominated in the old currency).
   if (parsed.data.baseCurrency !== undefined) {
-    revalidateTag(`net-worth:${userId}`, "max");
+    revalidateTag(`net-worth:${userId}`, { expire: 0 });
     void maybeWarmExchangeRate(parsed.data.baseCurrency);
   }
 
