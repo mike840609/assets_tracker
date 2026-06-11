@@ -65,7 +65,9 @@ test.describe("desktop plan split", () => {
     await expect(page.getByRole("tablist")).toHaveCount(0);
 
     await page.goto("/stocks");
-    await expect(page.getByRole("heading", { name: "Watchlist" })).toBeVisible();
+    // exact: the StocksOnboarding heading ("Start a watchlist from…") also matches a
+    // substring-based "Watchlist" heading query.
+    await expect(page.getByRole("heading", { name: "Watchlist", exact: true })).toBeVisible();
     await expect(page.getByText("Track stocks from a chosen price and date.")).toBeVisible();
   });
 });

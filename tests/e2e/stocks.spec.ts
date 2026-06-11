@@ -45,7 +45,11 @@ test.describe("stock tracker", () => {
     }
 
     await page.goto("/stocks");
-    await expect(page.getByRole("heading", { name: "No stocks tracked yet" })).toBeVisible();
+    // The bare empty state was replaced by StocksOnboarding (stocks-onboarding.tsx).
+    await expect(
+      page.getByRole("heading", { name: "Start a watchlist from your own reference price." }),
+    ).toBeVisible();
+    await expect(page.getByText("No tracked stocks")).toBeVisible();
 
     await page.route("**/api/search**", async (route) => {
       await route.fulfill({
