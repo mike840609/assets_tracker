@@ -10,7 +10,6 @@
   ],
   "functions": {
     "src/app/api/cron/snapshot/route.ts": { "maxDuration": 60 },
-    "src/app/api/prices/refresh/route.ts": { "maxDuration": 60 },
-    "src/app/api/exchange-rates/refresh/route.ts": { "maxDuration": 30 }
+    "src/app/api/refresh/route.ts": { "maxDuration": 60 }
   }
 }
