@@ -23,6 +23,7 @@ import { formatCurrency, getCurrencySymbol } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
 
@@ -263,51 +264,29 @@ export function TrendChart({
         </div>
         {!hideRangeFilter && (
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
-            {ranges.map((r) => (
-              <button
-                key={r.label}
-                onClick={() => setRange(r.label)}
-                aria-pressed={range === r.label}
-                className={`px-2 py-0.5 text-xs rounded-full transition-colors ${
-                  range === r.label
-                    ? "bg-primary text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    : "text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
+            <SegmentedControl
+              variant="pill"
+              size="xs"
+              options={ranges.map((r) => ({ value: r.label, label: r.label }))}
+              value={range}
+              onValueChange={setRange}
+              aria-label={t("title")}
+              className="justify-end gap-0.5 p-0"
+            />
             <div className="mx-1 h-3 w-px bg-border" />
-            <div
-              role="group"
+            <SegmentedControl
+              variant="pill"
+              size="xs"
+              options={[
+                { value: "off", label: currencySymbol, title: t("absToggleTitle") },
+                { value: "on", label: "%", title: t("pctToggleTitle") },
+              ]}
+              value={pctMode === "on" ? "on" : "off"}
+              onValueChange={setPctMode}
               aria-label={t("valueModeLabel")}
-              className="inline-flex items-center rounded-full bg-muted p-0.5"
-            >
-              <button
-                onClick={() => setPctMode("off")}
-                aria-pressed={!isPercentMode}
-                title={t("absToggleTitle")}
-                className={`px-2 py-0.5 text-xs rounded-full tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                  !isPercentMode
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {currencySymbol}
-              </button>
-              <button
-                onClick={() => setPctMode("on")}
-                aria-pressed={isPercentMode}
-                title={t("pctToggleTitle")}
-                className={`px-2 py-0.5 text-xs rounded-full tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                  isPercentMode
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                %
-              </button>
-            </div>
+              className="gap-0 bg-muted p-0.5"
+              itemClassName="tabular-nums"
+            />
           </div>
         )}
       </CardHeader>

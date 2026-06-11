@@ -701,6 +701,7 @@ export function AccountsList({
               <button
                 type="button"
                 onClick={() => setShowArchived((prev) => !prev)}
+                aria-expanded={showArchived}
                 className="w-full px-4 py-3 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors"
               >
                 <span className="text-sm font-semibold">{t("accountsList.archivedSection")}</span>
@@ -711,8 +712,13 @@ export function AccountsList({
                   />
                 </span>
               </button>
-              {showArchived && (
-                <div className="divide-y">
+              <div
+                inert={!showArchived}
+                className={`grid motion-safe:transition-[grid-template-rows] motion-normal ${
+                  showArchived ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                }`}
+              >
+                <div className="min-h-0 overflow-hidden divide-y">
                   {archivedAccounts.map((account) => (
                     <div
                       key={account.id}
@@ -748,7 +754,7 @@ export function AccountsList({
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
             </div>
           )}
         </>
