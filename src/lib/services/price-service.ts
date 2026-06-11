@@ -10,6 +10,13 @@ const RETRY_DELAYS_MS = [500, 1_500]; // 2 retries: 500 ms then 1.5 s
 
 export type RefreshPricesResult = {
   updated: number;
+  /**
+   * Symbols whose persisted price actually differs from the previously cached
+   * value (or had no cached row). Compared exactly after normalizing both
+   * sides to the Decimal(18,8) column precision — no epsilon. Lets callers
+   * (the cron) gate global cache revalidations on real change.
+   */
+  changed: number;
   /** Symbols skipped because their cached price was younger than the TTL. */
   skippedFresh: number;
   errors: string[];
@@ -25,6 +32,14 @@ export type RefreshPricesOptions = {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * Normalize to the Decimal(18,8) column precision so a freshly fetched float
+ * and a value read back from the DB round-trip to the same number.
+ */
+function normalizeTo8dp(value: number): number {
+  return Number(value.toFixed(8));
 }
 
 function isRetryable(err: unknown): boolean {
@@ -262,6 +277,7 @@ export async function refreshPricesForStockSymbols(
   if (uniqueSymbols.length === 0) {
     return {
       updated: 0,
+      changed: 0,
       skippedFresh: 0,
       errors: [],
       nextRefreshAt: null,
@@ -281,6 +297,7 @@ async function refreshPricesForHoldings(
   if (holdings.length === 0) {
     return {
       updated: 0,
+      changed: 0,
       skippedFresh: 0,
       errors: [],
       nextRefreshAt: null,
@@ -320,6 +337,7 @@ async function refreshPricesForHoldings(
           : null;
         return {
           updated: 0,
+          changed: 0,
           skippedFresh,
           errors: [],
           nextRefreshAt: nextRefreshAt?.toISOString() ?? null,
@@ -349,9 +367,33 @@ async function refreshPricesForHoldings(
 
   const entries = [...allPrices];
   if (entries.length === 0) {
-    return { updated: 0, skippedFresh, errors: [], nextRefreshAt: null, retryAfterSeconds: null };
+    return {
+      updated: 0,
+      changed: 0,
+      skippedFresh,
+      errors: [],
+      nextRefreshAt: null,
+      retryAfterSeconds: null,
+    };
   }
 
+  // Count real value changes before the write so callers (the cron) can gate
+  // global cache revalidations. Reading the existing rows first is one cheap
+  // indexed SELECT; the upsert below still bumps updatedAt on every write so
+  // the freshness gate and FreshnessBadge keep working.
+  const existingRows = await prisma.priceCache.findMany({
+    where: { symbol: { in: entries.map(([symbol]) => symbol) } },
+    select: { symbol: true, price: true },
+  });
+  const existingPriceBySymbol = new Map(
+    existingRows.map((row) => [row.symbol, normalizeTo8dp(Number(row.price))]),
+  );
+  const changedCount = entries.filter(([symbol, { price }]) => {
+    const previous = existingPriceBySymbol.get(symbol);
+    return previous === undefined || previous !== normalizeTo8dp(price);
+  }).length;
+
+  let changed = 0;
   try {
     const params: unknown[] = [];
     const placeholders = entries.map(([symbol, { price, currency }]) => {
@@ -369,10 +411,15 @@ async function refreshPricesForHoldings(
       ...params,
     );
     updated = entries.length;
-    revalidateTag("prices", "max");
+    changed = changedCount;
+    // Only bust the cached price reads when a value actually changed — a
+    // write that rewrites identical values leaves cache contents identical.
+    if (changed > 0) {
+      revalidateTag("prices", "max");
+    }
   } catch (error) {
     errors.push(`Bulk upsert failed: ${String(error)}`);
   }
 
-  return { updated, skippedFresh, errors, nextRefreshAt: null, retryAfterSeconds: null };
+  return { updated, changed, skippedFresh, errors, nextRefreshAt: null, retryAfterSeconds: null };
 }

@@ -7,6 +7,13 @@ import { log, withTiming } from "@/lib/logger";
 
 export type RefreshRatesResult = {
   updated: number;
+  /**
+   * Pairs whose persisted rate actually differs from the previously stored
+   * value (or had no row). Compared exactly after normalizing both sides to
+   * the Decimal(18,8) column precision — no epsilon. Lets callers (the cron)
+   * gate global cache revalidations on real change.
+   */
+  changed: number;
   /** True when the base currency's rates were fresh and no fetch happened. */
   skippedFresh: boolean;
   /** When the rates become stale again; null unless skippedFresh. */
@@ -20,6 +27,14 @@ const RATE_FETCH_TIMEOUT_MS = 1200;
 // staleness check costs no DB read (same warm-instance pattern as
 // lib/rate-limit.ts). Cold starts simply refresh once and re-prime it.
 const lastRateRefreshAt = new Map<string, number>();
+
+/**
+ * Normalize to the Decimal(18,8) column precision so a freshly fetched float
+ * and a value read back from the DB round-trip to the same number.
+ */
+function normalizeTo8dp(value: number): number {
+  return Number(value.toFixed(8));
+}
 
 /**
  * Cache Components read of all exchange rates.
@@ -173,6 +188,7 @@ export async function refreshExchangeRates(
     log.info("rates.refresh.skipped_fresh", { base: baseCurrency });
     return {
       updated: 0,
+      changed: 0,
       skippedFresh: true,
       nextRefreshAt: new Date(last + FX_REFRESH_TTL_MS).toISOString(),
     };
@@ -181,7 +197,24 @@ export async function refreshExchangeRates(
   const rates = await fetchExchangeRates(baseCurrency);
   const entries = Object.entries(rates);
 
-  if (entries.length === 0) return { updated: 0, skippedFresh: false, nextRefreshAt: null };
+  if (entries.length === 0) {
+    return { updated: 0, changed: 0, skippedFresh: false, nextRefreshAt: null };
+  }
+
+  // Count real value changes before the write so callers (the cron) can gate
+  // global cache revalidations. One cheap PK SELECT; the upsert below still
+  // bumps updatedAt on every write so freshness logic keeps working.
+  const existingRows = await prisma.exchangeRate.findMany({
+    where: { id: { in: entries.map(([toCurrency]) => `${baseCurrency}_${toCurrency}`) } },
+    select: { id: true, rate: true },
+  });
+  const existingRateById = new Map(
+    existingRows.map((row) => [row.id, normalizeTo8dp(Number(row.rate))]),
+  );
+  const changed = entries.filter(([toCurrency, rate]) => {
+    const previous = existingRateById.get(`${baseCurrency}_${toCurrency}`);
+    return previous === undefined || previous !== normalizeTo8dp(rate);
+  }).length;
 
   const params: unknown[] = [];
   const placeholders = entries.map(([toCurrency, rate]) => {
@@ -201,5 +234,5 @@ export async function refreshExchangeRates(
 
   // Stamp only after a successful persist so failed refreshes retry.
   lastRateRefreshAt.set(baseCurrency, Date.now());
-  return { updated: entries.length, skippedFresh: false, nextRefreshAt: null };
+  return { updated: entries.length, changed, skippedFresh: false, nextRefreshAt: null };
 }

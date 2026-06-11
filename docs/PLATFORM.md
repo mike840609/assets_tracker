@@ -370,6 +370,8 @@ Ordered by **expected Active-CPU saved per change**, given the bot-dominated tra
 
 #### P6 — Gate the cron's `revalidateTag` calls on "anything-changed"
 
+> **Status: ✅ Done 2026-06-11.** `refreshExchangeRates` / `refreshPricesForHoldings` now return a `changed` count (existing rows read with one cheap pre-write SELECT, values compared exactly after normalizing both sides to the `Decimal(18,8)` column precision), and the cron gates `exchange-rates` / `prices` / `prices:crypto` / `net-worth` revalidations on it — logged via `cron.revalidate.gate`. `snapshots` + per-user `history:${id}` invalidations stay always-on (snapshot rows are written every night). Changed-count gating was chosen over the ε net-worth comparison sketched below: exact per-table value comparison, no epsilon tuning, one cheap pre-write SELECT.
+
 **Effect:** Medium. Today the cron unconditionally invalidates `net-worth`, `prices:crypto`, `snapshots`, and a per-user `history:${user.id}` tag for every user. Every invalidation forces the **next** page load to rebuild via expensive RSC reads — wasted Active CPU on days when no prices actually moved.
 
 - File: `src/app/api/cron/snapshot/route.ts:53-74`.
@@ -423,7 +425,7 @@ After P1–P3 land, re-pull MCP logs for 3 days and recompute the Active-CPU tra
 | P7                                   | `src/lib/auth-session.ts`, `src/lib/api-handler.ts`                                                                                                                                              |
 | P3                                   | `src/app/privacy/page.tsx`, `src/app/login/page.tsx`, `src/app/terms/page.tsx`                                                                                                                   |
 | P5                                   | `src/app/api/prices/refresh/route.ts`, `src/app/api/exchange-rates/refresh/route.ts`, `src/components/dashboard/dashboard-actions.tsx`, `src/lib/services/price-service.ts` (`refreshAllPrices`) |
-| P6                                   | `src/app/api/cron/snapshot/route.ts`                                                                                                                                                             |
+| P6 ✅                                | `src/app/api/cron/snapshot/route.ts`, `src/lib/services/price-service.ts`, `src/lib/services/exchange-rate-service.ts`                                                                           |
 | P8                                   | `src/lib/services/price-service.ts`, `src/app/api/search/route.ts`, `src/app/api/options/chain/route.ts`, new `src/lib/yahoo.ts`                                                                 |
 | P2                                   | None in repo (managed in Vercel dashboard; export JSON to `docs/firewall_rules.json` for tracking)                                                                                               |
 
