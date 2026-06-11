@@ -359,6 +359,8 @@ Ordered by **expected Active-CPU saved per change**, given the bot-dominated tra
 
 #### P5 — Collapse the dashboard "refresh" button into one user-scoped function
 
+> **Status: ✅ Done 2026-06-11.** New `POST /api/refresh` (`src/app/api/refresh/route.ts`) runs `refreshPricesForUser(userId)` and the per-currency `refreshExchangeRates(...)` fan-out in one invocation; the old `/api/prices/refresh` and `/api/exchange-rates/refresh` routes are deleted and `src/lib/refresh-client.ts` now issues a single fetch (consumers unchanged). Rate limit: 5/min per user (`market-refresh`). The unified revalidation block follows the documented convention — per-user tags (`net-worth:${userId}`, `accounts:${userId}`, `history:${userId}`) use `{ expire: 0 }` so the refreshing user's next read is fresh, while global tags (`prices`, `prices:crypto`, `exchange-rates`, `net-worth`) use `"max"` stale-while-revalidate; the `accounts:${userId}` invalidation from PR #414 is carried forward.
+
 **Effect:** Medium per click; grows in importance as user traffic grows.
 
 - File: `src/components/dashboard/dashboard-actions.tsx:46-49`. Today: two fetches in parallel (`/api/prices/refresh` + `/api/exchange-rates/refresh`).
@@ -417,15 +419,15 @@ After P1–P3 land, re-pull MCP logs for 3 days and recompute the Active-CPU tra
 
 ### Critical files
 
-| Item                                 | Files                                                                                                                                                                                            |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P1, P3, P4, P7 (header pass-through) | `src/proxy.ts`                                                                                                                                                                                   |
-| P7                                   | `src/lib/auth-session.ts`, `src/lib/api-handler.ts`                                                                                                                                              |
-| P3                                   | `src/app/privacy/page.tsx`, `src/app/login/page.tsx`, `src/app/terms/page.tsx`                                                                                                                   |
-| P5                                   | `src/app/api/prices/refresh/route.ts`, `src/app/api/exchange-rates/refresh/route.ts`, `src/components/dashboard/dashboard-actions.tsx`, `src/lib/services/price-service.ts` (`refreshAllPrices`) |
-| P6                                   | `src/app/api/cron/snapshot/route.ts`                                                                                                                                                             |
-| P8                                   | `src/lib/services/price-service.ts`, `src/app/api/search/route.ts`, `src/app/api/options/chain/route.ts`, new `src/lib/yahoo.ts`                                                                 |
-| P2                                   | None in repo (managed in Vercel dashboard; export JSON to `docs/firewall_rules.json` for tracking)                                                                                               |
+| Item                                 | Files                                                                                                                            |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| P1, P3, P4, P7 (header pass-through) | `src/proxy.ts`                                                                                                                   |
+| P7                                   | `src/lib/auth-session.ts`, `src/lib/api-handler.ts`                                                                              |
+| P3                                   | `src/app/privacy/page.tsx`, `src/app/login/page.tsx`, `src/app/terms/page.tsx`                                                   |
+| P5 ✅                                | `src/app/api/refresh/route.ts` (replaces the two old refresh routes), `src/lib/refresh-client.ts`, `vercel.json`                 |
+| P6                                   | `src/app/api/cron/snapshot/route.ts`                                                                                             |
+| P8                                   | `src/lib/services/price-service.ts`, `src/app/api/search/route.ts`, `src/app/api/options/chain/route.ts`, new `src/lib/yahoo.ts` |
+| P2                                   | None in repo (managed in Vercel dashboard; export JSON to `docs/firewall_rules.json` for tracking)                               |
 
 ### Verification
 

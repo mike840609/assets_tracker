@@ -4,8 +4,9 @@ import { CLIENT_REFRESH_COOLDOWN_MS } from "@/lib/refresh-policy";
 
 /**
  * Shared client-side entry point for the dashboard/settings "refresh market
- * data" action. Centralizes the two POSTs plus a module-level cooldown so
- * every refresh surface (button, pull-to-refresh, settings) shares one state.
+ * data" action. Centralizes the single POST /api/refresh (prices + exchange
+ * rates in one invocation) plus a module-level cooldown so every refresh
+ * surface (button, pull-to-refresh, settings) shares one state.
  *
  * UX layer only — the server enforces its own freshness gate and per-user
  * rate limits regardless of what this module does.
@@ -51,27 +52,22 @@ export async function refreshMarketData(): Promise<RefreshOutcome> {
   }
 
   // Floor cooldown immediately so a double-fire (pull + button) can't send a
-  // second pair of requests while the first is in flight.
+  // second request while the first is in flight.
   setCooldown(Date.now() + CLIENT_REFRESH_COOLDOWN_MS);
 
   try {
-    const [priceRes, ratesRes] = await Promise.all([
-      fetch("/api/prices/refresh", { method: "POST" }),
-      fetch("/api/exchange-rates/refresh", { method: "POST" }),
-    ]);
+    const res = await fetch("/api/refresh", { method: "POST" });
 
-    if (priceRes.status === 429 || ratesRes.status === 429) {
-      const limited = priceRes.status === 429 ? priceRes : ratesRes;
-      const retryAfterSeconds = parseRetryAfterSeconds(limited);
+    if (res.status === 429) {
+      const retryAfterSeconds = parseRetryAfterSeconds(res);
       setCooldown(Date.now() + retryAfterSeconds * 1000);
       return { status: "cooldown", retryAfterSeconds };
     }
-    if (!priceRes.ok || !ratesRes.ok) return { status: "error" };
+    if (!res.ok) return { status: "error" };
 
-    const [{ data: priceData }, { data: ratesData }] = (await Promise.all([
-      priceRes.json(),
-      ratesRes.json(),
-    ])) as [{ data: RefreshPayload }, { data: RefreshPayload }];
+    const {
+      data: { prices: priceData, rates: ratesData },
+    } = (await res.json()) as { data: { prices: RefreshPayload; rates: RefreshPayload } };
 
     const pricesUpdated = priceData.updated ?? 0;
     const ratesUpdated = ratesData.updated ?? 0;
