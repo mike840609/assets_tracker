@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
 
@@ -21,12 +22,28 @@ const rootVariants: Record<SegmentedControlVariant, string> = {
   underline: "flex border-b",
 };
 
+/* The selected surface lives on a shared sliding indicator (one per group via
+   layoutId), so the item classes only carry text treatment for each state. */
 const itemVariants: Record<SegmentedControlVariant, string> = {
-  pill: "rounded-full text-muted-foreground hover:bg-muted aria-pressed:bg-primary aria-pressed:text-primary-foreground",
+  pill: "rounded-full text-muted-foreground not-aria-pressed:hover:bg-muted aria-pressed:text-primary-foreground",
   boxed:
-    "rounded-md border border-transparent text-muted-foreground font-medium hover:text-foreground aria-pressed:border-border aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm aria-pressed:font-semibold",
+    "rounded-md text-muted-foreground font-medium hover:text-foreground aria-pressed:text-foreground aria-pressed:font-semibold",
   underline:
-    "-mb-px rounded-none border-b-2 border-transparent px-4 pb-2 text-muted-foreground hover:text-foreground aria-pressed:border-primary aria-pressed:text-primary",
+    "-mb-px rounded-none border-b-2 border-transparent px-4 pb-2 text-muted-foreground hover:text-foreground aria-pressed:text-primary",
+};
+
+const indicatorVariants: Record<SegmentedControlVariant, string> = {
+  pill: "absolute inset-0 bg-primary",
+  boxed: "absolute inset-0 border border-border bg-background shadow-sm",
+  underline: "absolute inset-x-0 bottom-0 h-0.5 bg-primary",
+};
+
+/* Numeric radii (matching rounded-full / rounded-md) let framer-motion
+   scale-correct the corners while the indicator stretches between items. */
+const indicatorRadius: Record<SegmentedControlVariant, number> = {
+  pill: 9999,
+  boxed: 10,
+  underline: 0,
 };
 
 const sizeVariants: Record<SegmentedControlSize, string> = {
@@ -56,6 +73,12 @@ function SegmentedControl<T extends string>({
   itemClassName,
   "aria-label": ariaLabel,
 }: SegmentedControlProps<T>) {
+  const groupId = useId();
+  const reduceMotion = useReducedMotion();
+  const indicatorTransition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const };
+
   return (
     <div role="group" aria-label={ariaLabel} className={cn(rootVariants[variant], className)}>
       {options.map((option) => (
@@ -68,14 +91,23 @@ function SegmentedControl<T extends string>({
           title={option.title}
           disabled={option.disabled}
           className={cn(
-            "shrink-0 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+            "relative shrink-0 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
             itemVariants[variant],
             variant !== "underline" && sizeVariants[size],
             variant === "underline" && "text-sm font-medium capitalize",
             itemClassName,
           )}
         >
-          {option.label}
+          {value === option.value && (
+            <motion.span
+              aria-hidden
+              layoutId={`${groupId}-indicator`}
+              className={indicatorVariants[variant]}
+              style={{ borderRadius: indicatorRadius[variant] }}
+              transition={indicatorTransition}
+            />
+          )}
+          <span className="relative">{option.label}</span>
         </button>
       ))}
     </div>

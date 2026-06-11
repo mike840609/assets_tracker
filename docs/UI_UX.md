@@ -1087,9 +1087,27 @@ Each row uses `layout="position"`, `initial={{ opacity: 0, y: -8 }}`, `exit={{ o
 
 ### Out of scope (deferred)
 
-- Allocation pie hover pull-out spring (replace default Recharts tween) — proposed, not yet shipped.
+- Allocation pie hover pull-out spring (replace default Recharts tween) — proposed, not yet shipped. (Note: the pie's hover pull-out already animates via a 200 ms CSS transition on the custom `Sector` shape; only the spring-curve upgrade remains open.)
 - Net-worth card delta tick (▲/▼ pulse on `useCountUp` change) — decoration, deferred.
 - Desktop `<table>` row layout animations — fragile with `<tr>` + framer-motion; intentionally restricted to the mobile card list.
+
+---
+
+## Animation Polish — Selection & Disclosure Motion (2026-06-11)
+
+Second motion pass focused on state changes that previously snapped with no transition. All items gated by `useReducedMotion()` / `motion-safe:`.
+
+### A4 — SegmentedControl sliding active indicator — ✅ Done
+
+`src/components/ui/segmented-control.tsx` now renders the selected surface as a shared framer-motion `layoutId` indicator (one per group via `useId()`) instead of `aria-pressed:` background classes, so the active pill/box/underline slides between options (200 ms, `--ease-out-expo` curve; instant under reduced motion). All three variants covered: `pill` (primary pill), `boxed` (raised background box), `underline` (2 px primary bar). Item classes keep only the text treatment; numeric `borderRadius` is passed via `style` so framer-motion scale-corrects corners while the indicator stretches between different-width items. Animates the `/analysis` range selector + mobile tab switcher and the `/projections` lens toggle with no call-site changes.
+
+### A5 — TrendChart range chips + $/% toggle migrated to SegmentedControl — ✅ Done
+
+`src/components/dashboard/trend-chart.tsx` replaced its two bespoke `aria-pressed` button groups (range chips, `$`/`%` value-mode toggle) with `SegmentedControl` (`variant="pill" size="xs"`, matching the previous `px-2 py-0.5 text-xs` metrics). Removes the duplicated chip pattern and gives the dashboard the same sliding selection as `/analysis`.
+
+### A6 — Archived-accounts disclosure expand/collapse — ✅ Done
+
+`src/components/accounts/accounts-list.tsx` archived section now animates open/close with the CSS grid `grid-rows-[0fr] → grid-rows-[1fr]` technique (`motion-safe:transition-[grid-template-rows]` + `.motion-normal`), instead of conditional mount. Content stays mounted with `inert` while collapsed so hidden Restore/Delete buttons are unfocusable; button gains `aria-expanded`. Chevron rotation already existed; the content now follows it.
 
 ---
 
