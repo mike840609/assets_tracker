@@ -1,25 +1,28 @@
 name: E2E Smoke Tests
 
 on:
-  push:
-    branches: [master]
-    paths-ignore:
-      - "docs/**"
-      - "**.md"
+  deployment_status:
 
 concurrency:
-  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  group: e2e-${{ github.event.deployment.sha }}
   cancel-in-progress: true
 
 jobs:
   e2e:
     name: Playwright smoke tests
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, '[skip ci]')
+    # Run only on preview deployments — production uses VERCEL_ENV=production
+    # which never renders the preview-credentials password form.
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment != 'Production'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          # Check out the exact commit that was deployed
+          ref: ${{ github.event.deployment.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -64,6 +67,10 @@ jobs:
 
       - name: Run E2E tests
         run: npm run test:e2e
+        env:
+          # Vercel posts the live URL here automatically — no hardcoding needed
+          PLAYWRIGHT_TEST_BASE_URL: ${{ github.event.deployment_status.environment_url }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4

@@ -150,7 +150,8 @@ git worktree remove ../asset_tracker-<task-name>
 This repository uses a **light-vs-heavy CI split**:
 
 - **Pull requests**: run fast checks only (`lint`, `typecheck`).
-- **Push to `master`** (production merge path): run heavy checks (`build`, Playwright `e2e`).
+- **Push to `master`** (production merge path): run heavy checks (`build`).
+- **Vercel preview deployments**: the Playwright `e2e` smoke suite runs against the live preview URL (`deployment_status` trigger; production deployments are skipped since they never render the preview-credentials login). Requires the `E2E_PASSWORD` repo secret to match `PREVIEW_AUTH_PASSWORD` on Vercel previews.
 - **Docs-only / markdown-only changes** on push are skipped via workflow `paths-ignore`.
 - Add `[skip ci]` to a commit message to skip push-triggered heavy jobs.
 - Add `[skip ci]` to PR title/body to skip PR lint/typecheck jobs.
