@@ -31,10 +31,10 @@ Findings sourced from the Vercel MCP connector against project `prj_soY30S7ki1x3
 | V17 | `Cache-Control` + `"use cache"` / `cacheTag("exchange-rates")` on `/api/exchange-rates`                                                                                                                                    | Performance              | 🟡 Medium | 20 min  | ✅ Done                |
 | V18 | Opt `/analysis` and `/history` into PPR with `"use cache"` + `cacheTag`                                                                                                                                                    | Performance              | 🟡 Medium | 1 hr    | ❌ Not Done            |
 | V19 | Dynamic-import `AllocationChart` + `CurrencyExposureChart` like `TrendChart`                                                                                                                                               | Bundle                   | 🟡 Medium | 30 min  | ✅ Done                |
-| V20 | `Cache-Control: public, max-age=31536000, immutable` for `/public/*`                                                                                                                                                       | Performance              | 🟢 Low    | 15 min  | ❌ Not Done            |
+| V20 | `Cache-Control: public, max-age=31536000, immutable` for `/public/*`                                                                                                                                                       | Performance              | 🟢 Low    | 15 min  | ✅ Done                |
 | V21 | Audit `revalidateTag` after `POST /accounts`, `/holdings`, `/transactions`                                                                                                                                                 | Performance              | 🟡 Medium | 1–2 hrs | ❌ Not Done            |
-| V22 | Add `@next/bundle-analyzer` + baseline dashboard RSC payload                                                                                                                                                               | Observability            | 🟢 Low    | 30 min  | ⚠️ Partial             |
-| V23 | Reserve `min-h` / `aspect-ratio` on chart cards (CLS fix)                                                                                                                                                                  | Speed Insights · CLS     | 🔴 High   | 30 min  | ❌ Not Done            |
+| V22 | Add `@next/bundle-analyzer` + baseline dashboard RSC payload                                                                                                                                                               | Observability            | 🟢 Low    | 30 min  | ✅ Done                |
+| V23 | Reserve `min-h` / `aspect-ratio` on chart cards (CLS fix)                                                                                                                                                                  | Speed Insights · CLS     | 🔴 High   | 30 min  | ✅ Done                |
 | V24 | Preload Geist Sans `.woff2` + `content-visibility: auto` on below-fold cards                                                                                                                                               | Speed Insights · LCP/FCP | 🟡 Medium | 45 min  | ✅ Done                |
 | V25 | `startTransition` + memoize privacy/theme-toggle consumers                                                                                                                                                                 | Speed Insights · INP     | 🟡 Medium | 1 hr    | ✅ Done                |
 | V26 | Extend V18's PPR pattern to `/settings` and `/` (per-user cache key)                                                                                                                                                       | Speed Insights · TTFB    | 🟡 Medium | 1–2 hrs | ✅ Done                |
@@ -44,7 +44,7 @@ Findings sourced from the Vercel MCP connector against project `prj_soY30S7ki1x3
 | V30 | Wrap `router.refresh()` + inline-edit state setters in `startTransition` across transaction/holding mutators                                                                                                               | Speed Insights · INP     | 🟡 Medium | 45 min  | ✅ Done                |
 | V31 | Add `next.config.ts` `images.formats = ["image/avif", "image/webp"]` + `remotePatterns` for `lh3.googleusercontent.com`                                                                                                    | Speed Insights · LCP     | 🟢 Low    | 15 min  | ✅ Done                |
 | V32 | Configure `<SpeedInsights beforeSend={…}>` to drop `/login` + `/privacy` from telemetry                                                                                                                                    | Observability            | 🟢 Low    | 15 min  | ✅ Done                |
-| V33 | Ship `@next/bundle-analyzer` (supersedes V22) — prerequisite for measuring any further client-JS Speed Insights wins                                                                                                       | Observability            | 🟢 Low    | 30 min  | ⚠️ Partial             |
+| V33 | Ship `@next/bundle-analyzer` (supersedes V22) — prerequisite for measuring any further client-JS Speed Insights wins                                                                                                       | Observability            | 🟢 Low    | 30 min  | ✅ Done                |
 | V34 | Extend `maxDuration` in `vercel.json` to cover `/api/prices/refresh` (60 s) and `/api/exchange-rates/refresh` (30 s)                                                                                                       | Reliability              | 🟡 Medium | 5 min   | ✅ Done                |
 | V35 | Enable Skew Protection — keeps old deployment assets alive during transition so users don't hit JS chunk 404s on new deploy (configure via Vercel Dashboard → Project Settings → Deployment Protection, not `vercel.json`) | Reliability              | 🟢 Low    | 2 min   | ❌ Not Done            |
 | V36 | Add `poweredByHeader: false` to `next.config.ts`; set `images.minimumCacheTTL: 86400` for Google profile-picture cache (was 60 s default)                                                                                  | Performance              | 🟢 Low    | 5 min   | ✅ Done                |
@@ -107,13 +107,13 @@ Deployment `dpl_3KqPj4qBr3ZojdDaSxtKvo8iNhC2` (44s total, 292 MB build cache):
 
 **V19 — Dynamic-import sibling dashboard charts.** Extend the existing `lazy-charts` pattern to add `LazyAllocationChart` and `LazyCurrencyExposureChart`. Keep SSR enabled (unlike TrendChart which uses `ssr: false`) to preserve CLS. Critical files: `src/components/dashboard/lazy-charts.tsx`, `src/components/dashboard/dashboard-content.tsx`.
 
-**V20 — Long-cache `/public/*` static assets.** Add a second `source: "/:all*(svg|jpg|png|webp|avif|ico|woff2)"` entry in `next.config.ts` `headers()` with `Cache-Control: public, max-age=31536000, immutable`. Critical files: `next.config.ts`.
+**V20 — Long-cache `/public/*` static assets.** Done 2026-06-11. Implemented as two targeted `headers()` entries in `next.config.ts` rather than a broad extension-glob: `/splash/:path*` gets `public, max-age=31536000, immutable` (iOS PWA splash screens — produced only by `scripts/generate-splash-screens.mjs`; a design change requires renaming the file), and `/sw.js` is explicitly pinned to `public, max-age=0, must-revalidate` so no future broad pattern can long-cache the service worker. Deliberately not cached: og/twitter images, `robots.txt` (Vercel's default ETag/304 behavior is correct), and the unreferenced root starter SVGs (delete-candidates, not cache targets). Critical files: `next.config.ts`.
 
 **V21 — Audit `revalidateTag` fan-out.** Map each mutation to the narrowest tag(s) it should invalidate. Land V18 first so there are actual tagged reads to invalidate. Correct tag mappings: `POST /api/accounts` → `accounts:${userId}`, `net-worth:${userId}`; `POST /api/accounts/[id]/holdings` → `account:${id}`, `net-worth:${userId}`; etc.
 
-**V22 — Bundle-analyzer baseline.** `npm i -D @next/bundle-analyzer`. Wrap the export in `next.config.ts`. Run `ANALYZE=true npm run build` once and commit baseline numbers. Superseded by V33 / PE4.
+**V22 — Bundle-analyzer baseline.** Done 2026-06-11. The analyzer is wired (`ANALYZE=true npm run build` via `@next/bundle-analyzer` in `next.config.ts`), and the "commit a baseline" half is superseded by the S18 bundle-size CI gate: every master push saves a gzip baseline of `.next/static` via `scripts/ci/bundle-size.mjs`, and every PR is compared against it (fails at >5% growth). Superseded by V33 / PE4 / ROADMAP S18.
 
-**V23 — Reserve chart card height (CLS).** Set explicit `min-h-[320px]` on each chart card wrapper in `allocation-chart.tsx`, `currency-exposure-chart.tsx`, `trend-chart.tsx`. Match the skeleton in `dashboard-skeleton.tsx`. Verify CLS < 0.1.
+**V23 — Reserve chart card height (CLS).** Done 2026-06-11 (verified shipped, docs were stale). Lazy charts render fixed-height skeleton fallbacks and pass `initialDimension` to Recharts' `ResponsiveContainer` so the first paint already occupies the final height: see `src/components/analysis/lazy-analysis-charts.tsx`, `src/components/dashboard/trend-chart-skeleton.tsx`, and the `initialDimension` prop plumbed through `src/components/ui/chart.tsx`. Same evidence closes ROADMAP S21.
 
 **V24 — Preload fonts + defer below-fold work.** Mark the `next/font/local` declaration with `preload: true` for the weights used by the hero (`400`, `600`). Add `content-visibility: auto` to below-fold chart cards. Critical files: `src/app/layout.tsx`, chart card components.
 
@@ -133,7 +133,7 @@ Deployment `dpl_3KqPj4qBr3ZojdDaSxtKvo8iNhC2` (44s total, 292 MB build cache):
 
 **V32 — Trim Speed Insights telemetry.** Configure `<SpeedInsights beforeSend={(data) => { if (data.url.includes("/login") || data.url.includes("/privacy")) return null; return data; }} />`. Critical files: `src/app/layout.tsx`.
 
-**V33 — Ship `@next/bundle-analyzer`.** `npm i -D @next/bundle-analyzer`. Wrap the export in `next.config.ts`. Commit the `ANALYZE=true npm run build` baseline (dashboard route JS, shared chunks, largest single module) to this doc. Re-run on every Speed Insights PR.
+**V33 — Ship `@next/bundle-analyzer`.** Done 2026-06-11. The analyzer ships in `next.config.ts` (enabled via `ANALYZE=true npm run build`). The "commit a baseline to this doc" step is superseded by the automated S18 CI gate (`scripts/ci/bundle-size.mjs` + the `bundle-size` job in `.github/workflows/ci.yml`): master pushes save the gzip baseline, PRs fail on >5% total-gzip growth, so the baseline maintains itself instead of rotting in a doc.
 
 **V34 — Extend `maxDuration` for refresh routes.** Add per-function entries: `"src/app/api/prices/refresh/route.ts": { "maxDuration": 60 }` and `"src/app/api/exchange-rates/refresh/route.ts": { "maxDuration": 30 }`. Critical files: `vercel.json`.
 
@@ -245,7 +245,7 @@ Findings sourced against Vercel project on **2026-04-24**. Scope: only **launch 
 ### Deferred (not launch blockers)
 
 - Bundle-size reduction items (PERFORMANCE.md B-series)
-- Remaining Vercel ❌ items not listed above (V7, V15, V17/V18/V20, V22/V33, V23)
+- Remaining Vercel ❌ items not listed above (V7, V15, V18; V17/V20/V22/V33/V23 have since shipped)
 - Feature backlog (SUGGESTIONS.md #7 cost basis, #17 dividends, #23 2FA, #24 Plaid)
 - Rendering ladder items (PERFORMANCE.md S/P/I/X)
 - PWA manifest / install prompt
@@ -393,9 +393,11 @@ Ordered by **expected Active-CPU saved per change**, given the bot-dominated tra
 
 #### P8 — Cache `yahoo-finance2` module + class instance at module scope
 
-**Effect:** Low. `price-service.ts:73-74`, `search/route.ts:79-80`, `options/chain/route.ts:44-45` each do `await import("yahoo-finance2")` and `new YahooFinance()` per call. Node's ESM cache makes the second import a no-op, but instantiating a new class per call still allocates state.
+**✅ Done (verified 2026-06-11, docs were stale).** Shipped as `src/lib/services/yahoo-client.ts` exporting `getYahooClient()`; all callers (`src/lib/services/price-service.ts`, `src/lib/services/stock-watch-service.ts`, `src/app/api/search/route.ts`, `src/app/api/options/chain/route.ts`) import the shared singleton instead of doing `await import("yahoo-finance2")` + `new YahooFinance()` per call.
 
-- Add `src/lib/yahoo.ts` exporting a `const yf = new YahooFinance()` singleton; update the three callers to import it.
+**Effect:** Low. `price-service.ts:73-74`, `search/route.ts:79-80`, `options/chain/route.ts:44-45` each did `await import("yahoo-finance2")` and `new YahooFinance()` per call. Node's ESM cache makes the second import a no-op, but instantiating a new class per call still allocates state.
+
+- Add a module exporting a Yahoo client singleton; update the three callers to import it.
 
 **Pros:** Slightly lower per-call CPU/allocation; cleaner code; warm HTTP keep-alive across Fluid invocations.
 **Cons:** Minor — singletons can hold internal state across requests; in Fluid that's actually a benefit.

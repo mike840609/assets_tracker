@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartEmptyState } from "./chart-empty-state";
@@ -22,7 +23,7 @@ interface Props {
   baseCurrency: string;
 }
 
-export function TopMoversList({ movers, baseCurrency }: Props) {
+export const TopMoversList = memo(function TopMoversList({ movers, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const tCat = useTranslations("categories");
   const { privacyMode } = usePrivacyMode();
@@ -121,4 +122,4 @@ export function TopMoversList({ movers, baseCurrency }: Props) {
       </CardContent>
     </Card>
   );
-}
+});

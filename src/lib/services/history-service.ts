@@ -286,17 +286,32 @@ export async function getAccountMonthlyCashFlow(
   cacheTag(`history:${userId}`);
   cacheLife("hours");
 
-  const [accounts, allRatesMap] = await Promise.all([
+  const [accounts, allRatesMap, firstSnapshot] = await Promise.all([
     prisma.account.findMany({ where: { userId }, select: { id: true, currency: true } }),
     getAllExchangeRates(),
+    prisma.netWorthSnapshot.findFirst({
+      where: { userId },
+      orderBy: { date: "asc" },
+      select: { date: true },
+    }),
   ]);
 
   const accountCurrencyMap = new Map(accounts.map((a) => [a.id, a.currency]));
+
+  // PE29 — floor the transaction scan to the first day (UTC) of the month
+  // containing the user's earliest snapshot. Months before the first snapshot
+  // are unreachable by the analysis UI: the axis buckets and attribution math
+  // are snapshot-derived (including the "All" range), so this floor changes no
+  // rendered output — it only avoids scanning/converting unreachable rows.
+  const floor = firstSnapshot
+    ? new Date(Date.UTC(firstSnapshot.date.getUTCFullYear(), firstSnapshot.date.getUTCMonth(), 1))
+    : null;
 
   const transactions = await prisma.cashTransaction.findMany({
     where: {
       accountId: { in: accounts.map((a) => a.id) },
       type: { in: ["DEPOSIT", "WITHDRAWAL"] },
+      ...(floor ? { createdAt: { gte: floor } } : {}),
     },
     select: { amount: true, type: true, createdAt: true, accountId: true },
     orderBy: { createdAt: "asc" },

@@ -619,7 +619,7 @@ This lets the i18n + locale promises start immediately in parallel with the sett
 - **PE26 — analysis tab stays CSS-`hidden` on mobile** (`analysis-view.tsx`): `display:none` subtrees don't repaint and `HistoryView` is conditionally mounted; unmounting would restart chart animations. Low urgency.
 - **PE27 — cascaded `useMemo` chain on range change** (`analysis-view.tsx:126-216`): correctly dependency-keyed; collapse only after profiling shows it matters.
 - **PE28 — `ssr: false` on lazy charts**: charts SSR only their `!mounted` placeholder branch already, so the flip changes little; interacts with the PPR shell and open CLS item V23.
-- **PE29 — unbounded cashTransaction scan** in `getAccountMonthlyCashFlow`: fetches the user's full cash-transaction history on each cache fill; could be date-floored or pushed to SQL `GROUP BY`. Cached hourly, not urgent.
+- **PE29 — unbounded cashTransaction scan** in `getAccountMonthlyCashFlow`: ✅ Done (2026-06-11). Date-floored to the first day (UTC) of the month containing the user's earliest `NetWorthSnapshot` (a third member of the existing `Promise.all`; no floor when the user has no snapshots). Safe because analysis buckets and attribution are snapshot-derived — months before the first snapshot are unreachable by any range, including "All", so the floor changes no rendered output. The SQL `GROUP BY` alternative was not needed.
 
 ### Evaluated and rejected (recorded so they aren't re-flagged)
 
