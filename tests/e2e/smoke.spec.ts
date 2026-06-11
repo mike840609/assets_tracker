@@ -106,7 +106,8 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   const createdAccountId = createdAccount!.id;
 
   // ── Add holding ─────────────────────────────────────────────────────────
-  await page.getByRole("button", { name: "Add Item" }).click();
+  // Toolbar button was renamed "Add Item" → "Add Holding" in #377.
+  await page.getByRole("button", { name: "Add Holding" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
 
   // Skip the search step and enter the ticker manually
@@ -130,7 +131,9 @@ test("2. create an account, add a holding manually, and see it in the list", asy
     await page.getByRole("option", { name: accountName }).click();
   }
 
-  await page.getByRole("button", { name: "Add Holding" }).click();
+  // Scope to the dialog: the toolbar "Add Holding" trigger is still in the
+  // accessibility tree behind the overlay.
+  await page.getByRole("dialog").getByRole("button", { name: "Add Holding" }).click();
 
   // Verify persistence via API to avoid UI cache timing flakiness.
   await expect(async () => {

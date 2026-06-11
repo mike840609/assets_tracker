@@ -18,6 +18,9 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    // The PWA service worker (#404) intercepts fetches, which bypasses
+    // page.route() mocks (e.g. the /api/search mock in stocks.spec.ts).
+    serviceWorkers: "block",
   },
   projects: [
     {
