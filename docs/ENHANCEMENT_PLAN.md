@@ -25,17 +25,17 @@ Impact: 🔴 data risk / security / launch blocker · 🟡 meaningful · 🟢 po
 
 Small fixes; every one is a verified live bug with user-visible consequences.
 
-| ID | Item | Effort | Impact | Source |
-| --- | --- | --- | --- | --- |
-| E1 | UTC-floor the snapshot date | XS | 🔴 | BUGS Critical |
-| E2 | History dedupe tie-break by `max(createdAt)` | XS | 🔴 | BUGS High |
-| E3 | Guard `token.sub` in auth callbacks | XS | 🔴 | BUGS High |
-| E4 | FX: persist inverse rates + surface a stale flag | S | 🔴 | BUGS High ×2 |
-| E5 | Stop defaulting null `contractMultiplier` to 100 | S | 🟡 | BUGS High |
-| E6 | Tighten validators (qty>0, immutable assetType, tx unions, datetime) | S | 🟡 | BUGS High ×3 |
-| E7 | Decimal-safe `cashBalance` diff in account PATCH | XS | 🟡 | BUGS Medium |
-| E8 | Zod-validate holdings DELETE body; scope deletes/updates in the write itself | XS | 🟡 | BUGS Medium + new |
-| E9 | Goal import: fail loudly when `scopeRefId` remap misses | XS | 🟡 | new (audit) |
+| ID  | Item                                                                         | Effort | Impact | Source            |
+| --- | ---------------------------------------------------------------------------- | ------ | ------ | ----------------- |
+| E1  | ✅ UTC-floor the snapshot date                                               | XS     | 🔴     | BUGS Critical     |
+| E2  | ✅ History dedupe tie-break by `max(createdAt)`                              | XS     | 🔴     | BUGS High         |
+| E3  | ✅ Guard `token.sub` in auth callbacks                                       | XS     | 🔴     | BUGS High         |
+| E4  | FX: persist inverse rates + surface a stale flag                             | S      | 🔴     | BUGS High ×2      |
+| E5  | Stop defaulting null `contractMultiplier` to 100                             | S      | 🟡     | BUGS High         |
+| E6  | Tighten validators (qty>0, immutable assetType, tx unions, datetime)         | S      | 🟡     | BUGS High ×3      |
+| E7  | ✅ Decimal-safe `cashBalance` diff in account PATCH                          | XS     | 🟡     | BUGS Medium       |
+| E8  | Zod-validate holdings DELETE body; scope deletes/updates in the write itself | XS     | 🟡     | BUGS Medium + new |
+| E9  | ✅ Goal import: fail loudly when `scopeRefId` remap misses                   | XS     | 🟡     | new (audit)       |
 
 - **E1** — `src/lib/services/snapshot-service.ts:8-9` still floors "today" with
   local-time `setHours(0,0,0,0)`. The upsert key `userId_date_baseCurrency`
@@ -67,15 +67,15 @@ Small fixes; every one is a verified live bug with user-visible consequences.
 
 ## Tier 1 — Security hardening
 
-| ID | Item | Effort | Impact | Source |
-| --- | --- | --- | --- | --- |
-| E10 | Timing-safe `CRON_SECRET` comparison | XS | 🔴 | ROADMAP S2 |
-| E11 | Rate-limit coverage on all mutation routes | S | 🔴 | BUGS High (partial) |
-| E12 | `getClientIp` fallback chain (`cf-connecting-ip`, `x-real-ip`) | XS | 🟡 | BUGS High |
-| E13 | Import hardening: body-size cap + Zod array `.max()` | S | 🟡 | new (audit) |
-| E14 | Validate `/api/options/chain` symbol shape before upstream fetch | XS | 🟡 | BUGS Medium |
-| E15 | CSP header: Report-Only → enforce (report endpoint scaffolded) | M | 🔴 | ROADMAP S8 |
-| E16 | GDPR completion: true account deletion (`user.delete` cascade) | M | 🔴 | ROADMAP S9 ⚠️ |
+| ID  | Item                                                             | Effort | Impact | Source              |
+| --- | ---------------------------------------------------------------- | ------ | ------ | ------------------- |
+| E10 | Timing-safe `CRON_SECRET` comparison                             | XS     | 🔴     | ROADMAP S2          |
+| E11 | Rate-limit coverage on all mutation routes                       | S      | 🔴     | BUGS High (partial) |
+| E12 | `getClientIp` fallback chain (`cf-connecting-ip`, `x-real-ip`)   | XS     | 🟡     | BUGS High           |
+| E13 | Import hardening: body-size cap + Zod array `.max()`             | S      | 🟡     | new (audit)         |
+| E14 | Validate `/api/options/chain` symbol shape before upstream fetch | XS     | 🟡     | BUGS Medium         |
+| E15 | CSP header: Report-Only → enforce (report endpoint scaffolded)   | M      | 🔴     | ROADMAP S8          |
+| E16 | GDPR completion: true account deletion (`user.delete` cascade)   | M      | 🔴     | ROADMAP S9 ⚠️       |
 
 - **E10** — `cron/snapshot/route.ts:12` still `===`-compares the bearer token.
   `crypto.timingSafeEqual` over equal-length buffers; one line.
@@ -103,29 +103,29 @@ Small fixes; every one is a verified live bug with user-visible consequences.
 Production runtime logs were empty over a 7-day MCP window; if the nightly
 snapshot stops, nothing tells you. PLATFORM F1 flags this trio as "do first".
 
-| ID | Item | Effort | Impact | Source |
-| --- | --- | --- | --- | --- |
-| E17 | `/api/health` — DB ping + latest-snapshot freshness | XS | 🔴 | ROADMAP S5 |
-| E18 | `CronRun` audit table + >36 h freshness alarm | M | 🔴 | ROADMAP S6 |
-| E19 | Sentry (or equivalent) wired through `src/lib/logger.ts` | M | 🔴 | ROADMAP S4 ⚠️ |
-| E20 | Request-context correlation (requestId/userId) in logger | S | 🟢 | new (audit) |
-| E21 | Snapshot reconciliation side-job (drift >0.5% alert) | S | 🟢 | ROADMAP S28 |
+| ID  | Item                                                     | Effort | Impact | Source        |
+| --- | -------------------------------------------------------- | ------ | ------ | ------------- |
+| E17 | `/api/health` — DB ping + latest-snapshot freshness      | XS     | 🔴     | ROADMAP S5    |
+| E18 | `CronRun` audit table + >36 h freshness alarm            | M      | 🔴     | ROADMAP S6    |
+| E19 | Sentry (or equivalent) wired through `src/lib/logger.ts` | M      | 🔴     | ROADMAP S4 ⚠️ |
+| E20 | Request-context correlation (requestId/userId) in logger | S      | 🟢     | new (audit)   |
+| E21 | Snapshot reconciliation side-job (drift >0.5% alert)     | S      | 🟢     | ROADMAP S28   |
 
 - **E19** — The structured logger half of S4 is done (`logger.ts`, ~30 call
   sites, JSON output, `withTiming`); what's missing is shipping errors
   somewhere that alerts. `src/instrumentation.ts` exists as the hook point.
 - **E18** — Cron writes a `CronRun { name, startedAt, finishedAt, ok, error,
-  durationMs }` row each run; `/api/health` (E17) goes red when no successful
+durationMs }` row each run; `/api/health` (E17) goes red when no successful
   row in 36 h. #418's `cron.revalidate.gate` log line gives partial signal
   but only when logs are being watched — the table makes it queryable.
 
 ## Tier 3 — Testing
 
-| ID | Item | Effort | Impact | Source |
-| --- | --- | --- | --- | --- |
-| E22 | Vitest + first service-layer suite | M | 🔴 | ROADMAP S7 |
-| E23 | E2E gaps: /projections, /history, settings import/export round-trip | M | 🟡 | new (audit) |
-| E24 | Run `format:check`/`lint` in PR CI (not just pre-push hook) | XS | 🟢 | new (audit) |
+| ID  | Item                                                                | Effort | Impact | Source      |
+| --- | ------------------------------------------------------------------- | ------ | ------ | ----------- |
+| E22 | Vitest + first service-layer suite                                  | M      | 🔴     | ROADMAP S7  |
+| E23 | E2E gaps: /projections, /history, settings import/export round-trip | M      | 🟡     | new (audit) |
+| E24 | Run `format:check`/`lint` in PR CI (not just pre-push hook)         | XS     | 🟢     | new (audit) |
 
 - **E22** — Zero unit tests exist. First wave, all pure functions:
   `net-worth-service` two-pass + missing-rate path · `exchange-rate-service`
@@ -140,13 +140,13 @@ snapshot stops, nothing tells you. PLATFORM F1 flags this trio as "do first".
 
 ## Tier 4 — Database & schema evolution
 
-| ID | Item | Effort | Impact | Source |
-| --- | --- | --- | --- | --- |
-| E25 | `price`/`fee` on `HoldingTransaction` (cost-basis enabler) | M | 🔴 | DATABASE DB3 / F3 |
-| E26 | Explicit backdatable `date` on both transaction tables (+ indexes) | S | 🟡 | DATABASE DB4 |
-| E27 | Sync `colorSchema`/`density` to `Setting` (cross-device) | S | 🟡 | DATABASE DB6 |
-| E28 | `timestamptz` migration + ExchangeRate composite PK | M | 🟢 | DATABASE DB8/DB9 |
-| E29 | `source` field on `PriceCache` (provenance) | XS | 🟢 | DATABASE DB7 |
+| ID  | Item                                                               | Effort | Impact | Source            |
+| --- | ------------------------------------------------------------------ | ------ | ------ | ----------------- |
+| E25 | `price`/`fee` on `HoldingTransaction` (cost-basis enabler)         | M      | 🔴     | DATABASE DB3 / F3 |
+| E26 | Explicit backdatable `date` on both transaction tables (+ indexes) | S      | 🟡     | DATABASE DB4      |
+| E27 | Sync `colorSchema`/`density` to `Setting` (cross-device)           | S      | 🟡     | DATABASE DB6      |
+| E28 | `timestamptz` migration + ExchangeRate composite PK                | M      | 🟢     | DATABASE DB8/DB9  |
+| E29 | `source` field on `PriceCache` (provenance)                        | XS     | 🟢     | DATABASE DB7      |
 
 - **E25 is the keystone schema change** — it unblocks F3 (cost basis / P&L),
   then F4 (tax lots), F5 (tax export), and richer F11 attribution. Nullable
@@ -177,6 +177,7 @@ large ones.
 6. **F5 — year-end tax export** (M, after F3) · **F13 tags** · **F14 holding
    journal** · **F15 real-estate composite** · **F18 net-worth profiles** —
    pick by mood; all independent.
+
 - Mobile/UX companions when touching these surfaces: S11 color-blind-safe
   asset/liability cues (icon + label, not color alone) and the remaining
   UI_UX M-series CSS fixes (S12).
@@ -185,13 +186,13 @@ large ones.
 
 The June audit closed most of this. Remaining, in order:
 
-| ID | Item | Effort | Impact | Source |
-| --- | --- | --- | --- | --- |
-| E30 | Vercel dashboard toggles: Skew Protection + Rolling Releases | XS | 🟡 | ROADMAP S20 |
-| E31 | P3 — exclude `/login`/`/privacy`/`/terms` from proxy matcher | M | 🟡 | PLATFORM P3 |
-| E32 | PE16/V15 — build-cache audit (297 MB → <150 MB) | L | 🟢 | PERFORMANCE |
-| E33 | P7 — trusted `x-user-id` header to remove RSC double-decode | L | 🟢 | PLATFORM P7 |
-| E34 | Re-test `cacheComponents`-blocked items on each Next.js upgrade | XS/upgrade | 🟢 | PERFORMANCE |
+| ID  | Item                                                            | Effort     | Impact | Source      |
+| --- | --------------------------------------------------------------- | ---------- | ------ | ----------- |
+| E30 | Vercel dashboard toggles: Skew Protection + Rolling Releases    | XS         | 🟡     | ROADMAP S20 |
+| E31 | P3 — exclude `/login`/`/privacy`/`/terms` from proxy matcher    | M          | 🟡     | PLATFORM P3 |
+| E32 | PE16/V15 — build-cache audit (297 MB → <150 MB)                 | L          | 🟢     | PERFORMANCE |
+| E33 | P7 — trusted `x-user-id` header to remove RSC double-decode     | L          | 🟢     | PLATFORM P7 |
+| E34 | Re-test `cacheComponents`-blocked items on each Next.js upgrade | XS/upgrade | 🟢     | PERFORMANCE |
 
 - **E30** is a no-code pair of dashboard switches — do it in one session.
 - **E33** is security-sensitive (header spoofing if misconfigured) — needs a
@@ -202,13 +203,13 @@ The June audit closed most of this. Remaining, in order:
 
 ## Tier 7 — DX & docs
 
-| ID | Item | Effort | Impact | Source |
-| --- | --- | --- | --- | --- |
-| E35 | `noUncheckedIndexedAccess` (single dedicated PR) | M | 🟢 | ROADMAP S25 |
-| E36 | Consolidate per-route invalidation helpers into one module | S | 🟢 | new (audit) |
-| E37 | SECURITY / OBSERVABILITY / TESTING / DISASTER_RECOVERY docs | M | 🟢 | ROADMAP S24 |
-| E38 | OpenAPI spec from validators (`zod-to-openapi`) | M | 🟢 | ROADMAP S27 |
-| E39 | Cleanup: unreferenced root SVGs in /public, unused deps audit | XS | 🟢 | new (audit) |
+| ID  | Item                                                          | Effort | Impact | Source      |
+| --- | ------------------------------------------------------------- | ------ | ------ | ----------- |
+| E35 | `noUncheckedIndexedAccess` (single dedicated PR)              | M      | 🟢     | ROADMAP S25 |
+| E36 | Consolidate per-route invalidation helpers into one module    | S      | 🟢     | new (audit) |
+| E37 | SECURITY / OBSERVABILITY / TESTING / DISASTER_RECOVERY docs   | M      | 🟢     | ROADMAP S24 |
+| E38 | OpenAPI spec from validators (`zod-to-openapi`)               | M      | 🟢     | ROADMAP S27 |
+| E39 | Cleanup: unreferenced root SVGs in /public, unused deps audit | XS     | 🟢     | new (audit) |
 
 - **E36** — `invalidateUserCaches`-style helpers are re-declared per route
   file (~64 `revalidateTag` calls). One `src/lib/cache-invalidation.ts` with
