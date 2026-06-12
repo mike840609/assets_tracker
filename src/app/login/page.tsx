@@ -1,11 +1,25 @@
 // S1: force-static is incompatible with nextConfig.cacheComponents (PPR mode).
 // PPR prerendering the Suspense fallback shell is the correct tier here.
 import { Suspense } from "react";
-import { signIn } from "@/auth";
+import { auth, signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Lock, ShieldCheck, EyeOff } from "lucide-react";
+import { SESSION_COOKIE_NAMES } from "@/lib/auth-cookies";
 import { getTranslations } from "next-intl/server";
+import { cookies } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+
+type LoginPageProps = {
+  searchParams: Promise<{
+    "stale-session"?: string | string[];
+  }>;
+};
+
+async function hasSessionCookie(): Promise<boolean> {
+  const cookieStore = await cookies();
+  return SESSION_COOKIE_NAMES.some((name) => cookieStore.has(name));
+}
 
 async function LoginContent() {
   const t = await getTranslations("login");
@@ -150,7 +164,19 @@ async function LoginContent() {
   );
 }
 
-export default function LoginPage() {
+async function LoginGate({ searchParams }: LoginPageProps) {
+  const params = await searchParams;
+  const isStaleSessionRecovery = params["stale-session"] !== undefined;
+
+  if (!isStaleSessionRecovery && (await hasSessionCookie())) {
+    const session = await auth();
+    if (session?.user?.id) redirect("/");
+  }
+
+  return <LoginContent />;
+}
+
+export default function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <Suspense
       fallback={
@@ -166,7 +192,7 @@ export default function LoginPage() {
         </div>
       }
     >
-      <LoginContent />
+      <LoginGate searchParams={searchParams} />
     </Suspense>
   );
 }

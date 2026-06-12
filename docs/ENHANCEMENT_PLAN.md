@@ -193,25 +193,35 @@ large ones.
 
 The June audit closed most of this. Remaining, in order:
 
-| ID  | Item                                                            | Effort     | Impact | Source      |
-| --- | --------------------------------------------------------------- | ---------- | ------ | ----------- |
-| E30 | Vercel dashboard toggles: Skew Protection + Rolling Releases    | XS         | 🟡     | ROADMAP S20 |
-| E31 | P3 — resolve `/login` proxy; legal pages already excluded        | M          | 🟡     | PLATFORM P3 |
-| E32 | PE16/V15 — build-cache audit (297 MB → <150 MB)                 | L          | 🟢     | PERFORMANCE |
-| E33 | P7 — trusted `x-user-id` header to remove RSC double-decode     | L          | 🟢     | PLATFORM P7 |
-| E34 | Re-test `cacheComponents`-blocked items on each Next.js upgrade | XS/upgrade | 🟢     | PERFORMANCE |
+| ID  | Item                                                                      | Effort     | Impact | Source      |
+| --- | ------------------------------------------------------------------------- | ---------- | ------ | ----------- |
+| E30 | 🚫 Free-plan blocked: Skew Protection + Rolling Releases                 | XS         | 🟡     | ROADMAP S20 |
+| E31 | ✅ P3 — resolve `/login` proxy; legal pages already excluded              | M          | 🟡     | PLATFORM P3 |
+| E32 | ⚠️ PE16/V15 — build-cache audit (297 MB → <150 MB)                        | L          | 🟢     | PERFORMANCE |
+| E33 | ⏸️ P7 — trusted `x-user-id` header to remove RSC double-decode            | L          | 🟢     | PLATFORM P7 |
+| E34 | ✅ Re-test `cacheComponents`-blocked items on each Next.js upgrade        | XS/upgrade | 🟢     | PERFORMANCE |
 
-- **E30** is a no-code pair of dashboard switches — do it in one session.
-- **E31** — `src/proxy.ts` already excludes `/privacy` and `/terms` from the
-  matcher. `/login` still runs through proxy so signed-in users can be
-  redirected away from the login page; either keep that behavior and mark
-  PLATFORM P3 partial/intentional, or move the redirect into the login surface
-  before excluding `/login`.
+- **E30** — Deferred 2026-06-12: this project is on the Vercel Free plan, while
+  Skew Protection and Rolling Releases are Pro-plan platform controls. Do not
+  keep re-opening this as local code work; revisit only if the project upgrades
+  to Pro or Vercel makes these controls available on Free.
+- **E31** — Done 2026-06-12. `src/proxy.ts` now excludes `/login` in the
+  matcher, and the signed-in redirect moved into `src/app/login/page.tsx`. The
+  page preserves the `?stale-session` recovery escape hatch and checks for a
+  NextAuth session cookie before paying the JWT decode.
+- **E32** — Partial/process done 2026-06-12. Added
+  `npm run audit:build-cache` to report `.next/cache` contributors and the
+  150 MB target. A post-build local audit measured `.next/cache` at ~407 KB,
+  so no generated cache deletion or cache-policy change was warranted locally.
 - **E33** is security-sensitive (header spoofing if misconfigured) — needs a
   careful review; only worth it if Fluid CPU numbers say JWT decode matters.
-- **E34** — S1/S2(SSG), I1/I2/I4(ISR), V8/PE18(edge) are all blocked by
-  `cacheComponents: true`, not by our code. Re-check the constraint in each
-  Next.js release note; don't re-implement around it.
+  Deferred 2026-06-12: the installed Next docs warn to forward request headers
+  with an allow-list and the repo has no current CPU evidence that the second
+  JWT decode is material.
+- **E34** — Process note added 2026-06-12. S1/S2(SSG), I1/I2/I4(ISR), and
+  V8/PE18(edge) remain blocked by `cacheComponents: true`; re-check the
+  installed `node_modules/next/dist/docs` release/change guides on each Next.js
+  upgrade before proposing route-segment config or Edge runtime workarounds.
 
 ## Tier 7 — DX & docs
 
@@ -275,5 +285,6 @@ Recorded so future audits don't waste a cycle:
    hardening once the app has observability for report-only violations.
 4. **Then the keystone:** E25 schema migration → F3 cost basis → F6/F8
    cashflow. From here the F-series order above takes over.
-5. **Continuous:** E30 toggles now (5 min); E34 on every Next upgrade;
+5. **Continuous:** E34 on every Next upgrade; revisit E30 only after a Vercel
+   Pro upgrade or plan availability change;
    Tier 7 as filler between feature work.

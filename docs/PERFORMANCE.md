@@ -221,6 +221,14 @@ Only fall back to the next rung when the current one can't apply.
 
 **I4 — Route-segment `revalidate` backstop.** Belt-and-suspenders `export const revalidate = 900` on PPR routes. Blocked: `Route segment config "revalidate" is not compatible with nextConfig.cacheComponents`.
 
+**Next.js upgrade retest process.** On every Next.js upgrade, read the installed
+`node_modules/next/dist/docs/01-app/02-guides/migrating-to-cache-components.md`
+and release/upgrade notes before changing code. Re-test the currently blocked
+items in this order: S1/S2 (`force-static` public pages), I1/I2/I4
+(`revalidate` route segment config), and V8/PE18 (Edge runtime). If the docs
+still say Cache Components replaces route segment configs and requires Node.js,
+leave these items blocked and update only the tested version/date.
+
 **I5 — Document `fetch` revalidation pattern.** Canonical pattern for upstream fetches: `fetch(url, { next: { revalidate: N, tags: [...] } })`. Reference: `src/lib/services/exchange-rate-service.ts:74-77`.
 
 **X1 — Trim `revalidateTag(tag, "max")`.** In Next.js 16.2.2, the second argument is not a valid parameter. Dropped from `src/app/api/cron/snapshot/route.ts`, `src/app/api/exchange-rates/refresh/route.ts`, `src/app/api/prices/refresh/route.ts`.
@@ -445,6 +453,12 @@ These need PE2 timing data to prioritise within the phase.
 
 - **Problem:** `cache upload 31s` of the 53s build. V15 open. Likely culprits: `.next/cache/webpack/`, `node_modules/.prisma/`, Playwright browsers.
 - **Effort:** L (investigative). **Impact:** −5–10 s deploy time.
+- **Status (2026-06-12):** ⚠️ Partial. Added
+  `npm run audit:build-cache`, which prints `.next/cache` size, top cache
+  contributors, known non-runtime artifacts, and the `<150 MB` target. A clean
+  local `npm run build` produced only ~407 KB of `.next/cache`, so no cache
+  deletion or CI/Vercel policy change was made without evidence from the
+  production Vercel cache.
 
 #### PE17 — ISR for `/privacy` and `/terms`
 
@@ -479,6 +493,8 @@ After Phase 0 lands, every later item is verified the same way:
    - Upstream failures: `msg:/yahoo|coingecko/ AND level:error`
 4. **Playwright CWV project** (PE15) — run on PRs touching `src/components/**`; fail if mobile LCP > 2500 ms or CLS > 0.05.
 5. **Build duration** — target < 45 s end-to-end after PE16.
+6. **Build cache audit** — after a build or when reviewing Vercel cache growth,
+   run `npm run audit:build-cache`; target `.next/cache < 150 MB`.
 
 A single PR for Phase 0 must ship before any other PE# is merged.
 
