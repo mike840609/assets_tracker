@@ -1,6 +1,6 @@
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { createHoldingSchema, updateHoldingSchema } from "@/lib/validators";
+import { createHoldingSchema, updateHoldingSchema, deleteHoldingSchema } from "@/lib/validators";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { ok, failure, validationError } from "@/lib/api-responses";
@@ -154,6 +154,20 @@ export const PATCH = withAuth<IdCtx>(async (request, _ctx, userId) => {
   });
   if (!existing) return failure("Not found", 404);
 
+  // The schema already bars assetType: "OPTION"; also bar converting an
+  // existing OPTION away — that would orphan the OCC fields and misprice the
+  // row (no contract multiplier applied). The UI never offers this.
+  if (data.assetType !== undefined && existing.assetType === "OPTION") {
+    return failure("Cannot change the asset type of an option holding", 400);
+  }
+
+  // Quantity 0 is only meaningful for options ("close the position" keeps the
+  // transaction history; DELETE would cascade it away). Non-option holdings
+  // must go through DELETE instead of leaving zombie zero-quantity rows.
+  if (data.quantity === 0 && existing.assetType !== "OPTION") {
+    return failure("Quantity must be positive", 400);
+  }
+
   // Update and EDIT audit log commit together — a failed update must not
   // leave a phantom EDIT transaction behind.
   const holding = await prisma.$transaction(async (tx) => {
@@ -181,16 +195,16 @@ export const PATCH = withAuth<IdCtx>(async (request, _ctx, userId) => {
 
 export const DELETE = withAuth<IdCtx>(async (request, _ctx, userId) => {
   const body = await request.json();
-  const { id } = body;
-  if (!id) return failure("Holding ID required");
+  const parsed = deleteHoldingSchema.safeParse(body);
+  if (!parsed.success) return validationError(parsed.error);
 
-  const owned = await prisma.holding.findFirst({
-    where: { id, account: { userId } },
-    select: { id: true },
+  // Ownership is folded into the write itself (deleteMany can filter on the
+  // account relation, delete cannot) — no check-then-write TOCTOU window.
+  const { count } = await prisma.holding.deleteMany({
+    where: { id: parsed.data.id, account: { userId } },
   });
-  if (!owned) return failure("Not found", 404);
+  if (count === 0) return failure("Not found", 404);
 
-  await prisma.holding.delete({ where: { id } });
   invalidateUserCaches(userId);
   return ok({ ok: true });
 });

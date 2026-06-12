@@ -29,6 +29,13 @@ export function calculateBalanceDelta(
   return (newTx ? toSign(newTx) : 0) - (oldTx ? toSign(oldTx) : 0);
 }
 
+export function getHoldingTransactionQuantityError(tx: HoldingTxInput): string | null {
+  if (tx.type === "BUY" || tx.type === "SELL") {
+    return tx.quantity > 0 ? null : "Quantity must be positive";
+  }
+  return tx.quantity !== 0 ? null : "Adjustment quantity cannot be zero";
+}
+
 function getHoldingQuantityEffect(tx: HoldingTxInput): number {
   if (tx.type === "BUY") return Math.abs(tx.quantity);
   if (tx.type === "SELL") return -Math.abs(tx.quantity);

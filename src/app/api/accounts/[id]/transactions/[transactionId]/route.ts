@@ -5,6 +5,7 @@ import {
   calculateBalanceDelta,
   calculateHoldingQuantityDelta,
   getCashTransactionAmountError,
+  getHoldingTransactionQuantityError,
   normalizeHoldingTransactionQuantity,
 } from "@/lib/services/balance";
 import { ok, failure, validationError } from "@/lib/api-responses";
@@ -50,6 +51,13 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
       type: nextType,
       quantity: data.quantity ?? Number(holdingTx.quantity),
     });
+    // Re-check on the merged (existing + patch) values — the schema can only
+    // validate per-type rules when both fields are present in the payload.
+    const quantityError = getHoldingTransactionQuantityError({
+      type: nextType,
+      quantity: nextQuantity,
+    });
+    if (quantityError) return failure(quantityError, 400);
     const holdingDelta = calculateHoldingQuantityDelta(
       { type: holdingTx.type, quantity: Number(holdingTx.quantity) },
       { type: nextType, quantity: nextQuantity },
