@@ -210,22 +210,29 @@ export async function refreshExchangeRates(
     return { updated: 0, skippedFresh: false, nextRefreshAt: null, fetchFailed: true };
   }
 
-  const params: unknown[] = [];
-  const placeholders: string[] = [];
-  const pushRow = (id: string, fromCurrency: string, toCurrency: string, rate: number) => {
-    const base = params.length;
-    params.push(id, fromCurrency, toCurrency, String(rate));
-    placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}::numeric, NOW())`);
-  };
+  const rows: [id: string, fromCurrency: string, toCurrency: string, rate: number][] = [];
   for (const [toCurrency, rate] of entries) {
-    pushRow(`${baseCurrency}_${toCurrency}`, baseCurrency, toCurrency, rate);
+    rows.push([`${baseCurrency}_${toCurrency}`, baseCurrency, toCurrency, rate]);
     // Persist the inverse too, so direct lookups cover both directions and
     // resolveRate stops re-deriving 1/rate on every chained conversion.
     // Tradeoff: a later genuine fetch of `toCurrency` as base overwrites this
     // derived row (last-write-wins) — fine, since both come from the same
     // upstream snapshot and a fresher genuine rate is strictly better.
-    if (rate !== 0) pushRow(`${toCurrency}_${baseCurrency}`, toCurrency, baseCurrency, 1 / rate);
+    if (rate !== 0)
+      rows.push([`${toCurrency}_${baseCurrency}`, toCurrency, baseCurrency, 1 / rate]);
   }
+  // Sort by id so every statement locks rows in the same order: concurrent
+  // refreshes (one per currency in /api/refresh) now write overlapping rows
+  // (e.g. base=USD and base=TWD both upsert USD_TWD and TWD_USD), and
+  // multi-row upserts taking the same locks in different orders can deadlock.
+  rows.sort(([a], [b]) => (a < b ? -1 : 1));
+
+  const params: unknown[] = [];
+  const placeholders = rows.map(([id, fromCurrency, toCurrency, rate]) => {
+    const base = params.length;
+    params.push(id, fromCurrency, toCurrency, String(rate));
+    return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}::numeric, NOW())`;
+  });
   await prisma.$executeRawUnsafe(
     `INSERT INTO "ExchangeRate" (id, "fromCurrency", "toCurrency", rate, "updatedAt")
      VALUES ${placeholders.join(", ")}
