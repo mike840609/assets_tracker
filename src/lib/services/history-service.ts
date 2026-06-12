@@ -28,17 +28,38 @@ interface SnapshotRow {
   baseCurrency: string;
 }
 
+/** Tie-break metadata for same-day snapshot dedupes. */
+interface DedupeCandidate {
+  matchesTarget: boolean;
+  createdAt: Date;
+}
+
+/**
+ * Deterministic same-day tie-break shared by both dedupe sites:
+ * prefer a baseCurrency match with the target, then the greatest createdAt
+ * (a later candidate wins on equal createdAt, so re-takes replace originals).
+ */
+function isBetterDuplicate(
+  candidate: DedupeCandidate,
+  existing: DedupeCandidate | undefined,
+): boolean {
+  if (!existing) return true;
+  if (candidate.matchesTarget !== existing.matchesTarget) return candidate.matchesTarget;
+  return candidate.createdAt >= existing.createdAt;
+}
+
 /**
  * Pure transformation: convert and dedupe raw snapshots into NormalizedSnapshot[].
- * If multiple snapshots exist for the same date (e.g. from a currency change),
- * prefers the one whose baseCurrency already matches the target, otherwise the latest seen.
+ * If multiple snapshots exist for the same date (e.g. manual + cron, or a
+ * currency change), prefers the one whose baseCurrency already matches the
+ * target; among equal matches, keeps the one with the greatest createdAt.
  */
 function normalizeSnapshots(
   snapshots: SnapshotRow[],
   allRatesMap: Map<string, number>,
   targetBaseCurrency: string,
 ): NormalizedSnapshot[] {
-  const normalizedMap = new Map<string, NormalizedSnapshot>();
+  const normalizedMap = new Map<string, DedupeCandidate & { normalized: NormalizedSnapshot }>();
 
   for (const s of snapshots) {
     const dateStr = s.date.toISOString().split("T")[0];
@@ -54,13 +75,18 @@ function normalizeSnapshots(
       baseCurrency: targetBaseCurrency,
     };
 
-    const existing = normalizedMap.get(dateStr);
-    if (!existing || s.baseCurrency === targetBaseCurrency) {
-      normalizedMap.set(dateStr, normalized);
+    const candidate: DedupeCandidate = {
+      matchesTarget: s.baseCurrency === targetBaseCurrency,
+      createdAt: s.createdAt,
+    };
+    if (isBetterDuplicate(candidate, normalizedMap.get(dateStr))) {
+      normalizedMap.set(dateStr, { ...candidate, normalized });
     }
   }
 
-  return Array.from(normalizedMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+  return Array.from(normalizedMap.values())
+    .map((entry) => entry.normalized)
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 /**
@@ -214,7 +240,7 @@ export async function getRawHistoryWithBreakdown(
   const [snapshotsRaw, accountsRaw, allRatesMap] = await Promise.all([
     prisma.netWorthSnapshot.findMany({
       where: { userId },
-      select: { date: true, breakdown: true, baseCurrency: true },
+      select: { date: true, breakdown: true, baseCurrency: true, createdAt: true },
       orderBy: { date: "asc" },
     }),
     prisma.account.findMany({
@@ -224,14 +250,17 @@ export async function getRawHistoryWithBreakdown(
     getAllExchangeRates(),
   ]);
 
-  // Dedupe by date (same pattern as normalizeSnapshots): prefer the snapshot
-  // whose baseCurrency matches the target; otherwise keep the last one seen.
-  const dedupedMap = new Map<string, { breakdown: unknown; baseCurrency: string }>();
+  // Dedupe by date (same tie-break as normalizeSnapshots): prefer the snapshot
+  // whose baseCurrency matches the target, then the greatest createdAt.
+  const dedupedMap = new Map<string, DedupeCandidate & { breakdown: unknown }>();
   for (const s of snapshotsRaw) {
     const dateStr = s.date.toISOString().split("T")[0];
-    const existing = dedupedMap.get(dateStr);
-    if (!existing || s.baseCurrency === targetBaseCurrency) {
-      dedupedMap.set(dateStr, { breakdown: s.breakdown, baseCurrency: s.baseCurrency });
+    const candidate: DedupeCandidate = {
+      matchesTarget: s.baseCurrency === targetBaseCurrency,
+      createdAt: s.createdAt,
+    };
+    if (isBetterDuplicate(candidate, dedupedMap.get(dateStr))) {
+      dedupedMap.set(dateStr, { ...candidate, breakdown: s.breakdown });
     }
   }
 

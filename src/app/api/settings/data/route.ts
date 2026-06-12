@@ -35,9 +35,18 @@ function validateAccountGoalReferences(importData: ImportData) {
   return true;
 }
 
+/** Thrown inside the import transaction so the whole import rolls back atomically. */
+class GoalRemapError extends Error {}
+
 function remapGoalScopeRefId(goal: ImportGoal, accountIdMap: Map<string, string>) {
   if (goal.scope !== "ACCOUNT") return goal.scopeRefId ?? null;
-  return accountIdMap.get(goal.scopeRefId ?? "") ?? null;
+  const remapped = accountIdMap.get(goal.scopeRefId ?? "");
+  if (!remapped) {
+    throw new GoalRemapError(
+      `Import failed: account-scoped goal "${goal.name}" references account id "${goal.scopeRefId ?? "(none)"}", which is not present in the imported accounts.`,
+    );
+  }
+  return remapped;
 }
 
 function dedupeSnapshots(snapshots: ImportSnapshot[] | undefined, targetBaseCurrency: string) {
@@ -408,6 +417,9 @@ export const POST = withAuth(async (request, _ctx, userId) => {
     return response;
   } catch (error) {
     log.error("import.failed", { error: String(error) });
+    if (error instanceof GoalRemapError) {
+      return failure(error.message, 400);
+    }
     return failure("Failed to import data", 500);
   }
 });
