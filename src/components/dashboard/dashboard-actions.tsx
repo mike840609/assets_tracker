@@ -15,9 +15,15 @@ interface DashboardActionsProps {
   baseCurrency: string;
   lastPriceUpdate?: string | null;
   lastSnapshotDate?: string | null;
+  /** Most recent FX-rate write (ISO). The badge only renders once stale. */
+  lastRatesUpdate?: string | null;
 }
 
-export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: DashboardActionsProps) {
+export function DashboardActions({
+  lastPriceUpdate,
+  lastSnapshotDate,
+  lastRatesUpdate,
+}: DashboardActionsProps) {
   const router = useRouter();
   const t = useTranslations("dashboardActions");
   const [refreshing, setRefreshing] = useState(false);
@@ -32,11 +38,16 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
       switch (outcome.status) {
         case "updated":
           toast.success(t("refreshSuccess", { count: outcome.prices }));
+          if (outcome.ratesFetchFailed) toast.warning(t("ratesRefreshFailed"));
           setClientRefreshAt(new Date().toISOString());
           router.refresh();
           break;
         case "fresh":
-          toast.info(t("alreadyFresh", { seconds: outcome.retryAfterSeconds }));
+          if (outcome.ratesFetchFailed) {
+            toast.warning(t("ratesRefreshFailed"));
+          } else {
+            toast.info(t("alreadyFresh", { seconds: outcome.retryAfterSeconds }));
+          }
           break;
         case "cooldown":
           toast.info(t("cooldownWait", { seconds: outcome.retryAfterSeconds }));
@@ -83,6 +94,11 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
         )}
         {lastSnapshotDate && (
           <FreshnessBadge kind="snapshot" timestamp={lastSnapshotDate} mobileShort />
+        )}
+        {lastRatesUpdate && (
+          // Warning signal only — fresh FX rates stay invisible so the bar
+          // doesn't grow a third always-on chip.
+          <FreshnessBadge kind="rates" timestamp={lastRatesUpdate} mobileShort showOnlyWhenStale />
         )}
         {!effectiveLastUpdate && !lastSnapshotDate && (
           <span className="inline-flex items-center gap-1">

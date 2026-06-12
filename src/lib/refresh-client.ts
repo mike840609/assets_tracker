@@ -13,8 +13,10 @@ import { CLIENT_REFRESH_COOLDOWN_MS } from "@/lib/refresh-policy";
  */
 
 export type RefreshOutcome =
-  | { status: "updated"; prices: number; rates: number }
-  | { status: "fresh"; retryAfterSeconds: number }
+  // `ratesFetchFailed` marks a degraded success: prices refreshed (or were
+  // fresh) but the external FX fetch failed, so conversions may use stale rates.
+  | { status: "updated"; prices: number; rates: number; ratesFetchFailed: boolean }
+  | { status: "fresh"; retryAfterSeconds: number; ratesFetchFailed: boolean }
   | { status: "cooldown"; retryAfterSeconds: number }
   | { status: "error" };
 
@@ -43,6 +45,7 @@ type RefreshPayload = {
   updated?: number;
   skippedFresh?: number | boolean;
   retryAfterSeconds?: number | null;
+  fetchFailed?: boolean;
 };
 
 export async function refreshMarketData(): Promise<RefreshOutcome> {
@@ -72,6 +75,7 @@ export async function refreshMarketData(): Promise<RefreshOutcome> {
     const pricesUpdated = priceData.updated ?? 0;
     const ratesUpdated = ratesData.updated ?? 0;
     const anySkipped = Boolean(priceData.skippedFresh) || Boolean(ratesData.skippedFresh);
+    const ratesFetchFailed = Boolean(ratesData.fetchFailed);
 
     if (pricesUpdated === 0 && ratesUpdated === 0 && anySkipped) {
       // Earliest moment a retry would fetch *something* (prices have a much
@@ -84,11 +88,11 @@ export async function refreshMarketData(): Promise<RefreshOutcome> {
         Math.ceil(CLIENT_REFRESH_COOLDOWN_MS / 1000),
       );
       setCooldown(Date.now() + retryAfterSeconds * 1000);
-      return { status: "fresh", retryAfterSeconds };
+      return { status: "fresh", retryAfterSeconds, ratesFetchFailed };
     }
 
     window.dispatchEvent(new CustomEvent("prices:refreshed"));
-    return { status: "updated", prices: pricesUpdated, rates: ratesUpdated };
+    return { status: "updated", prices: pricesUpdated, rates: ratesUpdated, ratesFetchFailed };
   } catch {
     return { status: "error" };
   }

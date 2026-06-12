@@ -164,6 +164,7 @@
     "pricesFailed": "更新價格失敗",
     "marketDataUpdated": "已更新 {prices} 個價格與 {rates} 筆匯率",
     "marketDataFailed": "更新市場資料失敗",
+    "ratesRefreshFailed": "匯率更新失敗 — 顯示數值可能使用過期匯率",
     "snapshotCreated": "快照已建立",
     "snapshotFailed": "建立快照失敗",
     "exchangeRatesRefreshed": "匯率已更新",
@@ -672,6 +673,7 @@
     "refreshing": "更新中...",
     "refreshSuccess": "已更新 {count} 個價格和匯率",
     "refreshFailed": "更新價格失敗",
+    "ratesRefreshFailed": "匯率更新失敗 — 顯示數值可能使用過期匯率",
     "alreadyFresh": "價格已是最新 — 請於 {seconds} 秒後再試",
     "cooldownWait": "請稍候 {seconds} 秒後再重新整理"
   },

@@ -30,7 +30,7 @@ Small fixes; every one is a verified live bug with user-visible consequences.
 | E1  | ✅ UTC-floor the snapshot date                                                  | XS     | 🔴     | BUGS Critical     |
 | E2  | ✅ History dedupe tie-break by `max(createdAt)`                                 | XS     | 🔴     | BUGS High         |
 | E3  | ✅ Guard `token.sub` in auth callbacks                                          | XS     | 🔴     | BUGS High         |
-| E4  | FX: persist inverse rates + surface a stale flag                                | S      | 🔴     | BUGS High ×2      |
+| E4  | ✅ FX: persist inverse rates + surface a stale flag                             | S      | 🔴     | BUGS High ×2      |
 | E5  | ✅ Stop defaulting null `contractMultiplier` to 100                             | S      | 🟡     | BUGS High         |
 | E6  | ✅ Tighten validators (qty>0, immutable assetType, tx unions, datetime)         | S      | 🟡     | BUGS High ×3      |
 | E7  | ✅ Decimal-safe `cashBalance` diff in account PATCH                             | XS     | 🟡     | BUGS Medium       |

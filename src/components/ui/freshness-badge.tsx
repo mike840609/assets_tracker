@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Camera, Clock, RefreshCw, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FX_RATES_STALE_MS } from "@/lib/refresh-policy";
 import { formatRelativeTime, formatRelativeTimeShort } from "@/lib/format-relative-time";
 
 type FreshnessKind = "price" | "rates" | "snapshot";
@@ -12,6 +13,12 @@ interface FreshnessBadgeProps {
   timestamp: Date | string | null | undefined;
   kind: FreshnessKind;
   mobileShort?: boolean;
+  /**
+   * Render nothing while the timestamp is fresh — the badge becomes a pure
+   * warning signal. Hidden on SSR/first paint (`now` starts null) and appears
+   * right after mount, so server and client markup always match.
+   */
+  showOnlyWhenStale?: boolean;
   className?: string;
 }
 
@@ -19,6 +26,7 @@ export function FreshnessBadge({
   timestamp,
   kind,
   mobileShort = false,
+  showOnlyWhenStale = false,
   className,
 }: FreshnessBadgeProps) {
   const t = useTranslations("freshness");
@@ -45,10 +53,13 @@ export function FreshnessBadge({
   const displayNow = now ?? new Date(timestamp).getTime();
   const age = formatRelativeTime(timestamp, locale, displayNow);
   const shortAge = formatRelativeTimeShort(timestamp, locale, displayNow);
-  // Price/rates refresh daily; older than 3 days reads as a trust caution (the
-  // 72h window clears normal weekend gaps). Snapshots are point-in-time, never "stale".
-  const STALE_MS = 72 * 60 * 60 * 1000;
+  // Prices refresh daily; older than 3 days reads as a trust caution (the 72h
+  // window clears normal weekend gaps). FX rates use the shared 48h policy
+  // threshold (two missed daily crons — Friday ECB rates stay stamped over
+  // weekends). Snapshots are point-in-time, never "stale".
+  const STALE_MS = kind === "rates" ? FX_RATES_STALE_MS : 72 * 60 * 60 * 1000;
   const isStale = kind !== "snapshot" && displayNow - new Date(timestamp).getTime() > STALE_MS;
+  if (showOnlyWhenStale && !isStale) return null;
   const Icon = isStale
     ? TriangleAlert
     : kind === "snapshot"
