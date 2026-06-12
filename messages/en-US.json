@@ -164,6 +164,7 @@
     "pricesFailed": "Failed to refresh prices",
     "marketDataUpdated": "Updated {prices} prices and {rates} exchange rates",
     "marketDataFailed": "Failed to refresh market data",
+    "ratesRefreshFailed": "Exchange rates could not be refreshed — values may use stale rates",
     "snapshotCreated": "Snapshot created",
     "snapshotFailed": "Failed to create snapshot",
     "exchangeRatesRefreshed": "Exchange rates refreshed",
@@ -672,6 +673,7 @@
     "refreshing": "Refreshing...",
     "refreshSuccess": "Updated {count} prices & exchange rates",
     "refreshFailed": "Failed to refresh prices",
+    "ratesRefreshFailed": "Exchange rates could not be refreshed — values may use stale rates",
     "alreadyFresh": "Prices are already up to date — try again in {seconds}s",
     "cooldownWait": "Please wait {seconds}s before refreshing"
   },

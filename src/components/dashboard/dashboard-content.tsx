@@ -9,7 +9,11 @@ import {
   getCachedNetWorthSummary,
   fetchUserAccountsWithHoldings,
 } from "@/lib/services/net-worth-service";
-import { getAllExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
+import {
+  getAllExchangeRates,
+  getExchangeRatesFreshness,
+  resolveRate,
+} from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { getNormalizedHistory } from "@/lib/services/history-service";
 import { HistoryHeatmap } from "@/components/history/history-heatmap";
@@ -136,12 +140,13 @@ async function DashboardActionsSection({
   userId: string;
   baseCurrency: string;
 }) {
-  const [previousSnapshot, latestPrice] = await Promise.all([
+  const [previousSnapshot, latestPrice, lastRatesUpdate] = await Promise.all([
     fetchPreviousSnapshot(userId),
     prisma.priceCache.findFirst({
       orderBy: { updatedAt: "desc" },
       select: { updatedAt: true },
     }),
+    getExchangeRatesFreshness(),
   ]);
 
   const latestSnapshotDate = previousSnapshot?.createdAt?.toISOString() ?? null;
@@ -151,6 +156,7 @@ async function DashboardActionsSection({
       baseCurrency={baseCurrency}
       lastPriceUpdate={latestPrice?.updatedAt?.toISOString() ?? null}
       lastSnapshotDate={latestSnapshotDate}
+      lastRatesUpdate={lastRatesUpdate}
     />
   );
 }

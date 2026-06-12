@@ -16,10 +16,15 @@ export function DashboardPullRefresh({ children }: { children: React.ReactNode }
     switch (outcome.status) {
       case "updated":
         toast.success(t("refreshSuccess", { count: outcome.prices }));
+        if (outcome.ratesFetchFailed) toast.warning(t("ratesRefreshFailed"));
         router.refresh();
         break;
       case "fresh":
-        toast.info(t("alreadyFresh", { seconds: outcome.retryAfterSeconds }));
+        if (outcome.ratesFetchFailed) {
+          toast.warning(t("ratesRefreshFailed"));
+        } else {
+          toast.info(t("alreadyFresh", { seconds: outcome.retryAfterSeconds }));
+        }
         break;
       case "cooldown":
         toast.info(t("cooldownWait", { seconds: outcome.retryAfterSeconds }));

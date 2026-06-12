@@ -210,18 +210,25 @@ export function SettingsForm({
         case "updated": {
           const refreshedAt = new Date().toISOString();
           setClientPriceRefreshAt(refreshedAt);
-          setClientRatesRefreshAt(refreshedAt);
+          // Don't stamp the rates badge when the FX fetch failed — the badge
+          // would claim freshness the DB doesn't have.
+          if (!outcome.ratesFetchFailed) setClientRatesRefreshAt(refreshedAt);
           toast.success(
             t("toast.marketDataUpdated", {
               prices: outcome.prices,
               rates: outcome.rates,
             }),
           );
+          if (outcome.ratesFetchFailed) toast.warning(t("toast.ratesRefreshFailed"));
           router.refresh();
           break;
         }
         case "fresh":
-          toast.info(t("toast.marketDataFresh"));
+          if (outcome.ratesFetchFailed) {
+            toast.warning(t("toast.ratesRefreshFailed"));
+          } else {
+            toast.info(t("toast.marketDataFresh"));
+          }
           break;
         case "cooldown":
           toast.info(t("toast.refreshCooldown", { seconds: outcome.retryAfterSeconds }));

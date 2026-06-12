@@ -11,6 +11,13 @@ export type RefreshRatesResult = {
   skippedFresh: boolean;
   /** When the rates become stale again; null unless skippedFresh. */
   nextRefreshAt: string | null;
+  /**
+   * True when the external fetch returned nothing and the call was NOT
+   * skipped-fresh — i.e. an actual failure/timeout, distinguishable from
+   * "rates were fresh, nothing to do". Read paths keep serving cached
+   * (possibly stale) rates; the UI should surface this.
+   */
+  fetchFailed: boolean;
 };
 
 /** How long to wait (ms) before giving up on external rate APIs */
@@ -38,6 +45,21 @@ async function getCachedExchangeRates(): Promise<Record<string, number>> {
     map[`${r.fromCurrency}_${r.toCurrency}`] = Number(r.rate);
   }
   return map;
+}
+
+/**
+ * Cache Components read of the most recent ExchangeRate write (max
+ * `updatedAt` across the table), as an ISO string — null when the table is
+ * empty. Backs the user-facing "FX rates as of …" / stale-rates signal.
+ * Kept separate from `getAllExchangeRates` so its many callers keep their
+ * `Map<string, number>` shape.
+ */
+export async function getExchangeRatesFreshness(): Promise<string | null> {
+  "use cache";
+  cacheTag("exchange-rates");
+  cacheLife("hours");
+  const result = await prisma.exchangeRate.aggregate({ _max: { updatedAt: true } });
+  return result._max.updatedAt?.toISOString() ?? null;
 }
 
 /**
@@ -175,21 +197,35 @@ export async function refreshExchangeRates(
       updated: 0,
       skippedFresh: true,
       nextRefreshAt: new Date(last + FX_REFRESH_TTL_MS).toISOString(),
+      fetchFailed: false,
     };
   }
 
   const rates = await fetchExchangeRates(baseCurrency);
   const entries = Object.entries(rates);
 
-  if (entries.length === 0) return { updated: 0, skippedFresh: false, nextRefreshAt: null };
+  if (entries.length === 0) {
+    // Genuine failure/timeout (lastRateRefreshAt deliberately NOT stamped,
+    // so the next call retries immediately).
+    return { updated: 0, skippedFresh: false, nextRefreshAt: null, fetchFailed: true };
+  }
 
   const params: unknown[] = [];
-  const placeholders = entries.map(([toCurrency, rate]) => {
-    const id = `${baseCurrency}_${toCurrency}`;
+  const placeholders: string[] = [];
+  const pushRow = (id: string, fromCurrency: string, toCurrency: string, rate: number) => {
     const base = params.length;
-    params.push(id, baseCurrency, toCurrency, String(rate));
-    return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}::numeric, NOW())`;
-  });
+    params.push(id, fromCurrency, toCurrency, String(rate));
+    placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}::numeric, NOW())`);
+  };
+  for (const [toCurrency, rate] of entries) {
+    pushRow(`${baseCurrency}_${toCurrency}`, baseCurrency, toCurrency, rate);
+    // Persist the inverse too, so direct lookups cover both directions and
+    // resolveRate stops re-deriving 1/rate on every chained conversion.
+    // Tradeoff: a later genuine fetch of `toCurrency` as base overwrites this
+    // derived row (last-write-wins) — fine, since both come from the same
+    // upstream snapshot and a fresher genuine rate is strictly better.
+    if (rate !== 0) pushRow(`${toCurrency}_${baseCurrency}`, toCurrency, baseCurrency, 1 / rate);
+  }
   await prisma.$executeRawUnsafe(
     `INSERT INTO "ExchangeRate" (id, "fromCurrency", "toCurrency", rate, "updatedAt")
      VALUES ${placeholders.join(", ")}
@@ -201,5 +237,7 @@ export async function refreshExchangeRates(
 
   // Stamp only after a successful persist so failed refreshes retry.
   lastRateRefreshAt.set(baseCurrency, Date.now());
-  return { updated: entries.length, skippedFresh: false, nextRefreshAt: null };
+  // `updated` counts fetched (forward) rates only — it feeds the user-facing
+  // "N rates updated" toast; counting derived inverse rows would double it.
+  return { updated: entries.length, skippedFresh: false, nextRefreshAt: null, fetchFailed: false };
 }

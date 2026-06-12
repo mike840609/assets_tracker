@@ -44,6 +44,9 @@ export const POST = withAuth(async (request, _ctx, userId) => {
 
   const ratesUpdated = rateResults.reduce((sum, r) => sum + r.updated, 0);
   const ratesSkippedFresh = rateResults.filter((r) => r.skippedFresh).length;
+  // Any base whose external fetch failed (vs. skipped-fresh) means the user
+  // may be looking at stale conversions — surface it so the client can warn.
+  const ratesFetchFailed = rateResults.some((r) => r.fetchFailed);
   // Earliest moment a retry would actually fetch something.
   const ratesNextRefreshAt =
     rateResults
@@ -86,6 +89,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
       updated: ratesUpdated,
       skippedFresh: ratesSkippedFresh,
       retryAfterSeconds: ratesRetryAfterSeconds,
+      fetchFailed: ratesFetchFailed,
     },
   });
 });
