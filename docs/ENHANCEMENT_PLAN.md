@@ -191,27 +191,31 @@ large ones.
 
 ## Tier 6 — Performance & platform (what's actually left)
 
-The June audit closed most of this. Remaining, in order:
+The June audit closed most of this. Ship the remaining work in this order:
 
 | ID  | Item                                                            | Effort     | Impact | Source      |
 | --- | --------------------------------------------------------------- | ---------- | ------ | ----------- |
 | E30 | Vercel dashboard toggles: Skew Protection + Rolling Releases    | XS         | 🟡     | ROADMAP S20 |
-| E31 | P3 — resolve `/login` proxy; legal pages already excluded        | M          | 🟡     | PLATFORM P3 |
+| E31 | P3 — resolve `/login` proxy; legal pages already excluded       | M          | 🟡     | PLATFORM P3 |
 | E32 | PE16/V15 — build-cache audit (297 MB → <150 MB)                 | L          | 🟢     | PERFORMANCE |
 | E33 | P7 — trusted `x-user-id` header to remove RSC double-decode     | L          | 🟢     | PLATFORM P7 |
 | E34 | Re-test `cacheComponents`-blocked items on each Next.js upgrade | XS/upgrade | 🟢     | PERFORMANCE |
 
-- **E30** is a no-code pair of dashboard switches — do it in one session.
-- **E31** — `src/proxy.ts` already excludes `/privacy` and `/terms` from the
-  matcher. `/login` still runs through proxy so signed-in users can be
-  redirected away from the login page; either keep that behavior and mark
-  PLATFORM P3 partial/intentional, or move the redirect into the login surface
-  before excluding `/login`.
-- **E33** is security-sensitive (header spoofing if misconfigured) — needs a
-  careful review; only worth it if Fluid CPU numbers say JWT decode matters.
-- **E34** — S1/S2(SSG), I1/I2/I4(ISR), V8/PE18(edge) are all blocked by
-  `cacheComponents: true`, not by our code. Re-check the constraint in each
-  Next.js release note; don't re-implement around it.
+1. **E30 first** — enable Skew Protection and Rolling Releases in the Vercel
+   dashboard; record the final dashboard state in PLATFORM if needed.
+2. **E31 next** — make the `/login` proxy call explicit: keep it proxied if
+   signed-in-user redirect is more valuable, or move that redirect into the
+   login surface before excluding `/login`. `/privacy` and `/terms` are already
+   excluded from `src/proxy.ts`.
+3. **E32 next** — audit `.next/cache` from a fresh build, identify large
+   non-Turbopack subtrees, and shrink toward the <150 MB target without
+   touching runtime behavior.
+4. **E34 with every Next.js upgrade** — re-test S1/S2(SSG), I1/I2/I4(ISR),
+   and V8/PE18(edge) against the current `cacheComponents: true` constraint;
+   do not re-implement around it unless the upstream restriction changes.
+5. **Defer E33** — the trusted `x-user-id` header path is security-sensitive
+   and should wait until Vercel Fluid CPU metrics prove JWT double-decode is a
+   meaningful cost.
 
 ## Tier 7 — DX & docs
 

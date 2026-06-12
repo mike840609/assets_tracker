@@ -335,9 +335,9 @@ Ordered by **expected Active-CPU saved per change**, given the bot-dominated tra
 
 #### P3 — Statically prerender `/privacy`, `/terms`, and the `/login` shell, and exclude them from middleware
 
-**Effect:** High. The page-source comments rule out `force-static` because `cacheComponents: true` is project-wide, but the cheaper, lower-risk alternative is: keep PPR, and exclude these paths from the middleware matcher so the prebuilt shell is served from CDN without any middleware execution. The locale-cookie logic moves to first authenticated navigation instead.
+**Effect:** High. The page-source comments rule out `force-static` because `cacheComponents: true` is project-wide, but the cheaper, lower-risk alternative is: keep PPR, and exclude public legal pages from the middleware matcher so the prebuilt shell is served from CDN without any middleware execution. `/login` needs an explicit product call because it currently stays proxied to redirect signed-in users away from the login page.
 
-- File: `src/proxy.ts` — add `/login`, `/privacy`, `/terms` to the matcher exclusion.
+- File: `src/proxy.ts` — `/privacy` and `/terms` are already excluded. Decide whether to keep `/login` proxied for signed-in redirects, or move that redirect into the login surface before excluding `/login`.
 - Files: `src/app/privacy/page.tsx`, `src/app/login/page.tsx`, `src/app/terms/page.tsx` — keep PPR; move the dynamic island (e.g. `signIn` button) into a leaf client component so the shell is fully prerendered. Move the locale-cookie write into either the `/login` server action or the `(main)/layout.tsx` first render.
 
 **Pros:** Removes one of the largest bot-traffic categories from billed CPU; legitimate users still get their locale cookie set on first authenticated navigation.
