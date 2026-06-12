@@ -8,22 +8,23 @@ here, and false alarms found during the audit are recorded so they don't get
 re-flagged. Use this file as the "what to do next" view; when you ship an item,
 tick it here **and** in the source tracker.
 
-**Codebase state at audit time.** Master includes PRs #403–#417 (perf rounds,
-cache unification, unified `/api/refresh`); #418 (cron revalidation gating) and
-#419 (bundle CI gate, splash cache headers, cash-flow date floor) are open and
-assumed to merge. Bundle, rendering/PPR, service-layer caching, and page
-waterfalls are in good shape — the remaining work clusters around
-**data integrity, security hardening, observability, unit testing, schema
-evolution, and product features**.
+**Codebase state at audit time.** Current code includes the perf rounds, cache
+unification, unified `/api/refresh`, cron cache revalidation, bundle-size CI,
+splash cache headers, and the Tier 0 correctness sweep. Bundle,
+rendering/PPR, service-layer caching, and page waterfalls are in good shape —
+the remaining work clusters around **security hardening, observability, unit
+testing, schema evolution, and product features**.
 
 Legend — Effort: XS ≤30 min · S ≤2 h · M ½–1 day · L 1–3 days · XL >3 days.
 Impact: 🔴 data risk / security / launch blocker · 🟡 meaningful · 🟢 polish.
 
 ---
 
-## Tier 0 — Data integrity & correctness (do first)
+## Tier 0 — Data integrity & correctness (completed; keep as regression log)
 
-Small fixes; every one is a verified live bug with user-visible consequences.
+Small fixes; every one was a verified live bug with user-visible consequences.
+Current code shows the Tier 0 sweep is now shipped; keep the evidence here so
+the same issues do not get re-opened from older trackers.
 
 | ID  | Item                                                                            | Effort | Impact | Source            |
 | --- | ------------------------------------------------------------------------------- | ------ | ------ | ----------------- |
@@ -37,33 +38,36 @@ Small fixes; every one is a verified live bug with user-visible consequences.
 | E8  | ✅ Zod-validate holdings DELETE body; scope deletes/updates in the write itself | XS     | 🟡     | BUGS Medium + new |
 | E9  | ✅ Goal import: fail loudly when `scopeRefId` remap misses                      | XS     | 🟡     | new (audit)       |
 
-- **E1** — `src/lib/services/snapshot-service.ts:8-9` still floors "today" with
-  local-time `setHours(0,0,0,0)`. The upsert key `userId_date_baseCurrency`
-  drifts a day depending on function region → duplicate/merged daily snapshots.
-  Fix: `new Date(Date.UTC(y, m, d))`. The last remaining Critical in BUGS.md.
-- **E2** — `src/lib/services/history-service.ts` `normalizeSnapshots()`
-  tie-breaks same-day snapshots by base-currency match, not greatest
-  `createdAt`; manual + cron snapshots on one day render non-deterministically.
-- **E3** — `src/auth.ts:55-59` assigns `session.user.id = token.sub!` —
-  if a provider ever omits `sub`, every request 401s with no log. Throw loudly.
-- **E4** — `exchange-rate-service.ts`: timeout returns `{}` and `resolveRate`
-  silently falls back to `1` (values render wrong with no signal); inverse
-  rates are derived `1/rate` on the fly (float drift on chained conversions).
-  Persist both directions on write; return a `stale` flag the UI can badge.
-- **E5** — `net-worth-service.ts:97` `?? 100` silently misprices non-standard
-  option contracts 10×. Require at the validator layer; `log.warn` when defaulting.
-- **E6** — `src/lib/validators.ts`: `updateHoldingSchema.quantity` accepts `0`
-  (zombie holdings hidden only by read-time filters); `assetType` is mutable
-  (STOCK→OPTION without OCC fields = unrepresentable row); transaction update
-  schemas lack a discriminated union on `type` and accept non-datetime
-  `createdAt`. One PR across the schema file + the routes that consume it.
-- **E8** — `accounts/[id]/holdings/route.ts:182-196`: `const { id } = body`
-  un-validated (400 vs 404 confusion), and the delete/update statements are
-  check-then-write on bare `id` — fold ownership into the write
-  (`deleteMany({ where: { id, account: { userId } } })`) to remove the TOCTOU
-  window. Same pattern in `stocks/[id]/route.ts` PATCH/DELETE.
-- **E9** — `settings/data/route.ts:~387`: imported ACCOUNT-scoped goals whose
-  old account id isn't in the remap silently get a dangling/null `scopeRefId`.
+- **E1** — Done in `snapshot-service.ts`: `createSnapshot()` now derives the
+  upsert date with `Date.UTC(getUTCFullYear(), getUTCMonth(), getUTCDate())`,
+  while `createdAt` preserves the exact snapshot timestamp.
+- **E2** — Done in `history-service.ts`: normalized history and raw breakdown
+  dedupe share the same tie-break, preferring target-base-currency snapshots
+  and then greatest `createdAt`.
+- **E3** — Done in `auth.ts`: the session callback throws loudly when
+  `token.sub` is missing before assigning `session.user.id`.
+- **E4** — Done in `exchange-rate-service.ts` + refresh UI: refresh responses
+  distinguish `fetchFailed`, inverse rows are persisted on refresh, and
+  `getExchangeRatesFreshness()` feeds the stale-FX warning badge. `resolveRate`
+  keeps inverse/USD-cross fallback support for legacy or missing rows.
+- **E5** — Done/guarded: option creation is OCC-derived with
+  `contractMultiplier: 100`; net-worth only defaults legacy null multipliers
+  to 100 and logs `option.multiplier.defaulted`.
+- **E6** — Done with route nuance: create schemas require positive quantities;
+  non-option PATCH quantity `0` is rejected in the holdings route, while option
+  quantity `0` remains allowed to close a position without deleting its audit
+  trail. `assetType: OPTION` cannot be introduced by PATCH, existing options
+  cannot be converted away, and transaction update timestamps use
+  `z.iso.datetime()` with per-type `superRefine` rules.
+- **E7** — Done in `accounts/[id]/route.ts`: cash-balance edit diffs use
+  Prisma `Decimal` math instead of number subtraction.
+- **E8** — Done in `accounts/[id]/holdings/route.ts` and
+  `stocks/[id]/route.ts`: holdings DELETE validates with `deleteHoldingSchema`,
+  and ownership is folded into `deleteMany`/`updateMany` writes to remove the
+  check-then-write TOCTOU window.
+- **E9** — Done in `settings/data/route.ts`: account-scoped import goals are
+  pre-validated, remapped through `accountIdMap`, and fail with a 400 instead
+  of silently writing a dangling/null `scopeRefId`.
 
 ## Tier 1 — Security hardening
 
@@ -125,7 +129,7 @@ durationMs }` row each run; `/api/health` (E17) goes red when no successful
 | --- | ------------------------------------------------------------------- | ------ | ------ | ----------- |
 | E22 | Vitest + first service-layer suite                                  | M      | 🔴     | ROADMAP S7  |
 | E23 | E2E gaps: /projections, /history, settings import/export round-trip | M      | 🟡     | new (audit) |
-| E24 | Run `format:check`/`lint` in PR CI (not just pre-push hook)         | XS     | 🟢     | new (audit) |
+| E24 | Run `format:check` in PR CI; lint/typecheck are already gated       | XS     | 🟢     | new (audit) |
 
 - **E22** — Zero unit tests exist. First wave, all pure functions:
   `net-worth-service` two-pass + missing-rate path · `exchange-rate-service`
@@ -137,6 +141,9 @@ durationMs }` row each run; `/api/health` (E17) goes red when no successful
   pages with the most math (projections, history) and the riskiest mutation
   (data import) have no coverage. An import→export round-trip equality test
   doubles as a backup-integrity guarantee.
+- **E24** — `.github/workflows/ci.yml` already runs `npm run lint` and
+  `npm run typecheck` on PRs. The remaining CI gap is `npm run format:check`
+  (currently only covered locally/pre-push via scripts and lint-staged).
 
 ## Tier 4 — Database & schema evolution
 
@@ -189,12 +196,17 @@ The June audit closed most of this. Remaining, in order:
 | ID  | Item                                                            | Effort     | Impact | Source      |
 | --- | --------------------------------------------------------------- | ---------- | ------ | ----------- |
 | E30 | Vercel dashboard toggles: Skew Protection + Rolling Releases    | XS         | 🟡     | ROADMAP S20 |
-| E31 | P3 — exclude `/login`/`/privacy`/`/terms` from proxy matcher    | M          | 🟡     | PLATFORM P3 |
+| E31 | P3 — resolve `/login` proxy; legal pages already excluded        | M          | 🟡     | PLATFORM P3 |
 | E32 | PE16/V15 — build-cache audit (297 MB → <150 MB)                 | L          | 🟢     | PERFORMANCE |
 | E33 | P7 — trusted `x-user-id` header to remove RSC double-decode     | L          | 🟢     | PLATFORM P7 |
 | E34 | Re-test `cacheComponents`-blocked items on each Next.js upgrade | XS/upgrade | 🟢     | PERFORMANCE |
 
 - **E30** is a no-code pair of dashboard switches — do it in one session.
+- **E31** — `src/proxy.ts` already excludes `/privacy` and `/terms` from the
+  matcher. `/login` still runs through proxy so signed-in users can be
+  redirected away from the login page; either keep that behavior and mark
+  PLATFORM P3 partial/intentional, or move the redirect into the login surface
+  before excluding `/login`.
 - **E33** is security-sensitive (header spoofing if misconfigured) — needs a
   careful review; only worth it if Fluid CPU numbers say JWT decode matters.
 - **E34** — S1/S2(SSG), I1/I2/I4(ISR), V8/PE18(edge) are all blocked by
@@ -254,12 +266,13 @@ Recorded so future audits don't waste a cycle:
 
 ## Suggested sequencing
 
-1. **Week 1 — correctness sweep:** E1–E9 + E10 + E12 + E14 (one or two PRs;
-   all XS/S). Highest risk-reduction per hour in the repo.
-2. **Week 2 — eyes and ears:** E17 + E18 + E19 (+E24). After this, failures
-   page you instead of hiding.
-3. **Week 3 — lock it in:** E22 unit suite (+E23 E2E gaps), then E11 + E13 +
-   E15 hardening.
+1. **Week 1 — security quick wins:** E10 + E12 + E14 + E24, then E11 + E13.
+   Tier 0 is already complete, so these are now the highest risk-reduction
+   items per hour.
+2. **Week 2 — eyes and ears:** E17 + E18 + E19. After this, failures page you
+   instead of hiding.
+3. **Week 3 — lock it in:** E22 unit suite (+E23 E2E gaps), then E15 CSP
+   hardening once the app has observability for report-only violations.
 4. **Then the keystone:** E25 schema migration → F3 cost basis → F6/F8
    cashflow. From here the F-series order above takes over.
 5. **Continuous:** E30 toggles now (5 min); E34 on every Next upgrade;
