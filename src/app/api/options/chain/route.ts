@@ -19,6 +19,7 @@ type ChainResponse = {
 
 const EMPTY: ChainResponse = { underlying: "", expirations: [], chains: {} };
 const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
+const SYMBOL_SHAPE = /^[A-Z][A-Z0-9.-]{0,9}$/;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const slim = (arr: any[] | undefined): ChainContract[] =>
@@ -37,6 +38,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get("symbol")?.trim().toUpperCase();
   if (!symbol) return ok(EMPTY);
+  if (!SYMBOL_SHAPE.test(symbol)) return ok(EMPTY);
 
   // Optional: fetch chain for a specific expiration (lazy-loading from the UI)
   const dateParam = searchParams.get("date"); // YYYY-MM-DD

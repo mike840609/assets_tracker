@@ -24,7 +24,14 @@
       "Bash(DATABASE_URL=\"postgresql://ci:ci@localhost:5432/ci\" AUTH_SECRET=\"ci-secret-placeholder-not-real\" AUTH_GOOGLE_ID=\"ci-google-id\" AUTH_GOOGLE_SECRET=\"ci-google-secret\" CRON_SECRET=\"ci-cron-secret\" npm run build)",
       "Bash(mkdir -p /home/user/asset_tracker/.husky)",
       "Bash(git rebase *)",
-      "Bash(GIT_EDITOR=true git rebase --continue)"
+      "Bash(GIT_EDITOR=true git rebase --continue)",
+      "Bash(cat)",
+      "Bash(python3 -)",
+      "Bash(sed -n 80,115p src/proxy.ts)",
+      "Bash(sed -n '/#### P1 —/,/#### P5 —/p' docs/PLATFORM.md)",
+      "Bash(curl -s -o /dev/null -D - http://localhost:3000/privacy)",
+      "Bash(curl -s -o /dev/null -D - -H \"Accept-Language: zh-TW\" http://localhost:3000/privacy)",
+      "Bash(python3 -m json.tool)"
     ]
   }
 }

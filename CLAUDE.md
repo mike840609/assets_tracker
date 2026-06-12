@@ -40,6 +40,8 @@ ANALYZE=true npm run build  # Build with @next/bundle-analyzer HTML reports
 npm run lint         # Run ESLint
 
 # Database
+npm run db:up        # Start local PostgreSQL via docker-compose (recommended for dev — avoids Neon compute costs; then `npx prisma db push`)
+npm run db:down      # Stop the local PostgreSQL container
 npx prisma generate                                # Regenerate Prisma client after schema changes (also runs automatically via `postinstall` after `npm install`)
 npx prisma migrate dev --name <description>        # Author a new migration locally (commits to prisma/migrations/)
 npx prisma migrate deploy                          # Apply pending migrations against $DATABASE_URL (run by build:vercel on Vercel)
@@ -47,6 +49,9 @@ npx prisma migrate resolve --applied <migration>   # One-shot baseline: mark a m
 npx prisma db push                                 # Quick prototype-only schema sync — bypasses migration history; commit a migrate dev before merging
 npx prisma db push --force-reset                    # Reset local DB (drops all tables, recreates schema directly, bypassing migration history)
 npx prisma studio                                  # Open Prisma Studio GUI
+
+# Dead-code detection
+npx knip             # Find unused files/exports/deps (config: knip.json; shadcn ui/ primitives are ignored)
 
 # E2E tests (Playwright)
 npm run test:e2e         # Run Playwright suite headless
@@ -98,9 +103,11 @@ src/
 │   │   ├── page.tsx            # Dashboard
 │   │   ├── accounts/           # Accounts list + [id] detail
 │   │   ├── analysis/           # Analysis tab (charts: assets/liabilities, cash flow, movers)
+│   │   ├── goals/              # Net worth goals & milestones
 │   │   ├── history/            # Net worth history view
 │   │   ├── projections/        # FIRE/retirement projection page
-│   │   └── settings/           # User settings
+│   │   ├── settings/           # User settings
+│   │   └── stocks/             # Stock watchlist / tracker
 │   └── api/
 │       ├── auth/[...nextauth]/ # NextAuth handlers
 │       ├── accounts/           # CRUD for accounts
@@ -108,13 +115,16 @@ src/
 │       ├── accounts/[id]/transactions/      # HoldingTransaction CRUD
 │       ├── accounts/[id]/cash-transactions/ # CashTransaction CRUD
 │       ├── exchange-rates/     # Fetch + refresh exchange rates
+│       ├── goals/              # Goals CRUD
 │       ├── options/chain/      # Options chain data (Yahoo Finance)
 │       ├── prices/refresh/     # Manual price refresh trigger
 │       ├── snapshots/          # Net worth snapshot history
 │       ├── search/             # Holding symbol search (Yahoo Finance)
 │       ├── settings/           # User settings API
+│       ├── stocks/             # Stock watchlist CRUD + quote + refresh
+│       ├── _metrics/vitals/    # Web Vitals ingestion
 │       └── cron/snapshot/      # Daily cron job (requires CRON_SECRET bearer token)
-├── hooks/                      # Client hooks (use-chart-animation, use-count-up)
+├── hooks/                      # Client hooks (use-chart-animation, use-count-up, use-is-mobile, use-refresh-cooldown, …)
 └── proxy.ts                    # Server-side proxy module (used by service layer)
 ```
 
@@ -183,6 +193,14 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 - Stocks/ETFs/bonds: Yahoo Finance 2
 - Crypto: Yahoo Finance 2 first, then CoinGecko API (free tier, no key) as fallback
 - Prices are cached in the `PriceCache` table (keyed by symbol)
+- All Yahoo calls go through the shared lazily-instantiated client in `src/lib/services/yahoo-client.ts` (`getYahooClient()`) — never instantiate `yahoo-finance2` directly
+
+**Manual refresh throttling** (see `docs/REFRESH_THROTTLING_PLAN.md`):
+
+- `src/lib/refresh-policy.ts` — isomorphic TTL constants (`PRICE_REFRESH_TTL_MS`, `FX_REFRESH_TTL_MS`, `CLIENT_REFRESH_COOLDOWN_MS`) shared by server freshness gates and the client cooldown so the two layers can't drift
+- `src/lib/refresh-client.ts` — client-side entry point for every "refresh market data" surface (dashboard button, pull-to-refresh, settings); module-level cooldown + `refresh:cooldown` event
+- `src/hooks/use-refresh-cooldown.ts` — React hook over that cooldown state
+- The server enforces its own freshness gate (skips external fetches for recently-cached symbols/rates) and per-user rate limits regardless of client behavior; throttled responses carry `Retry-After`
 
 **Exchange rates** (`src/lib/services/exchange-rate-service.ts`):
 
@@ -202,6 +220,10 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 - `snapshot-service.ts` — creates `NetWorthSnapshot` rows with the lossless per-account breakdown
 - `history-service.ts` — reads snapshots and renormalizes them on the fly into the user's current base currency
 - `analysis-service.ts` — backs the `/analysis` tab
+- `analysis-payload-service.ts` — `getCachedAnalysisPayload`: bundles the four `/analysis` history/cash-flow reads behind one `unstable_cache` entry
+- `goal-service.ts` — goals CRUD + progress computation against the cached net-worth summary (backs `/goals`)
+- `stock-watch-service.ts` — stock watchlist (`StockWatchItem`) reads/refresh (backs `/stocks`)
+- `yahoo-client.ts` — shared `yahoo-finance2` client singleton (see Price Pipeline above)
 - `projection-service.ts` — `getProjectionData` for FIRE/retirement projections (uses `"use cache"`)
 - `settings-service.ts` — user settings reads/writes
 - `balance.ts` — shared balance/value computation helpers
@@ -239,10 +261,13 @@ src/components/
 ├── accounts/     # Account detail, holding form, transaction history, inline editors
 ├── analysis/     # Analysis view, assets/liabilities chart, cash flow chart, movers list
 ├── dashboard/    # Net worth card, allocation chart, trend chart, accounts summary
+├── goals/        # Goal cards, goal form dialog, goals view + onboarding
 ├── history/      # History table, pull-to-refresh
 ├── layout/       # Sidebar, mobile header, theme provider/toggle
+├── onboarding/   # First-run empty-state surface (shared by feature onboardings)
 ├── projections/  # FIRE projection chart and view
-└── settings/     # Settings form
+├── settings/     # Settings form
+└── stocks/       # Stock tracker view + onboarding
 ```
 
 ### Key Conventions
