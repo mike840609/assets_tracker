@@ -24,44 +24,44 @@ The existing `docs/` folder has trackers (PERFORMANCE, PLATFORM, UI*UX, CODE_QUA
 
 ### Quick-Reference Table
 
-| ID                                 | Title                                                                  | Effort | Impact | Status | Source                 |
-| ---------------------------------- | ---------------------------------------------------------------------- | ------ | ------ | ------ | ---------------------- |
-| **Tier 1 — Crucial**               |                                                                        |        |        |        |
-| S1                                 | Route error boundaries (error.tsx / not-found / global-error)          | S      | 🔴     | ❌     | R11                    |
-| S2                                 | Timing-safe `CRON_SECRET` comparison                                   | XS     | 🔴     | ❌     | R4                     |
-| S3                                 | Ownership-check audit on `[id]` mutations                              | S      | 🔴     | ✅     | R5 / D1                |
-| S4                                 | Structured logger + Sentry across services (**do first** — F1)         | M      | 🔴     | ❌     | Q5 / R17               |
-| S5                                 | `/api/health` endpoint (DB ping + freshness) (**do first** — F1)       | XS     | 🔴     | ❌     | V12 / R12              |
-| S6                                 | Cron-run audit table + freshness alert (**do first** — F1)             | M      | 🔴     | ❌     | V11 / R13              |
-| S7                                 | Vitest + service-layer test suite                                      | M      | 🔴     | ❌     | Q1–Q4                  |
-| S8                                 | CSP header (Report-Only → enforce) (report endpoint scaffolded — F4)   | M      | 🔴     | ⚠️     | V14 / R2               |
-| S9                                 | GDPR data export + account deletion                                    | L      | 🔴     | ❌     | R7 / R8                |
-| S10                                | Middleware returns JSON 401 for `/api/*`                               | XS     | 🔴     | ❌     | SUGGESTIONS 2026-05-11 |
-| **Tier 2 — High-Value**            |                                                                        |        |        |        |
-| S11                                | Color-blind safe asset/liability cues                                  | S      | 🟡     | ❌     | fresh                  |
-| S12                                | Mobile polish backlog M1–M3, M5–M9                                     | M      | 🟡     | ❌     | UI_UX M-series         |
-| S13                                | Analysis Phase 3 (date picker, YoY, export, benchmark, vol)            | L      | 🟡     | ❌     | UI_UX Phase 3          |
-| S14                                | Custom account ordering (drag-reorder + `sortOrder`)                   | M      | 🟡     | ❌     | fresh                  |
-| S15                                | Dividend / income tracking (`IncomeEvent` model)                       | L      | 🟡     | ❌     | fresh                  |
-| S16                                | Expand crypto symbol coverage beyond ~20 CoinGecko entries             | S      | 🟡     | ❌     | fresh                  |
-| S17                                | `Cache-Control` on `/api/snapshots`, `/api/exchange-rates`             | S      | 🟡     | ✅     | V17 / V18              |
-| S18                                | Bundle-size CI gate (PR-fail if main grows >5%)                        | S      | 🟡     | ✅     | V22 / V33              |
-| S19                                | Preconnect to `va.vercel-scripts.com`                                  | XS     | 🟡     | ✅     | V28                    |
-| S20                                | Vercel Skew Protection on (**promote to Tier 1** — bundle with F6)     | XS     | 🟡     | ❌     | V35                    |
-| S21                                | Chart CLS reserve (explicit `min-height` on lazy charts)               | XS     | 🟡     | ✅     | V23                    |
-| S22                                | Holding price-alert thresholds (email / web push)                      | L      | 🟡     | ❌     | fresh                  |
-| S23                                | Tax-lot tracking (FIFO / specific-lot cost basis)                      | L      | 🟡     | ❌     | fresh                  |
-| **Tier 3 — Polish & DX**           |                                                                        |        |        |        |
-| S24                                | Critical docs (SECURITY / OBSERVABILITY / TESTING / DISASTER_RECOVERY) | M      | 🟢     | ❌     | C1–C4                  |
-| S25                                | Enable `noUncheckedIndexedAccess` in tsconfig                          | M      | 🟢     | ❌     | Q10                    |
-| S26                                | `lint-staged` pre-commit (format only staged files)                    | XS     | 🟢     | ❌     | Q15                    |
-| S27                                | OpenAPI spec for `/api/*` (zod-to-openapi)                             | M      | 🟢     | ❌     | fresh                  |
-| S28                                | Snapshot reconciliation utility (drift >0.5% alert)                    | S      | 🟢     | ❌     | fresh                  |
-| **Tier 4 — Future / Aspirational** |                                                                        |        |        |        |
-| S29                                | AI portfolio insights via Vercel AI Gateway                            | L      | 🟢     | ❌     | fresh                  |
-| S30                                | Plaid / SnapTrade read-only brokerage sync                             | XL     | 🟢     | ❌     | fresh                  |
-| S31                                | Multi-user / household read-only sharing                               | XL     | 🟢     | ❌     | fresh                  |
-| S32                                | Net-worth forecast + goal tracking                                     | L      | 🟢     | ❌     | UI_UX Phase 4          |
+| ID                                 | Title                                                                  | Effort | Impact | Status      | Source                 |
+| ---------------------------------- | ---------------------------------------------------------------------- | ------ | ------ | ----------- | ---------------------- |
+| **Tier 1 — Crucial**               |                                                                        |        |        |             |
+| S1                                 | Route error boundaries (error.tsx / not-found / global-error)          | S      | 🔴     | ❌          | R11                    |
+| S2                                 | Timing-safe `CRON_SECRET` comparison                                   | XS     | 🔴     | ❌          | R4                     |
+| S3                                 | Ownership-check audit on `[id]` mutations                              | S      | 🔴     | ✅          | R5 / D1                |
+| S4                                 | Structured logger + Sentry across services (**do first** — F1)         | M      | 🔴     | ❌          | Q5 / R17               |
+| S5                                 | `/api/health` endpoint (DB ping + freshness) (**do first** — F1)       | XS     | 🔴     | ❌          | V12 / R12              |
+| S6                                 | Cron-run audit table + freshness alert (**do first** — F1)             | M      | 🔴     | ❌          | V11 / R13              |
+| S7                                 | Vitest + service-layer test suite                                      | M      | 🔴     | ❌          | Q1–Q4                  |
+| S8                                 | CSP header (Report-Only → enforce) (report endpoint scaffolded — F4)   | M      | 🔴     | ⚠️          | V14 / R2               |
+| S9                                 | GDPR data export + account deletion                                    | L      | 🔴     | ❌          | R7 / R8                |
+| S10                                | Middleware returns JSON 401 for `/api/*`                               | XS     | 🔴     | ❌          | SUGGESTIONS 2026-05-11 |
+| **Tier 2 — High-Value**            |                                                                        |        |        |             |
+| S11                                | Color-blind safe asset/liability cues                                  | S      | 🟡     | ❌          | fresh                  |
+| S12                                | Mobile polish backlog M1–M3, M5–M9                                     | M      | 🟡     | ❌          | UI_UX M-series         |
+| S13                                | Analysis Phase 3 (date picker, YoY, export, benchmark, vol)            | L      | 🟡     | ❌          | UI_UX Phase 3          |
+| S14                                | Custom account ordering (drag-reorder + `sortOrder`)                   | M      | 🟡     | ❌          | fresh                  |
+| S15                                | Dividend / income tracking (`IncomeEvent` model)                       | L      | 🟡     | ❌          | fresh                  |
+| S16                                | Expand crypto symbol coverage beyond ~20 CoinGecko entries             | S      | 🟡     | ❌          | fresh                  |
+| S17                                | `Cache-Control` on `/api/snapshots`, `/api/exchange-rates`             | S      | 🟡     | ✅          | V17 / V18              |
+| S18                                | Bundle-size CI gate (PR-fail if main grows >5%)                        | S      | 🟡     | ✅          | V22 / V33              |
+| S19                                | Preconnect to `va.vercel-scripts.com`                                  | XS     | 🟡     | ✅          | V28                    |
+| S20                                | Vercel Skew Protection on (**promote to Tier 1** — bundle with F6)     | XS     | 🟡     | ⚠️ External | V35                    |
+| S21                                | Chart CLS reserve (explicit `min-height` on lazy charts)               | XS     | 🟡     | ✅          | V23                    |
+| S22                                | Holding price-alert thresholds (email / web push)                      | L      | 🟡     | ❌          | fresh                  |
+| S23                                | Tax-lot tracking (FIFO / specific-lot cost basis)                      | L      | 🟡     | ❌          | fresh                  |
+| **Tier 3 — Polish & DX**           |                                                                        |        |        |             |
+| S24                                | Critical docs (SECURITY / OBSERVABILITY / TESTING / DISASTER_RECOVERY) | M      | 🟢     | ❌          | C1–C4                  |
+| S25                                | Enable `noUncheckedIndexedAccess` in tsconfig                          | M      | 🟢     | ❌          | Q10                    |
+| S26                                | `lint-staged` pre-commit (format only staged files)                    | XS     | 🟢     | ❌          | Q15                    |
+| S27                                | OpenAPI spec for `/api/*` (zod-to-openapi)                             | M      | 🟢     | ❌          | fresh                  |
+| S28                                | Snapshot reconciliation utility (drift >0.5% alert)                    | S      | 🟢     | ❌          | fresh                  |
+| **Tier 4 — Future / Aspirational** |                                                                        |        |        |             |
+| S29                                | AI portfolio insights via Vercel AI Gateway                            | L      | 🟢     | ❌          | fresh                  |
+| S30                                | Plaid / SnapTrade read-only brokerage sync                             | XL     | 🟢     | ❌          | fresh                  |
+| S31                                | Multi-user / household read-only sharing                               | XL     | 🟢     | ❌          | fresh                  |
+| S32                                | Net-worth forecast + goal tracking                                     | L      | 🟢     | ❌          | UI_UX Phase 4          |
 
 ---
 
@@ -220,11 +220,17 @@ Already shipped: `src/app/layout.tsx:288-289` has `<link rel="preconnect" href="
 
 #### S20 — Vercel Skew Protection
 
-**XS | 🟡 → 🔴 | ❌ — closes V35 — _MCP F6: bundle with Rolling Releases_**
+**XS | 🟡 → 🔴 | ⚠️ External dashboard action — closes V35 — _MCP F6: bundle with Rolling Releases_**
 
 Enable in Vercel project settings + read `x-deployment-id` header in client. Prevents users from getting half-old / half-new JS during a deploy.
 
 > **MCP context (F6):** Pair this XS dashboard toggle with **Rolling Releases** (also a dashboard toggle, no code change). Both meaningfully shrink deploy blast radius given the daily-deploy cadence (5+ prod deploys per day observed). Logical to ship in the same dashboard session.
+
+2026-06-12: Vercel project read access works for `asset-tracker`, but the
+available connector does not expose write tools for Skew Protection or Rolling
+Releases. Enable both manually in Vercel Dashboard: Project Settings →
+Deployment Protection → Skew Protection; Project Settings → Deployments →
+Rolling Releases, 10% canary for 5 min.
 
 #### S21 — Chart CLS reserve
 

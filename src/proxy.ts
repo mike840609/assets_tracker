@@ -1,16 +1,12 @@
 import NextAuth from "next-auth";
 import authConfig from "./auth.config";
+import { SESSION_COOKIE_NAMES } from "@/lib/auth-cookies";
 import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
 const PUBLIC_ROUTES = ["/login", "/privacy", "/terms"];
-
-// NextAuth v5 default session-cookie names: the `__Secure-` prefix is used
-// when the app runs over https (production), the bare name over http (dev).
-// Must stay in sync with NextAuth defaults — we set no custom cookie config.
-const SESSION_COOKIE_NAMES = ["__Secure-authjs.session-token", "authjs.session-token"];
 
 function hasSessionCookie(req: NextRequest): boolean {
   return SESSION_COOKIE_NAMES.some((name) => req.cookies.has(name));
@@ -122,7 +118,8 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 //   - PWA assets sw.js + manifest.webmanifest: the browser fetches these without
 //     credentials, so they must resolve to 200 (not a /login redirect) or Chrome's
 //     installability check fails and the install prompt never appears.
-//   - Public legal pages, so they can render without NextAuth cookie work.
+//   - Public login/legal pages, so they can render without NextAuth cookie work.
+//     The signed-in /login redirect lives in the login page itself.
 //   - Common bot/scanner probes observed in production logs and in the wild:
 //     wp-admin/wp-login/wp-content/wp-includes/wordpress, xmlrpc, cgi-bin,
 //     phpmyadmin/adminer, cmd_*, vendor/phpunit, plus any path containing
@@ -133,6 +130,6 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 // component carrying them is excluded.
 export const config = {
   matcher: [
-    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|manifest\\.webmanifest|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms|wp-admin|wp-login|wp-content|wp-includes|wordpress|xmlrpc|cgi-bin|cmd_|phpmyadmin|adminer|vendor/phpunit|.*\\.php|.*\\.aspx?|.*\\.jsp|.*\\.cgi|.*\\.env|.*\\.git|.*\\.svn|.*\\.htaccess|.*\\.htpasswd).*)",
+    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|manifest\\.webmanifest|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|login|privacy|terms|wp-admin|wp-login|wp-content|wp-includes|wordpress|xmlrpc|cgi-bin|cmd_|phpmyadmin|adminer|vendor/phpunit|.*\\.php|.*\\.aspx?|.*\\.jsp|.*\\.cgi|.*\\.env|.*\\.git|.*\\.svn|.*\\.htaccess|.*\\.htpasswd).*)",
   ],
 };
