@@ -46,7 +46,7 @@ Findings sourced from the Vercel MCP connector against project `prj_soY30S7ki1x3
 | V32 | Configure `<SpeedInsights beforeSend={…}>` to drop `/login` + `/privacy` from telemetry                                                                                                                                    | Observability            | 🟢 Low    | 15 min  | ✅ Done                      |
 | V33 | Ship `@next/bundle-analyzer` (supersedes V22) — prerequisite for measuring any further client-JS Speed Insights wins                                                                                                       | Observability            | 🟢 Low    | 30 min  | ✅ Done                      |
 | V34 | Extend `maxDuration` in `vercel.json` to cover `/api/prices/refresh` (60 s) and `/api/exchange-rates/refresh` (30 s)                                                                                                       | Reliability              | 🟡 Medium | 5 min   | ✅ Done                      |
-| V35 | Enable Skew Protection — keeps old deployment assets alive during transition so users don't hit JS chunk 404s on new deploy (configure via Vercel Dashboard → Project Settings → Deployment Protection, not `vercel.json`) | Reliability              | 🟢 Low    | 2 min   | ⚠️ External dashboard action |
+| V35 | Enable Skew Protection — keeps old deployment assets alive during transition so users don't hit JS chunk 404s on new deploy (Pro-plan platform control; configure via Vercel Dashboard, not `vercel.json`) | Reliability              | 🟢 Low    | 2 min   | 🚫 Free-plan blocked         |
 | V36 | Add `poweredByHeader: false` to `next.config.ts`; set `images.minimumCacheTTL: 86400` for Google profile-picture cache (was 60 s default)                                                                                  | Performance              | 🟢 Low    | 5 min   | ✅ Done                      |
 
 ### Key Build-log Findings (2026-04-17)
@@ -137,7 +137,7 @@ Deployment `dpl_3KqPj4qBr3ZojdDaSxtKvo8iNhC2` (44s total, 292 MB build cache):
 
 **V34 — Extend `maxDuration` for refresh routes.** Add per-function entries: `"src/app/api/prices/refresh/route.ts": { "maxDuration": 60 }` and `"src/app/api/exchange-rates/refresh/route.ts": { "maxDuration": 30 }`. Critical files: `vercel.json`.
 
-**V35 — Enable Skew Protection.** Configure via Vercel Dashboard → Project Settings → Deployment Protection. No `vercel.json` change needed. 2026-06-12: the Vercel connector could read the `asset-tracker` project but did not expose a write tool for this switch, so this remains an external dashboard action.
+**V35 — Enable Skew Protection.** Pro-plan platform control; no `vercel.json` change needed. 2026-06-12: this project is on the Vercel Free plan, so the item is intentionally deferred until a Pro upgrade or a plan availability change.
 
 **V36 — `poweredByHeader: false` + image cache TTL.** Add `poweredByHeader: false` to `next.config.ts`; set `images.minimumCacheTTL: 86400` so Google profile pictures aren't re-fetched every 60 s. Critical files: `next.config.ts`.
 
@@ -535,9 +535,13 @@ All 5 domains are `*.vercel.app`. Production traffic served from `assets-tracker
 
 #### F6 — Vercel Rolling Releases (canary deploys) · 🟡 · Effort: XS
 
-Daily-deploy cadence (5 deploys to production yesterday alone) means a bad ship hits 100% of users instantly. **Rolling Releases** (GA June 2025) lets a deploy go to a configurable % first. Toggle in project settings; no code change.
+Daily-deploy cadence (5 deploys to production yesterday alone) means a bad ship hits 100% of users instantly. **Rolling Releases** (GA June 2025) lets a deploy go to a configurable % first when the Vercel plan supports it. No code change.
 
-**Action:** Enable in Vercel dashboard → Settings → Deployments → Rolling Releases. Set canary to 10% for 5 min. Pairs with S20 (Skew Protection) in `docs/ROADMAP.md` — both are XS dashboard toggles that meaningfully shrink deploy blast radius.
+**Status:** Deferred on the current Vercel Free plan. If the project upgrades to
+Pro, enable in Vercel dashboard → Settings → Deployments → Rolling Releases and
+set canary to 10% for 5 min. Pairs with S20 (Skew Protection) in
+`docs/ROADMAP.md` — both are dashboard toggles that meaningfully shrink deploy
+blast radius.
 
 #### F7 — Vercel BotID on hot public endpoints · 🟡 · Effort: S
 
@@ -561,7 +565,7 @@ Driven by the F-series above. No items are removed — only urgency shifts.
 | S6   | Tier 1         | Tier 1 — **do alongside S5**          | F1: paired with /api/health; without `CronRun` table no historical signal exists either |
 | S4   | Tier 1         | Tier 1 — **promote ahead of S1 / S7** | F1: every other Tier-1 item benefits from having a logger first                         |
 | S8   | Tier 1, ❌     | Tier 1, **⚠️ partial**                | F4: report endpoint already scaffolded                                                  |
-| S20  | Tier 2         | Tier 1 — bundle with F6               | F6: both are XS dashboard toggles; logical to ship together                             |
+| S20  | Tier 2         | Deferred on Free — bundle with F6 if upgraded | F6: both are Pro-plan platform controls; logical to ship together after a plan upgrade |
 
 ### Cross-References
 

@@ -47,7 +47,7 @@ The existing `docs/` folder has trackers (PERFORMANCE, PLATFORM, UI*UX, CODE_QUA
 | S17                                | `Cache-Control` on `/api/snapshots`, `/api/exchange-rates`             | S      | 🟡     | ✅          | V17 / V18              |
 | S18                                | Bundle-size CI gate (PR-fail if main grows >5%)                        | S      | 🟡     | ✅          | V22 / V33              |
 | S19                                | Preconnect to `va.vercel-scripts.com`                                  | XS     | 🟡     | ✅          | V28                    |
-| S20                                | Vercel Skew Protection on (**promote to Tier 1** — bundle with F6)     | XS     | 🟡     | ⚠️ External | V35                    |
+| S20                                | Vercel Skew Protection on (**Pro-plan only; bundle with F6 if upgraded**) | XS     | 🟡     | 🚫 Free-plan blocked | V35                    |
 | S21                                | Chart CLS reserve (explicit `min-height` on lazy charts)               | XS     | 🟡     | ✅          | V23                    |
 | S22                                | Holding price-alert thresholds (email / web push)                      | L      | 🟡     | ❌          | fresh                  |
 | S23                                | Tax-lot tracking (FIFO / specific-lot cost basis)                      | L      | 🟡     | ❌          | fresh                  |
@@ -220,17 +220,19 @@ Already shipped: `src/app/layout.tsx:288-289` has `<link rel="preconnect" href="
 
 #### S20 — Vercel Skew Protection
 
-**XS | 🟡 → 🔴 | ⚠️ External dashboard action — closes V35 — _MCP F6: bundle with Rolling Releases_**
+**XS | 🟡 → 🔴 | 🚫 Free-plan blocked — closes V35 if project upgrades — _MCP F6: bundle with Rolling Releases_**
 
 Enable in Vercel project settings + read `x-deployment-id` header in client. Prevents users from getting half-old / half-new JS during a deploy.
 
-> **MCP context (F6):** Pair this XS dashboard toggle with **Rolling Releases** (also a dashboard toggle, no code change). Both meaningfully shrink deploy blast radius given the daily-deploy cadence (5+ prod deploys per day observed). Logical to ship in the same dashboard session.
+> **MCP context (F6):** If the project upgrades to Pro, pair this platform
+> toggle with **Rolling Releases**. Both meaningfully shrink deploy blast radius
+> given the daily-deploy cadence (5+ prod deploys per day observed), but they
+> are deferred while the project remains on the Vercel Free plan.
 
-2026-06-12: Vercel project read access works for `asset-tracker`, but the
-available connector does not expose write tools for Skew Protection or Rolling
-Releases. Enable both manually in Vercel Dashboard: Project Settings →
-Deployment Protection → Skew Protection; Project Settings → Deployments →
-Rolling Releases, 10% canary for 5 min.
+2026-06-12: this project is on the Vercel Free plan. Skew Protection and
+Rolling Releases are Pro-plan platform controls, so this is intentionally
+deferred rather than blocked on code or connector access. Revisit only after a
+Pro upgrade or if Vercel makes these controls available on Free.
 
 #### S21 — Chart CLS reserve
 

@@ -195,16 +195,16 @@ The June audit closed most of this. Remaining, in order:
 
 | ID  | Item                                                                      | Effort     | Impact | Source      |
 | --- | ------------------------------------------------------------------------- | ---------- | ------ | ----------- |
-| E30 | ⚠️ External: Vercel dashboard toggles, Skew Protection + Rolling Releases | XS         | 🟡     | ROADMAP S20 |
+| E30 | 🚫 Free-plan blocked: Skew Protection + Rolling Releases                 | XS         | 🟡     | ROADMAP S20 |
 | E31 | ✅ P3 — resolve `/login` proxy; legal pages already excluded              | M          | 🟡     | PLATFORM P3 |
 | E32 | ⚠️ PE16/V15 — build-cache audit (297 MB → <150 MB)                        | L          | 🟢     | PERFORMANCE |
 | E33 | ⏸️ P7 — trusted `x-user-id` header to remove RSC double-decode            | L          | 🟢     | PLATFORM P7 |
 | E34 | ✅ Re-test `cacheComponents`-blocked items on each Next.js upgrade        | XS/upgrade | 🟢     | PERFORMANCE |
 
-- **E30** — Verified 2026-06-12: the Vercel connector can read project
-  `asset-tracker` but does not expose write tools for these toggles. Enable in
-  Vercel Dashboard → Project Settings: Deployment Protection → Skew Protection,
-  and Deployments → Rolling Releases (10% for 5 min).
+- **E30** — Deferred 2026-06-12: this project is on the Vercel Free plan, while
+  Skew Protection and Rolling Releases are Pro-plan platform controls. Do not
+  keep re-opening this as local code work; revisit only if the project upgrades
+  to Pro or Vercel makes these controls available on Free.
 - **E31** — Done 2026-06-12. `src/proxy.ts` now excludes `/login` in the
   matcher, and the signed-in redirect moved into `src/app/login/page.tsx`. The
   page preserves the `?stale-session` recovery escape hatch and checks for a
@@ -285,5 +285,6 @@ Recorded so future audits don't waste a cycle:
    hardening once the app has observability for report-only violations.
 4. **Then the keystone:** E25 schema migration → F3 cost basis → F6/F8
    cashflow. From here the F-series order above takes over.
-5. **Continuous:** E30 toggles now (5 min); E34 on every Next upgrade;
+5. **Continuous:** E34 on every Next upgrade; revisit E30 only after a Vercel
+   Pro upgrade or plan availability change;
    Tier 7 as filler between feature work.
