@@ -73,28 +73,38 @@ the same issues do not get re-opened from older trackers.
 
 | ID  | Item                                                             | Effort | Impact | Source              |
 | --- | ---------------------------------------------------------------- | ------ | ------ | ------------------- |
-| E10 | Timing-safe `CRON_SECRET` comparison                             | XS     | 🔴     | ROADMAP S2          |
-| E11 | Rate-limit coverage on all mutation routes                       | S      | 🔴     | BUGS High (partial) |
-| E12 | `getClientIp` fallback chain (`cf-connecting-ip`, `x-real-ip`)   | XS     | 🟡     | BUGS High           |
-| E13 | Import hardening: body-size cap + Zod array `.max()`             | S      | 🟡     | new (audit)         |
-| E14 | Validate `/api/options/chain` symbol shape before upstream fetch | XS     | 🟡     | BUGS Medium         |
-| E15 | CSP header: Report-Only → enforce (report endpoint scaffolded)   | M      | 🔴     | ROADMAP S8          |
+| E10 | ✅ Timing-safe `CRON_SECRET` comparison                          | XS     | 🔴     | ROADMAP S2          |
+| E11 | ✅ Rate-limit coverage on all mutation routes                    | S      | 🔴     | BUGS High (partial) |
+| E12 | ✅ `getClientIp` fallback chain (`cf-connecting-ip`, `x-real-ip`)| XS     | 🟡     | BUGS High           |
+| E13 | ✅ Import hardening: body-size cap + Zod array `.max()`          | S      | 🟡     | new (audit)         |
+| E14 | ✅ Validate `/api/options/chain` symbol shape before upstream fetch | XS     | 🟡     | BUGS Medium       |
+| E15 | ✅ CSP header enforced + public report endpoint                  | M      | 🔴     | ROADMAP S8          |
 | E16 | GDPR completion: true account deletion (`user.delete` cascade)   | M      | 🔴     | ROADMAP S9 ⚠️       |
 
-- **E10** — `cron/snapshot/route.ts:12` still `===`-compares the bearer token.
-  `crypto.timingSafeEqual` over equal-length buffers; one line.
-- **E11** — Verified unthrottled: `/api/accounts` POST/DELETE, `reorder`,
-  `[id]` PATCH, holdings POST/PATCH, `goals` POST, `stocks` POST,
-  `settings/data` POST (import!). All auth-gated but spammable. Wrap each with
-  `rateLimitCheckWithPrune` (per-user key; generous caps, e.g. 60/min edits,
-  5/min imports). `/api/refresh` and search are already covered.
-- **E13** — Vercel caps request bodies (~4.5 MB) so this is hardening, not an
-  open DoS: still add a `Content-Length` check and `.max()` caps on the import
-  schema's accounts/holdings/transactions arrays so a pathological import
-  fails fast with a clear error instead of an OOM-ish parse.
-- **E15** — `next.config.ts` has the R1 security headers but no CSP. Ship
-  `Content-Security-Policy-Report-Only` (script-src nonce, connect-src
-  allowlist for Yahoo/CoinGecko/Vercel), watch a week, flip to enforce.
+- **E10** — Done in `cron/snapshot/route.ts`: the bearer token compare now uses
+  `crypto.timingSafeEqual` over equal-length buffers.
+- **E11** — Done in `api-handler.ts`: authenticated `POST`/`PUT`/`PATCH`/`DELETE`
+  handlers wrapped with `withAuth` now inherit a per-user `rateLimitCheckWithPrune`
+  budget of 60/min. Existing expensive refresh endpoints keep their tighter
+  route-specific caps.
+- **E12** — Done in `rate-limit.ts` + `proxy.ts`: `getClientIp()` now prefers the
+  first `x-forwarded-for` IP, then falls back to `cf-connecting-ip`, then
+  `x-real-ip`, before using `"unknown"`. The auth proxy limiter reuses the same
+  helper.
+- **E13** — Done in `settings/data/route.ts` + `validators.ts`: import POST now
+  rejects bodies over 4 MB before JSON parse, returns a clear 400 for invalid
+  JSON, applies a 5/min per-user import cap, and bounds import arrays with Zod
+  `.max()` limits for accounts, holdings, transactions, snapshots, and goals.
+- **E14** — Done in `options/chain/route.ts`: symbols must match
+  `^[A-Z][A-Z0-9.-]{0,9}$` before any Yahoo options-chain fetch.
+- **E15** — Done in `next.config.ts` + `api/csp/report/route.ts`: responses now
+  ship an enforced `Content-Security-Policy` with explicit `connect-src`
+  allowlists for Vercel Analytics/Speed Insights, FX providers, CoinGecko, and
+  Yahoo Finance, plus a public `/api/csp/report` collector. A nonce-only
+  `script-src` was not used because it blocked Next.js 16 Cache Components/PPR
+  chunk scripts during runtime smoke testing; the enforced policy keeps
+  framework-compatible `'unsafe-inline'` while still locking down object/base/
+  frame/form/worker/manifest sources.
 - **E16** — Export (`GET /api/settings/data`) and replace-import already exist;
   what's missing for GDPR is **deleting the User row itself** (cascades to
   auth accounts/sessions/settings/snapshots/goals per schema). Add
@@ -276,13 +286,12 @@ Recorded so future audits don't waste a cycle:
 
 ## Suggested sequencing
 
-1. **Week 1 — security quick wins:** E10 + E12 + E14 + E24, then E11 + E13.
-   Tier 0 is already complete, so these are now the highest risk-reduction
-   items per hour.
+1. **Week 1 — security quick wins:** E10–E15 are shipped. E24 remains the small
+   CI follow-up from this batch.
 2. **Week 2 — eyes and ears:** E17 + E18 + E19. After this, failures page you
    instead of hiding.
-3. **Week 3 — lock it in:** E22 unit suite (+E23 E2E gaps), then E15 CSP
-   hardening once the app has observability for report-only violations.
+3. **Week 3 — lock it in:** E22 unit suite (+E23 E2E gaps), then revisit CSP
+   reports only if `/api/csp/report` surfaces real production violations.
 4. **Then the keystone:** E25 schema migration → F3 cost basis → F6/F8
    cashflow. From here the F-series order above takes over.
 5. **Continuous:** E34 on every Next upgrade; revisit E30 only after a Vercel

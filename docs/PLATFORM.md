@@ -25,7 +25,7 @@ Findings sourced from the Vercel MCP connector against project `prj_soY30S7ki1x3
 | V11 | Verify Vercel Cron `/api/cron/snapshot` is firing daily                                                                                                                                                                    | Reliability              | 🔴 High   | 15 min  | ❌ Not Done                  |
 | V12 | Structured error logging in `price-service.ts`                                                                                                                                                                             | Observability            | 🟡 Medium | 1 hr    | ❌ Not Done                  |
 | V13 | Add baseline security headers (HSTS, X-CTO, XFO, Referrer-Policy, Permissions-Policy)                                                                                                                                      | Security                 | 🔴 High   | 1 hr    | ✅ Done                      |
-| V14 | Add CSP (Report-Only first, then enforce)                                                                                                                                                                                  | Security                 | 🔴 High   | 2-3 hrs | ❌ Not Done                  |
+| V14 | Add CSP (Report-Only first, then enforce)                                                                                                                                                                                  | Security                 | 🔴 High   | 2-3 hrs | ✅ Done                      |
 | V15 | Audit & shrink `.next/cache` (currently 292 MB)                                                                                                                                                                            | Build Perf               | 🟢 Low    | 1 hr    | ⚠️ Partial — audit script    |
 | V16 | React `cache()` wrap for `/accounts/[id]` reads + audit `<Link prefetch>` to stop 5–8× burst                                                                                                                               | Performance              | 🔴 High   | 45 min  | ✅ Done                      |
 | V17 | `Cache-Control` + `"use cache"` / `cacheTag("exchange-rates")` on `/api/exchange-rates`                                                                                                                                    | Performance              | 🟡 Medium | 20 min  | ✅ Done                      |
@@ -95,7 +95,15 @@ Deployment `dpl_3KqPj4qBr3ZojdDaSxtKvo8iNhC2` (44s total, 292 MB build cache):
 
 **V13 — Add baseline security headers.** Extend `next.config.ts` `headers()` to include HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`. Critical files: `next.config.ts`.
 
-**V14 — Add Content-Security-Policy.** Start with `Content-Security-Policy-Report-Only` for one week, then promote to enforcement. Allowlist: `default-src 'self'`, `script-src 'self' 'nonce-<NONCE>' https://va.vercel-scripts.com`, `img-src 'self' data: https://lh3.googleusercontent.com`, `frame-ancestors 'none'`. Critical files: `next.config.ts` or `src/proxy.ts`.
+**V14 — Add Content-Security-Policy.** ✅ Done 2026-06-12. `next.config.ts`
+now emits an enforced `Content-Security-Policy` with allowlists for app assets,
+Google profile images, Vercel Analytics/Speed Insights, Frankfurter,
+open.er-api.com, CoinGecko, and Yahoo Finance. The public
+`src/app/api/csp/report/route.ts` collector returns 204 and logs violations.
+Nonce-only `script-src` was tested but blocked Next.js 16 Cache Components/PPR
+chunk scripts, so the enforced policy keeps framework-compatible
+`'unsafe-inline'` while locking down object/base/frame/form/worker/manifest
+sources.
 
 **V15 — Audit & shrink `.next/cache`.** Build cache is 292 MB; upload cost is ~4s per deploy. ⚠️ Partial (2026-05-16): `.vercelignore` now excludes `tests/`, `playwright-report/`, `test-results/`, `playwright.config.ts`, `docs/`, `*.md` (except `README.md`), `.github/`, `.husky/`, and `scripts/compress-og-images.mjs` so they no longer ride along in the deploy upload. ⚠️ Partial (2026-06-12): `npm run audit:build-cache` now reports `.next/cache` totals, top contributors, and the `<150 MB` target for local/CI audits. A clean local `npm run build` produced only ~407 KB of `.next/cache`, so no deletion or cache-policy change was made locally. Critical files: `.vercelignore`, `scripts/ci/build-cache-audit.mjs`.
 
@@ -150,9 +158,9 @@ Findings sourced against Vercel project on **2026-04-24**. Scope: only **launch 
 | #   | Suggestion                                                                           | Category           | Impact    | Effort    | Status                                                                                                       |
 | --- | ------------------------------------------------------------------------------------ | ------------------ | --------- | --------- | ------------------------------------------------------------------------------------------------------------ |
 | R1  | Add baseline security headers (HSTS, XFO, XCTO, Referrer-Policy, Permissions-Policy) | Security           | 🔴 High   | 1 hr      | ✅ Done                                                                                                      |
-| R2  | Content-Security-Policy (Report-Only → enforce)                                      | Security           | 🔴 High   | 2–3 hrs   | ❌ Not Done                                                                                                  |
+| R2  | Content-Security-Policy (Report-Only → enforce)                                      | Security           | 🔴 High   | 2–3 hrs   | ✅ Done                                                                                                      |
 | R3  | Rate limit `/api/search`, `/api/exchange-rates`, `/api/auth/*`                       | Security           | 🔴 High   | 2–3 hrs   | ✅ Done                                                                                                      |
-| R4  | `crypto.timingSafeEqual` compare for `CRON_SECRET`                                   | Security           | 🟡 Medium | 15 min    | ❌ Not Done                                                                                                  |
+| R4  | `crypto.timingSafeEqual` compare for `CRON_SECRET`                                   | Security           | 🟡 Medium | 15 min    | ✅ Done                                                                                                      |
 | R5  | Enforce account/holding ownership on every mutation route                            | Security           | 🔴 High   | 1–2 hrs   | ✅ Done                                                                                                      |
 | R6  | Add `/terms` (Terms of Service) page                                                 | Legal / Compliance | 🔴 High   | 1–2 hrs   | ✅ Done                                                                                                      |
 | R7  | Cookie / analytics consent banner                                                    | Legal / Compliance | 🔴 High   | 2–3 hrs   | ❌ Not Done                                                                                                  |
@@ -180,11 +188,14 @@ Findings sourced against Vercel project on **2026-04-24**. Scope: only **launch 
 
 **R1** — Baseline security headers: `Strict-Transport-Security`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`. ✅ Done. See also V13.
 
-**R2** — Content-Security-Policy: ship in two stages — `Content-Security-Policy-Report-Only` for 48 h with `report-uri`, review violations, then flip to enforced. Allowlist must cover Google OAuth, Vercel Analytics + Speed Insights, self-hosted fonts. See V14.
+**R2** — Content-Security-Policy: ✅ Done 2026-06-12. See V14 for the
+enforced policy details and the `/api/csp/report` collector.
 
 **R3** — Rate limiting: `/api/search`, `/api/exchange-rates`, and `/api/auth/*` accept unbounded request volume. Add a token bucket keyed by `x-forwarded-for` + `session.user.id`. ✅ Done.
 
-**R4** — Timing-safe `CRON_SECRET` comparison: `src/app/api/cron/snapshot/route.ts` compares the bearer token with `!==` (short-circuits on first byte mismatch, leaks secret length via timing). Replace with `crypto.timingSafeEqual` on equal-length buffers.
+**R4** — Timing-safe `CRON_SECRET` comparison: ✅ Done 2026-06-12.
+`src/app/api/cron/snapshot/route.ts` now compares the bearer token with
+`crypto.timingSafeEqual` on equal-length buffers.
 
 **R5** ✅ Done — All four `/api/accounts/[id]/...` mutation routes now scope reads/writes to `session.user.id`. `route.ts` and `cash-transactions/route.ts` already gated the parent account by `{ id, userId }`; `transactions/[transactionId]/route.ts` PATCH/DELETE were unwrapped (no `withAuth`) and only checked `tx.accountId === accountId` — now wrapped in `withAuth` with an upfront `Account.findUnique({ id, userId })` guard. `holdings/route.ts` POST gained the same parent-account guard, and PATCH/DELETE now resolve the holding via `findFirst({ id, account: { userId } })` instead of an unscoped `findUnique`. _(Closed 2026-05-16)_
 
@@ -264,7 +275,9 @@ After R1–R26 land, confirm:
 
 ### Launch-day go/no-go
 
-Go only when every 🔴 High item above is ✅ Done. The 🟡 Medium items (R4, R10, R12, R16, R18, R19, R22, R25) can land in the week following launch but should all be closed within 14 days.
+Go only when every 🔴 High item above is ✅ Done. The remaining 🟡 Medium items
+(R10, R12, R16, R18, R19, R22, R25) can land in the week following launch but
+should all be closed within 14 days.
 
 ---
 
@@ -521,11 +534,11 @@ Build log emitted twice:
 
 Resolved — `package.json` now declares `"node": "24.x"`. Verify by inspecting the next deployment's build log: the warning should no longer appear.
 
-#### F4 — S8 (CSP) is partly underway · ⚠️ status correction
+#### F4 — S8 (CSP) shipped · ✅
 
-Untracked file: `src/app/api/_csp/report/route.ts`. The `_` prefix means App Router treats it as a private folder (the route is not yet wired). Someone has already started scaffolding the CSP violation report endpoint that S8 calls for.
-
-**Action:** S8's status in `docs/ROADMAP.md §Current Priorities` updated from ❌ → ⚠️ ("report endpoint scaffolded; header + nonce pipeline still missing"). Promote the route under a public path (e.g. `/api/csp/report`) once the header lands.
+`src/app/api/csp/report/route.ts` is now a public route and `next.config.ts`
+ships the enforced CSP header. Runtime smoke testing verified `/login` renders
+with no console errors, and a synthetic POST to `/api/csp/report` returns 204.
 
 #### F5 — No custom domain on production traffic · 🟡 · Effort: S (one-time)
 
@@ -564,7 +577,7 @@ Driven by the F-series above. No items are removed — only urgency shifts.
 | S5   | Tier 1         | Tier 1 — **do first**                 | F1: zero evidence cron is firing; need a healthcheck before adding any observability    |
 | S6   | Tier 1         | Tier 1 — **do alongside S5**          | F1: paired with /api/health; without `CronRun` table no historical signal exists either |
 | S4   | Tier 1         | Tier 1 — **promote ahead of S1 / S7** | F1: every other Tier-1 item benefits from having a logger first                         |
-| S8   | Tier 1, ❌     | Tier 1, **⚠️ partial**                | F4: report endpoint already scaffolded                                                  |
+| S8   | Tier 1, ✅     | Tier 1, **✅ done**                   | F4: enforced CSP header + public report endpoint shipped                                |
 | S20  | Tier 2         | Deferred on Free — bundle with F6 if upgraded | F6: both are Pro-plan platform controls; logical to ship together after a plan upgrade |
 
 ### Cross-References
