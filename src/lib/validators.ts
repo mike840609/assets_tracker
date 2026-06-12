@@ -85,8 +85,20 @@ export const updateHoldingSchema = z.object({
     .transform((s) => s.toUpperCase())
     .optional(),
   name: z.string().min(1).max(100).optional(),
+  // 0 is allowed only to close an OPTION position (preserves the transaction
+  // audit trail, which a DELETE would cascade away). The PATCH route rejects
+  // quantity 0 for non-option holdings, where the asset type is known.
   quantity: z.number().nonnegative().optional(),
-  assetType: z.enum(HOLDING_ASSET_TYPES).optional(),
+  // OPTION is deliberately excluded: converting a holding to OPTION via PATCH
+  // would produce a row without the OCC fields (underlyingSymbol, optionType,
+  // strike, expiration). Options can only be created via POST, which derives
+  // those fields server-side from the OCC symbol. The PATCH route also rejects
+  // assetType changes on existing OPTION holdings.
+  assetType: z.enum(NON_OPTION_ASSET_TYPES).optional(),
+});
+
+export const deleteHoldingSchema = z.object({
+  id: z.string().min(1, "Holding ID required"),
 });
 
 export const updateSettingsSchema = z.object({
@@ -94,13 +106,35 @@ export const updateSettingsSchema = z.object({
   locale: z.enum(["en-US", "zh-TW"]).optional(),
 });
 
-export const updateTransactionSchema = z.object({
-  id: z.string(),
-  quantity: z.number().optional(),
-  type: z.enum(HOLDING_TRANSACTION_TYPES).optional(),
-  note: z.string().optional().nullable(),
-  createdAt: z.string().optional(), // Using string for ISO dates
-});
+// `type` is optional on update, so a discriminated union doesn't fit here —
+// per-type quantity rules are enforced via superRefine (mirroring
+// updateCashTransactionSchema below), and the PATCH route re-checks the
+// merged (existing + patch) values via getHoldingTransactionQuantityError.
+export const updateTransactionSchema = z
+  .object({
+    id: z.string(),
+    quantity: z.number().optional(),
+    type: z.enum(HOLDING_TRANSACTION_TYPES).optional(),
+    note: z.string().optional().nullable(),
+    createdAt: z.iso.datetime().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.quantity === undefined) return;
+    if ((data.type === "BUY" || data.type === "SELL") && data.quantity <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["quantity"],
+        message: "Quantity must be positive",
+      });
+    }
+    if (data.type === "EDIT" && data.quantity === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["quantity"],
+        message: "Adjustment quantity cannot be zero",
+      });
+    }
+  });
 
 const positiveCashAmount = z.number().positive("Amount must be positive");
 const nonZeroCashAdjustment = z.number().refine((amount) => amount !== 0, {
@@ -132,7 +166,7 @@ export const updateCashTransactionSchema = z
     type: z.enum(CASH_TRANSACTION_TYPES).optional(),
     amount: z.number().optional(),
     note: cashNoteField,
-    createdAt: z.string().optional(),
+    createdAt: z.iso.datetime().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.type === "DEPOSIT" || data.type === "WITHDRAWAL") {
@@ -191,6 +225,11 @@ export const updateStockWatchItemSchema = z.object({
 
 const decimalSchema = z.union([z.string(), z.number()]);
 
+// Exports are produced by NextResponse.json (Dates → full ISO 8601 strings),
+// so round-trip imports always carry valid ISO datetimes. Rejecting anything
+// else turns a write-time Prisma 500 into a 400 with a field path.
+const importTimestamp = z.iso.datetime().optional();
+
 export const dataImportSchema = z.object({
   version: z.string(),
   settings: z
@@ -211,8 +250,8 @@ export const dataImportSchema = z.object({
       isActive: z.boolean().default(true),
       isPinned: z.boolean().default(false),
       sortOrder: z.number().int().default(0),
-      createdAt: z.string().optional(),
-      updatedAt: z.string().optional(),
+      createdAt: importTimestamp,
+      updatedAt: importTimestamp,
       holdings: z
         .array(
           z.object({
@@ -221,8 +260,8 @@ export const dataImportSchema = z.object({
             quantity: decimalSchema,
             currency: z.string().length(3),
             assetType: z.enum(HOLDING_ASSET_TYPES),
-            createdAt: z.string().optional(),
-            updatedAt: z.string().optional(),
+            createdAt: importTimestamp,
+            updatedAt: importTimestamp,
             underlyingSymbol: z.string().optional().nullable(),
             optionType: z.enum(OPTION_TYPES).optional().nullable(),
             strike: decimalSchema.optional().nullable(),
@@ -234,7 +273,7 @@ export const dataImportSchema = z.object({
                   type: z.enum(HOLDING_TRANSACTION_TYPES),
                   quantity: decimalSchema,
                   note: z.string().optional().nullable(),
-                  createdAt: z.string().optional(),
+                  createdAt: importTimestamp,
                 }),
               )
               .optional(),
@@ -247,7 +286,7 @@ export const dataImportSchema = z.object({
             type: z.enum(CASH_TRANSACTION_TYPES),
             amount: decimalSchema,
             note: z.string().optional().nullable(),
-            createdAt: z.string().optional(),
+            createdAt: importTimestamp,
           }),
         )
         .optional(),
@@ -262,7 +301,7 @@ export const dataImportSchema = z.object({
         netWorth: decimalSchema,
         baseCurrency: z.string().length(3),
         breakdown: z.record(z.string(), z.unknown()).optional().nullable(),
-        createdAt: z.string().optional(),
+        createdAt: importTimestamp,
       }),
     )
     .optional(),
@@ -275,8 +314,8 @@ export const dataImportSchema = z.object({
         targetDate: z.string().optional().nullable(),
         scope: z.enum(GOAL_SCOPES),
         scopeRefId: z.string().optional().nullable(),
-        createdAt: z.string().optional(),
-        updatedAt: z.string().optional(),
+        createdAt: importTimestamp,
+        updatedAt: importTimestamp,
       }),
     )
     .optional(),

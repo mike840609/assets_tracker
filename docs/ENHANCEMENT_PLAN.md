@@ -25,17 +25,17 @@ Impact: 🔴 data risk / security / launch blocker · 🟡 meaningful · 🟢 po
 
 Small fixes; every one is a verified live bug with user-visible consequences.
 
-| ID  | Item                                                                         | Effort | Impact | Source            |
-| --- | ---------------------------------------------------------------------------- | ------ | ------ | ----------------- |
-| E1  | ✅ UTC-floor the snapshot date                                               | XS     | 🔴     | BUGS Critical     |
-| E2  | ✅ History dedupe tie-break by `max(createdAt)`                              | XS     | 🔴     | BUGS High         |
-| E3  | ✅ Guard `token.sub` in auth callbacks                                       | XS     | 🔴     | BUGS High         |
-| E4  | FX: persist inverse rates + surface a stale flag                             | S      | 🔴     | BUGS High ×2      |
-| E5  | Stop defaulting null `contractMultiplier` to 100                             | S      | 🟡     | BUGS High         |
-| E6  | Tighten validators (qty>0, immutable assetType, tx unions, datetime)         | S      | 🟡     | BUGS High ×3      |
-| E7  | ✅ Decimal-safe `cashBalance` diff in account PATCH                          | XS     | 🟡     | BUGS Medium       |
-| E8  | Zod-validate holdings DELETE body; scope deletes/updates in the write itself | XS     | 🟡     | BUGS Medium + new |
-| E9  | ✅ Goal import: fail loudly when `scopeRefId` remap misses                   | XS     | 🟡     | new (audit)       |
+| ID  | Item                                                                            | Effort | Impact | Source            |
+| --- | ------------------------------------------------------------------------------- | ------ | ------ | ----------------- |
+| E1  | ✅ UTC-floor the snapshot date                                                  | XS     | 🔴     | BUGS Critical     |
+| E2  | ✅ History dedupe tie-break by `max(createdAt)`                                 | XS     | 🔴     | BUGS High         |
+| E3  | ✅ Guard `token.sub` in auth callbacks                                          | XS     | 🔴     | BUGS High         |
+| E4  | FX: persist inverse rates + surface a stale flag                                | S      | 🔴     | BUGS High ×2      |
+| E5  | ✅ Stop defaulting null `contractMultiplier` to 100                             | S      | 🟡     | BUGS High         |
+| E6  | ✅ Tighten validators (qty>0, immutable assetType, tx unions, datetime)         | S      | 🟡     | BUGS High ×3      |
+| E7  | ✅ Decimal-safe `cashBalance` diff in account PATCH                             | XS     | 🟡     | BUGS Medium       |
+| E8  | ✅ Zod-validate holdings DELETE body; scope deletes/updates in the write itself | XS     | 🟡     | BUGS Medium + new |
+| E9  | ✅ Goal import: fail loudly when `scopeRefId` remap misses                      | XS     | 🟡     | new (audit)       |
 
 - **E1** — `src/lib/services/snapshot-service.ts:8-9` still floors "today" with
   local-time `setHours(0,0,0,0)`. The upsert key `userId_date_baseCurrency`
