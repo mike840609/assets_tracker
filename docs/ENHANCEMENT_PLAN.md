@@ -178,16 +178,23 @@ snapshotAgeMs, timestamp }` — no user data. `status` is `"ok"` (HTTP 200) when
 
 | ID  | Item                                                                | Effort | Impact | Source      |
 | --- | ------------------------------------------------------------------- | ------ | ------ | ----------- |
-| E22 | Vitest + first service-layer suite                                  | M      | 🔴     | ROADMAP S7  |
+| E22 | ✅ Vitest + first service-layer suite                               | M      | 🔴     | ROADMAP S7  |
 | E23 | E2E gaps: /projections, /history, settings import/export round-trip | M      | 🟡     | new (audit) |
 | E24 | ✅ Run `format:check` in PR CI; lint/typecheck are already gated    | XS     | 🟢     | new (audit) |
 
-- **E22** — Zero unit tests exist. First wave, all pure functions:
-  `net-worth-service` two-pass + missing-rate path · `exchange-rate-service`
-  `resolveRate` identity/inverse/cross · `history-service` normalize + dedupe
-  (locks in E2's fix) · `analysis-service` bucket aggregations ·
-  `types.ts` serializers (Decimal/Date stripping) · `validators.ts` edge cases
-  (locks in E6). A regression in net-worth math currently only surfaces in E2E.
+- **E22** — Done. Vitest 4 added (`npm run test:unit` / `:watch`; config in
+  `vitest.config.ts` with an `@/*` alias and a `server-only` stub at
+  `tests/stubs/server-only.ts` so server-only service modules import cleanly in
+  the Node test env). First wave landed under `tests/unit/` (56 tests, 6 files):
+  `net-worth-service` two-pass valuation + missing-rate fallback (real
+  `resolveRate`, mocked Prisma/rates, neutralized cache wrappers) ·
+  `exchange-rate-service` `resolveRate` identity/direct/inverse/USD-cross ·
+  `history-service` normalize + dedupe via `getFullNormalizedHistory` (locks in
+  E2's same-day tie-break) · `analysis-service` bucket/KPI/attribution/mover
+  aggregations · `types.ts` serializers (Decimal→number, Date→ISO) ·
+  `validators.ts` edge cases (locks in E6). CI runs them in a new `unit` job in
+  `.github/workflows/ci.yml`, mirroring the lint/typecheck jobs. Next:
+  E23 (E2E gaps).
 - **E23** — Playwright covers smoke/accounts/analysis/stocks/mobile; the
   pages with the most math (projections, history) and the riskiest mutation
   (data import) have no coverage. An import→export round-trip equality test
@@ -335,8 +342,9 @@ Recorded so future audits don't waste a cycle:
    (shipped — `/api/health`) + E18 (CronRun audit) + E19 (Sentry via logger).
    Failures now page you instead of hiding. E18's freshness alarm reuses the
    36 h window E17 already enforces; E19 only activates once a DSN is set.
-3. **Week 3 — lock it in:** E22 unit suite (+E23 E2E gaps), then revisit CSP
-   reports only if `/api/csp/report` surfaces real production violations.
+3. **Week 3 — lock it in:** E22 unit suite is shipped (Vitest service-layer
+   tests in CI); E23 E2E gaps are next, then revisit CSP reports only if
+   `/api/csp/report` surfaces real production violations.
 4. **Then the keystone:** E25 schema migration → F3 cost basis → F6/F8
    cashflow. From here the F-series order above takes over.
 5. **Continuous:** E34 on every Next upgrade; revisit E30 only after a Vercel

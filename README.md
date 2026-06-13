@@ -99,9 +99,16 @@ When you are done developing for the day, you can stop the database with `npm ru
 > [!TIP]
 > **Resetting the Local Database**: If you need to clear all data and rebuild the database schema from scratch, run `npx prisma db push --force-reset`. Avoid using `npx prisma migrate reset` locally, as the repository does not have a baseline migration file (it relies on `db push` for schema sync) and the command will fail.
 
-### 5. End-to-End Tests
+### 5. Tests
 
-A Playwright suite lives in `tests/e2e/`. The global setup provisions a dedicated test user so runs don't pollute real data.
+**Unit tests (Vitest).** A fast, DB-free suite lives in `tests/unit/`, covering the pure service-layer logic — net-worth two-pass valuation, exchange-rate resolution, history normalize/dedupe, analysis aggregations, serializers, and Zod validators. Server-only/DB modules are exercised through their real public functions with their dependencies mocked, so no database or env vars are needed.
+
+```bash
+npm run test:unit        # Run once (headless)
+npm run test:unit:watch  # Watch mode
+```
+
+**End-to-end tests (Playwright).** A suite lives in `tests/e2e/`. The global setup provisions a dedicated test user so runs don't pollute real data.
 
 ```bash
 npm run test:e2e         # Run headless
@@ -149,7 +156,7 @@ git worktree remove ../asset_tracker-<task-name>
 
 This repository uses a **light-vs-heavy CI split**:
 
-- **Pull requests**: run fast checks only (`lint`, `typecheck`).
+- **Pull requests**: run fast checks only (`format:check`, `lint`, `typecheck`, `test:unit`).
 - **Push to `master`** (production merge path): run heavy checks (`build`).
 - **Vercel preview deployments**: the Playwright `e2e` smoke suite runs against the live preview URL (`deployment_status` trigger; production deployments are skipped since they never render the preview-credentials login). Requires the `E2E_PASSWORD` repo secret to match `PREVIEW_AUTH_PASSWORD` on Vercel previews.
 - **Docs-only / markdown-only changes** on push are skipped via workflow `paths-ignore`.

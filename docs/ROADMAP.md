@@ -33,7 +33,7 @@ The existing `docs/` folder has trackers (PERFORMANCE, PLATFORM, UI*UX, CODE_QUA
 | S4                                 | Structured logger + Sentry across services (**do first** — F1)            | M      | 🔴     | ❌                   | Q5 / R17               |
 | S5                                 | `/api/health` endpoint (DB ping + freshness) (**do first** — F1)          | XS     | 🔴     | ❌                   | V12 / R12              |
 | S6                                 | Cron-run audit table + freshness alert (**do first** — F1)                | M      | 🔴     | ❌                   | V11 / R13              |
-| S7                                 | Vitest + service-layer test suite                                         | M      | 🔴     | ❌                   | Q1–Q4                  |
+| S7                                 | Vitest + service-layer test suite                                         | M      | 🔴     | ✅                   | Q1–Q4                  |
 | S8                                 | CSP header enforced + report endpoint                                     | M      | 🔴     | ✅                   | V14 / R2               |
 | S9                                 | GDPR data export + account deletion                                       | L      | 🔴     | ❌                   | R7 / R8                |
 | S10                                | Middleware returns JSON 401 for `/api/*`                                  | XS     | 🔴     | ❌                   | SUGGESTIONS 2026-05-11 |
@@ -111,16 +111,22 @@ Add `CronRun { id, name, startedAt, finishedAt, ok, error, durationMs }` to Pris
 
 #### S7 — Vitest + service-layer test suite
 
-**M | 🔴 | ❌ — closes Q1–Q4**
+**M | 🔴 | ✅ Done (2026-06-14) — closes Q1–Q4 (tracked as E22 in ENHANCEMENT_PLAN.md)**
 
-Add Vitest config + first wave of unit tests:
+Vitest 4 added (`npm run test:unit`); config in `vitest.config.ts` (`@/*` alias
 
-- `src/lib/services/net-worth-service.ts` — two-pass rate resolution, missing-rate path, mixed-currency totals
-- `src/lib/services/exchange-rate-service.ts` — identity, inverse, missing-pair lazy fetch
-- `src/lib/types.ts` — `serialize{Account,Holding,AccountWithHoldings}` Decimal/Date stripping
-- `src/lib/services/balance.ts` — account-value math
+- a `server-only` stub so server-only service modules import in the Node test
+  env). First wave under `tests/unit/` (56 tests, 6 files), run in CI by a new
+  `unit` job:
 
-Today only the Playwright smoke test exists. A regression in net-worth math would only surface in E2E — too late.
+* `src/lib/services/net-worth-service.ts` — two-pass valuation, missing-rate fallback, mixed-currency totals, option multiplier (real `resolveRate`, mocked Prisma/rates, neutralized cache wrappers)
+* `src/lib/services/exchange-rate-service.ts` — `resolveRate` identity / direct / inverse / USD-cross
+* `src/lib/services/history-service.ts` — normalize + same-day dedupe tie-break (locks in S-series E2 fix)
+* `src/lib/services/analysis-service.ts` — monthly buckets, KPIs, cash-flow split, category history, movers, attribution
+* `src/lib/types.ts` — `serialize{Account,Holding,AccountWithHoldings,Goal}` Decimal/Date stripping
+* `src/lib/validators.ts` — Zod edge cases (locks in E6: positive quantities, immutable assetType, OCC option shape, per-type unions)
+
+Follow-up: `src/lib/services/balance.ts` direct coverage + the E23 E2E gaps.
 
 #### S8 — CSP header
 
