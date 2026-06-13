@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import bundleAnalyzer from "@next/bundle-analyzer";
+import { withSentryConfig } from "@sentry/nextjs";
 import { lstatSync, readlinkSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 
@@ -40,7 +41,11 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://lh3.googleusercontent.com",
   "font-src 'self' data:",
-  `connect-src 'self' https://va.vercel-scripts.com https://api.frankfurter.app https://open.er-api.com https://api.coingecko.com https://query1.finance.yahoo.com https://query2.finance.yahoo.com${isDev ? " http: ws: wss:" : ""}`,
+  // E19 — Sentry's browser SDK POSTs events to its ingest endpoint. The host is
+  // org/region-specific (`https://o<orgid>.ingest.<region>.sentry.io` or the
+  // non-regional `https://o<orgid>.ingest.sentry.io`), so both wildcard forms
+  // are allowlisted. Without these, client-side reporting is blocked by CSP.
+  `connect-src 'self' https://va.vercel-scripts.com https://api.frankfurter.app https://open.er-api.com https://api.coingecko.com https://query1.finance.yahoo.com https://query2.finance.yahoo.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io${isDev ? " http: ws: wss:" : ""}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -129,4 +134,21 @@ const wrappedConfig = withNextIntl(nextConfig);
 
 const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === "true" });
 
-export default withBundleAnalyzer(wrappedConfig);
+// E19 — Sentry build-time plugin. Wrapping is always applied (it injects the
+// runtime instrumentation), but it stays inert at runtime when no SENTRY_DSN is
+// configured. Source-map upload is gated on SENTRY_AUTH_TOKEN so builds without
+// it (local / CI / preview) never fail: when absent, `authToken` is undefined
+// and the plugin skips upload. `silent` keeps build logs quiet outside CI.
+export default withSentryConfig(withBundleAnalyzer(wrappedConfig), {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  // Only upload source maps when an auth token is present; otherwise skip the
+  // release/upload step entirely so token-less builds succeed.
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+  // Reduce bundle size by stripping Sentry SDK logger statements from prod.
+  disableLogger: true,
+  // Avoid CSP/ad-blocker tunneling indirection by default; not enabled here.
+  widenClientFileUpload: true,
+});

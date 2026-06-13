@@ -121,13 +121,13 @@ the same issues do not get re-opened from older trackers.
 Production runtime logs were empty over a 7-day MCP window; if the nightly
 snapshot stops, nothing tells you. PLATFORM F1 flags this trio as "do first".
 
-| ID  | Item                                                     | Effort | Impact | Source        |
-| --- | -------------------------------------------------------- | ------ | ------ | ------------- |
-| E17 | ✅ `/api/health` — DB ping + latest-snapshot freshness   | XS     | 🔴     | ROADMAP S5    |
-| E18 | ✅ `CronRun` audit table + >36 h freshness alarm         | M      | 🔴     | ROADMAP S6    |
-| E19 | Sentry (or equivalent) wired through `src/lib/logger.ts` | M      | 🔴     | ROADMAP S4 ⚠️ |
-| E20 | Request-context correlation (requestId/userId) in logger | S      | 🟢     | new (audit)   |
-| E21 | Snapshot reconciliation side-job (drift >0.5% alert)     | S      | 🟢     | ROADMAP S28   |
+| ID  | Item                                                     | Effort | Impact | Source      |
+| --- | -------------------------------------------------------- | ------ | ------ | ----------- |
+| E17 | ✅ `/api/health` — DB ping + latest-snapshot freshness   | XS     | 🔴     | ROADMAP S5  |
+| E18 | ✅ `CronRun` audit table + >36 h freshness alarm         | M      | 🔴     | ROADMAP S6  |
+| E19 | ✅ Sentry wired through `src/lib/logger.ts`              | M      | 🔴     | ROADMAP S4  |
+| E20 | Request-context correlation (requestId/userId) in logger | S      | 🟢     | new (audit) |
+| E21 | Snapshot reconciliation side-job (drift >0.5% alert)     | S      | 🟢     | ROADMAP S28 |
 
 - **E17** — Done in `app/api/health/route.ts`: unauthenticated `GET /api/health`
   pings the DB with a `SELECT 1` and reads the most recent `NetWorthSnapshot`
@@ -138,9 +138,23 @@ snapshotAgeMs, timestamp }` — no user data. `status` is `"ok"` (HTTP 200) when
   (HTTP 503) when the DB is unreachable. The endpoint is wrapped with
   `rateLimitCheckWithPrune` (30/min per IP). The 36 h threshold is the same one
   E18's `CronRun` alarm will build on, so E17 unblocks E18.
-- **E19** — The structured logger half of S4 is done (`logger.ts`, ~30 call
-  sites, JSON output, `withTiming`); what's missing is shipping errors
-  somewhere that alerts. `src/instrumentation.ts` exists as the hook point.
+- **E19** — Done. `@sentry/nextjs` (v10.57, peer-dep `^16.0.0-0` → Next 16 +
+  Turbopack supported) wired through the existing structured logger. Init runs
+  via the instrumentation hooks: `src/instrumentation.ts` (server + edge in
+  `register()`, plus `onRequestError = Sentry.captureRequestError`) and
+  `src/instrumentation-client.ts` (browser init + `onRouterTransitionStart`).
+  All init is guarded on a DSN — with no `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN`
+  the SDK never initializes, so every capture is a complete no-op (local dev /
+  CI / `next build` need no Sentry account). `logger.ts` `log.error` →
+  `captureException` (full stack via a stripped `__error` meta key) and
+  `log.warn` → `captureMessage` (level `warning`), both best-effort and
+  guarded so they never throw or alter the JSON log line. DSN/auth-token env
+  added as optional to `src/lib/env.ts`; `next.config.ts` is wrapped with
+  `withSentryConfig` (source-map upload gated on `SENTRY_AUTH_TOKEN` so
+  token-less builds succeed) and its CSP `connect-src` now allowlists the
+  Sentry ingest hosts (`https://*.ingest.sentry.io` + `us`/`de` regional
+  variants) so browser reporting isn't blocked by E15's CSP. This completes
+  the **observability trio** (E17 health + E18 CronRun + E19 Sentry).
 - **E18** — Done in `prisma/schema.prisma` + `cron/snapshot/route.ts` +
   `app/api/health/route.ts` (migration
   `20260613000000_add_cron_run_and_fk_indexes`). The cron writes a
@@ -317,9 +331,10 @@ Recorded so future audits don't waste a cycle:
 
 1. **Week 1 — security quick wins:** E10–E15 are shipped, and E24 (the
    `format:check` CI gate) is now done too.
-2. **Week 2 — eyes and ears:** E17 (shipped — `/api/health`) + E18 + E19. After
-   this, failures page you instead of hiding. E18's freshness alarm reuses the
-   36 h window E17 already enforces.
+2. **Week 2 — eyes and ears:** the observability trio is complete — E17
+   (shipped — `/api/health`) + E18 (CronRun audit) + E19 (Sentry via logger).
+   Failures now page you instead of hiding. E18's freshness alarm reuses the
+   36 h window E17 already enforces; E19 only activates once a DSN is set.
 3. **Week 3 — lock it in:** E22 unit suite (+E23 E2E gaps), then revisit CSP
    reports only if `/api/csp/report` surfaces real production violations.
 4. **Then the keystone:** E25 schema migration → F3 cost basis → F6/F8
