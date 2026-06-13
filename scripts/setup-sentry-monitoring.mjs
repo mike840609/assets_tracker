@@ -105,7 +105,9 @@ function dashboardWidget(spec, layout) {
 // Widgets are paired in declaration order; both cells in a row share the same y
 // and a uniform height (the taller of the pair), so the left and right columns
 // stay aligned row-for-row. A trailing odd widget sits alone in the left column.
-const widgetHeight = (spec) => (spec.displayType === "big_number" ? 2 : 3);
+// Height: big_number widgets are kept at 2 so their auto-scaled font matches
+// across KPIs; a spec may set an explicit `h` to share a KPI row (see below).
+const widgetHeight = (spec) => spec.h ?? (spec.displayType === "big_number" ? 2 : 3);
 
 function layoutWidgets(specs) {
   const widgets = [];
@@ -143,11 +145,14 @@ const WIDGET_SPECS = [
     conditions: "level:error release:latest",
   },
   // Only populated when SENTRY_CAPTURE_WARNINGS=true forwards warnings as events.
+  // h:2 keeps it level with the "Latest release errors" KPI it shares a row with,
+  // so that big-number stays at height 2 and renders the same font as the others.
   {
     title: "Warning volume",
     displayType: "area",
     fields: ["count()"],
     conditions: "level:warning",
+    h: 2,
   },
   {
     title: "Errors by route",
