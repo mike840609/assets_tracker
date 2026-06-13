@@ -27,6 +27,7 @@ const envSchema = z
     SENTRY_DSN: z.string().trim().min(1, "must not be empty").optional(),
     NEXT_PUBLIC_SENTRY_DSN: z.string().trim().min(1, "must not be empty").optional(),
     SENTRY_AUTH_TOKEN: z.string().trim().min(1, "must not be empty").optional(),
+    SENTRY_CAPTURE_WARNINGS: z.string().trim().optional(),
   })
   .superRefine((value, ctx) => {
     const previewAuthDisabled = ["1", "true", "yes", "on"].includes(
@@ -54,6 +55,7 @@ const parsedEnv = envSchema.safeParse({
   SENTRY_DSN: process.env.SENTRY_DSN,
   NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
   SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+  SENTRY_CAPTURE_WARNINGS: process.env.SENTRY_CAPTURE_WARNINGS,
 });
 
 if (!parsedEnv.success) {
@@ -84,4 +86,5 @@ export const {
   SENTRY_DSN,
   NEXT_PUBLIC_SENTRY_DSN,
   SENTRY_AUTH_TOKEN,
+  SENTRY_CAPTURE_WARNINGS,
 } = env;

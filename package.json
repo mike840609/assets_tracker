@@ -11,6 +11,7 @@
     "build": "next build",
     "build:vercel": "node scripts/vercel-build.mjs",
     "audit:build-cache": "node scripts/ci/build-cache-audit.mjs",
+    "sentry:setup": "node scripts/setup-sentry-monitoring.mjs",
     "start": "next start",
     "analyze": "ANALYZE=true next build",
     "compress:og": "node scripts/compress-og-images.mjs",

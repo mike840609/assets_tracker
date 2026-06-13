@@ -1,4 +1,11 @@
 import * as Sentry from "@sentry/nextjs";
+import {
+  beforeSend,
+  getSentryDist,
+  getSentryEnvironment,
+  getSentryRelease,
+  getSentryTags,
+} from "@/lib/sentry-config";
 
 // E19 — Sentry server + edge init runs through Next.js's instrumentation hook.
 // Guarded on DSN presence: with no SENTRY_DSN the SDK is never initialized, so
@@ -15,7 +22,11 @@ export async function register() {
         // Errors are always captured. Tracing is off by default (no perf budget
         // spent unless explicitly opted in via SENTRY_TRACES_SAMPLE_RATE).
         tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 0),
-        environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
+        environment: getSentryEnvironment(),
+        release: getSentryRelease(),
+        dist: getSentryDist(),
+        initialScope: { tags: getSentryTags("nodejs") },
+        beforeSend,
         enabled: true,
       });
     }
@@ -25,7 +36,11 @@ export async function register() {
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
       tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 0),
-      environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
+      environment: getSentryEnvironment(),
+      release: getSentryRelease(),
+      dist: getSentryDist(),
+      initialScope: { tags: getSentryTags("edge") },
+      beforeSend,
       enabled: true,
     });
   }

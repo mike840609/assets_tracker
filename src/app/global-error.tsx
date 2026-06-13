@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 
 // Renders when the root layout itself throws. It replaces the entire document,
 // so it must supply its own <html>/<body> and cannot rely on global styles,
@@ -13,6 +14,10 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
+    Sentry.captureException(error, {
+      tags: { boundary: "global" },
+      extra: { digest: error.digest },
+    });
     // eslint-disable-next-line no-console
     console.error(error);
   }, [error]);

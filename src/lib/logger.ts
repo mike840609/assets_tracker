@@ -26,6 +26,9 @@ function emit(level: Level, msg: string, meta?: Meta): void {
 // already loaded on the server via the instrumentation hook, so importing it
 // here adds no extra cost.
 const sentryEnabled = Boolean(process.env.SENTRY_DSN);
+const captureWarnings = ["1", "true", "yes", "on"].includes(
+  (process.env.SENTRY_CAPTURE_WARNINGS ?? "").toLowerCase(),
+);
 
 function reportToSentry(level: "warn" | "error", msg: string, meta?: Meta): void {
   if (!sentryEnabled) return;
@@ -38,6 +41,15 @@ function reportToSentry(level: "warn" | "error", msg: string, meta?: Meta): void
     if (extra) delete extra[SENTRY_ERROR_KEY];
     // Sentry's SeverityLevel uses "warning", not the logger's "warn".
     const sentryLevel = level === "warn" ? "warning" : "error";
+    if (level === "warn" && !captureWarnings) {
+      Sentry.addBreadcrumb({
+        category: "app.warning",
+        level: sentryLevel,
+        message: msg,
+        data: extra,
+      });
+      return;
+    }
     if (err instanceof Error) {
       Sentry.captureException(err, { level: sentryLevel, extra: { msg, ...extra } });
     } else {

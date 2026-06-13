@@ -1,4 +1,11 @@
 import * as Sentry from "@sentry/nextjs";
+import {
+  beforeSend,
+  getSentryDist,
+  getSentryEnvironment,
+  getSentryRelease,
+  getSentryTags,
+} from "@/lib/sentry-config";
 
 // E19 — Client-side Sentry init. This file runs in the browser before React
 // hydration (Next.js `instrumentation-client` convention), so it cannot import
@@ -11,7 +18,11 @@ if (dsn) {
   Sentry.init({
     dsn,
     tracesSampleRate: Number(process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE ?? 0),
-    environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV,
+    environment: getSentryEnvironment(),
+    release: getSentryRelease(),
+    dist: getSentryDist(),
+    initialScope: { tags: getSentryTags("browser") },
+    beforeSend,
     enabled: true,
   });
 }
