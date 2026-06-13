@@ -23,6 +23,8 @@
     "postinstall": "prisma generate",
     "setup:worktree": "node scripts/setup-worktree.mjs",
     "prepare": "husky",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
@@ -91,6 +93,7 @@
     "lint-staged": "^17.0.3",
     "prettier": "^3.8.3",
     "sharp": "^0.34.5",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4",
+    "vitest": "^4.1.8"
   }
 }
