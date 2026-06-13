@@ -3,16 +3,21 @@
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import { Reorder, useDragControls } from "framer-motion";
 import {
   ArrowRight,
+  ArrowUpDown,
   ChartCandlestick,
+  GripVertical,
   MoreHorizontal,
   Pencil,
   Plus,
   RefreshCw,
+  Save,
   Trash2,
   TrendingDown,
   TrendingUp,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -610,6 +615,97 @@ function StockRow({
   );
 }
 
+function ReorderStockItem({ stock }: { stock: SerializedTrackedStock }) {
+  const t = useTranslations("stocks");
+  const format = useFormatters();
+  const dragControls = useDragControls();
+  const isGain = (stock.change ?? 0) >= 0;
+  const hasDirection = stock.changePercent !== null;
+  const DirectionIcon = isGain ? TrendingUp : TrendingDown;
+  const percent = format.percent(stock.changePercent);
+
+  return (
+    <Reorder.Item
+      value={stock}
+      dragListener={false}
+      dragControls={dragControls}
+      dragMomentum={false}
+      layout="position"
+      whileDrag={{ scale: 1.01 }}
+      transition={{ type: "spring", stiffness: 520, damping: 38, mass: 0.85 }}
+      style={{ willChange: "transform" }}
+      className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5"
+    >
+      <button
+        type="button"
+        aria-label={t("dragHandleLabel")}
+        className="inline-flex shrink-0 cursor-grab touch-none items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        onPointerDown={(event) => dragControls.start(event)}
+      >
+        <GripVertical className="h-4 w-4" aria-hidden />
+      </button>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate font-mono text-sm font-semibold tracking-normal">
+            {stock.symbol}
+          </span>
+          <Badge
+            variant="outline"
+            className="border-primary/20 bg-primary/5 text-[10px] font-medium text-primary/90"
+          >
+            {stock.currency}
+          </Badge>
+        </div>
+        <p className="mt-0.5 truncate text-xs leading-4 text-muted-foreground">{stock.name}</p>
+      </div>
+      {hasDirection ? (
+        <span
+          className={cn(
+            "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-mono text-xs font-semibold tabular-nums leading-none",
+            isGain
+              ? "bg-[var(--gain)]/15 text-[var(--gain)]"
+              : "bg-[var(--loss)]/15 text-[var(--loss)]",
+          )}
+        >
+          <DirectionIcon className="h-3 w-3 shrink-0" aria-hidden />
+          {percent}
+        </span>
+      ) : (
+        <span className="shrink-0 font-mono text-xs font-medium tabular-nums text-muted-foreground">
+          {t("unavailable")}
+        </span>
+      )}
+    </Reorder.Item>
+  );
+}
+
+function ManageOrderList({
+  draft,
+  onReorder,
+}: {
+  draft: SerializedTrackedStock[];
+  onReorder: (next: SerializedTrackedStock[]) => void;
+}) {
+  const t = useTranslations("stocks");
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs leading-tight text-muted-foreground">{t("manageOrderHint")}</p>
+      <Reorder.Group
+        axis="y"
+        values={draft}
+        onReorder={onReorder}
+        layoutScroll
+        className="space-y-2"
+      >
+        {draft.map((stock) => (
+          <ReorderStockItem key={stock.id} stock={stock} />
+        ))}
+      </Reorder.Group>
+    </div>
+  );
+}
+
 export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] }) {
   const t = useTranslations("stocks");
   const common = useTranslations("common");
@@ -621,6 +717,9 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
   const [refreshing, setRefreshing] = useState(false);
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [now, setNow] = useState(() => Date.now());
+  const [manageMode, setManageMode] = useState(false);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [draft, setDraft] = useState<SerializedTrackedStock[]>([]);
 
   // 1s tick while a cooldown is active so the button re-enables on time.
   useEffect(() => {
@@ -698,6 +797,37 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
     }
   }
 
+  function enterManageMode() {
+    setDraft([...stocks]);
+    setManageMode(true);
+  }
+
+  function cancelManageMode() {
+    setManageMode(false);
+    setDraft([]);
+  }
+
+  async function saveOrder() {
+    setSavingOrder(true);
+    try {
+      const res = await fetch("/api/stocks/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds: draft.map((stock) => stock.id) }),
+      });
+      if (!res.ok) throw new Error("reorder failed");
+      toast.success(t("reorderSaved"));
+      setManageMode(false);
+      setDraft([]);
+      startTransition(() => router.refresh());
+    } catch {
+      // Stay in manage mode so the user can retry without losing the arrangement.
+      toast.error(t("reorderSaveFailed"));
+    } finally {
+      setSavingOrder(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -714,27 +844,51 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
             <FreshnessBadge kind="price" timestamp={latestPriceTimestamp} mobileShort />
           )}
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:flex">
-          <Button
-            variant="outline"
-            onClick={refreshPrices}
-            disabled={refreshing || coolingDown || stocks.length === 0}
-            className="w-full sm:w-auto"
-          >
-            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-            {refreshing ? t("refreshing") : t("refreshPrices")}
-          </Button>
-          <Button
-            onClick={() => {
-              setEditingStock(null);
-              setFormOpen(true);
-            }}
-            className="w-full sm:w-auto"
-          >
-            <Plus className="h-4 w-4" />
-            {t("addStock")}
-          </Button>
-        </div>
+        {manageMode ? (
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <Button
+              variant="outline"
+              onClick={cancelManageMode}
+              disabled={savingOrder}
+              className="w-full sm:w-auto"
+            >
+              <X className="h-4 w-4" />
+              {common("cancel")}
+            </Button>
+            <Button onClick={saveOrder} disabled={savingOrder} className="w-full sm:w-auto">
+              <Save className="h-4 w-4" />
+              {savingOrder ? common("saving") : common("save")}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+            <Button
+              variant="outline"
+              onClick={refreshPrices}
+              disabled={refreshing || coolingDown || stocks.length === 0}
+              className="flex-1 sm:flex-none"
+            >
+              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+              {refreshing ? t("refreshing") : t("refreshPrices")}
+            </Button>
+            {stocks.length > 1 && (
+              <Button variant="outline" onClick={enterManageMode} className="flex-1 sm:flex-none">
+                <ArrowUpDown className="h-4 w-4" />
+                {t("manageOrder")}
+              </Button>
+            )}
+            <Button
+              onClick={() => {
+                setEditingStock(null);
+                setFormOpen(true);
+              }}
+              className="order-last w-full sm:order-none sm:w-auto sm:flex-none"
+            >
+              <Plus className="h-4 w-4" />
+              {t("addStock")}
+            </Button>
+          </div>
+        )}
       </div>
 
       {stocks.length === 0 ? (
@@ -744,6 +898,8 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
             setFormOpen(true);
           }}
         />
+      ) : manageMode ? (
+        <ManageOrderList draft={draft} onReorder={setDraft} />
       ) : (
         <div className="space-y-3 md:space-y-2">
           {stocks.map((stock) => (

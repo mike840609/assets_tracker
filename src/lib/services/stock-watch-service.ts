@@ -17,6 +17,7 @@ export type SerializedStockWatchItem = {
   recordPrice: number;
   recordDate: string;
   note: string | null;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -40,6 +41,7 @@ export function serializeStockWatchItem(item: StockWatchItem): SerializedStockWa
     recordPrice: Number(item.recordPrice),
     recordDate: item.recordDate.toISOString().slice(0, 10),
     note: item.note,
+    sortOrder: item.sortOrder,
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
   };
@@ -78,7 +80,9 @@ export async function getCachedTrackedStocks(userId: string): Promise<Serialized
   cacheLife("hours");
   const items = await prisma.stockWatchItem.findMany({
     where: { userId },
-    orderBy: [{ createdAt: "desc" }, { symbol: "asc" }],
+    // Manual order first; createdAt keeps a stable newest-first tiebreak for
+    // rows that share a sortOrder (e.g. before the user has reordered).
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }, { symbol: "asc" }],
   });
   const symbols = items.map((item) => item.symbol);
   const prices =

@@ -198,6 +198,10 @@ export const createGoalSchema = z.object({
 
 export const updateGoalSchema = createGoalSchema.partial();
 
+export const reorderGoalsSchema = z.object({
+  orderedIds: z.array(z.string().min(1)),
+});
+
 const stockWatchItemFields = {
   symbol: z
     .string()
@@ -221,6 +225,10 @@ export const updateStockWatchItemSchema = z.object({
   recordPrice: stockWatchItemFields.recordPrice.optional(),
   recordDate: stockWatchItemFields.recordDate.optional(),
   note: stockWatchItemFields.note,
+});
+
+export const reorderStocksSchema = z.object({
+  orderedIds: z.array(z.string().min(1)),
 });
 
 const decimalSchema = z.union([z.string(), z.number()]);
@@ -327,6 +335,7 @@ export const dataImportSchema = z.object({
         targetDate: z.string().optional().nullable(),
         scope: z.enum(GOAL_SCOPES),
         scopeRefId: z.string().optional().nullable(),
+        sortOrder: z.number().int().default(0),
         createdAt: importTimestamp,
         updatedAt: importTimestamp,
       }),
