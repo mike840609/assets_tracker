@@ -40,6 +40,13 @@ export const POST = withAuth(async (request, _ctx, userId) => {
     if (existingCanonical) return failure("This stock is already tracked.", 409);
   }
 
+  // Append new stocks to the bottom so a manually saved order stays intact.
+  const { _max } = await prisma.stockWatchItem.aggregate({
+    where: { userId },
+    _max: { sortOrder: true },
+  });
+  const nextSortOrder = (_max.sortOrder ?? -1) + 1;
+
   const item = await prisma.stockWatchItem.create({
     data: {
       userId,
@@ -50,6 +57,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
       recordPrice: parsed.data.recordPrice,
       recordDate: new Date(`${parsed.data.recordDate}T00:00:00.000Z`),
       note: parsed.data.note?.trim() || null,
+      sortOrder: nextSortOrder,
     },
   });
 

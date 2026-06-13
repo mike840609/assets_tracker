@@ -228,6 +228,11 @@
     "title": "Goals",
     "subtitle": "Track milestones toward your net worth targets.",
     "addGoal": "New Goal",
+    "manageOrder": "Manage order",
+    "manageOrderHint": "Drag to reorder your goals. New goals are added to the bottom.",
+    "dragHandleLabel": "Drag to reorder",
+    "reorderSaved": "Goal order saved",
+    "reorderSaveFailed": "Failed to save goal order",
     "emptyTitle": "No goals yet",
     "emptyDescription": "Set a target — like \"$1M net worth by 2030\" — and track your progress here.",
     "emptyHint": "Establish goals to track your milestones over time.",
@@ -1131,7 +1136,12 @@
     "dashboardEmptyBody": "Track ideas separately from accounts before they become holdings.",
     "dashboardPreviewCount": "Showing {shown} of {count} tracked stocks",
     "alreadyFresh": "Watchlist prices are already up to date",
-    "refreshCooldown": "Please wait {seconds}s before refreshing"
+    "refreshCooldown": "Please wait {seconds}s before refreshing",
+    "manageOrder": "Manage order",
+    "manageOrderHint": "Drag to reorder your watchlist. New stocks are added to the bottom.",
+    "dragHandleLabel": "Drag to reorder",
+    "reorderSaved": "Watchlist order saved",
+    "reorderSaveFailed": "Failed to save watchlist order"
   },
   "transactionHistory": {
     "title": "Transaction History",

@@ -140,6 +140,7 @@ export type SerializedGoal = {
   targetDate: string | null;
   scope: "NET_WORTH" | "ASSETS_ONLY" | "CATEGORY" | "ACCOUNT";
   scopeRefId: string | null;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -164,6 +165,7 @@ export function serializeGoal(goal: Goal): SerializedGoal {
     targetDate: goal.targetDate ? (goal.targetDate as Date).toISOString() : null,
     scope: goal.scope as "NET_WORTH" | "ASSETS_ONLY" | "CATEGORY" | "ACCOUNT",
     scopeRefId: goal.scopeRefId,
+    sortOrder: goal.sortOrder,
     createdAt: goal.createdAt.toISOString(),
     updatedAt: goal.updatedAt.toISOString(),
   };

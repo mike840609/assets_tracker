@@ -443,6 +443,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
               targetDate: g.targetDate ? new Date(g.targetDate) : null,
               scope: g.scope,
               scopeRefId: remapGoalScopeRefId(g, accountIdMap),
+              sortOrder: g.sortOrder,
               ...(g.createdAt && { createdAt: new Date(g.createdAt) }),
               ...(g.updatedAt && { updatedAt: new Date(g.updatedAt) }),
             })),

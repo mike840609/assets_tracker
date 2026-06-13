@@ -228,6 +228,11 @@
     "title": "目標",
     "subtitle": "設定並追蹤您的淨資產里程碑。",
     "addGoal": "新增目標",
+    "manageOrder": "管理排序",
+    "manageOrderHint": "拖曳以重新排序目標。新增的目標會加到最下方。",
+    "dragHandleLabel": "拖曳以重新排序",
+    "reorderSaved": "已儲存目標排序",
+    "reorderSaveFailed": "儲存目標排序失敗",
     "emptyTitle": "尚無目標",
     "emptyDescription": "設定目標 — 例如「在 2030 年達到 100 萬美元淨資產」 — 並在此處追蹤進度。",
     "emptyHint": "建立目標以持續追蹤您的里程碑。",
@@ -1131,7 +1136,12 @@
     "dashboardEmptyBody": "先把投資想法獨立追蹤，之後再加入帳戶持倉。",
     "dashboardPreviewCount": "顯示 {count} 檔中的 {shown} 檔自選股",
     "alreadyFresh": "追蹤清單價格已是最新",
-    "refreshCooldown": "請稍候 {seconds} 秒後再重新整理"
+    "refreshCooldown": "請稍候 {seconds} 秒後再重新整理",
+    "manageOrder": "管理排序",
+    "manageOrderHint": "拖曳以重新排序追蹤清單。新增的股票會加到最下方。",
+    "dragHandleLabel": "拖曳以重新排序",
+    "reorderSaved": "已儲存追蹤清單排序",
+    "reorderSaveFailed": "儲存追蹤清單排序失敗"
   },
   "transactionHistory": {
     "title": "交易紀錄",

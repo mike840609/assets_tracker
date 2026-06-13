@@ -14,7 +14,9 @@ async function fetchUserGoalsInner(userId: string): Promise<SerializedGoal[]> {
   cacheLife("hours");
   const goals = await prisma.goal.findMany({
     where: { userId },
-    orderBy: { createdAt: "desc" },
+    // Manual order first; createdAt keeps a stable newest-first tiebreak for
+    // goals that share a sortOrder (e.g. before the user has reordered).
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
   });
   return goals.map(serializeGoal);
 }
