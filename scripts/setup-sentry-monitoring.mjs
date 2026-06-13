@@ -78,14 +78,15 @@ function dashboardWidget(spec, layout) {
   return {
     title,
     displayType,
-    // Sentry defaults un-typed widgets to the errors dataset; p95(transaction.duration)
-    // only resolves on the transactions dataset, so latency widgets must opt out.
+    // Defaults to the errors dataset; widgets that need transaction-duration
+    // metrics pass widgetType: "spans" (the transactions dataset is deprecated
+    // under Sentry EAP) — see the p95 latency specs below.
     widgetType,
     interval: "5m",
     limit: 10,
     layout: {
-      minH: layout.h,
       ...layout,
+      minH: layout.h,
     },
     queries: [
       {
@@ -351,15 +352,15 @@ async function main() {
   // PUT replaces the existing dashboard's widget set with the current spec (the
   // widgets carry no id, so Sentry recreates them); POST creates it on first run.
   // Without the update branch a re-run would no-op against a stale dashboard.
-  const dashboard = existingDashboard
-    ? await sentryFetch(`/organizations/${org}/dashboards/${existingDashboard.id}/`, {
-        method: "PUT",
-        body: JSON.stringify(dashboardPayload(projectInfo.id)),
-      })
-    : await sentryFetch(`/organizations/${org}/dashboards/`, {
-        method: "POST",
-        body: JSON.stringify(dashboardPayload(projectInfo.id)),
-      });
+  const dashboard = await sentryFetch(
+    existingDashboard
+      ? `/organizations/${org}/dashboards/${existingDashboard.id}/`
+      : `/organizations/${org}/dashboards/`,
+    {
+      method: existingDashboard ? "PUT" : "POST",
+      body: JSON.stringify(dashboardPayload(projectInfo.id)),
+    },
+  );
 
   const alertResults = [];
   if (alertActions.length === 0) {
