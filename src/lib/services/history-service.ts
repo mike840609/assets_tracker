@@ -18,6 +18,16 @@ export interface NormalizedSnapshot {
 /** Default history window: last 90 days. Keeps the query fast for the dashboard. */
 const DEFAULT_HISTORY_DAYS = 90;
 
+const SNAPSHOT_SELECT = {
+  id: true,
+  date: true,
+  createdAt: true,
+  netWorth: true,
+  totalAssets: true,
+  totalLiabilities: true,
+  baseCurrency: true,
+} as const;
+
 interface SnapshotRow {
   id: string;
   date: Date;
@@ -111,21 +121,56 @@ export async function getNormalizedHistory(
   const [snapshotsRaw, allRatesMap] = await Promise.all([
     prisma.netWorthSnapshot.findMany({
       where: { userId, date: { gte: fromDate } },
-      select: {
-        id: true,
-        date: true,
-        createdAt: true,
-        netWorth: true,
-        totalAssets: true,
-        totalLiabilities: true,
-        baseCurrency: true,
-      },
+      select: SNAPSHOT_SELECT,
       orderBy: { date: "asc" },
     }),
     getAllExchangeRates(),
   ]);
 
   return normalizeSnapshots(snapshotsRaw, allRatesMap, targetBaseCurrency);
+}
+
+/**
+ * Current-year history for the activity heatmap. Includes the latest snapshot
+ * before Jan 1, when present, so the first visible day can compute its delta
+ * the same way full-history views do.
+ */
+export async function getCurrentYearNormalizedHistory(
+  userId: string,
+  targetBaseCurrency: string,
+): Promise<NormalizedSnapshot[]> {
+  "use cache";
+  cacheTag("snapshots");
+  cacheTag("net-worth");
+  cacheTag(`history:${userId}`);
+  cacheLife("hours");
+
+  const now = new Date();
+  const yearStart = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+
+  const [currentYearRows, previousDateRow, allRatesMap] = await Promise.all([
+    prisma.netWorthSnapshot.findMany({
+      where: { userId, date: { gte: yearStart } },
+      select: SNAPSHOT_SELECT,
+      orderBy: { date: "asc" },
+    }),
+    prisma.netWorthSnapshot.findFirst({
+      where: { userId, date: { lt: yearStart } },
+      select: { date: true },
+      orderBy: { date: "desc" },
+    }),
+    getAllExchangeRates(),
+  ]);
+
+  const previousRows = previousDateRow
+    ? await prisma.netWorthSnapshot.findMany({
+        where: { userId, date: previousDateRow.date },
+        select: SNAPSHOT_SELECT,
+        orderBy: { createdAt: "asc" },
+      })
+    : [];
+
+  return normalizeSnapshots([...previousRows, ...currentYearRows], allRatesMap, targetBaseCurrency);
 }
 
 /**
@@ -158,15 +203,7 @@ async function fetchFullHistoryCached(
   const [snapshotsRaw, allRatesMap] = await Promise.all([
     prisma.netWorthSnapshot.findMany({
       where: { userId },
-      select: {
-        id: true,
-        date: true,
-        createdAt: true,
-        netWorth: true,
-        totalAssets: true,
-        totalLiabilities: true,
-        baseCurrency: true,
-      },
+      select: SNAPSHOT_SELECT,
       orderBy: { date: "asc" },
     }),
     getAllExchangeRates(),

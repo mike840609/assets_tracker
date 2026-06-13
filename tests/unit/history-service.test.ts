@@ -13,6 +13,9 @@ interface SnapshotRowFixture {
 }
 const h = vi.hoisted(() => ({
   rows: [] as SnapshotRowFixture[],
+  currentYearRows: [] as SnapshotRowFixture[],
+  previousRows: [] as SnapshotRowFixture[],
+  previousDateRow: null as { date: Date } | null,
   rates: new Map<string, number>(),
 }));
 
@@ -22,14 +25,25 @@ vi.mock("@/lib/logger", () => ({
   withTiming: <T>(_name: string, fn: () => T) => fn(),
 }));
 vi.mock("@/lib/prisma", () => ({
-  prisma: { netWorthSnapshot: { findMany: vi.fn(async () => h.rows) } },
+  prisma: {
+    netWorthSnapshot: {
+      findMany: vi.fn(async (args?: { where?: { date?: Date | { gte?: Date } } }) => {
+        const dateWhere = args?.where?.date;
+        if (dateWhere instanceof Date) return h.previousRows;
+        if (dateWhere && "gte" in dateWhere) return h.currentYearRows;
+        return h.rows;
+      }),
+      findFirst: vi.fn(async () => h.previousDateRow),
+    },
+  },
 }));
 vi.mock("@/lib/services/exchange-rate-service", async (importActual) => {
   const actual = await importActual<typeof import("@/lib/services/exchange-rate-service")>();
   return { ...actual, getAllExchangeRates: vi.fn(async () => h.rates) };
 });
 
-const { getFullNormalizedHistory } = await import("@/lib/services/history-service");
+const { getCurrentYearNormalizedHistory, getFullNormalizedHistory } =
+  await import("@/lib/services/history-service");
 
 function row(
   over: Partial<SnapshotRowFixture> & Pick<SnapshotRowFixture, "id" | "date">,
@@ -45,7 +59,11 @@ function row(
 }
 
 beforeEach(() => {
+  vi.useRealTimers();
   h.rows = [];
+  h.currentYearRows = [];
+  h.previousRows = [];
+  h.previousDateRow = null;
   h.rates = new Map<string, number>();
 });
 
@@ -123,5 +141,37 @@ describe("getFullNormalizedHistory (normalize + dedupe — locks E2)", () => {
     expect(result[0].totalAssets).toBeCloseTo(110);
     expect(result[0].totalLiabilities).toBeCloseTo(10);
     expect(result[0].baseCurrency).toBe("USD");
+  });
+});
+
+describe("getCurrentYearNormalizedHistory", () => {
+  it("returns current-year snapshots plus the latest prior day for delta context", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-14T12:00:00.000Z"));
+
+    const priorDate = new Date("2025-12-31T00:00:00.000Z");
+    h.previousDateRow = { date: priorDate };
+    h.previousRows = [row({ id: "prior", date: priorDate, netWorth: 90 })];
+    h.currentYearRows = [
+      row({ id: "jan", date: new Date("2026-01-01T00:00:00.000Z"), netWorth: 100 }),
+      row({ id: "today", date: new Date("2026-06-14T00:00:00.000Z"), netWorth: 120 }),
+    ];
+
+    const result = await getCurrentYearNormalizedHistory("u1", "USD");
+
+    expect(result.map((s) => s.date)).toEqual(["2025-12-31", "2026-01-01", "2026-06-14"]);
+  });
+
+  it("returns only current-year snapshots when there is no prior history", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-14T12:00:00.000Z"));
+
+    h.currentYearRows = [
+      row({ id: "jan", date: new Date("2026-01-01T00:00:00.000Z"), netWorth: 100 }),
+    ];
+
+    const result = await getCurrentYearNormalizedHistory("u1", "USD");
+
+    expect(result.map((s) => s.date)).toEqual(["2026-01-01"]);
   });
 });

@@ -15,7 +15,10 @@ import {
   resolveRate,
 } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
-import { getNormalizedHistory } from "@/lib/services/history-service";
+import {
+  getCurrentYearNormalizedHistory,
+  getNormalizedHistory,
+} from "@/lib/services/history-service";
 import { HistoryHeatmap } from "@/components/history/history-heatmap";
 import { computeGoalsWithProgress } from "@/lib/services/goal-service";
 import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
@@ -265,22 +268,23 @@ async function GoalsMilestoneSection({
 /**
  * Trend chart + history heatmap — streams behind its Suspense boundary so the
  * dashboard shell never waits on snapshot history. getNormalizedHistory is
- * "use cache" with cacheLife("hours"), so the snapshot fetch — shared by
- * TrendChartSection and HistoryHeatmap — is a cache read on warm requests.
+ * "use cache" with cacheLife("hours"), so the chart stays on the fast 90-day
+ * window while the heatmap gets a year-to-date calendar window.
  */
 async function TrendSection({ userId, baseCurrency }: { userId: string; baseCurrency: string }) {
-  const [snapshots, t] = await Promise.all([
+  const [trendSnapshots, heatmapSnapshots, t] = await Promise.all([
     getNormalizedHistory(userId, baseCurrency),
+    getCurrentYearNormalizedHistory(userId, baseCurrency),
     getTranslations("dashboard"),
   ]);
 
   return (
     <TrendChartSection
       baseCurrency={baseCurrency}
-      snapshots={snapshots}
+      snapshots={trendSnapshots}
       footer={
         <>
-          <HistoryHeatmap snapshots={snapshots} baseCurrency={baseCurrency} />
+          <HistoryHeatmap snapshots={heatmapSnapshots} baseCurrency={baseCurrency} />
           {/* Mobile-only entry point — History is a sub-tab of /analysis, so
               the tab bar gives it no scent. The trend chart is the preview;
               this names the destination. Desktop uses the sidebar route. */}

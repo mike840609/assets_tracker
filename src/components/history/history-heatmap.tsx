@@ -11,6 +11,7 @@ const CELL_PX = 10;
 const GAP_PX = 4;
 const COL_WIDTH = CELL_PX + GAP_PX;
 const CALENDAR_TIME_ZONE = "UTC";
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function calendarDate(year: number, monthIndex: number, day: number) {
   return new Date(Date.UTC(year, monthIndex, day));
@@ -19,6 +20,22 @@ function calendarDate(year: number, monthIndex: number, day: number) {
 function calendarDateFromString(dateString: string) {
   const [year, month, day] = dateString.split("-").map(Number);
   return calendarDate(year, month - 1, day);
+}
+
+function utcToday() {
+  const now = new Date();
+  return calendarDate(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+}
+
+function addUtcDays(date: Date, days: number) {
+  return new Date(date.getTime() + days * DAY_MS);
+}
+
+function utcDateString(date: Date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 // Fixed reference dates for day-of-week label generation
@@ -45,7 +62,7 @@ type GridDay = {
   netWorth?: number;
   change: number | null;
   isFuture: boolean;
-  isNextYear: boolean;
+  isOutsideYear: boolean;
 };
 
 type Props = {
@@ -64,105 +81,109 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   const [tooltip, setTooltip] = useState<{ day: GridDay; x: number; y: number } | null>(null);
   const tooltipLabels = labels ?? { netWorth: "Net Worth", change: "Change" };
 
-  const { gridDays, monthLabels, maxPos, maxNeg, weeksToShow, currentYear, todayColIndex } =
-    useMemo(() => {
-      // 1. Sort snapshots chronologically (oldest first) to easily calculate deltas
-      const sortedSnapshots = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+  const {
+    gridDays,
+    monthLabels,
+    maxPos,
+    maxNeg,
+    weeksToShow,
+    currentYear,
+    todayColIndex,
+    todayString,
+  } = useMemo(() => {
+    // 1. Sort snapshots chronologically (oldest first) to easily calculate deltas
+    const sortedSnapshots = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
 
-      let maxPositiveChange = 0;
-      let maxNegativeChange = 0;
+    // 2. Create a lookup map of snapshot dates with pre-calculated changes (O(N))
+    const snapshotMap = new Map<string, SnapshotRow & { change: number | null }>();
 
-      // 2. Create a lookup map of snapshot dates with pre-calculated changes (O(N))
-      const snapshotMap = new Map<string, SnapshotRow & { change: number | null }>();
+    for (let i = 0; i < sortedSnapshots.length; i++) {
+      const snap = sortedSnapshots[i]!;
+      const prevSnap = i > 0 ? sortedSnapshots[i - 1] : null;
+      const change = prevSnap ? snap.netWorth - prevSnap.netWorth : null;
 
-      for (let i = 0; i < sortedSnapshots.length; i++) {
-        const snap = sortedSnapshots[i]!;
-        const prevSnap = i > 0 ? sortedSnapshots[i - 1] : null;
-        const change = prevSnap ? snap.netWorth - prevSnap.netWorth : null;
+      snapshotMap.set(snap.date, { ...snap, change });
+    }
 
-        if (change !== null) {
-          if (change > maxPositiveChange) maxPositiveChange = change;
-          if (change < maxNegativeChange) maxNegativeChange = change;
-        }
+    // 3. Determine end date (Saturday on or after Dec 31st of current year)
+    const today = utcToday();
+    const todayString = utcDateString(today);
+    const currentYear = today.getUTCFullYear();
+    const dec31 = calendarDate(currentYear, 11, 31);
+    const dayOfWeekEnd = dec31.getUTCDay(); // 0 = Sunday, 6 = Saturday
+    const daysToAddToReachSaturday = 6 - dayOfWeekEnd;
+    const endDate = addUtcDays(dec31, daysToAddToReachSaturday);
 
-        snapshotMap.set(snap.date, { ...snap, change });
-      }
+    // 4. Determine start date (Sunday on or before Jan 1st of current year)
+    const jan1 = calendarDate(currentYear, 0, 1);
+    const dayOfWeekStart = jan1.getUTCDay();
+    const startDate = addUtcDays(jan1, -dayOfWeekStart);
 
-      // 3. Determine end date (Saturday on or after Dec 31st of current year)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const currentYear = today.getFullYear();
-      const dec31 = new Date(currentYear, 11, 31);
-      const dayOfWeekEnd = dec31.getDay(); // 0 = Sunday, 6 = Saturday
-      const daysToAddToReachSaturday = 6 - dayOfWeekEnd;
-      const endDate = new Date(dec31);
-      endDate.setDate(dec31.getDate() + daysToAddToReachSaturday);
+    // 5. Calculate total days to show
+    const daysToShow = Math.round((endDate.getTime() - startDate.getTime()) / DAY_MS) + 1;
+    const weeksToShow = daysToShow / 7;
 
-      // 4. Determine start date (Sunday on or before Jan 1st of current year)
-      const jan1 = new Date(currentYear, 0, 1);
-      const dayOfWeekStart = jan1.getDay();
-      const startDate = new Date(jan1);
-      startDate.setDate(jan1.getDate() - dayOfWeekStart);
+    const days: GridDay[] = [];
+    const mLabels: { col: number; label: string }[] = [];
+    let currentMonth = -1;
+    let maxPositiveChange = 0;
+    let maxNegativeChange = 0;
 
-      // 5. Calculate total days to show
-      const daysToShow =
-        Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      const weeksToShow = daysToShow / 7;
+    for (let i = 0; i < daysToShow; i++) {
+      const current = addUtcDays(startDate, i);
 
-      const days: GridDay[] = [];
-      const mLabels: { col: number; label: string }[] = [];
-      let currentMonth = -1;
+      const year = current.getUTCFullYear();
+      const monthIndex = current.getUTCMonth();
+      const dateString = utcDateString(current);
 
-      for (let i = 0; i < daysToShow; i++) {
-        const current = new Date(startDate);
-        current.setDate(startDate.getDate() + i);
+      const snapData = snapshotMap.get(dateString);
+      const isFuture = current.getTime() > today.getTime();
+      const isOutsideYear = year !== currentYear;
+      const change = snapData?.change ?? null;
 
-        const year = current.getFullYear();
-        const month = String(current.getMonth() + 1).padStart(2, "0");
-        const day = String(current.getDate()).padStart(2, "0");
-        const dateString = `${year}-${month}-${day}`;
-
-        const snapData = snapshotMap.get(dateString);
-
-        // Track month boundaries for labels (only if we are still in the current year)
-        if (year === currentYear && current.getMonth() !== currentMonth && current.getDate() < 15) {
-          currentMonth = current.getMonth();
-          mLabels.push({
-            col: Math.floor(i / 7),
-            label: format.dateTime(calendarDate(year, current.getMonth(), 1), {
-              month: "short",
-              timeZone: CALENDAR_TIME_ZONE,
-            }),
-          });
-        }
-
-        days.push({
-          date: current,
-          dateString,
-          hasSnapshot: !!snapData,
-          netWorth: snapData?.netWorth,
-          change: snapData?.change ?? null,
-          isFuture: current > today,
-          isNextYear: year > currentYear,
+      // Track month boundaries for labels (only if we are still in the current year)
+      if (year === currentYear && monthIndex !== currentMonth && current.getUTCDate() < 15) {
+        currentMonth = monthIndex;
+        mLabels.push({
+          col: Math.floor(i / 7),
+          label: format.dateTime(calendarDate(year, monthIndex, 1), {
+            month: "short",
+            timeZone: CALENDAR_TIME_ZONE,
+          }),
         });
       }
 
-      // Column index of the current week, used to seed the initial scroll position
-      const todayDayOffset = Math.round(
-        (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-      );
-      const todayColIndex = Math.floor(todayDayOffset / 7);
+      if (!isFuture && !isOutsideYear && change !== null) {
+        if (change > maxPositiveChange) maxPositiveChange = change;
+        if (change < maxNegativeChange) maxNegativeChange = change;
+      }
 
-      return {
-        gridDays: days,
-        monthLabels: mLabels,
-        maxPos: maxPositiveChange,
-        maxNeg: Math.abs(maxNegativeChange),
-        weeksToShow,
-        currentYear,
-        todayColIndex,
-      };
-    }, [snapshots, format]);
+      days.push({
+        date: current,
+        dateString,
+        hasSnapshot: !!snapData,
+        netWorth: snapData?.netWorth,
+        change,
+        isFuture,
+        isOutsideYear,
+      });
+    }
+
+    // Column index of the current week, used to seed the initial scroll position
+    const todayDayOffset = Math.round((today.getTime() - startDate.getTime()) / DAY_MS);
+    const todayColIndex = Math.floor(todayDayOffset / 7);
+
+    return {
+      gridDays: days,
+      monthLabels: mLabels,
+      maxPos: maxPositiveChange,
+      maxNeg: Math.abs(maxNegativeChange),
+      weeksToShow,
+      currentYear,
+      todayColIndex,
+      todayString,
+    };
+  }, [snapshots, format]);
 
   // Transpose the flat array into 7 rows (Sunday–Saturday)
   const rows = useMemo(() => {
@@ -184,14 +205,6 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
       ),
     [format],
   );
-
-  // "You are here" marker: the date the user orients around in the year grid.
-  const todayString = useMemo(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-      d.getDate(),
-    ).padStart(2, "0")}`;
-  }, []);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const dismissTooltip = useCallback(() => setTooltip(null), []);
@@ -315,7 +328,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                 <div key={rIdx} role="row" aria-rowindex={rIdx + 1} className="flex gap-1">
                   {row.map((day, cIdx) => {
                     // Padding cells outside the current year — hide from AT
-                    if (!day || day.isNextYear) {
+                    if (!day || day.isOutsideYear) {
                       return (
                         <div
                           key={cIdx}
