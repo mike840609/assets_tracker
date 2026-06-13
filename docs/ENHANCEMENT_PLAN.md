@@ -71,15 +71,15 @@ the same issues do not get re-opened from older trackers.
 
 ## Tier 1 — Security hardening
 
-| ID  | Item                                                             | Effort | Impact | Source              |
-| --- | ---------------------------------------------------------------- | ------ | ------ | ------------------- |
-| E10 | ✅ Timing-safe `CRON_SECRET` comparison                          | XS     | 🔴     | ROADMAP S2          |
-| E11 | ✅ Rate-limit coverage on all mutation routes                    | S      | 🔴     | BUGS High (partial) |
-| E12 | ✅ `getClientIp` fallback chain (`cf-connecting-ip`, `x-real-ip`)| XS     | 🟡     | BUGS High           |
-| E13 | ✅ Import hardening: body-size cap + Zod array `.max()`          | S      | 🟡     | new (audit)         |
-| E14 | ✅ Validate `/api/options/chain` symbol shape before upstream fetch | XS     | 🟡     | BUGS Medium       |
-| E15 | ✅ CSP header enforced + public report endpoint                  | M      | 🔴     | ROADMAP S8          |
-| E16 | GDPR completion: true account deletion (`user.delete` cascade)   | M      | 🔴     | ROADMAP S9 ⚠️       |
+| ID  | Item                                                                | Effort | Impact | Source              |
+| --- | ------------------------------------------------------------------- | ------ | ------ | ------------------- |
+| E10 | ✅ Timing-safe `CRON_SECRET` comparison                             | XS     | 🔴     | ROADMAP S2          |
+| E11 | ✅ Rate-limit coverage on all mutation routes                       | S      | 🔴     | BUGS High (partial) |
+| E12 | ✅ `getClientIp` fallback chain (`cf-connecting-ip`, `x-real-ip`)   | XS     | 🟡     | BUGS High           |
+| E13 | ✅ Import hardening: body-size cap + Zod array `.max()`             | S      | 🟡     | new (audit)         |
+| E14 | ✅ Validate `/api/options/chain` symbol shape before upstream fetch | XS     | 🟡     | BUGS Medium         |
+| E15 | ✅ CSP header enforced + public report endpoint                     | M      | 🔴     | ROADMAP S8          |
+| E16 | GDPR completion: true account deletion (`user.delete` cascade)      | M      | 🔴     | ROADMAP S9 ⚠️       |
 
 - **E10** — Done in `cron/snapshot/route.ts`: the bearer token compare now uses
   `crypto.timingSafeEqual` over equal-length buffers.
@@ -119,12 +119,21 @@ snapshot stops, nothing tells you. PLATFORM F1 flags this trio as "do first".
 
 | ID  | Item                                                     | Effort | Impact | Source        |
 | --- | -------------------------------------------------------- | ------ | ------ | ------------- |
-| E17 | `/api/health` — DB ping + latest-snapshot freshness      | XS     | 🔴     | ROADMAP S5    |
+| E17 | ✅ `/api/health` — DB ping + latest-snapshot freshness   | XS     | 🔴     | ROADMAP S5    |
 | E18 | `CronRun` audit table + >36 h freshness alarm            | M      | 🔴     | ROADMAP S6    |
 | E19 | Sentry (or equivalent) wired through `src/lib/logger.ts` | M      | 🔴     | ROADMAP S4 ⚠️ |
 | E20 | Request-context correlation (requestId/userId) in logger | S      | 🟢     | new (audit)   |
 | E21 | Snapshot reconciliation side-job (drift >0.5% alert)     | S      | 🟢     | ROADMAP S28   |
 
+- **E17** — Done in `app/api/health/route.ts`: unauthenticated `GET /api/health`
+  pings the DB with a `SELECT 1` and reads the most recent `NetWorthSnapshot`
+  `createdAt` in one parallel round. Returns only `{ status, db, latestSnapshotAt,
+snapshotAgeMs, timestamp }` — no user data. `status` is `"ok"` (HTTP 200) when
+  the DB is reachable and a snapshot exists within 36 h; `"degraded"` (HTTP 503)
+  when the DB is up but the latest snapshot is stale/absent; `"unhealthy"`
+  (HTTP 503) when the DB is unreachable. The endpoint is wrapped with
+  `rateLimitCheckWithPrune` (30/min per IP). The 36 h threshold is the same one
+  E18's `CronRun` alarm will build on, so E17 unblocks E18.
 - **E19** — The structured logger half of S4 is done (`logger.ts`, ~30 call
   sites, JSON output, `withTiming`); what's missing is shipping errors
   somewhere that alerts. `src/instrumentation.ts` exists as the hook point.
@@ -139,7 +148,7 @@ durationMs }` row each run; `/api/health` (E17) goes red when no successful
 | --- | ------------------------------------------------------------------- | ------ | ------ | ----------- |
 | E22 | Vitest + first service-layer suite                                  | M      | 🔴     | ROADMAP S7  |
 | E23 | E2E gaps: /projections, /history, settings import/export round-trip | M      | 🟡     | new (audit) |
-| E24 | Run `format:check` in PR CI; lint/typecheck are already gated       | XS     | 🟢     | new (audit) |
+| E24 | ✅ Run `format:check` in PR CI; lint/typecheck are already gated    | XS     | 🟢     | new (audit) |
 
 - **E22** — Zero unit tests exist. First wave, all pure functions:
   `net-worth-service` two-pass + missing-rate path · `exchange-rate-service`
@@ -151,9 +160,11 @@ durationMs }` row each run; `/api/health` (E17) goes red when no successful
   pages with the most math (projections, history) and the riskiest mutation
   (data import) have no coverage. An import→export round-trip equality test
   doubles as a backup-integrity guarantee.
-- **E24** — `.github/workflows/ci.yml` already runs `npm run lint` and
-  `npm run typecheck` on PRs. The remaining CI gap is `npm run format:check`
-  (currently only covered locally/pre-push via scripts and lint-staged).
+- **E24** — Done in `.github/workflows/ci.yml`: a `format` job runs
+  `npm run format:check` on PRs, mirroring the `lint`/`typecheck` jobs (same
+  checkout/setup/deps-cache pattern, same `[skip ci]` guard, `needs: install`).
+  Prettier drift is now caught in CI instead of relying solely on the
+  local/pre-push hook and lint-staged.
 
 ## Tier 4 — Database & schema evolution
 
@@ -203,13 +214,13 @@ large ones.
 
 The June audit closed most of this. Remaining, in order:
 
-| ID  | Item                                                                      | Effort     | Impact | Source      |
-| --- | ------------------------------------------------------------------------- | ---------- | ------ | ----------- |
-| E30 | 🚫 Free-plan blocked: Skew Protection + Rolling Releases                 | XS         | 🟡     | ROADMAP S20 |
-| E31 | ✅ P3 — resolve `/login` proxy; legal pages already excluded              | M          | 🟡     | PLATFORM P3 |
-| E32 | ⚠️ PE16/V15 — build-cache audit (297 MB → <150 MB)                        | L          | 🟢     | PERFORMANCE |
-| E33 | ⏸️ P7 — trusted `x-user-id` header to remove RSC double-decode            | L          | 🟢     | PLATFORM P7 |
-| E34 | ✅ Re-test `cacheComponents`-blocked items on each Next.js upgrade        | XS/upgrade | 🟢     | PERFORMANCE |
+| ID  | Item                                                               | Effort     | Impact | Source      |
+| --- | ------------------------------------------------------------------ | ---------- | ------ | ----------- |
+| E30 | 🚫 Free-plan blocked: Skew Protection + Rolling Releases           | XS         | 🟡     | ROADMAP S20 |
+| E31 | ✅ P3 — resolve `/login` proxy; legal pages already excluded       | M          | 🟡     | PLATFORM P3 |
+| E32 | ⚠️ PE16/V15 — build-cache audit (297 MB → <150 MB)                 | L          | 🟢     | PERFORMANCE |
+| E33 | ⏸️ P7 — trusted `x-user-id` header to remove RSC double-decode     | L          | 🟢     | PLATFORM P7 |
+| E34 | ✅ Re-test `cacheComponents`-blocked items on each Next.js upgrade | XS/upgrade | 🟢     | PERFORMANCE |
 
 - **E30** — Deferred 2026-06-12: this project is on the Vercel Free plan, while
   Skew Protection and Rolling Releases are Pro-plan platform controls. Do not
@@ -286,10 +297,11 @@ Recorded so future audits don't waste a cycle:
 
 ## Suggested sequencing
 
-1. **Week 1 — security quick wins:** E10–E15 are shipped. E24 remains the small
-   CI follow-up from this batch.
-2. **Week 2 — eyes and ears:** E17 + E18 + E19. After this, failures page you
-   instead of hiding.
+1. **Week 1 — security quick wins:** E10–E15 are shipped, and E24 (the
+   `format:check` CI gate) is now done too.
+2. **Week 2 — eyes and ears:** E17 (shipped — `/api/health`) + E18 + E19. After
+   this, failures page you instead of hiding. E18's freshness alarm reuses the
+   36 h window E17 already enforces.
 3. **Week 3 — lock it in:** E22 unit suite (+E23 E2E gaps), then revisit CSP
    reports only if `/api/csp/report` surfaces real production violations.
 4. **Then the keystone:** E25 schema migration → F3 cost basis → F6/F8
