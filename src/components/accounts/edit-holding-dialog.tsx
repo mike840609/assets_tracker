@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import type { SerializedHolding } from "@/lib/types";
 
 import { getOptionDisplay } from "@/lib/options";
+import { maskAmountInput } from "@/lib/amount-input";
 
 const ASSET_TYPES = [
   { value: "STOCK", label: "Stock" },
@@ -49,15 +50,8 @@ export function EditHoldingDialog({
   const optionDisplay = getOptionDisplay(holding);
 
   function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
-    if (!raw) {
-      setQuantity("");
-      return;
-    }
-    const [intPart, decPart] = raw.split(".");
-    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
+    const next = maskAmountInput(e.target.value);
+    if (next !== null) setQuantity(next);
   }
 
   function handleQuantityBlur() {
@@ -95,11 +89,6 @@ export function EditHoldingDialog({
       toast.error(
         isOption ? "Quantity must be 0 or greater" : "Quantity must be a positive number",
       );
-      setLoading(false);
-      return;
-    }
-    if (!isOption && parsedQty <= 0) {
-      toast.error("Quantity must be a positive number");
       setLoading(false);
       return;
     }

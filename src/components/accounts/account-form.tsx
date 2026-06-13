@@ -15,23 +15,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CURRENCIES } from "@/lib/currencies";
+import { maskAmountInput } from "@/lib/amount-input";
+import { ACCOUNT_CATEGORIES } from "@/lib/enums";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useDiscardGuard } from "@/hooks/use-discard-guard";
 import { DiscardConfirmDialog } from "@/components/discard-confirm-dialog";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-
-const CATEGORY_KEYS = [
-  "BANK",
-  "BROKERAGE",
-  "CRYPTO_WALLET",
-  "PROPERTY",
-  "VEHICLE",
-  "CREDIT_CARD",
-  "LOAN",
-  "MORTGAGE",
-  "OTHER",
-] as const;
 
 export function AccountForm({
   open,
@@ -80,16 +70,10 @@ export function AccountForm({
   );
 
   function handleCashBalanceChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    const next = maskAmountInput(e.target.value);
+    if (next === null) return;
     setCashBalanceError("");
-    if (!raw) {
-      setCashBalance("");
-      return;
-    }
-    const [intPart, decPart] = raw.split(".");
-    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setCashBalance(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
+    setCashBalance(next);
   }
 
   function handleCashBalanceBlur() {
@@ -179,7 +163,7 @@ export function AccountForm({
               <SelectValue>{t(`categories.${category}`)}</SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {CATEGORY_KEYS.map((key) => (
+              {ACCOUNT_CATEGORIES.map((key) => (
                 <SelectItem key={key} value={key}>
                   {t(`categories.${key}`)}
                 </SelectItem>
@@ -189,64 +173,42 @@ export function AccountForm({
         </div>
       </div>
 
-      {category === "BROKERAGE" || category === "CRYPTO_WALLET" ? (
-        <div className="space-y-2">
-          <Label htmlFor={currencyId}>{t("accountForm.labelCurrency")}</Label>
-          <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
-            <SelectTrigger id={currencyId}>
-              <SelectValue>
-                {(() => {
-                  const c = CURRENCIES.find((c) => c.code === currency);
-                  return c ? `${c.code} (${c.symbol})` : currency;
-                })()}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {CURRENCIES.map((c) => (
-                <SelectItem key={c.code} value={c.code}>
-                  {c.code} ({c.symbol})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-2">
-            <Label htmlFor={currencyId}>{t("accountForm.labelCurrency")}</Label>
-            <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
-              <SelectTrigger id={currencyId}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CURRENCIES.map((c) => (
-                  <SelectItem key={c.code} value={c.code}>
-                    {c.code} ({c.symbol})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <div className="space-y-2">
+        <Label htmlFor={currencyId}>{t("accountForm.labelCurrency")}</Label>
+        <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
+          <SelectTrigger id={currencyId}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CURRENCIES.map((c) => (
+              <SelectItem key={c.code} value={c.code}>
+                {c.code} ({c.symbol})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor={cashId}>{t("accountForm.labelCashBalance")}</Label>
-            <Input
-              id={cashId}
-              type="text"
-              inputMode="decimal"
-              value={cashBalance}
-              onChange={handleCashBalanceChange}
-              onBlur={handleCashBalanceBlur}
-              aria-invalid={!!cashBalanceError}
-              aria-describedby={cashBalanceError ? `${cashId}-error` : undefined}
-            />
-            {cashBalanceError && (
-              <p id={`${cashId}-error`} className="text-xs text-destructive" role="alert">
-                {cashBalanceError}
-              </p>
-            )}
-          </div>
-        </>
+      {/* Brokerage/crypto value comes from holdings, so only cash accounts edit a balance here. */}
+      {category !== "BROKERAGE" && category !== "CRYPTO_WALLET" && (
+        <div className="space-y-2">
+          <Label htmlFor={cashId}>{t("accountForm.labelCashBalance")}</Label>
+          <Input
+            id={cashId}
+            type="text"
+            inputMode="decimal"
+            value={cashBalance}
+            onChange={handleCashBalanceChange}
+            onBlur={handleCashBalanceBlur}
+            aria-invalid={!!cashBalanceError}
+            aria-describedby={cashBalanceError ? `${cashId}-error` : undefined}
+          />
+          {cashBalanceError && (
+            <p id={`${cashId}-error`} className="text-xs text-destructive" role="alert">
+              {cashBalanceError}
+            </p>
+          )}
+        </div>
       )}
 
       <div className="flex justify-end gap-2 pt-2">
