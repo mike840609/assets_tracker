@@ -235,6 +235,7 @@ model AuthAccount {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
   @@map("auth_accounts")
 }
 
@@ -244,6 +245,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -252,4 +255,17 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model CronRun {
+  id         String    @id @default(cuid())
+  name       String
+  startedAt  DateTime
+  finishedAt DateTime?
+  ok         Boolean   @default(false)
+  error      String?   @db.Text
+  durationMs Int?
+  createdAt  DateTime  @default(now())
+
+  @@index([name, ok, startedAt(sort: Desc)])
 }

@@ -14,11 +14,23 @@ function hasValidCronSecret(authHeader: string | null): boolean {
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
+/** Name used for this cron's CronRun audit rows; E18's /api/health alarm keys on it. */
+const CRON_NAME = "snapshot";
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   if (!hasValidCronSecret(authHeader)) {
     return new Response("Unauthorized", { status: 401 });
   }
+
+  // E18 — audit trail. Record the run start up front so a crash mid-flight still
+  // leaves an `ok: false` row that /api/health can read. Both the success and
+  // failure paths below close it out with finishedAt/durationMs.
+  const startedAt = new Date();
+  const cronRun = await prisma.cronRun.create({
+    data: { name: CRON_NAME, startedAt, ok: false },
+    select: { id: true },
+  });
 
   try {
     // 0. Sweep expired option contracts so the snapshot doesn't include them
@@ -99,13 +111,39 @@ export async function GET(request: Request) {
       revalidateTag(`history:${user.id}`, "max");
     }
 
+    const finishedAt = new Date();
+    await prisma.cronRun.update({
+      where: { id: cronRun.id },
+      data: {
+        ok: true,
+        finishedAt,
+        durationMs: finishedAt.getTime() - startedAt.getTime(),
+      },
+    });
+
     return ok({
       success: true,
       snapshotIds: snapshots.map((s) => s.id),
-      timestamp: new Date().toISOString(),
+      timestamp: finishedAt.toISOString(),
     });
   } catch (error) {
     log.error("cron.snapshot.failed", { error: String(error) });
+    const finishedAt = new Date();
+    // Best-effort: record the failure row before returning. Swallow any error
+    // from this write so it can't mask the original failure.
+    try {
+      await prisma.cronRun.update({
+        where: { id: cronRun.id },
+        data: {
+          ok: false,
+          finishedAt,
+          durationMs: finishedAt.getTime() - startedAt.getTime(),
+          error: String(error),
+        },
+      });
+    } catch (auditError) {
+      log.error("cron.snapshot.audit_failed", { error: String(auditError) });
+    }
     return failure("Internal Server Error", 500);
   }
 }
