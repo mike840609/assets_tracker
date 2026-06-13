@@ -73,10 +73,14 @@ function getAlertActions() {
   return [];
 }
 
-function dashboardWidget(title, displayType, fields, conditions, layout) {
+function dashboardWidget(spec, layout) {
+  const { title, displayType, fields, conditions, widgetType = "error-events" } = spec;
   return {
     title,
     displayType,
+    // Sentry defaults un-typed widgets to the errors dataset; p95(transaction.duration)
+    // only resolves on the transactions dataset, so latency widgets must opt out.
+    widgetType,
     interval: "5m",
     limit: 10,
     layout: {
@@ -97,6 +101,153 @@ function dashboardWidget(title, displayType, fields, conditions, layout) {
   };
 }
 
+// Two-column auto-layout on Sentry's 6-col grid (each widget is half-width).
+// Bin-packs into whichever column is currently shorter so mixed big-number (h2)
+// and table/line (h3) heights never overlap, regardless of widget count.
+function layoutWidgets(specs) {
+  let yLeft = 0;
+  let yRight = 0;
+  return specs.map((spec) => {
+    const h = spec.displayType === "big_number" ? 2 : 3;
+    if (yLeft <= yRight) {
+      const widget = dashboardWidget(spec, { x: 0, y: yLeft, w: 3, h });
+      yLeft += h;
+      return widget;
+    }
+    const widget = dashboardWidget(spec, { x: 3, y: yRight, w: 3, h });
+    yRight += h;
+    return widget;
+  });
+}
+
+// The full set documented in docs/SENTRY_MONITORING_PLAN.md "Recommended layout".
+// Order follows the plan's reading order; layoutWidgets() places them two-per-row.
+const WIDGET_SPECS = [
+  {
+    title: "Production errors",
+    displayType: "big_number",
+    fields: ["count()"],
+    conditions: "level:error",
+  },
+  {
+    title: "Affected users",
+    displayType: "big_number",
+    fields: ["count_unique(user)"],
+    conditions: "level:error",
+  },
+  {
+    title: "Latest release errors",
+    displayType: "big_number",
+    fields: ["count()"],
+    conditions: "level:error release:latest",
+  },
+  // Only populated when SENTRY_CAPTURE_WARNINGS=true forwards warnings as events.
+  {
+    title: "Warning volume",
+    displayType: "area",
+    fields: ["count()"],
+    conditions: "level:warning",
+  },
+  {
+    title: "Errors by route",
+    displayType: "table",
+    fields: ["transaction", "count()"],
+    conditions: "level:error",
+  },
+  {
+    title: "Errors by release",
+    displayType: "table",
+    fields: ["release", "count()"],
+    conditions: "level:error",
+  },
+  {
+    title: "Errors by runtime",
+    displayType: "table",
+    fields: ["runtime", "count()"],
+    conditions: "level:error",
+  },
+  {
+    title: "Cron failures",
+    displayType: "table",
+    fields: ["message", "count()"],
+    conditions: 'message:"cron.snapshot.failed" OR message:"cron.snapshot.audit_failed"',
+  },
+  {
+    title: "DB failures",
+    displayType: "table",
+    fields: ["message", "count()"],
+    conditions: 'message:"health.db_unreachable" OR error.type:*Prisma*',
+  },
+  {
+    title: "Import/export failures",
+    displayType: "table",
+    fields: ["message", "count()"],
+    conditions: 'message:"export.failed" OR message:"import.failed"',
+  },
+  {
+    title: "Market providers",
+    displayType: "table",
+    fields: ["message", "count()"],
+    conditions:
+      'message:"price.yahoo.*" OR message:"price.coingecko.failed" OR message:"rates.fetch.failed"',
+  },
+  {
+    title: "FX unresolved pairs",
+    displayType: "table",
+    fields: ["message", "count()"],
+    conditions: 'message:"rates.unresolved"',
+  },
+  {
+    title: "Slow Prisma operations",
+    displayType: "table",
+    fields: ["message", "count()"],
+    conditions: 'message:"prisma.slow_query"',
+  },
+  {
+    title: "Browser render errors",
+    displayType: "table",
+    fields: ["transaction", "browser.name", "release", "count()"],
+    conditions: "level:error runtime:browser",
+  },
+  {
+    title: "Navigation/chunk errors",
+    displayType: "table",
+    fields: ["transaction", "count()"],
+    conditions: "runtime:browser error.type:ChunkLoadError",
+  },
+  {
+    title: "CSP violations",
+    displayType: "table",
+    fields: ["message", "count()"],
+    conditions: 'message:"csp.violation"',
+  },
+  // p95 widgets use the spans dataset (the transactions dataset is deprecated in
+  // Sentry EAP) filtered to transaction-root spans, and need tracing enabled
+  // (SENTRY_TRACES_SAMPLE_RATE > 0 — Plan Phase 4). They render empty until then.
+  {
+    title: "Backend p95 latency",
+    displayType: "line",
+    fields: ["transaction", "p95(span.duration)"],
+    conditions:
+      "is_transaction:true (transaction:/api/health OR transaction:/api/refresh OR transaction:/api/cron/snapshot)",
+    widgetType: "spans",
+  },
+  {
+    title: "Page p95 latency",
+    displayType: "line",
+    fields: ["transaction", "p95(span.duration)"],
+    conditions:
+      "is_transaction:true (transaction:/ OR transaction:/accounts OR transaction:/accounts/* OR transaction:/analysis OR transaction:/history)",
+    widgetType: "spans",
+  },
+  {
+    title: "CWV budget misses",
+    displayType: "table",
+    fields: ["message", "count()"],
+    conditions: 'message:"cwv.budget_exceeded"',
+  },
+];
+
 function dashboardPayload(projectId) {
   return {
     title: DASHBOARD_TITLE,
@@ -105,79 +256,7 @@ function dashboardPayload(projectId) {
     period: "24h",
     utc: true,
     is_favorited: true,
-    widgets: [
-      dashboardWidget("Production errors", "big_number", ["count()"], "level:error", {
-        x: 0,
-        y: 0,
-        w: 3,
-        h: 2,
-      }),
-      dashboardWidget("Affected users", "big_number", ["count_unique(user)"], "level:error", {
-        x: 3,
-        y: 0,
-        w: 3,
-        h: 2,
-      }),
-      dashboardWidget("Errors by route", "table", ["transaction", "count()"], "level:error", {
-        x: 0,
-        y: 2,
-        w: 3,
-        h: 3,
-      }),
-      dashboardWidget("Errors by release", "table", ["release", "count()"], "level:error", {
-        x: 3,
-        y: 2,
-        w: 3,
-        h: 3,
-      }),
-      dashboardWidget(
-        "Cron failures",
-        "table",
-        ["message", "count()"],
-        'message:"cron.snapshot.failed" OR message:"cron.snapshot.audit_failed"',
-        { x: 0, y: 5, w: 3, h: 3 },
-      ),
-      dashboardWidget(
-        "DB failures",
-        "table",
-        ["message", "count()"],
-        'message:"health.db_unreachable" OR error.type:*Prisma*',
-        { x: 3, y: 5, w: 3, h: 3 },
-      ),
-      dashboardWidget(
-        "Market providers",
-        "table",
-        ["message", "count()"],
-        'message:"price.yahoo.*" OR message:"price.coingecko.failed" OR message:"rates.fetch.failed"',
-        { x: 0, y: 8, w: 3, h: 3 },
-      ),
-      dashboardWidget(
-        "Browser render errors",
-        "table",
-        ["transaction", "browser.name", "count()"],
-        "runtime:browser",
-        {
-          x: 3,
-          y: 8,
-          w: 3,
-          h: 3,
-        },
-      ),
-      dashboardWidget(
-        "Backend p95 latency",
-        "line",
-        ["p95(transaction.duration)", "transaction"],
-        "transaction:/api/health OR transaction:/api/refresh OR transaction:/api/cron/snapshot",
-        { x: 0, y: 11, w: 3, h: 3 },
-      ),
-      dashboardWidget(
-        "Page p95 latency",
-        "line",
-        ["p95(transaction.duration)", "transaction"],
-        "transaction:/ OR transaction:/accounts OR transaction:/accounts/* OR transaction:/analysis OR transaction:/history",
-        { x: 3, y: 11, w: 3, h: 3 },
-      ),
-    ],
+    widgets: layoutWidgets(WIDGET_SPECS),
   };
 }
 
@@ -263,12 +342,18 @@ async function main() {
 
   const projectInfo = await sentryFetch(`/projects/${org}/${project}/`);
   const existingDashboard = await getExistingDashboard(org);
-  const dashboard =
-    existingDashboard ??
-    (await sentryFetch(`/organizations/${org}/dashboards/`, {
-      method: "POST",
-      body: JSON.stringify(dashboardPayload(projectInfo.id)),
-    }));
+  // PUT replaces the existing dashboard's widget set with the current spec (the
+  // widgets carry no id, so Sentry recreates them); POST creates it on first run.
+  // Without the update branch a re-run would no-op against a stale dashboard.
+  const dashboard = existingDashboard
+    ? await sentryFetch(`/organizations/${org}/dashboards/${existingDashboard.id}/`, {
+        method: "PUT",
+        body: JSON.stringify(dashboardPayload(projectInfo.id)),
+      })
+    : await sentryFetch(`/organizations/${org}/dashboards/`, {
+        method: "POST",
+        body: JSON.stringify(dashboardPayload(projectInfo.id)),
+      });
 
   const alertResults = [];
   if (alertActions.length === 0) {
