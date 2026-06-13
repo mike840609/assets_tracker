@@ -111,6 +111,10 @@ the same issues do not get re-opened from older trackers.
   `DELETE /api/account` + a confirm flow in Settings. Add the missing FK
   indexes on `AuthAccount.userId` / `Session.userId` in the same PR — Postgres
   needs them for efficient cascade (DATABASE.md follow-up).
+  - **Partial (2026-06-13):** the FK-index half shipped with E18 — migration
+    `20260613000000_add_cron_run_and_fk_indexes` adds `@@index([userId])` to
+    `auth_accounts` and `Session` so cascade deletes are index-backed. The
+    account-deletion endpoint + confirm flow remain pending.
 
 ## Tier 2 — Observability (the "blind cron" cluster)
 
@@ -120,7 +124,7 @@ snapshot stops, nothing tells you. PLATFORM F1 flags this trio as "do first".
 | ID  | Item                                                     | Effort | Impact | Source        |
 | --- | -------------------------------------------------------- | ------ | ------ | ------------- |
 | E17 | ✅ `/api/health` — DB ping + latest-snapshot freshness   | XS     | 🔴     | ROADMAP S5    |
-| E18 | `CronRun` audit table + >36 h freshness alarm            | M      | 🔴     | ROADMAP S6    |
+| E18 | ✅ `CronRun` audit table + >36 h freshness alarm         | M      | 🔴     | ROADMAP S6    |
 | E19 | Sentry (or equivalent) wired through `src/lib/logger.ts` | M      | 🔴     | ROADMAP S4 ⚠️ |
 | E20 | Request-context correlation (requestId/userId) in logger | S      | 🟢     | new (audit)   |
 | E21 | Snapshot reconciliation side-job (drift >0.5% alert)     | S      | 🟢     | ROADMAP S28   |
@@ -137,10 +141,24 @@ snapshotAgeMs, timestamp }` — no user data. `status` is `"ok"` (HTTP 200) when
 - **E19** — The structured logger half of S4 is done (`logger.ts`, ~30 call
   sites, JSON output, `withTiming`); what's missing is shipping errors
   somewhere that alerts. `src/instrumentation.ts` exists as the hook point.
-- **E18** — Cron writes a `CronRun { name, startedAt, finishedAt, ok, error,
-durationMs }` row each run; `/api/health` (E17) goes red when no successful
-  row in 36 h. #418's `cron.revalidate.gate` log line gives partial signal
-  but only when logs are being watched — the table makes it queryable.
+- **E18** — Done in `prisma/schema.prisma` + `cron/snapshot/route.ts` +
+  `app/api/health/route.ts` (migration
+  `20260613000000_add_cron_run_and_fk_indexes`). The cron writes a
+  `CronRun { name: "snapshot", startedAt, finishedAt, ok, error, durationMs }`
+  row each invocation — an `ok: false` row is created up front so a crash
+  mid-flight still leaves a failure record, then closed out as `ok: true` on
+  success or `ok: false` + `error` on failure (the failure-audit write is
+  best-effort and can't mask the original error). `CronRun` is indexed on
+  `(name, ok, startedAt DESC)` so "latest successful run" is a single
+  index seek. `/api/health` now reports **both** signals independently:
+  `cron` (latest successful `CronRun` within 36 h) and `snapshot` (existing
+  `NetWorthSnapshot` freshness), with overall `status` = worst of
+  {db, cron, snapshot} — `degraded` (503) if either cron or snapshot is
+  stale/absent, `ok` (200) only when all three are healthy. The 36 h window is
+  shared with E17. This is **Free-plan compatible**: no new cron is added — the
+  alarm is pull-based via `/api/health`. #418's `cron.revalidate.gate` log line
+  gave partial signal but only when logs were watched; the table makes it
+  queryable.
 
 ## Tier 3 — Testing
 
