@@ -179,7 +179,7 @@ Repo setup path:
 
 Current Sentry resources:
 
-- Dashboard: `Assets Tracker - Production Health`, id `7021314`.
+- Dashboard: `Assets Tracker - Production Health`, id `7021314` (all 19 widgets applied 2026-06-13).
 - Metric alerts: production error spike `439337`, API error spike `439338`, cron snapshot failed `439339`, DB unreachable `439340`.
 
 1. New issue, level error
@@ -255,9 +255,16 @@ Recommended layout:
 | 5   | Browser render errors   | Table                  | `level:error runtime:browser` grouped by `transaction`, browser, release                                                  | Client-only failures and hydration/runtime crashes          |
 | 5   | Navigation/chunk errors | Table                  | Browser errors containing chunk/load/navigation terms                                                                     | Catches stale service worker or deployment skew             |
 | 5   | CSP violations          | Table                  | `message:"csp.violation"` grouped by violated directive and blocked URI                                                   | Verifies CSP changes without paging on internet noise       |
-| 6   | Backend p95 latency     | Line chart             | `p95(transaction.duration)` for `/api/health`, `/api/refresh`, `/api/cron/snapshot`                                       | Backend degradation trend after tracing is enabled          |
-| 6   | Page p95 latency        | Line chart             | `p95(transaction.duration)` for `/`, `/accounts`, `/accounts/[id]`, `/analysis`, `/history`                               | User-facing route performance trend                         |
+| 6   | Backend p95 latency     | Line chart             | `p95(span.duration)` for `/api/health`, `/api/refresh`, `/api/cron/snapshot`                                              | Backend degradation trend after tracing is enabled          |
+| 6   | Page p95 latency        | Line chart             | `p95(span.duration)` for `/`, `/accounts`, `/accounts/[id]`, `/analysis`, `/history`                                      | User-facing route performance trend                         |
 | 6   | CWV budget misses       | Bar/table              | `message:"cwv.budget_exceeded"` grouped by metric and URL                                                                 | Complements Vercel Speed Insights                           |
+
+Applied state (2026-06-13): all 19 widgets above are live on dashboard `7021314` via `npm run sentry:setup -- --apply`. Parity notes vs. the table:
+
+- Backend/Page p95 latency use the **spans** dataset (`widgetType: spans`) with an `is_transaction:true` filter and `p95(span.duration)` — Sentry's transactions dataset is deprecated under EAP. They stay empty until tracing is enabled (`SENTRY_TRACES_SAMPLE_RATE > 0`, Phase 4).
+- Navigation/chunk errors is scoped to `runtime:browser error.type:ChunkLoadError` (the dominant Next.js navigation failure), not a broad term match.
+- FX unresolved pairs groups by `message`, not `from`/`to`/`baseCurrency`; switch to those columns once the context tags in "Missing tags to add" below are emitted by the logger.
+- Warning volume only populates when `SENTRY_CAPTURE_WARNINGS=true`.
 
 Dashboard conventions:
 
