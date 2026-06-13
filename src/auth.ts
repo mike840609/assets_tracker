@@ -4,12 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import authConfig from "./auth.config";
 import { customPrismaAdapter } from "@/lib/auth-adapter";
 import { prisma } from "@/lib/prisma";
-import { PREVIEW_AUTH_DISABLED, PREVIEW_AUTH_PASSWORD, VERCEL_ENV } from "@/lib/env";
-
-const previewAuthDisabled = ["1", "true", "yes", "on"].includes(
-  (PREVIEW_AUTH_DISABLED ?? "").toLowerCase(),
-);
-const isPreviewOrLocal = VERCEL_ENV === "preview" || VERCEL_ENV === "development" || !VERCEL_ENV;
+import { isPreviewOrLocal, previewAuthDisabled, PREVIEW_AUTH_PASSWORD } from "@/lib/env";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -23,7 +18,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               password: { label: "Password", type: "password" },
             },
             authorize: async (credentials) => {
-              if (!isPreviewOrLocal) return null;
               if (!previewAuthDisabled) {
                 const expected = PREVIEW_AUTH_PASSWORD;
                 if (!expected || credentials?.password !== expected) return null;

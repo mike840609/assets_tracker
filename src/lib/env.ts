@@ -1,6 +1,11 @@
 import "server-only";
 import { z } from "zod";
 
+/** Parse a boolean-ish env flag: "1" | "true" | "yes" | "on" (case-insensitive) → true. */
+function isTruthyFlag(value: string | undefined): boolean {
+  return ["1", "true", "yes", "on"].includes((value ?? "").trim().toLowerCase());
+}
+
 const envSchema = z
   .object({
     DATABASE_URL: z
@@ -30,10 +35,11 @@ const envSchema = z
     SENTRY_CAPTURE_WARNINGS: z.string().trim().optional(),
   })
   .superRefine((value, ctx) => {
-    const previewAuthDisabled = ["1", "true", "yes", "on"].includes(
-      (value.PREVIEW_AUTH_DISABLED ?? "").toLowerCase(),
-    );
-    if (value.VERCEL_ENV === "preview" && !previewAuthDisabled && !value.PREVIEW_AUTH_PASSWORD) {
+    if (
+      value.VERCEL_ENV === "preview" &&
+      !isTruthyFlag(value.PREVIEW_AUTH_DISABLED) &&
+      !value.PREVIEW_AUTH_PASSWORD
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["PREVIEW_AUTH_PASSWORD"],
@@ -88,3 +94,14 @@ export const {
   SENTRY_AUTH_TOKEN,
   SENTRY_CAPTURE_WARNINGS,
 } = env;
+
+/**
+ * Credentials/preview login is offered in Vercel preview deployments and any
+ * non-Vercel context (local dev, CI). Centralized here so the login page and the
+ * NextAuth Credentials provider share one gate and can't drift.
+ */
+export const isPreviewOrLocal =
+  VERCEL_ENV === "preview" || VERCEL_ENV === "development" || !VERCEL_ENV;
+
+/** When set, preview login skips the password check (passwordless preview). */
+export const previewAuthDisabled = isTruthyFlag(PREVIEW_AUTH_DISABLED);
