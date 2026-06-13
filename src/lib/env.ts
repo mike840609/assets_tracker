@@ -19,6 +19,14 @@ const envSchema = z
     PREVIEW_AUTH_PASSWORD: z.string().trim().min(1, "must not be empty").optional(),
     PREVIEW_AUTH_DISABLED: z.string().trim().optional(),
     VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
+    // E19 — Sentry error reporting. All optional: when no DSN is set the
+    // integration is a complete no-op (local dev / CI / build need no Sentry
+    // account). SENTRY_DSN drives server + edge init; NEXT_PUBLIC_SENTRY_DSN is
+    // the client-exposed equivalent the browser SDK reads. SENTRY_AUTH_TOKEN
+    // only gates source-map upload at build time.
+    SENTRY_DSN: z.string().trim().min(1, "must not be empty").optional(),
+    NEXT_PUBLIC_SENTRY_DSN: z.string().trim().min(1, "must not be empty").optional(),
+    SENTRY_AUTH_TOKEN: z.string().trim().min(1, "must not be empty").optional(),
   })
   .superRefine((value, ctx) => {
     const previewAuthDisabled = ["1", "true", "yes", "on"].includes(
@@ -43,6 +51,9 @@ const parsedEnv = envSchema.safeParse({
   PREVIEW_AUTH_PASSWORD: process.env.PREVIEW_AUTH_PASSWORD,
   PREVIEW_AUTH_DISABLED: process.env.PREVIEW_AUTH_DISABLED,
   VERCEL_ENV: process.env.VERCEL_ENV,
+  SENTRY_DSN: process.env.SENTRY_DSN,
+  NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
 });
 
 if (!parsedEnv.success) {
@@ -70,4 +81,7 @@ export const {
   PREVIEW_AUTH_PASSWORD,
   PREVIEW_AUTH_DISABLED,
   VERCEL_ENV,
+  SENTRY_DSN,
+  NEXT_PUBLIC_SENTRY_DSN,
+  SENTRY_AUTH_TOKEN,
 } = env;
