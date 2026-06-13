@@ -7,6 +7,7 @@ import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { ok, failure } from "@/lib/api-responses";
 import { CRON_SECRET } from "@/lib/env";
 import { log } from "@/lib/logger";
+import { finishSnapshotCronCheckIn, startSnapshotCronCheckIn } from "@/lib/sentry-cron";
 
 function hasValidCronSecret(authHeader: string | null): boolean {
   const expected = Buffer.from(`Bearer ${CRON_SECRET}`);
@@ -23,16 +24,19 @@ export async function GET(request: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  // E18 — audit trail. Record the run start up front so a crash mid-flight still
-  // leaves an `ok: false` row that /api/health can read. Both the success and
-  // failure paths below close it out with finishedAt/durationMs.
   const startedAt = new Date();
-  const cronRun = await prisma.cronRun.create({
-    data: { name: CRON_NAME, startedAt, ok: false },
-    select: { id: true },
-  });
+  const checkIn = startSnapshotCronCheckIn();
+  let cronRun: { id: string } | null = null;
 
   try {
+    // E18 — audit trail. Record the run start up front so a crash mid-flight still
+    // leaves an `ok: false` row that /api/health can read. Both the success and
+    // failure paths below close it out with finishedAt/durationMs.
+    cronRun = await prisma.cronRun.create({
+      data: { name: CRON_NAME, startedAt, ok: false },
+      select: { id: true },
+    });
+
     // 0. Sweep expired option contracts so the snapshot doesn't include them
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
@@ -120,6 +124,7 @@ export async function GET(request: Request) {
         durationMs: finishedAt.getTime() - startedAt.getTime(),
       },
     });
+    finishSnapshotCronCheckIn(checkIn, "ok");
 
     return ok({
       success: true,
@@ -132,6 +137,7 @@ export async function GET(request: Request) {
     // Best-effort: record the failure row before returning. Swallow any error
     // from this write so it can't mask the original failure.
     try {
+      if (!cronRun) return failure("Internal Server Error", 500);
       await prisma.cronRun.update({
         where: { id: cronRun.id },
         data: {
@@ -143,6 +149,8 @@ export async function GET(request: Request) {
       });
     } catch (auditError) {
       log.error("cron.snapshot.audit_failed", { error: String(auditError) });
+    } finally {
+      finishSnapshotCronCheckIn(checkIn, "error");
     }
     return failure("Internal Server Error", 500);
   }
