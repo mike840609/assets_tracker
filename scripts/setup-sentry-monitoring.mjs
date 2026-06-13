@@ -101,23 +101,24 @@ function dashboardWidget(spec, layout) {
   };
 }
 
-// Two-column auto-layout on Sentry's 6-col grid (each widget is half-width).
-// Bin-packs into whichever column is currently shorter so mixed big-number (h2)
-// and table/line (h3) heights never overlap, regardless of widget count.
+// Row-based two-column layout on Sentry's 6-col grid (each widget is half-width).
+// Widgets are paired in declaration order; both cells in a row share the same y
+// and a uniform height (the taller of the pair), so the left and right columns
+// stay aligned row-for-row. A trailing odd widget sits alone in the left column.
+const widgetHeight = (spec) => (spec.displayType === "big_number" ? 2 : 3);
+
 function layoutWidgets(specs) {
-  let yLeft = 0;
-  let yRight = 0;
-  return specs.map((spec) => {
-    const h = spec.displayType === "big_number" ? 2 : 3;
-    if (yLeft <= yRight) {
-      const widget = dashboardWidget(spec, { x: 0, y: yLeft, w: 3, h });
-      yLeft += h;
-      return widget;
-    }
-    const widget = dashboardWidget(spec, { x: 3, y: yRight, w: 3, h });
-    yRight += h;
-    return widget;
-  });
+  const widgets = [];
+  let y = 0;
+  for (let i = 0; i < specs.length; i += 2) {
+    const row = specs.slice(i, i + 2);
+    const rowH = Math.max(...row.map(widgetHeight));
+    row.forEach((spec, col) => {
+      widgets.push(dashboardWidget(spec, { x: col * 3, y, w: 3, h: rowH }));
+    });
+    y += rowH;
+  }
+  return widgets;
 }
 
 // The full set documented in docs/SENTRY_MONITORING_PLAN.md "Recommended layout".
