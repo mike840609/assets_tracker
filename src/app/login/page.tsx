@@ -5,6 +5,7 @@ import { auth, signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Lock, ShieldCheck, EyeOff } from "lucide-react";
 import { SESSION_COOKIE_NAMES } from "@/lib/auth-cookies";
+import { isPreviewOrLocal, previewAuthDisabled } from "@/lib/env";
 import { getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import Link from "next/link";
@@ -23,14 +24,6 @@ async function hasSessionCookie(): Promise<boolean> {
 
 async function LoginContent() {
   const t = await getTranslations("login");
-  const isPreviewOrLocal =
-    process.env.VERCEL_ENV === "preview" ||
-    process.env.VERCEL_ENV === "development" ||
-    !process.env.VERCEL_ENV;
-  const previewAuthDisabled = ["1", "true", "yes", "on"].includes(
-    (process.env.PREVIEW_AUTH_DISABLED ?? "").toLowerCase(),
-  );
-  const showPreviewLogin = isPreviewOrLocal;
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center relative overflow-hidden bg-background">
@@ -114,7 +107,7 @@ async function LoginContent() {
           </div>
         </div>
 
-        {showPreviewLogin && (
+        {isPreviewOrLocal && (
           <>
             <div className="flex items-center gap-3 pt-2">
               <div className="flex-1 h-px bg-border" />
