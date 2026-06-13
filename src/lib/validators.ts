@@ -225,6 +225,13 @@ export const updateStockWatchItemSchema = z.object({
 
 const decimalSchema = z.union([z.string(), z.number()]);
 
+const MAX_IMPORT_ACCOUNTS = 200;
+const MAX_IMPORT_HOLDINGS_PER_ACCOUNT = 2_000;
+const MAX_IMPORT_TRANSACTIONS_PER_HOLDING = 10_000;
+const MAX_IMPORT_CASH_TRANSACTIONS_PER_ACCOUNT = 10_000;
+const MAX_IMPORT_SNAPSHOTS = 10_000;
+const MAX_IMPORT_GOALS = 500;
+
 // Exports are produced by NextResponse.json (Dates → full ISO 8601 strings),
 // so round-trip imports always carry valid ISO datetimes. Rejecting anything
 // else turns a write-time Prisma 500 into a 400 with a field path.
@@ -239,59 +246,64 @@ export const dataImportSchema = z.object({
     })
     .optional()
     .nullable(),
-  accounts: z.array(
-    z.object({
-      id: z.string().optional(),
-      name: z.string().min(1),
-      type: z.enum(ACCOUNT_TYPES),
-      category: z.enum(ACCOUNT_CATEGORIES),
-      currency: z.string().length(3),
-      cashBalance: decimalSchema,
-      isActive: z.boolean().default(true),
-      isPinned: z.boolean().default(false),
-      sortOrder: z.number().int().default(0),
-      createdAt: importTimestamp,
-      updatedAt: importTimestamp,
-      holdings: z
-        .array(
-          z.object({
-            symbol: z.string().min(1),
-            name: z.string().min(1),
-            quantity: decimalSchema,
-            currency: z.string().length(3),
-            assetType: z.enum(HOLDING_ASSET_TYPES),
-            createdAt: importTimestamp,
-            updatedAt: importTimestamp,
-            underlyingSymbol: z.string().optional().nullable(),
-            optionType: z.enum(OPTION_TYPES).optional().nullable(),
-            strike: decimalSchema.optional().nullable(),
-            expiration: z.string().optional().nullable(),
-            contractMultiplier: z.number().int().optional().nullable(),
-            transactions: z
-              .array(
-                z.object({
-                  type: z.enum(HOLDING_TRANSACTION_TYPES),
-                  quantity: decimalSchema,
-                  note: z.string().optional().nullable(),
-                  createdAt: importTimestamp,
-                }),
-              )
-              .optional(),
-          }),
-        )
-        .optional(),
-      cashTransactions: z
-        .array(
-          z.object({
-            type: z.enum(CASH_TRANSACTION_TYPES),
-            amount: decimalSchema,
-            note: z.string().optional().nullable(),
-            createdAt: importTimestamp,
-          }),
-        )
-        .optional(),
-    }),
-  ),
+  accounts: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        name: z.string().min(1),
+        type: z.enum(ACCOUNT_TYPES),
+        category: z.enum(ACCOUNT_CATEGORIES),
+        currency: z.string().length(3),
+        cashBalance: decimalSchema,
+        isActive: z.boolean().default(true),
+        isPinned: z.boolean().default(false),
+        sortOrder: z.number().int().default(0),
+        createdAt: importTimestamp,
+        updatedAt: importTimestamp,
+        holdings: z
+          .array(
+            z.object({
+              symbol: z.string().min(1),
+              name: z.string().min(1),
+              quantity: decimalSchema,
+              currency: z.string().length(3),
+              assetType: z.enum(HOLDING_ASSET_TYPES),
+              createdAt: importTimestamp,
+              updatedAt: importTimestamp,
+              underlyingSymbol: z.string().optional().nullable(),
+              optionType: z.enum(OPTION_TYPES).optional().nullable(),
+              strike: decimalSchema.optional().nullable(),
+              expiration: z.string().optional().nullable(),
+              contractMultiplier: z.number().int().optional().nullable(),
+              transactions: z
+                .array(
+                  z.object({
+                    type: z.enum(HOLDING_TRANSACTION_TYPES),
+                    quantity: decimalSchema,
+                    note: z.string().optional().nullable(),
+                    createdAt: importTimestamp,
+                  }),
+                )
+                .max(MAX_IMPORT_TRANSACTIONS_PER_HOLDING)
+                .optional(),
+            }),
+          )
+          .max(MAX_IMPORT_HOLDINGS_PER_ACCOUNT)
+          .optional(),
+        cashTransactions: z
+          .array(
+            z.object({
+              type: z.enum(CASH_TRANSACTION_TYPES),
+              amount: decimalSchema,
+              note: z.string().optional().nullable(),
+              createdAt: importTimestamp,
+            }),
+          )
+          .max(MAX_IMPORT_CASH_TRANSACTIONS_PER_ACCOUNT)
+          .optional(),
+      }),
+    )
+    .max(MAX_IMPORT_ACCOUNTS),
   snapshots: z
     .array(
       z.object({
@@ -304,6 +316,7 @@ export const dataImportSchema = z.object({
         createdAt: importTimestamp,
       }),
     )
+    .max(MAX_IMPORT_SNAPSHOTS)
     .optional(),
   goals: z
     .array(
@@ -318,5 +331,6 @@ export const dataImportSchema = z.object({
         updatedAt: importTimestamp,
       }),
     )
+    .max(MAX_IMPORT_GOALS)
     .optional(),
 });

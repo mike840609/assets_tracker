@@ -33,6 +33,24 @@ if (turbopackRoot) {
   console.log(`[next.config] Widened turbopack.root to ${turbopackRoot} (symlinked node_modules).`);
 }
 
+const isDev = process.env.NODE_ENV !== "production";
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com${isDev ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://lh3.googleusercontent.com",
+  "font-src 'self' data:",
+  `connect-src 'self' https://va.vercel-scripts.com https://api.frankfurter.app https://open.er-api.com https://api.coingecko.com https://query1.finance.yahoo.com https://query2.finance.yahoo.com${isDev ? " http: ws: wss:" : ""}`,
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "report-uri /api/csp/report",
+  ...(isDev ? [] : ["upgrade-insecure-requests"]),
+].join("; ");
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   poweredByHeader: false,
@@ -81,6 +99,10 @@ const nextConfig: NextConfig = {
         {
           key: "Permissions-Policy",
           value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+        },
+        {
+          key: "Content-Security-Policy",
+          value: contentSecurityPolicy,
         },
       ],
     },

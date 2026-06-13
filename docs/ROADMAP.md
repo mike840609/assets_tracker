@@ -28,13 +28,13 @@ The existing `docs/` folder has trackers (PERFORMANCE, PLATFORM, UI*UX, CODE_QUA
 | ---------------------------------- | ---------------------------------------------------------------------- | ------ | ------ | ----------- | ---------------------- |
 | **Tier 1 — Crucial**               |                                                                        |        |        |             |
 | S1                                 | Route error boundaries (error.tsx / not-found / global-error)          | S      | 🔴     | ❌          | R11                    |
-| S2                                 | Timing-safe `CRON_SECRET` comparison                                   | XS     | 🔴     | ❌          | R4                     |
+| S2                                 | Timing-safe `CRON_SECRET` comparison                                   | XS     | 🔴     | ✅          | R4                     |
 | S3                                 | Ownership-check audit on `[id]` mutations                              | S      | 🔴     | ✅          | R5 / D1                |
 | S4                                 | Structured logger + Sentry across services (**do first** — F1)         | M      | 🔴     | ❌          | Q5 / R17               |
 | S5                                 | `/api/health` endpoint (DB ping + freshness) (**do first** — F1)       | XS     | 🔴     | ❌          | V12 / R12              |
 | S6                                 | Cron-run audit table + freshness alert (**do first** — F1)             | M      | 🔴     | ❌          | V11 / R13              |
 | S7                                 | Vitest + service-layer test suite                                      | M      | 🔴     | ❌          | Q1–Q4                  |
-| S8                                 | CSP header (Report-Only → enforce) (report endpoint scaffolded — F4)   | M      | 🔴     | ⚠️          | V14 / R2               |
+| S8                                 | CSP header enforced + report endpoint                                  | M      | 🔴     | ✅          | V14 / R2               |
 | S9                                 | GDPR data export + account deletion                                    | L      | 🔴     | ❌          | R7 / R8                |
 | S10                                | Middleware returns JSON 401 for `/api/*`                               | XS     | 🔴     | ❌          | SUGGESTIONS 2026-05-11 |
 | **Tier 2 — High-Value**            |                                                                        |        |        |             |
@@ -77,9 +77,11 @@ Add `src/app/(main)/error.tsx`, `src/app/(main)/not-found.tsx`, and `src/app/glo
 
 #### S2 — Timing-safe CRON_SECRET comparison
 
-**XS | 🔴 | ❌ — closes R4**
+**XS | 🔴 | ✅ Done (2026-06-12) — closes R4**
 
-`src/app/api/cron/snapshot/route.ts` currently `===`-compares the bearer token. Switch to `crypto.timingSafeEqual` against equal-length buffers. One-line fix; closes a side-channel that's free to exploit on a known-length secret.
+`src/app/api/cron/snapshot/route.ts` now compares the bearer token with
+`crypto.timingSafeEqual` against equal-length buffers, closing the avoidable
+timing side-channel on `CRON_SECRET`.
 
 #### S3 — Ownership-check audit on `[id]` mutations
 
@@ -122,11 +124,16 @@ Today only the Playwright smoke test exists. A regression in net-worth math woul
 
 #### S8 — CSP header
 
-**M | 🔴 | ⚠️ — closes V14 / R2 — _MCP F4: report endpoint scaffolded_**
+**M | 🔴 | ✅ Done (2026-06-12) — closes V14 / R2**
 
-Ship `Content-Security-Policy-Report-Only` with a strict policy (`script-src 'self' 'nonce-…'`, `connect-src` allowlist for `api.coingecko.com`, `query1.finance.yahoo.com`, `va.vercel-scripts.com`). Watch reports for one week, then flip to enforce. Tracks alongside S19 (preconnect targets).
-
-> **MCP context (F4):** `src/app/api/_csp/report/route.ts` is already scaffolded (private folder — not yet routed). Header + nonce pipeline still missing. Promote the route under a public path once the header lands.
+`next.config.ts` now ships an enforced `Content-Security-Policy` alongside the
+existing baseline security headers, with explicit `connect-src` allowlists for
+Vercel Analytics/Speed Insights, Frankfurter, open.er-api.com, CoinGecko, and
+Yahoo Finance. `src/app/api/csp/report/route.ts` is public and returns 204 for
+violation reports. A nonce-only `script-src` was tested and rejected for this
+Next.js 16 Cache Components/PPR app because it blocked framework chunk scripts;
+the enforced policy keeps framework-compatible `'unsafe-inline'` while locking
+down object/base/frame/form/worker/manifest sources and reporting violations.
 
 #### S9 — GDPR data export + account deletion
 

@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { createSnapshot } from "@/lib/services/snapshot-service";
 import { refreshAllPrices } from "@/lib/services/price-service";
@@ -7,9 +8,15 @@ import { ok, failure } from "@/lib/api-responses";
 import { CRON_SECRET } from "@/lib/env";
 import { log } from "@/lib/logger";
 
+function hasValidCronSecret(authHeader: string | null): boolean {
+  const expected = Buffer.from(`Bearer ${CRON_SECRET}`);
+  const actual = Buffer.from(authHeader ?? "");
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+  if (!hasValidCronSecret(authHeader)) {
     return new Response("Unauthorized", { status: 401 });
   }
 

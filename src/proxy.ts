@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import authConfig from "./auth.config";
 import { SESSION_COOKIE_NAMES } from "@/lib/auth-cookies";
+import { getClientIp } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 
@@ -23,8 +24,7 @@ interface _RLEntry {
 const _authRLStore = new Map<string, _RLEntry>();
 
 function _authRateLimit(request: Request): Response | null {
-  const xff = request.headers.get("x-forwarded-for");
-  const ip = xff ? xff.split(",")[0].trim() : "unknown";
+  const ip = getClientIp(request);
   const now = Date.now();
   const windowMs = 60_000;
   const limit = 20;

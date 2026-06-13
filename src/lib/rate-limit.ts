@@ -34,9 +34,19 @@ interface WindowEntry {
 const store = new Map<string, WindowEntry>();
 
 /** Extract the best available IP from the request headers. */
-function getClientIp(request: Request): string {
+export function getClientIp(request: Request): string {
   const xff = request.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+
+  const cfIp = request.headers.get("cf-connecting-ip")?.trim();
+  if (cfIp) return cfIp;
+
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+
   return "unknown";
 }
 

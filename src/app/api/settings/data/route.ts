@@ -8,15 +8,55 @@ import { dataImportSchema } from "@/lib/validators";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 import { log } from "@/lib/logger";
+import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
 
 const MISSING_ACCOUNT_GOAL_MESSAGE =
   "Import backup contains an account-scoped goal that references a missing account.";
 const MISSING_EXCHANGE_RATE_MESSAGE =
   "Import backup contains mixed-currency snapshots, but the required exchange rate could not be loaded.";
+const MAX_IMPORT_BODY_BYTES = 4 * 1024 * 1024;
 
 type ImportData = z.infer<typeof dataImportSchema>;
 type ImportGoal = NonNullable<ImportData["goals"]>[number];
 type ImportSnapshot = NonNullable<ImportData["snapshots"]>[number];
+
+async function readImportJson(
+  request: Request,
+): Promise<{ ok: true; body: unknown } | { ok: false; response: Response }> {
+  const contentLength = request.headers.get("content-length");
+  if (contentLength) {
+    const declaredBytes = Number(contentLength);
+    if (Number.isFinite(declaredBytes) && declaredBytes > MAX_IMPORT_BODY_BYTES) {
+      return { ok: false, response: failure("Import backup is too large", 413) };
+    }
+  }
+
+  if (!request.body) {
+    return { ok: false, response: failure("Import backup must be valid JSON", 400) };
+  }
+
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder();
+  let receivedBytes = 0;
+  let text = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    receivedBytes += value.byteLength;
+    if (receivedBytes > MAX_IMPORT_BODY_BYTES) {
+      return { ok: false, response: failure("Import backup is too large", 413) };
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+  text += decoder.decode();
+
+  try {
+    return { ok: true, body: JSON.parse(text) };
+  } catch {
+    return { ok: false, response: failure("Import backup must be valid JSON", 400) };
+  }
+}
 
 function validateAccountGoalReferences(importData: ImportData) {
   const accountIds = new Set(
@@ -228,8 +268,17 @@ export const GET = withAuth(async (_req, _ctx, userId) => {
 
 export const POST = withAuth(async (request, _ctx, userId) => {
   try {
-    const body = await request.json();
-    const parsed = dataImportSchema.safeParse(body);
+    const limited = rateLimitCheckWithPrune(request, {
+      limit: 5,
+      prefix: "settings-import",
+      key: userId,
+    });
+    if (limited) return limited;
+
+    const json = await readImportJson(request);
+    if (!json.ok) return json.response;
+
+    const parsed = dataImportSchema.safeParse(json.body);
 
     if (!parsed.success) {
       log.error("import.validation", { issues: parsed.error.format() });
