@@ -233,7 +233,7 @@ function StockForm({
   }
 
   const form = (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="min-w-0 space-y-4">
       {editing && selected ? (
         <div className="rounded-lg border bg-muted/40 p-3">
           <div className="flex items-center gap-2">
@@ -245,7 +245,7 @@ function StockForm({
           <p className="mt-1 truncate text-sm text-muted-foreground">{selected.name}</p>
         </div>
       ) : selected ? (
-        <div className="flex items-center justify-between rounded-lg border bg-muted/40 p-3">
+        <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
           <div className="min-w-0">
             <Label className="text-xs text-muted-foreground">{t("selectedStock")}</Label>
             <div className="mt-1 flex items-center gap-2">
@@ -256,7 +256,13 @@ function StockForm({
             </div>
             <p className="mt-1 truncate text-sm text-muted-foreground">{selected.name}</p>
           </div>
-          <Button type="button" variant="ghost" size="sm" onClick={() => setSelected(null)}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="shrink-0 whitespace-nowrap"
+            onClick={() => setSelected(null)}
+          >
             {t("changeStock")}
           </Button>
         </div>
