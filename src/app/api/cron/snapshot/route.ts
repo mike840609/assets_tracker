@@ -85,15 +85,25 @@ export async function GET(request: Request) {
     log.info("cron.prices.refresh");
     // force: snapshots must be computed from current rates; the manual-refresh
     // freshness gate doesn't apply to the cron.
-    await Promise.all([
-      ...[...sourceCurrencies].map((c) => refreshExchangeRates(c, { force: true })),
+    const [rateResults, priceResult] = await Promise.all([
+      Promise.all([...sourceCurrencies].map((c) => refreshExchangeRates(c, { force: true }))),
       refreshAllPrices(),
     ]);
+    const ratesUpdated = rateResults.reduce((sum, result) => sum + result.updated, 0);
+    const ratesChanged = rateResults.reduce((sum, result) => sum + result.changed, 0);
+    log.info("cron.revalidate.gate", {
+      pricesUpdated: priceResult.updated,
+      pricesChanged: priceResult.changed,
+      ratesUpdated,
+      ratesChanged,
+    });
     // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
-    revalidateTag("exchange-rates", "max");
-    revalidateTag("net-worth", "max");
-    revalidateTag("prices", "max");
-    revalidateTag("prices:crypto", "max");
+    if (ratesChanged > 0) revalidateTag("exchange-rates", "max");
+    if (priceResult.changed > 0) {
+      revalidateTag("prices", "max");
+      revalidateTag("prices:crypto", "max");
+    }
+    if (ratesChanged > 0 || priceResult.changed > 0) revalidateTag("net-worth", "max");
 
     // 2. Get all users and their settings
     const users = await prisma.user.findMany({

@@ -10,6 +10,8 @@ const RETRY_DELAYS_MS = [500, 1_500]; // 2 retries: 500 ms then 1.5 s
 
 export type RefreshPricesResult = {
   updated: number;
+  /** Persisted rows whose price/currency changed compared with the previous value. */
+  changed: number;
   /** Symbols skipped because their cached price was younger than the TTL. */
   skippedFresh: number;
   errors: string[];
@@ -22,6 +24,15 @@ export type RefreshPricesOptions = {
   /** Bypass the freshness gate (cron path — snapshots need current prices). */
   force?: boolean;
 };
+
+function decimalChangedAtDbScale(current: unknown, next: number): boolean {
+  const currentNumber = Number(current);
+  return (
+    !Number.isFinite(currentNumber) ||
+    !Number.isFinite(next) ||
+    currentNumber.toFixed(8) !== next.toFixed(8)
+  );
+}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -262,6 +273,7 @@ export async function refreshPricesForStockSymbols(
   if (uniqueSymbols.length === 0) {
     return {
       updated: 0,
+      changed: 0,
       skippedFresh: 0,
       errors: [],
       nextRefreshAt: null,
@@ -281,6 +293,7 @@ async function refreshPricesForHoldings(
   if (holdings.length === 0) {
     return {
       updated: 0,
+      changed: 0,
       skippedFresh: 0,
       errors: [],
       nextRefreshAt: null,
@@ -320,6 +333,7 @@ async function refreshPricesForHoldings(
           : null;
         return {
           updated: 0,
+          changed: 0,
           skippedFresh,
           errors: [],
           nextRefreshAt: nextRefreshAt?.toISOString() ?? null,
@@ -339,6 +353,7 @@ async function refreshPricesForHoldings(
 
   const errors: string[] = [];
   let updated = 0;
+  let changed = 0;
 
   const [stockPrices, cryptoPrices] = await Promise.all([
     fetchStockPrices(stockSymbols),
@@ -349,10 +364,31 @@ async function refreshPricesForHoldings(
 
   const entries = [...allPrices];
   if (entries.length === 0) {
-    return { updated: 0, skippedFresh, errors: [], nextRefreshAt: null, retryAfterSeconds: null };
+    return {
+      updated: 0,
+      changed: 0,
+      skippedFresh,
+      errors: [],
+      nextRefreshAt: null,
+      retryAfterSeconds: null,
+    };
   }
 
   try {
+    const currentRows = await prisma.priceCache.findMany({
+      where: { symbol: { in: entries.map(([symbol]) => symbol) } },
+      select: { symbol: true, price: true, currency: true },
+    });
+    const currentBySymbol = new Map(currentRows.map((row) => [row.symbol, row]));
+    const pendingChanged = entries.reduce((count, [symbol, { price, currency }]) => {
+      const current = currentBySymbol.get(symbol);
+      return current === undefined ||
+        current.currency !== currency ||
+        decimalChangedAtDbScale(current.price, price)
+        ? count + 1
+        : count;
+    }, 0);
+
     const params: unknown[] = [];
     const placeholders = entries.map(([symbol, { price, currency }]) => {
       const base = params.length;
@@ -369,10 +405,11 @@ async function refreshPricesForHoldings(
       ...params,
     );
     updated = entries.length;
-    revalidateTag("prices", "max");
+    changed = pendingChanged;
+    if (changed > 0) revalidateTag("prices", "max");
   } catch (error) {
     errors.push(`Bulk upsert failed: ${String(error)}`);
   }
 
-  return { updated, skippedFresh, errors, nextRefreshAt: null, retryAfterSeconds: null };
+  return { updated, changed, skippedFresh, errors, nextRefreshAt: null, retryAfterSeconds: null };
 }
