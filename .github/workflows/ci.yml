@@ -29,24 +29,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v5
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
-
-      - name: Restore deps cache
-        id: deps-cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            src/generated/prisma
-            ~/.cache/prisma
-          key: deps-${{ runner.os }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
+          cache: "pnpm"
 
       - name: Install dependencies
-        if: steps.deps-cache.outputs.cache-hit != 'true'
-        run: npm ci --prefer-offline --no-audit --no-fund
+        run: pnpm install --frozen-lockfile
 
   format:
     name: Format check
@@ -55,19 +46,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
-      - name: Restore deps cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            src/generated/prisma
-            ~/.cache/prisma
-          key: deps-${{ runner.os }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
-      - run: npm run format:check
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
 
   lint:
     name: Lint
@@ -76,19 +61,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
-      - name: Restore deps cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            src/generated/prisma
-            ~/.cache/prisma
-          key: deps-${{ runner.os }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
-      - run: npm run lint
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
 
   typecheck:
     name: Type check
@@ -97,19 +76,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
-      - name: Restore deps cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            src/generated/prisma
-            ~/.cache/prisma
-          key: deps-${{ runner.os }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
-      - run: npm run typecheck
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
 
   unit:
     name: Unit tests
@@ -118,19 +91,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
-      - name: Restore deps cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            src/generated/prisma
-            ~/.cache/prisma
-          key: deps-${{ runner.os }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
-      - run: npm run test:unit
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:unit
 
   build:
     name: Build
@@ -139,28 +106,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
-      - name: Restore deps cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            src/generated/prisma
-            ~/.cache/prisma
-          key: deps-${{ runner.os }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
 
       - name: Restore Next.js build cache
         uses: actions/cache@v4
         with:
           path: .next/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package-lock.json', 'prisma/schema.prisma', 'next.config.ts') }}-${{ github.sha }}
+          key: nextjs-${{ runner.os }}-${{ hashFiles('.nvmrc', 'pnpm-lock.yaml', 'prisma/schema.prisma', 'next.config.ts') }}-${{ github.sha }}
           restore-keys: |
-            nextjs-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package-lock.json', 'prisma/schema.prisma', 'next.config.ts') }}-
+            nextjs-${{ runner.os }}-${{ hashFiles('.nvmrc', 'pnpm-lock.yaml', 'prisma/schema.prisma', 'next.config.ts') }}-
 
-      - run: npm run build
+      - run: pnpm build
 
       - name: Measure bundle baseline
         run: node scripts/ci/bundle-size.mjs --write bundle-baseline.json
@@ -178,28 +139,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
           node-version-file: ".nvmrc"
-          cache: "npm"
-      - name: Restore deps cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            src/generated/prisma
-            ~/.cache/prisma
-          key: deps-${{ runner.os }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
 
       - name: Restore Next.js build cache
         uses: actions/cache@v4
         with:
           path: .next/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package-lock.json', 'prisma/schema.prisma', 'next.config.ts') }}-${{ github.sha }}
+          key: nextjs-${{ runner.os }}-${{ hashFiles('.nvmrc', 'pnpm-lock.yaml', 'prisma/schema.prisma', 'next.config.ts') }}-${{ github.sha }}
           restore-keys: |
-            nextjs-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package-lock.json', 'prisma/schema.prisma', 'next.config.ts') }}-
+            nextjs-${{ runner.os }}-${{ hashFiles('.nvmrc', 'pnpm-lock.yaml', 'prisma/schema.prisma', 'next.config.ts') }}-
 
-      - run: npm run build
+      - run: pnpm build
 
       - name: Measure head bundle
         run: node scripts/ci/bundle-size.mjs --write bundle-head.json

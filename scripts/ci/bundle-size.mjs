@@ -53,7 +53,7 @@ function walk(dir) {
 
 function measure() {
   if (!existsSync(STATIC_DIR)) {
-    console.error(`::error::${STATIC_DIR} not found — run \`npm run build\` first`);
+    console.error(`::error::${STATIC_DIR} not found — run \`pnpm build\` first`);
     process.exit(1);
   }
   let jsGzipBytes = 0;

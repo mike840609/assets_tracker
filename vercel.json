@@ -1,6 +1,6 @@
 {
-  "installCommand": "npm ci --prefer-offline --no-audit --no-fund",
-  "buildCommand": "npm run build:vercel",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm run build:vercel",
   "regions": ["sin1"],
   "crons": [
     {

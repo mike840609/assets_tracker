@@ -6,7 +6,7 @@
       "runtimeExecutable": "/bin/zsh",
       "runtimeArgs": [
         "-c",
-        "export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\" && nvm use 22 && npm run dev"
+        "export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\" && nvm use 22 && corepack pnpm dev"
       ],
       "port": 3000,
       "autoPort": false

@@ -27,49 +27,51 @@ A personal net-worth / asset tracking application built with **Next.js 16** (App
 
 ## Commands
 
+> This project uses **pnpm** (pinned via the `packageManager` field + Corepack). Run `corepack enable` once, then use `pnpm <script>` / `pnpm exec <bin>` instead of `npm run` / `npx`.
+
 ```bash
 # Development
-npm run dev          # Start dev server; binds 0.0.0.0 (LAN-reachable) on port 3000
+pnpm dev             # Start dev server; binds 0.0.0.0 (LAN-reachable) on port 3000
 
 # Build & Production
-npm run build        # Production build
-npm run start        # Start production server
-ANALYZE=true npm run build  # Build with @next/bundle-analyzer HTML reports
+pnpm build           # Production build
+pnpm start           # Start production server
+ANALYZE=true pnpm build  # Build with @next/bundle-analyzer HTML reports
 
 # Linting
-npm run lint         # Run ESLint
+pnpm lint            # Run ESLint
 
 # Database
-npm run db:up        # Start local PostgreSQL via docker-compose (recommended for dev — avoids Neon compute costs; then `npx prisma db push`)
-npm run db:down      # Stop the local PostgreSQL container
-npx prisma generate                                # Regenerate Prisma client after schema changes (also runs automatically via `postinstall` after `npm install`)
-npx prisma migrate dev --name <description>        # Author a new migration locally (commits to prisma/migrations/)
-npx prisma migrate deploy                          # Apply pending migrations against $DATABASE_URL (run by build:vercel on Vercel)
-npx prisma migrate resolve --applied <migration>   # One-shot baseline: mark a migration as already-applied (e.g. when adopting migrations on a DB seeded via db push)
-npx prisma db push                                 # Quick prototype-only schema sync — bypasses migration history; commit a migrate dev before merging
-npx prisma db push --force-reset                    # Reset local DB (drops all tables, recreates schema directly, bypassing migration history)
-npx prisma studio                                  # Open Prisma Studio GUI
+pnpm db:up           # Start local PostgreSQL via docker-compose (recommended for dev — avoids Neon compute costs; then `pnpm exec prisma db push`)
+pnpm db:down         # Stop the local PostgreSQL container
+pnpm exec prisma generate                                # Regenerate Prisma client after schema changes (also runs automatically via `postinstall` after `pnpm install`)
+pnpm exec prisma migrate dev --name <description>        # Author a new migration locally (commits to prisma/migrations/)
+pnpm exec prisma migrate deploy                          # Apply pending migrations against $DATABASE_URL (run by build:vercel on Vercel)
+pnpm exec prisma migrate resolve --applied <migration>   # One-shot baseline: mark a migration as already-applied (e.g. when adopting migrations on a DB seeded via db push)
+pnpm exec prisma db push                                 # Quick prototype-only schema sync — bypasses migration history; commit a migrate dev before merging
+pnpm exec prisma db push --force-reset                    # Reset local DB (drops all tables, recreates schema directly, bypassing migration history)
+pnpm exec prisma studio                                  # Open Prisma Studio GUI
 
 # Dead-code detection
-npx knip             # Find unused files/exports/deps (config: knip.json; shadcn ui/ primitives are ignored)
+pnpm exec knip       # Find unused files/exports/deps (config: knip.json; shadcn ui/ primitives are ignored)
 
 # Unit tests (Vitest) — pure service-layer logic, no DB/env needed
-npm run test:unit        # Run the unit suite once (tests/unit/)
-npm run test:unit:watch  # Watch mode
+pnpm test:unit           # Run the unit suite once (tests/unit/)
+pnpm test:unit:watch     # Watch mode
 
 # E2E tests (Playwright)
-npm run test:e2e         # Run Playwright suite headless
-npm run test:e2e:ui      # Open the Playwright UI runner
-npm run test:e2e:report  # Open the last HTML report
+pnpm test:e2e            # Run Playwright suite headless
+pnpm test:e2e:ui         # Open the Playwright UI runner
+pnpm test:e2e:report     # Open the last HTML report
 
 # Worktree / sandbox setup
-npm run setup:worktree   # Copies .env / .env.local from the main worktree, then symlinks
-                         # node_modules from a hash-keyed shared cache (skips npm ci on cache hit).
-                         # Caches default to ~/.cache/asset_tracker/{npm,modules}; override the root
-                         # with $ASSET_TRACKER_CACHE_ROOT (or $ASSET_TRACKER_NPM_CACHE just for npm).
-                         # Set $ASSET_TRACKER_SKIP_ENV_COPY=1 to skip the env-copy step.
-                         # See README §"Git Worktrees" — do NOT run `npm install <pkg>` in a worktree
-                         # since the symlinked node_modules is shared across worktrees.
+pnpm setup:worktree      # Copies .env / .env.local from the main worktree, then runs
+                         # `pnpm install --frozen-lockfile` against a shared pnpm store.
+                         # pnpm hardlinks node_modules from the store, so packages are never
+                         # duplicated across worktrees and each worktree has a real node_modules.
+                         # Store defaults to ~/.cache/asset_tracker/pnpm-store; override the root
+                         # with $ASSET_TRACKER_CACHE_ROOT. Set $ASSET_TRACKER_SKIP_ENV_COPY=1 to
+                         # skip the env-copy step; pass `-- --prune` to GC the store.
 ```
 
 ## Pre-PR Checklist
@@ -77,20 +79,20 @@ npm run setup:worktree   # Copies .env / .env.local from the main worktree, then
 Before pushing or opening a pull request, always run the full CI-equivalent check suite:
 
 ```bash
-npm run format:check   # Prettier format — must match .prettierrc.json exactly
-npm run lint           # ESLint with Next.js + TypeScript rules
-npm run typecheck      # TypeScript strict mode (no DB needed)
+pnpm format:check   # Prettier format — must match .prettierrc.json exactly
+pnpm lint           # ESLint with Next.js + TypeScript rules
+pnpm typecheck      # TypeScript strict mode (no DB needed)
 ```
 
 Or use the combined script (also runs `build`, which requires DB env vars — skip if unavailable):
 
 ```bash
-npm run check
+pnpm check
 ```
 
 Fix all errors before pushing. CI runs these steps in order and fails fast on the first error.
 
-> The `.husky/pre-push` hook enforces `format:check + lint + typecheck` on every `git push`, so the push will be rejected if any check fails. Run `npm run format` to auto-fix formatting issues before committing.
+> The `.husky/pre-push` hook enforces `format:check + lint + typecheck` on every `git push`, so the push will be rejected if any check fails. Run `pnpm format` to auto-fix formatting issues before committing.
 
 ## Architecture
 
@@ -261,7 +263,7 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 
 - Specs live in `tests/e2e/` (`smoke.spec.ts` is the entry; `global-setup.ts` / `global-teardown.ts` provision and tear down a dedicated test user so runs don't pollute real user data — see commit `3289e91`).
 - Stored auth state: `tests/e2e/.auth/user.json` (loaded by the `chromium` project).
-- The config auto-starts `npm run dev` with `VERCEL_ENV=preview` and `PREVIEW_AUTH_PASSWORD=<E2E_PASSWORD>` unless `PLAYWRIGHT_TEST_BASE_URL` is set; CI sets that var to skip the bootstrap and run against an existing deployment.
+- The config auto-starts `pnpm dev` with `VERCEL_ENV=preview` and `PREVIEW_AUTH_PASSWORD=<E2E_PASSWORD>` unless `PLAYWRIGHT_TEST_BASE_URL` is set; CI sets that var to skip the bootstrap and run against an existing deployment.
 - `fullyParallel: false` and `workers: 1` — the suite is intentionally serial; do not parallelize without revisiting the global setup.
 
 ### Component Organization
@@ -288,7 +290,7 @@ src/components/
 - Use `Decimal` in Prisma operations — never `number` for monetary/quantity values
 - `Holding` supports an `OPTION` asset type with extra fields: `underlyingSymbol`, `optionType` (CALL/PUT), `strike`, `expiration`, `contractMultiplier`
 - Use Tailwind CSS 4 utilities only — no inline styles or CSS Modules
-- Add shadcn/ui components via `npx shadcn@latest add <component>`
+- Add shadcn/ui components via `pnpm dlx shadcn@latest add <component>`
 - Zod 4 schemas live in `@/lib/validators.ts`
 - Prisma schema: `prisma/schema.prisma`; generator config: `prisma.config.ts` (Prisma 7 convention); generated client: `src/generated/prisma/` (gitignored). `Decimal` is imported from `@/generated/prisma/runtime/library`, not `@prisma/client`.
 - i18n strings go in `messages/en-US.json` and `messages/zh-TW.json`
@@ -310,7 +312,7 @@ PREVIEW_AUTH_DISABLED     # Set to "1"/"true" to skip preview password gate
 VERCEL_ENV                # Set automatically by Vercel (production | preview | development)
 ```
 
-`DATABASE_URL` is scoped per Vercel environment — Production uses the prod Neon branch, Preview uses a separate shared `preview` Neon branch, so previews never touch live data. Vercel runs the `build:vercel` script (wired via `vercel.json` → `buildCommand`); it runs `prisma migrate deploy` followed by `next build`, skipping the migrate step when no files under `prisma/migrations/` changed since `VERCEL_GIT_PREVIOUS_SHA` (`FORCE_PRISMA_MIGRATE_DEPLOY=1` overrides; `SKIP_PRISMA_MIGRATE_DEPLOY=1` skips unconditionally). CI/local `npm run build` stays as plain `next build` so it doesn't need a database.
+`DATABASE_URL` is scoped per Vercel environment — Production uses the prod Neon branch, Preview uses a separate shared `preview` Neon branch, so previews never touch live data. Vercel runs the `build:vercel` script (wired via `vercel.json` → `buildCommand`); it runs `prisma migrate deploy` followed by `next build`, skipping the migrate step when no files under `prisma/migrations/` changed since `VERCEL_GIT_PREVIOUS_SHA` (`FORCE_PRISMA_MIGRATE_DEPLOY=1` overrides; `SKIP_PRISMA_MIGRATE_DEPLOY=1` skips unconditionally). CI/local `pnpm build` stays as plain `next build` so it doesn't need a database.
 
 ### Long-form analysis docs (`docs/`)
 

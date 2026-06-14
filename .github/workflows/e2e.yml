@@ -24,30 +24,21 @@ jobs:
           # Check out the exact commit that was deployed
           ref: ${{ github.event.deployment.sha }}
 
+      - uses: pnpm/action-setup@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
           node-version-file: ".nvmrc"
-          cache: npm
-
-      - name: Restore deps cache
-        id: deps-cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            src/generated/prisma
-            ~/.cache/prisma
-          key: deps-${{ runner.os }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}-v2
+          cache: "pnpm"
 
       - name: Install dependencies
-        if: steps.deps-cache.outputs.cache-hit != 'true'
-        run: npm ci --prefer-offline --no-audit --no-fund
+        run: pnpm install --frozen-lockfile
 
       - name: Resolve Playwright version
         id: playwright
         run: |
-          version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")
+          version=$(node -p "require('@playwright/test/package.json').version")
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Cache Playwright browsers
@@ -59,14 +50,14 @@ jobs:
 
       - name: Install Playwright browsers (cache miss)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Install Playwright system deps (cache hit)
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+        run: pnpm exec playwright install-deps chromium
 
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: pnpm test:e2e
         env:
           # Vercel posts the live URL here automatically — no hardcoding needed
           PLAYWRIGHT_TEST_BASE_URL: ${{ github.event.deployment_status.environment_url }}

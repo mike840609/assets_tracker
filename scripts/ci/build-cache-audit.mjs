@@ -68,7 +68,7 @@ console.log("Build cache audit");
 console.log("=================");
 
 if (rows.length === 0) {
-  console.log("No local build/cache artifacts found. Run `npm run build` first for a local audit.");
+  console.log("No local build/cache artifacts found. Run `pnpm build` first for a local audit.");
   process.exit(0);
 }
 
