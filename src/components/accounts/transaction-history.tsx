@@ -139,15 +139,29 @@ function SwipeableTxRow({
 export function TransactionHistory({
   accountId,
   isBank: _isBank,
+  accountType = "ASSET",
   refreshTrigger,
 }: {
   accountId: string;
   isBank?: boolean;
+  accountType?: "ASSET" | "LIABILITY";
   refreshTrigger?: number;
 }) {
   const router = useRouter();
   const t = useTranslations("transactionHistory");
   const tCommon = useTranslations("common");
+
+  // For a liability the balance is debt owed, so a cash DEPOSIT reads as a
+  // "charge/borrow" and a WITHDRAWAL as a "payment" — labels only (same enum).
+  const isLiability = accountType === "LIABILITY";
+  const cashTypeKey = (txType: string, isCash: boolean): Parameters<typeof t>[0] => {
+    if (isCash && isLiability && (txType === "DEPOSIT" || txType === "WITHDRAWAL")) {
+      return (
+        txType === "DEPOSIT" ? "typeDepositLiability" : "typeWithdrawalLiability"
+      ) as Parameters<typeof t>[0];
+    }
+    return `type${txType.charAt(0) + txType.slice(1).toLowerCase()}` as Parameters<typeof t>[0];
+  };
 
   // Dialog state
   const [editingTx, setEditingTx] = useState<SerializedTransaction | null>(null);
@@ -377,12 +391,9 @@ export function TransactionHistory({
               <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
                 {items.map((tx, index) => {
                   const typeVariant = TYPE_VARIANTS[tx.type] ?? "secondary";
-                  const typeKey =
-                    `type${tx.type.charAt(0) + tx.type.slice(1).toLowerCase()}` as Parameters<
-                      typeof t
-                    >[0];
-                  const typeLabel = t.has(typeKey) ? t(typeKey) : tx.type;
                   const isCash = (tx as SerializedTransaction & { isCash?: boolean }).isCash;
+                  const typeKey = cashTypeKey(tx.type, Boolean(isCash));
+                  const typeLabel = t.has(typeKey) ? t(typeKey) : tx.type;
                   const symbol = isCash ? null : (tx.holding?.symbol ?? null);
                   const displayQuantity = getDisplayQuantity(tx, Boolean(isCash));
                   const qty = `${displayQuantity > 0 ? "+" : ""}${formatQuantity(displayQuantity, tx.holding?.assetType ?? "")}`;
@@ -440,10 +451,10 @@ export function TransactionHistory({
                   <SelectTrigger id="type">
                     <SelectValue>
                       {(() => {
-                        const k =
-                          `type${editType.charAt(0) + editType.slice(1).toLowerCase()}` as Parameters<
-                            typeof t
-                          >[0];
+                        const editIsCash = Boolean(
+                          (editingTx as SerializedTransaction & { isCash?: boolean })?.isCash,
+                        );
+                        const k = cashTypeKey(editType, editIsCash);
                         return editType && t.has(k) ? t(k) : t("labelType");
                       })()}
                     </SelectValue>
@@ -451,8 +462,10 @@ export function TransactionHistory({
                   <SelectContent>
                     {(editingTx as SerializedTransaction & { isCash?: boolean })?.isCash ? (
                       <>
-                        <SelectItem value="DEPOSIT">{t("typeDeposit")}</SelectItem>
-                        <SelectItem value="WITHDRAWAL">{t("typeWithdrawal")}</SelectItem>
+                        <SelectItem value="DEPOSIT">{t(cashTypeKey("DEPOSIT", true))}</SelectItem>
+                        <SelectItem value="WITHDRAWAL">
+                          {t(cashTypeKey("WITHDRAWAL", true))}
+                        </SelectItem>
                         <SelectItem value="EDIT">{t("typeEdit")}</SelectItem>
                       </>
                     ) : (

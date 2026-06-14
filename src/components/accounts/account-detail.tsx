@@ -538,7 +538,12 @@ export function AccountDetail({
         />
       </div>
 
-      <TransactionHistory accountId={account.id} isBank={isBank} refreshTrigger={refreshTrigger} />
+      <TransactionHistory
+        accountId={account.id}
+        isBank={isBank}
+        accountType={account.type}
+        refreshTrigger={refreshTrigger}
+      />
 
       {/* Mobile Danger Zone */}
       <div className="mt-10 md:hidden pt-6 border-t border-border/40">

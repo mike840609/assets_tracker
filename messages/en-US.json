@@ -1208,6 +1208,8 @@
     "typeSell": "Sell",
     "typeDeposit": "Deposit",
     "typeWithdrawal": "Withdrawal",
+    "typeDepositLiability": "Charge",
+    "typeWithdrawalLiability": "Payment",
     "typeEdit": "Edit",
     "editTitle": "Edit Transaction",
     "deleteTitle": "Delete Transaction",

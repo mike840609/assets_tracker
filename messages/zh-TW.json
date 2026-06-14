@@ -1208,6 +1208,8 @@
     "typeSell": "賣出",
     "typeDeposit": "存款",
     "typeWithdrawal": "提款",
+    "typeDepositLiability": "借入",
+    "typeWithdrawalLiability": "還款",
     "typeEdit": "調整",
     "editTitle": "編輯交易",
     "deleteTitle": "刪除交易",
