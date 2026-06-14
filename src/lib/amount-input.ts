@@ -24,3 +24,12 @@ export function maskAmountInput(value: string): string | null {
 export function parseAmountInput(value: string): number {
   return parseFloat(value.replace(/,/g, ""));
 }
+
+/**
+ * Format a parsed number for display in a masked amount input (en-US thousands
+ * grouping). Mirrors the inverse of {@link maskAmountInput} for the blur/normalize
+ * step that re-renders a validated number with grouping separators.
+ */
+export function formatAmountInput(value: number, maxFractionDigits = 2): string {
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: maxFractionDigits }).format(value);
+}

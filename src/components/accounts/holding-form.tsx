@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { HoldingSearch } from "./holding-search";
 import type { SearchResult } from "./holding-search";
 import { OptionBuilder } from "./option-builder";
-import { maskAmountInput } from "@/lib/amount-input";
+import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 
 const ASSET_TYPES = [
   { value: "STOCK", label: "Stock" },
@@ -66,13 +66,13 @@ export function HoldingForm({
       setQuantityError("");
       return;
     }
-    const parsed = parseFloat(val);
+    const parsed = parseAmountInput(val);
     if (isNaN(parsed) || parsed <= 0) {
       setQuantityError("Invalid quantity");
       return;
     }
     setQuantityError("");
-    setQuantity(new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(parsed));
+    setQuantity(formatAmountInput(parsed, 6));
   }
 
   function selectResult(result: SearchResult) {
@@ -141,7 +141,7 @@ export function HoldingForm({
     await postHolding({
       symbol,
       name,
-      quantity: parseFloat(quantity.replace(/,/g, "")),
+      quantity: parseAmountInput(quantity),
       assetType,
       currency,
     });
@@ -151,7 +151,7 @@ export function HoldingForm({
   const canSubmit =
     (tickerSelected || (manualMode && symbol && name)) &&
     !!quantity &&
-    parseFloat(quantity.replace(/,/g, "")) > 0;
+    parseAmountInput(quantity) > 0;
 
   // Dirty once the user has picked/typed a ticker, named it, or set a quantity.
   const isDirty = !!symbol || !!quantity || name.trim() !== "";

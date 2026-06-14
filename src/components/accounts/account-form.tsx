@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CURRENCIES } from "@/lib/currencies";
-import { maskAmountInput } from "@/lib/amount-input";
+import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import { ACCOUNT_CATEGORIES } from "@/lib/enums";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useDiscardGuard } from "@/hooks/use-discard-guard";
@@ -83,13 +83,13 @@ export function AccountForm({
       setCashBalanceError("");
       return;
     }
-    const parsed = parseFloat(val);
+    const parsed = parseAmountInput(val);
     if (isNaN(parsed)) {
       setCashBalanceError(t("accountForm.invalidAmount", { defaultValue: "Invalid amount" }));
       return;
     }
     setCashBalanceError("");
-    setCashBalance(new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(parsed));
+    setCashBalance(formatAmountInput(parsed, 2));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -105,7 +105,7 @@ export function AccountForm({
           type,
           category,
           currency,
-          cashBalance: parseFloat(cashBalance.replace(/,/g, "")) || 0,
+          cashBalance: parseAmountInput(cashBalance) || 0,
         }),
       });
 

@@ -6,7 +6,7 @@ import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency, formatNumber } from "@/lib/currencies";
-import { maskAmountInput } from "@/lib/amount-input";
+import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 
 interface InlineBalanceEditorProps {
@@ -47,13 +47,13 @@ export function InlineBalanceEditor({
       setError("");
       return;
     }
-    const parsed = parseFloat(val);
+    const parsed = parseAmountInput(val);
     if (isNaN(parsed)) {
       setError("Invalid amount");
       return;
     }
     setError("");
-    setBalance(new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(parsed));
+    setBalance(formatAmountInput(parsed, 2));
   }
 
   async function handleSave() {
@@ -65,7 +65,7 @@ export function InlineBalanceEditor({
       return;
     }
 
-    const parsed = parseFloat(val);
+    const parsed = parseAmountInput(val);
     if (isNaN(parsed)) {
       setError("Invalid amount");
       return;
@@ -78,6 +78,8 @@ export function InlineBalanceEditor({
       setBalance("");
       setNote("");
       setError("");
+    } catch {
+      // onSave surfaces its own error toast; keep the editor open with the entered value.
     } finally {
       setSaving(false);
     }
