@@ -20,6 +20,7 @@ const CLIENT_NAMESPACES = [
   "holdingSearch",
   "freshness",
   "toast",
+  "categories",
 ];
 
 async function GoalsContent() {

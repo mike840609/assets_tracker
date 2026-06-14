@@ -5,6 +5,7 @@ import {
   HOLDING_ASSET_TYPES,
   HOLDING_TRANSACTION_TYPES,
   CASH_TRANSACTION_TYPES,
+  RECURRING_FREQUENCIES,
   OPTION_TYPES,
   GOAL_SCOPES,
 } from "./enums";
@@ -185,6 +186,80 @@ export const updateCashTransactionSchema = z
         message: "Adjustment amount cannot be zero",
       });
     }
+  });
+
+// Recurring cash transactions (F6). Only DEPOSIT / WITHDRAWAL make sense for a
+// recurring rule — EDIT is an explicit one-off balance adjustment, so it is
+// excluded here. Dates are calendar days (YYYY-MM-DD); the cron materializes
+// occurrences at its run time.
+const RECURRING_CASH_TYPES = ["DEPOSIT", "WITHDRAWAL"] as const;
+
+export const createRecurringCashTransactionSchema = z
+  .object({
+    type: z.enum(RECURRING_CASH_TYPES),
+    amount: positiveCashAmount,
+    frequency: z.enum(RECURRING_FREQUENCIES),
+    note: cashNoteField,
+    startDate: z.iso.date("Must be a valid YYYY-MM-DD date"),
+    endDate: z.iso.date("Must be a valid YYYY-MM-DD date").optional().nullable(),
+  })
+  .refine((d) => !d.endDate || d.endDate >= d.startDate, {
+    message: "End date must be on or after the start date",
+    path: ["endDate"],
+  });
+
+export const updateRecurringCashTransactionSchema = z
+  .object({
+    type: z.enum(RECURRING_CASH_TYPES).optional(),
+    amount: positiveCashAmount.optional(),
+    frequency: z.enum(RECURRING_FREQUENCIES).optional(),
+    note: cashNoteField,
+    startDate: z.iso.date("Must be a valid YYYY-MM-DD date").optional(),
+    endDate: z.iso.date("Must be a valid YYYY-MM-DD date").optional().nullable(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((d) => !d.startDate || !d.endDate || d.endDate >= d.startDate, {
+    message: "End date must be on or after the start date",
+    path: ["endDate"],
+  });
+
+// Recurring investments (F6 — dollar-cost averaging). `amount` is the cash
+// invested per period (in the account's currency); shares are derived at
+// materialization time. symbol/name/assetType/holdingCurrency are resolved
+// client-side via the holding search before submit.
+export const createRecurringInvestmentSchema = z
+  .object({
+    symbol: z
+      .string()
+      .min(1, "Symbol is required")
+      .max(32)
+      .transform((s) => s.toUpperCase()),
+    name: z.string().min(1, "Name is required").max(100),
+    assetType: z.enum(HOLDING_ASSET_TYPES),
+    holdingCurrency: z.string().length(3).default("USD"),
+    amount: positiveCashAmount,
+    frequency: z.enum(RECURRING_FREQUENCIES),
+    note: cashNoteField,
+    startDate: z.iso.date("Must be a valid YYYY-MM-DD date"),
+    endDate: z.iso.date("Must be a valid YYYY-MM-DD date").optional().nullable(),
+  })
+  .refine((d) => !d.endDate || d.endDate >= d.startDate, {
+    message: "End date must be on or after the start date",
+    path: ["endDate"],
+  });
+
+export const updateRecurringInvestmentSchema = z
+  .object({
+    amount: positiveCashAmount.optional(),
+    frequency: z.enum(RECURRING_FREQUENCIES).optional(),
+    note: cashNoteField,
+    startDate: z.iso.date("Must be a valid YYYY-MM-DD date").optional(),
+    endDate: z.iso.date("Must be a valid YYYY-MM-DD date").optional().nullable(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((d) => !d.startDate || !d.endDate || d.endDate >= d.startDate, {
+    message: "End date must be on or after the start date",
+    path: ["endDate"],
   });
 
 export const createGoalSchema = z.object({

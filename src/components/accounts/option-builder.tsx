@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -65,6 +66,7 @@ interface OptionBuilderProps {
 }
 
 export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: OptionBuilderProps) {
+  const t = useTranslations("optionBuilder");
   const [underlying, setUnderlying] = useState("");
   const [chain, setChain] = useState<ChainResponse | null>(null);
   const [chainLoading, setChainLoading] = useState(false);
@@ -96,7 +98,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
     }
     const parsed = parseInt(val, 10);
     if (isNaN(parsed) || parsed <= 0) {
-      setQuantityError("Invalid quantity");
+      setQuantityError(t("invalidQuantity"));
       return;
     }
     setQuantityError("");
@@ -108,29 +110,32 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
   const [pasteValue, setPasteValue] = useState("");
   const [pasteError, setPasteError] = useState<string | null>(null);
 
-  const fetchChain = useCallback(async (symbol: string) => {
-    setChainLoading(true);
-    setChainError(null);
-    try {
-      const res = await fetch(`/api/options/chain?symbol=${encodeURIComponent(symbol)}`);
-      const { data }: { data: ChainResponse } = await res.json();
-      setChain(data);
-      if (data.expirations.length === 0) {
-        setChainError(`No option chain available for ${symbol}`);
-        return;
+  const fetchChain = useCallback(
+    async (symbol: string) => {
+      setChainLoading(true);
+      setChainError(null);
+      try {
+        const res = await fetch(`/api/options/chain?symbol=${encodeURIComponent(symbol)}`);
+        const { data }: { data: ChainResponse } = await res.json();
+        setChain(data);
+        if (data.expirations.length === 0) {
+          setChainError(t("noChain", { symbol }));
+          return;
+        }
+        const firstLoaded = data.expirations.find((exp) => data.chains[exp]);
+        const firstExp = firstLoaded ?? data.expirations[0] ?? "";
+        setExpiration(firstExp);
+        const firstChainBlock = firstExp ? data.chains[firstExp] : undefined;
+        const firstStrike = firstChainBlock?.calls[0]?.strike;
+        setStrike(firstStrike !== undefined ? String(firstStrike) : "");
+      } catch {
+        setChainError(t("loadChainFailed", { symbol }));
+      } finally {
+        setChainLoading(false);
       }
-      const firstLoaded = data.expirations.find((exp) => data.chains[exp]);
-      const firstExp = firstLoaded ?? data.expirations[0] ?? "";
-      setExpiration(firstExp);
-      const firstChainBlock = firstExp ? data.chains[firstExp] : undefined;
-      const firstStrike = firstChainBlock?.calls[0]?.strike;
-      setStrike(firstStrike !== undefined ? String(firstStrike) : "");
-    } catch {
-      setChainError(`Failed to load option chain for ${symbol}`);
-    } finally {
-      setChainLoading(false);
-    }
-  }, []);
+    },
+    [t],
+  );
 
   // Lazy-load chain data when user picks an expiration not yet fetched.
   useEffect(() => {
@@ -246,7 +251,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
       setPasteMode(false);
       setPasteValue("");
     } catch (err) {
-      setPasteError(err instanceof Error ? err.message : "Invalid option symbol");
+      setPasteError(err instanceof Error ? err.message : t("invalidOccSymbol"));
     }
   }
 
@@ -329,17 +334,17 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* ── Underlying ── */}
       <div className="space-y-2">
-        <Label>Underlying Symbol</Label>
+        <Label>{t("underlyingSymbol")}</Label>
         {showSearch ? (
           <div className="space-y-2">
             <HoldingSearch
               onSelect={handleUnderlyingSearch}
-              label="Search underlying stock or ETF"
-              placeholder="e.g. AAPL, SPY"
+              label={t("searchUnderlying")}
+              placeholder={t("placeholderUnderlying")}
               autoFocus
             />
             <Button type="button" variant="ghost" size="sm" onClick={() => setShowSearch(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
           </div>
         ) : (
@@ -350,7 +355,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
                 setUnderlying(e.target.value.toUpperCase().replace(/[^A-Z0-9.\-]/g, ""))
               }
               onKeyDown={handleUnderlyingKeyDown}
-              placeholder="e.g. AAPL, SPY"
+              placeholder={t("placeholderUnderlying")}
               autoFocus={!chain}
             />
             <Button
@@ -361,7 +366,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
               onClick={() => loadChain(underlying)}
               disabled={!underlying || chainLoading}
             >
-              Load
+              {t("load")}
             </Button>
             <Button
               type="button"
@@ -370,22 +375,22 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
               className="shrink-0"
               onClick={() => setShowSearch(true)}
             >
-              Search
+              {t("search")}
             </Button>
           </div>
         )}
 
-        {chainLoading && <p className="text-xs text-muted-foreground">Loading option chain…</p>}
+        {chainLoading && <p className="text-xs text-muted-foreground">{t("loadingChain")}</p>}
         {chainError && <p className="text-xs text-destructive">{chainError}</p>}
       </div>
 
       {/* ── Expiration dropdown (shown once chain is loaded) ── */}
       {chain && chain.expirations.length > 0 && (
         <div className="space-y-2">
-          <Label>Expiration</Label>
+          <Label>{t("expiration")}</Label>
           <Select value={expiration} onValueChange={(v) => v && setExpiration(v)}>
             <SelectTrigger className="w-full">
-              <SelectValue>{expiration ? fmtExp(expiration) : "Select expiration"}</SelectValue>
+              <SelectValue>{expiration ? fmtExp(expiration) : t("selectExpiration")}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {chain.expirations.map((exp) => (
@@ -400,11 +405,11 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
 
       {/* ── Call / Put ── */}
       <div className="space-y-2">
-        <Label>Type</Label>
+        <Label>{t("type")}</Label>
         <Tabs value={side} onValueChange={(v) => v && setSide(v as OptionSide)}>
           <TabsList>
-            <TabsTrigger value="CALL">Call</TabsTrigger>
-            <TabsTrigger value="PUT">Put</TabsTrigger>
+            <TabsTrigger value="CALL">{t("call")}</TabsTrigger>
+            <TabsTrigger value="PUT">{t("put")}</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -412,11 +417,11 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
       {/* ── Strike dropdown (shown once expiration chain data is loaded) ── */}
       {chain && expiration && (
         <div className="space-y-2">
-          <Label>Strike</Label>
+          <Label>{t("strike")}</Label>
           {expChainLoading ? (
-            <p className="text-sm text-muted-foreground">Loading strikes…</p>
+            <p className="text-sm text-muted-foreground">{t("loadingStrikes")}</p>
           ) : strikesForSide.length === 0 ? (
-            <p className="text-sm text-destructive">No strikes available for this expiration.</p>
+            <p className="text-sm text-destructive">{t("noStrikes")}</p>
           ) : (
             <Select
               value={strike}
@@ -425,11 +430,11 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
               }}
             >
               <SelectTrigger className="w-full">
-                <SelectValue>{strike ? `$${strike}` : "Select strike"}</SelectValue>
+                <SelectValue>{strike ? `$${strike}` : t("selectStrike")}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {strikesForSide.map((c) => {
-                  const askLabel = c.ask !== null ? ` — ask $${c.ask.toFixed(2)}` : "";
+                  const askLabel = c.ask !== null ? t("askLabel", { price: c.ask.toFixed(2) }) : "";
                   return (
                     <SelectItem key={c.contractSymbol} value={String(c.strike)}>
                       ${c.strike}
@@ -446,25 +451,24 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
       {/* ── Placeholder when chain not yet loaded ── */}
       {!chain && !chainLoading && (
         <p className="text-xs text-muted-foreground">
-          Enter an underlying symbol above and click <strong>Load</strong> (or press Enter) to see
-          available expirations and strikes.
+          {t.rich("loadHint", { b: (chunks) => <strong>{chunks}</strong> })}
         </p>
       )}
 
       {/* ── Quantity ── */}
       <div className="space-y-2">
-        <Label className="text-base font-medium">Number of Contracts</Label>
+        <Label className="text-base font-medium">{t("numContracts")}</Label>
         <Input
           type="text"
           inputMode="numeric"
           value={quantity}
           onChange={handleQuantityChange}
           onBlur={handleQuantityBlur}
-          placeholder="e.g. 1"
+          placeholder={t("placeholderContracts")}
           className="text-lg h-12"
         />
         {quantityError && <p className="text-xs text-destructive">{quantityError}</p>}
-        <p className="text-xs text-muted-foreground">1 contract = 100 shares</p>
+        <p className="text-xs text-muted-foreground">{t("contractNote")}</p>
       </div>
 
       {/* ── Summary / cost preview ── */}
@@ -473,14 +477,18 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{formatOptionShort(previewParsed)}</span>
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-              Option
+              {t("optionBadge")}
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">{formatOptionLabel(previewParsed)}</p>
           <p className="text-[11px] font-mono text-muted-foreground">{previewOcc}</p>
           {previewCost !== null && (
             <p className="text-xs text-muted-foreground">
-              Est. cost at ask: ${previewCost.toFixed(2)} ({qtyNum} × ${ask?.toFixed(2)} × 100)
+              {t("estCost", {
+                cost: previewCost.toFixed(2),
+                qty: qtyNum,
+                ask: ask?.toFixed(2) ?? "",
+              })}
             </p>
           )}
         </div>
@@ -493,16 +501,16 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
           className="text-xs text-primary underline underline-offset-2 hover:text-primary/80"
           onClick={() => setPasteMode((v) => !v)}
         >
-          Paste OCC symbol
+          {t("pasteOcc")}
         </button>
 
         {pasteMode && (
           <div className="mt-2 space-y-2">
-            <Label>OCC symbol</Label>
+            <Label>{t("occSymbol")}</Label>
             <Input
               value={pasteValue}
               onChange={(e) => setPasteValue(e.target.value.toUpperCase())}
-              placeholder="e.g. AAPL250117C00150000"
+              placeholder={t("placeholderOcc")}
               autoFocus
             />
             {pasteError && <p className="text-xs text-destructive">{pasteError}</p>}
@@ -517,10 +525,10 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
                   setPasteError(null);
                 }}
               >
-                Cancel
+                {t("cancel")}
               </Button>
               <Button type="button" size="sm" onClick={handlePaste}>
-                Use
+                {t("use")}
               </Button>
             </div>
           </div>
@@ -530,10 +538,10 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
       {/* ── Actions ── */}
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
+          {t("cancel")}
         </Button>
         <Button type="submit" disabled={!canSubmit}>
-          {onConfigure ? "Next" : loading ? "Adding…" : "Add Option"}
+          {onConfigure ? t("next") : loading ? t("adding") : t("addOption")}
         </Button>
       </div>
     </form>

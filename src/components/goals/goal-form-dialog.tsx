@@ -64,6 +64,7 @@ export function GoalFormDialog({
 }: GoalFormDialogProps) {
   const router = useRouter();
   const t = useTranslations("goals");
+  const tCategories = useTranslations("categories");
   const isMobile = useIsMobile();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(() => initialState(editGoal, defaultCurrency));
@@ -190,7 +191,7 @@ export function GoalFormDialog({
           <Label htmlFor="goal-currency">{t("form.targetCurrency")}</Label>
           <Select value={targetCurrency} onValueChange={(v) => v && setTargetCurrency(v)}>
             <SelectTrigger id="goal-currency">
-              <SelectValue />
+              <SelectValue>{targetCurrency}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {CURRENCIES.map((c) => (
@@ -227,7 +228,7 @@ export function GoalFormDialog({
           }}
         >
           <SelectTrigger id="goal-scope">
-            <SelectValue />
+            <SelectValue>{t(`scope.${scope}`)}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {SCOPE_OPTIONS.map((s) => (
@@ -245,15 +246,16 @@ export function GoalFormDialog({
           <Label htmlFor="goal-category">{t("form.category")}</Label>
           <Select value={scopeRefId} onValueChange={(v) => v && setScopeRefId(v)}>
             <SelectTrigger id="goal-category">
-              <SelectValue placeholder={t("form.categoryPlaceholder")} />
+              <SelectValue>
+                {scopeRefId
+                  ? tCategories(scopeRefId as Parameters<typeof tCategories>[0])
+                  : t("form.categoryPlaceholder")}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {ACCOUNT_CATEGORIES.map((cat) => (
                 <SelectItem key={cat} value={cat}>
-                  {cat
-                    .replace(/_/g, " ")
-                    .toLowerCase()
-                    .replace(/^\w/, (c) => c.toUpperCase())}
+                  {tCategories(cat)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -267,7 +269,12 @@ export function GoalFormDialog({
           <Label htmlFor="goal-account">{t("form.account")}</Label>
           <Select value={scopeRefId} onValueChange={(v) => v && setScopeRefId(v)}>
             <SelectTrigger id="goal-account">
-              <SelectValue placeholder={t("form.accountPlaceholder")} />
+              <SelectValue>
+                {scopeRefId
+                  ? (accounts.find((a) => a.id === scopeRefId)?.name ??
+                    t("form.accountPlaceholder"))
+                  : t("form.accountPlaceholder")}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {accounts.map((a) => (

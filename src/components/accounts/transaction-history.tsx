@@ -438,7 +438,15 @@ export function TransactionHistory({
               <div className="col-span-3">
                 <Select value={editType} onValueChange={(v) => v && setEditType(v)}>
                   <SelectTrigger id="type">
-                    <SelectValue placeholder={t("labelType")} />
+                    <SelectValue>
+                      {(() => {
+                        const k =
+                          `type${editType.charAt(0) + editType.slice(1).toLowerCase()}` as Parameters<
+                            typeof t
+                          >[0];
+                        return editType && t.has(k) ? t(k) : t("labelType");
+                      })()}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {(editingTx as SerializedTransaction & { isCash?: boolean })?.isCash ? (

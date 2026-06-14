@@ -1,4 +1,11 @@
-import type { Account, Goal, Holding, HoldingTransaction } from "@/generated/prisma/client";
+import type {
+  Account,
+  Goal,
+  Holding,
+  HoldingTransaction,
+  RecurringCashTransaction,
+  RecurringInvestment,
+} from "@/generated/prisma/client";
 
 // ---------------------------------------------------------------------------
 // Generic serialization utilities
@@ -124,6 +131,90 @@ export function serializeAccountWithHoldings(
   return {
     ...serializeAccount(account),
     holdings: account.holdings.map(serializeHolding),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Recurring cash transaction types (F6)
+// ---------------------------------------------------------------------------
+
+export type SerializedRecurringCashTransaction = {
+  id: string;
+  accountId: string;
+  type: "DEPOSIT" | "WITHDRAWAL";
+  amount: number;
+  frequency: "WEEKLY" | "BIWEEKLY" | "MONTHLY" | "QUARTERLY" | "ANNUAL";
+  note: string | null;
+  // Calendar-day fields are serialized as YYYY-MM-DD (no time component).
+  startDate: string;
+  endDate: string | null;
+  nextRunDate: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** YYYY-MM-DD from a UTC-midnight `@db.Date` value. */
+function toDateOnly(d: Date): string {
+  return (d as Date).toISOString().slice(0, 10);
+}
+
+export function serializeRecurringCashTransaction(
+  rule: RecurringCashTransaction,
+): SerializedRecurringCashTransaction {
+  return {
+    id: rule.id,
+    accountId: rule.accountId,
+    type: rule.type as "DEPOSIT" | "WITHDRAWAL",
+    amount: Number(rule.amount),
+    frequency: rule.frequency,
+    note: rule.note,
+    startDate: toDateOnly(rule.startDate),
+    endDate: rule.endDate ? toDateOnly(rule.endDate) : null,
+    nextRunDate: toDateOnly(rule.nextRunDate),
+    isActive: rule.isActive,
+    createdAt: rule.createdAt.toISOString(),
+    updatedAt: rule.updatedAt.toISOString(),
+  };
+}
+
+export type SerializedRecurringInvestment = {
+  id: string;
+  accountId: string;
+  symbol: string;
+  name: string;
+  assetType: "STOCK" | "ETF" | "CRYPTO" | "MUTUAL_FUND" | "BOND" | "OPTION" | "OTHER";
+  holdingCurrency: string;
+  amount: number;
+  frequency: "WEEKLY" | "BIWEEKLY" | "MONTHLY" | "QUARTERLY" | "ANNUAL";
+  note: string | null;
+  startDate: string;
+  endDate: string | null;
+  nextRunDate: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function serializeRecurringInvestment(
+  rule: RecurringInvestment,
+): SerializedRecurringInvestment {
+  return {
+    id: rule.id,
+    accountId: rule.accountId,
+    symbol: rule.symbol,
+    name: rule.name,
+    assetType: rule.assetType,
+    holdingCurrency: rule.holdingCurrency,
+    amount: Number(rule.amount),
+    frequency: rule.frequency,
+    note: rule.note,
+    startDate: toDateOnly(rule.startDate),
+    endDate: rule.endDate ? toDateOnly(rule.endDate) : null,
+    nextRunDate: toDateOnly(rule.nextRunDate),
+    isActive: rule.isActive,
+    createdAt: rule.createdAt.toISOString(),
+    updatedAt: rule.updatedAt.toISOString(),
   };
 }
 

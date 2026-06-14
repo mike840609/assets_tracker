@@ -49,6 +49,8 @@ model Account {
   updatedAt        DateTime          @updatedAt
   holdings         Holding[]
   cashTransactions CashTransaction[]
+  recurringCashTransactions RecurringCashTransaction[]
+  recurringInvestments      RecurringInvestment[]
 
   @@index([userId, isActive])
   @@index([userId, isActive, type, isPinned, sortOrder])
@@ -105,6 +107,14 @@ model HoldingTransaction {
   note      String?
   createdAt DateTime        @default(now())
 
+  // Set when materialized from a recurring investment (F6 DCA). Same idempotency
+  // pattern as CashTransaction: the unique (recurringId, occurrenceDate) pair
+  // makes re-materialization a no-op; both NULL for manual buys/sells.
+  recurringId    String?
+  recurring      RecurringInvestment? @relation(fields: [recurringId], references: [id], onDelete: SetNull)
+  occurrenceDate DateTime?            @db.Date
+
+  @@unique([recurringId, occurrenceDate])
   @@index([holdingId, createdAt(sort: Desc)])
 }
 
@@ -123,7 +133,85 @@ model CashTransaction {
   note      String?
   createdAt DateTime            @default(now())
 
+  // Set when this row was materialized from a recurring rule. `occurrenceDate`
+  // is the UTC calendar day the occurrence is for; the unique pair makes
+  // materialization idempotent (a re-run can't double-post the same occurrence).
+  // Both NULL for manually-entered transactions (Postgres treats NULLs as
+  // distinct, so manual rows never collide on this constraint).
+  recurringId    String?
+  recurring      RecurringCashTransaction? @relation(fields: [recurringId], references: [id], onDelete: SetNull)
+  occurrenceDate DateTime?                 @db.Date
+
+  @@unique([recurringId, occurrenceDate])
   @@index([accountId, createdAt(sort: Desc)])
+}
+
+enum RecurringFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+// A template that the daily snapshot cron materializes into CashTransaction
+// rows when due. No dedicated cron is added: the existing /api/cron/snapshot
+// sweep posts every occurrence whose date has arrived (catching up any missed
+// days), keeping this Free-plan compatible. See recurring-cash-service.ts.
+model RecurringCashTransaction {
+  id          String              @id @default(cuid())
+  accountId   String
+  account     Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  // Only DEPOSIT / WITHDRAWAL are meaningful for a recurring rule; EDIT (an
+  // explicit balance adjustment) is rejected by the validator.
+  type        CashTransactionType
+  amount      Decimal             @db.Decimal(18, 8)
+  frequency   RecurringFrequency
+  note        String?
+  // Date-only (no time-of-day): occurrences land at the cron's run time.
+  startDate   DateTime            @db.Date
+  endDate     DateTime?           @db.Date
+  // The next calendar day an occurrence is due; advanced as occurrences post.
+  nextRunDate DateTime            @db.Date
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  generated   CashTransaction[]
+
+  // Cron sweep query: active rules whose next run has arrived.
+  @@index([isActive, nextRunDate])
+  @@index([accountId])
+}
+
+// A recurring dollar-cost-averaging rule: invest a fixed `amount` (in the
+// account's currency) into `symbol` each period. Materialized by the same daily
+// cron — converts the amount to shares at the run-time price, posts a BUY
+// HoldingTransaction, increments the holding quantity, and debits the account's
+// cash. Auto-creates the target holding on first run if it doesn't exist.
+model RecurringInvestment {
+  id              String           @id @default(cuid())
+  accountId       String
+  account         Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  symbol          String
+  name            String
+  assetType       HoldingAssetType
+  // Currency of the target holding / its market price (from symbol search).
+  holdingCurrency String           @default("USD")
+  // Per-period cash invested, in the ACCOUNT's currency (this is what gets
+  // debited from cashBalance); shares = amount→holdingCurrency ÷ price.
+  amount          Decimal          @db.Decimal(18, 8)
+  frequency       RecurringFrequency
+  note            String?
+  startDate       DateTime         @db.Date
+  endDate         DateTime?        @db.Date
+  nextRunDate     DateTime         @db.Date
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  generated       HoldingTransaction[]
+
+  @@index([isActive, nextRunDate])
+  @@index([accountId])
 }
 
 model PriceCache {

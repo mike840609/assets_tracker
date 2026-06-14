@@ -177,7 +177,7 @@ export function AccountForm({
         <Label htmlFor={currencyId}>{t("accountForm.labelCurrency")}</Label>
         <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
           <SelectTrigger id={currencyId}>
-            <SelectValue />
+            <SelectValue>{currency}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {CURRENCIES.map((c) => (

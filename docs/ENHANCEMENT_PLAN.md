@@ -231,9 +231,10 @@ large ones.
 
 1. **F3 — Cost basis + realized/unrealized P&L** (L · 🔴) — directly on E25.
    The single biggest "this is more than a tracker" capability still missing.
-2. **F6 — Recurring cash transactions** (M · 🔴) + **F8 — categories /
-   spending insights** (L · 🟡, opt-in toggle) — makes the projections page's
-   savings-rate real instead of assumed; cron already has the daily hook.
+2. **F6 — Recurring cash transactions** (M · 🔴) ✅ **shipped 2026-06-14** +
+   **F8 — categories / spending insights** (L · 🟡, opt-in toggle) — makes the
+   projections page's savings-rate real instead of assumed; cron already has the
+   daily hook.
 3. **F16 — Manual price overrides** (S · 🟡) and **F21 — labelled snapshots**
    (S · 🟢) — small, self-contained, high perceived value.
 4. **F10 — Benchmark overlay** (M · 🟡) — needs a benchmark price-history
@@ -245,6 +246,37 @@ large ones.
    journal** · **F15 real-estate composite** · **F18 net-worth profiles** —
    pick by mood; all independent.
 
+- **F6 (shipped 2026-06-14) — no new cron.** `RecurringCashTransaction` model
+  (migration `20260614000000_add_recurring_cash_transactions`) + a
+  materialization step folded into the existing `/api/cron/snapshot` run, so the
+  Free-plan one-cron limit is respected. `materializeDueRecurringTransactions()`
+  (`src/lib/services/recurring-cash-service.ts`) runs a catch-up loop driven by
+  each rule's `nextRunDate`, posting every occurrence due since the last run —
+  so a skipped/failed cron day self-heals on the next run rather than needing a
+  tighter schedule. Idempotency: a `(recurringId, occurrenceDate)` unique index
+  - balance incremented by `createMany().count` (not occurrence count), all in
+    one interactive `$transaction`. UI: a Recurring card on the account detail
+    page (`recurring-cash-transactions.tsx`); rules support pause/resume + end
+    dates; deleting a rule keeps already-posted ledger rows (FK `SetNull`). Unit
+    tests cover the date math + catch-up + idempotent-skip paths
+    (`tests/unit/recurring-cash-service.test.ts`). The generated rows are ordinary
+    `CashTransaction`s, so they flow into history/snapshots with no extra wiring.
+    Next: F8 categories builds on this for real savings-rate inputs.
+- **F6b (shipped 2026-06-14) — recurring investments (DCA), also no new cron.**
+  `RecurringInvestment` model (migration
+  `20260614010000_add_recurring_investments`) + `materializeDueInvestments()`
+  (`src/lib/services/recurring-investment-service.ts`) folded into the same cron
+  step (runs after the cash sweep so deposits land before buys spend them). Each
+  rule invests a fixed `amount` (account currency) into a `symbol`: shares =
+  amount→price-currency ÷ run-time price, posts a BUY `HoldingTransaction`,
+  increments the holding (auto-creating it on first run), and debits cash —
+  modeling a real brokerage purchase (net worth unchanged at buy time). Reuses
+  the cash service's date helpers and the same `(recurringId, occurrenceDate)`
+  idempotency on `HoldingTransaction`. UI: `recurring-investments.tsx` card on
+  non-bank account detail, using `HoldingSearch` for symbol resolution. Known
+  limitation: catch-up after a cron outage prices missed days at the current
+  price, not the historical price. Tests:
+  `tests/unit/recurring-investment-service.test.ts`.
 - Mobile/UX companions when touching these surfaces: S11 color-blind-safe
   asset/liability cues (icon + label, not color alone) and the remaining
   UI_UX M-series CSS fixes (S12).

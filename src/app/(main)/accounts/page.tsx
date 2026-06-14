@@ -19,6 +19,7 @@ const CLIENT_NAMESPACES = [
   "accountsList",
   "accountForm",
   "quickAddHolding",
+  "optionBuilder",
   "holdingSearch",
   "categories",
   "common",
