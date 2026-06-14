@@ -429,7 +429,64 @@ export function ProjectionView({ projectionData, baseCurrency, hasAccounts }: Pr
         </div>
       </div>
 
-      {/* Cockpit: assumptions rail + projection workspace */}
+      {/* Verdict band — the projection's headline answer. Full width so it owns
+          the top of the page, above the controls + chart cockpit below. */}
+      <Card className="rounded-2xl py-5 sm:py-6">
+        <CardContent className="grid gap-6 px-5 sm:px-6 lg:grid-cols-[1.5fr_1fr] lg:items-stretch">
+          <div className="space-y-3">
+            {hasExpenses && reachable && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                <Sparkles className="h-3 w-3" />
+                {t("onTrackLabel")}
+              </span>
+            )}
+            <h2 className="text-2xl font-semibold tracking-tight text-balance lg:text-3xl">
+              {headline}
+            </h2>
+            {subline && <p className="text-sm text-muted-foreground">{subline}</p>}
+
+            {hasExpenses && (
+              <div className="space-y-2 pt-1">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full origin-left rounded-full bg-primary transition-transform duration-700"
+                    style={{
+                      transform: `scaleX(${Math.max(0, Math.min(progressPct, 100)) / 100})`,
+                      transitionTimingFunction: "var(--ease-out-expo)",
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span className="tabular-nums">
+                    {mask(formatCurrency(latestNetWorth, baseCurrency, true))}
+                  </span>
+                  <span className="font-medium text-foreground tabular-nums">
+                    {formatNumber(progressPct, progressPct >= 10 ? 0 : 1)}%
+                  </span>
+                  <span className="tabular-nums">
+                    {mask(formatCurrency(fireNumber, baseCurrency, true))}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col justify-center lg:border-l lg:border-border/60 lg:pl-6">
+            <p className="text-xs font-medium text-muted-foreground">
+              {t("projectedPortfolio")}
+              <span className="ml-1 tabular-nums">{t("projectedBy", { year: horizonYear })}</span>
+            </p>
+            <p className="mt-1.5 text-xl font-semibold tracking-tight tabular-nums lg:text-2xl">
+              {mask(formatCurrency(animatedProjected, baseCurrency))}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+              {mask(t("fromToday", { amount: formatCurrency(latestNetWorth, baseCurrency, true) }))}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cockpit: assumptions rail + projection chart side by side */}
       <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-6">
         {/* Assumptions rail */}
         <aside className="order-last lg:order-none lg:sticky lg:top-6">
@@ -486,87 +543,23 @@ export function ProjectionView({ projectionData, baseCurrency, hasAccounts }: Pr
           </Card>
         </aside>
 
-        {/* Workspace */}
-        <div className="min-w-0 space-y-4 lg:space-y-6">
-          {/* Result band */}
-          <Card className="rounded-2xl py-5 sm:py-6">
-            <CardContent className="grid gap-6 px-5 sm:px-6 lg:grid-cols-[1.5fr_1fr] lg:items-stretch">
-              <div className="space-y-3">
-                {hasExpenses && reachable && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                    <Sparkles className="h-3 w-3" />
-                    {t("onTrackLabel")}
-                  </span>
-                )}
-                <h2 className="text-2xl font-semibold tracking-tight text-balance lg:text-3xl">
-                  {headline}
-                </h2>
-                {subline && <p className="text-sm text-muted-foreground">{subline}</p>}
-
-                {hasExpenses && (
-                  <div className="space-y-2 pt-1">
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full origin-left rounded-full bg-primary transition-transform duration-700"
-                        style={{
-                          transform: `scaleX(${Math.max(0, Math.min(progressPct, 100)) / 100})`,
-                          transitionTimingFunction: "var(--ease-out-expo)",
-                        }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span className="tabular-nums">
-                        {mask(formatCurrency(latestNetWorth, baseCurrency, true))}
-                      </span>
-                      <span className="font-medium text-foreground tabular-nums">
-                        {formatNumber(progressPct, progressPct >= 10 ? 0 : 1)}%
-                      </span>
-                      <span className="tabular-nums">
-                        {mask(formatCurrency(fireNumber, baseCurrency, true))}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col justify-center lg:border-l lg:border-border/60 lg:pl-6">
-                <p className="text-xs font-medium text-muted-foreground">
-                  {t("projectedPortfolio")}
-                  <span className="ml-1 tabular-nums">
-                    {t("projectedBy", { year: horizonYear })}
-                  </span>
-                </p>
-                <p className="mt-1.5 text-xl font-semibold tracking-tight tabular-nums lg:text-2xl">
-                  {mask(formatCurrency(animatedProjected, baseCurrency))}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                  {mask(
-                    t("fromToday", { amount: formatCurrency(latestNetWorth, baseCurrency, true) }),
-                  )}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Chart */}
-          <Card>
-            <CardContent className="space-y-4">
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 className="text-sm font-semibold tracking-tight">{t("chart")}</h2>
-                <p className="hidden text-xs text-muted-foreground sm:block">
-                  {t("chartSubtitle")}
-                </p>
-              </div>
-              <LazyProjectionChart
-                data={chartData}
-                fireNumber={fireNumber}
-                fireYear={fireYear}
-                baseCurrency={baseCurrency}
-                lens={lens}
-              />
-            </CardContent>
-          </Card>
-        </div>
+        {/* Chart — fills the workspace column beside the rail */}
+        <Card className="min-w-0">
+          <CardContent className="space-y-4">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-sm font-semibold tracking-tight">{t("chart")}</h2>
+              <p className="hidden text-xs text-muted-foreground sm:block">{t("chartSubtitle")}</p>
+            </div>
+            <LazyProjectionChart
+              data={chartData}
+              fireNumber={fireNumber}
+              fireYear={fireYear}
+              baseCurrency={baseCurrency}
+              lens={lens}
+              height={420}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Milestones (full width, below the cockpit on desktop; after inputs on mobile) */}
