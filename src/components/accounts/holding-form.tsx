@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { HoldingSearch } from "./holding-search";
 import type { SearchResult } from "./holding-search";
 import { OptionBuilder } from "./option-builder";
+import { maskAmountInput } from "@/lib/amount-input";
 
 const ASSET_TYPES = [
   { value: "STOCK", label: "Stock" },
@@ -53,16 +54,10 @@ export function HoldingForm({
   const [quantityError, setQuantityError] = useState("");
 
   function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    const next = maskAmountInput(e.target.value);
+    if (next === null) return;
     setQuantityError("");
-    if (!raw) {
-      setQuantity("");
-      return;
-    }
-    const [intPart, decPart] = raw.split(".");
-    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
+    setQuantity(next);
   }
 
   function handleQuantityBlur() {

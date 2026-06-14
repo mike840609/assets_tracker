@@ -25,10 +25,13 @@ import { DiscardConfirmDialog } from "@/components/discard-confirm-dialog";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
 import { HoldingSearch } from "./holding-search";
 import type { SearchResult } from "./holding-search";
+import { maskAmountInput } from "@/lib/amount-input";
+import { HOLDING_ASSET_TYPES } from "@/lib/enums";
 
 const OptionBuilder = dynamic(() => import("./option-builder").then((m) => m.OptionBuilder));
 
-const ASSET_TYPE_KEYS = ["STOCK", "ETF", "CRYPTO", "MUTUAL_FUND", "BOND", "OTHER"] as const;
+// OPTION has its own tab/builder, so the stock form offers every other asset type.
+const ASSET_TYPE_KEYS = HOLDING_ASSET_TYPES.filter((k) => k !== "OPTION");
 
 const ASSET_TYPE_TO_CATEGORY: Record<string, string> = {
   STOCK: "BROKERAGE",
@@ -77,16 +80,10 @@ export function QuickAddHolding({
   const [quantityError, setQuantityError] = useState("");
 
   function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    const next = maskAmountInput(e.target.value);
+    if (next === null) return;
     setQuantityError("");
-    if (!raw) {
-      setQuantity("");
-      return;
-    }
-    const [intPart, decPart] = raw.split(".");
-    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
+    setQuantity(next);
   }
 
   function handleQuantityBlur() {

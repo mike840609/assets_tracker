@@ -6,6 +6,7 @@ import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency, formatNumber } from "@/lib/currencies";
+import { maskAmountInput } from "@/lib/amount-input";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 
 interface InlineBalanceEditorProps {
@@ -34,16 +35,10 @@ export function InlineBalanceEditor({
   const { privacyMode } = usePrivacyMode();
 
   function handleBalanceChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    const next = maskAmountInput(e.target.value);
+    if (next === null) return;
     setError("");
-    if (!raw) {
-      setBalance("");
-      return;
-    }
-    const [intPart, decPart] = raw.split(".");
-    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setBalance(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
+    setBalance(next);
   }
 
   function handleBalanceBlur() {

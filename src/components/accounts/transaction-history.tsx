@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatQuantity } from "@/lib/currencies";
+import { maskAmountInput } from "@/lib/amount-input";
 import type { SerializedTransaction } from "@/lib/types";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -175,15 +176,8 @@ export function TransactionHistory({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleEditQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
-    if (!raw) {
-      setEditQuantity("");
-      return;
-    }
-    const [intPart, decPart] = raw.split(".");
-    const formatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setEditQuantity(decPart !== undefined ? `${formatted}.${decPart}` : formatted);
+    const next = maskAmountInput(e.target.value);
+    if (next !== null) setEditQuantity(next);
   }
 
   function handleEditQuantityBlur() {

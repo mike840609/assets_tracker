@@ -108,14 +108,18 @@ export function AccountDetail({
 
   const shouldReduceMotion = useReducedMotion();
 
-  const holdingsWithValue: HoldingWithPrice[] = account.holdings.map((h) => {
-    const price = priceMap[h.symbol] ?? null;
-    const hc = h.currency || "USD";
-    const rate = hc === account.currency ? 1 : (ratesMap[`${hc}_${account.currency}`] ?? 1);
-    const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
-    const marketValue = price !== null ? price * h.quantity * multiplier * rate : null;
-    return { ...h, currentPrice: price, marketValue };
-  });
+  const holdingsWithValue: HoldingWithPrice[] = useMemo(
+    () =>
+      account.holdings.map((h) => {
+        const price = priceMap[h.symbol] ?? null;
+        const hc = h.currency || "USD";
+        const rate = hc === account.currency ? 1 : (ratesMap[`${hc}_${account.currency}`] ?? 1);
+        const multiplier = h.assetType === "OPTION" ? (h.contractMultiplier ?? 100) : 1;
+        const marketValue = price !== null ? price * h.quantity * multiplier * rate : null;
+        return { ...h, currentPrice: price, marketValue };
+      }),
+    [account.holdings, account.currency, priceMap, ratesMap],
+  );
 
   const totalHoldingsValue = holdingsWithValue.reduce((sum, h) => sum + (h.marketValue ?? 0), 0);
 
