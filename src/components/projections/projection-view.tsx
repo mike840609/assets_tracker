@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { formatCurrency, formatNumber, getCurrencySymbol } from "@/lib/currencies";
+import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
 import { useCountUp } from "@/hooks/use-count-up";
@@ -168,36 +169,30 @@ function NumberInput({
   max?: number;
   prefix?: string;
 }) {
-  const [display, setDisplay] = useState(() =>
-    value === 0 ? "" : new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(value),
-  );
+  const [display, setDisplay] = useState(() => (value === 0 ? "" : formatAmountInput(value, 6)));
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
-    if (!raw) {
-      setDisplay("");
+    const next = maskAmountInput(e.target.value);
+    if (next === null) return;
+    setDisplay(next);
+    if (!next) {
       onChange(0);
       return;
     }
-    const [intPart, decPart] = raw.split(".");
-    const formattedInt = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setDisplay(decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt);
-    const parsed = parseFloat(raw);
+    const parsed = parseAmountInput(next);
     if (!isNaN(parsed)) {
       onChange(Math.max(min, max !== undefined ? Math.min(max, parsed) : parsed));
     }
   }
 
   function handleBlur() {
-    const raw = display.replace(/,/g, "");
-    const parsed = parseFloat(raw);
-    if (!raw || isNaN(parsed)) {
+    const parsed = parseAmountInput(display);
+    if (isNaN(parsed)) {
       setDisplay("");
       return;
     }
     const clamped = Math.max(min, max !== undefined ? Math.min(max, parsed) : parsed);
-    setDisplay(new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(clamped));
+    setDisplay(formatAmountInput(clamped, 6));
   }
 
   return (

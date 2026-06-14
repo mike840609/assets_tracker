@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import type { SerializedHolding } from "@/lib/types";
 
 import { getOptionDisplay } from "@/lib/options";
-import { maskAmountInput } from "@/lib/amount-input";
+import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 
 const ASSET_TYPES = [
   { value: "STOCK", label: "Stock" },
@@ -38,9 +38,7 @@ export function EditHoldingDialog({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [quantity, setQuantity] = useState(() =>
-    new Intl.NumberFormat("en-US", {
-      maximumFractionDigits: holding.assetType === "OPTION" ? 0 : 6,
-    }).format(Number(holding.quantity)),
+    formatAmountInput(Number(holding.quantity), holding.assetType === "OPTION" ? 0 : 6),
   );
   const [name, setName] = useState(holding.name);
   const [assetType, setAssetType] = useState<
@@ -57,13 +55,9 @@ export function EditHoldingDialog({
   function handleQuantityBlur() {
     const val = quantity.replace(/,/g, "");
     if (!val) return;
-    const parsed = isOption ? parseInt(val, 10) : parseFloat(val);
+    const parsed = isOption ? parseInt(val, 10) : parseAmountInput(val);
     if (isNaN(parsed)) return;
-    setQuantity(
-      isOption
-        ? new Intl.NumberFormat("en-US").format(parsed)
-        : new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(parsed),
-    );
+    setQuantity(isOption ? formatAmountInput(parsed, 0) : formatAmountInput(parsed, 6));
   }
 
   function handleOpen(isOpen: boolean) {
@@ -83,7 +77,7 @@ export function EditHoldingDialog({
     e.preventDefault();
     setLoading(true);
 
-    const parsedQty = parseFloat(quantity.replace(/,/g, ""));
+    const parsedQty = parseAmountInput(quantity);
     const minAllowed = isOption ? 0 : Number.MIN_VALUE;
     if (isNaN(parsedQty) || parsedQty < minAllowed) {
       toast.error(

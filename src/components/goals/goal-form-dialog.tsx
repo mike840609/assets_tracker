@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CURRENCIES } from "@/lib/currencies";
+import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import { ACCOUNT_CATEGORIES } from "@/lib/enums";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import type { SerializedAccount, SerializedGoal } from "@/lib/types";
@@ -37,9 +38,7 @@ function initialState(editGoal: SerializedGoal | undefined, defaultCurrency: str
   if (editGoal) {
     return {
       name: editGoal.name,
-      targetAmount: new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(
-        Number(editGoal.targetAmount),
-      ),
+      targetAmount: formatAmountInput(Number(editGoal.targetAmount), 2),
       targetCurrency: editGoal.targetCurrency,
       targetDate: editGoal.targetDate ? editGoal.targetDate.slice(0, 10) : "",
       scope: editGoal.scope as GoalScope,
@@ -105,28 +104,21 @@ export function GoalFormDialog({
   const needsScopeRef = scope === "CATEGORY" || scope === "ACCOUNT";
 
   function handleTargetAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/,/g, "");
-    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
-    if (!raw) {
-      setTargetAmount("");
-      return;
-    }
-    const [intPart, decPart] = raw.split(".");
-    const formattedInt = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    setTargetAmount(decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt);
+    const next = maskAmountInput(e.target.value);
+    if (next !== null) setTargetAmount(next);
   }
 
   function handleTargetAmountBlur() {
     const val = targetAmount.replace(/,/g, "");
     if (!val) return;
-    const parsed = parseFloat(val);
+    const parsed = parseAmountInput(val);
     if (isNaN(parsed) || parsed <= 0) return;
-    setTargetAmount(new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(parsed));
+    setTargetAmount(formatAmountInput(parsed, 2));
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const amount = parseFloat(targetAmount.replace(/,/g, ""));
+    const amount = parseAmountInput(targetAmount);
     if (!name.trim() || isNaN(amount) || amount <= 0) return;
     if (needsScopeRef && !scopeRefId) return;
 

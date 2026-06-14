@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatQuantity } from "@/lib/currencies";
-import { maskAmountInput } from "@/lib/amount-input";
+import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import type { SerializedTransaction } from "@/lib/types";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -183,9 +183,9 @@ export function TransactionHistory({
   function handleEditQuantityBlur() {
     const val = editQuantity.replace(/,/g, "");
     if (!val) return;
-    const parsed = parseFloat(val);
+    const parsed = parseAmountInput(val);
     if (isNaN(parsed)) return;
-    setEditQuantity(new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(parsed));
+    setEditQuantity(formatAmountInput(parsed, 6));
   }
 
   const [transactions, setTransactions] = useState<SerializedTransaction[]>([]);
@@ -246,9 +246,7 @@ export function TransactionHistory({
   const handleEditClick = (t: SerializedTransaction) => {
     setEditingTx(t);
     setEditType(t.type);
-    setEditQuantity(
-      new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(t.quantity),
-    );
+    setEditQuantity(formatAmountInput(t.quantity, 6));
     setEditNote(t.note || "");
 
     // Format date for datetime-local input

@@ -25,7 +25,7 @@ import { DiscardConfirmDialog } from "@/components/discard-confirm-dialog";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
 import { HoldingSearch } from "./holding-search";
 import type { SearchResult } from "./holding-search";
-import { maskAmountInput } from "@/lib/amount-input";
+import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import { HOLDING_ASSET_TYPES } from "@/lib/enums";
 
 const OptionBuilder = dynamic(() => import("./option-builder").then((m) => m.OptionBuilder));
@@ -92,13 +92,13 @@ export function QuickAddHolding({
       setQuantityError("");
       return;
     }
-    const parsed = parseFloat(val);
+    const parsed = parseAmountInput(val);
     if (isNaN(parsed) || parsed <= 0) {
       setQuantityError(t("quickAddHolding.invalidQuantity", { defaultValue: "Invalid quantity" }));
       return;
     }
     setQuantityError("");
-    setQuantity(new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(parsed));
+    setQuantity(formatAmountInput(parsed, 6));
   }
 
   function selectResult(result: SearchResult) {
@@ -183,7 +183,7 @@ export function QuickAddHolding({
         body: JSON.stringify({
           symbol,
           name,
-          quantity: parseFloat(quantity.replace(/,/g, "")),
+          quantity: parseAmountInput(quantity),
           assetType,
           currency,
         }),
@@ -216,7 +216,7 @@ export function QuickAddHolding({
   const canProceed =
     (tickerSelected || (manualMode && symbol && name)) &&
     !!quantity &&
-    parseFloat(quantity.replace(/,/g, "")) > 0;
+    parseAmountInput(quantity) > 0;
 
   const matchingAccounts = getMatchingAccounts();
   const targetCategory = ASSET_TYPE_TO_CATEGORY[assetType] || "BROKERAGE";
@@ -424,7 +424,7 @@ export function QuickAddHolding({
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
               {assetType === "OPTION"
-                ? `${name} · ${quantity} contract${parseFloat(quantity.replace(/,/g, "")) !== 1 ? "s" : ""}`
+                ? `${name} · ${quantity} contract${parseAmountInput(quantity) !== 1 ? "s" : ""}`
                 : t("quickAddHolding.sharesSummary", { name, quantity })}
             </p>
           </div>

@@ -52,6 +52,7 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 import { StocksOnboarding } from "./stocks-onboarding";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { hapticTick } from "@/lib/haptics";
+import { formatAmountInput } from "@/lib/amount-input";
 import { CLIENT_REFRESH_COOLDOWN_MS } from "@/lib/refresh-policy";
 import { cn, daysBetweenDates, localToday } from "@/lib/utils";
 import type { SerializedTrackedStock } from "@/lib/services/stock-watch-service";
@@ -72,10 +73,6 @@ function parseMoney(value: string) {
   if (!normalized) return null;
   const parsed = Number(normalized);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
-function formatNumberInput(value: number) {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 8 }).format(value);
 }
 
 function useFormatters() {
@@ -139,13 +136,15 @@ function StockForm({
         }
       : null,
   );
-  const [recordPrice, setRecordPrice] = useState(stock ? formatNumberInput(stock.recordPrice) : "");
+  const [recordPrice, setRecordPrice] = useState(
+    stock ? formatAmountInput(stock.recordPrice, 8) : "",
+  );
   const [recordDate, setRecordDate] = useState(stock?.recordDate ?? localToday());
   const [note, setNote] = useState(stock?.note ?? "");
   const [priceError, setPriceError] = useState("");
 
   const isDirty = editing
-    ? recordPrice !== formatNumberInput(stock.recordPrice) ||
+    ? recordPrice !== formatAmountInput(stock.recordPrice, 8) ||
       recordDate !== stock.recordDate ||
       note !== (stock.note ?? "")
     : !!selected || !!recordPrice || recordDate !== localToday() || note.trim().length > 0;
@@ -173,7 +172,7 @@ function StockForm({
         type: "STOCK",
         currency: data.currency,
       });
-      setRecordPrice(formatNumberInput(data.price));
+      setRecordPrice(formatAmountInput(data.price, 8));
       setPriceError("");
     } catch {
       toast.error(t("prefillFailed"));

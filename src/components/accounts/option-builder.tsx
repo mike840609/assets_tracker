@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatAmountInput } from "@/lib/amount-input";
 import { HoldingSearch } from "./holding-search";
 import type { SearchResult } from "./holding-search";
 import {
@@ -99,7 +100,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
       return;
     }
     setQuantityError("");
-    setQuantity(new Intl.NumberFormat("en-US").format(parsed));
+    setQuantity(formatAmountInput(parsed, 0));
   }
 
   const [showSearch, setShowSearch] = useState(false);

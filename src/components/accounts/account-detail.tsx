@@ -161,16 +161,27 @@ export function AccountDetail({
     : filteredSortedHoldings.slice(0, 20);
 
   async function saveBalance(newBalance: number, note?: string) {
-    await fetch(`/api/accounts/${account.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cashBalance: newBalance, note }),
-    });
-    setRefreshTrigger((prev) => prev + 1);
-    toast.success(t("accountDetail.balanceUpdated"));
-    startTransition(() => {
-      router.refresh();
-    });
+    try {
+      const res = await fetch(`/api/accounts/${account.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cashBalance: newBalance, note }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || t("accountDetail.updateFailed"));
+      }
+
+      setRefreshTrigger((prev) => prev + 1);
+      toast.success(t("accountDetail.balanceUpdated"));
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("accountDetail.updateFailed"));
+      throw error;
+    }
   }
 
   async function handleNameSave() {
