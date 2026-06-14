@@ -7,6 +7,8 @@ import { log, withTiming } from "@/lib/logger";
 
 export type RefreshRatesResult = {
   updated: number;
+  /** Persisted rows whose rate changed compared with the previous value. */
+  changed: number;
   /** True when the base currency's rates were fresh and no fetch happened. */
   skippedFresh: boolean;
   /** When the rates become stale again; null unless skippedFresh. */
@@ -27,6 +29,25 @@ const RATE_FETCH_TIMEOUT_MS = 1200;
 // staleness check costs no DB read (same warm-instance pattern as
 // lib/rate-limit.ts). Cold starts simply refresh once and re-prime it.
 const lastRateRefreshAt = new Map<string, number>();
+
+function decimalChangedAtDbScale(current: unknown, next: number): boolean {
+  const currentNumber = Number(current);
+  return (
+    !Number.isFinite(currentNumber) ||
+    !Number.isFinite(next) ||
+    currentNumber.toFixed(8) !== next.toFixed(8)
+  );
+}
+
+async function getPersistedFreshRefreshAt(baseCurrency: string): Promise<Date | null> {
+  const result = await prisma.exchangeRate.aggregate({
+    where: { fromCurrency: baseCurrency },
+    _max: { updatedAt: true },
+  });
+  const refreshedAt = result._max.updatedAt;
+  if (!refreshedAt || Date.now() - refreshedAt.getTime() >= FX_REFRESH_TTL_MS) return null;
+  return refreshedAt;
+}
 
 /**
  * Cache Components read of all exchange rates.
@@ -195,10 +216,26 @@ export async function refreshExchangeRates(
     log.info("rates.refresh.skipped_fresh", { base: baseCurrency });
     return {
       updated: 0,
+      changed: 0,
       skippedFresh: true,
       nextRefreshAt: new Date(last + FX_REFRESH_TTL_MS).toISOString(),
       fetchFailed: false,
     };
+  }
+
+  if (!opts.force) {
+    const persistedRefreshAt = await getPersistedFreshRefreshAt(baseCurrency);
+    if (persistedRefreshAt) {
+      lastRateRefreshAt.set(baseCurrency, persistedRefreshAt.getTime());
+      log.info("rates.refresh.skipped_fresh_db", { base: baseCurrency });
+      return {
+        updated: 0,
+        changed: 0,
+        skippedFresh: true,
+        nextRefreshAt: new Date(persistedRefreshAt.getTime() + FX_REFRESH_TTL_MS).toISOString(),
+        fetchFailed: false,
+      };
+    }
   }
 
   const rates = await fetchExchangeRates(baseCurrency);
@@ -207,7 +244,13 @@ export async function refreshExchangeRates(
   if (entries.length === 0) {
     // Genuine failure/timeout (lastRateRefreshAt deliberately NOT stamped,
     // so the next call retries immediately).
-    return { updated: 0, skippedFresh: false, nextRefreshAt: null, fetchFailed: true };
+    return {
+      updated: 0,
+      changed: 0,
+      skippedFresh: false,
+      nextRefreshAt: null,
+      fetchFailed: true,
+    };
   }
 
   const rows: [id: string, fromCurrency: string, toCurrency: string, rate: number][] = [];
@@ -226,6 +269,16 @@ export async function refreshExchangeRates(
   // (e.g. base=USD and base=TWD both upsert USD_TWD and TWD_USD), and
   // multi-row upserts taking the same locks in different orders can deadlock.
   rows.sort(([a], [b]) => (a < b ? -1 : 1));
+
+  const currentRows = await prisma.exchangeRate.findMany({
+    where: { id: { in: rows.map(([id]) => id) } },
+    select: { id: true, rate: true },
+  });
+  const currentById = new Map(currentRows.map((row) => [row.id, row]));
+  const changed = rows.reduce((count, [id, _fromCurrency, _toCurrency, rate]) => {
+    const current = currentById.get(id);
+    return current === undefined || decimalChangedAtDbScale(current.rate, rate) ? count + 1 : count;
+  }, 0);
 
   const params: unknown[] = [];
   const placeholders = rows.map(([id, fromCurrency, toCurrency, rate]) => {
@@ -246,5 +299,11 @@ export async function refreshExchangeRates(
   lastRateRefreshAt.set(baseCurrency, Date.now());
   // `updated` counts fetched (forward) rates only — it feeds the user-facing
   // "N rates updated" toast; counting derived inverse rows would double it.
-  return { updated: entries.length, skippedFresh: false, nextRefreshAt: null, fetchFailed: false };
+  return {
+    updated: entries.length,
+    changed,
+    skippedFresh: false,
+    nextRefreshAt: null,
+    fetchFailed: false,
+  };
 }

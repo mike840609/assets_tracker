@@ -40,7 +40,7 @@ export function DashboardActions({
           toast.success(t("refreshSuccess", { count: outcome.prices }));
           if (outcome.ratesFetchFailed) toast.warning(t("ratesRefreshFailed"));
           setClientRefreshAt(new Date().toISOString());
-          router.refresh();
+          if (outcome.changed > 0) router.refresh();
           break;
         case "fresh":
           if (outcome.ratesFetchFailed) {

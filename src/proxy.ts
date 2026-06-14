@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import authConfig from "./auth.config";
+import { AUTH_SOURCE_HEADER, AUTH_SOURCE_PROXY, AUTH_USER_ID_HEADER } from "@/lib/auth-headers";
 import { SESSION_COOKIE_NAMES } from "@/lib/auth-cookies";
 import { getClientIp } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
@@ -11,6 +12,29 @@ const PUBLIC_ROUTES = ["/login", "/privacy", "/terms"];
 
 function hasSessionCookie(req: NextRequest): boolean {
   return SESSION_COOKIE_NAMES.some((name) => req.cookies.has(name));
+}
+
+function requestHeadersForApp(req: NextRequest, userId?: string): Headers {
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.delete(AUTH_USER_ID_HEADER);
+  requestHeaders.delete(AUTH_SOURCE_HEADER);
+
+  if (userId) {
+    requestHeaders.set(AUTH_USER_ID_HEADER, userId);
+    requestHeaders.set(AUTH_SOURCE_HEADER, AUTH_SOURCE_PROXY);
+  }
+
+  return requestHeaders;
+}
+
+function nextResponse(req: NextRequest, userId?: string): NextResponse {
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeadersForApp(req, userId),
+    },
+  });
+  setLocaleCookie(req, response);
+  return response;
 }
 
 // ---------------------------------------------------------------------------
@@ -49,20 +73,18 @@ function _authRateLimit(request: Request): Response | null {
 }
 // ---------------------------------------------------------------------------
 
-// On first visit (no locale cookie), detect from Accept-Language and set cookie
-function localeCookieResponse(req: NextRequest): NextResponse | undefined {
+// On first visit (no locale cookie), detect from Accept-Language and set cookie.
+function setLocaleCookie(req: NextRequest, response: NextResponse): void {
   const localeCookie = req.cookies.get("NEXT_LOCALE")?.value;
-  if (localeCookie) return undefined;
+  if (localeCookie) return;
 
   const acceptLanguage = req.headers.get("accept-language") ?? "";
   const locale = acceptLanguage.toLowerCase().includes("zh") ? "zh-TW" : "en-US";
-  const response = NextResponse.next();
   response.cookies.set("NEXT_LOCALE", locale, {
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
     sameSite: "lax",
   });
-  return response;
 }
 
 // Slow path: a session cookie is present, so pay the JWT decode to validate it.
@@ -82,7 +104,7 @@ const authMiddleware = auth((req) => {
     return Response.redirect(newUrl);
   }
 
-  return localeCookieResponse(req);
+  return nextResponse(req, req.auth?.user?.id);
 });
 
 export default function middleware(req: NextRequest, event: NextFetchEvent) {
@@ -100,7 +122,7 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
     if (!PUBLIC_ROUTES.includes(req.nextUrl.pathname)) {
       return Response.redirect(new URL("/login", req.nextUrl.origin));
     }
-    return localeCookieResponse(req);
+    return nextResponse(req);
   }
 
   // NextAuth types the wrapped handler for route-handler contexts too, so the

@@ -769,15 +769,18 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
         return;
       }
       if (!res.ok) throw new Error("refresh failed");
-      const { data }: { data: { updated: number; skippedFresh?: number } } = await res.json();
+      const { data }: { data: { updated: number; changed?: number; skippedFresh?: number } } =
+        await res.json();
       startCooldown(Math.ceil(CLIENT_REFRESH_COOLDOWN_MS / 1000));
       if (data.updated === 0 && (data.skippedFresh ?? 0) > 0) {
         toast.info(t("alreadyFresh"));
         return;
       }
       toast.success(t("refreshSuccess", { count: data.updated }));
-      window.dispatchEvent(new CustomEvent("prices:refreshed"));
-      startTransition(() => router.refresh());
+      if ((data.changed ?? data.updated) > 0) {
+        window.dispatchEvent(new CustomEvent("prices:refreshed"));
+        startTransition(() => router.refresh());
+      }
     } catch {
       toast.error(t("refreshFailed"));
     } finally {

@@ -186,7 +186,7 @@ export async function refreshTrackedStockPrices(userId: string) {
   });
   const result = await refreshPricesForStockSymbols(stocks.map((stock) => stock.symbol));
   // Skip the cache bust when nothing changed (e.g. everything was fresh).
-  if (result.updated > 0) invalidateStockWatchCaches(userId);
+  if (result.changed > 0) invalidateStockWatchCaches(userId);
   return result;
 }
 

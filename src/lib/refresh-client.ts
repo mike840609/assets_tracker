@@ -15,7 +15,7 @@ import { CLIENT_REFRESH_COOLDOWN_MS } from "@/lib/refresh-policy";
 export type RefreshOutcome =
   // `ratesFetchFailed` marks a degraded success: prices refreshed (or were
   // fresh) but the external FX fetch failed, so conversions may use stale rates.
-  | { status: "updated"; prices: number; rates: number; ratesFetchFailed: boolean }
+  | { status: "updated"; prices: number; rates: number; changed: number; ratesFetchFailed: boolean }
   | { status: "fresh"; retryAfterSeconds: number; ratesFetchFailed: boolean }
   | { status: "cooldown"; retryAfterSeconds: number }
   | { status: "error" };
@@ -43,6 +43,7 @@ function parseRetryAfterSeconds(res: Response): number {
 
 type RefreshPayload = {
   updated?: number;
+  changed?: number;
   skippedFresh?: number | boolean;
   retryAfterSeconds?: number | null;
   fetchFailed?: boolean;
@@ -74,6 +75,7 @@ export async function refreshMarketData(): Promise<RefreshOutcome> {
 
     const pricesUpdated = priceData.updated ?? 0;
     const ratesUpdated = ratesData.updated ?? 0;
+    const changed = (priceData.changed ?? pricesUpdated) + (ratesData.changed ?? ratesUpdated);
     const anySkipped = Boolean(priceData.skippedFresh) || Boolean(ratesData.skippedFresh);
     const ratesFetchFailed = Boolean(ratesData.fetchFailed);
 
@@ -92,7 +94,13 @@ export async function refreshMarketData(): Promise<RefreshOutcome> {
     }
 
     window.dispatchEvent(new CustomEvent("prices:refreshed"));
-    return { status: "updated", prices: pricesUpdated, rates: ratesUpdated, ratesFetchFailed };
+    return {
+      status: "updated",
+      prices: pricesUpdated,
+      rates: ratesUpdated,
+      changed,
+      ratesFetchFailed,
+    };
   } catch {
     return { status: "error" };
   }

@@ -43,6 +43,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
   ]);
 
   const ratesUpdated = rateResults.reduce((sum, r) => sum + r.updated, 0);
+  const ratesChanged = rateResults.reduce((sum, r) => sum + r.changed, 0);
   const ratesSkippedFresh = rateResults.filter((r) => r.skippedFresh).length;
   // Any base whose external fetch failed (vs. skipped-fresh) means the user
   // may be looking at stale conversions — surface it so the client can warn.
@@ -62,8 +63,8 @@ export const POST = withAuth(async (request, _ctx, userId) => {
   // src/app/api/accounts/route.ts: per-user tags expire immediately so this
   // user's next read is fresh; global tags (shared by all users) revalidate
   // with "max" (stale-while-revalidate) to avoid cross-user blocking reads.
-  const pricesDirty = priceResult.updated > 0;
-  const ratesDirty = ratesUpdated > 0;
+  const pricesDirty = priceResult.changed > 0;
+  const ratesDirty = ratesChanged > 0;
   if (pricesDirty) {
     revalidateTag("prices", "max");
     revalidateTag("prices:crypto", "max");
@@ -82,11 +83,13 @@ export const POST = withAuth(async (request, _ctx, userId) => {
   return ok({
     prices: {
       updated: priceResult.updated,
+      changed: priceResult.changed,
       skippedFresh: priceResult.skippedFresh,
       retryAfterSeconds: priceResult.retryAfterSeconds,
     },
     rates: {
       updated: ratesUpdated,
+      changed: ratesChanged,
       skippedFresh: ratesSkippedFresh,
       retryAfterSeconds: ratesRetryAfterSeconds,
       fetchFailed: ratesFetchFailed,
