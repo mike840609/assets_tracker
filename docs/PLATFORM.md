@@ -285,6 +285,15 @@ should all be closed within 14 days.
 
 _Author: planning pass on branch `20260517-optimize-vecel-fluid-cpu-usage`, 2026-05-17. Supersedes the earlier draft (`docs/codex_vercel_fluid_cpu_optimization_plan.md`), which was written before Vercel MCP runtime logs were inspected._
 
+> **2026-06-13 re-audit → see `docs/FLUID_CPU_PLAN_2026-06.md` (C1–C7).** Most of
+> the high-impact P-items below have shipped (P3, P4, P5, P8 ✅; P1 matcher
+> tightened; P2 firewall documented). A fresh MCP pull shows the bot-probe storm
+> is gone and request traffic is now ~0, so the remaining Active-CPU cost is
+> traffic-independent: the daily cron's unconditional cache invalidation (**P6,
+> still not done**), deploy-driven cold cache resets, and the `/api/health` probe.
+> The C-series doc re-prioritizes around that profile and is the current
+> system-of-record for this work.
+
 ### Context
 
 The project is on the Vercel **Hobby (Free)** plan. Monthly Fluid Function Active-CPU usage is approaching the included **4-hour** allowance, with little real human traffic. Goal: cut billed Active CPU by ≥50 % without UX regressions, so headroom returns before the next monthly window.
