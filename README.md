@@ -134,8 +134,8 @@ pnpm dev
 
 `setup:worktree`:
 
-- Copies `.env` and `.env.local` from the main worktree on first run (won't overwrite — delete in the worktree to refresh; set `ASSET_TRACKER_SKIP_ENV_COPY=1` to opt out).
-- Points pnpm's store at a shared location and runs `pnpm install --frozen-lockfile`. The `postinstall` (`prisma generate`) and `prepare` (`husky`) lifecycle scripts run automatically, so `src/generated/prisma/` and `.husky/_/` are always regenerated.
+- Copies `.env` and `.env.local` from the main worktree on first run (won't overwrite — delete in the worktree to refresh; set `ASSET_TRACKER_SKIP_ENV_COPY=1` to opt out). This env-copy is the only thing the script does that pnpm can't.
+- Runs `pnpm install --frozen-lockfile`. pnpm hardlinks `node_modules` from its shared global store (so packages are never duplicated across worktrees), and the `postinstall` (`prisma generate`) and `prepare` (`husky`) lifecycle scripts run automatically, so `src/generated/prisma/` and `.husky/_/` are always regenerated.
 - Pass `--prune` to garbage-collect unreferenced packages from the store (`pnpm setup:worktree -- --prune`).
 
 When the task is done:
@@ -146,7 +146,7 @@ git worktree remove ../asset_tracker-<task-name>
 ```
 
 > [!TIP]
-> The shared store defaults to `~/.cache/asset_tracker/pnpm-store`. In ephemeral sandboxes/containers where `$HOME` isn't persisted across sessions, point `ASSET_TRACKER_CACHE_ROOT` at a persistent volume. Hardlinks need the store and worktree on the same filesystem; if they differ, pnpm transparently falls back to copying (still correct, just less space-efficient).
+> pnpm uses one global store (default `~/.local/share/pnpm/store`) shared across all projects and worktrees, so dedup is automatic — no config needed for normal local dev. In ephemeral sandboxes/containers where `$HOME` isn't persisted across sessions, redirect the store to a persistent volume with pnpm's native setting, e.g. `export npm_config_store_dir=/persistent/pnpm-store` before installing (this is what `.codex/environments/environment_pnpm.toml` does, honoring `ASSET_TRACKER_CACHE_ROOT`). Hardlinks need the store and worktree on the same filesystem; if they differ, pnpm transparently falls back to copying (still correct, just less space-efficient).
 
 > [!NOTE]
 > Because each worktree now has its own real `node_modules`, you can run `pnpm add <pkg>` directly in a worktree — it updates `package.json` + `pnpm-lock.yaml` without affecting other worktrees.

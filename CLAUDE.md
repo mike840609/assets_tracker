@@ -66,12 +66,14 @@ pnpm test:e2e:report     # Open the last HTML report
 
 # Worktree / sandbox setup
 pnpm setup:worktree      # Copies .env / .env.local from the main worktree, then runs
-                         # `pnpm install --frozen-lockfile` against a shared pnpm store.
-                         # pnpm hardlinks node_modules from the store, so packages are never
-                         # duplicated across worktrees and each worktree has a real node_modules.
-                         # Store defaults to ~/.cache/asset_tracker/pnpm-store; override the root
-                         # with $ASSET_TRACKER_CACHE_ROOT. Set $ASSET_TRACKER_SKIP_ENV_COPY=1 to
-                         # skip the env-copy step; pass `-- --prune` to GC the store.
+                         # `pnpm install --frozen-lockfile`. pnpm hardlinks node_modules from
+                         # its shared global store, so packages are never duplicated across
+                         # worktrees and each worktree gets a real node_modules. Env-copy is the
+                         # only thing pnpm can't do itself; the store location is native pnpm
+                         # config (default global store locally; set $npm_config_store_dir to a
+                         # persistent path in ephemeral sandboxes — see .codex/environments).
+                         # Set $ASSET_TRACKER_SKIP_ENV_COPY=1 to skip env-copy; `-- --prune` GCs
+                         # the store.
 ```
 
 ## Pre-PR Checklist

@@ -1,23 +1,15 @@
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync } from "node:fs";
-import { homedir } from "node:os";
+import { copyFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
+// This script does the one thing pnpm can't do on its own for a fresh worktree:
+// copy the env files from the main worktree. Dependency dedup is handled natively
+// by pnpm's global content-addressable store (a single shared store hardlinks
+// node_modules across every worktree), and the store location is configured
+// natively too — pnpm's default global store locally, or `npm_config_store_dir`
+// / an `.npmrc` `store-dir` in ephemeral sandboxes (see .codex/environments).
+
 const ENV_FILES = [".env", ".env.local"];
-
-function cacheRoot() {
-  if (process.env.ASSET_TRACKER_CACHE_ROOT) return process.env.ASSET_TRACKER_CACHE_ROOT;
-  const xdg = process.env.XDG_CACHE_HOME || join(homedir(), ".cache");
-  return join(xdg, "asset_tracker");
-}
-
-// pnpm keeps a single global content-addressable store and builds each worktree's
-// node_modules from hardlinks into it, so packages are never duplicated on disk.
-// We point the store at a stable location so it survives across worktrees and
-// (when pointed at a persistent volume) across ephemeral sandbox sessions.
-function storeDir() {
-  return join(cacheRoot(), "pnpm-store");
-}
 
 function gitRevParse(arg) {
   const r = spawnSync("git", ["rev-parse", arg], { encoding: "utf8" });
@@ -60,23 +52,9 @@ function copyEnvFromMainWorktree() {
 }
 
 function installDeps() {
-  const store = storeDir();
-  // --frozen-lockfile mirrors CI/Vercel: install exactly what pnpm-lock.yaml pins.
-  // pnpm's `postinstall` (prisma generate) and `prepare` (husky) run automatically.
-  // Note: hardlinks require the store and worktree to share a filesystem; if
-  // $ASSET_TRACKER_CACHE_ROOT points at a different volume, pnpm transparently
-  // falls back to copying (still correct, just less space-efficient).
-  const result = spawnSync(
-    "pnpm",
-    ["install", "--frozen-lockfile", "--prefer-offline", "--store-dir", store],
-    { stdio: "inherit", shell: process.platform === "win32" },
-  );
-  if (result.error) throw result.error;
-  return result.status ?? 1;
-}
-
-function pruneStore() {
-  const result = spawnSync("pnpm", ["store", "prune", "--store-dir", storeDir()], {
+  // --frozen-lockfile mirrors CI/Vercel. pnpm hardlinks node_modules from the
+  // shared store, and runs `postinstall` (prisma generate) + `prepare` (husky).
+  const result = spawnSync("pnpm", ["install", "--frozen-lockfile", "--prefer-offline"], {
     stdio: "inherit",
     shell: process.platform === "win32",
   });
@@ -84,12 +62,20 @@ function pruneStore() {
   return result.status ?? 1;
 }
 
-mkdirSync(storeDir(), { recursive: true });
+function pruneStore() {
+  const result = spawnSync("pnpm", ["store", "prune"], {
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+  if (result.error) throw result.error;
+  return result.status ?? 1;
+}
 
-console.log(`[setup-worktree] pnpm store: ${storeDir()}`);
-console.log("[setup-worktree] Override the store root with $ASSET_TRACKER_CACHE_ROOT.");
 console.log(
-  "[setup-worktree] Skip env copy with $ASSET_TRACKER_SKIP_ENV_COPY=1; pass --prune to garbage-collect the store.",
+  "[setup-worktree] Copying env files from the main worktree, then running pnpm install.",
+);
+console.log(
+  "[setup-worktree] Skip env copy with $ASSET_TRACKER_SKIP_ENV_COPY=1; pass --prune to garbage-collect the pnpm store.",
 );
 
 copyEnvFromMainWorktree();
