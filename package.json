@@ -2,7 +2,7 @@
   "name": "asset_app",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@10.34.3",
+  "packageManager": "pnpm@11.6.0",
   "engines": {
     "node": "24.x"
   },
@@ -30,18 +30,6 @@
     "test:e2e:report": "playwright show-report",
     "db:up": "docker-compose up -d",
     "db:down": "docker-compose down"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@parcel/watcher",
-      "@prisma/engines",
-      "@sentry/cli",
-      "@swc/core",
-      "msw",
-      "prisma",
-      "sharp",
-      "unrs-resolver"
-    ]
   },
   "lint-staged": {
     "**/*.{ts,tsx,mjs,js}": [
