@@ -162,6 +162,19 @@ export function TransactionHistory({
     }
     return `type${txType.charAt(0) + txType.slice(1).toLowerCase()}` as Parameters<typeof t>[0];
   };
+  // On a liability the "good" direction is reducing debt, so flip the badge:
+  // a charge (DEPOSIT, debt up) is destructive and a payment (WITHDRAWAL, debt
+  // down) is neutral — the inverse of the asset mapping. (Amount text is
+  // uncolored; only the badge signals direction.)
+  const cashTypeVariant = (
+    txType: string,
+    isCash: boolean,
+  ): "default" | "secondary" | "destructive" => {
+    if (isCash && isLiability && (txType === "DEPOSIT" || txType === "WITHDRAWAL")) {
+      return txType === "DEPOSIT" ? "destructive" : "default";
+    }
+    return TYPE_VARIANTS[txType] ?? "secondary";
+  };
 
   // Dialog state
   const [editingTx, setEditingTx] = useState<SerializedTransaction | null>(null);
@@ -390,8 +403,8 @@ export function TransactionHistory({
               </p>
               <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
                 {items.map((tx, index) => {
-                  const typeVariant = TYPE_VARIANTS[tx.type] ?? "secondary";
                   const isCash = (tx as SerializedTransaction & { isCash?: boolean }).isCash;
+                  const typeVariant = cashTypeVariant(tx.type, Boolean(isCash));
                   const typeKey = cashTypeKey(tx.type, Boolean(isCash));
                   const typeLabel = t.has(typeKey) ? t(typeKey) : tx.type;
                   const symbol = isCash ? null : (tx.holding?.symbol ?? null);

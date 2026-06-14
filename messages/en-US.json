@@ -977,6 +977,7 @@
     "deleteFailed": "Failed to delete",
     "holdingDeleteFailed": "Failed to delete holding",
     "notePlaceholderDeposit": "Note (e.g. Deposit, Salary...)",
+    "notePlaceholderPayment": "Note (e.g. Payment, Charge...)",
     "notePlaceholderSalary": "Note (e.g. Salary, Rent...)",
     "editAccount": "Edit Account",
     "accountUpdated": "Account updated",

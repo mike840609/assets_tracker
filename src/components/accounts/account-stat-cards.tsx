@@ -43,9 +43,12 @@ export function AccountStatCards({
   // BROKERAGE / CRYPTO / OTHER: primary is total value (cash + holdings);
   // secondary breaks it into editable cash balance + holdings market value.
   const totalValue = account.cashBalance + totalHoldingsValue;
-  const notePlaceholder = isBrokerage
-    ? t("accountDetail.notePlaceholderDeposit")
-    : t("accountDetail.notePlaceholderSalary");
+  const notePlaceholder =
+    account.type === "LIABILITY"
+      ? t("accountDetail.notePlaceholderPayment")
+      : isBrokerage
+        ? t("accountDetail.notePlaceholderDeposit")
+        : t("accountDetail.notePlaceholderSalary");
   return (
     <section className="space-y-1">
       <p
