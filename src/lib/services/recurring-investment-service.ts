@@ -3,8 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { log } from "@/lib/logger";
 import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 import { computeDueOccurrences, utcDateOnly } from "./recurring-cash-service";
-import { getAllExchangeRates, resolveRate } from "./exchange-rate-service";
-import { getCachedPricesForSymbols, fetchStockPrices, fetchCryptoPrices } from "./price-service";
+import { resolveRate } from "./exchange-rate-service";
+import { fetchStockPrices, fetchCryptoPrices } from "./price-service";
 
 /**
  * Recurring investments (F6 — dollar-cost averaging).
@@ -20,16 +20,37 @@ import { getCachedPricesForSymbols, fetchStockPrices, fetchCryptoPrices } from "
  * *current* price, not the historical price of each occurrence day. Under
  * normal daily operation each occurrence is same-day, so this only affects
  * recovery after a cron outage.
+ *
+ * Price and FX are read DIRECTLY from the DB here (not via the cached
+ * `getCachedPricesForSymbols` / `getAllExchangeRates`): the cron writes fresh
+ * prices/rates just before this runs but only revalidates the `prices` /
+ * `exchange-rates` cache tags afterward, so the cached readers would return
+ * pre-refresh values and the buys would use stale price/FX.
  */
+
+/** Loads all exchange rates straight from the DB as a "FROM_TO" → rate map. */
+async function loadFreshRateMap(): Promise<Map<string, number>> {
+  const rows = await prisma.exchangeRate.findMany({
+    select: { fromCurrency: true, toCurrency: true, rate: true },
+  });
+  const map = new Map<string, number>();
+  for (const r of rows) map.set(`${r.fromCurrency}_${r.toCurrency}`, Number(r.rate));
+  return map;
+}
 
 /** Resolves a usable market price (value + currency) for the rule's symbol. */
 async function resolvePrice(
   symbol: string,
   assetType: string,
 ): Promise<{ price: number; currency: string } | null> {
-  const cached = await getCachedPricesForSymbols([symbol]);
-  if (cached.length > 0 && cached[0].price > 0) {
-    return { price: cached[0].price, currency: cached[0].currency };
+  // Direct read (see file header) so a freshly-refreshed price isn't masked by
+  // the still-stale `prices` cache during the cron run.
+  const cached = await prisma.priceCache.findUnique({
+    where: { symbol },
+    select: { price: true, currency: true },
+  });
+  if (cached && Number(cached.price) > 0) {
+    return { price: Number(cached.price), currency: cached.currency };
   }
   // Brand-new symbol with no holding yet won't be in PriceCache (the cron only
   // refreshes held symbols), so fetch + cache it here.
@@ -67,7 +88,7 @@ export async function materializeDueInvestments(
   });
   if (dueRules.length === 0) return { created: 0, rulesProcessed: 0 };
 
-  const rateMap = await getAllExchangeRates();
+  const rateMap = await loadFreshRateMap();
   let created = 0;
 
   for (const rule of dueRules) {
@@ -93,7 +114,19 @@ export async function materializeDueInvestments(
 
     // amount is in account currency; convert to the price's currency for shares.
     const accountCurrency = rule.account.currency;
-    const fxRate = resolveRate(rateMap, accountCurrency, priced.currency) ?? 1;
+    const fxRate = resolveRate(rateMap, accountCurrency, priced.currency);
+    if (fxRate === undefined) {
+      // Cross-currency rate is genuinely unresolvable (same-currency returns 1).
+      // Skip rather than silently assume 1, which would mint a wildly wrong
+      // share count and debit cash for a position that's off by the FX factor.
+      // nextRunDate is left untouched so it retries once the rate is warmed.
+      log.warn("cron.investment.skip_no_rate", {
+        ruleId: rule.id,
+        from: accountCurrency,
+        to: priced.currency,
+      });
+      continue;
+    }
     const amountInPriceCcy = new Decimal(rule.amount).times(fxRate);
     const sharesPerOccurrence = amountInPriceCcy.div(priced.price);
 

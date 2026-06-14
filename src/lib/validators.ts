@@ -226,7 +226,10 @@ export const updateRecurringCashTransactionSchema = z
 // Recurring investments (F6 — dollar-cost averaging). `amount` is the cash
 // invested per period (in the account's currency); shares are derived at
 // materialization time. symbol/name/assetType/holdingCurrency are resolved
-// client-side via the holding search before submit.
+// client-side via the holding search before submit. OPTION is excluded
+// (mirroring createHoldingSchema): an auto-created OPTION holding would lack
+// the OCC fields and be mis-valued by net-worth — options can only be added
+// via the dedicated OCC-deriving create path.
 export const createRecurringInvestmentSchema = z
   .object({
     symbol: z
@@ -235,7 +238,7 @@ export const createRecurringInvestmentSchema = z
       .max(32)
       .transform((s) => s.toUpperCase()),
     name: z.string().min(1, "Name is required").max(100),
-    assetType: z.enum(HOLDING_ASSET_TYPES),
+    assetType: z.enum(NON_OPTION_ASSET_TYPES),
     holdingCurrency: z.string().length(3).default("USD"),
     amount: positiveCashAmount,
     frequency: z.enum(RECURRING_FREQUENCIES),

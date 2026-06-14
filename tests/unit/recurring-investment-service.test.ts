@@ -16,14 +16,15 @@ vi.mock("@/lib/logger", () => ({
   log: { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} },
 }));
 
-// Keep resolveRate real (pure), override only the data loader.
+// Keep resolveRate real (pure); the service now reads rates straight from the
+// DB (prisma.exchangeRate.findMany), so no data-loader override is needed.
 vi.mock("@/lib/services/exchange-rate-service", async (importActual) => {
   const actual = await importActual<typeof import("@/lib/services/exchange-rate-service")>();
-  return { ...actual, getAllExchangeRates: vi.fn(async () => h.rates) };
+  return { ...actual };
 });
 
+// The service now reads PriceCache directly; fetch* are the new-symbol fallback.
 vi.mock("@/lib/services/price-service", () => ({
-  getCachedPricesForSymbols: vi.fn(async () => h.prices),
   fetchStockPrices: vi.fn(async () => new Map()),
   fetchCryptoPrices: vi.fn(async () => new Map()),
 }));
@@ -37,7 +38,21 @@ vi.mock("@/lib/prisma", () => ({
         return {};
       }),
     },
-    priceCache: { upsert: vi.fn(async () => ({})) },
+    exchangeRate: {
+      findMany: vi.fn(async () =>
+        [...h.rates].map(([key, rate]) => {
+          const [fromCurrency, toCurrency] = key.split("_");
+          return { fromCurrency, toCurrency, rate };
+        }),
+      ),
+    },
+    priceCache: {
+      findUnique: vi.fn(async (args: { where: { symbol: string } }) => {
+        const p = h.prices.find((x) => x.symbol === args.where.symbol);
+        return p ? { price: p.price, currency: p.currency } : null;
+      }),
+      upsert: vi.fn(async () => ({})),
+    },
     holding: {
       upsert: vi.fn(async (args: Record<string, unknown>) => {
         h.upserts.push(args);
@@ -162,6 +177,20 @@ describe("materializeDueInvestments", () => {
     h.dueRules = [rule()];
     const result = await materializeDueInvestments(d("2026-06-14"));
 
+    expect(result.created).toBe(0);
+    expect(h.createManyCalls).toHaveLength(0);
+    expect(h.accountUpdates).toHaveLength(0);
+    expect(h.ruleUpdates).toHaveLength(0); // nextRunDate untouched → retries next run
+  });
+
+  it("skips (no writes, no advance) when the cross-currency rate is unresolvable", async () => {
+    // TWD account buying a USD-priced stock, but the rate map is empty.
+    h.rates = new Map();
+    h.prices = [{ symbol: "NVDA", price: 200, currency: "USD" }];
+    h.dueRules = [rule({ amount: 30000, account: { currency: "TWD" } })];
+    const result = await materializeDueInvestments(d("2026-06-14"));
+
+    // Must NOT fall back to rate 1 (which would mint ~150 shares instead of ~5).
     expect(result.created).toBe(0);
     expect(h.createManyCalls).toHaveLength(0);
     expect(h.accountUpdates).toHaveLength(0);
