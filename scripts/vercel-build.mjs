@@ -56,4 +56,11 @@ if (shouldAttemptMigrate) {
   console.log("[build:vercel] Set FORCE_PRISMA_MIGRATE_DEPLOY=1 to force it.\n");
 }
 
+// Always (re)generate the Prisma client before building. We can't rely on the
+// `postinstall` hook here: Vercel restores node_modules from its build cache, so
+// `pnpm install --frozen-lockfile` reports "Already up to date" and skips
+// lifecycle scripts — and `src/generated/prisma/` is gitignored, so it isn't in
+// the cache. Generating explicitly keeps the build correct on cold and warm caches.
+run("prisma", ["generate"]);
+
 run("next", ["build"]);

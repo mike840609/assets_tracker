@@ -62,14 +62,14 @@ CRON_SECRET="your_secure_random_string"
 ### 3. Installation
 
 ```bash
-corepack enable     # pins the npm version declared in package.json
-npm install
-npx prisma generate
-npx prisma migrate deploy   # apply committed migrations to your database
+corepack enable     # pins the pnpm version declared in package.json
+pnpm install
+pnpm exec prisma generate
+pnpm exec prisma migrate deploy   # apply committed migrations to your database
 ```
 
 > [!NOTE]
-> For brand-new schema changes during local development, use `npx prisma migrate dev --name <description>` to generate a new migration file. `prisma db push` is still useful for quick prototyping but bypasses migration history; commit a migration before pushing the change.
+> For brand-new schema changes during local development, use `pnpm exec prisma migrate dev --name <description>` to generate a new migration file. `prisma db push` is still useful for quick prototyping but bypasses migration history; commit a migration before pushing the change.
 
 ### 4. Running Locally
 
@@ -78,47 +78,47 @@ We recommend using a local PostgreSQL database via Docker for development to avo
 1. **Start the local database:**
 
    ```bash
-   npm run db:up
+   pnpm db:up
    ```
 
 2. **Push the schema to your local DB:**
 
    ```bash
-   npx prisma db push
+   pnpm exec prisma db push
    ```
 
 3. **Start the development server:**
    ```bash
-   npm run dev
+   pnpm dev
    ```
 
 Open [http://localhost:3000](http://localhost:3000) to see your dashboard.
 
-When you are done developing for the day, you can stop the database with `npm run db:down`.
+When you are done developing for the day, you can stop the database with `pnpm db:down`.
 
 > [!TIP]
-> **Resetting the Local Database**: If you need to clear all data and rebuild the database schema from scratch, run `npx prisma db push --force-reset`. Avoid using `npx prisma migrate reset` locally, as the repository does not have a baseline migration file (it relies on `db push` for schema sync) and the command will fail.
+> **Resetting the Local Database**: If you need to clear all data and rebuild the database schema from scratch, run `pnpm exec prisma db push --force-reset`. Avoid using `pnpm exec prisma migrate reset` locally, as the repository does not have a baseline migration file (it relies on `db push` for schema sync) and the command will fail.
 
 ### 5. Tests
 
 **Unit tests (Vitest).** A fast, DB-free suite lives in `tests/unit/`, covering the pure service-layer logic — net-worth two-pass valuation, exchange-rate resolution, history normalize/dedupe, analysis aggregations, serializers, and Zod validators. Server-only/DB modules are exercised through their real public functions with their dependencies mocked, so no database or env vars are needed.
 
 ```bash
-npm run test:unit        # Run once (headless)
-npm run test:unit:watch  # Watch mode
+pnpm test:unit        # Run once (headless)
+pnpm test:unit:watch  # Watch mode
 ```
 
 **End-to-end tests (Playwright).** A suite lives in `tests/e2e/`. The global setup provisions a dedicated test user so runs don't pollute real data.
 
 ```bash
-npm run test:e2e         # Run headless
-npm run test:e2e:ui      # Open the Playwright UI runner
-npm run test:e2e:report  # Open the last HTML report
+pnpm test:e2e         # Run headless
+pnpm test:e2e:ui      # Open the Playwright UI runner
+pnpm test:e2e:report  # Open the last HTML report
 ```
 
 ## 🌳 Git Worktrees (parallel dev / AI agents)
 
-When you want to work on several branches in parallel — or hand a branch to an AI agent in an isolated sandbox — use git worktrees with the bundled setup script. Worktrees share both an **npm download cache** and a **hash-keyed `node_modules` cache**, so any worktree after the first one with a matching `package-lock.json` skips `npm ci` entirely.
+When you want to work on several branches in parallel — or hand a branch to an AI agent in an isolated sandbox — use git worktrees with the bundled setup script. pnpm keeps a single global **content-addressable store** and builds each worktree's `node_modules` from **hardlinks** into it, so every worktree gets a real `node_modules` while package files are never duplicated on disk and installs after the first are near-instant.
 
 ```bash
 # 1. Create a worktree for the branch you want to work on
@@ -126,18 +126,17 @@ git worktree add ../asset_tracker-<task-name> -b <branch-name>
 cd ../asset_tracker-<task-name>
 
 # 2. Install deps + auto-copy env files from the main worktree
-npm run setup:worktree
+pnpm setup:worktree
 
 # 3. Develop as usual
-npm run dev
+pnpm dev
 ```
 
 `setup:worktree`:
 
-- Copies `.env` and `.env.local` from the main worktree on first run (won't overwrite — delete in the worktree to refresh; set `ASSET_TRACKER_SKIP_ENV_COPY=1` to opt out).
-- Hashes `package-lock.json` + `prisma/schema.prisma` and reuses a cached `node_modules` symlink when the hash matches; only runs a real `npm ci` on cache miss.
-- Runs `prisma generate` if the local `src/generated/prisma/` is missing, and re-initializes `.husky/_/` if missing (both are skipped on cache hit since `npm ci` doesn't run).
-- Pass `--prune` to evict cache buckets that don't match the current hash (`npm run setup:worktree -- --prune`).
+- Copies `.env` and `.env.local` from the main worktree on first run (won't overwrite — delete in the worktree to refresh; set `ASSET_TRACKER_SKIP_ENV_COPY=1` to opt out). This env-copy is the only thing the script does that pnpm can't.
+- Runs `pnpm install --frozen-lockfile`. pnpm hardlinks `node_modules` from its shared global store (so packages are never duplicated across worktrees), and the `postinstall` (`prisma generate`) and `prepare` (`husky`) lifecycle scripts run automatically, so `src/generated/prisma/` and `.husky/_/` are always regenerated.
+- Pass `--prune` to garbage-collect unreferenced packages from the store (`pnpm setup:worktree -- --prune`).
 
 When the task is done:
 
@@ -147,10 +146,80 @@ git worktree remove ../asset_tracker-<task-name>
 ```
 
 > [!TIP]
-> Cache roots default to `~/.cache/asset_tracker/{npm,modules}`. In ephemeral sandboxes/containers where `$HOME` isn't persisted across sessions, point `ASSET_TRACKER_CACHE_ROOT` (or the narrower `ASSET_TRACKER_NPM_CACHE`) at a persistent volume.
+> pnpm uses one global store (default `~/.local/share/pnpm/store`) shared across all projects and worktrees, so dedup is automatic — no config needed for normal local dev. In ephemeral sandboxes/containers where `$HOME` isn't persisted across sessions, redirect the store to a persistent volume with pnpm's native setting, e.g. `export npm_config_store_dir=/persistent/pnpm-store` before installing (this is what `.codex/environments/environment_pnpm.toml` does, honoring `ASSET_TRACKER_CACHE_ROOT`). Hardlinks need the store and worktree on the same filesystem; if they differ, pnpm transparently falls back to copying (still correct, just less space-efficient).
 
-> [!WARNING]
-> A worktree's `node_modules` is a **symlink into the shared cache**. Don't run `npm install <pkg>` directly in a worktree — that mutates the cache and contaminates other worktrees. Instead, edit `package.json` + `package-lock.json` (or use a temporary `node_modules` outside the cache), then re-run `npm run setup:worktree` to populate a fresh hash bucket.
+> [!NOTE]
+> Because each worktree now has its own real `node_modules`, you can run `pnpm add <pkg>` directly in a worktree — it updates `package.json` + `pnpm-lock.yaml` without affecting other worktrees.
+
+## ✅ Verifying Locally
+
+Steps to validate a fresh checkout end-to-end — these mirror what CI and Vercel run.
+
+**1. Activate the pinned pnpm**
+
+```bash
+corepack enable
+pnpm --version          # should print the version pinned in package.json (pnpm 11)
+```
+
+> If you still have a `node_modules` from an older npm setup, pnpm may ask to purge it once. Let it (`CI=true pnpm install` auto-confirms in non-interactive shells).
+
+**2. Install + the CI check suite (no database needed)**
+
+```bash
+pnpm install --frozen-lockfile   # hardlinks from the shared store; runs prisma generate + husky
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+```
+
+**3. Production build**
+
+```bash
+pnpm build                       # uses your .env
+```
+
+No `.env`? Use the CI placeholders just to confirm it compiles:
+
+```bash
+DATABASE_URL="postgresql://ci:ci@localhost:5432/ci" \
+AUTH_SECRET=x AUTH_GOOGLE_ID=x AUTH_GOOGLE_SECRET=x CRON_SECRET=x \
+pnpm build
+```
+
+**4. Worktree flow (env-copy + install)**
+
+```bash
+git worktree add ../asset_tracker-pnpm-test -b tmp/pnpm-check
+cd ../asset_tracker-pnpm-test
+pnpm setup:worktree              # copies .env/.env.local from main, then pnpm install
+ls -la node_modules              # a real directory (hardlinked from the store), not a symlink
+cd ../asset_tracker
+git worktree remove ../asset_tracker-pnpm-test
+git branch -D tmp/pnpm-check
+```
+
+**5. (Optional) Inspect the shared store**
+
+```bash
+pnpm store path                  # global store location (default ~/.local/share/pnpm/store)
+pnpm store status
+```
+
+Every worktree's `node_modules` hardlinks into this one store, so package files are stored once.
+
+**6. (Optional) Run the app**
+
+```bash
+pnpm db:up
+pnpm exec prisma db push
+pnpm dev                         # http://localhost:3000
+pnpm db:down                     # when done
+```
+
+> [!NOTE]
+> `.nvmrc` pins Node 24. On a different version pnpm prints an `Unsupported engine` warning — harmless; run `nvm use` to match.
 
 ## 🔁 GitHub Actions policy (to control free-plan minutes)
 
@@ -184,8 +253,8 @@ To enable automation, deploy to Vercel and set all environment variables in your
 Vercel preview deployments use a **separate Neon branch** so they never touch production data:
 
 - Set `DATABASE_URL` with two scopes in Vercel → Settings → Environment Variables: one for **Production** (prod Neon branch) and one for **Preview** (a dedicated `preview` Neon branch). If your `DATABASE_URL` is managed by the Neon-Vercel integration, configure the per-environment branch mapping inside the integration UI instead.
-- The Vercel build runs `npm run build:vercel`, which runs `prisma migrate deploy` followed by `next build`. The migrate step is skipped when no files under `prisma/migrations/` changed since `VERCEL_GIT_PREVIOUS_SHA` (set `FORCE_PRISMA_MIGRATE_DEPLOY=1` to override; `SKIP_PRISMA_MIGRATE_DEPLOY=1` skips it unconditionally).
-- CI / local `npm run build` is plain `next build` and does **not** require a database.
+- The Vercel build runs `pnpm run build:vercel`, which runs `prisma migrate deploy` followed by `next build`. The migrate step is skipped when no files under `prisma/migrations/` changed since `VERCEL_GIT_PREVIOUS_SHA` (set `FORCE_PRISMA_MIGRATE_DEPLOY=1` to override; `SKIP_PRISMA_MIGRATE_DEPLOY=1` skips it unconditionally).
+- CI / local `pnpm build` is plain `next build` and does **not** require a database.
 
 ## 💹 Net Worth History & Currency Normalization
 

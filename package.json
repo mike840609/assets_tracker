@@ -2,7 +2,7 @@
   "name": "asset_app",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "npm@10.9.7",
+  "packageManager": "pnpm@11.6.0",
   "engines": {
     "node": "24.x"
   },
@@ -19,7 +19,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build",
     "postinstall": "prisma generate",
     "setup:worktree": "node scripts/setup-worktree.mjs",
     "prepare": "husky",
@@ -85,6 +85,7 @@
     "@playwright/test": "^1.52.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",

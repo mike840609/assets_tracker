@@ -42,7 +42,7 @@ export default defineConfig({
     ? {}
     : {
         webServer: {
-          command: "npm run build && npm run start",
+          command: "pnpm build && pnpm start",
           url: BASE_URL,
           reuseExistingServer: false,
           env: {

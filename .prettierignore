@@ -9,6 +9,5 @@ coverage
 src/generated
 prisma/migrations
 *.lock
-package-lock.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
