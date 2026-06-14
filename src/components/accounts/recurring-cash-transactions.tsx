@@ -38,16 +38,25 @@ function todayDateOnly(): string {
 export function RecurringCashTransactions({
   accountId,
   currency,
+  accountType = "ASSET",
   refreshTrigger,
   onChange,
 }: {
   accountId: string;
   currency: string;
+  accountType?: "ASSET" | "LIABILITY";
   refreshTrigger?: number;
   onChange?: () => void;
 }) {
   const t = useTranslations("recurringCash");
   const tCommon = useTranslations("common");
+
+  // For a liability the balance is debt owed, so DEPOSIT (balance up) reads as a
+  // "charge/borrow" and WITHDRAWAL (balance down) as a "payment". Same enum +
+  // sign — only the labels differ.
+  const isLiability = accountType === "LIABILITY";
+  const depositKey = isLiability ? "typeDepositLiability" : "typeDeposit";
+  const withdrawalKey = isLiability ? "typeWithdrawalLiability" : "typeWithdrawal";
 
   const [rules, setRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -278,13 +287,11 @@ export function RecurringCashTransactions({
                 <Label htmlFor="rc-type">{t("labelType")}</Label>
                 <Select value={type} onValueChange={(v) => v && setType(v as typeof type)}>
                   <SelectTrigger id="rc-type" className="w-full">
-                    <SelectValue>
-                      {t(type === "DEPOSIT" ? "typeDeposit" : "typeWithdrawal")}
-                    </SelectValue>
+                    <SelectValue>{t(type === "DEPOSIT" ? depositKey : withdrawalKey)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="DEPOSIT">{t("typeDeposit")}</SelectItem>
-                    <SelectItem value="WITHDRAWAL">{t("typeWithdrawal")}</SelectItem>
+                    <SelectItem value="DEPOSIT">{t(depositKey)}</SelectItem>
+                    <SelectItem value="WITHDRAWAL">{t(withdrawalKey)}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

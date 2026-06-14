@@ -17,16 +17,22 @@ export function RecurringSection({
   accountId,
   currency,
   isBank,
+  accountType,
   refreshTrigger,
   onChange,
 }: {
   accountId: string;
   currency: string;
   isBank: boolean;
+  accountType: "ASSET" | "LIABILITY";
   refreshTrigger?: number;
   onChange?: () => void;
 }) {
   const t = useTranslations("recurring");
+  // DCA only makes sense for asset accounts that hold securities — never for a
+  // bank (cash-only) account, and never for a liability (you don't buy stocks
+  // from a loan/credit-card account).
+  const showInvestments = !isBank && accountType === "ASSET";
 
   return (
     <Card>
@@ -38,7 +44,7 @@ export function RecurringSection({
         <CardDescription>{t("subtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {!isBank && (
+        {showInvestments && (
           <>
             <RecurringInvestments
               accountId={accountId}
@@ -52,6 +58,7 @@ export function RecurringSection({
         <RecurringCashTransactions
           accountId={accountId}
           currency={currency}
+          accountType={accountType}
           refreshTrigger={refreshTrigger}
           onChange={onChange}
         />

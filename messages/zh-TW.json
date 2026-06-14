@@ -1244,6 +1244,8 @@
     "labelNote": "備註",
     "typeDeposit": "存款",
     "typeWithdrawal": "提款",
+    "typeDepositLiability": "借入",
+    "typeWithdrawalLiability": "還款",
     "freqWEEKLY": "每週",
     "freqBIWEEKLY": "每兩週",
     "freqMONTHLY": "每月",

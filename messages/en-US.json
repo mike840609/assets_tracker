@@ -1244,6 +1244,8 @@
     "labelNote": "Note",
     "typeDeposit": "Deposit",
     "typeWithdrawal": "Withdrawal",
+    "typeDepositLiability": "Charge",
+    "typeWithdrawalLiability": "Payment",
     "freqWEEKLY": "Weekly",
     "freqBIWEEKLY": "Every 2 weeks",
     "freqMONTHLY": "Monthly",

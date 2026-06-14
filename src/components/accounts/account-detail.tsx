@@ -532,6 +532,7 @@ export function AccountDetail({
           accountId={account.id}
           currency={account.currency}
           isBank={isBank}
+          accountType={account.type}
           refreshTrigger={refreshTrigger}
           onChange={() => setRefreshTrigger((prev) => prev + 1)}
         />
