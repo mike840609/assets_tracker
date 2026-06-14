@@ -14,9 +14,9 @@ least 1h of headroom, without changing the user-facing refresh cadence or
 upgrading plans.
 
 Fluid Active CPU is CPU time spent executing code, not wall-clock time waiting on
-external HTTP or database I/O. The highest-value levers are reducing unused RSC
-renders, avoiding duplicate auth work, and preventing cache invalidations that
-force cold recomputation.
+external HTTP or database I/O. The highest-value levers in this branch are
+avoiding duplicate auth work and preventing cache invalidations that force cold
+recomputation.
 
 ## Current Evidence
 
@@ -57,22 +57,7 @@ Additional findings:
 
 ## Implemented Changes
 
-### 1. Reduce unused page renders from navigation prefetch
-
-- Authenticated desktop sidebar links use `prefetch={false}` to disable automatic
-  production viewport prefetch.
-- Intent prefetch stays enabled only for lighter routes: `/`, `/accounts`,
-  `/goals`, `/stocks`, and `/settings`.
-- Heavier routes skip intent prefetch: `/analysis`, `/projections`, and
-  `/history`.
-- Focus-triggered prefetch was removed so keyboard navigation does not warm every
-  route.
-- Mobile touch prefetch follows the same light-route allow-list.
-
-Expected effect: fewer unused Vercel Function renders and fewer Proxy executions
-from sidebar links that were visible but never clicked.
-
-### 2. Avoid duplicate page-layer JWT decode
+### 1. Avoid duplicate page-layer JWT decode
 
 - Proxy validates the session cookie once through NextAuth.
 - After validation, Proxy overwrites internal auth headers and forwards only the
@@ -87,7 +72,7 @@ from sidebar links that were visible but never clicked.
 Expected effect: authenticated page renders skip the second JWT decode while
 preserving the database existence check and stale-session fallback.
 
-### 3. Gate market-data cache invalidation on actual value changes
+### 2. Gate market-data cache invalidation on actual value changes
 
 - Price refresh results report both `updated` rows and `changed` rows.
 - Exchange-rate refresh results report both `updated` forward rates and
@@ -103,7 +88,7 @@ preserving the database existence check and stale-session fallback.
 Expected effect: daily cron and manual refreshes no longer force cached reads to
 recompute when external providers return the same values.
 
-### 4. Add DB-backed FX freshness for cold Fluid instances
+### 3. Add DB-backed FX freshness for cold Fluid instances
 
 - Manual FX refresh first checks the in-process freshness map.
 - On cold instances, it now checks the latest persisted `ExchangeRate.updatedAt`
@@ -142,11 +127,6 @@ npm run test:unit
 
 Manual checks:
 
-- Load the authenticated dashboard in production mode and confirm the sidebar
-  does not prefetch every authenticated route on first paint.
-- Hover light sidebar routes and confirm only the hovered route is prefetched.
-- Click `/analysis`, `/projections`, and `/history` and confirm navigation still
-  works.
 - Run the snapshot cron twice with unchanged market data. The second run should
   log `cron.revalidate.gate` with `pricesChanged: 0` and `ratesChanged: 0`, and
   should skip broad market-data revalidation.
@@ -165,8 +145,6 @@ Success criteria:
 - Do not add a keep-warm ping. It spends Fluid Active CPU without user value.
 - Do not move functions away from `sin1` unless the database region changes.
 - Do not trust client-supplied auth headers in route handlers or Server Actions.
-- Do not re-enable broad automatic prefetch for authenticated dashboard
-  navigation without new CPU evidence that the cost is acceptable.
 - Do not switch to database sessions as a CPU fix; it would add per-render DB
   work.
 - Do not upgrade plans as the first fix; reduce avoidable CPU before buying more

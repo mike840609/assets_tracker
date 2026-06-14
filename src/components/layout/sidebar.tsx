@@ -104,19 +104,14 @@ export function Sidebar({
   }, [toggleCollapsed]);
 
   const navItems = [
-    { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard, prefetchOnIntent: true },
-    { label: t("nav.accounts"), href: "/accounts", icon: Copy, prefetchOnIntent: true },
-    { label: t("nav.goals"), href: "/goals", icon: Target, prefetchOnIntent: true },
-    { label: t("nav.stocks"), href: "/stocks", icon: ChartCandlestick, prefetchOnIntent: true },
-    { label: t("nav.analysis"), href: "/analysis", icon: BarChart3, prefetchOnIntent: false },
-    {
-      label: t("nav.projections"),
-      href: "/projections",
-      icon: TrendingUp,
-      prefetchOnIntent: false,
-    },
-    { label: t("nav.history"), href: "/history", icon: History, prefetchOnIntent: false },
-    { label: t("nav.settings"), href: "/settings", icon: Settings, prefetchOnIntent: true },
+    { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
+    { label: t("nav.accounts"), href: "/accounts", icon: Copy },
+    { label: t("nav.goals"), href: "/goals", icon: Target },
+    { label: t("nav.stocks"), href: "/stocks", icon: ChartCandlestick },
+    { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
+    { label: t("nav.projections"), href: "/projections", icon: TrendingUp },
+    { label: t("nav.history"), href: "/history", icon: History },
+    { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];
 
   return (
@@ -172,10 +167,8 @@ export function Sidebar({
             <Link
               key={item.href}
               href={item.href}
-              prefetch={false}
-              onMouseEnter={() => {
-                if (item.prefetchOnIntent) router.prefetch(item.href);
-              }}
+              onMouseEnter={() => router.prefetch(item.href)}
+              onFocus={() => router.prefetch(item.href)}
               title={collapsed ? item.label : undefined}
               className={cn(
                 "group relative flex items-center rounded-lg py-2.5 text-sm font-medium transition-all motion-fast",
@@ -265,11 +258,11 @@ export function MobileNav() {
   const [optimisticHref, setOptimisticHref] = useState<string | null>(null);
 
   const navItems = [
-    { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard, prefetchOnIntent: true },
-    { label: t("nav.accounts"), href: "/accounts", icon: Copy, prefetchOnIntent: true },
-    { label: t("nav.plan"), href: "/goals", icon: Target, prefetchOnIntent: true },
-    { label: t("nav.analysis"), href: "/analysis", icon: BarChart3, prefetchOnIntent: false },
-    { label: t("nav.settings"), href: "/settings", icon: Settings, prefetchOnIntent: true },
+    { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
+    { label: t("nav.accounts"), href: "/accounts", icon: Copy },
+    { label: t("nav.plan"), href: "/goals", icon: Target },
+    { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
+    { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];
 
   return (
@@ -293,7 +286,7 @@ export function MobileNav() {
             key={item.href}
             type="button"
             onTouchStart={() => {
-              if (!isActive && item.prefetchOnIntent) router.prefetch(item.href);
+              if (!isActive) router.prefetch(item.href);
             }}
             onClick={() => {
               if (isActive) return;
