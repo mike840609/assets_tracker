@@ -151,6 +151,76 @@ git worktree remove ../asset_tracker-<task-name>
 > [!NOTE]
 > Because each worktree now has its own real `node_modules`, you can run `pnpm add <pkg>` directly in a worktree — it updates `package.json` + `pnpm-lock.yaml` without affecting other worktrees.
 
+## ✅ Verifying Locally
+
+Steps to validate a fresh checkout end-to-end — these mirror what CI and Vercel run.
+
+**1. Activate the pinned pnpm**
+
+```bash
+corepack enable
+pnpm --version          # should print the version pinned in package.json (pnpm 11)
+```
+
+> If you still have a `node_modules` from an older npm setup, pnpm may ask to purge it once. Let it (`CI=true pnpm install` auto-confirms in non-interactive shells).
+
+**2. Install + the CI check suite (no database needed)**
+
+```bash
+pnpm install --frozen-lockfile   # hardlinks from the shared store; runs prisma generate + husky
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+```
+
+**3. Production build**
+
+```bash
+pnpm build                       # uses your .env
+```
+
+No `.env`? Use the CI placeholders just to confirm it compiles:
+
+```bash
+DATABASE_URL="postgresql://ci:ci@localhost:5432/ci" \
+AUTH_SECRET=x AUTH_GOOGLE_ID=x AUTH_GOOGLE_SECRET=x CRON_SECRET=x \
+pnpm build
+```
+
+**4. Worktree flow (env-copy + install)**
+
+```bash
+git worktree add ../asset_tracker-pnpm-test -b tmp/pnpm-check
+cd ../asset_tracker-pnpm-test
+pnpm setup:worktree              # copies .env/.env.local from main, then pnpm install
+ls -la node_modules              # a real directory (hardlinked from the store), not a symlink
+cd ../asset_tracker
+git worktree remove ../asset_tracker-pnpm-test
+git branch -D tmp/pnpm-check
+```
+
+**5. (Optional) Inspect the shared store**
+
+```bash
+pnpm store path                  # global store location (default ~/.local/share/pnpm/store)
+pnpm store status
+```
+
+Every worktree's `node_modules` hardlinks into this one store, so package files are stored once.
+
+**6. (Optional) Run the app**
+
+```bash
+pnpm db:up
+pnpm exec prisma db push
+pnpm dev                         # http://localhost:3000
+pnpm db:down                     # when done
+```
+
+> [!NOTE]
+> `.nvmrc` pins Node 24. On a different version pnpm prints an `Unsupported engine` warning — harmless; run `nvm use` to match.
+
 ## 🔁 GitHub Actions policy (to control free-plan minutes)
 
 This repository uses a **light-vs-heavy CI split**:
