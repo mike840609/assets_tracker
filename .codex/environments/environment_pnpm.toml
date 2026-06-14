@@ -1,0 +1,10 @@
+# pnpm variant of the Codex sandbox bootstrap (hand-authored).
+version = 1
+name = "asset_tracker"
+
+[setup]
+script = '''
+cd "$CODEX_WORKTREE_PATH"
+corepack enable
+pnpm setup:worktree
+'''
