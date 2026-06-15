@@ -148,27 +148,34 @@ function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T
 /**
  * Fetch exchange rates from external APIs with a timeout guard.
  * Returns {} if all sources fail or timeout.
+ *
+ * Exported for unit testing; production callers use `refreshExchangeRates`.
  */
-async function fetchExchangeRates(base: string): Promise<Record<string, number>> {
+export async function fetchExchangeRates(base: string): Promise<Record<string, number>> {
   const doFetch = async (): Promise<Record<string, number>> => {
-    // Try frankfurter.app first (ECB data, reliable but limited currencies)
+    // Primary: Frankfurter (ECB data, reliable but limited to ~30 major
+    // currencies). A 404 here just means `base` isn't an ECB currency
+    // (e.g. TWD) — an expected miss we recover from via the fallback below.
+    // It's logged at warn level (breadcrumb only, not a captured Sentry
+    // error) precisely because the fallback covers it; only a total failure
+    // of BOTH sources is escalated to log.error further down.
+    const frankfurterStart = Date.now();
     try {
-      const rates = await withTiming(
-        "rates.frankfurter.fetch",
-        async () => {
-          const res = await fetch(`https://api.frankfurter.app/latest?from=${base}`, {
-            next: { revalidate: 3600 },
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          if (!data.rates || Object.keys(data.rates).length === 0) throw new Error("empty rates");
-          return data.rates as Record<string, number>;
-        },
-        { base },
-      );
-      return rates;
-    } catch {
-      // Fall through to backup
+      const res = await fetch(`https://api.frankfurter.dev/v1/latest?base=${base}`, {
+        next: { revalidate: 3600 },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.rates || Object.keys(data.rates).length === 0) throw new Error("empty rates");
+      log.info("rates.frankfurter.fetch", { base, durationMs: Date.now() - frankfurterStart });
+      return data.rates as Record<string, number>;
+    } catch (error) {
+      // Expected for non-ECB bases; fall through to backup.
+      log.warn("rates.frankfurter.fallback", {
+        base,
+        durationMs: Date.now() - frankfurterStart,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
 
     // Fallback: open.er-api.com (supports 150+ currencies including TWD)
