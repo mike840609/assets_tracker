@@ -60,6 +60,10 @@ const QuickAddHolding = dynamic(() => import("./quick-add-holding").then((m) => 
 
 const HIDDEN = "***";
 
+// Cap the per-row entrance stagger so a long mobile list never grows a slow tail:
+// rows past this index all share the final delay (8 × 45ms = 360ms) and land together.
+const STAGGER_CAP = 8;
+
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   BANK: Landmark,
   BROKERAGE: BriefcaseBusiness,
@@ -652,10 +656,11 @@ export function AccountsList({
                     {t("accountsList.assets")}
                   </h3>
                   <div className="rounded-xl border overflow-hidden divide-y divide-border/60">
-                    {assets.map((account) => (
+                    {assets.map((account, index) => (
                       <MobileAccountRow
                         key={account.id}
                         account={account}
+                        index={index}
                         priceMap={priceMap}
                         ratesMap={ratesMap}
                         baseCurrency={baseCurrency}
@@ -676,10 +681,11 @@ export function AccountsList({
                     {t("accountsList.liabilities")}
                   </h3>
                   <div className="rounded-xl border overflow-hidden divide-y divide-border/60">
-                    {liabilities.map((account) => (
+                    {liabilities.map((account, index) => (
                       <MobileAccountRow
                         key={account.id}
                         account={account}
+                        index={index}
                         priceMap={priceMap}
                         ratesMap={ratesMap}
                         baseCurrency={baseCurrency}
@@ -1142,6 +1148,7 @@ function MobileSummaryStrip({
 
 function MobileAccountRow({
   account,
+  index,
   priceMap,
   ratesMap,
   baseCurrency,
@@ -1152,6 +1159,7 @@ function MobileAccountRow({
   isUpdating,
 }: {
   account: SerializedAccountWithHoldings;
+  index: number;
   priceMap: Record<string, number>;
   ratesMap: Record<string, number>;
   baseCurrency: string;
@@ -1176,7 +1184,10 @@ function MobileAccountRow({
   const isBank = account.category === "BANK";
 
   return (
-    <div className="relative group">
+    <div
+      className="relative group motion-safe:stagger-rise"
+      style={{ "--i": Math.min(index, STAGGER_CAP) } as React.CSSProperties}
+    >
       <Link href={`/accounts/${account.id}`} prefetch={false} transitionTypes={["nav-forward"]}>
         <div
           className={`flex items-center gap-3 ${isCompact ? "px-4 py-2.5" : "px-4 py-3.5"} bg-card hover:bg-muted/40 active:bg-muted/60 transition-colors`}

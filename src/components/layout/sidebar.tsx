@@ -24,7 +24,14 @@ import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import { hapticTick } from "@/lib/haptics";
-import { useCallback, useEffect, useSyncExternalStore, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 import { AppIcon } from "./app-icon";
 
 const SIDEBAR_STORAGE_KEY = "asset-tracker:sidebar-collapsed";
@@ -265,6 +272,61 @@ export function MobileNav() {
     { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];
 
+  const resolveActive = (href: string) =>
+    isPending
+      ? href === "/"
+        ? optimisticHref === "/"
+        : (optimisticHref?.startsWith(href) ?? false)
+      : href === "/"
+        ? pathname === "/"
+        : pathname.startsWith(href);
+
+  // The active "pill" is a single shared element that glides between tabs instead
+  // of each button toggling its own background. We measure the active button's box
+  // and translate the pill there; only `transform` is transitioned (the buttons are
+  // equal-width, so width/height stay constant). `animate` gates the transition on
+  // for one frame after the first measurement so the pill places itself on mount
+  // without sliding in from the left edge. routes not in the tab bar (e.g. /history)
+  // leave activeIndex at -1, hiding the pill.
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [indicator, setIndicator] = useState<{
+    x: number;
+    w: number;
+    y: number;
+    h: number;
+  } | null>(null);
+  const [animate, setAnimate] = useState(false);
+  const activeIndex = navItems.findIndex((item) => resolveActive(item.href));
+
+  useEffect(() => {
+    const measure = () => {
+      const btn = activeIndex >= 0 ? itemRefs.current[activeIndex] : null;
+      if (!btn) {
+        setIndicator(null);
+        return;
+      }
+      setIndicator({
+        x: btn.offsetLeft,
+        w: btn.offsetWidth,
+        y: btn.offsetTop,
+        h: btn.offsetHeight,
+      });
+    };
+    measure();
+    const nav = itemRefs.current[0]?.parentElement;
+    if (!nav) return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(nav);
+    return () => ro.disconnect();
+  }, [activeIndex]);
+
+  useEffect(() => {
+    if (indicator && !animate) {
+      const id = requestAnimationFrame(() => setAnimate(true));
+      return () => cancelAnimationFrame(id);
+    }
+  }, [indicator, animate]);
+
   return (
     <nav
       className={cn(
@@ -272,18 +334,34 @@ export function MobileNav() {
         hidden && "translate-y-[calc(100%+1.75rem+env(safe-area-inset-bottom))]",
       )}
     >
-      {navItems.map((item) => {
-        const isActive = isPending
-          ? item.href === "/"
-            ? optimisticHref === "/"
-            : (optimisticHref?.startsWith(item.href) ?? false)
-          : item.href === "/"
-            ? pathname === "/"
-            : pathname.startsWith(item.href);
+      {/* Sliding active-tab pill — sits behind the buttons. */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute left-0 top-0 rounded-full bg-primary/15 dark:bg-primary/20",
+          animate &&
+            "transition-[transform,opacity] duration-[280ms] ease-[var(--ease-out-expo)] motion-reduce:transition-none",
+        )}
+        style={
+          indicator
+            ? {
+                width: indicator.w,
+                height: indicator.h,
+                transform: `translate(${indicator.x}px, ${indicator.y}px)`,
+                opacity: 1,
+              }
+            : { opacity: 0 }
+        }
+      />
+      {navItems.map((item, i) => {
+        const isActive = resolveActive(item.href);
         const Icon = item.icon;
         return (
           <button
             key={item.href}
+            ref={(el) => {
+              itemRefs.current[i] = el;
+            }}
             type="button"
             onTouchStart={() => {
               if (!isActive) router.prefetch(item.href);
@@ -304,7 +382,7 @@ export function MobileNav() {
               className={cn(
                 "flex w-full h-full flex-col items-center justify-center gap-0.5 px-1 py-1 rounded-full text-[10px] font-medium tracking-tight normal-case transition-colors motion-normal",
                 isActive
-                  ? "text-primary font-semibold bg-primary/15 dark:bg-primary/20"
+                  ? "text-primary font-semibold"
                   : "text-muted-foreground group-hover:text-foreground",
               )}
             >

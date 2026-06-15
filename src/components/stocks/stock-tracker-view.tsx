@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Reorder, useDragControls } from "framer-motion";
@@ -365,12 +365,18 @@ function StockForm({
   );
 }
 
+// Cap the per-row entrance stagger so a long watchlist never grows a slow tail:
+// rows past this index share the final delay and land together.
+const STAGGER_CAP = 8;
+
 function StockRow({
   stock,
+  index,
   onEdit,
   onDelete,
 }: {
   stock: SerializedTrackedStock;
+  index: number;
   onEdit: (stock: SerializedTrackedStock) => void;
   onDelete: (stock: SerializedTrackedStock) => void;
 }) {
@@ -472,8 +478,9 @@ function StockRow({
   return (
     <Card
       size="sm"
+      style={{ "--i": Math.min(index, STAGGER_CAP) } as CSSProperties}
       className={cn(
-        "overflow-visible transition-colors md:py-2",
+        "overflow-visible transition-colors md:py-2 motion-safe:stagger-rise",
         hasDirection
           ? isGain
             ? "border-[var(--gain)]/35 bg-[var(--gain)]/5 hover:border-[var(--gain)]/60 hover:bg-[var(--gain)]/8"
@@ -910,10 +917,11 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
         <ManageOrderList draft={draft} onReorder={setDraft} />
       ) : (
         <div className="space-y-3 md:space-y-2">
-          {stocks.map((stock) => (
+          {stocks.map((stock, index) => (
             <StockRow
               key={stock.id}
               stock={stock}
+              index={index}
               onEdit={(nextStock) => {
                 setEditingStock(nextStock);
                 setFormOpen(true);
