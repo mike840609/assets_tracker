@@ -65,29 +65,61 @@ describe("fetchExchangeRates", () => {
     globalThis.fetch = realFetch;
   });
 
-  it("falls back to er-api without a captured error when Frankfurter 404s for a non-ECB base", async () => {
-    // Frankfurter (ECB) doesn't cover TWD → 404; the secondary source does.
-    // Regression guard for the Sentry-noise fix (ASTT-A): the recovered
-    // primary miss must be a warn-level breadcrumb, never a log.error
-    // (which forwards to Sentry.captureException).
-    globalThis.fetch = vi.fn(async (input: string | URL | Request) => {
-      const url = String(input);
-      if (url.includes("frankfurter")) {
-        return new Response(null, { status: 404 });
-      }
-      return new Response(JSON.stringify({ result: "success", rates: { TWD: 32, USD: 1 } }), {
-        status: 200,
-      });
-    }) as typeof fetch;
+  it("skips Frankfurter entirely for a non-ECB base and uses er-api", async () => {
+    // ASTT-A: Frankfurter (ECB) can't serve TWD — it returns a guaranteed
+    // 404 — so the gate must skip it outright (no wasted round-trip, no
+    // frankfurter.fallback warning) and go straight to the er-api source.
+    const fetchSpy = vi.fn(
+      async (_input: string | URL | Request) =>
+        new Response(JSON.stringify({ result: "success", rates: { TWD: 32, USD: 1 } }), {
+          status: 200,
+        }),
+    );
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
 
     const rates = await fetchExchangeRates("TWD");
 
     // Returns the fallback's rates, with the base currency stripped.
     expect(rates).toEqual({ USD: 1 });
-    // The primary miss is a breadcrumb-level warning, not an escalated error.
+    // Frankfurter was never contacted.
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(String(fetchSpy.mock.calls[0][0])).not.toContain("frankfurter");
+    expect(logSpies.warn).not.toHaveBeenCalled();
+    expect(logSpies.error).not.toHaveBeenCalled();
+  });
+
+  it("uses Frankfurter directly for a supported ECB base", async () => {
+    const fetchSpy = vi.fn(
+      async (_input: string | URL | Request) =>
+        new Response(JSON.stringify({ rates: { EUR: 0.9, TWD: 32 } }), { status: 200 }),
+    );
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+
+    const rates = await fetchExchangeRates("USD");
+
+    expect(rates).toEqual({ EUR: 0.9, TWD: 32 });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(String(fetchSpy.mock.calls[0][0])).toContain("frankfurter");
+    expect(logSpies.error).not.toHaveBeenCalled();
+  });
+
+  it("falls back to er-api with a breadcrumb warning when Frankfurter fails for an ECB base", async () => {
+    // A transient Frankfurter failure for a supported base must stay a
+    // warn-level breadcrumb (never a captured log.error) since er-api covers it.
+    globalThis.fetch = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("frankfurter")) return new Response(null, { status: 500 });
+      return new Response(JSON.stringify({ result: "success", rates: { EUR: 0.9, USD: 1 } }), {
+        status: 200,
+      });
+    }) as typeof fetch;
+
+    const rates = await fetchExchangeRates("USD");
+
+    expect(rates).toEqual({ EUR: 0.9 });
     expect(logSpies.warn).toHaveBeenCalledWith(
       "rates.frankfurter.fallback",
-      expect.objectContaining({ base: "TWD" }),
+      expect.objectContaining({ base: "USD" }),
     );
     expect(logSpies.error).not.toHaveBeenCalled();
   });

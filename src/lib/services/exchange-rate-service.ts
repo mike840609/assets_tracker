@@ -25,6 +25,48 @@ export type RefreshRatesResult = {
 /** How long to wait (ms) before giving up on external rate APIs */
 const RATE_FETCH_TIMEOUT_MS = 1200;
 
+/**
+ * Currencies the Frankfurter API (ECB reference rates) can serve as a base.
+ * Anything outside this set (e.g. TWD) returns a guaranteed 404, so we skip
+ * the primary source entirely for those bases and go straight to the
+ * er-api fallback — saving a wasted round-trip on every refresh. The ECB
+ * list changes only rarely; if it grows, an unsupported base simply keeps
+ * using the fallback until added here.
+ */
+const FRANKFURTER_CURRENCIES = new Set([
+  "AUD",
+  "BGN",
+  "BRL",
+  "CAD",
+  "CHF",
+  "CNY",
+  "CZK",
+  "DKK",
+  "EUR",
+  "GBP",
+  "HKD",
+  "HUF",
+  "IDR",
+  "ILS",
+  "INR",
+  "ISK",
+  "JPY",
+  "KRW",
+  "MXN",
+  "MYR",
+  "NOK",
+  "NZD",
+  "PHP",
+  "PLN",
+  "RON",
+  "SEK",
+  "SGD",
+  "THB",
+  "TRY",
+  "USD",
+  "ZAR",
+]);
+
 // In-process memo of the last successful refresh per base currency, so the
 // staleness check costs no DB read (same warm-instance pattern as
 // lib/rate-limit.ts). Cold starts simply refresh once and re-prime it.
@@ -153,32 +195,36 @@ function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T
  */
 export async function fetchExchangeRates(base: string): Promise<Record<string, number>> {
   const doFetch = async (): Promise<Record<string, number>> => {
-    // Primary: Frankfurter (ECB data, reliable but limited to ~30 major
-    // currencies). A 404 here just means `base` isn't an ECB currency
-    // (e.g. TWD) — an expected miss we recover from via the fallback below.
-    // It's logged at warn level (breadcrumb only, not a captured Sentry
-    // error) precisely because the fallback covers it; only a total failure
-    // of BOTH sources is escalated to log.error further down.
-    const frankfurterStart = Date.now();
-    try {
-      const res = await fetch(`https://api.frankfurter.dev/v1/latest?base=${base}`, {
-        next: { revalidate: 3600 },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (!data.rates || Object.keys(data.rates).length === 0) throw new Error("empty rates");
-      log.info("rates.frankfurter.fetch", { base, durationMs: Date.now() - frankfurterStart });
-      return data.rates as Record<string, number>;
-    } catch (error) {
-      // Expected for non-ECB bases; fall through to backup.
-      log.warn("rates.frankfurter.fallback", {
-        base,
-        durationMs: Date.now() - frankfurterStart,
-        error: error instanceof Error ? error.message : String(error),
-      });
+    // Primary: Frankfurter (ECB data, reliable but limited to the currencies
+    // the ECB publishes). Skip it entirely for bases it can't serve (e.g.
+    // TWD) — those return a guaranteed 404, so the gate avoids a wasted
+    // round-trip before falling back. For a supported base, a transient
+    // failure is logged at warn level (breadcrumb only, not a captured Sentry
+    // error) and falls through; only a total failure of BOTH sources is
+    // escalated to log.error further down.
+    if (FRANKFURTER_CURRENCIES.has(base)) {
+      const frankfurterStart = Date.now();
+      try {
+        const res = await fetch(`https://api.frankfurter.dev/v1/latest?base=${base}`, {
+          next: { revalidate: 3600 },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.rates || Object.keys(data.rates).length === 0) throw new Error("empty rates");
+        log.info("rates.frankfurter.fetch", { base, durationMs: Date.now() - frankfurterStart });
+        return data.rates as Record<string, number>;
+      } catch (error) {
+        // Transient failure for a supported base; fall through to backup.
+        log.warn("rates.frankfurter.fallback", {
+          base,
+          durationMs: Date.now() - frankfurterStart,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
 
-    // Fallback: open.er-api.com (supports 150+ currencies including TWD)
+    // Fallback (and primary for non-ECB bases): open.er-api.com (supports
+    // 150+ currencies including TWD)
     try {
       const rates = await withTiming(
         "rates.er_api.fetch",
