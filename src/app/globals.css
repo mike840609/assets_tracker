@@ -443,6 +443,29 @@
   animation-delay: calc(var(--i, 0) * 45ms);
 }
 
+/* ─── Mobile list entrance ────────────────────────────────────────────────────
+   Grouped mobile lists (accounts rows, the stock watchlist) settle in as a
+   sibling stagger when the screen mounts, so a list reads as arriving rather than
+   appearing all at once. Transform/opacity only, one-shot, `backwards` fill holds
+   the from-state through the per-row delay then reverts to the natural state so
+   row hover/press transitions keep working. The caller caps `--i` (see
+   STAGGER_CAP in the list components) so a long list never grows a slow tail. */
+@keyframes list-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-rise {
+  animation: list-row-in var(--duration-normal) var(--ease-out-expo) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
 /* Decorative, continuously-looping effects must not run when the user has
    asked for reduced motion (WCAG 2.3.3) — the mesh stays as a static wash. */
 @media (prefers-reduced-motion: reduce) {
@@ -461,7 +484,8 @@
     animation: none;
   }
   .history-cell-in,
-  .history-rise-in {
+  .history-rise-in,
+  .stagger-rise {
     animation: none;
   }
   /* tw-animate-css ships no reduced-motion guard of its own, so the dashboard's
