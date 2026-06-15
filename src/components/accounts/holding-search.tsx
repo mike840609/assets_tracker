@@ -24,7 +24,7 @@ interface HoldingSearchProps {
 
 export function HoldingSearch({
   onSelect,
-  label = "Search by name or ticker symbol",
+  label,
   placeholder,
   autoFocus = false,
   allowedTypes,
@@ -179,7 +179,7 @@ export function HoldingSearch({
   return (
     <div ref={containerRef} className="relative">
       <div className="space-y-2">
-        <Label htmlFor={inputId}>{label}</Label>
+        <Label htmlFor={inputId}>{label ?? t("searchLabel")}</Label>
         <div className="relative">
           <Input
             id={inputId}

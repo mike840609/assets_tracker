@@ -54,6 +54,9 @@ vi.mock("@/lib/prisma", () => ({
       upsert: vi.fn(async () => ({})),
     },
     holding: {
+      // Pre-existing-holding lookup for the currency-mismatch diagnostic warning.
+      // Null = no pre-existing holding (the common case), so no behavior change.
+      findUnique: vi.fn(async () => null),
       upsert: vi.fn(async (args: Record<string, unknown>) => {
         h.upserts.push(args);
         return { id: "holding1" };

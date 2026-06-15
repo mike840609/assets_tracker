@@ -827,6 +827,7 @@
     "resultCount": "{count, plural, other {# 筆結果}}",
     "unavailable": "搜尋暫時無法使用，請稍後再試。",
     "placeholder": "例如：Apple、台積電、2330、BTC…",
+    "searchLabel": "依名稱或股票代號搜尋",
     "assetType": {
       "STOCK": "股票",
       "ETF": "ETF",

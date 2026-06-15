@@ -827,6 +827,7 @@
     "resultCount": "{count, plural, one {# result} other {# results}}",
     "unavailable": "Search is temporarily unavailable. Please try again.",
     "placeholder": "e.g. Apple, TSMC, 2330, BTC...",
+    "searchLabel": "Search by name or ticker symbol",
     "assetType": {
       "STOCK": "Stock",
       "ETF": "ETF",
