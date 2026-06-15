@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { ok, failure } from "@/lib/api-responses";
 import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
-import { getYahooClient } from "@/lib/services/yahoo-client";
+import { getYahooClient, getYahooErrorStatus } from "@/lib/services/yahoo-client";
 import { log } from "@/lib/logger";
 
 type SearchResult = {
@@ -142,8 +142,19 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    // Distinct from an empty 200: signals an upstream failure so the client can
-    // show "search unavailable" instead of a misleading "no results".
+    const status = getYahooErrorStatus(error);
+    if (status !== undefined && status >= 400 && status < 500) {
+      // Expected client-driven 4xx, not a server fault: a malformed query
+      // (e.g. mid-composition Bopomofo yielding a 400 "Invalid Search Query")
+      // or a transient upstream rate-limit (429). Keep it out of Sentry —
+      // log.warn is breadcrumb-only — and return empty results so the UI shows
+      // "no matches" rather than an error. Not cached: a 429 is transient.
+      log.warn("search.yahoo_4xx", { query, status, error: String(error) });
+      return ok([] as SearchResult[]);
+    }
+    // Genuine upstream failure (5xx / network / timeout): distinct from an
+    // empty 200 so the client can show "search unavailable" instead of a
+    // misleading "no results". Captured so real outages stay visible.
     log.error("search.failed", { query, error: String(error) });
     return failure("Search is temporarily unavailable. Please try again.", 502);
   }

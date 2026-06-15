@@ -22,3 +22,18 @@ let clientPromise: ReturnType<typeof load> | null = null;
 export function getYahooClient() {
   return (clientPromise ??= load());
 }
+
+/**
+ * Extract the upstream HTTP status from a yahoo-finance2 error, when it carries
+ * one. `BadRequestError` corresponds to a 400; `HTTPError` sets a numeric `code`
+ * to the response status (see the lib's yahooFinanceFetch). Returns undefined
+ * for network/timeout/validation errors that have no HTTP status — callers
+ * should treat those as genuine failures. Lets call sites distinguish an
+ * expected client-driven 4xx (malformed query, rate-limit) from a real outage.
+ */
+export function getYahooErrorStatus(error: unknown): number | undefined {
+  if (!(error instanceof Error)) return undefined;
+  if (error.name === "BadRequestError") return 400;
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "number" ? code : undefined;
+}
