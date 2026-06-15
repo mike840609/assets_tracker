@@ -36,6 +36,7 @@ const TransactionHistory = dynamic(
   },
 );
 import { AccountStatCards } from "./account-stat-cards";
+import { RecurringSection } from "./recurring-section";
 import { HoldingRow } from "./holding-row";
 import type { HoldingWithPrice } from "./holding-row";
 import { HoldingsTable, type HoldingSortField } from "./holdings-table";
@@ -526,7 +527,23 @@ export function AccountDetail({
         </>
       )}
 
-      <TransactionHistory accountId={account.id} isBank={isBank} refreshTrigger={refreshTrigger} />
+      <div className="mt-8">
+        <RecurringSection
+          accountId={account.id}
+          currency={account.currency}
+          isBank={isBank}
+          accountType={account.type}
+          refreshTrigger={refreshTrigger}
+          onChange={() => setRefreshTrigger((prev) => prev + 1)}
+        />
+      </div>
+
+      <TransactionHistory
+        accountId={account.id}
+        isBank={isBank}
+        accountType={account.type}
+        refreshTrigger={refreshTrigger}
+      />
 
       {/* Mobile Danger Zone */}
       <div className="mt-10 md:hidden pt-6 border-t border-border/40">

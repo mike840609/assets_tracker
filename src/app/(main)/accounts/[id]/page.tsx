@@ -15,7 +15,12 @@ const CLIENT_NAMESPACES = [
   "common",
   "categories",
   "transactionHistory",
+  "recurring",
+  "recurringCash",
+  "recurringInvest",
   "holdingSearch",
+  "quickAddHolding",
+  "optionBuilder",
 ];
 
 async function AccountDetailContent({ params }: { params: Promise<{ id: string }> }) {

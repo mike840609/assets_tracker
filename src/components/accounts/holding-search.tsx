@@ -24,8 +24,8 @@ interface HoldingSearchProps {
 
 export function HoldingSearch({
   onSelect,
-  label = "Search by name or ticker symbol",
-  placeholder = "e.g. Apple, TSMC, 2330, BTC...",
+  label,
+  placeholder,
   autoFocus = false,
   allowedTypes,
 }: HoldingSearchProps) {
@@ -179,14 +179,14 @@ export function HoldingSearch({
   return (
     <div ref={containerRef} className="relative">
       <div className="space-y-2">
-        <Label htmlFor={inputId}>{label}</Label>
+        <Label htmlFor={inputId}>{label ?? t("searchLabel")}</Label>
         <div className="relative">
           <Input
             id={inputId}
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={placeholder}
+            placeholder={placeholder ?? t("placeholder")}
             autoFocus={autoFocus}
             role="combobox"
             aria-expanded={listboxOpen}
@@ -246,7 +246,9 @@ export function HoldingSearch({
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-semibold text-sm">{r.symbol}</span>
                     <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                      {r.type}
+                      {t.has(`assetType.${r.type}` as Parameters<typeof t.has>[0])
+                        ? t(`assetType.${r.type}` as Parameters<typeof t>[0])
+                        : r.type}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground truncate mt-0.5">{r.name}</p>

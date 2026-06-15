@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { createSnapshot } from "@/lib/services/snapshot-service";
 import { refreshAllPrices } from "@/lib/services/price-service";
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
+import { materializeDueRecurringTransactions } from "@/lib/services/recurring-cash-service";
+import { materializeDueInvestments } from "@/lib/services/recurring-investment-service";
 import { ok, failure } from "@/lib/api-responses";
 import { CRON_SECRET } from "@/lib/env";
 import { log } from "@/lib/logger";
@@ -97,13 +99,38 @@ export async function GET(request: Request) {
       ratesUpdated,
       ratesChanged,
     });
+
+    // 1b. Materialize due recurring cash transactions (F6) before snapshots, so
+    // the day's snapshot reflects the posted cash. This piggybacks on the daily
+    // cron — no dedicated cron is added (Free-plan compatible). The catch-up
+    // loop inside also covers any days a prior cron run was skipped/failed.
+    const recurring = await materializeDueRecurringTransactions();
+    if (recurring.rulesProcessed > 0) {
+      log.info("cron.recurring.summary", recurring);
+    }
+    // Recurring investments (DCA) — runs after cash so cash deposits land before
+    // they're spent on buys; prices are already refreshed above.
+    const investments = await materializeDueInvestments();
+    if (investments.rulesProcessed > 0) {
+      log.info("cron.investment.summary", investments);
+    }
+    const recurringChanged = recurring.created > 0 || investments.created > 0;
+
     // "max" is the cacheComponents revalidation scope required by Next.js 16 cacheComponents: true
     if (ratesChanged > 0) revalidateTag("exchange-rates", "max");
     if (priceResult.changed > 0) {
       revalidateTag("prices", "max");
       revalidateTag("prices:crypto", "max");
     }
-    if (ratesChanged > 0 || priceResult.changed > 0) revalidateTag("net-worth", "max");
+    // New recurring cash/buy rows changed balances + holdings → net-worth +
+    // accounts must drop even when prices/rates were unchanged (otherwise list
+    // pages and the snapshot below would read stale data).
+    if (ratesChanged > 0 || priceResult.changed > 0 || recurringChanged) {
+      revalidateTag("net-worth", "max");
+    }
+    if (recurringChanged) {
+      revalidateTag("accounts", "max");
+    }
 
     // 2. Get all users and their settings
     const users = await prisma.user.findMany({

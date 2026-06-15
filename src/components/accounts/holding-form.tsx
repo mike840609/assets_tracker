@@ -2,6 +2,7 @@
 
 import { useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -18,14 +19,7 @@ import type { SearchResult } from "./holding-search";
 import { OptionBuilder } from "./option-builder";
 import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 
-const ASSET_TYPES = [
-  { value: "STOCK", label: "Stock" },
-  { value: "ETF", label: "ETF" },
-  { value: "CRYPTO", label: "Crypto" },
-  { value: "MUTUAL_FUND", label: "Mutual Fund" },
-  { value: "BOND", label: "Bond" },
-  { value: "OTHER", label: "Other" },
-];
+const ASSET_TYPES = ["STOCK", "ETF", "CRYPTO", "MUTUAL_FUND", "BOND", "OTHER"] as const;
 
 type Mode = "stock" | "option";
 
@@ -41,6 +35,7 @@ export function HoldingForm({
   onSuccess?: () => void;
 }) {
   const router = useRouter();
+  const t = useTranslations("quickAddHolding");
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<Mode>("stock");
@@ -68,7 +63,7 @@ export function HoldingForm({
     }
     const parsed = parseAmountInput(val);
     if (isNaN(parsed) || parsed <= 0) {
-      setQuantityError("Invalid quantity");
+      setQuantityError(t("invalidQuantity"));
       return;
     }
     setQuantityError("");
@@ -120,17 +115,17 @@ export function HoldingForm({
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error?.message || "Failed");
+        throw new Error(err.error?.message || t("addFailed"));
       }
 
-      toast.success(`Added ${payload.symbol}`);
+      toast.success(t("addedSymbol", { symbol: payload.symbol }));
       handleClose();
       if (onSuccess) onSuccess();
       startTransition(() => {
         router.refresh();
       });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to add holding");
+      toast.error(error instanceof Error ? error.message : t("addFailed"));
     } finally {
       setLoading(false);
     }
@@ -160,7 +155,7 @@ export function HoldingForm({
     handleClose,
   );
 
-  const title = mode === "option" ? "Add Option Contract" : "Add Holding";
+  const title = mode === "option" ? t("titleOption") : t("titleConfirm");
 
   const body = (
     <>
@@ -175,8 +170,8 @@ export function HoldingForm({
         }}
       >
         <TabsList>
-          <TabsTrigger value="stock">Stock / ETF / Crypto</TabsTrigger>
-          <TabsTrigger value="option">Option</TabsTrigger>
+          <TabsTrigger value="stock">{t("tabStock")}</TabsTrigger>
+          <TabsTrigger value="option">{t("tabOption")}</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -191,7 +186,7 @@ export function HoldingForm({
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-bold">{symbol}</span>
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                    {ASSET_TYPES.find((t) => t.value === assetType)?.label ?? assetType}
+                    {t(`assetTypes.${assetType}` as Parameters<typeof t>[0])}
                   </Badge>
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                     {currency}
@@ -200,43 +195,43 @@ export function HoldingForm({
                 <p className="text-sm text-muted-foreground mt-0.5">{name}</p>
               </div>
               <Button type="button" variant="ghost" size="sm" onClick={clearSelection}>
-                Change
+                {t("change")}
               </Button>
             </div>
           ) : manualMode ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Symbol</Label>
+                  <Label>{t("labelSymbol")}</Label>
                   <Input
                     value={symbol}
                     onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                    placeholder="e.g. AAPL"
+                    placeholder={t("placeholderSymbol")}
                     autoFocus={!isMobile}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Asset Type</Label>
+                  <Label>{t("labelAssetType")}</Label>
                   <select
                     value={assetType}
                     onChange={(e) => setAssetType(e.target.value)}
                     className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
-                    {ASSET_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
+                    {ASSET_TYPES.map((value) => (
+                      <option key={value} value={value}>
+                        {t(`assetTypes.${value}` as Parameters<typeof t>[0])}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Name</Label>
+                <Label>{t("labelName")}</Label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Apple Inc."
+                  placeholder={t("placeholderName")}
                   required
                 />
               </div>
@@ -246,22 +241,27 @@ export function HoldingForm({
                   className="text-primary underline underline-offset-2 hover:text-primary/80"
                   onClick={() => setManualMode(false)}
                 >
-                  Search instead
+                  {t("searchInstead")}
                 </button>
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              <HoldingSearch onSelect={selectResult} autoFocus={!isMobile} />
+              <HoldingSearch
+                onSelect={selectResult}
+                autoFocus={!isMobile}
+                label={t("labelSearch")}
+                placeholder={t("placeholderSearch")}
+              />
               <div className="pt-2 border-t">
                 <p className="text-xs text-muted-foreground">
-                  Can&apos;t find what you&apos;re looking for?{" "}
+                  {t("cantFind")}{" "}
                   <button
                     type="button"
                     className="text-primary underline underline-offset-2 hover:text-primary/80"
                     onClick={() => setManualMode(true)}
                   >
-                    Enter manually
+                    {t("enterManually")}
                   </button>
                 </p>
               </div>
@@ -270,14 +270,14 @@ export function HoldingForm({
 
           {/* ── Quantity ── */}
           <div className="space-y-2">
-            <Label className="text-base font-medium">Number of Shares</Label>
+            <Label className="text-base font-medium">{t("labelShares")}</Label>
             <Input
               type="text"
               inputMode="decimal"
               value={quantity}
               onChange={handleQuantityChange}
               onBlur={handleQuantityBlur}
-              placeholder="e.g. 100"
+              placeholder={t("placeholderShares")}
               required
               autoFocus={tickerSelected && !isMobile}
               className="text-lg h-12"
@@ -288,10 +288,10 @@ export function HoldingForm({
           {/* ── Actions ── */}
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={requestClose}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" disabled={loading || !canSubmit}>
-              {loading ? "Adding..." : "Add Holding"}
+              {loading ? t("adding") : t("addHolding")}
             </Button>
           </div>
         </form>

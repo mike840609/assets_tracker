@@ -28,4 +28,12 @@ export const HOLDING_TRANSACTION_TYPES = ["BUY", "SELL", "EDIT"] as const;
 
 export const CASH_TRANSACTION_TYPES = ["DEPOSIT", "WITHDRAWAL", "EDIT"] as const;
 
+export const RECURRING_FREQUENCIES = [
+  "WEEKLY",
+  "BIWEEKLY",
+  "MONTHLY",
+  "QUARTERLY",
+  "ANNUAL",
+] as const;
+
 export const GOAL_SCOPES = ["NET_WORTH", "ASSETS_ONLY", "CATEGORY", "ACCOUNT"] as const;
