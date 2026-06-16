@@ -17,13 +17,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SwipeableRow } from "@/components/ui/swipeable-row";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -150,6 +146,7 @@ export function TransactionHistory({
   const router = useRouter();
   const t = useTranslations("transactionHistory");
   const tCommon = useTranslations("common");
+  const isMobile = useIsMobile();
 
   // For a liability the balance is debt owed, so a cash DEPOSIT reads as a
   // "charge/borrow" and a WITHDRAWAL as a "payment" — labels only (same enum).
@@ -387,6 +384,107 @@ export function TransactionHistory({
     [],
   );
 
+  const editFormBody = (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="type">{t("labelType")}</Label>
+        <Select value={editType} onValueChange={(v) => v && setEditType(v)}>
+          <SelectTrigger id="type" className="w-full min-h-11 md:min-h-8">
+            <SelectValue>
+              {(() => {
+                const editIsCash = Boolean(
+                  (editingTx as SerializedTransaction & { isCash?: boolean })?.isCash,
+                );
+                const k = cashTypeKey(editType, editIsCash);
+                return editType && t.has(k) ? t(k) : t("labelType");
+              })()}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {(editingTx as SerializedTransaction & { isCash?: boolean })?.isCash ? (
+              <>
+                <SelectItem value="DEPOSIT">{t(cashTypeKey("DEPOSIT", true))}</SelectItem>
+                <SelectItem value="WITHDRAWAL">{t(cashTypeKey("WITHDRAWAL", true))}</SelectItem>
+                <SelectItem value="EDIT">{t("typeEdit")}</SelectItem>
+              </>
+            ) : (
+              <>
+                <SelectItem value="BUY">{t("typeBuy")}</SelectItem>
+                <SelectItem value="SELL">{t("typeSell")}</SelectItem>
+                <SelectItem value="EDIT">{t("typeEdit")}</SelectItem>
+              </>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="quantity">{t("labelQuantity")}</Label>
+        <Input
+          id="quantity"
+          type="text"
+          inputMode="decimal"
+          value={editQuantity}
+          onChange={handleEditQuantityChange}
+          onBlur={handleEditQuantityBlur}
+          className="min-h-11 md:min-h-8"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="date">{t("labelDate")}</Label>
+        <Input
+          id="date"
+          type="datetime-local"
+          value={editDate}
+          onChange={(e) => setEditDate(e.target.value)}
+          className="min-h-11 md:min-h-8"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="note">{t("labelNote")}</Label>
+        <Input
+          id="note"
+          value={editNote}
+          onChange={(e) => setEditNote(e.target.value)}
+          className="min-h-11 md:min-h-8"
+        />
+      </div>
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+        <Button
+          variant="outline"
+          className="min-h-11 md:min-h-8"
+          onClick={() => setEditingTx(null)}
+        >
+          {tCommon("cancel")}
+        </Button>
+        <Button className="min-h-11 md:min-h-8" onClick={handleEditSave} disabled={isSubmitting}>
+          {isSubmitting ? tCommon("saving") : tCommon("save")}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const mobileEditForm = (
+    <Drawer open={!!editingTx} onOpenChange={(open) => !open && setEditingTx(null)}>
+      <DrawerContent showCloseButton={false}>
+        <DrawerHeader>
+          <DrawerTitle>{t("editTitle")}</DrawerTitle>
+        </DrawerHeader>
+        <div className="px-4 pb-4">{editFormBody}</div>
+      </DrawerContent>
+    </Drawer>
+  );
+
+  const desktopEditForm = (
+    <Dialog open={!!editingTx} onOpenChange={(open) => !open && setEditingTx(null)}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("editTitle")}</DialogTitle>
+        </DialogHeader>
+        {editFormBody}
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -449,97 +547,7 @@ export function TransactionHistory({
         )}
       </CardContent>
 
-      <Dialog open={!!editingTx} onOpenChange={(open) => !open && setEditingTx(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("editTitle")}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="type" className="text-right">
-                {t("labelType")}
-              </Label>
-              <div className="col-span-3">
-                <Select value={editType} onValueChange={(v) => v && setEditType(v)}>
-                  <SelectTrigger id="type">
-                    <SelectValue>
-                      {(() => {
-                        const editIsCash = Boolean(
-                          (editingTx as SerializedTransaction & { isCash?: boolean })?.isCash,
-                        );
-                        const k = cashTypeKey(editType, editIsCash);
-                        return editType && t.has(k) ? t(k) : t("labelType");
-                      })()}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(editingTx as SerializedTransaction & { isCash?: boolean })?.isCash ? (
-                      <>
-                        <SelectItem value="DEPOSIT">{t(cashTypeKey("DEPOSIT", true))}</SelectItem>
-                        <SelectItem value="WITHDRAWAL">
-                          {t(cashTypeKey("WITHDRAWAL", true))}
-                        </SelectItem>
-                        <SelectItem value="EDIT">{t("typeEdit")}</SelectItem>
-                      </>
-                    ) : (
-                      <>
-                        <SelectItem value="BUY">{t("typeBuy")}</SelectItem>
-                        <SelectItem value="SELL">{t("typeSell")}</SelectItem>
-                        <SelectItem value="EDIT">{t("typeEdit")}</SelectItem>
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="quantity" className="text-right">
-                {t("labelQuantity")}
-              </Label>
-              <Input
-                id="quantity"
-                type="text"
-                inputMode="decimal"
-                value={editQuantity}
-                onChange={handleEditQuantityChange}
-                onBlur={handleEditQuantityBlur}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="date" className="text-right">
-                {t("labelDate")}
-              </Label>
-              <Input
-                id="date"
-                type="datetime-local"
-                value={editDate}
-                onChange={(e) => setEditDate(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="note" className="text-right">
-                {t("labelNote")}
-              </Label>
-              <Input
-                id="note"
-                value={editNote}
-                onChange={(e) => setEditNote(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingTx(null)}>
-              {tCommon("cancel")}
-            </Button>
-            <Button onClick={handleEditSave} disabled={isSubmitting}>
-              {isSubmitting ? tCommon("saving") : tCommon("save")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {isMobile ? mobileEditForm : desktopEditForm}
     </Card>
   );
 }

@@ -13,13 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currencies";
@@ -49,6 +45,7 @@ export function RecurringInvestments({
 }) {
   const t = useTranslations("recurringInvest");
   const tCommon = useTranslations("common");
+  const isMobile = useIsMobile();
 
   const [rules, setRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -215,6 +212,142 @@ export function RecurringInvestments({
     }
   }
 
+  const formBody = (
+    <div className="min-w-0 space-y-4">
+      {editing || selected ? (
+        <div className="space-y-2">
+          <Label>{t("labelSymbol")}</Label>
+          <div className="flex items-center gap-2 rounded-md border border-input bg-muted/30 px-3 min-h-11 md:min-h-9">
+            <span className="font-mono font-semibold text-sm shrink-0">{selected?.symbol}</span>
+            <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+              {selected?.name}
+            </span>
+            {!editing && (
+              <button
+                type="button"
+                aria-label={tCommon("edit")}
+                className="-mr-2 ml-auto inline-flex h-11 w-11 md:h-7 md:w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                onClick={() => setSelected(null)}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <HoldingSearch
+          onSelect={(r) => setSelected(r)}
+          label={t("labelSymbol")}
+          allowedTypes={["STOCK", "ETF", "CRYPTO", "MUTUAL_FUND", "BOND"]}
+        />
+      )}
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="ri-amount">{t("labelAmount")}</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="ri-amount"
+              type="text"
+              inputMode="decimal"
+              value={amount}
+              onChange={handleAmountChange}
+              onBlur={handleAmountBlur}
+              className="min-w-0 flex-1 min-h-11 md:min-h-8"
+            />
+            <span className="text-xs text-muted-foreground shrink-0">{currency}</span>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="ri-frequency">{t("labelFrequency")}</Label>
+          <Select
+            value={frequency}
+            onValueChange={(v) => v && setFrequency(v as Rule["frequency"])}
+          >
+            <SelectTrigger id="ri-frequency" className="w-full min-h-11 md:min-h-8">
+              <SelectValue>{t(`freq${frequency}` as Parameters<typeof t>[0])}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {RECURRING_FREQUENCIES.map((f) => (
+                <SelectItem key={f} value={f}>
+                  {t(`freq${f}` as Parameters<typeof t>[0])}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="ri-start">{t("labelStartDate")}</Label>
+          <Input
+            id="ri-start"
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="min-h-11 md:min-h-8"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="ri-end">{t("labelEndDate")}</Label>
+          <Input
+            id="ri-end"
+            type="date"
+            value={endDate}
+            min={startDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="min-h-11 md:min-h-8"
+          />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="ri-note">{t("labelNote")}</Label>
+        <Input
+          id="ri-note"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          className="min-h-11 md:min-h-8"
+        />
+      </div>
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+        <Button
+          variant="outline"
+          className="min-h-11 md:min-h-8"
+          onClick={() => setDialogOpen(false)}
+        >
+          {tCommon("cancel")}
+        </Button>
+        <Button className="min-h-11 md:min-h-8" onClick={handleSave} disabled={submitting}>
+          {submitting ? tCommon("saving") : tCommon("save")}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const dialogTitle = editing ? t("editTitle") : t("addTitle");
+
+  const mobileForm = (
+    <Drawer open={dialogOpen} onOpenChange={(open) => !open && setDialogOpen(false)}>
+      <DrawerContent showCloseButton={false}>
+        <DrawerHeader>
+          <DrawerTitle>{dialogTitle}</DrawerTitle>
+        </DrawerHeader>
+        <div className="px-4 pb-4">{formBody}</div>
+      </DrawerContent>
+    </Drawer>
+  );
+
+  const desktopForm = (
+    <Dialog open={dialogOpen} onOpenChange={(open) => !open && setDialogOpen(false)}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+        </DialogHeader>
+        {formBody}
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <section aria-label={t("sectionLabel")}>
       <div className="flex items-center justify-between gap-3 mb-3">
@@ -222,7 +355,7 @@ export function RecurringInvestments({
         <Button
           size="sm"
           variant="ghost"
-          className="h-7 -mr-2 px-2 text-primary hover:text-primary"
+          className="min-h-11 md:min-h-7 -mr-2 px-2 text-primary hover:text-primary"
           onClick={openAdd}
         >
           <Plus className="h-4 w-4 mr-1" />
@@ -288,109 +421,7 @@ export function RecurringInvestments({
         </ul>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={(open) => !open && setDialogOpen(false)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editing ? t("editTitle") : t("addTitle")}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            {editing || selected ? (
-              <div className="space-y-2">
-                <Label>{t("labelSymbol")}</Label>
-                <div className="flex items-center gap-2 rounded-md border border-input bg-muted/30 px-3 h-9">
-                  <span className="font-mono font-semibold text-sm">{selected?.symbol}</span>
-                  <span className="text-sm text-muted-foreground truncate">{selected?.name}</span>
-                  {!editing && (
-                    <button
-                      type="button"
-                      aria-label={tCommon("edit")}
-                      className="ml-auto text-muted-foreground hover:text-foreground shrink-0"
-                      onClick={() => setSelected(null)}
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <HoldingSearch
-                onSelect={(r) => setSelected(r)}
-                label={t("labelSymbol")}
-                allowedTypes={["STOCK", "ETF", "CRYPTO", "MUTUAL_FUND", "BOND"]}
-              />
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="ri-amount">{t("labelAmount")}</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="ri-amount"
-                    type="text"
-                    inputMode="decimal"
-                    value={amount}
-                    onChange={handleAmountChange}
-                    onBlur={handleAmountBlur}
-                    className="min-w-0 flex-1"
-                  />
-                  <span className="text-xs text-muted-foreground shrink-0">{currency}</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ri-frequency">{t("labelFrequency")}</Label>
-                <Select
-                  value={frequency}
-                  onValueChange={(v) => v && setFrequency(v as Rule["frequency"])}
-                >
-                  <SelectTrigger id="ri-frequency" className="w-full">
-                    <SelectValue>{t(`freq${frequency}` as Parameters<typeof t>[0])}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {RECURRING_FREQUENCIES.map((f) => (
-                      <SelectItem key={f} value={f}>
-                        {t(`freq${f}` as Parameters<typeof t>[0])}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="ri-start">{t("labelStartDate")}</Label>
-                <Input
-                  id="ri-start"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ri-end">{t("labelEndDate")}</Label>
-                <Input
-                  id="ri-end"
-                  type="date"
-                  value={endDate}
-                  min={startDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ri-note">{t("labelNote")}</Label>
-              <Input id="ri-note" value={note} onChange={(e) => setNote(e.target.value)} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              {tCommon("cancel")}
-            </Button>
-            <Button onClick={handleSave} disabled={submitting}>
-              {submitting ? tCommon("saving") : tCommon("save")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {isMobile ? mobileForm : desktopForm}
     </section>
   );
 }
