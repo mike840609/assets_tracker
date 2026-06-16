@@ -30,7 +30,7 @@ export function RecurringRowMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={ariaLabel}
-        className="inline-flex items-center justify-center rounded-md h-9 w-9 sm:h-7 sm:w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="-mr-1.5 inline-flex items-center justify-center rounded-md h-11 w-11 sm:mr-0 sm:h-7 sm:w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
       </DropdownMenuTrigger>

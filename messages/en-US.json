@@ -975,6 +975,7 @@
     "colPrice": "Price",
     "colValue": "Value",
     "colPercentage": "%",
+    "sortLabel": "Sort",
     "deleteConfirm": "Delete this account? This cannot be undone.",
     "deleteTitle": "Delete account?",
     "deleteDescription": "{name} and all of its holdings will be permanently deleted. This cannot be undone.",

@@ -975,6 +975,7 @@
     "colPrice": "價格",
     "colValue": "價值",
     "colPercentage": "%",
+    "sortLabel": "排序",
     "deleteConfirm": "確定要刪除此帳戶？此操作無法復原。",
     "deleteTitle": "刪除帳戶？",
     "deleteDescription": "{name} 及其所有持倉將被永久刪除。此操作無法復原。",
