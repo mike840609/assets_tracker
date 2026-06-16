@@ -52,12 +52,16 @@ export function Sidebar({
   userImage,
   userName,
   defaultCollapsed = false,
+  appVersion,
 }: {
   userImage?: string | null;
   userName?: string | null;
   /** SSR seed read from the sidebar cookie, so the first paint matches the
    *  user's saved preference instead of always rendering expanded. */
   defaultCollapsed?: boolean;
+  /** Passed in from the RSC layout so the (bilingual) changelog data never
+   *  enters this client bundle — only the resolved version string does. */
+  appVersion: string;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -215,7 +219,16 @@ export function Sidebar({
                 className="rounded-full"
               />
             ) : (
-              <span className="text-xs text-muted-foreground">v0.1.0</span>
+              <Link
+                href="/changelog"
+                title={t("nav.changelog")}
+                // Low-traffic page in the always-visible footer: don't speculatively
+                // prefetch its RSC payload for every user with the sidebar open.
+                prefetch={false}
+                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                v{appVersion}
+              </Link>
             ))}
           <div className="flex items-center gap-1">
             <button

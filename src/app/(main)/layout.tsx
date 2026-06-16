@@ -11,6 +11,7 @@ import { PullToRefreshProvider } from "@/components/layout/pull-to-refresh-conte
 import { LargeTitleProvider } from "@/components/layout/large-title-context";
 import { LazyCommandPalette } from "@/components/layout/lazy-command-palette";
 import { getSession } from "@/lib/auth-session";
+import { APP_VERSION } from "@/lib/changelog";
 
 async function SidebarWithSession({ defaultCollapsed }: { defaultCollapsed: boolean }) {
   const session = await getSession();
@@ -19,6 +20,7 @@ async function SidebarWithSession({ defaultCollapsed }: { defaultCollapsed: bool
       userImage={session?.user?.image ?? null}
       userName={session?.user?.name ?? null}
       defaultCollapsed={defaultCollapsed}
+      appVersion={APP_VERSION}
     />
   );
 }
@@ -43,7 +45,12 @@ export default async function MainLayout({
             <PullToRefreshProvider>
               <Suspense
                 fallback={
-                  <Sidebar userImage={null} userName={null} defaultCollapsed={defaultCollapsed} />
+                  <Sidebar
+                    userImage={null}
+                    userName={null}
+                    defaultCollapsed={defaultCollapsed}
+                    appVersion={APP_VERSION}
+                  />
                 }
               >
                 <SidebarWithSession defaultCollapsed={defaultCollapsed} />

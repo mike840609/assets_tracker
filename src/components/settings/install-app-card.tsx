@@ -1,6 +1,5 @@
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent } from "@/components/ui/card";
-import { SmartphoneIcon } from "lucide-react";
 
 function ShareIcon() {
   return (
@@ -23,10 +22,7 @@ export async function InstallAppCard() {
 
   return (
     <section className="space-y-3 w-full">
-      <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-        <SmartphoneIcon className="h-4 w-4" />
-        {t("title")}
-      </h3>
+      <h3 className="text-lg font-semibold text-foreground">{t("title")}</h3>
       <Card className="overflow-hidden p-0">
         <CardContent className="p-4 space-y-4">
           <div className="space-y-1">

@@ -13,7 +13,8 @@
     "analysis": "Analysis",
     "history": "History",
     "projections": "Projections",
-    "settings": "Settings"
+    "settings": "Settings",
+    "changelog": "What's New"
   },
   "commandPalette": {
     "placeholder": "Type a command or search…",
@@ -151,7 +152,12 @@
     },
     "signOut": "Sign Out",
     "signOutDesc": "Securely log out of your account on this device.",
-    "dangerZone": "Danger Zone"
+    "dangerZone": "Danger Zone",
+    "versionTitle": "Version",
+    "versionCurrent": "Current version",
+    "versionReleased": "Released {date}",
+    "versionWhatsNew": "What's new in {version}",
+    "versionViewChangelog": "View changelog"
   },
   "languages": {
     "en-US": "English",
@@ -1300,5 +1306,17 @@
     "deleteSuccess": "Recurring investment deleted",
     "deleteFailed": "Failed to delete recurring investment",
     "deleteConfirm": "Stop this recurring investment? Already-purchased shares are kept."
+  },
+  "changelog": {
+    "title": "What's New",
+    "subtitle": "Every release of Assets Tracker, newest first.",
+    "currentVersion": "You're on {version}",
+    "latest": "Latest",
+    "empty": "No releases yet.",
+    "types": {
+      "added": "Added",
+      "improved": "Improved",
+      "fixed": "Fixed"
+    }
   }
 }

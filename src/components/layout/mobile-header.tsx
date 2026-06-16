@@ -19,6 +19,7 @@ function getPageTitle(pathname: string, nav: (k: string) => string): string {
   if (pathname.startsWith("/analysis")) return nav("analysis");
   if (pathname.startsWith("/history")) return nav("history");
   if (pathname.startsWith("/settings")) return nav("settings");
+  if (pathname.startsWith("/changelog")) return nav("changelog");
   return "";
 }
 

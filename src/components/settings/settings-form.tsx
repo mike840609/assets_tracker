@@ -293,7 +293,7 @@ export function SettingsForm({
                 <p className="text-sm font-medium">{t("settings.density")}</p>
                 <p className="text-sm text-muted-foreground">{t("settings.densityDescription")}</p>
               </div>
-              <div className="w-fit flex items-center gap-1 rounded-lg border p-1 bg-muted/30">
+              <div className="flex w-full items-center gap-1 rounded-lg border p-1 bg-muted/30 sm:w-fit">
                 {(["comfortable", "compact"] as Density[]).map((d) => {
                   const isActive = isHydrated && isDensityReady && density === d;
 
@@ -302,7 +302,7 @@ export function SettingsForm({
                       key={d}
                       type="button"
                       onClick={() => setDensity(d)}
-                      className={`px-3 py-1.5 min-h-[44px] md:min-h-0 flex items-center justify-center rounded-md text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                      className={`flex flex-1 min-h-[44px] items-center justify-center rounded-md px-3 py-1.5 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:flex-none md:min-h-0 ${
                         isActive
                           ? "bg-background border border-border shadow-sm text-foreground font-semibold"
                           : "border border-transparent text-muted-foreground font-medium hover:text-foreground"
@@ -326,7 +326,7 @@ export function SettingsForm({
                   {t("settings.colorSchemaDescription")}
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-start">
                 {COLOR_SCHEMAS.map((schema) => {
                   const isActive = isHydrated && isColorSchemaReady && colorSchema === schema.id;
 

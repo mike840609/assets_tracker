@@ -13,7 +13,8 @@
     "analysis": "分析",
     "history": "歷史紀錄",
     "projections": "財務預測",
-    "settings": "設定"
+    "settings": "設定",
+    "changelog": "更新內容"
   },
   "commandPalette": {
     "placeholder": "輸入指令或搜尋…",
@@ -151,7 +152,12 @@
     },
     "signOut": "登出",
     "signOutDesc": "安全地登出此裝置上的帳戶。",
-    "dangerZone": "危險區域"
+    "dangerZone": "危險區域",
+    "versionTitle": "版本",
+    "versionCurrent": "目前版本",
+    "versionReleased": "發布於 {date}",
+    "versionWhatsNew": "{version} 的更新內容",
+    "versionViewChangelog": "查看更新紀錄"
   },
   "languages": {
     "en-US": "English",
@@ -1300,5 +1306,17 @@
     "deleteSuccess": "已刪除定期投資",
     "deleteFailed": "刪除定期投資失敗",
     "deleteConfirm": "要停止此定期投資嗎？已買入的股數會保留。"
+  },
+  "changelog": {
+    "title": "更新內容",
+    "subtitle": "Assets Tracker 的每個版本，由新到舊。",
+    "currentVersion": "目前版本 {version}",
+    "latest": "最新",
+    "empty": "尚無版本。",
+    "types": {
+      "added": "新增",
+      "improved": "改善",
+      "fixed": "修正"
+    }
   }
 }

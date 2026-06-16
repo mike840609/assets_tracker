@@ -2,6 +2,7 @@ import { SettingsForm } from "@/components/settings/settings-form";
 import { DataManagement } from "@/components/settings/data-management";
 import { InstallAppCard } from "@/components/settings/install-app-card";
 import { PrivacySecurity } from "@/components/settings/privacy-security";
+import { VersionCard } from "@/components/settings/version-card";
 import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
@@ -51,6 +52,7 @@ async function SettingsContent() {
           }}
         />
         <DataManagement />
+        <VersionCard />
         <InstallAppCard />
       </div>
     </NextIntlClientProvider>
