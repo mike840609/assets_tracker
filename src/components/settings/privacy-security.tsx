@@ -81,7 +81,7 @@ export function PrivacySecurity({ userEmail, signOutAction }: PrivacySecurityPro
             </div>
             <Badge
               variant="secondary"
-              className="self-start bg-primary/10 text-primary dark:bg-primary/15"
+              className="self-start bg-primary/10 text-primary-ink dark:bg-primary/15"
             >
               {t("privacy.privateByDefault")}
             </Badge>
@@ -102,7 +102,7 @@ export function PrivacySecurity({ userEmail, signOutAction }: PrivacySecurityPro
                   <Badge
                     variant="secondary"
                     className={
-                      privacyMode ? "bg-primary/10 text-primary dark:bg-primary/15" : undefined
+                      privacyMode ? "bg-primary/10 text-primary-ink dark:bg-primary/15" : undefined
                     }
                   >
                     {privacyMode ? t("privacy.balancesHidden") : t("privacy.balancesVisible")}
@@ -118,7 +118,7 @@ export function PrivacySecurity({ userEmail, signOutAction }: PrivacySecurityPro
               variant="outline"
               onClick={togglePrivacyMode}
               aria-pressed={privacyMode}
-              className="w-full sm:w-auto sm:min-w-[150px]"
+              className="h-11 md:h-8 w-full sm:w-auto sm:min-w-[150px]"
             >
               {privacyMode ? t("privacy.showBalances") : t("privacy.hideBalances")}
             </Button>
@@ -139,7 +139,11 @@ export function PrivacySecurity({ userEmail, signOutAction }: PrivacySecurityPro
               </div>
             </div>
             <form action={signOutAction} className="w-full sm:w-auto">
-              <Button type="submit" variant="outline" className="w-full sm:min-w-[150px]">
+              <Button
+                type="submit"
+                variant="outline"
+                className="h-11 md:h-8 w-full sm:min-w-[150px]"
+              >
                 <LogOutIcon className="mr-2 size-4" aria-hidden="true" />
                 {t("signOut")}
               </Button>
@@ -164,7 +168,7 @@ export function PrivacySecurity({ userEmail, signOutAction }: PrivacySecurityPro
               onClick={handleExport}
               disabled={isExporting}
               aria-busy={isExporting}
-              className="w-full sm:w-auto sm:min-w-[150px]"
+              className="h-11 md:h-8 w-full sm:w-auto sm:min-w-[150px]"
             >
               {isExporting ? (
                 <Loader2Icon className="mr-2 size-4 animate-spin" aria-hidden="true" />

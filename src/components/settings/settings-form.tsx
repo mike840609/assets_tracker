@@ -100,7 +100,7 @@ function CurrencyPicker({
         variant="outline"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        className="h-9 w-full justify-between gap-3 sm:w-[240px]"
+        className="h-11 md:h-9 w-full justify-between gap-3 sm:w-[240px]"
       >
         <span className="min-w-0 truncate text-left font-normal">
           {formatCurrencyLabel(selectedCurrency)}
@@ -270,7 +270,10 @@ export function SettingsForm({
               </div>
               <div className="flex items-center gap-2 sm:w-auto w-full">
                 <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
-                  <SelectTrigger id="language-select" className="flex-1 sm:flex-none sm:w-[200px]">
+                  <SelectTrigger
+                    id="language-select"
+                    className="min-h-11 md:min-h-0 flex-1 sm:flex-none sm:w-[200px]"
+                  >
                     <SelectValue>{t(`languages.${locale}`)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -363,7 +366,7 @@ export function SettingsForm({
                 type="button"
                 onClick={savePreferences}
                 disabled={saving || !preferencesChanged}
-                className="w-full sm:w-auto sm:min-w-[150px]"
+                className="h-11 md:h-8 w-full sm:w-auto sm:min-w-[150px]"
               >
                 {saving ? (
                   <RefreshCw className="mr-2 size-4 animate-spin" aria-hidden="true" />
@@ -418,7 +421,7 @@ export function SettingsForm({
                 title={
                   coolingDown ? t("toast.refreshCooldown", { seconds: secondsLeft }) : undefined
                 }
-                className="w-full sm:w-auto min-w-[150px]"
+                className="h-11 md:h-8 w-full sm:w-auto min-w-[150px]"
               >
                 <RefreshCw className={`mr-2 size-4 ${refreshing ? "animate-spin" : ""}`} />
                 {refreshing ? t("settings.refreshing") : t("settings.btnRefreshMarketData")}
