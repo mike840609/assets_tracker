@@ -215,6 +215,9 @@ export function Sidebar({
               <Link
                 href="/changelog"
                 title={t("nav.changelog")}
+                // Low-traffic page in the always-visible footer: don't speculatively
+                // prefetch its RSC payload for every user with the sidebar open.
+                prefetch={false}
                 className="text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 v{appVersion}

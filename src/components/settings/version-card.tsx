@@ -56,6 +56,7 @@ export async function VersionCard() {
 
           <Link
             href="/changelog"
+            prefetch={false}
             className="inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           >
             {t("versionViewChangelog")}
