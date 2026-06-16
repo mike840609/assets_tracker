@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowRightIcon, TagIcon } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { APP_VERSION, CHANGELOG, resolveChangeText } from "@/lib/changelog";
 import type { Locale } from "@/i18n/config";
@@ -17,10 +17,7 @@ export async function VersionCard() {
 
   return (
     <section className="space-y-3 w-full">
-      <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-        <TagIcon className="h-4 w-4" />
-        {t("versionTitle")}
-      </h3>
+      <h3 className="text-lg font-semibold text-foreground">{t("versionTitle")}</h3>
       <Card className="overflow-hidden p-0">
         <CardContent className="p-4 space-y-4">
           <div className="flex items-end justify-between gap-3">
