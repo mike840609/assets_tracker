@@ -38,6 +38,33 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.6.1",
+    date: "2026-06-17",
+    summary: {
+      "en-US": "Recurring and transaction forms feel native on mobile.",
+      "zh-TW": "定期與交易表單在手機上更貼近原生操作體驗。",
+    },
+    changes: [
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Add/edit forms for recurring investments, recurring cash, and transactions now open as native bottom sheets on mobile with larger touch targets, and scroll instead of clipping on small screens.",
+          "zh-TW":
+            "定期投資、定期現金與交易的新增／編輯表單，在手機上改以原生底部彈出視窗呈現，並加大可點擊範圍；在小螢幕上可捲動而不會被裁切。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Long stock names no longer overflow and break the layout of the Add/Edit Recurring Investment dialog.",
+          "zh-TW": "較長的股票名稱不再溢出並破壞「新增／編輯定期投資」視窗的版面。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.6.0",
     date: "2026-06-16",
     summary: {

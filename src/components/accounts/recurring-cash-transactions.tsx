@@ -13,13 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currencies";
@@ -50,6 +46,7 @@ export function RecurringCashTransactions({
 }) {
   const t = useTranslations("recurringCash");
   const tCommon = useTranslations("common");
+  const isMobile = useIsMobile();
 
   // For a liability the balance is debt owed, so DEPOSIT (balance up) reads as a
   // "charge/borrow" and WITHDRAWAL (balance down) as a "payment". Same enum +
@@ -200,6 +197,123 @@ export function RecurringCashTransactions({
     }
   }
 
+  const formBody = (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="rc-type">{t("labelType")}</Label>
+          <Select value={type} onValueChange={(v) => v && setType(v as typeof type)}>
+            <SelectTrigger id="rc-type" className="w-full min-h-11 md:min-h-8">
+              <SelectValue>{t(type === "DEPOSIT" ? depositKey : withdrawalKey)}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="DEPOSIT">{t(depositKey)}</SelectItem>
+              <SelectItem value="WITHDRAWAL">{t(withdrawalKey)}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="rc-amount">{t("labelAmount")}</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="rc-amount"
+              type="text"
+              inputMode="decimal"
+              value={amount}
+              onChange={handleAmountChange}
+              onBlur={handleAmountBlur}
+              className="min-w-0 flex-1 min-h-11 md:min-h-8"
+            />
+            <span className="text-xs text-muted-foreground shrink-0">{currency}</span>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="rc-frequency">{t("labelFrequency")}</Label>
+        <Select value={frequency} onValueChange={(v) => v && setFrequency(v as Rule["frequency"])}>
+          <SelectTrigger id="rc-frequency" className="w-full min-h-11 md:min-h-8">
+            <SelectValue>{t(`freq${frequency}` as Parameters<typeof t>[0])}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {RECURRING_FREQUENCIES.map((f) => (
+              <SelectItem key={f} value={f}>
+                {t(`freq${f}` as Parameters<typeof t>[0])}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="rc-start">{t("labelStartDate")}</Label>
+          <Input
+            id="rc-start"
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="min-h-11 md:min-h-8"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="rc-end">{t("labelEndDate")}</Label>
+          <Input
+            id="rc-end"
+            type="date"
+            value={endDate}
+            min={startDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="min-h-11 md:min-h-8"
+          />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="rc-note">{t("labelNote")}</Label>
+        <Input
+          id="rc-note"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          className="min-h-11 md:min-h-8"
+        />
+      </div>
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+        <Button
+          variant="outline"
+          className="min-h-11 md:min-h-8"
+          onClick={() => setDialogOpen(false)}
+        >
+          {tCommon("cancel")}
+        </Button>
+        <Button className="min-h-11 md:min-h-8" onClick={handleSave} disabled={submitting}>
+          {submitting ? tCommon("saving") : tCommon("save")}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const dialogTitle = editing ? t("editTitle") : t("addTitle");
+
+  const mobileForm = (
+    <Drawer open={dialogOpen} onOpenChange={(open) => !open && setDialogOpen(false)}>
+      <DrawerContent showCloseButton={false}>
+        <DrawerHeader>
+          <DrawerTitle>{dialogTitle}</DrawerTitle>
+        </DrawerHeader>
+        <div className="px-4 pb-4">{formBody}</div>
+      </DrawerContent>
+    </Drawer>
+  );
+
+  const desktopForm = (
+    <Dialog open={dialogOpen} onOpenChange={(open) => !open && setDialogOpen(false)}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+        </DialogHeader>
+        {formBody}
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <section aria-label={t("sectionLabel")}>
       <div className="flex items-center justify-between gap-3 mb-3">
@@ -207,7 +321,7 @@ export function RecurringCashTransactions({
         <Button
           size="sm"
           variant="ghost"
-          className="h-7 -mr-2 px-2 text-primary hover:text-primary"
+          className="min-h-11 md:min-h-7 -mr-2 px-2 text-primary hover:text-primary"
           onClick={openAdd}
         >
           <Plus className="h-4 w-4 mr-1" />
@@ -276,95 +390,7 @@ export function RecurringCashTransactions({
         </ul>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={(open) => !open && setDialogOpen(false)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editing ? t("editTitle") : t("addTitle")}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="rc-type">{t("labelType")}</Label>
-                <Select value={type} onValueChange={(v) => v && setType(v as typeof type)}>
-                  <SelectTrigger id="rc-type" className="w-full">
-                    <SelectValue>{t(type === "DEPOSIT" ? depositKey : withdrawalKey)}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="DEPOSIT">{t(depositKey)}</SelectItem>
-                    <SelectItem value="WITHDRAWAL">{t(withdrawalKey)}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="rc-amount">{t("labelAmount")}</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="rc-amount"
-                    type="text"
-                    inputMode="decimal"
-                    value={amount}
-                    onChange={handleAmountChange}
-                    onBlur={handleAmountBlur}
-                    className="min-w-0 flex-1"
-                  />
-                  <span className="text-xs text-muted-foreground shrink-0">{currency}</span>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="rc-frequency">{t("labelFrequency")}</Label>
-              <Select
-                value={frequency}
-                onValueChange={(v) => v && setFrequency(v as Rule["frequency"])}
-              >
-                <SelectTrigger id="rc-frequency" className="w-full">
-                  <SelectValue>{t(`freq${frequency}` as Parameters<typeof t>[0])}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {RECURRING_FREQUENCIES.map((f) => (
-                    <SelectItem key={f} value={f}>
-                      {t(`freq${f}` as Parameters<typeof t>[0])}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="rc-start">{t("labelStartDate")}</Label>
-                <Input
-                  id="rc-start"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="rc-end">{t("labelEndDate")}</Label>
-                <Input
-                  id="rc-end"
-                  type="date"
-                  value={endDate}
-                  min={startDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="rc-note">{t("labelNote")}</Label>
-              <Input id="rc-note" value={note} onChange={(e) => setNote(e.target.value)} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              {tCommon("cancel")}
-            </Button>
-            <Button onClick={handleSave} disabled={submitting}>
-              {submitting ? tCommon("saving") : tCommon("save")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {isMobile ? mobileForm : desktopForm}
     </section>
   );
 }

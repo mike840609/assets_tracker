@@ -197,6 +197,7 @@ export function HoldingSearch({
             aria-busy={searching}
             autoComplete="off"
             spellCheck={false}
+            className="min-h-11 md:min-h-8"
           />
           {searching && (
             <div

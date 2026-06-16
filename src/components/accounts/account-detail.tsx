@@ -373,7 +373,7 @@ export function AccountDetail({
         <>
           {/* Mobile: swipeable rows */}
           <div className="md:hidden mt-8">
-            <div className="flex items-center justify-between mb-3 px-1">
+            <div className="flex items-center justify-between mb-3">
               <h3 className="font-medium text-sm">
                 {t("accountDetail.holdingsCount")}
                 {filteredSortedHoldings.length > 0 && (
@@ -385,7 +385,7 @@ export function AccountDetail({
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-8 text-primary px-2"
+                className="-mr-2 h-11 text-primary px-2"
                 onClick={() => setShowHoldingForm(true)}
               >
                 <Plus className="h-4 w-4 mr-1.5" />
@@ -401,7 +401,7 @@ export function AccountDetail({
                 <p className="text-sm text-muted-foreground mb-4 max-w-xs">
                   {t("accountDetail.noHoldings")}
                 </p>
-                <Button size="sm" onClick={() => setShowHoldingForm(true)}>
+                <Button size="sm" className="min-h-11" onClick={() => setShowHoldingForm(true)}>
                   <Plus className="h-4 w-4 mr-1.5" />
                   {t("accountDetail.addHolding")}
                 </Button>
@@ -410,7 +410,9 @@ export function AccountDetail({
               <>
                 {holdingsWithValue.length > 1 && (
                   <div className="sticky top-14 z-10 bg-background/90 backdrop-blur-sm border-b border-border/40 mb-2 py-2 flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs text-muted-foreground shrink-0">Sort:</span>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {t("accountDetail.sortLabel")}
+                    </span>
                     {(
                       [
                         {
