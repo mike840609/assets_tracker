@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Settings,
   Shield,
+  Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";
@@ -114,6 +115,15 @@ export function DesktopCommandPaletteDialog({
               </CommandItem>
             );
           })}
+          <CommandItem
+            onSelect={() => {
+              onNavigate("/changelog");
+              onOpenChange(false);
+            }}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            {t("nav.changelog")}
+          </CommandItem>
         </CommandGroup>
         <CommandGroup heading={t("commandPalette.groupActions")}>
           <CommandItem

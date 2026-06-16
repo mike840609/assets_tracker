@@ -96,6 +96,15 @@ Fix all errors before pushing. CI runs these steps in order and fails fast on th
 
 > The `.husky/pre-push` hook enforces `format:check + lint + typecheck` on every `git push`, so the push will be rejected if any check fails. Run `pnpm format` to auto-fix formatting issues before committing.
 
+## Releasing
+
+When shipping a user-facing change, record it in the version history:
+
+1. Prepend a release to `src/lib/changelog.ts` — it is the **single source of truth**; `APP_VERSION` derives from `CHANGELOG[0]`. Group changes as `added` / `improved` / `fixed`; author `text` bilingually (`en-US` + `zh-TW`).
+2. Bump `package.json`'s `version` to match the new top entry.
+
+That one edit updates every surface that reads `APP_VERSION` / `CHANGELOG`: the sidebar footer, the Settings "Version" card, and the `/changelog` timeline page. Version-number rules (SemVer, "highest change type wins") live in `docs/VERSIONING.md`.
+
 ## Architecture
 
 ### Route Structure
@@ -328,3 +337,4 @@ Before proposing changes, check whether the work is already tracked in one of th
 - `docs/SUGGESTIONS.md` — master backlog (151 items, ✅/❌ tracked)
 - `docs/ROADMAP.md` — prioritized current work (S1–S32) and future features (F1–F25, themes: projections, P&L, cashflow, portfolio intelligence, etc.)
 - `docs/LOG.md` — running engineering log / decision journal
+- `docs/VERSIONING.md` — SemVer policy + how to ship a release (changelog entry + version bump); backs the `/changelog` page
