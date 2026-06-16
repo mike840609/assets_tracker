@@ -53,6 +53,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-ink: var(--primary-ink);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -115,6 +116,11 @@
      Defined once: lazy var() substitution re-resolves per cascaded theme/schema. */
   --gain-ink: color-mix(in oklab, var(--gain), var(--foreground) 30%);
   --loss-ink: color-mix(in oklab, var(--loss), var(--foreground) 30%);
+  /* Same treatment for the brand primary when it carries small chip/body text on
+     a faint primary tint (freshness + privacy badges): the raw --primary clears
+     3:1 as a pill fill but dips below 4.5:1 as 11px text on the near-white canvas,
+     worst on the lighter schemas (amber, emerald). Re-resolves per theme/schema. */
+  --primary-ink: color-mix(in oklab, var(--primary), var(--foreground) 30%);
   --app-icon-gradient-start: #34d399;
   --app-icon-gradient-end: #065f46;
 

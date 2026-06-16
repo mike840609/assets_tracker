@@ -251,7 +251,7 @@ export function DataManagement() {
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
-                className="w-full min-w-[200px]"
+                className="h-11 md:h-8 w-full min-w-[200px]"
               >
                 {isImporting ? (
                   <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
@@ -365,7 +365,9 @@ export function DataManagement() {
                   value={confirmation}
                   onChange={(event) => setConfirmation(event.target.value)}
                   autoComplete="off"
+                  autoCapitalize="characters"
                   aria-describedby="replace-confirmation-help"
+                  className="h-11 md:h-9"
                 />
                 <p id="replace-confirmation-help" className="text-xs text-muted-foreground">
                   {t("typeToConfirmHelp", { confirmation: CONFIRMATION_TEXT })}
@@ -374,13 +376,19 @@ export function DataManagement() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={resetImportSelection} disabled={isImporting}>
+            <Button
+              variant="outline"
+              onClick={resetImportSelection}
+              disabled={isImporting}
+              className="h-11 md:h-8"
+            >
               {t("cancel")}
             </Button>
             <Button
               variant="destructive"
               onClick={handleImport}
               disabled={!confirmationMatches || isImporting}
+              className="h-11 md:h-8"
             >
               {isImporting ? (
                 <Loader2Icon className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
@@ -419,7 +427,7 @@ export function DataManagement() {
                 setImportError(null);
                 resetImportSelection();
               }}
-              className="w-full sm:w-auto"
+              className="h-11 md:h-8 w-full sm:w-auto"
             >
               {t("close")}
             </Button>
@@ -442,10 +450,16 @@ export function DataManagement() {
             {t("importSuccessNextStep")}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => window.location.reload()}>
+            <Button
+              variant="outline"
+              onClick={() => window.location.reload()}
+              className="h-11 md:h-8"
+            >
               {t("stayInSettings")}
             </Button>
-            <Button onClick={() => window.location.assign("/")}>{t("reviewDashboard")}</Button>
+            <Button onClick={() => window.location.assign("/")} className="h-11 md:h-8">
+              {t("reviewDashboard")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

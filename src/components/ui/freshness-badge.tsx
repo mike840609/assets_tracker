@@ -84,7 +84,7 @@ export function FreshnessBadge({
     ? "border-warning/35 bg-warning/10 text-warning"
     : kind === "snapshot"
       ? "border-border/70 bg-muted/30"
-      : "border-primary/25 bg-primary/5 text-primary";
+      : "border-primary/25 bg-primary/5 text-primary-ink";
 
   return (
     <span
