@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 import { prisma } from "@/lib/prisma";
 import { updateTransactionSchema, updateCashTransactionSchema } from "@/lib/validators";
 import {
@@ -21,22 +22,31 @@ function invalidateAccountCaches(userId: string) {
 
 class NegativeHoldingQuantityError extends Error {}
 class StaleHoldingTransactionError extends Error {}
+class StaleCashTransactionError extends Error {}
 
 async function applyHoldingQuantityDelta(
   tx: Pick<typeof prisma, "holding">,
   holdingId: string,
   delta: number,
 ) {
-  if (delta > 0) {
+  // Snap the float delta to the column's Decimal(18, 8) scale before handing it
+  // to Prisma. A raw `number` delta produced by float arithmetic (e.g. 0.1 + 0.2
+  // = 0.30000000000000004) would otherwise drift the stored quantity away from
+  // its transaction ledger and, worse, spuriously trip the `gte` guard below
+  // when closing an exact-quantity position. CLAUDE.md: never hand a raw
+  // `number` to Prisma for monetary/quantity values.
+  const change = new Decimal(delta.toFixed(8));
+
+  if (change.gt(0)) {
     await tx.holding.update({
       where: { id: holdingId },
-      data: { quantity: { increment: delta } },
+      data: { quantity: { increment: change } },
     });
     return;
   }
 
-  if (delta < 0) {
-    const decrement = Math.abs(delta);
+  if (change.lt(0)) {
+    const decrement = change.abs();
     const result = await tx.holding.updateMany({
       where: { id: holdingId, quantity: { gte: decrement } },
       data: { quantity: { decrement } },
@@ -158,30 +168,53 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
     if (amountError) return failure(amountError, 400);
 
     // Balance adjustment and transaction update commit atomically so a
-    // failure can't leave the cash balance out of sync with the ledger.
-    const updatedTx = await prisma.$transaction(async (tx) => {
-      // Recompute balance delta whenever amount or type changes.
-      if (data.amount !== undefined || data.type !== undefined) {
-        const oldTx = { type: cashTx.type, amount: Number(cashTx.amount) };
-        const delta = calculateBalanceDelta(oldTx, nextCashTx);
-        if (delta !== 0) {
-          await tx.account.update({
-            where: { id: accountId },
-            data: { cashBalance: { increment: delta } },
-          });
+    // failure can't leave the cash balance out of sync with the ledger. The
+    // row write is guarded on the values the delta was measured against (the
+    // same optimistic-lock contract as the holding path), so two concurrent
+    // edits can't each apply their own balance delta on top of a row only one
+    // of them actually wrote.
+    let updatedTx;
+    try {
+      updatedTx = await prisma.$transaction(async (tx) => {
+        const result = await tx.cashTransaction.updateMany({
+          where: {
+            id: transactionId,
+            type: cashTx.type,
+            amount: cashTx.amount,
+          },
+          data: {
+            ...(data.amount !== undefined && { amount: data.amount }),
+            ...(data.type !== undefined && { type: data.type }),
+            ...(data.note !== undefined && { note: data.note }),
+            ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
+          },
+        });
+        if (result.count !== 1) {
+          throw new StaleCashTransactionError();
         }
-      }
 
-      return tx.cashTransaction.update({
-        where: { id: transactionId },
-        data: {
-          ...(data.amount !== undefined && { amount: data.amount }),
-          ...(data.type !== undefined && { type: data.type }),
-          ...(data.note !== undefined && { note: data.note }),
-          ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
-        },
+        // Recompute balance delta whenever amount or type changes.
+        if (data.amount !== undefined || data.type !== undefined) {
+          const oldTx = { type: cashTx.type, amount: Number(cashTx.amount) };
+          const delta = calculateBalanceDelta(oldTx, nextCashTx);
+          if (delta !== 0) {
+            await tx.account.update({
+              where: { id: accountId },
+              data: { cashBalance: { increment: delta } },
+            });
+          }
+        }
+
+        return tx.cashTransaction.findUniqueOrThrow({
+          where: { id: transactionId },
+        });
       });
-    });
+    } catch (error) {
+      if (error instanceof StaleCashTransactionError) {
+        return failure("Transaction changed while updating; please retry", 409);
+      }
+      throw error;
+    }
 
     invalidateAccountCaches(userId);
     return ok(updatedTx);
