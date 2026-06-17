@@ -46,9 +46,7 @@ export function GoalsMilestoneCard({
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
             <Target className="h-4 w-4 shrink-0 text-primary" />
-            <CardTitle asChild>
-              <h2 className="truncate">{t("title")}</h2>
-            </CardTitle>
+            <CardTitle className="truncate">{t("title")}</CardTitle>
           </div>
           <Link
             href="/goals"

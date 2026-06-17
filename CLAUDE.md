@@ -52,9 +52,6 @@ pnpm exec prisma db push                                 # Quick prototype-only 
 pnpm exec prisma db push --force-reset                    # Reset local DB (drops all tables, recreates schema directly, bypassing migration history)
 pnpm exec prisma studio                                  # Open Prisma Studio GUI
 
-# Dead-code detection
-pnpm exec knip       # Find unused files/exports/deps (config: knip.json; shadcn ui/ primitives are ignored)
-
 # Unit tests (Vitest) — pure service-layer logic, no DB/env needed
 pnpm test:unit           # Run the unit suite once (tests/unit/)
 pnpm test:unit:watch     # Watch mode
@@ -139,7 +136,6 @@ src/
 │       ├── search/             # Holding symbol search (Yahoo Finance)
 │       ├── settings/           # User settings API
 │       ├── stocks/             # Stock watchlist CRUD + quote + refresh
-│       ├── _metrics/vitals/    # Web Vitals ingestion
 │       └── cron/snapshot/      # Daily cron job (requires CRON_SECRET bearer token)
 ├── hooks/                      # Client hooks (use-chart-animation, use-count-up, use-is-mobile, use-refresh-cooldown, …)
 └── proxy.ts                    # Server-side proxy module (used by service layer)
@@ -155,7 +151,7 @@ src/
 
 `next.config.ts` enables `cacheComponents: true` (Next.js 16's dynamic-IO / PPR-era cache flag). Service-layer reads throughout `src/lib/services/` use the `"use cache"` directive with `cacheTag("...")` — see `getCachedNetWorthSummary`, `getNormalizedHistory`, settings, and the `/analysis` + `/history` reads (landed per `docs/VERCEL_ANALYSIS.md` V18/V26/V27). Follow the same pattern for new server reads; then invalidate from mutation routes via `revalidateTag(...)`.
 
-`next.config.ts` also declares `serverExternalPackages: ["ws", "@neondatabase/serverless"]`. Any new server-only dep that imports Node built-ins (fs, net, tls) must be added here or the build breaks with Edge-incompat errors.
+`next.config.ts` also declares `serverExternalPackages: ["ws", "@neondatabase/serverless", "pg"]`. Any new server-only dep that imports Node built-ins (fs, net, tls) must be added here or the build breaks with Edge-incompat errors.
 
 ### Auth Architecture (Split Config Pattern)
 
@@ -163,7 +159,7 @@ NextAuth v5 requires two files to avoid loading Node.js-only modules in Edge mid
 
 - `src/auth.config.ts` — Edge-compatible config (providers only, no adapter)
 - `src/auth.ts` — Full server config (imports Prisma adapter, used in RSC and API routes)
-- `src/middleware.ts` — Uses `auth.config.ts` to protect all routes except the public-route allowlist in its matcher: `/login`, `/privacy`, `/api/auth/*`, and the file-based metadata routes `/opengraph-image.png` + `/twitter-image.png`. Any new public page must be added to the matcher exclusion.
+- `src/proxy.ts` — Uses `auth.config.ts` to protect all routes except the public-route allowlist in its matcher: `/login`, `/privacy`, `/api/auth/*`, and file-based metadata routes. Any new public page must be added to the matcher exclusion.
 
 The `session.user.id` is populated from `token.sub` in the JWT callback.
 
@@ -212,7 +208,7 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 - Prices are cached in the `PriceCache` table (keyed by symbol)
 - All Yahoo calls go through the shared lazily-instantiated client in `src/lib/services/yahoo-client.ts` (`getYahooClient()`) — never instantiate `yahoo-finance2` directly
 
-**Manual refresh throttling** (see `docs/REFRESH_THROTTLING_PLAN.md`):
+**Manual refresh throttling**:
 
 - `src/lib/refresh-policy.ts` — isomorphic TTL constants (`PRICE_REFRESH_TTL_MS`, `FX_REFRESH_TTL_MS`, `CLIENT_REFRESH_COOLDOWN_MS`) shared by server freshness gates and the client cooldown so the two layers can't drift
 - `src/lib/refresh-client.ts` — client-side entry point for every "refresh market data" surface (dashboard button, pull-to-refresh, settings); module-level cooldown + `refresh:cooldown` event
@@ -325,16 +321,7 @@ VERCEL_ENV                # Set automatically by Vercel (production | preview | 
 
 `DATABASE_URL` is scoped per Vercel environment — Production uses the prod Neon branch, Preview uses a separate shared `preview` Neon branch, so previews never touch live data. Vercel runs the `build:vercel` script (wired via `vercel.json` → `buildCommand`); it runs `prisma migrate deploy` followed by `next build`, skipping the migrate step when no files under `prisma/migrations/` changed since `VERCEL_GIT_PREVIOUS_SHA` (`FORCE_PRISMA_MIGRATE_DEPLOY=1` overrides; `SKIP_PRISMA_MIGRATE_DEPLOY=1` skips unconditionally). CI/local `pnpm build` stays as plain `next build` so it doesn't need a database.
 
-### Long-form analysis docs (`docs/`)
+### Docs (`docs/`)
 
-Before proposing changes, check whether the work is already tracked in one of these — items are status-marked and cross-referenced:
-
-- `docs/PERFORMANCE.md` — bundle optimization (B1–B15), rendering strategy (S/P/I/X), enhancement roadmap (PE1–PE19), React best-practices review (F1–F10)
-- `docs/PLATFORM.md` — Vercel platform (V1–V36), launch readiness (R1–R26), Fluid CPU optimization (P1–P9), Vercel MCP findings (F1–F8), firewall setup
-- `docs/DATABASE.md` — Neon database audit (DB1–DB14): schema overview, index analysis, enhancement backlog
-- `docs/UI_UX.md` — UI/UX improvements (1–15), `/analysis` tab feature roadmap (Phases 1–4), desktop + mobile enhancements, animation polish
-- `docs/CODE_QUALITY.md` — engineering hygiene (Q1–Q20), documentation gaps (C1–C14), cross-doc synthesis (D1–D10)
-- `docs/SUGGESTIONS.md` — master backlog (151 items, ✅/❌ tracked)
-- `docs/ROADMAP.md` — prioritized current work (S1–S32) and future features (F1–F25, themes: projections, P&L, cashflow, portfolio intelligence, etc.)
-- `docs/LOG.md` — running engineering log / decision journal
-- `docs/VERSIONING.md` — SemVer policy + how to ship a release (changelog entry + version bump); backs the `/changelog` page
+- `docs/DATABASE.md` — Neon database notes.
+- `docs/VERSIONING.md` — SemVer policy + release steps.
