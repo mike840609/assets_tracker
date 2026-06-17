@@ -13,6 +13,8 @@ function invalidateUserCaches(userId: string) {
   revalidateTag(`history:${userId}`, { expire: 0 });
 }
 
+class StaleAccountError extends Error {}
+
 export const GET = withAuth<IdCtx>(async (_request, { params }, userId) => {
   const { id } = await params;
   const account = await prisma.account.findUnique({
@@ -32,25 +34,53 @@ export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
   const existingAccount = await prisma.account.findUnique({ where: { id, userId } });
   if (!existingAccount) return failure("Not found", 404);
 
-  // If cashBalance is being updated to a new value, log it as an EDIT transaction
-  if (parsed.data.cashBalance !== undefined) {
-    const diff = new Decimal(parsed.data.cashBalance).minus(existingAccount.cashBalance);
-    if (!diff.isZero()) {
-      await prisma.cashTransaction.create({
+  const { note, ...accountData } = parsed.data;
+  // A manual balance edit logs the difference as an EDIT cash transaction. The
+  // diff must be measured against the balance we actually write over, so the
+  // write is guarded on that prior balance: if a concurrent cash mutation moved
+  // it between our read and the commit, we reject with 409 rather than letting
+  // the EDIT row desync from the stored cashBalance.
+  const nextBalance = accountData.cashBalance;
+  const balanceChanging =
+    nextBalance !== undefined && !new Decimal(nextBalance).equals(existingAccount.cashBalance);
+
+  let account;
+  try {
+    account = await prisma.$transaction(async (tx) => {
+      if (!balanceChanging) {
+        return tx.account.update({
+          where: { id, userId },
+          data: accountData,
+        });
+      }
+
+      const diff = new Decimal(nextBalance!).minus(existingAccount.cashBalance);
+      await tx.cashTransaction.create({
         data: {
           accountId: id,
           type: "EDIT",
           amount: diff,
-          note: body.note || `Manual balance update (${diff.isNegative() ? "" : "+"}${diff})`,
+          note: note || `Manual balance update (${diff.isNegative() ? "" : "+"}${diff})`,
         },
       });
+
+      const result = await tx.account.updateMany({
+        where: { id, userId, cashBalance: existingAccount.cashBalance },
+        data: accountData,
+      });
+      if (result.count !== 1) {
+        throw new StaleAccountError();
+      }
+
+      return tx.account.findUniqueOrThrow({ where: { id } });
+    });
+  } catch (error) {
+    if (error instanceof StaleAccountError) {
+      return failure("Account changed while updating; please retry", 409);
     }
+    throw error;
   }
 
-  const account = await prisma.account.update({
-    where: { id, userId },
-    data: parsed.data,
-  });
   invalidateUserCaches(userId);
   return ok(account);
 });

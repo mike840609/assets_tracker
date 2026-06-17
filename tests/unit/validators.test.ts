@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   createHoldingSchema,
+  updateAccountSchema,
   updateHoldingSchema,
   updateTransactionSchema,
   createCashTransactionSchema,
@@ -11,6 +12,20 @@ import {
 
 // Locks in the E6 validator hardening (positive quantities, immutable
 // assetType, per-type transaction unions, OCC option shape, ISO datetimes).
+
+describe("updateAccountSchema", () => {
+  it("accepts a bounded manual balance edit note", () => {
+    const result = updateAccountSchema.safeParse({ cashBalance: 125, note: "opening correction" });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.note).toBe("opening correction");
+    }
+  });
+
+  it("rejects an oversized manual balance edit note", () => {
+    expect(updateAccountSchema.safeParse({ note: "x".repeat(501) }).success).toBe(false);
+  });
+});
 
 describe("createHoldingSchema", () => {
   const base = { symbol: "aapl", name: "Apple", quantity: 10, assetType: "STOCK" as const };
