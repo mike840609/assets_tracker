@@ -620,6 +620,27 @@
     "current": "目前",
     "trackingSince": "自 {date} 起追蹤",
     "snapshotsCount": "{count} 筆快照",
+    "reconciliation": {
+      "title": "偵測到快照差異",
+      "description": "最新快照與目前餘額相差 {amount}（{percent}）。請先檢查分類帳再進行修正。",
+      "descriptionPrivate": "最新快照與目前餘額相差 {percent}。請先檢查分類帳再進行修正。"
+    },
+    "snapshotLabel": {
+      "addSnapshotAction": "為 {date} 加上標籤",
+      "editSnapshotAction": "編輯 {date} 的標籤",
+      "title": "快照標籤",
+      "label": "標籤",
+      "labelPlaceholder": "收到獎金",
+      "labelCount": "{count}/80",
+      "note": "備註",
+      "notePlaceholder": "為這筆快照加入補充說明",
+      "noteCount": "{count}/500",
+      "cancel": "取消",
+      "save": "儲存",
+      "saving": "儲存中...",
+      "toastSaved": "快照標籤已儲存",
+      "toastFailed": "儲存快照標籤失敗"
+    },
     "emptyTitle": "尚無歷史記錄",
     "emptyDesc": "每日擷取一次淨值快照。第一份快照完成後，您的趨勢、活動月曆和完整分類帳就會顯示在此處。快照每日自動執行，您也可以立即從儀表板手動觸發。",
     "emptyHint": "系統每日擷取快照，隨著歷史累積，圖表會逐漸顯示。",

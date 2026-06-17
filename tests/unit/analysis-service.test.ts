@@ -30,6 +30,8 @@ function snap(
     totalAssets: assets,
     totalLiabilities: liabilities,
     baseCurrency: "USD",
+    label: null,
+    note: null,
   };
 }
 

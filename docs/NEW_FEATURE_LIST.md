@@ -299,6 +299,8 @@ Acceptance checks:
 
 Priority: P1
 
+Status: ✅ First slice done (2026-06-17)
+
 Current state:
 
 - Snapshots are automated and lossless, but users cannot annotate major life
@@ -314,13 +316,14 @@ Feature:
 
 First slice:
 
-- Add optional snapshot label/note fields.
-- Add UI to label the latest snapshot.
-- Add service warning when drift exceeds a configured threshold.
+- ✅ Add optional snapshot label/note fields.
+- ✅ Add UI to label the latest snapshot and edit any historical snapshot row.
+- ✅ Add service warning when drift exceeds a configured threshold.
 
 Acceptance checks:
 
 - Labels appear on history and trend chart tooltips.
+- Labelled snapshot notes appear in the activity heatmap tooltip.
 - Reconciliation warnings never mutate data automatically.
 
 ### NF9 - Merge-First Import and Safer Restore

@@ -620,6 +620,27 @@
     "current": "Current",
     "trackingSince": "Tracking since {date}",
     "snapshotsCount": "{count, plural, one {# snapshot} other {# snapshots}}",
+    "reconciliation": {
+      "title": "Snapshot drift detected",
+      "description": "The latest snapshot differs from current balances by {amount} ({percent}). Review the ledger before making corrections.",
+      "descriptionPrivate": "The latest snapshot differs from current balances by {percent}. Review the ledger before making corrections."
+    },
+    "snapshotLabel": {
+      "addSnapshotAction": "Add label for {date}",
+      "editSnapshotAction": "Edit label for {date}",
+      "title": "Snapshot label",
+      "label": "Label",
+      "labelPlaceholder": "Bonus paid",
+      "labelCount": "{count}/80",
+      "note": "Note",
+      "notePlaceholder": "Optional context for this snapshot",
+      "noteCount": "{count}/500",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving...",
+      "toastSaved": "Snapshot label saved",
+      "toastFailed": "Failed to save snapshot label"
+    },
     "emptyTitle": "No history yet",
     "emptyDesc": "Net worth is captured once a day as a snapshot. After your first one, your trend, activity calendar, and full ledger appear here. Snapshots run automatically each day; you can also trigger one now from the dashboard.",
     "emptyHint": "Snapshots are captured daily, so charts fill in as your history grows.",

@@ -1,0 +1,3 @@
+ALTER TABLE "NetWorthSnapshot"
+ADD COLUMN "label" VARCHAR(80),
+ADD COLUMN "note" TEXT;

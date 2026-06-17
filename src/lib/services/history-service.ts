@@ -2,6 +2,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAllExchangeRates, resolveRate } from "./exchange-rate-service";
+import { getCachedNetWorthSummary } from "./net-worth-service";
 import type { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 import type { MonthlyContribution } from "./analysis-service";
 
@@ -12,6 +13,14 @@ export interface NormalizedSnapshot {
   netWorth: number;
   totalAssets: number;
   totalLiabilities: number;
+  baseCurrency: string;
+  label: string | null;
+  note: string | null;
+}
+
+export interface SnapshotReconciliationWarning {
+  difference: number;
+  differencePercent: number;
   baseCurrency: string;
 }
 
@@ -26,7 +35,11 @@ const SNAPSHOT_SELECT = {
   totalAssets: true,
   totalLiabilities: true,
   baseCurrency: true,
+  label: true,
+  note: true,
 } as const;
+
+const RECONCILIATION_DRIFT_THRESHOLD = 0.05;
 
 interface SnapshotRow {
   id: string;
@@ -36,6 +49,8 @@ interface SnapshotRow {
   totalAssets: Decimal;
   totalLiabilities: Decimal;
   baseCurrency: string;
+  label: string | null;
+  note: string | null;
 }
 
 /** Tie-break metadata for same-day snapshot dedupes. */
@@ -83,6 +98,8 @@ function normalizeSnapshots(
       totalAssets: Number(s.totalAssets) * rate,
       totalLiabilities: Number(s.totalLiabilities) * rate,
       baseCurrency: targetBaseCurrency,
+      label: s.label,
+      note: s.note,
     };
 
     const candidate: DedupeCandidate = {
@@ -225,12 +242,56 @@ async function fetchFullHistoryRange(
   const [snapshotsRaw, allRatesMap] = await Promise.all([
     prisma.netWorthSnapshot.findMany({
       where,
+      select: SNAPSHOT_SELECT,
       orderBy: { date: "asc" },
     }),
     getAllExchangeRates(),
   ]);
 
   return normalizeSnapshots(snapshotsRaw, allRatesMap, targetBaseCurrency);
+}
+
+export async function getSnapshotReconciliationWarning(
+  userId: string,
+  targetBaseCurrency: string,
+): Promise<SnapshotReconciliationWarning | null> {
+  "use cache";
+  cacheTag("snapshots");
+  cacheTag("net-worth");
+  cacheTag(`history:${userId}`);
+  cacheTag(`net-worth:${userId}`);
+  cacheLife("minutes");
+
+  const [latestSnapshot, currentSummary, allRatesMap] = await Promise.all([
+    prisma.netWorthSnapshot.findFirst({
+      where: { userId },
+      select: SNAPSHOT_SELECT,
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    }),
+    getCachedNetWorthSummary(userId, targetBaseCurrency),
+    getAllExchangeRates(),
+  ]);
+
+  if (!latestSnapshot) return null;
+
+  const rate =
+    resolveRate(allRatesMap, latestSnapshot.baseCurrency, targetBaseCurrency) ??
+    (latestSnapshot.baseCurrency === targetBaseCurrency ? 1 : undefined);
+  if (rate === undefined) return null;
+
+  const snapshotNetWorth = Number(latestSnapshot.netWorth) * rate;
+  const currentNetWorth = currentSummary.netWorth;
+  const difference = currentNetWorth - snapshotNetWorth;
+  const denominator = Math.max(Math.abs(snapshotNetWorth), 1);
+  const differencePercent = Math.abs(difference) / denominator;
+
+  if (differencePercent <= RECONCILIATION_DRIFT_THRESHOLD) return null;
+
+  return {
+    difference,
+    differencePercent,
+    baseCurrency: targetBaseCurrency,
+  };
 }
 
 // ---------------------------------------------------------------------------
