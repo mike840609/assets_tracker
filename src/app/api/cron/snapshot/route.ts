@@ -42,6 +42,7 @@ export async function GET(request: Request) {
     // 0. Sweep expired option contracts so the snapshot doesn't include them
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
+    let expiredOptionsChanged = false;
     const expiredOptions = await prisma.holding.findMany({
       where: {
         assetType: "OPTION",
@@ -65,7 +66,7 @@ export async function GET(request: Request) {
           data: { quantity: 0 },
         }),
       ]);
-      revalidateTag("accounts", "max");
+      expiredOptionsChanged = true;
     }
 
     // 1. Warm the ExchangeRate cache (so render paths never need to fetch
@@ -125,10 +126,11 @@ export async function GET(request: Request) {
     // New recurring cash/buy rows changed balances + holdings → net-worth +
     // accounts must drop even when prices/rates were unchanged (otherwise list
     // pages and the snapshot below would read stale data).
-    if (ratesChanged > 0 || priceResult.changed > 0 || recurringChanged) {
+    const structuralChanged = expiredOptionsChanged || recurringChanged;
+    if (ratesChanged > 0 || priceResult.changed > 0 || structuralChanged) {
       revalidateTag("net-worth", "max");
     }
-    if (recurringChanged) {
+    if (structuralChanged) {
       revalidateTag("accounts", "max");
     }
 

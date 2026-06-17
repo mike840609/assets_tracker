@@ -19,14 +19,18 @@ export const POST = withAuth(
     const account = await prisma.account.findUnique({ where: { id, userId } });
     if (!account) return failure("Account not found", 404);
 
-    const transaction = await prisma.cashTransaction.create({
-      data: { accountId: id, type, amount, note },
-    });
-
     const delta = calculateBalanceDelta(null, { type, amount });
-    await prisma.account.update({
-      where: { id },
-      data: { cashBalance: { increment: delta } },
+    const transaction = await prisma.$transaction(async (tx) => {
+      const created = await tx.cashTransaction.create({
+        data: { accountId: id, type, amount, note },
+      });
+
+      await tx.account.update({
+        where: { id },
+        data: { cashBalance: { increment: delta } },
+      });
+
+      return created;
     });
 
     revalidateTag(`accounts:${userId}`, { expire: 0 });

@@ -19,6 +19,34 @@ function invalidateAccountCaches(userId: string) {
   revalidateTag(`history:${userId}`, { expire: 0 });
 }
 
+class NegativeHoldingQuantityError extends Error {}
+class StaleHoldingTransactionError extends Error {}
+
+async function applyHoldingQuantityDelta(
+  tx: Pick<typeof prisma, "holding">,
+  holdingId: string,
+  delta: number,
+) {
+  if (delta > 0) {
+    await tx.holding.update({
+      where: { id: holdingId },
+      data: { quantity: { increment: delta } },
+    });
+    return;
+  }
+
+  if (delta < 0) {
+    const decrement = Math.abs(delta);
+    const result = await tx.holding.updateMany({
+      where: { id: holdingId, quantity: { gte: decrement } },
+      data: { quantity: { decrement } },
+    });
+    if (result.count !== 1) {
+      throw new NegativeHoldingQuantityError();
+    }
+  }
+}
+
 export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
   const { id: accountId, transactionId } = await params;
 
@@ -62,29 +90,42 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
       { type: holdingTx.type, quantity: Number(holdingTx.quantity) },
       { type: nextType, quantity: nextQuantity },
     );
-    const nextHoldingQty = Number(holdingTx.holding.quantity) + holdingDelta;
-    if (nextHoldingQty < 0) {
-      return failure("Holding quantity cannot be negative", 400);
-    }
 
-    const updatedTx = await prisma.$transaction(async (tx) => {
-      if (holdingDelta !== 0) {
-        await tx.holding.update({
-          where: { id: holdingTx.holding.id },
-          data: { quantity: nextHoldingQty },
+    let updatedTx;
+    try {
+      updatedTx = await prisma.$transaction(async (tx) => {
+        const result = await tx.holdingTransaction.updateMany({
+          where: {
+            id: transactionId,
+            type: holdingTx.type,
+            quantity: holdingTx.quantity,
+          },
+          data: {
+            ...(data.quantity !== undefined && { quantity: nextQuantity }),
+            ...(data.type !== undefined && { type: data.type }),
+            ...(data.note !== undefined && { note: data.note }),
+            ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
+          },
         });
-      }
+        if (result.count !== 1) {
+          throw new StaleHoldingTransactionError();
+        }
 
-      return tx.holdingTransaction.update({
-        where: { id: transactionId },
-        data: {
-          ...(data.quantity !== undefined && { quantity: nextQuantity }),
-          ...(data.type !== undefined && { type: data.type }),
-          ...(data.note !== undefined && { note: data.note }),
-          ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
-        },
+        await applyHoldingQuantityDelta(tx, holdingTx.holding.id, holdingDelta);
+
+        return tx.holdingTransaction.findUniqueOrThrow({
+          where: { id: transactionId },
+        });
       });
-    });
+    } catch (error) {
+      if (error instanceof NegativeHoldingQuantityError) {
+        return failure("Holding quantity cannot be negative", 400);
+      }
+      if (error instanceof StaleHoldingTransactionError) {
+        return failure("Transaction changed while updating; please retry", 409);
+      }
+      throw error;
+    }
 
     invalidateAccountCaches(userId);
     return ok(updatedTx);
@@ -172,18 +213,32 @@ export const DELETE = withAuth<TxCtx>(async (_request, { params }, userId) => {
       { type: holdingTx.type, quantity: Number(holdingTx.quantity) },
       null,
     );
-    const nextHoldingQty = Number(holdingTx.holding.quantity) + holdingDelta;
-    if (nextHoldingQty < 0) {
-      return failure("Holding quantity cannot be negative", 400);
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        const result = await tx.holdingTransaction.deleteMany({
+          where: {
+            id: transactionId,
+            type: holdingTx.type,
+            quantity: holdingTx.quantity,
+          },
+        });
+        if (result.count !== 1) {
+          throw new StaleHoldingTransactionError();
+        }
+
+        await applyHoldingQuantityDelta(tx, holdingTx.holding.id, holdingDelta);
+      });
+    } catch (error) {
+      if (error instanceof NegativeHoldingQuantityError) {
+        return failure("Holding quantity cannot be negative", 400);
+      }
+      if (error instanceof StaleHoldingTransactionError) {
+        return failure("Transaction changed while deleting; please retry", 409);
+      }
+      throw error;
     }
 
-    await prisma.$transaction([
-      prisma.holding.update({
-        where: { id: holdingTx.holding.id },
-        data: { quantity: nextHoldingQty },
-      }),
-      prisma.holdingTransaction.delete({ where: { id: transactionId } }),
-    ]);
     invalidateAccountCaches(userId);
     return ok({ ok: true });
   }

@@ -20,6 +20,31 @@ Impact: 🔴 data risk / security / launch blocker · 🟡 meaningful · 🟢 po
 
 ---
 
+## 2026-06-17 module audit addendum
+
+Fresh module-by-module audit: [`MODULE_ENHANCEMENT_AUDIT_2026-06-17.md`](./MODULE_ENHANCEMENT_AUDIT_2026-06-17.md).
+
+Automated baseline is clean (`format:check`, `lint`, `typecheck`,
+`test:unit`, and `build` all pass), but the audit found live issues that should
+take priority over the older "completed" Tier 0 wording below:
+
+1. ✅ P0 ledger atomicity implemented in this PR: cash transaction create,
+   account balance edit, and holding transaction edit/delete now use stronger
+   transaction/delta write contracts.
+2. ✅ P0 cron cache consistency implemented in this PR: expired option sweeps
+   now invalidate net-worth before same-run snapshots.
+3. P1 validation/dedupe gaps: transaction pagination, snapshot range params,
+   goal scope references, and projection same-day snapshot dedupe need focused
+   fixes.
+4. P1/P2 client/tooling hardening: undo-delete can double-commit, option-chain
+   fetches need cancellation, Sentry config emits a deprecation warning, and
+   the vitals endpoint needs a body cap.
+
+Use the addendum as the current next-work queue, then reconcile stale statuses
+in `BUGS.md`, `CODE_QUALITY.md`, and `ROADMAP.md` as fixes land.
+
+---
+
 ## Tier 0 — Data integrity & correctness (completed; keep as regression log)
 
 Small fixes; every one was a verified live bug with user-visible consequences.

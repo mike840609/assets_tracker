@@ -24,6 +24,7 @@ export const updateAccountSchema = createAccountSchema
   .extend({
     isActive: z.boolean(),
     isPinned: z.boolean(),
+    note: z.string().max(500).optional().nullable(),
   })
   .partial();
 
