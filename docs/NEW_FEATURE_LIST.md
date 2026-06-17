@@ -8,6 +8,11 @@ tracker statuses alone. Several older docs are stale; this list treats shipped
 features as shipped when the current code shows the route, model, component, or
 service exists.
 
+A competitor scan was added 2026-06-18 (see "Competitor Scan" below): a pass over
+comparable net-worth, portfolio, and dividend trackers to surface capabilities
+this app does not yet have. The resulting additions are NF22–NF32; they were
+checked against NF1–NF21 so nothing already on the backlog is repeated.
+
 ## Sources Reviewed
 
 - Product intent: `PRODUCT.md`, `README.md`, `DESIGN.md`
@@ -18,6 +23,10 @@ service exists.
   `src/lib/services/*`, `prisma/schema.prisma`
 - Next.js guidance: installed Next.js 16 docs under
   `node_modules/next/dist/docs/`, especially App Router and `cacheComponents`
+- Comparable products (2026-06-18 scan): Sharesight, Empower (Personal Capital),
+  Morningstar Portfolio X-Ray, Ghostfolio, Kubera, Monarch Money, Copilot,
+  Snowball Analytics, M1 Finance / Betterment / Wealthfront, Yahoo / Google
+  Finance, and dedicated debt-payoff planners
 
 ## Current Product Baseline
 
@@ -69,6 +78,7 @@ features.
 3. Merge-first import and safer restore flow
 4. True account deletion
 5. Price provenance and manual price override groundwork
+6. Corporate actions and ledger integrity (NF25)
 
 ### 0.8 - Performance Analytics
 
@@ -79,6 +89,10 @@ Use the improved ledger to answer "what changed and why?"
 3. Analysis Phase 3: custom ranges, YoY, CSV export, PDF later
 4. Benchmark overlay and volatility/drawdown KPIs
 5. Labelled snapshots and reconciliation warnings
+6. Time-weighted and money-weighted return / XIRR (NF22)
+7. Allocation x-ray: asset class, sector, geography (NF23)
+8. Risk-adjusted performance and concentration (NF24)
+9. Dividend calendar and forward income (NF26)
 
 ### 0.9 - Automation and Personalization
 
@@ -89,6 +103,11 @@ Add features that make daily use easier once the accounting base is solid.
 3. Dashboard widget customization
 4. Cross-device preference sync
 5. In-app help and keyboard shortcut reference
+6. Account security: passkeys / 2FA and session management (NF29)
+7. Liability intelligence: amortization and debt payoff (NF27)
+8. Savings rate, runway, and financial-health score (NF28)
+9. Rebalancing simulator and trade planner (NF31)
+10. Watchlist and holding fundamentals + earnings calendar (NF32)
 
 ### 1.0+ - Connected Finance
 
@@ -99,6 +118,38 @@ Larger features with greater compliance, privacy, and operational risk.
 3. Tax-lot selection and year-end tax export
 4. Real estate and vehicle composite assets
 5. AI portfolio insights after ledger and cost-basis data is reliable
+6. Legacy / beneficiary access (NF30)
+
+## Competitor Scan (2026-06-18)
+
+A pass over comparable products to find capabilities this app does not yet have.
+Items already on the backlog (NF1–NF21) are not repeated; each gap below maps to
+a new backlog item (NF22–NF32).
+
+- Sharesight — annualized money- and time-weighted returns, automatic corporate
+  actions, dividend handling, diversity reports → NF22, NF25, NF26, NF23.
+- Empower (Personal Capital) — investment checkup, risk/fee analysis,
+  financial-health summary → NF24, NF28.
+- Morningstar Portfolio X-Ray — asset-class / sector / geography breakdown, fund
+  look-through, concentration → NF23, NF24.
+- Ghostfolio (open source) — time-weighted return, allocation by class / sector /
+  region → NF22, NF23.
+- Kubera — beneficiary / "if something happens to me" access, strong security →
+  NF30, NF29.
+- Monarch Money / Copilot — savings rate, cash-flow health, multi-device → NF28.
+- Snowball Analytics / dividend trackers — dividend calendar, forward income,
+  yield on cost → NF26.
+- M1 Finance / Betterment / Wealthfront — automatic rebalancing toward targets →
+  NF31.
+- Monarch debt view / Undebt.it — loan amortization, debt snowball/avalanche →
+  NF27.
+- Yahoo Finance / Google Finance / broker dashboards — quote fundamentals and
+  earnings calendar → NF32.
+- Banking apps / passkey-era auth — passkeys, MFA, session management → NF29.
+
+Gaps intentionally skipped: full live brokerage aggregation (already NF20),
+deep budgeting / bill-pay (out of scope for a net-worth tracker beyond NF13), and
+social / copy-trading features.
 
 ## Feature Backlog
 
@@ -657,6 +708,354 @@ Acceptance checks:
   compliance review and disclaimers.
 - Users can disable AI features entirely.
 
+## Competitor-Inspired Backlog (2026-06-18)
+
+These entries come from the Competitor Scan above. They are deliberately distinct
+from NF1–NF21: NF22 is a return _rate_ (not the currency P&L of NF3), NF23 is a
+holdings _composition_ x-ray (not the account-category donut), NF26 is _forward_
+income (not the recorded income events of NF4), and NF30 is inactivity-triggered
+estate access (not the live, consensual sharing of NF19).
+
+### NF22 - Time-Weighted and Money-Weighted Returns
+
+Priority: P1
+
+Depends on: NF1, NF2
+
+Current state:
+
+- Analysis reports net-worth deltas, and NF3 will add realized/unrealized P&L in
+  currency terms, but there is no rate-of-return that neutralizes the timing and
+  size of contributions.
+- `projection-service.ts` already derives trailing-12m net cash, proving the
+  cash-flow series needed for return math is reachable.
+
+Feature:
+
+- Add money-weighted return (XIRR/IRR) and time-weighted return (TWR) at the
+  portfolio, account, and holding level, with both period and annualized figures.
+- TWR isolates investment selection from contribution timing; XIRR answers "what
+  did my money actually earn."
+
+First slice:
+
+- Add a pure service-layer module that takes dated cash flows plus valuation
+  marks and returns XIRR (Newton with a bisection fallback) and TWR (geometric
+  linking of sub-period returns between snapshots).
+- Surface a single "annualized return" KPI tile in Analysis behind the existing
+  range control.
+
+Acceptance checks:
+
+- A flat-priced holding that only received contributions returns ~0% TWR, not a
+  figure inflated by deposits.
+- XIRR matches a spreadsheet reference within a small epsilon for a known
+  cash-flow set (unit-tested per the project's service-math test pattern).
+- Returns are shown as unavailable, not wrong, when dates or basis are missing on
+  legacy rows.
+
+### NF23 - Allocation X-Ray (Asset Class, Sector, Geography)
+
+Priority: P1
+
+Current state:
+
+- The allocation donut groups assets by `AccountCategory` only
+  (`allocation-chart.tsx`); there is no asset-class, sector, industry, or
+  geographic breakdown, and no look-through into ETF/fund holdings.
+- `currencyExposure` is already computed in `net-worth-service.ts`, proving the
+  per-holding classify-and-roll-up pattern exists.
+
+Feature:
+
+- Classify each holding by asset class (equity / bond / cash / crypto / other),
+  sector, and region/country, then render switchable allocation breakdowns.
+- Add ETF/fund look-through later so a broad-market ETF reports its underlying
+  sector/region mix instead of a single "ETF" slice.
+
+First slice:
+
+- Add a `SymbolProfile` cache keyed by symbol (mirroring `PriceCache`) storing
+  sector, industry, country, and asset class from Yahoo `quoteSummary`.
+- Warm it on holding create/refresh; never fetch during render. Reads use
+  `"use cache"` + `cacheTag` and are invalidated on refresh.
+- Add an asset-class breakdown to the dashboard allocation card with a dimension
+  switcher.
+
+Acceptance checks:
+
+- Unclassified or `OTHER` holdings fall into a clear "Unclassified" bucket
+  instead of being dropped.
+- Breakdown percentages reconcile to the same asset total as the category donut.
+- No external fetch happens during a normal dashboard render.
+
+### NF24 - Risk-Adjusted Performance and Concentration
+
+Priority: P2
+
+Depends on: NF6, NF22, NF23
+
+Current state:
+
+- NF5 plans net-worth volatility and drawdown, but there is no benchmark-relative
+  or holdings-level risk view.
+
+Feature:
+
+- Add annualized volatility, max-drawdown attribution, a Sharpe-style
+  risk-adjusted return (vs a configurable risk-free rate), and beta vs a
+  benchmark.
+- Add concentration metrics: largest single-position weight and a
+  Herfindahl-Hirschman-style concentration index, with a "too concentrated" hint.
+
+First slice:
+
+- Ship concentration first — it needs only current holdings and prices.
+- Add volatility/Sharpe/beta once a return series (NF22) and benchmark series
+  (NF6) exist.
+
+Acceptance checks:
+
+- Concentration uses base-currency market value, not raw quantity.
+- Risk metrics are hidden, not faked, when the history window is too short.
+- A single-holding portfolio reports 100% concentration and no spurious beta.
+
+### NF25 - Corporate Actions (Splits, Mergers, DRIP, Symbol Changes)
+
+Priority: P1
+
+Depends on: NF2
+
+Current state:
+
+- `Holding` and `HoldingTransaction` have no concept of splits, mergers,
+  spin-offs, ticker changes, or dividend reinvestment, so a 4:1 split would look
+  like a ~75% crash and corrupt cost basis.
+
+Feature:
+
+- Model corporate actions that adjust quantity and/or cost basis: forward and
+  reverse splits, mergers, spin-offs, symbol changes, and DRIP reinvestment.
+- Offer Yahoo-assisted detection (its historical API exposes splits/dividends)
+  with manual entry and an explicit confirmation before any ledger adjustment.
+
+First slice:
+
+- Add a `CorporateAction` model (type, symbol, ratio/terms, effectiveDate) and
+  apply splits to quantity + average cost deterministically.
+- Surface a per-holding "apply split" action with a preview of the resulting
+  quantity and basis.
+
+Acceptance checks:
+
+- Applying a 2:1 split doubles quantity and halves average cost; market value is
+  unchanged.
+- Actions are idempotent and reversible, and never mutate data without
+  confirmation.
+- Splits flow into NF22 return math without producing a phantom gain/loss.
+
+### NF26 - Dividend Calendar and Forward Income
+
+Priority: P2
+
+Depends on: NF4
+
+Current state:
+
+- NF4 records income events that already happened; there is no forward-looking
+  view of expected dividends or an income calendar.
+
+Feature:
+
+- Project forward annual income from announced/trailing dividend rates and show
+  an ex-date / pay-date calendar plus yield-on-cost and projected monthly income.
+
+First slice:
+
+- Extend the `SymbolProfile` cache (NF23) with `dividendRate`, `dividendYield`,
+  and `exDividendDate` from Yahoo `quoteSummary`.
+- Add an "expected income" card: forward annual income = Σ(quantity × rate),
+  converted to base currency.
+
+Acceptance checks:
+
+- Forward income recomputes when holdings change and never fetches per render.
+- Non-dividend and crypto holdings contribute zero without errors.
+- Projected income is clearly labelled as an estimate, not booked cash.
+
+### NF27 - Liability Intelligence (Amortization and Debt Payoff)
+
+Priority: P2
+
+Current state:
+
+- `AccountCategory` includes `MORTGAGE`, `LOAN`, and `CREDIT_CARD`, but these are
+  tracked as bare balances with no rate, term, or payment schedule.
+
+Feature:
+
+- Capture interest rate, term, origination date, and minimum payment on liability
+  accounts, then compute amortization schedules, payoff date, total interest, and
+  debt snowball vs avalanche payoff ordering across debts.
+
+First slice:
+
+- Add optional loan-term metadata to liability accounts.
+- Add an amortization/payoff projection on the account detail page using
+  Decimal-safe math.
+
+Acceptance checks:
+
+- Payoff math is Decimal-backed and matches a known amortization reference.
+- Extra-payment scenarios correctly shorten the schedule and reduce total
+  interest.
+- Accounts without loan metadata keep their current balance-only behavior.
+
+### NF28 - Savings Rate, Runway, and Financial-Health Score
+
+Priority: P2
+
+Depends on: NF13
+
+Current state:
+
+- Projections use trailing net cash, but there is no savings-rate,
+  emergency-fund-runway, or composite health KPI surface.
+
+Feature:
+
+- Add savings rate (net contributions ÷ inflow), emergency-fund runway (liquid
+  assets ÷ trailing monthly spending), debt-to-asset ratio, and a composite
+  financial-health score blending diversification (NF23), runway, savings rate,
+  debt ratio, and goal progress.
+
+First slice:
+
+- Add savings-rate and runway KPI tiles from existing cash-transaction data.
+- Add the composite score once spending categories (NF13) make outflow reliable.
+
+Acceptance checks:
+
+- Runway uses only liquid (cash / brokerage) assets, not illiquid property.
+- The score explains its inputs and never presents itself as financial advice.
+- KPIs degrade gracefully with sparse history.
+
+### NF29 - Account Security (Passkeys, 2FA, Session Management)
+
+Priority: P2
+
+Current state:
+
+- Auth is Google OAuth only (NextAuth v5 + Prisma adapter). The `Session` and
+  `AuthAccount` models exist, but there is no MFA, passkey, session list, or
+  login-activity surface.
+
+Feature:
+
+- Add WebAuthn passkeys and/or TOTP two-factor as a second factor, a Settings
+  "active sessions" list with remote sign-out, and a recent login-activity log.
+
+First slice:
+
+- Add a passkey enrollment flow (NextAuth passkey/authenticator support) and a
+  session list backed by the existing `Session` model.
+- Add a security section to Settings.
+
+Acceptance checks:
+
+- A user can register and sign in with a passkey, and revoke another device's
+  session immediately.
+- Security changes are rate-limited and logged through the existing logger.
+- Losing the second factor has a documented, safe recovery path.
+
+### NF30 - Legacy / Beneficiary Access
+
+Priority: P3
+
+Depends on: NF10, NF19, NF29
+
+Current state:
+
+- There is no way to designate someone who can reach the portfolio if the user
+  becomes inactive; sharing (NF19) is live and consensual, not inactivity-based.
+
+Feature:
+
+- Let a user nominate a beneficiary who receives read-only access (or a final
+  emailed snapshot) after a configurable inactivity period, with check-in
+  reminders before any access is granted.
+
+First slice:
+
+- Track last-active time and add a beneficiary invitation with an inactivity
+  threshold.
+- Send reminder emails to the owner before the threshold; grant scoped read-only
+  access only after it lapses.
+
+Acceptance checks:
+
+- The owner can cancel/reset the timer at any time, which revokes pending access.
+- The beneficiary never gains write access and can never trigger access early.
+- All transitions are logged and reversible by the owner while active.
+
+### NF31 - Rebalancing Simulator and Trade Planner
+
+Priority: P3
+
+Depends on: F9 allocation targets, NF23
+
+Current state:
+
+- Target allocation and drift alerts already exist (F9 — see allocation targets
+  in `docs/ROADMAP.md`), but the app does not suggest the trades needed to return
+  to target.
+
+Feature:
+
+- Given target weights and current holdings, compute the buy/sell amounts to
+  reach target within an optional new-cash constraint, as a non-mutating what-if
+  preview.
+
+First slice:
+
+- Add a service that returns per-holding / per-class deltas to hit targets.
+- Add a read-only "rebalance plan" preview from the allocation/analysis surface.
+
+Acceptance checks:
+
+- Deltas respect the available-cash constraint and never produce negative
+  quantities.
+- The simulator writes nothing; the user executes trades manually.
+- Multi-currency holdings are normalized to base currency before sizing.
+
+### NF32 - Watchlist and Holding Fundamentals + Earnings Calendar
+
+Priority: P2
+
+Current state:
+
+- `StockWatchItem` stores a recorded price/date and a note; quotes are fetched,
+  but no fundamentals (P/E, market cap, day / 52-week range) or earnings dates are
+  shown.
+
+Feature:
+
+- Enrich watchlist and holding rows with key fundamentals and the next earnings
+  date, plus an upcoming-earnings calendar for held/watched symbols.
+
+First slice:
+
+- Extend the `SymbolProfile` cache (NF23) with market cap, P/E, day range, and
+  52-week range from Yahoo `quoteSummary`.
+- Show fundamentals on the stock tracker and a compact earnings badge.
+
+Acceptance checks:
+
+- Fundamentals are cached per symbol and refreshed with market data, not per
+  render.
+- Crypto and non-equity symbols hide equity-only fields cleanly.
+- Stale fundamentals show their age, consistent with the price-freshness UI.
+
 ## Deferred or Not Recommended Yet
 
 - Full live brokerage sync before CSV import and merge-first restore are stable.
@@ -665,6 +1064,12 @@ Acceptance checks:
 - Household sharing before account deletion, security docs, and permission
   boundaries are complete.
 - Decorative dashboard redesigns that do not improve repeated finance workflows.
+- Beneficiary / legacy access (NF30) before account security (NF29) and read-only
+  sharing (NF19) ship.
+- Risk-adjusted metrics (NF24) and time/money-weighted returns (NF22) before
+  explicit dates (NF1) and cost basis (NF2) make the underlying series reliable.
+- ETF/fund look-through (within NF23) before a dependable symbol-profile cache and
+  a fund-holdings data source exist.
 
 ## Cross-Feature Test Plan
 
