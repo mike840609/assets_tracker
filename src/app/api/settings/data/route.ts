@@ -245,7 +245,7 @@ export const GET = withAuth(async (_req, _ctx, userId) => {
     if (!data) return failure("User not found", 404);
 
     const exportData = {
-      version: "1.1",
+      version: "1.2",
       exportedAt: new Date().toISOString(),
       settings: data.appSettings,
       accounts: data.appAccounts,
@@ -426,6 +426,8 @@ export const POST = withAuth(async (request, _ctx, userId) => {
                     targetBaseCurrency,
                   ),
                 ),
+                label: s.label?.trim() || null,
+                note: s.note?.trim() || null,
                 createdAt: s.createdAt,
               };
             }),

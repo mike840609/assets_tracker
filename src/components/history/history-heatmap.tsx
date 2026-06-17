@@ -53,6 +53,8 @@ type SnapshotRow = {
   id: string;
   date: string; // YYYY-MM-DD
   netWorth: number;
+  label?: string | null;
+  note?: string | null;
 };
 
 type GridDay = {
@@ -60,6 +62,8 @@ type GridDay = {
   dateString: string;
   hasSnapshot: boolean;
   netWorth?: number;
+  label?: string | null;
+  note?: string | null;
   change: number | null;
   isFuture: boolean;
   isOutsideYear: boolean;
@@ -163,6 +167,8 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
         dateString,
         hasSnapshot: !!snapData,
         netWorth: snapData?.netWorth,
+        label: snapData?.label ?? null,
+        note: snapData?.note ?? null,
         change,
         isFuture,
         isOutsideYear,
@@ -360,7 +366,9 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                                       formatCurrency(day.change, baseCurrency)
                                 }`
                               : ""
-                          }`
+                          }${
+                            !privacyMode && day.label ? `, label ${day.label}` : ""
+                          }${!privacyMode && day.note ? `, note ${day.note}` : ""}`
                         : `${dateLabel}, no snapshot`;
 
                     // Future days sit fainter than past days with no snapshot, so the grid
@@ -480,6 +488,28 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                       : (tooltip.day.change >= 0 ? "+" : "") +
                         formatCurrency(tooltip.day.change, baseCurrency)}
                   </span>
+                </div>
+              )}
+              {!privacyMode && (tooltip.day.label || tooltip.day.note) && (
+                <div className="mt-1.5 space-y-1 border-t border-border/40 pt-1.5">
+                  {tooltip.day.label && (
+                    <div className="flex items-start justify-between gap-4 text-[11px] leading-relaxed">
+                      <span className="shrink-0 text-muted-foreground">
+                        {t("snapshotLabel.label")}
+                      </span>
+                      <span className="min-w-0 max-w-[13rem] text-right font-medium text-foreground">
+                        {tooltip.day.label}
+                      </span>
+                    </div>
+                  )}
+                  {tooltip.day.note && (
+                    <div className="space-y-0.5 text-[11px] leading-relaxed">
+                      <span className="text-muted-foreground">{t("snapshotLabel.note")}</span>
+                      <p className="max-w-[16rem] whitespace-pre-wrap text-foreground">
+                        {tooltip.day.note}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

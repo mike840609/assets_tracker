@@ -108,6 +108,11 @@ export const updateSettingsSchema = z.object({
   locale: z.enum(["en-US", "zh-TW"]).optional(),
 });
 
+export const updateSnapshotAnnotationSchema = z.object({
+  label: z.string().max(80).optional().nullable(),
+  note: z.string().max(500).optional().nullable(),
+});
+
 // `type` is optional on update, so a discriminated union doesn't fit here —
 // per-type quantity rules are enforced via superRefine (mirroring
 // updateCashTransactionSchema below), and the PATCH route re-checks the
@@ -400,6 +405,8 @@ export const dataImportSchema = z.object({
         netWorth: decimalSchema,
         baseCurrency: z.string().length(3),
         breakdown: z.record(z.string(), z.unknown()).optional().nullable(),
+        label: z.string().max(80).optional().nullable(),
+        note: z.string().max(500).optional().nullable(),
         createdAt: importTimestamp,
       }),
     )

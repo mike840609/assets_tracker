@@ -38,6 +38,42 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.7.0",
+    date: "2026-06-17",
+    summary: {
+      "en-US": "Snapshots can now carry the story behind the numbers.",
+      "zh-TW": "快照現在可以記錄數字背後的事件脈絡。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Snapshot labels and notes: annotate major events, corrections, migrations, and other moments directly from History.",
+          "zh-TW": "新增快照標籤與備註：可在歷史頁直接標記重大事件、修正、帳戶轉移或其他關鍵時刻。",
+        },
+      },
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "History now surfaces snapshot context in the ledger, trend chart tooltip, and activity heatmap tooltip, with privacy mode hiding annotation text.",
+          "zh-TW":
+            "歷史頁會在分類帳、趨勢圖提示與活動熱圖提示中顯示快照脈絡；隱私模式會隱藏標籤與備註文字。",
+        },
+      },
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Snapshot reconciliation warnings flag large drift between the latest snapshot and current reconstructed net worth without changing data automatically.",
+          "zh-TW":
+            "新增快照對帳提醒：當最新快照與目前重建淨值差異過大時提示使用者，且不會自動修改資料。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.6.1",
     date: "2026-06-17",
     summary: {

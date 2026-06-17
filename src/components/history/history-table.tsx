@@ -2,11 +2,14 @@
 
 import { useMemo } from "react";
 import { useTranslations, useFormatter } from "next-intl";
+import { Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currencies";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
 import { FreshnessBadge } from "@/components/ui/freshness-badge";
+import { Badge } from "@/components/ui/badge";
+import { SnapshotLabelDialog } from "./snapshot-label-dialog";
 
 type SnapshotRow = {
   id: string;
@@ -15,6 +18,8 @@ type SnapshotRow = {
   netWorth: number;
   totalAssets: number;
   totalLiabilities: number;
+  label?: string | null;
+  note?: string | null;
 };
 
 type Props = {
@@ -116,13 +121,33 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                       <div
                         role="row"
                         className={cn(
-                          "flex flex-col gap-1 px-4 transition-colors hover:bg-muted/30 md:grid md:grid-cols-[100px_1fr_1fr_120px] md:gap-4 md:items-center",
+                          "group/snapshot-row flex flex-col gap-1 px-4 transition-colors hover:bg-muted/30 md:grid md:grid-cols-[100px_1fr_1fr_120px] md:gap-4 md:items-center",
                           isCompact ? "py-2" : "py-3.5",
                         )}
                       >
                         <div className="flex items-baseline justify-between gap-3 md:contents">
-                          <div role="rowheader" className="shrink-0">
-                            <p className="text-sm font-medium">{dayLabel}</p>
+                          <div role="rowheader" className="min-w-0 shrink-0">
+                            <div className="flex items-center gap-1.5">
+                              <p className="truncate text-sm font-medium">{dayLabel}</p>
+                              <SnapshotLabelDialog
+                                snapshot={row}
+                                className={cn(
+                                  "-my-1 shrink-0",
+                                  row.label
+                                    ? "md:text-primary md:opacity-100"
+                                    : "md:opacity-0 md:group-hover/snapshot-row:opacity-100 md:focus-visible:opacity-100",
+                                )}
+                              />
+                            </div>
+                            {row.label && !privacyMode && (
+                              <Badge
+                                variant="outline"
+                                className="mt-1 max-w-[11rem] justify-start rounded-md px-1.5 text-[10px] md:max-w-[6rem]"
+                              >
+                                <Tag className="size-3 shrink-0" aria-hidden="true" />
+                                <span className="truncate">{row.label}</span>
+                              </Badge>
+                            )}
                           </div>
 
                           <div
@@ -173,6 +198,11 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                               </>
                             )}
                           </p>
+                          {row.note && !privacyMode && (
+                            <p className="mt-1 line-clamp-2 text-xs leading-snug text-muted-foreground md:hidden">
+                              {row.note}
+                            </p>
+                          )}
                           <div className="hidden md:block text-right text-sm tabular-nums text-muted-foreground">
                             {privacyMode ? "***" : formatCurrency(row.totalAssets, baseCurrency)}
                           </div>

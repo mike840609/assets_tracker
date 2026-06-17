@@ -8,6 +8,7 @@ import {
   updateCashTransactionSchema,
   createGoalSchema,
   createStockWatchItemSchema,
+  updateSnapshotAnnotationSchema,
 } from "@/lib/validators";
 
 // Locks in the E6 validator hardening (positive quantities, immutable
@@ -186,5 +187,22 @@ describe("createStockWatchItemSchema", () => {
     expect(
       createStockWatchItemSchema.safeParse({ ...base, recordDate: "2026/06/14" }).success,
     ).toBe(false);
+  });
+});
+
+describe("updateSnapshotAnnotationSchema", () => {
+  it("accepts nullable label and note fields", () => {
+    expect(updateSnapshotAnnotationSchema.safeParse({ label: null, note: null }).success).toBe(
+      true,
+    );
+    expect(
+      updateSnapshotAnnotationSchema.safeParse({ label: "Bonus paid", note: "Annual event" })
+        .success,
+    ).toBe(true);
+  });
+
+  it("enforces label and note length limits", () => {
+    expect(updateSnapshotAnnotationSchema.safeParse({ label: "x".repeat(81) }).success).toBe(false);
+    expect(updateSnapshotAnnotationSchema.safeParse({ note: "x".repeat(501) }).success).toBe(false);
   });
 });

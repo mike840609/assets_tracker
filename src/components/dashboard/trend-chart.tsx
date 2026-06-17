@@ -32,6 +32,8 @@ type SnapshotData = {
   netWorth: number;
   totalAssets: number;
   totalLiabilities: number;
+  label?: string | null;
+  note?: string | null;
 };
 
 type ChartDataPoint = SnapshotData & { netWorthPct?: number };
@@ -60,6 +62,17 @@ function TrendTooltip({
     year: "numeric",
   });
 
+  const snapshot = payload[0] as
+    | ({ payload?: ChartDataPoint } & {
+        name: string;
+        value: number;
+        color?: string;
+        stroke?: string;
+      })
+    | undefined;
+  const snapshotLabel = privacyMode ? null : snapshot?.payload?.label;
+  const snapshotNote = privacyMode ? null : snapshot?.payload?.note;
+
   const formatValue = (v: number) => {
     if (privacyMode) return "***";
     if (isPercentMode) return `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
@@ -68,6 +81,18 @@ function TrendTooltip({
 
   return (
     <ChartTooltipContainer title={formattedDate}>
+      {(snapshotLabel || snapshotNote) && (
+        <div className="mb-2 border-b border-border/60 pb-2">
+          {snapshotLabel && (
+            <p className="max-w-56 truncate text-sm font-medium text-foreground">{snapshotLabel}</p>
+          )}
+          {snapshotNote && (
+            <p className="mt-0.5 max-w-56 text-xs leading-snug text-muted-foreground">
+              {snapshotNote}
+            </p>
+          )}
+        </div>
+      )}
       {payload.map((entry, i) => (
         <ChartTooltipRow
           key={i}
