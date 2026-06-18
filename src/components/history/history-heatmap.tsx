@@ -72,13 +72,21 @@ type GridDay = {
 type Props = {
   snapshots: SnapshotRow[];
   baseCurrency: string;
+  selectedDate?: string | null;
+  onSelectedDateChange?: (date: string) => void;
   labels?: {
     netWorth: string;
     change: string;
   };
 };
 
-export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
+export function HistoryHeatmap({
+  snapshots,
+  baseCurrency,
+  selectedDate,
+  onSelectedDateChange,
+  labels,
+}: Props) {
   const format = useFormatter();
   const t = useTranslations("history");
   const { privacyMode } = usePrivacyMode();
@@ -92,8 +100,9 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
     maxNeg,
     weeksToShow,
     currentYear,
-    todayColIndex,
+    selectedColIndex,
     todayString,
+    activeDateString,
   } = useMemo(() => {
     // 1. Sort snapshots chronologically (oldest first) to easily calculate deltas
     const sortedSnapshots = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
@@ -109,21 +118,28 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
       snapshotMap.set(snap.date, { ...snap, change });
     }
 
-    // 3. Determine end date (Saturday on or after Dec 31st of current year)
+    // 3. Show the year containing the selected snapshot. The latest snapshot is
+    // the default, while inspecting an older trend point moves the heatmap with it.
     const today = utcToday();
     const todayString = utcDateString(today);
-    const currentYear = today.getUTCFullYear();
+    const activeDateString = selectedDate ?? sortedSnapshots.at(-1)?.date ?? todayString;
+    const activeDate = calendarDateFromString(activeDateString);
+    const currentYear = Number.isNaN(activeDate.getTime())
+      ? today.getUTCFullYear()
+      : activeDate.getUTCFullYear();
+
+    // 4. Determine end date (Saturday on or after Dec 31st of the active year)
     const dec31 = calendarDate(currentYear, 11, 31);
     const dayOfWeekEnd = dec31.getUTCDay(); // 0 = Sunday, 6 = Saturday
     const daysToAddToReachSaturday = 6 - dayOfWeekEnd;
     const endDate = addUtcDays(dec31, daysToAddToReachSaturday);
 
-    // 4. Determine start date (Sunday on or before Jan 1st of current year)
+    // 5. Determine start date (Sunday on or before Jan 1st of the active year)
     const jan1 = calendarDate(currentYear, 0, 1);
     const dayOfWeekStart = jan1.getUTCDay();
     const startDate = addUtcDays(jan1, -dayOfWeekStart);
 
-    // 5. Calculate total days to show
+    // 6. Calculate total days to show
     const daysToShow = Math.round((endDate.getTime() - startDate.getTime()) / DAY_MS) + 1;
     const weeksToShow = daysToShow / 7;
 
@@ -175,9 +191,11 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
       });
     }
 
-    // Column index of the current week, used to seed the initial scroll position
-    const todayDayOffset = Math.round((today.getTime() - startDate.getTime()) / DAY_MS);
-    const todayColIndex = Math.floor(todayDayOffset / 7);
+    // Column index of the selected week, used to keep the inspected day visible.
+    const selectedDayOffset = Math.round((activeDate.getTime() - startDate.getTime()) / DAY_MS);
+    const selectedColIndex = Number.isNaN(selectedDayOffset)
+      ? 0
+      : Math.floor(selectedDayOffset / 7);
 
     return {
       gridDays: days,
@@ -186,10 +204,11 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
       maxNeg: Math.abs(maxNegativeChange),
       weeksToShow,
       currentYear,
-      todayColIndex,
+      selectedColIndex,
       todayString,
+      activeDateString,
     };
-  }, [snapshots, format]);
+  }, [snapshots, format, selectedDate]);
 
   // Transpose the flat array into 7 rows (Sunday–Saturday)
   const rows = useMemo(() => {
@@ -215,14 +234,14 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const dismissTooltip = useCallback(() => setTooltip(null), []);
 
-  // On mount, position the scroll so today sits near the right edge of the visible window.
-  // This shows recent activity immediately without requiring the user to scroll on mobile.
+  // Keep the selected week near the right edge so trend-chart inspection remains
+  // visible on narrow screens, including when selection crosses into another year.
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
-    const targetLeft = (todayColIndex - 8) * COL_WIDTH;
+    const targetLeft = (selectedColIndex - 8) * COL_WIDTH;
     el.scrollLeft = Math.max(0, targetLeft);
-  }, [todayColIndex]);
+  }, [selectedColIndex]);
 
   const showTooltipAtElement = (day: GridDay, element: HTMLElement) => {
     const rect = element.getBoundingClientRect();
@@ -347,6 +366,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
 
                     const canShowDetails = day.hasSnapshot && !day.isFuture;
                     const isToday = day.dateString === todayString;
+                    const isSelected = day.dateString === activeDateString;
 
                     const dateLabel = format.dateTime(calendarDateFromString(day.dateString), {
                       dateStyle: "medium",
@@ -401,8 +421,11 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                         role="gridcell"
                         aria-colindex={cIdx + 1}
                         aria-label={isToday ? `${cellLabel}, today` : cellLabel}
-                        aria-selected={tooltip?.day.dateString === day.dateString}
+                        aria-selected={isSelected}
                         tabIndex={canShowDetails ? 0 : -1}
+                        onClick={
+                          canShowDetails ? () => onSelectedDateChange?.(day.dateString) : undefined
+                        }
                         onPointerEnter={
                           canShowDetails
                             ? (e) => {
@@ -424,7 +447,10 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                         }
                         onFocus={
                           canShowDetails
-                            ? (e) => showTooltipAtElement(day, e.currentTarget)
+                            ? (e) => {
+                                onSelectedDateChange?.(day.dateString);
+                                showTooltipAtElement(day, e.currentTarget);
+                              }
                             : undefined
                         }
                         onBlur={canShowDetails ? () => setTooltip(null) : undefined}
@@ -436,8 +462,9 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                           canShowDetails &&
                             "cursor-pointer transition-transform hover:scale-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-1",
                           bgClass,
-                          // Neutral ink ring marks today: orientation, not a gain/loss signal.
-                          isToday && "ring-1 ring-foreground/60 dark:ring-foreground/70",
+                          // Neutral ink ring tracks the snapshot being inspected without
+                          // competing with the gain/loss fill.
+                          isSelected && "ring-1 ring-foreground/60 dark:ring-foreground/70",
                         )}
                       />
                     );

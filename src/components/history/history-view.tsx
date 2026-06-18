@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { AlertTriangle } from "lucide-react";
 import { TrendChart } from "@/components/dashboard/trend-chart";
@@ -40,6 +41,9 @@ export function HistoryView({
   const t = useTranslations("history");
   const format = useFormatter();
   const { privacyMode } = usePrivacyMode();
+  const [selectedSnapshotDate, setSelectedSnapshotDate] = useState<string | null>(
+    snapshots.at(-1)?.date ?? null,
+  );
 
   const firstSnapshot = snapshots[0];
   const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
@@ -118,10 +122,13 @@ export function HistoryView({
             snapshots={snapshots}
             baseCurrency={baseCurrency}
             hideRangeFilter={hideTrendRangeFilter}
+            onSnapshotDateChange={setSelectedSnapshotDate}
             footer={
               <HistoryHeatmap
                 snapshots={snapshots}
                 baseCurrency={baseCurrency}
+                selectedDate={selectedSnapshotDate}
+                onSelectedDateChange={setSelectedSnapshotDate}
                 labels={{ netWorth: t("colNetWorth"), change: t("colChange") }}
               />
             }

@@ -160,11 +160,13 @@ export function TrendChart({
   baseCurrency = "USD",
   hideRangeFilter = false,
   footer,
+  onSnapshotDateChange,
 }: {
   snapshots: SnapshotData[];
   baseCurrency?: string;
   hideRangeFilter?: boolean;
   footer?: ReactNode;
+  onSnapshotDateChange?: (date: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { width: containerWidth, height: containerHeight } = useContainerSize(containerRef);
@@ -173,7 +175,6 @@ export function TrendChart({
   const t = useTranslations("trendChart");
   const { privacyMode } = usePrivacyMode();
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
-  const { handlers: crosshairHandlers } = useChartCrosshair();
   const shouldReduceMotion = useReducedMotion();
   const rangeFadeTransition = shouldReduceMotion
     ? { duration: 0 }
@@ -218,6 +219,18 @@ export function TrendChart({
       netWorthPct: ((snapshot.netWorth - firstNetWorth) / Math.abs(firstNetWorth)) * 100,
     }));
   }, [filtered, isPercentMode]);
+
+  const handleActiveSnapshotChange = useCallback(
+    (index: number | string) => {
+      const activeIndex = Number(index);
+      if (!Number.isInteger(activeIndex)) return;
+
+      const snapshot = chartData[activeIndex];
+      if (snapshot) onSnapshotDateChange?.(snapshot.date);
+    },
+    [chartData, onSnapshotDateChange],
+  );
+  const { handlers: crosshairHandlers } = useChartCrosshair(handleActiveSnapshotChange);
 
   const periodChange = useMemo(() => {
     if (filtered.length < 2) return null;
