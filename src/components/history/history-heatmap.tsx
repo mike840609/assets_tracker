@@ -215,13 +215,14 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const dismissTooltip = useCallback(() => setTooltip(null), []);
 
-  // On mount, position the scroll so today sits near the right edge of the visible window.
-  // This shows recent activity immediately without requiring the user to scroll on mobile.
+  // On mount, scroll so today's (selected) square is centered in the visible
+  // window. Using the real container width keeps it in view on both the narrow
+  // mobile scroller and a wider desktop card, instead of a fixed mobile offset.
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
-    const targetLeft = (todayColIndex - 8) * COL_WIDTH;
-    el.scrollLeft = Math.max(0, targetLeft);
+    const todayCenter = todayColIndex * COL_WIDTH + CELL_PX / 2;
+    el.scrollLeft = Math.max(0, todayCenter - el.clientWidth / 2);
   }, [todayColIndex]);
 
   const showTooltipAtElement = (day: GridDay, element: HTMLElement) => {
