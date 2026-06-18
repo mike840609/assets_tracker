@@ -306,43 +306,44 @@ export async function refreshExchangeRates(
     };
   }
 
-  const rows: [id: string, fromCurrency: string, toCurrency: string, rate: number][] = [];
+  const rows: [fromCurrency: string, toCurrency: string, rate: number][] = [];
   for (const [toCurrency, rate] of entries) {
-    rows.push([`${baseCurrency}_${toCurrency}`, baseCurrency, toCurrency, rate]);
+    rows.push([baseCurrency, toCurrency, rate]);
     // Persist the inverse too, so direct lookups cover both directions and
     // resolveRate stops re-deriving 1/rate on every chained conversion.
     // Tradeoff: a later genuine fetch of `toCurrency` as base overwrites this
     // derived row (last-write-wins) — fine, since both come from the same
     // upstream snapshot and a fresher genuine rate is strictly better.
-    if (rate !== 0)
-      rows.push([`${toCurrency}_${baseCurrency}`, toCurrency, baseCurrency, 1 / rate]);
+    if (rate !== 0) rows.push([toCurrency, baseCurrency, 1 / rate]);
   }
-  // Sort by id so every statement locks rows in the same order: concurrent
+  // Sort by pair so every statement locks rows in the same order: concurrent
   // refreshes (one per currency in /api/refresh) now write overlapping rows
   // (e.g. base=USD and base=TWD both upsert USD_TWD and TWD_USD), and
   // multi-row upserts taking the same locks in different orders can deadlock.
-  rows.sort(([a], [b]) => (a < b ? -1 : 1));
+  rows.sort(([aFrom, aTo], [bFrom, bTo]) => `${aFrom}_${aTo}`.localeCompare(`${bFrom}_${bTo}`));
 
   const currentRows = await prisma.exchangeRate.findMany({
-    where: { id: { in: rows.map(([id]) => id) } },
-    select: { id: true, rate: true },
+    where: { OR: rows.map(([fromCurrency, toCurrency]) => ({ fromCurrency, toCurrency })) },
+    select: { fromCurrency: true, toCurrency: true, rate: true },
   });
-  const currentById = new Map(currentRows.map((row) => [row.id, row]));
-  const changed = rows.reduce((count, [id, _fromCurrency, _toCurrency, rate]) => {
-    const current = currentById.get(id);
+  const currentByPair = new Map(
+    currentRows.map((row) => [`${row.fromCurrency}_${row.toCurrency}`, row]),
+  );
+  const changed = rows.reduce((count, [fromCurrency, toCurrency, rate]) => {
+    const current = currentByPair.get(`${fromCurrency}_${toCurrency}`);
     return current === undefined || decimalChangedAtDbScale(current.rate, rate) ? count + 1 : count;
   }, 0);
 
   const params: unknown[] = [];
-  const placeholders = rows.map(([id, fromCurrency, toCurrency, rate]) => {
+  const placeholders = rows.map(([fromCurrency, toCurrency, rate]) => {
     const base = params.length;
-    params.push(id, fromCurrency, toCurrency, String(rate));
-    return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}::numeric, NOW())`;
+    params.push(fromCurrency, toCurrency, String(rate));
+    return `($${base + 1}, $${base + 2}, $${base + 3}::numeric, NOW())`;
   });
   await prisma.$executeRawUnsafe(
-    `INSERT INTO "ExchangeRate" (id, "fromCurrency", "toCurrency", rate, "updatedAt")
+    `INSERT INTO "ExchangeRate" ("fromCurrency", "toCurrency", rate, "updatedAt")
      VALUES ${placeholders.join(", ")}
-     ON CONFLICT (id) DO UPDATE SET
+     ON CONFLICT ("fromCurrency", "toCurrency") DO UPDATE SET
        rate        = EXCLUDED.rate,
        "updatedAt" = NOW()`,
     ...params,

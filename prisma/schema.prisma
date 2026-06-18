@@ -243,13 +243,12 @@ model StockWatchItem {
 }
 
 model ExchangeRate {
-  id           String   @id
   fromCurrency String
   toCurrency   String
   rate         Decimal  @db.Decimal(18, 8)
   updatedAt    DateTime @updatedAt
 
-  @@unique([fromCurrency, toCurrency])
+  @@id([fromCurrency, toCurrency])
 }
 
 model NetWorthSnapshot {
