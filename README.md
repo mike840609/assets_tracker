@@ -278,11 +278,6 @@ When you view your history chart or table, the system:
 
 This approach ensures that your trend lines always remain continuous and comparable, regardless of currency fluctuations or setting changes.
 
-## 📝 Roadmap
-
-- [SUGGESTIONS.md](./docs/SUGGESTIONS.md) — fix-it backlog (150+ items, ✅/❌ tracked).
-- [suggestions_20260516_future_features.md](./docs/suggestions_20260516_future_features.md) — forward-looking feature backlog (F1–F25).
-
 ## 🏷️ Versioning
 
 The app follows [Semantic Versioning](https://semver.org). Version history lives in `src/lib/changelog.ts` (the single source of truth — the displayed version derives from the newest entry) and is shown in-app on the **`/changelog`** page and the Settings "Version" card. To cut a release, add an entry there and bump `package.json`'s `version`. See [VERSIONING.md](./docs/VERSIONING.md) for the bump rules and full process.
