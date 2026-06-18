@@ -111,15 +111,6 @@ const nextConfig: NextConfig = {
         },
       ],
     },
-    // V20 — iOS PWA splash screens are immutable build artifacts: they are
-    // produced only by `scripts/generate-splash-screens.mjs` and referenced
-    // from the root layout's `appleWebApp.startupImage`. Cached for 1 year —
-    // if a splash design ever changes, RENAME the file (and update the layout
-    // references) instead of editing it in place.
-    {
-      source: "/splash/:path*",
-      headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
-    },
     // V20 — the service worker must never be long-cached or clients can get
     // stuck on a stale SW. Pinned explicitly so a future broad caching
     // pattern can't accidentally cover it.
