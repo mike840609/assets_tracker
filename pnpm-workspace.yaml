@@ -15,4 +15,5 @@ allowBuilds:
   "@swc/core": true
   msw: true
   prisma: true
+  sharp: true
   unrs-resolver: true
