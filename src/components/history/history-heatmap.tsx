@@ -6,6 +6,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency } from "@/lib/currencies";
+import { hapticTick } from "@/lib/haptics";
 
 const CELL_PX = 10;
 const GAP_PX = 4;
@@ -83,7 +84,9 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   const t = useTranslations("history");
   const { privacyMode } = usePrivacyMode();
   const [tooltip, setTooltip] = useState<{ day: GridDay; x: number; y: number } | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const tooltipLabels = labels ?? { netWorth: "Net Worth", change: "Change" };
+  const activePointerType = useRef<string | null>(null);
 
   const {
     gridDays,
@@ -203,6 +206,11 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
     }
     return result;
   }, [gridDays, weeksToShow]);
+
+  const selectedDay = useMemo(
+    () => gridDays.find((day) => day.dateString === selectedDate),
+    [gridDays, selectedDate],
+  );
 
   const daysOfWeek = useMemo(
     () =>
@@ -347,6 +355,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
 
                     const canShowDetails = day.hasSnapshot && !day.isFuture;
                     const isToday = day.dateString === todayString;
+                    const isSelected = day.dateString === selectedDate;
 
                     const dateLabel = format.dateTime(calendarDateFromString(day.dateString), {
                       dateStyle: "medium",
@@ -401,8 +410,43 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                         role="gridcell"
                         aria-colindex={cIdx + 1}
                         aria-label={isToday ? `${cellLabel}, today` : cellLabel}
-                        aria-selected={tooltip?.day.dateString === day.dateString}
+                        aria-selected={isSelected}
                         tabIndex={canShowDetails ? 0 : -1}
+                        onPointerDown={
+                          canShowDetails
+                            ? (e) => {
+                                activePointerType.current = e.pointerType;
+                              }
+                            : undefined
+                        }
+                        onPointerUp={
+                          canShowDetails
+                            ? () => {
+                                activePointerType.current = null;
+                              }
+                            : undefined
+                        }
+                        onPointerCancel={
+                          canShowDetails
+                            ? () => {
+                                activePointerType.current = null;
+                              }
+                            : undefined
+                        }
+                        onClick={
+                          canShowDetails
+                            ? () => {
+                                // A click only becomes a persistent selection in the
+                                // single-column mobile layout. Touch-generated clicks are
+                                // naturally cancelled when the user scrolls the calendar.
+                                if (window.matchMedia("(max-width: 767px)").matches) {
+                                  if (selectedDate !== day.dateString) hapticTick();
+                                  setSelectedDate(day.dateString);
+                                  setTooltip(null);
+                                }
+                              }
+                            : undefined
+                        }
                         onPointerEnter={
                           canShowDetails
                             ? (e) => {
@@ -424,7 +468,12 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                         }
                         onFocus={
                           canShowDetails
-                            ? (e) => showTooltipAtElement(day, e.currentTarget)
+                            ? (e) => {
+                                // Touch focus is followed by the persistent mobile detail
+                                // panel. Keep the floating tooltip for keyboard navigation.
+                                if (!activePointerType.current)
+                                  showTooltipAtElement(day, e.currentTarget);
+                              }
                             : undefined
                         }
                         onBlur={canShowDetails ? () => setTooltip(null) : undefined}
@@ -434,10 +483,14 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                           // Only the year-to-date fills in; the blank future months stay put.
                           !day.isFuture && "history-cell-in",
                           canShowDetails &&
-                            "cursor-pointer transition-transform hover:scale-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-1",
+                            "cursor-pointer transition-[transform,box-shadow] duration-150 ease-[var(--ease-out-expo)] hover:scale-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-1 motion-reduce:transition-none",
                           bgClass,
+                          isSelected &&
+                            "relative z-10 scale-150 ring-2 ring-primary ring-offset-2 ring-offset-card",
                           // Neutral ink ring marks today: orientation, not a gain/loss signal.
-                          isToday && "ring-1 ring-foreground/60 dark:ring-foreground/70",
+                          isToday &&
+                            !isSelected &&
+                            "ring-1 ring-foreground/60 dark:ring-foreground/70",
                         )}
                       />
                     );
@@ -448,6 +501,69 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
           </div>
         </div>
       </div>
+
+      {selectedDay && (
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="mt-3 rounded-lg bg-muted/45 px-3 py-2.5 ring-1 ring-foreground/10 animate-in fade-in slide-in-from-top-1 duration-150 motion-reduce:animate-none md:hidden"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-foreground">
+                {format.dateTime(calendarDateFromString(selectedDay.dateString), {
+                  dateStyle: "medium",
+                  timeZone: CALENDAR_TIME_ZONE,
+                })}
+              </p>
+              {!privacyMode && selectedDay.label && (
+                <p className="mt-0.5 truncate text-[11px] font-medium text-foreground/80">
+                  {selectedDay.label}
+                </p>
+              )}
+            </div>
+            <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary-ink">
+              {t("selectedSnapshot")}
+            </span>
+          </div>
+
+          <div className="mt-2 flex items-end justify-between gap-4 border-t border-border/50 pt-2">
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground">{tooltipLabels.netWorth}</p>
+              <p className="mt-0.5 truncate text-sm font-semibold tabular-nums text-foreground">
+                {privacyMode ? "***" : formatCurrency(selectedDay.netWorth!, baseCurrency)}
+              </p>
+            </div>
+            {selectedDay.change !== null && (
+              <div className="shrink-0 text-right">
+                <p className="text-[10px] text-muted-foreground">{tooltipLabels.change}</p>
+                <p
+                  className={cn(
+                    "mt-0.5 text-sm font-semibold tabular-nums",
+                    selectedDay.change > 0
+                      ? "text-[var(--gain-ink)]"
+                      : selectedDay.change < 0
+                        ? "text-[var(--loss-ink)]"
+                        : "text-muted-foreground",
+                  )}
+                >
+                  {privacyMode
+                    ? "***"
+                    : (selectedDay.change >= 0 ? "+" : "") +
+                      formatCurrency(selectedDay.change, baseCurrency)}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {!privacyMode && selectedDay.note && (
+            <p className="mt-2 line-clamp-3 border-t border-border/50 pt-2 text-[11px] leading-relaxed text-muted-foreground">
+              {selectedDay.note}
+            </p>
+          )}
+        </div>
+      )}
 
       {typeof document !== "undefined" &&
         tooltip &&

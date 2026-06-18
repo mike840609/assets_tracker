@@ -685,6 +685,7 @@
       }
     },
     "activityYear": "{year} activity",
+    "selectedSnapshot": "Selected snapshot",
     "legendLoss": "Loss",
     "legendGain": "Gain"
   },

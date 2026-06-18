@@ -685,6 +685,7 @@
       }
     },
     "activityYear": "{year} 年活動",
+    "selectedSnapshot": "已選取快照",
     "legendLoss": "下跌",
     "legendGain": "上漲"
   },
