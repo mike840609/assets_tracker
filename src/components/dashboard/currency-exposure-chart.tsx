@@ -52,9 +52,7 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
   return (
     <Card>
       <CardHeader className="pb-1 px-4">
-        <CardTitle asChild className="text-foreground">
-          <h2>{t("title")}</h2>
-        </CardTitle>
+        <CardTitle className="text-foreground">{t("title")}</CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-3">
         {data.length === 0 ? (

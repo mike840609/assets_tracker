@@ -97,9 +97,7 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
   return (
     <Card>
       <CardHeader className="pb-1 px-4">
-        <CardTitle asChild className="text-foreground">
-          <h2>{t("allocationChart.title")}</h2>
-        </CardTitle>
+        <CardTitle className="text-foreground">{t("allocationChart.title")}</CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-3">
         {data.length === 0 ? (
