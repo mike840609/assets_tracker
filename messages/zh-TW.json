@@ -628,7 +628,11 @@
     "snapshotLabel": {
       "addSnapshotAction": "為 {date} 加上標籤",
       "editSnapshotAction": "編輯 {date} 的標籤",
-      "title": "快照標籤",
+      "addNoteAction": "為 {date} 加上備註",
+      "editNoteAction": "編輯 {date} 的備註",
+      "addNote": "新增備註",
+      "editNote": "編輯備註",
+      "title": "快照詳細資料",
       "label": "標籤",
       "labelPlaceholder": "收到獎金",
       "labelCount": "{count}/80",
@@ -638,8 +642,8 @@
       "cancel": "取消",
       "save": "儲存",
       "saving": "儲存中...",
-      "toastSaved": "快照標籤已儲存",
-      "toastFailed": "儲存快照標籤失敗"
+      "toastSaved": "快照詳細資料已儲存",
+      "toastFailed": "儲存快照詳細資料失敗"
     },
     "emptyTitle": "尚無歷史記錄",
     "emptyDesc": "每日擷取一次淨值快照。第一份快照完成後，您的趨勢、活動月曆和完整分類帳就會顯示在此處。快照每日自動執行，您也可以立即從儀表板手動觸發。",
@@ -685,6 +689,10 @@
       }
     },
     "activityYear": "{year} 年活動",
+    "netWorth": "淨資產",
+    "change": "變化",
+    "selectedSnapshot": "已選取快照",
+    "clearSnapshotSelection": "清除快照選取",
     "legendLoss": "下跌",
     "legendGain": "上漲"
   },

@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useRef, useState, useEffect, useSyncExternalStore } from "react";
+import { useMemo, useRef, useState, useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { motion, useReducedMotion } from "framer-motion";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useDensity } from "@/components/layout/density-context";
 import { cn } from "@/lib/utils";
 import { HistoryView } from "@/components/history/history-view";
@@ -79,6 +80,10 @@ function pickDefaultRange(snapshots: NormalizedSnapshot[]): RangeLabel {
   return "YTD";
 }
 
+function MountedAnalysis({ show, children }: { show: boolean; children: ReactNode }) {
+  return show ? <div>{children}</div> : null;
+}
+
 export function AnalysisView({
   snapshots,
   cashFlowData,
@@ -91,6 +96,7 @@ export function AnalysisView({
   const t = useTranslations("analysis");
   const tNav = useTranslations("nav");
   const { density } = useDensity();
+  const isMobile = useIsMobile();
   const isCompact = density === "compact";
   // Keep side-by-side gaps equal to the vertical rhythm between stacked rows.
   const gridGapClass = isCompact ? "gap-3" : "gap-6";
@@ -234,6 +240,8 @@ export function AnalysisView({
   const [override, setOverride] = useState<"analysis" | "history" | null>(null);
   const activeTab: "analysis" | "history" =
     override ?? (hash === "#history" ? "history" : "analysis");
+  const showAnalysis = !isMobile || activeTab === "analysis";
+  const showHistory = isMobile && activeTab === "history";
 
   const handleTabChange = (tab: "analysis" | "history") => {
     setOverride(tab);
@@ -265,8 +273,9 @@ export function AnalysisView({
         aria-label={tNav("analysis")}
       />
 
-      {/* Analysis tab content — always visible on desktop, conditional on mobile */}
-      <div className={activeTab === "history" ? "hidden md:block" : "block"}>
+      {/* Do not mount charts inside a display:none tab. Recharts measures its
+          container on mount, so hidden lazy charts otherwise initialize at 0×0. */}
+      <MountedAnalysis show={showAnalysis}>
         {/* Sentinel: when this scrolls off-screen the range bar is stuck */}
         <div ref={sentinelRef} className="h-px -mt-px" aria-hidden />
         {/* Range selector — floats as a compact pill while scrolling */}
@@ -385,12 +394,10 @@ export function AnalysisView({
             <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
           </motion.div>
         )}
-      </div>
+      </MountedAnalysis>
 
       {/* History tab content — mobile only */}
-      {activeTab === "history" && (
-        <HistoryView snapshots={snapshots} baseCurrency={baseCurrency} className="md:hidden" />
-      )}
+      {showHistory && <HistoryView snapshots={snapshots} baseCurrency={baseCurrency} />}
     </div>
   );
 }

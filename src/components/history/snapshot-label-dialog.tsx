@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
-import { Tag } from "lucide-react";
+import { NotebookPen, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -24,9 +24,10 @@ export type SnapshotLabelTarget = {
 type Props = {
   snapshot: SnapshotLabelTarget;
   className?: string;
+  trigger?: "icon" | "note";
 };
 
-export function SnapshotLabelDialog({ snapshot, className }: Props) {
+export function SnapshotLabelDialog({ snapshot, className, trigger = "icon" }: Props) {
   const router = useRouter();
   const t = useTranslations("history.snapshotLabel");
   const format = useFormatter();
@@ -77,9 +78,11 @@ export function SnapshotLabelDialog({ snapshot, className }: Props) {
     dateStyle: "medium",
   });
   const hasLabel = Boolean(snapshot?.label);
-  const triggerLabel = t(hasLabel ? "editSnapshotAction" : "addSnapshotAction", {
-    date: snapshotDate,
-  });
+  const hasNote = Boolean(snapshot?.note);
+  const triggerLabel =
+    trigger === "note"
+      ? t(hasNote ? "editNoteAction" : "addNoteAction", { date: snapshotDate })
+      : t(hasLabel ? "editSnapshotAction" : "addSnapshotAction", { date: snapshotDate });
 
   const form = (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -127,14 +130,21 @@ export function SnapshotLabelDialog({ snapshot, className }: Props) {
       <Button
         type="button"
         variant="ghost"
-        size="icon-sm"
+        size={trigger === "note" ? "sm" : "icon-sm"}
         onClick={() => handleOpenChange(true)}
         disabled={saving}
         aria-label={triggerLabel}
         title={triggerLabel}
         className={cn("text-muted-foreground hover:text-foreground", className)}
       >
-        <Tag className="size-3.5" aria-hidden="true" />
+        {trigger === "note" ? (
+          <>
+            <NotebookPen className="size-3.5" aria-hidden="true" />
+            {t(hasNote ? "editNote" : "addNote")}
+          </>
+        ) : (
+          <Tag className="size-3.5" aria-hidden="true" />
+        )}
       </Button>
 
       {isMobile ? (
