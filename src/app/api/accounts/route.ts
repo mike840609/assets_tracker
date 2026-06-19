@@ -21,7 +21,7 @@ async function maybeWarmExchangeRate(currency: string) {
   try {
     const existing = await prisma.exchangeRate.findFirst({
       where: { fromCurrency: currency },
-      select: { id: true },
+      select: { fromCurrency: true },
     });
     if (existing) return;
     await refreshExchangeRates(currency);
