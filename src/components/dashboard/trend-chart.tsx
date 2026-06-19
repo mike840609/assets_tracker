@@ -253,9 +253,7 @@ export function TrendChart({
     <Card className="relative h-full flex flex-col pb-0">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 pb-2 px-4">
         <div className="flex flex-col gap-1 min-w-0">
-          <CardTitle asChild className="text-foreground">
-            <h2>{t("title")}</h2>
-          </CardTitle>
+          <CardTitle className="text-foreground">{t("title")}</CardTitle>
           {periodChange && (
             <div
               aria-label={

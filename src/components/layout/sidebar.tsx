@@ -1,7 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- ponytail: one 28px remote avatar does not need image optimization. */
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -210,13 +210,12 @@ export function Sidebar({
         <div className={cn("flex items-center", collapsed ? "justify-center" : "justify-between")}>
           {!collapsed &&
             (userImage ? (
-              <Image
+              <img
                 src={userImage}
-                priority
                 width={28}
                 height={28}
                 alt={userName ?? "User avatar"}
-                className="rounded-full"
+                className="h-7 w-7 rounded-full"
               />
             ) : (
               <Link

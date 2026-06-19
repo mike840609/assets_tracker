@@ -16,6 +16,3 @@ docs/
 # CI / git tooling — not needed in Vercel build
 .github/
 .husky/
-
-# One-off local scripts
-scripts/compress-og-images.mjs
