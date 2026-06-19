@@ -628,7 +628,11 @@
     "snapshotLabel": {
       "addSnapshotAction": "Add label for {date}",
       "editSnapshotAction": "Edit label for {date}",
-      "title": "Snapshot label",
+      "addNoteAction": "Add note for {date}",
+      "editNoteAction": "Edit note for {date}",
+      "addNote": "Add note",
+      "editNote": "Edit note",
+      "title": "Snapshot details",
       "label": "Label",
       "labelPlaceholder": "Bonus paid",
       "labelCount": "{count}/80",
@@ -638,8 +642,8 @@
       "cancel": "Cancel",
       "save": "Save",
       "saving": "Saving...",
-      "toastSaved": "Snapshot label saved",
-      "toastFailed": "Failed to save snapshot label"
+      "toastSaved": "Snapshot details saved",
+      "toastFailed": "Failed to save snapshot details"
     },
     "emptyTitle": "No history yet",
     "emptyDesc": "Net worth is captured once a day as a snapshot. After your first one, your trend, activity calendar, and full ledger appear here. Snapshots run automatically each day; you can also trigger one now from the dashboard.",
@@ -685,7 +689,10 @@
       }
     },
     "activityYear": "{year} activity",
+    "netWorth": "Net worth",
+    "change": "Change",
     "selectedSnapshot": "Selected snapshot",
+    "clearSnapshotSelection": "Clear snapshot selection",
     "legendLoss": "Loss",
     "legendGain": "Gain"
   },

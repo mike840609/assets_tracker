@@ -3,8 +3,10 @@
 import { useCallback, useMemo, useState, useRef, useEffect, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useFormatter, useTranslations } from "next-intl";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { SnapshotLabelDialog } from "@/components/history/snapshot-label-dialog";
 import { formatCurrency } from "@/lib/currencies";
 import { hapticTick } from "@/lib/haptics";
 
@@ -59,6 +61,7 @@ type SnapshotRow = {
 };
 
 type GridDay = {
+  id?: string;
   date: Date;
   dateString: string;
   hasSnapshot: boolean;
@@ -85,7 +88,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   const { privacyMode } = usePrivacyMode();
   const [tooltip, setTooltip] = useState<{ day: GridDay; x: number; y: number } | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const tooltipLabels = labels ?? { netWorth: "Net Worth", change: "Change" };
+  const tooltipLabels = labels ?? { netWorth: t("netWorth"), change: t("change") };
   const activePointerType = useRef<string | null>(null);
 
   const {
@@ -166,6 +169,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
       }
 
       days.push({
+        id: snapData?.id,
         date: current,
         dateString,
         hasSnapshot: !!snapData,
@@ -208,7 +212,8 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   }, [gridDays, weeksToShow]);
 
   const selectedDay = useMemo(
-    () => gridDays.find((day) => day.dateString === selectedDate),
+    () =>
+      gridDays.find((day) => day.dateString === selectedDate && day.hasSnapshot && !day.isFuture),
     [gridDays, selectedDate],
   );
 
@@ -264,6 +269,18 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
       window.removeEventListener("orientationchange", dismissTooltip);
     };
   }, [dismissTooltip, tooltip]);
+
+  // Persistent selection is a mobile-only alternative to the floating tooltip.
+  // Clear it when the layout becomes desktop so it cannot reappear after a resize.
+  useEffect(() => {
+    const desktopLayout = window.matchMedia("(min-width: 768px)");
+    const clearDesktopSelection = (event: MediaQueryListEvent) => {
+      if (event.matches) setSelectedDate(null);
+    };
+
+    desktopLayout.addEventListener("change", clearDesktopSelection);
+    return () => desktopLayout.removeEventListener("change", clearDesktopSelection);
+  }, []);
 
   return (
     <div
@@ -355,7 +372,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
 
                     const canShowDetails = day.hasSnapshot && !day.isFuture;
                     const isToday = day.dateString === todayString;
-                    const isSelected = day.dateString === selectedDate;
+                    const isSelected = canShowDetails && day.dateString === selectedDate;
 
                     const dateLabel = format.dateTime(calendarDateFromString(day.dateString), {
                       dateStyle: "medium",
@@ -440,8 +457,10 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                                 // single-column mobile layout. Touch-generated clicks are
                                 // naturally cancelled when the user scrolls the calendar.
                                 if (window.matchMedia("(max-width: 767px)").matches) {
-                                  if (selectedDate !== day.dateString) hapticTick();
-                                  setSelectedDate(day.dateString);
+                                  hapticTick();
+                                  setSelectedDate((current) =>
+                                    current === day.dateString ? null : day.dateString,
+                                  );
                                   setTooltip(null);
                                 }
                               }
@@ -504,40 +523,47 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
 
       {selectedDay && (
         <div
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-          className="mt-3 rounded-lg bg-muted/45 px-3 py-2.5 ring-1 ring-foreground/10 animate-in fade-in slide-in-from-top-1 duration-150 motion-reduce:animate-none md:hidden"
+          role="region"
+          aria-label={t("selectedSnapshot")}
+          className="mt-3 animate-in rounded-lg bg-muted/45 px-3 py-3 ring-1 ring-foreground/10 fade-in slide-in-from-top-1 duration-150 motion-reduce:animate-none md:hidden"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-foreground">
+              <p className="text-sm font-semibold text-foreground">
                 {format.dateTime(calendarDateFromString(selectedDay.dateString), {
                   dateStyle: "medium",
                   timeZone: CALENDAR_TIME_ZONE,
                 })}
               </p>
               {!privacyMode && selectedDay.label && (
-                <p className="mt-0.5 truncate text-[11px] font-medium text-foreground/80">
+                <p className="mt-0.5 truncate text-xs font-medium text-foreground/80">
                   {selectedDay.label}
                 </p>
               )}
             </div>
-            <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary-ink">
-              {t("selectedSnapshot")}
-            </span>
+            <button
+              type="button"
+              aria-label={t("clearSnapshotSelection")}
+              className="-mr-1 -mt-1 flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 active:bg-foreground/10"
+              onClick={() => {
+                hapticTick();
+                setSelectedDate(null);
+              }}
+            >
+              <X className="size-4" aria-hidden="true" />
+            </button>
           </div>
 
-          <div className="mt-2 flex items-end justify-between gap-4 border-t border-border/50 pt-2">
+          <div className="mt-2.5 flex items-end justify-between gap-4 border-t border-border/50 pt-2.5">
             <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground">{tooltipLabels.netWorth}</p>
+              <p className="text-xs text-muted-foreground">{tooltipLabels.netWorth}</p>
               <p className="mt-0.5 truncate text-sm font-semibold tabular-nums text-foreground">
                 {privacyMode ? "***" : formatCurrency(selectedDay.netWorth!, baseCurrency)}
               </p>
             </div>
             {selectedDay.change !== null && (
               <div className="shrink-0 text-right">
-                <p className="text-[10px] text-muted-foreground">{tooltipLabels.change}</p>
+                <p className="text-xs text-muted-foreground">{tooltipLabels.change}</p>
                 <p
                   className={cn(
                     "mt-0.5 text-sm font-semibold tabular-nums",
@@ -558,10 +584,37 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
           </div>
 
           {!privacyMode && selectedDay.note && (
-            <p className="mt-2 line-clamp-3 border-t border-border/50 pt-2 text-[11px] leading-relaxed text-muted-foreground">
+            <p className="mt-2.5 line-clamp-3 border-t border-border/50 pt-2.5 text-xs leading-relaxed text-muted-foreground">
               {selectedDay.note}
             </p>
           )}
+          {!privacyMode && selectedDay.id && (
+            <div className="mt-2.5 border-t border-border/50 pt-2">
+              <SnapshotLabelDialog
+                snapshot={{
+                  id: selectedDay.id,
+                  date: selectedDay.dateString,
+                  label: selectedDay.label,
+                  note: selectedDay.note,
+                }}
+                trigger="note"
+                className="-ml-2"
+              />
+            </div>
+          )}
+          <span className="sr-only" aria-live="polite">
+            {t("selectedSnapshot")}: {tooltipLabels.netWorth},{" "}
+            {privacyMode ? "***" : formatCurrency(selectedDay.netWorth!, baseCurrency)}
+            {selectedDay.change !== null && (
+              <>
+                ; {tooltipLabels.change},{" "}
+                {privacyMode
+                  ? "***"
+                  : (selectedDay.change >= 0 ? "+" : "") +
+                    formatCurrency(selectedDay.change, baseCurrency)}
+              </>
+            )}
+          </span>
         </div>
       )}
 
