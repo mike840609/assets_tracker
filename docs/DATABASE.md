@@ -2,7 +2,7 @@
 
 Findings sourced from the Neon MCP connector against project `solitary-wind-27723484` (`asset_tracker`, region `aws-ap-southeast-1`, PostgreSQL 16). Audit date: 2026-05-15.
 
-> Cross-references: items that overlap the master backlog appear in [`ROADMAP.md`](./ROADMAP.md) S-series. This file is the **database-specific** system of record.
+This file is the database-specific system of record.
 
 ---
 
