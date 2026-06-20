@@ -279,10 +279,11 @@ async function TrendSection({ userId, baseCurrency }: { userId: string; baseCurr
       footer={
         <>
           <HistoryHeatmap snapshots={heatmapSnapshots} baseCurrency={baseCurrency} />
-          {/* Mobile-only entry point — the trend chart is the preview; this
-              names the History destination inline. Desktop uses the sidebar route. */}
+          {/* Mobile-only entry point — History is a sub-tab of /analysis, so
+              the tab bar gives it no scent. The trend chart is the preview;
+              this names the destination. Desktop uses the sidebar route. */}
           <Link
-            href="/history"
+            href="/analysis#history"
             className="md:hidden mt-3 flex items-center justify-between gap-2 rounded-sm border-t border-border/40 pt-3 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <span className="flex items-center gap-1.5">

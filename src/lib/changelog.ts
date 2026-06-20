@@ -57,14 +57,6 @@ export const CHANGELOG: Release[] = [
         type: "improved",
         text: {
           "en-US":
-            "The Analysis tab opens directly to its charts; net-worth History is now reached from its own tab instead of a duplicate sub-tab.",
-          "zh-TW": "分析分頁直接顯示圖表；淨資產歷史改由獨立分頁開啟，不再重複出現於分析子分頁。",
-        },
-      },
-      {
-        type: "improved",
-        text: {
-          "en-US":
             "Sharper mobile labels: the header subtitle and activity-heatmap labels are larger and higher contrast.",
           "zh-TW": "行動版標籤更清晰：頁首副標與活動熱圖標籤加大並提高對比。",
         },
@@ -86,11 +78,11 @@ export const CHANGELOG: Release[] = [
         },
       },
       {
-        type: "fixed",
+        type: "improved",
         text: {
           "en-US":
-            "The Analysis loading placeholder now matches the real page, removing a brief flash of an outdated tab bar.",
-          "zh-TW": "分析頁載入骨架與實際畫面一致，不再短暫閃現舊版分頁列。",
+            "The Analysis loading placeholder now mirrors the page layout (section headings and chart cards), so content settles in place instead of shifting as it loads.",
+          "zh-TW": "分析頁載入骨架改為對應實際版面（區段標題與圖表卡片），內容載入時不再跳動。",
         },
       },
     ],

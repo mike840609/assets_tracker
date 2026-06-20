@@ -38,7 +38,7 @@ const setupSteps = [
   {
     key: "history",
     icon: Clock3,
-    href: "/history",
+    href: "/analysis#history",
     primary: false,
   },
 ] as const;
