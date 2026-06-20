@@ -250,7 +250,7 @@ export function TrendChart({
   }, [filtered, isPercentMode]);
 
   return (
-    <Card data-testid="trend-chart" className="relative h-full flex flex-col pb-0">
+    <Card className="relative h-full flex flex-col pb-0">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 pb-2 px-4">
         <div className="flex flex-col gap-1 min-w-0">
           <CardTitle className="text-foreground">{t("title")}</CardTitle>

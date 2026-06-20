@@ -50,7 +50,7 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
   }, [summary.currencyExposure]);
 
   return (
-    <Card data-testid="currency-exposure-chart">
+    <Card>
       <CardHeader className="pb-1 px-4">
         <CardTitle className="text-foreground">{t("title")}</CardTitle>
       </CardHeader>
