@@ -38,6 +38,49 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.8.0",
+    date: "2026-06-20",
+    summary: {
+      "en-US": "A calmer mobile header and an easier way to switch themes.",
+      "zh-TW": "更清爽的行動版頁首，以及更直覺的主題切換方式。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Appearance control in Settings: pick Light, Dark, or System directly from the preferences page.",
+          "zh-TW": "設定頁新增「外觀」選項：可直接選擇淺色、深色或跟隨系統。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Mobile navigation: History is now a primary tab, and Settings lives in the header for quicker access.",
+          "zh-TW": "行動版導覽：歷史改為主要分頁，設定移至頁首以便快速開啟。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "The mobile header theme switcher is now a single icon that opens a compact Light / Dark / System picker, easing header crowding.",
+          "zh-TW":
+            "行動版頁首的主題切換改為單一圖示，點擊後展開淺色／深色／系統選單，減少頁首壅擠。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "History activity heatmap now fades on both edges so it's clear you can scroll in either direction after it jumps to today.",
+          "zh-TW": "歷史活動熱圖兩側皆會淡出，捲動至今日後可清楚看出左右皆可繼續捲動。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.7.0",
     date: "2026-06-17",
     summary: {

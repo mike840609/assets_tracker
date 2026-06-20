@@ -10,10 +10,10 @@ test.describe("mobile Plan hub", () => {
       .locator("nav")
       .filter({ has: page.getByRole("button", { name: "Accounts" }) });
     await expect(bottomNav).toBeVisible();
-    await expect(bottomNav.getByRole("button", { name: "Plan" })).toBeVisible();
-    await expect(bottomNav.getByRole("button", { name: "Goals" })).toHaveCount(0);
+    await expect(bottomNav.getByRole("button", { name: "Goals" })).toBeVisible();
+    await expect(bottomNav.getByRole("button", { name: "Plan" })).toHaveCount(0);
 
-    await bottomNav.getByRole("button", { name: "Plan" }).click();
+    await bottomNav.getByRole("button", { name: "Goals" }).click();
     await expect(page).toHaveURL(/\/goals$/);
     await expect(page.getByRole("heading", { name: "Plan" })).toBeVisible();
 

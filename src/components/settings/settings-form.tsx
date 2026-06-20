@@ -28,6 +28,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "@/i18n/config";
 import { useDensity, type Density } from "@/components/layout/density-context";
 import { useColorSchema, type ColorSchema } from "@/components/layout/color-schema-context";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Check, ChevronsUpDown, Clock, RefreshCw, Save } from "lucide-react";
 
 const COLOR_SCHEMAS: Array<{ id: ColorSchema; light: string; dark: string }> = [
@@ -316,6 +317,15 @@ export function SettingsForm({
                   );
                 })}
               </div>
+            </div>
+
+            {/* Theme Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t("settings.theme")}</p>
+                <p className="text-sm text-muted-foreground">{t("settings.themeDescription")}</p>
+              </div>
+              <ThemeToggle variant="full" />
             </div>
 
             {/* Color Schema Row */}
