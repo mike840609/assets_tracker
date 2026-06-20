@@ -94,7 +94,6 @@ export function AnalysisView({
   hasAccounts,
 }: Props) {
   const t = useTranslations("analysis");
-  const tNav = useTranslations("nav");
   const { density } = useDensity();
   const isMobile = useIsMobile();
   const isCompact = density === "compact";
@@ -123,11 +122,6 @@ export function AnalysisView({
     label: t(rangeLabelKey[r.label] as Parameters<typeof t>[0]),
   }));
   const activeRangeLabel = t(rangeLabelKey[range] as Parameters<typeof t>[0]);
-
-  const tabOptions: SegmentedOption<"analysis" | "history">[] = [
-    { value: "analysis", label: tNav("analysis") },
-    { value: "history", label: tNav("history") },
-  ];
 
   const { filteredSnapshots, rangeStart, rangeEnd, rangeStartIso } = useMemo(() => {
     const selected = ranges.find((r) => r.label === range)!;
@@ -224,11 +218,11 @@ export function AnalysisView({
   const hasData = snapshots.length > 0;
   const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
 
-  // Deep link: the dashboard's "View full history" link points at /analysis#history
-  // so the History sub-view opens directly. useSyncExternalStore reads the hash with
-  // a server snapshot of "" so SSR and hydration agree (no mismatch), then the client
-  // settles on the real hash. A manual tab switch sets `override`, which wins and
-  // rewrites the hash so the URL stays shareable and Back is predictable.
+  // Analysis no longer shows History as a peer tab. The dashboard's "View full
+  // history" link still deep-links at /analysis#history, which renders the full
+  // history view on mobile; otherwise Analysis stands alone. (Keeping HistoryView
+  // imported and rendered here also keeps recharts in a shared chunk — dropping it
+  // makes Turbopack duplicate recharts across route bundles, ~+150KB gzip.)
   const hash = useSyncExternalStore(
     (onChange) => {
       window.addEventListener("hashchange", onChange);
@@ -237,17 +231,9 @@ export function AnalysisView({
     () => window.location.hash,
     () => "",
   );
-  const [override, setOverride] = useState<"analysis" | "history" | null>(null);
-  const activeTab: "analysis" | "history" =
-    override ?? (hash === "#history" ? "history" : "analysis");
+  const activeTab: "analysis" | "history" = hash === "#history" ? "history" : "analysis";
   const showAnalysis = !isMobile || activeTab === "analysis";
   const showHistory = isMobile && activeTab === "history";
-
-  const handleTabChange = (tab: "analysis" | "history") => {
-    setOverride(tab);
-    const base = window.location.pathname + window.location.search;
-    window.history.replaceState(null, "", tab === "history" ? `${base}#history` : base);
-  };
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [isStuck, setIsStuck] = useState(false);
@@ -263,16 +249,6 @@ export function AnalysisView({
 
   return (
     <div className="space-y-4">
-      {/* Mobile-only tab switcher */}
-      <SegmentedControl
-        variant="underline"
-        options={tabOptions}
-        value={activeTab}
-        onValueChange={handleTabChange}
-        className="md:hidden"
-        aria-label={tNav("analysis")}
-      />
-
       {/* Do not mount charts inside a display:none tab. Recharts measures its
           container on mount, so hidden lazy charts otherwise initialize at 0×0. */}
       <MountedAnalysis show={showAnalysis}>

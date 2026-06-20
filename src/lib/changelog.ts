@@ -57,6 +57,14 @@ export const CHANGELOG: Release[] = [
         type: "improved",
         text: {
           "en-US":
+            "Analysis opens straight to its charts on mobile; History is no longer a separate tab inside Analysis.",
+          "zh-TW": "行動版分析頁直接顯示圖表；歷史紀錄不再是分析頁中的獨立分頁。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
             "Sharper mobile labels: the header subtitle and activity-heatmap labels are larger and higher contrast.",
           "zh-TW": "行動版標籤更清晰：頁首副標與活動熱圖標籤加大並提高對比。",
         },

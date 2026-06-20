@@ -34,17 +34,8 @@ export default function AnalysisLoading() {
       <Skeleton className="h-10 md:h-9 w-32 rounded-lg" />
 
       <div className="space-y-4">
-        {/* Mobile-only Analysis / History tab switcher */}
-        <div className="md:hidden flex border-b">
-          <div className="h-8 w-24 border-b-2 border-primary px-4 pb-2">
-            <Skeleton className="h-4 w-16" />
-          </div>
-          <div className="h-8 w-24 px-4 pb-2">
-            <Skeleton className="h-4 w-14" />
-          </div>
-        </div>
-
-        {/* Sticky freshness badge + range selector */}
+        {/* Sticky freshness badge + range selector (Analysis is a single view; no
+            History sub-tab). */}
         <div className="sticky top-[env(safe-area-inset-top)] md:top-0 z-40 flex items-center justify-between gap-2 py-2 md:-mx-2 md:px-2">
           <Skeleton className="h-5 w-24 rounded-full" />
           <div className="inline-flex gap-1 rounded-full p-1 ring-1 ring-border/50">
