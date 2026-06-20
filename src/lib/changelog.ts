@@ -49,8 +49,8 @@ export const CHANGELOG: Release[] = [
         type: "improved",
         text: {
           "en-US":
-            "Mobile navigation: Goals, Watchlist, and Projections now live together under a single Plan tab that opens on your goals.",
-          "zh-TW": "行動版導覽：目標、自選股與財務預測整合於單一「計畫」分頁，預設顯示目標。",
+            "Mobile navigation: Goals, Watchlist, and Projections now live together under a single Plan tab.",
+          "zh-TW": "行動版導覽：目標、自選股與財務預測整合於單一「計畫」分頁。",
         },
       },
       {
