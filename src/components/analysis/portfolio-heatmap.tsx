@@ -147,9 +147,9 @@ function HeatmapTile(props: HeatmapTileProps) {
           rx={0}
           ry={0}
           fill="none"
-          stroke="var(--foreground)"
-          strokeOpacity={0.72}
-          strokeWidth={1.5}
+          stroke={node.color}
+          strokeOpacity={0.9}
+          strokeWidth={2}
           vectorEffect="non-scaling-stroke"
         />
       )}

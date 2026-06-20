@@ -35,25 +35,32 @@ async function SettingsContent() {
 
   return (
     <NextIntlClientProvider messages={pickMessages(allMessages, CLIENT_NAMESPACES)}>
-      <div className="space-y-10 max-w-2xl pb-16 animate-in fade-in duration-200">
+      <div className="space-y-8 max-w-2xl lg:max-w-6xl pb-16 animate-in fade-in duration-200">
         <LargeTitleHeading>{t("title")}</LargeTitleHeading>
 
-        <SettingsForm
-          currentCurrency={settings.baseCurrency}
-          currentLocale={settings.locale}
-          lastPriceUpdate={latestPrice?.updatedAt?.toISOString() ?? null}
-          lastExchangeRateUpdate={latestExchangeRate?.updatedAt?.toISOString() ?? null}
-        />
-        <PrivacySecurity
-          userEmail={session.user.email}
-          signOutAction={async () => {
-            "use server";
-            await signOut({ redirectTo: "/login" });
-          }}
-        />
-        <DataManagement />
-        <VersionCard />
-        <InstallAppCard />
+        {/* Single column on mobile; on desktop the tall preferences form sits
+            beside a stack of the shorter cards so wide monitors aren't a narrow
+            column floating in empty space. items-start keeps columns independent. */}
+        <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-x-8 lg:gap-y-10">
+          <SettingsForm
+            currentCurrency={settings.baseCurrency}
+            currentLocale={settings.locale}
+            lastPriceUpdate={latestPrice?.updatedAt?.toISOString() ?? null}
+            lastExchangeRateUpdate={latestExchangeRate?.updatedAt?.toISOString() ?? null}
+          />
+          <div className="space-y-8 lg:space-y-10">
+            <PrivacySecurity
+              userEmail={session.user.email}
+              signOutAction={async () => {
+                "use server";
+                await signOut({ redirectTo: "/login" });
+              }}
+            />
+            <DataManagement />
+            <VersionCard />
+            <InstallAppCard />
+          </div>
+        </div>
       </div>
     </NextIntlClientProvider>
   );

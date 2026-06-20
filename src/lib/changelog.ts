@@ -41,8 +41,8 @@ export const CHANGELOG: Release[] = [
     version: "0.8.1",
     date: "2026-06-20",
     summary: {
-      "en-US": "Clearer mobile navigation, analysis charts, and labels.",
-      "zh-TW": "更清楚的行動版導覽、分析圖表與標籤。",
+      "en-US": "Clearer mobile navigation, analysis charts, and labels; settings desktop polish.",
+      "zh-TW": "更清楚的行動版導覽、分析圖表與標籤；設定頁桌面版優化。",
     },
     changes: [
       {
@@ -91,6 +91,31 @@ export const CHANGELOG: Release[] = [
           "en-US":
             "The Analysis loading placeholder now mirrors the page layout (section headings and chart cards), so content settles in place instead of shifting as it loads.",
           "zh-TW": "分析頁載入骨架改為對應實際版面（區段標題與圖表卡片），內容載入時不再跳動。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Settings now lays out in two columns on desktop instead of a single narrow column, so wide screens are no longer mostly empty space.",
+          "zh-TW": "設定頁在桌面改為雙欄排版，不再是單一窄欄，寬螢幕不再留下大片空白。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "On large monitors (1536px and wider) page content uses more of the available width instead of leaving wide side margins.",
+          "zh-TW": "在大型螢幕（1536px 以上）上，頁面內容會運用更多可用寬度，不再留下寬邊距。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Portfolio Composition treemap: the selection ring on a hovered tile now uses the tile's own color instead of a jarring near-black foreground stroke.",
+          "zh-TW":
+            "投資組合熱圖：滑鼠懸停時的選取框線現在使用圖塊本身的顏色，不再顯示突兀的深色邊框。",
         },
       },
     ],
