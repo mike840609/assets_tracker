@@ -7,9 +7,10 @@ import { ColorSchemaProvider } from "@/components/layout/color-schema-context";
 import { LazyToaster } from "@/components/layout/lazy-toaster";
 import { CustomSpeedInsights } from "@/components/layout/speed-insights";
 import { HtmlLangSync } from "@/components/layout/html-lang-sync";
+import { AppLoadingShell } from "@/components/layout/app-loading-shell";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
+import { getMessages } from "next-intl/server";
 import { pickMessages } from "@/lib/i18n-utils";
 import "./globals.css";
 
@@ -71,7 +72,6 @@ const enableVercelInsights = process.env.VERCEL === "1";
  * cookie read.
  */
 async function LocaleProviders({ children }: { children: React.ReactNode }) {
-  await getLocale();
   const messages = await getMessages();
   return (
     <NextIntlClientProvider
@@ -111,7 +111,7 @@ export default function RootLayout({
              * The fallback is a non-null element to avoid the Next.js
              * "empty fallback above document body" anti-pattern.
              */}
-            <Suspense fallback={<span />}>
+            <Suspense fallback={<AppLoadingShell />}>
               <LocaleProviders>{children}</LocaleProviders>
             </Suspense>
             <LazyToaster />
