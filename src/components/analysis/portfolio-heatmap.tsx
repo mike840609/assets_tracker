@@ -419,7 +419,7 @@ export function PortfolioHeatmap({
     ) : null;
 
   return (
-    <Card size={isCompact ? "sm" : "default"} style={heatmapStyle}>
+    <Card data-testid="portfolio-heatmap" size={isCompact ? "sm" : "default"} style={heatmapStyle}>
       <CardHeader className="pb-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
