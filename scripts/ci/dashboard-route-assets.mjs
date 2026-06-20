@@ -35,7 +35,9 @@ export function measureDashboardRoute() {
   for (const file of files) {
     const relative = file.replace(/^\/_next\//, "");
     const full = join(ROOT, ".next", relative);
-    if (!existsSync(full) || !statSync(full).isFile()) continue;
+    if (!existsSync(full) || !statSync(full).isFile()) {
+      throw new Error(`Dashboard route asset missing or not a regular file: ${file}`);
+    }
     const bytes = gzipSync(readFileSync(full)).length;
     if (full.endsWith(".js")) jsGzipBytes += bytes;
     if (full.endsWith(".css")) cssGzipBytes += bytes;

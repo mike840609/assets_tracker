@@ -12,6 +12,9 @@ describe("AppLoadingShell", () => {
     expect(html).toContain('data-app-loading-shell="true"');
     expect(html).toContain('aria-hidden="true"');
     expect(html).toContain("route fallback");
-    expect(html).not.toContain("net-worth-card");
+    expect(html).not.toContain("Net Worth");
+    expect(html).not.toContain("Total Assets");
+    expect(html).not.toContain("USD");
+    expect(html).not.toMatch(/\$\s?[\d,.]+/);
   });
 });
