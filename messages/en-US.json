@@ -113,6 +113,8 @@
     "densityDescription": "Control the spacing of cards and rows",
     "densityComfortable": "Comfortable",
     "densityCompact": "Compact",
+    "theme": "Appearance",
+    "themeDescription": "Choose light, dark, or follow your system preference",
     "colorSchema": "Color Schema",
     "colorSchemaDescription": "Choose an accent color for light and dark mode",
     "syncMarketDataTitle": "Market data",

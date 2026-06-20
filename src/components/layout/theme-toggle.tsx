@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { startTransition, useEffect, useState, useCallback } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,11 +21,35 @@ type DocumentWithVT = Document & {
   };
 };
 
-export function ThemeToggle() {
+const CYCLE_ORDER: ThemeValue[] = ["light", "dark", "system"];
+
+export function ThemeToggle({
+  variant = "compact",
+}: {
+  variant?: "compact" | "full" | "cycle" | "popover";
+}) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => startTransition(() => setMounted(true)), []);
+
+  useEffect(() => {
+    if (variant !== "popover" || !open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [variant, open]);
 
   const handleSelect = useCallback(
     (value: ThemeValue, event: React.MouseEvent<HTMLButtonElement>) => {
@@ -48,8 +72,6 @@ export function ThemeToggle() {
       root.setAttribute("data-vt-theme", "1");
 
       const transition = doc.startViewTransition(() => {
-        // Synchronous DOM commit so the View Transitions API captures the
-        // before/after states correctly across the radial reveal.
         flushSync(() => setTheme(value));
       });
 
@@ -59,6 +81,110 @@ export function ThemeToggle() {
     },
     [theme, setTheme],
   );
+
+  if (variant === "popover") {
+    const CurrentIcon = mounted
+      ? (themes.find((t) => t.value === theme)?.icon ?? Monitor)
+      : Monitor;
+
+    return (
+      <div ref={containerRef} className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          aria-label="Change theme"
+          title="Change theme"
+          className="inline-flex items-center justify-center rounded-md h-11 w-11 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <CurrentIcon className="h-4 w-4" />
+        </button>
+
+        {open && (
+          <div
+            role="listbox"
+            aria-label="Theme"
+            className="absolute top-full right-0 mt-1 z-[60] w-36 rounded-xl border border-border bg-popover shadow-lg shadow-black/10 dark:shadow-black/30 overflow-hidden"
+          >
+            {themes.map(({ value, icon: Icon, label }) => {
+              const isActive = mounted && theme === value;
+              return (
+                <button
+                  key={value}
+                  role="option"
+                  aria-selected={isActive}
+                  type="button"
+                  onClick={(e) => {
+                    handleSelect(value, e);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "flex w-full items-center gap-3 px-3 py-2.5 text-sm transition-colors",
+                    isActive
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-foreground hover:bg-muted",
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (variant === "full") {
+    return (
+      <div className="flex w-full items-center gap-1 rounded-lg border p-1 bg-muted/30 sm:w-fit">
+        {themes.map(({ value, icon: Icon, label }) => {
+          const isActive = mounted && theme === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={(e) => handleSelect(value, e)}
+              title={label}
+              aria-pressed={isActive}
+              className={cn(
+                "flex flex-1 min-h-[44px] items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:flex-none md:min-h-0",
+                isActive
+                  ? "bg-background border border-border shadow-sm text-foreground font-semibold"
+                  : "border border-transparent text-muted-foreground font-medium hover:text-foreground",
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span>{label}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (variant === "cycle") {
+    const currentIndex = CYCLE_ORDER.indexOf((theme as ThemeValue) ?? "system");
+    const nextTheme = CYCLE_ORDER[(currentIndex + 1) % CYCLE_ORDER.length];
+    const nextEntry = themes.find((t) => t.value === nextTheme)!;
+    const CurrentIcon = mounted
+      ? (themes.find((t) => t.value === theme)?.icon ?? Monitor)
+      : Monitor;
+
+    return (
+      <button
+        type="button"
+        onClick={(e) => handleSelect(nextTheme, e)}
+        aria-label={`Switch to ${nextEntry.label} mode`}
+        title={`Switch to ${nextEntry.label} mode`}
+        className="inline-flex items-center justify-center rounded-md h-11 w-11 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        <CurrentIcon className="h-4 w-4" />
+      </button>
+    );
+  }
 
   if (!mounted) {
     return (

@@ -279,9 +279,9 @@ export function MobileNav() {
   const navItems = [
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
     { label: t("nav.accounts"), href: "/accounts", icon: Copy },
-    { label: t("nav.plan"), href: "/goals", icon: Target },
+    { label: t("nav.goals"), href: "/goals", icon: Target },
     { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
-    { label: t("nav.settings"), href: "/settings", icon: Settings },
+    { label: t("nav.history"), href: "/history", icon: History },
   ];
 
   const resolveActive = (href: string) =>

@@ -113,6 +113,8 @@
     "densityDescription": "調整卡片與列的間距",
     "densityComfortable": "舒適",
     "densityCompact": "緊湊",
+    "theme": "外觀",
+    "themeDescription": "選擇淺色、深色，或跟隨系統設定",
     "colorSchema": "配色方案",
     "colorSchemaDescription": "選擇淺色與深色模式的主題色彩",
     "syncMarketDataTitle": "市場資料",

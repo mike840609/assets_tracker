@@ -228,13 +228,31 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const dismissTooltip = useCallback(() => setTooltip(null), []);
 
-  // On mount, position the scroll so today sits near the right edge of the visible window.
-  // This shows recent activity immediately without requiring the user to scroll on mobile.
+  // Track which scroll edges are reachable so the mask fades only the sides that
+  // have hidden content. On initial render the right fade is shown; once the
+  // scroll-to-today effect fires and the listener measures the new position both
+  // sides update in a single frame.
+  const [scrollEdges, setScrollEdges] = useState<{ left: boolean; right: boolean }>({
+    left: false,
+    right: true,
+  });
+
+  // Position the scroll so today sits ~8 weeks from the left edge, then attach
+  // a scroll listener that keeps the edge-fade state in sync.
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
-    const targetLeft = (todayColIndex - 8) * COL_WIDTH;
-    el.scrollLeft = Math.max(0, targetLeft);
+    el.scrollLeft = Math.max(0, (todayColIndex - 8) * COL_WIDTH);
+    const measure = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = el;
+      setScrollEdges({
+        left: scrollLeft > 4,
+        right: scrollLeft + clientWidth < scrollWidth - 4,
+      });
+    };
+    measure();
+    el.addEventListener("scroll", measure, { passive: true });
+    return () => el.removeEventListener("scroll", measure);
   }, [todayColIndex]);
 
   const showTooltipAtElement = (day: GridDay, element: HTMLElement) => {
@@ -315,13 +333,27 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
       </div>
 
       {/*
-        Relative wrapper lets the fade overlay sit on top of the scroll container
-        without affecting layout. The fade uses mask-image on the scroll div itself
-        so it fades the content edge, not a positioned overlay that blocks interaction.
+        Scroll container clips the 52-week grid to the viewport width. The mask
+        fades whichever edges still have hidden content: right-only when at the
+        start, both when in the middle, left-only when at the end. This replaces
+        the static right-only Tailwind mask so the fade correctly signals
+        scrollability in both directions after the initial scroll-to-today.
       */}
       <div
         ref={scrollContainerRef}
-        className="overflow-x-auto scrollbar-none pb-1 [mask-image:linear-gradient(to_right,black_0%,black_88%,transparent_100%)]"
+        style={(() => {
+          const { left, right } = scrollEdges;
+          const mask =
+            left && right
+              ? "linear-gradient(to right, transparent 0%, black 8%, black 88%, transparent 100%)"
+              : left
+                ? "linear-gradient(to right, transparent 0%, black 8%, black 100%)"
+                : right
+                  ? "linear-gradient(to right, black 0%, black 88%, transparent 100%)"
+                  : undefined;
+          return mask ? { maskImage: mask, WebkitMaskImage: mask } : undefined;
+        })()}
+        className="overflow-x-auto scrollbar-none pb-1"
       >
         <div className="inline-flex flex-col min-w-max">
           {/* Month Labels */}

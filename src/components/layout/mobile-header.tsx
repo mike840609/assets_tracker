@@ -1,12 +1,13 @@
 "use client";
 
-import { ChevronLeft, Eye, EyeOff } from "lucide-react";
+import { ChevronLeft, Eye, EyeOff, Settings } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { usePrivacyMode } from "./privacy-mode-context";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import { useLargeTitle } from "./large-title-context";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { hapticTick } from "@/lib/haptics";
 import { AppIcon } from "./app-icon";
@@ -14,7 +15,7 @@ import { AppIcon } from "./app-icon";
 function getPageTitle(pathname: string, nav: (k: string) => string): string {
   if (pathname === "/") return nav("dashboard");
   if (pathname.startsWith("/accounts")) return nav("accounts");
-  if (pathname.startsWith("/goals")) return nav("plan");
+  if (pathname.startsWith("/goals")) return nav("goals");
   if (pathname.startsWith("/stocks")) return nav("stocks");
   if (pathname.startsWith("/analysis")) return nav("analysis");
   if (pathname.startsWith("/history")) return nav("history");
@@ -109,7 +110,19 @@ export function MobileHeader() {
         >
           {privacyMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
-        <ThemeToggle />
+        <ThemeToggle variant="popover" />
+        <Link
+          href="/settings"
+          aria-label={t("nav.settings")}
+          className={cn(
+            "inline-flex items-center justify-center rounded-md h-11 w-11 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            pathname.startsWith("/settings")
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Settings className="h-4 w-4" />
+        </Link>
       </div>
     </header>
   );
