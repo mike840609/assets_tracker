@@ -1,16 +1,29 @@
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Mirrors a secondary chart card: size="sm" Card with a title + subtitle header
+// and a fixed-height plot, so the skeleton→chart swap doesn't shift the row.
 function ChartSkeleton({ height }: { height: number }) {
   return (
-    <Card>
-      <div className="pb-2 px-2 sm:px-4">
-        <Skeleton className="h-5 w-40" />
+    <Card size="sm" className="h-full">
+      <div className="space-y-1.5 px-2 sm:px-4">
+        <Skeleton className="h-5 w-40 max-w-full" />
+        <Skeleton className="h-3 w-52 max-w-full" />
       </div>
-      <div className="px-2 sm:px-4 pb-4">
+      <div className="px-2 pb-1 sm:px-4">
         <Skeleton style={{ height }} />
       </div>
     </Card>
+  );
+}
+
+// Matches the "Movement" / "Composition" group headings (h2 + subtitle).
+function SectionHeaderSkeleton() {
+  return (
+    <div className="space-y-1.5">
+      <Skeleton className="h-4 w-28" />
+      <Skeleton className="h-3 w-44 max-w-full" />
+    </div>
   );
 }
 
@@ -21,17 +34,8 @@ export default function AnalysisLoading() {
       <Skeleton className="h-10 md:h-9 w-32 rounded-lg" />
 
       <div className="space-y-4">
-        {/* Mobile-only tab switcher */}
-        <div className="md:hidden flex border-b">
-          <div className="h-8 w-24 border-b-2 border-primary px-4 pb-2">
-            <Skeleton className="h-4 w-16" />
-          </div>
-          <div className="h-8 w-24 px-4 pb-2">
-            <Skeleton className="h-4 w-14" />
-          </div>
-        </div>
-
-        {/* Sticky freshness + range selector */}
+        {/* Sticky freshness badge + range selector (no sub-tabs: Analysis and
+            History are separate destinations now). */}
         <div className="sticky top-[env(safe-area-inset-top)] md:top-0 z-40 flex items-center justify-between gap-2 py-2 md:-mx-2 md:px-2">
           <Skeleton className="h-5 w-24 rounded-full" />
           <div className="inline-flex gap-1 rounded-full p-1 ring-1 ring-border/50">
@@ -42,18 +46,20 @@ export default function AnalysisLoading() {
         </div>
 
         <div className="space-y-6">
-          {/* Lead balance-sheet chart with integrated KPI rail */}
-          <Card className="!py-0">
-            <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-stretch 2xl:grid-cols-[minmax(0,1fr)_18rem]">
-              <div className="min-w-0 py-4">
-                <div className="pb-2 px-2 sm:px-4">
-                  <Skeleton className="h-5 w-40" />
+          {/* Lead balance-sheet chart with integrated KPI rail (rail stacks below
+              the chart on mobile, sits beside it from xl up). */}
+          <Card size="sm" className="!py-0">
+            <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-stretch 2xl:grid-cols-[minmax(0,1fr)_22rem]">
+              <div className="min-w-0 py-3">
+                <div className="space-y-1.5 px-2 sm:px-4">
+                  <Skeleton className="h-5 w-40 max-w-full" />
+                  <Skeleton className="h-3 w-56 max-w-full" />
                 </div>
-                <div className="px-2 sm:px-4 pb-4">
+                <div className="px-2 pb-1 pt-2 sm:px-4">
                   <Skeleton style={{ height: 180 }} />
                 </div>
               </div>
-              <div className="min-w-0 border-t border-border/60 bg-muted/20 px-4 py-4 xl:border-t-0 xl:border-l xl:bg-muted/25">
+              <div className="min-w-0 border-t border-border/60 bg-muted/20 px-3 py-3 xl:border-t-0 xl:border-l xl:bg-muted/25">
                 <div className="space-y-3">
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-3">
@@ -85,15 +91,22 @@ export default function AnalysisLoading() {
             </div>
           </Card>
 
-          {/* Secondary charts — grouped into movement, then composition */}
+          {/* Secondary charts — grouped into "Movement", then "Composition", each
+              behind its own section heading (stacks single-column on mobile). */}
           <div className="space-y-4">
-            <div className="grid gap-6 xl:grid-cols-2">
-              <ChartSkeleton height={200} />
-              <ChartSkeleton height={200} />
+            <div className="space-y-3">
+              <SectionHeaderSkeleton />
+              <div className="grid gap-6 xl:grid-cols-2">
+                <ChartSkeleton height={200} />
+                <ChartSkeleton height={200} />
+              </div>
             </div>
-            <div className="grid gap-6 xl:grid-cols-2">
-              <ChartSkeleton height={200} />
-              <ChartSkeleton height={200} />
+            <div className="space-y-3">
+              <SectionHeaderSkeleton />
+              <div className="grid gap-6 xl:grid-cols-2">
+                <ChartSkeleton height={200} />
+                <ChartSkeleton height={200} />
+              </div>
             </div>
           </div>
 

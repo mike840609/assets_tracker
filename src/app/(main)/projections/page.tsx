@@ -5,6 +5,7 @@ import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { getProjectionData } from "@/lib/services/projection-service";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
+import { MobileHubRedirect } from "@/components/layout/mobile-hub-redirect";
 import { ProjectionView } from "@/components/projections/projection-view";
 import { prisma } from "@/lib/prisma";
 
@@ -26,6 +27,7 @@ async function ProjectionsContent() {
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
+      <MobileHubRedirect hash="#projections" />
       <div className="space-y-4 md:space-y-8 animate-in fade-in duration-200">
         <LargeTitleHeading>{t("title")}</LargeTitleHeading>
 

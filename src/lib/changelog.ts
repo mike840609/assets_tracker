@@ -38,6 +38,64 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.8.1",
+    date: "2026-06-20",
+    summary: {
+      "en-US": "Clearer mobile navigation, analysis charts, and labels.",
+      "zh-TW": "更清楚的行動版導覽、分析圖表與標籤。",
+    },
+    changes: [
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Mobile navigation: Goals, Watchlist, and Projections now live together under a single Plan tab that opens on your goals.",
+          "zh-TW": "行動版導覽：目標、自選股與財務預測整合於單一「計畫」分頁，預設顯示目標。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "The Analysis tab opens directly to its charts; net-worth History is now reached from its own tab instead of a duplicate sub-tab.",
+          "zh-TW": "分析分頁直接顯示圖表；淨資產歷史改由獨立分頁開啟，不再重複出現於分析子分頁。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Sharper mobile labels: the header subtitle and activity-heatmap labels are larger and higher contrast.",
+          "zh-TW": "行動版標籤更清晰：頁首副標與活動熱圖標籤加大並提高對比。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Dashboard: removed the exchange-rate status chip to keep the freshness row focused on prices and snapshots.",
+          "zh-TW": "儀表板：移除匯率更新狀態標籤，狀態列聚焦於價格與快照。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Cash-flow chart: Contributions now has its own color, so it no longer reads as a downward move.",
+          "zh-TW": "現金流圖表：「淨流入」改用獨立顏色，不再與下跌的顏色混淆。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "The Analysis loading placeholder now matches the real page, removing a brief flash of an outdated tab bar.",
+          "zh-TW": "分析頁載入骨架與實際畫面一致，不再短暫閃現舊版分頁列。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.8.0",
     date: "2026-06-20",
     summary: {

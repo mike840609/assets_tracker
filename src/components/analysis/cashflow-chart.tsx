@@ -118,7 +118,7 @@ export const CashFlowChart = memo(function CashFlowChart({ buckets, baseCurrency
                 <span
                   aria-hidden
                   className="inline-block h-2 w-2 rounded-full"
-                  style={{ background: "var(--chart-2)" }}
+                  style={{ background: "var(--chart-3)" }}
                 />
                 {t("seriesContributions")}
               </span>
@@ -182,7 +182,7 @@ export const CashFlowChart = memo(function CashFlowChart({ buckets, baseCurrency
                     {buckets.map((b) => (
                       <Cell
                         key={`contrib-${b.monthKey}`}
-                        fill="var(--chart-2)"
+                        fill="var(--chart-3)"
                         opacity={b.isEmpty ? 0.2 : 0.85}
                       />
                     ))}

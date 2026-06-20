@@ -1,13 +1,11 @@
 "use client";
 
-import { useMemo, useRef, useState, useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { useMemo, useRef, useState, useEffect, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { motion, useReducedMotion } from "framer-motion";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
-import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useDensity } from "@/components/layout/density-context";
 import { cn } from "@/lib/utils";
-import { HistoryView } from "@/components/history/history-view";
 import { FreshnessBadge } from "@/components/ui/freshness-badge";
 import { SegmentedControl, type SegmentedOption } from "@/components/ui/segmented-control";
 import { Card } from "@/components/ui/card";
@@ -94,9 +92,7 @@ export function AnalysisView({
   hasAccounts,
 }: Props) {
   const t = useTranslations("analysis");
-  const tNav = useTranslations("nav");
   const { density } = useDensity();
-  const isMobile = useIsMobile();
   const isCompact = density === "compact";
   // Keep side-by-side gaps equal to the vertical rhythm between stacked rows.
   const gridGapClass = isCompact ? "gap-3" : "gap-6";
@@ -123,11 +119,6 @@ export function AnalysisView({
     label: t(rangeLabelKey[r.label] as Parameters<typeof t>[0]),
   }));
   const activeRangeLabel = t(rangeLabelKey[range] as Parameters<typeof t>[0]);
-
-  const tabOptions: SegmentedOption<"analysis" | "history">[] = [
-    { value: "analysis", label: tNav("analysis") },
-    { value: "history", label: tNav("history") },
-  ];
 
   const { filteredSnapshots, rangeStart, rangeEnd, rangeStartIso } = useMemo(() => {
     const selected = ranges.find((r) => r.label === range)!;
@@ -224,31 +215,6 @@ export function AnalysisView({
   const hasData = snapshots.length > 0;
   const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
 
-  // Deep link: the dashboard's "View full history" link points at /analysis#history
-  // so the History sub-view opens directly. useSyncExternalStore reads the hash with
-  // a server snapshot of "" so SSR and hydration agree (no mismatch), then the client
-  // settles on the real hash. A manual tab switch sets `override`, which wins and
-  // rewrites the hash so the URL stays shareable and Back is predictable.
-  const hash = useSyncExternalStore(
-    (onChange) => {
-      window.addEventListener("hashchange", onChange);
-      return () => window.removeEventListener("hashchange", onChange);
-    },
-    () => window.location.hash,
-    () => "",
-  );
-  const [override, setOverride] = useState<"analysis" | "history" | null>(null);
-  const activeTab: "analysis" | "history" =
-    override ?? (hash === "#history" ? "history" : "analysis");
-  const showAnalysis = !isMobile || activeTab === "analysis";
-  const showHistory = isMobile && activeTab === "history";
-
-  const handleTabChange = (tab: "analysis" | "history") => {
-    setOverride(tab);
-    const base = window.location.pathname + window.location.search;
-    window.history.replaceState(null, "", tab === "history" ? `${base}#history` : base);
-  };
-
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [isStuck, setIsStuck] = useState(false);
   useEffect(() => {
@@ -263,19 +229,9 @@ export function AnalysisView({
 
   return (
     <div className="space-y-4">
-      {/* Mobile-only tab switcher */}
-      <SegmentedControl
-        variant="underline"
-        options={tabOptions}
-        value={activeTab}
-        onValueChange={handleTabChange}
-        className="md:hidden"
-        aria-label={tNav("analysis")}
-      />
-
       {/* Do not mount charts inside a display:none tab. Recharts measures its
           container on mount, so hidden lazy charts otherwise initialize at 0×0. */}
-      <MountedAnalysis show={showAnalysis}>
+      <MountedAnalysis show>
         {/* Sentinel: when this scrolls off-screen the range bar is stuck */}
         <div ref={sentinelRef} className="h-px -mt-px" aria-hidden />
         {/* Range selector — floats as a compact pill while scrolling */}
@@ -395,9 +351,6 @@ export function AnalysisView({
           </motion.div>
         )}
       </MountedAnalysis>
-
-      {/* History tab content — mobile only */}
-      {showHistory && <HistoryView snapshots={snapshots} baseCurrency={baseCurrency} />}
     </div>
   );
 }

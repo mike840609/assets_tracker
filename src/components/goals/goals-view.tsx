@@ -142,9 +142,11 @@ export function GoalsView({
     }
   }
   // Deep link: the dashboard's "View projections" link points at /goals#projections
-  // so the Projections sub-view opens directly. useSyncExternalStore reads the hash
-  // with a server snapshot of "" so SSR and hydration agree; a manual switch sets
-  // `override`, which wins and rewrites the hash for shareable, Back-friendly URLs.
+  // and the watchlist surfaces at /goals#watchlist, so a tapped sub-view opens
+  // directly. The bare "Plan" tab (no hash) lands on Goals — matching the tab's
+  // label. useSyncExternalStore reads the hash with a server snapshot of "" so SSR
+  // and hydration agree; a manual switch sets `override`, which wins and rewrites
+  // the hash for shareable, Back-friendly URLs.
   const hash = useSyncExternalStore(
     (onChange) => {
       window.addEventListener("hashchange", onChange);
@@ -155,20 +157,20 @@ export function GoalsView({
   );
   const [override, setOverride] = useState<MobilePlanTab | null>(null);
   const hashTab: MobilePlanTab =
-    hash === "#projections" ? "projections" : hash === "#goals" ? "goals" : "watchlist";
+    hash === "#watchlist" ? "watchlist" : hash === "#projections" ? "projections" : "goals";
   const activeTab: MobilePlanTab = override ?? hashTab;
 
   const handleTabChange = (tab: MobilePlanTab) => {
     setOverride(tab);
     const base = window.location.pathname + window.location.search;
-    window.history.replaceState(null, "", tab === "watchlist" ? base : `${base}#${tab}`);
+    window.history.replaceState(null, "", tab === "goals" ? base : `${base}#${tab}`);
   };
 
   return (
     <div className="space-y-4">
       {/* Mobile-only tab switcher */}
       <div role="tablist" className="md:hidden flex border-b">
-        {(["watchlist", "goals", "projections"] as const).map((tab) => (
+        {(["goals", "watchlist", "projections"] as const).map((tab) => (
           <button
             key={tab}
             role="tab"
