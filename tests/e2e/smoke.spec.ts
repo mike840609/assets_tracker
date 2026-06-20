@@ -184,4 +184,14 @@ test("3. dashboard renders the net-worth card and trend chart section", async ({
   ).toBeVisible({
     timeout: 15_000,
   });
+
+  for (const testId of [
+    "trend-chart",
+    "history-heatmap",
+    "allocation-chart",
+    "currency-exposure-chart",
+    "portfolio-heatmap",
+  ]) {
+    await expect(page.getByTestId(testId)).toBeAttached({ timeout: 15_000 });
+  }
 });

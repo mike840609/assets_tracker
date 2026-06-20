@@ -302,6 +302,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
 
   return (
     <div
+      data-testid="history-heatmap"
       className={cn(
         "w-full transition-[filter] duration-300",
         privacyMode && "blur-sm pointer-events-none select-none",
