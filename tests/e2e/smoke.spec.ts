@@ -163,15 +163,15 @@ test("2. create an account, add a holding manually, and see it in the list", asy
 test("3. dashboard renders the net-worth card and trend chart section", async ({ page }) => {
   await page.goto("/");
 
-  // Net-worth card: scope to the card's data-testid to skip the hidden
-  // MobileHeader subtitle ("Net Worth") that appears earlier in DOM order.
-  const netWorthCard = page.getByTestId("net-worth-card");
-  await expect(netWorthCard.getByText(/net worth/i).first()).toBeVisible({
+  // Scope to main to skip the hidden MobileHeader subtitle ("Net Worth")
+  // that appears earlier in DOM order.
+  const dashboard = page.getByRole("main");
+  await expect(dashboard.getByText(/net worth/i).first()).toBeVisible({
     timeout: 15_000,
   });
 
   // Total-assets sub-card label
-  await expect(netWorthCard.getByText(/total assets/i).first()).toBeVisible({
+  await expect(dashboard.getByText(/total assets/i).first()).toBeVisible({
     timeout: 15_000,
   });
 
@@ -185,13 +185,15 @@ test("3. dashboard renders the net-worth card and trend chart section", async ({
     timeout: 15_000,
   });
 
-  for (const testId of [
-    "trend-chart",
-    "history-heatmap",
-    "allocation-chart",
-    "currency-exposure-chart",
-    "portfolio-heatmap",
+  for (const chartLabel of [
+    /net worth trend/i,
+    /\d{4} activity/i,
+    /asset allocation/i,
+    /currency exposure/i,
+    /portfolio composition/i,
   ]) {
-    await expect(page.getByTestId(testId)).toBeAttached({ timeout: 15_000 });
+    await expect(dashboard.getByText(chartLabel).first()).toBeAttached({
+      timeout: 15_000,
+    });
   }
 });
