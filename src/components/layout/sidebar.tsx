@@ -250,16 +250,13 @@ export function Sidebar({
                   title={privacyMode ? "Show values" : "Hide values"}
                   aria-label={privacyMode ? "Show values" : "Hide values"}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-md px-1.5 py-1.5 text-sm transition-all motion-fast",
+                    "inline-flex items-center rounded-md p-1.5 text-sm transition-all motion-fast",
                     privacyMode
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {privacyMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  <span className="text-[11px] font-medium leading-none">
-                    {privacyMode ? "Show" : "Hide"}
-                  </span>
                 </button>
                 <ThemeToggle />
               </>
