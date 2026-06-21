@@ -316,7 +316,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
           {t("activityYear", { year: currentYear })}
         </span>
         <div
-          className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70"
+          className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
           aria-label={`${t("legendLoss")} – ${t("legendGain")}`}
         >
           <span aria-hidden="true">{t("legendLoss")}</span>
@@ -357,7 +357,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
       >
         <div className="inline-flex flex-col min-w-max">
           {/* Month Labels */}
-          <div className="flex text-xs text-muted-foreground/70 mb-1 ml-6 relative h-4">
+          <div className="flex text-xs text-muted-foreground mb-1 ml-6 relative h-4">
             {monthLabels.map((m, i) => (
               <span key={i} className="absolute" style={{ left: `${m.col * COL_WIDTH}px` }}>
                 {m.label}
@@ -367,7 +367,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
 
           <div className="flex gap-2">
             {/* Day Labels */}
-            <div className="flex flex-col justify-between text-[10px] text-muted-foreground/50 leading-[10px] py-[2px]">
+            <div className="flex flex-col justify-between text-[10px] text-muted-foreground/75 leading-[10px] py-[2px]">
               {daysOfWeek.map((day, i) => (
                 <span
                   key={i}

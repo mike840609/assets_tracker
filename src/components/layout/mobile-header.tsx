@@ -82,7 +82,7 @@ export function MobileHeader() {
           <h1 className="text-lg font-bold tracking-tight text-foreground truncate">
             {t("app.name")}
           </h1>
-          <p className="text-[10px] text-muted-foreground font-medium -mt-1 opacity-80 uppercase tracking-wide truncate">
+          <p className="text-[11px] text-muted-foreground font-medium -mt-1 uppercase tracking-wider truncate">
             {t("app.subtitleMobile")}
           </p>
         </div>

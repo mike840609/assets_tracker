@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth-session";
 import { getCachedTrackedStocks } from "@/lib/services/stock-watch-service";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
+import { MobileHubRedirect } from "@/components/layout/mobile-hub-redirect";
 import { StockTrackerView } from "@/components/stocks/stock-tracker-view";
 
 const CLIENT_NAMESPACES = ["stocks", "holdingSearch", "common", "freshness", "nav", "toast"];
@@ -20,6 +21,7 @@ async function StocksContent() {
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
+      <MobileHubRedirect hash="#watchlist" />
       <div className="space-y-4 md:space-y-8 animate-in fade-in duration-200">
         <div>
           <LargeTitleHeading>{t("title")}</LargeTitleHeading>
