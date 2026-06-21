@@ -138,8 +138,11 @@ export default withSentryConfig(withBundleAnalyzer(wrappedConfig), {
   // Only upload source maps when an auth token is present; otherwise skip the
   // release/upload step entirely so token-less builds succeed.
   sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+  // Route browser telemetry through a randomized same-origin path so privacy
+  // filters do not block direct requests to Sentry's ingest host.
+  tunnelRoute: true,
   // Reduce bundle size by stripping Sentry SDK logger statements from prod.
   disableLogger: true,
-  // Avoid CSP/ad-blocker tunneling indirection by default; not enabled here.
+  // Upload a broader set of source maps for readable browser stack traces.
   widenClientFileUpload: true,
 });
