@@ -5,15 +5,27 @@ import { useReducedMotion } from "framer-motion";
 
 export function useCountUp(end: number, duration: number = 1000) {
   const shouldReduceMotion = useReducedMotion();
-  const [count, setCount] = useState(0);
-  // The value the next animation starts from. 0 on first mount gives the intro
-  // count-up; afterward it holds the last displayed figure so a value change
-  // (e.g. net worth after a price refresh) rolls from the previous number to the
-  // new one — conveying the change — instead of snapping back to zero and
-  // replaying the load animation.
-  const fromRef = useRef(0);
+  // Start at the real value so the first paint (SSR + hydration) already shows
+  // the true figure. The dashboard net-worth headline is the LCP element;
+  // starting at 0 and animating up delayed the *largest* text paint until after
+  // the JS bundle hydrated (~5s on throttled mobile), pushing LCP past 5s.
+  const [count, setCount] = useState(end);
+  // The value the next animation starts from. Holds the last displayed figure so
+  // a value change (e.g. net worth after a price refresh) rolls from the previous
+  // number to the new one — conveying the change.
+  const fromRef = useRef(end);
+  // The intro count-up is intentionally skipped (see above); only value changes
+  // *after* mount animate.
+  const mountedRef = useRef(false);
 
   useEffect(() => {
+    if (!mountedRef.current) {
+      // First mount: the value is already correct, so don't animate or re-set.
+      mountedRef.current = true;
+      fromRef.current = end;
+      return;
+    }
+
     if (shouldReduceMotion) {
       // The returned value is `end` via the ternary below, so there's nothing to
       // animate or set here; just remember it as the next start point.
