@@ -400,13 +400,22 @@
 .skeleton-shimmer {
   background-image: linear-gradient(
     90deg,
-    transparent 20%,
-    color-mix(in oklab, var(--foreground) 12%, transparent) 50%,
-    transparent 80%
+    transparent 25%,
+    color-mix(in oklab, var(--foreground) 8%, transparent) 50%,
+    transparent 75%
   );
   background-size: 200% 100%;
   background-repeat: no-repeat;
   animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+.dark .skeleton-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 25%,
+    color-mix(in oklab, var(--foreground) 15%, transparent) 50%,
+    transparent 75%
+  );
 }
 
 /* ─── History tab entrance motion ────────────────────────────────────────────
@@ -472,6 +481,16 @@
   animation-delay: calc(var(--i, 0) * 45ms);
 }
 
+/* ─── Skeleton entrance stagger ──────────────────────────────────────────────
+   Route skeletons cascade their sections in with short delays so loading
+   states feel progressive rather than a simultaneous wall of gray. Reuses
+   the list-row-in keyframes with a tighter per-group delay (35ms vs 45ms
+   for list rows) since skeleton groups are coarser than individual rows. */
+.skeleton-stagger {
+  animation: list-row-in var(--duration-normal) var(--ease-out-expo) backwards;
+  animation-delay: calc(var(--i, 0) * 35ms);
+}
+
 /* Decorative, continuously-looping effects must not run when the user has
    asked for reduced motion (WCAG 2.3.3) — the mesh stays as a static wash. */
 @media (prefers-reduced-motion: reduce) {
@@ -491,7 +510,8 @@
   }
   .history-cell-in,
   .history-rise-in,
-  .stagger-rise {
+  .stagger-rise,
+  .skeleton-stagger {
     animation: none;
   }
   /* tw-animate-css ships no reduced-motion guard of its own, so the dashboard's
