@@ -38,6 +38,52 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.8.3",
+    date: "2026-06-21",
+    summary: {
+      "en-US": "Clearer Analysis page and quieter dashboard status bar.",
+      "zh-TW": "分析頁更清晰，儀表板狀態列更簡潔。",
+    },
+    changes: [
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Analysis section headers now show the active time range (e.g. 'Movement — All') so the selected period is always visible as you scroll.",
+          "zh-TW":
+            "分析頁各區段標題現在會顯示當前時間範圍（例如「變動 — 全部」），捲動時也能隨時確認所選期間。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Replaced 'Fixed YTD baseline' and 'year-start baseline' with plain language: 'Year to date' and 'Latest snapshot vs. Jan 1'.",
+          "zh-TW":
+            "將「固定年初至今基準」等專業術語改為更直白的說法：「年初至今」及「最新快照 vs. 1月1日」。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Dashboard status bar: the snapshot badge now only appears when the daily cron has missed two or more cycles, keeping the bar quiet during normal operation.",
+          "zh-TW":
+            "儀表板狀態列：快照標籤現在只在每日排程連續兩次以上未執行時才出現，正常運作時不再佔用版面。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Sidebar privacy toggle now shows 'Hide' or 'Show' text next to the eye icon, making the control discoverable without hovering.",
+          "zh-TW":
+            "側邊欄隱私切換按鈕現在在眼睛圖示旁顯示「Hide」或「Show」文字，不需滑鼠懸停也能一目了然。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.8.2",
     date: "2026-06-21",
     summary: {
