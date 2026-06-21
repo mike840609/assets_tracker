@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Camera, Clock, RefreshCw, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FX_RATES_STALE_MS } from "@/lib/refresh-policy";
+import { FX_RATES_STALE_MS, SNAPSHOT_STALE_MS } from "@/lib/refresh-policy";
 import { formatRelativeTime, formatRelativeTimeShort } from "@/lib/format-relative-time";
 
 type FreshnessKind = "price" | "rates" | "snapshot";
@@ -56,9 +56,14 @@ export function FreshnessBadge({
   // Prices refresh daily; older than 3 days reads as a trust caution (the 72h
   // window clears normal weekend gaps). FX rates use the shared 48h policy
   // threshold (two missed daily crons — Friday ECB rates stay stamped over
-  // weekends). Snapshots are point-in-time, never "stale".
-  const STALE_MS = kind === "rates" ? FX_RATES_STALE_MS : 72 * 60 * 60 * 1000;
-  const isStale = kind !== "snapshot" && displayNow - new Date(timestamp).getTime() > STALE_MS;
+  // weekends). Snapshots use 48h — two missed daily crons is a real gap.
+  const STALE_MS =
+    kind === "rates"
+      ? FX_RATES_STALE_MS
+      : kind === "snapshot"
+        ? SNAPSHOT_STALE_MS
+        : 72 * 60 * 60 * 1000;
+  const isStale = displayNow - new Date(timestamp).getTime() > STALE_MS;
   if (showOnlyWhenStale && !isStale) return null;
   const Icon = isStale
     ? TriangleAlert
