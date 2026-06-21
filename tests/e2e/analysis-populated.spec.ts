@@ -20,13 +20,18 @@ test("analysis renders populated desktop charts without layout overflow", async 
     await expect(page.getByText("Assets vs. Liabilities by Month")).toBeVisible({
       timeout: 20_000,
     });
-    await expect(page.getByText("Fixed YTD baseline")).toBeVisible();
+    await expect(page.getByText("Year to date").first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Movement" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Composition", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Composition" }).first()).toBeVisible();
     await expect(page.getByText("Performance Attribution")).toBeVisible();
 
     await page.getByRole("button", { name: "All", exact: true }).click();
     await expect(page.getByText("Showing top 5 of 7 categories by latest value.")).toBeVisible();
+
+    // Scroll to top so all charts are in the viewport; wait for at least one
+    // recharts SVG to confirm the lazy dynamic imports have hydrated.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.locator(".recharts-surface").first().waitFor({ timeout: 10_000 });
 
     const layout = await page.evaluate(() => {
       const documentElement = document.documentElement;

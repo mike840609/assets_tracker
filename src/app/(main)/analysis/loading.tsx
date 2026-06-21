@@ -102,10 +102,7 @@ export default function AnalysisLoading() {
 
           {/* Secondary charts — grouped into "Movement", then "Composition", each
               behind its own section heading (stacks single-column on mobile). */}
-          <div
-            className="skeleton-stagger space-y-4"
-            style={{ "--i": 3 } as React.CSSProperties}
-          >
+          <div className="skeleton-stagger space-y-4" style={{ "--i": 3 } as React.CSSProperties}>
             <div className="space-y-3">
               <SectionHeaderSkeleton />
               <div className="grid gap-6 xl:grid-cols-2">
@@ -123,10 +120,7 @@ export default function AnalysisLoading() {
           </div>
 
           {/* Top movers list — card with horizontally scrollable table rows */}
-          <Card
-            className="skeleton-stagger"
-            style={{ "--i": 4 } as React.CSSProperties}
-          >
+          <Card className="skeleton-stagger" style={{ "--i": 4 } as React.CSSProperties}>
             <div className="px-6 pt-2 pb-2">
               <Skeleton className="h-5 w-32 mb-2" />
               <Skeleton className="h-3 w-56 max-w-full" />
