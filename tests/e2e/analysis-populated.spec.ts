@@ -22,7 +22,7 @@ test("analysis renders populated desktop charts without layout overflow", async 
     });
     await expect(page.getByText("Fixed YTD baseline")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Movement" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Composition" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Composition", exact: true })).toBeVisible();
     await expect(page.getByText("Performance Attribution")).toBeVisible();
 
     await page.getByRole("button", { name: "All", exact: true }).click();

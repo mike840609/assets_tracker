@@ -163,10 +163,16 @@ test("2. create an account, add a holding manually, and see it in the list", asy
 test("3. dashboard renders the net-worth card and trend chart section", async ({ page }) => {
   await page.goto("/");
 
-  // Scope to main to skip the hidden MobileHeader subtitle ("Net Worth")
+  // Scope to the card container to skip the hidden MobileHeader subtitle ("Net Worth")
   // that appears earlier in DOM order.
   const dashboard = page.getByRole("main");
-  await expect(dashboard.getByText(/net worth/i).first()).toBeVisible({
+  await expect(
+    dashboard
+      .locator("div")
+      .filter({ has: page.locator(".net-worth-card-accent") })
+      .getByText(/net worth/i)
+      .first(),
+  ).toBeVisible({
     timeout: 15_000,
   });
 
