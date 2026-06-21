@@ -50,19 +50,21 @@ New flow:
 
 ```
 1. Read stale symbols (freshness gate SELECT — unchanged)
-2. CLAIM: atomic UPDATE for symbols with existing PriceCache rows
+2. EXISTENCE CHECK: SELECT symbol FROM "PriceCache" WHERE symbol = ANY($stale)
+   → symbols in result = existing rows; remainder = new symbols
+3. CLAIM: atomic UPDATE for existing stale symbols only
           SET refreshingAt = NOW()
           WHERE (refreshingAt IS NULL OR refreshingAt < NOW() - 30s)
             AND updatedAt < NOW() - TTL
           RETURNING symbol
    → only returned symbols are owned by this instance
-3. New symbols (no PriceCache row yet) bypass the claim — always fetched;
-   upsert at step 5 is idempotent
-4. If zero claimed AND zero new → all symbols mid-refresh by another instance
+4. New symbols (no PriceCache row yet) bypass the claim — always fetched;
+   upsert at step 6 is idempotent
+5. If zero claimed AND zero new → all symbols mid-refresh by another instance
    → return { retryAfterSeconds: 30 } so the client knows when to retry
-5. Fetch from Yahoo / CoinGecko for (claimed ∪ new) only
-6. SUCCESS: bulk upsert sets price, currency, updatedAt = NOW(), refreshingAt = NULL
-7. FAILURE: cleanup UPDATE sets refreshingAt = NULL for claimed symbols,
+6. Fetch from Yahoo / CoinGecko for (claimed ∪ new) only
+7. SUCCESS: bulk upsert sets price, currency, updatedAt = NOW(), refreshingAt = NULL
+8. FAILURE: cleanup UPDATE sets refreshingAt = NULL for claimed symbols,
             leaving price and updatedAt untouched
 ```
 
@@ -105,16 +107,17 @@ refreshPricesForHoldings(holdings, opts)
 
 ## Error Handling
 
-| Failure | Behaviour |
-|---|---|
-| External fetch fully fails | Cleanup UPDATE clears `refreshingAt` for claimed symbols; `updatedAt` unchanged → next request can retry after TTL |
+| Failure                              | Behaviour                                                                                                                      |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| External fetch fully fails           | Cleanup UPDATE clears `refreshingAt` for claimed symbols; `updatedAt` unchanged → next request can retry after TTL             |
 | Partial fetch failure (some symbols) | Successful symbols get price written + `refreshingAt` cleared via upsert; failed symbols get claim released via cleanup UPDATE |
-| Serverless instance killed | `refreshingAt` expires after 30s; next request re-claims |
-| Claim UPDATE itself fails | Surfaces as an error in `RefreshPricesResult.errors`; no lock held |
+| Serverless instance killed           | `refreshingAt` expires after 30s; next request re-claims                                                                       |
+| Claim UPDATE itself fails            | Surfaces as an error in `RefreshPricesResult.errors`; no lock held                                                             |
 
 ## SQL Patterns
 
 **Claim:**
+
 ```sql
 UPDATE "PriceCache"
 SET "refreshingAt" = NOW()
@@ -125,6 +128,7 @@ RETURNING symbol
 ```
 
 **Success upsert (existing ON CONFLICT extended):**
+
 ```sql
 ON CONFLICT (symbol) DO UPDATE SET
   price          = EXCLUDED.price,
@@ -134,6 +138,7 @@ ON CONFLICT (symbol) DO UPDATE SET
 ```
 
 **Failure cleanup:**
+
 ```sql
 UPDATE "PriceCache"
 SET "refreshingAt" = NULL
@@ -150,9 +155,9 @@ Two new unit test cases in `tests/unit/price-service.test.ts`, following the exi
 
 ## Files Changed
 
-| File | Change |
-|---|---|
-| `prisma/schema.prisma` | Add `refreshingAt DateTime?` to `PriceCache` |
-| `prisma/migrations/<timestamp>_price_cache_refreshing_at/migration.sql` | `ALTER TABLE "PriceCache" ADD COLUMN "refreshingAt" TIMESTAMP(3)` |
-| `src/lib/services/price-service.ts` | Claim-before-fetch in `refreshPricesForHoldings`; cleanup on failure |
-| `tests/unit/price-service.test.ts` | Two new test cases |
+| File                                                                    | Change                                                               |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `prisma/schema.prisma`                                                  | Add `refreshingAt DateTime?` to `PriceCache`                         |
+| `prisma/migrations/<timestamp>_price_cache_refreshing_at/migration.sql` | `ALTER TABLE "PriceCache" ADD COLUMN "refreshingAt" TIMESTAMP(3)`    |
+| `src/lib/services/price-service.ts`                                     | Claim-before-fetch in `refreshPricesForHoldings`; cleanup on failure |
+| `tests/unit/price-service.test.ts`                                      | Two new test cases                                                   |
