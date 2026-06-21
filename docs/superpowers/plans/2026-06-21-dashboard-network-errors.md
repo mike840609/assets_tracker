@@ -436,3 +436,20 @@ git status --short
 ```
 
 Expected: no output.
+
+---
+
+### Approved Amendment — Task 4a: Bypass auth for the exact Sentry tunnel path
+
+**Approval:** The user added `src/proxy.ts` to scope on 2026-06-21 after live Chromium verification showed the randomized tunnel `POST` requests returning `302 Location: /login`.
+
+**Files:**
+
+- Create: `tests/unit/proxy.test.ts`
+- Modify: `src/proxy.ts`
+- Modify: `docs/superpowers/specs/2026-06-21-dashboard-network-errors-design.md`
+- Modify: `docs/superpowers/plans/2026-06-21-dashboard-network-errors.md`
+
+- [ ] **Test the exact boundary first:** Execute the real exported proxy function, mocking only NextAuth and auth config for module initialization. Set `_sentryRewritesTunnelPath`, require the exact anonymous pathname to return `x-middleware-next: 1` with no `Location`, and require a different anonymous protected pathname to redirect to `/login`. Run `pnpm exec vitest run tests/unit/proxy.test.ts` and observe RED before changing production code.
+- [ ] **Add the minimal early guard:** Before auth rate limiting, session-cookie checks, or JWT work, return `NextResponse.next()` only when the configured tunnel path is non-empty and `req.nextUrl.pathname === process.env._sentryRewritesTunnelPath`. Do not add wildcard, prefix, query-only, matcher, or public-route bypasses.
+- [ ] **Verify the amendment:** Run the focused proxy test GREEN, `pnpm exec vitest run tests/unit/next-config.test.ts`, and `pnpm test:unit`. Commit the source, test, and documentation changes as `fix(observability): bypass auth for Sentry tunnel`.

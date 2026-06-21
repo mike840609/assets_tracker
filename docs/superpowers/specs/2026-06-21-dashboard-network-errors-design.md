@@ -33,7 +33,9 @@ Enable `tunnelRoute: true` in the existing `withSentryConfig` options in `next.c
 
 During each production build, the installed Sentry Next.js SDK generates a randomized same-origin route, injects that route into the browser SDK, and adds a Next.js rewrite to the regional Sentry envelope endpoint. Browser events therefore post to `astt.app/<generated-route>` instead of directly to `*.ingest.us.sentry.io`.
 
-The SDK's proxy wrapper detects its generated tunnel path and bypasses application authentication middleware for those requests. Existing CSP already permits same-origin connections through `'self'`, so no CSP expansion is required. Node.js and edge Sentry clients continue using their existing direct DSNs.
+Next.js 16 runs `src/proxy.ts` before `beforeFiles` rewrites. With Turbopack, the Sentry integration injects `_sentryRewritesTunnelPath` and the rewrite but does not apply its Webpack proxy-wrapping loader, so the application proxy must allow the request to continue before anonymous authentication redirects run. At the beginning of its exported request flow, `src/proxy.ts` compares `req.nextUrl.pathname` with the non-empty generated path for exact equality and returns `NextResponse.next()` only for that request. Prefixes, wildcard-shaped paths, and other anonymous routes remain protected.
+
+Existing CSP already permits same-origin connections through `'self'`, so no CSP expansion is required. Node.js and edge Sentry clients continue using their existing direct DSNs.
 
 The randomized route is preferred over a fixed path because it is less likely to be added to tracker-blocking filter lists. The trade-off is that the tunnel path changes between builds and consumes application request/bandwidth capacity when forwarding browser telemetry.
 
@@ -54,7 +56,7 @@ Same-origin GET requests remain network-only. Non-GET requests continue to fall 
 
 1. The browser Sentry SDK creates an envelope.
 2. The SDK posts it to the randomized same-origin tunnel path.
-3. The Sentry/Next.js integration bypasses the auth proxy for that path.
+3. The application proxy exactly matches the non-empty `_sentryRewritesTunnelPath` value and continues the request before authentication work.
 4. Next.js rewrites the request to the configured regional Sentry ingest endpoint.
 5. A transport failure is handled by the SDK and never blocks dashboard rendering.
 
@@ -71,6 +73,7 @@ Same-origin GET requests remain network-only. Non-GET requests continue to fall 
   - same-origin GET requests call `respondWith`;
   - cross-origin GET requests do not call `respondWith`; and
   - non-GET requests do not call `respondWith`.
+- Add proxy regression coverage that executes the real exported request function and confirms the exact configured Sentry tunnel path continues while a different anonymous protected path still redirects to `/login`.
 - Run `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, and `pnpm test:unit`.
 - Run a production build and confirm its route manifest contains the generated Sentry tunnel rewrite.
 - In a browser controlled by the service worker, confirm:
@@ -82,7 +85,10 @@ Same-origin GET requests remain network-only. Non-GET requests continue to fall 
 ## Files Expected to Change
 
 - `next.config.ts` — enable the SDK-managed randomized tunnel.
+- `src/proxy.ts` — bypass authentication only for the exact non-empty generated tunnel path before any auth work.
 - `public/sw.js` — restrict fetch interception to same-origin GET requests.
-- A focused regression test for the service-worker routing behavior.
+- `tests/unit/next-config.test.ts` — verify the randomized Sentry rewrite.
+- `tests/unit/proxy.test.ts` — verify the exact-path proxy bypass and protected-route boundary.
+- `tests/unit/service-worker.test.ts` — verify the service-worker routing behavior.
 
-No dashboard component, avatar component, authentication rule, or CSP directive should change.
+No dashboard component, avatar component, authentication behavior for other routes, or CSP directive should change.
