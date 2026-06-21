@@ -67,6 +67,9 @@ export function Sidebar({
   const router = useRouter();
   const t = useTranslations();
   const { privacyMode, togglePrivacyMode } = usePrivacyMode();
+  // Google's avatar CDN (lh3.googleusercontent.com) intermittently 429/403s the
+  // request; fall back to the version link rather than render a broken image.
+  const [avatarError, setAvatarError] = useState(false);
   const collapsed = useSyncExternalStore(
     (onStoreChange) => {
       const handleChange = () => onStoreChange();
@@ -209,12 +212,17 @@ export function Sidebar({
       <div className="p-4 border-t border-border/50 bg-background/30 backdrop-blur-md">
         <div className={cn("flex items-center", collapsed ? "justify-center" : "justify-between")}>
           {!collapsed &&
-            (userImage ? (
+            (userImage && !avatarError ? (
               <img
                 src={userImage}
                 width={28}
                 height={28}
                 alt={userName ?? "User avatar"}
+                // Google's image CDN returns 429/403 when a referrer is sent
+                // (the app's Referrer-Policy leaks the origin otherwise), which
+                // is what breaks the avatar. Strip the referrer on this request.
+                referrerPolicy="no-referrer"
+                onError={() => setAvatarError(true)}
                 className="h-7 w-7 rounded-full"
               />
             ) : (

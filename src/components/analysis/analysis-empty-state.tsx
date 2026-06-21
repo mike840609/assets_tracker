@@ -30,7 +30,7 @@ export function AnalysisEmptyState({ hasAccounts }: { hasAccounts: boolean }) {
               {t("preview.trendSubtitle")}
             </p>
           </div>
-          <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+          <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-[var(--primary-ink)]">
             {t("preview.range")}
           </span>
         </div>

@@ -38,19 +38,20 @@ async function SettingsContent() {
       <div className="space-y-8 max-w-2xl lg:max-w-6xl pb-16 animate-in fade-in duration-200">
         <LargeTitleHeading>{t("title")}</LargeTitleHeading>
 
-        {/* Single column on mobile; on desktop the tall preferences form sits
-            beside a stack of the shorter cards so wide monitors aren't a narrow
-            column floating in empty space. items-start keeps columns independent.
-            At xl+ the Version and Install cards pair up in a 2-col sub-grid so
-            the right column doesn't have a long tail of narrow single-row cards. */}
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-x-10 lg:gap-y-10">
+        {/* Single column on mobile. On desktop a 2x3 section grid: each section
+            is placed explicitly so its title sits on a shared row line across
+            both columns (Preferences↔Privacy, Synchronization↔Data Management,
+            Version↔Install). auto-rows-min + items-start anchor every section to
+            its row top so the titles align. SettingsForm uses lg:contents so its
+            two inner sections become direct grid items. */}
+        <div className="grid gap-8 lg:grid-cols-2 lg:auto-rows-min lg:items-start lg:gap-x-10 lg:gap-y-10">
           <SettingsForm
             currentCurrency={settings.baseCurrency}
             currentLocale={settings.locale}
             lastPriceUpdate={latestPrice?.updatedAt?.toISOString() ?? null}
             lastExchangeRateUpdate={latestExchangeRate?.updatedAt?.toISOString() ?? null}
           />
-          <div className="space-y-8 lg:space-y-10">
+          <div className="lg:col-start-2 lg:row-start-1">
             <PrivacySecurity
               userEmail={session.user.email}
               signOutAction={async () => {
@@ -58,15 +59,15 @@ async function SettingsContent() {
                 await signOut({ redirectTo: "/login" });
               }}
             />
-            {/* Utility cluster: tighter internal spacing, visually subordinate
-                to Privacy & Security above. Version + Install pair at xl+. */}
-            <div className="space-y-5">
-              <DataManagement />
-              <div className="grid gap-5 xl:grid-cols-2 xl:items-start">
-                <VersionCard />
-                <InstallAppCard />
-              </div>
-            </div>
+          </div>
+          <div className="lg:col-start-2 lg:row-start-2">
+            <DataManagement />
+          </div>
+          <div className="lg:col-start-1 lg:row-start-3">
+            <VersionCard />
+          </div>
+          <div className="lg:col-start-2 lg:row-start-3">
+            <InstallAppCard />
           </div>
         </div>
       </div>

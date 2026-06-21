@@ -68,7 +68,9 @@ function CashFlowTooltip({
         value={
           privacyMode ? "***" : `${marketSign}${formatCurrency(b.marketPerformance, baseCurrency)}`
         }
-        valueClassName={b.marketPerformance >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"}
+        valueClassName={
+          b.marketPerformance >= 0 ? "text-[var(--gain-ink)]" : "text-[var(--loss-ink)]"
+        }
       />
       <div className="pt-1.5 mt-1.5 border-t border-border/40">
         <ChartTooltipRow
@@ -76,7 +78,9 @@ function CashFlowTooltip({
           value={
             privacyMode ? "***" : `${deltaSign}${formatCurrency(b.deltaNetWorth, baseCurrency)}`
           }
-          valueClassName={b.deltaNetWorth >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"}
+          valueClassName={
+            b.deltaNetWorth >= 0 ? "text-[var(--gain-ink)]" : "text-[var(--loss-ink)]"
+          }
         />
       </div>
     </ChartTooltipContainer>

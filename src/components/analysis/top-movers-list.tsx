@@ -108,7 +108,7 @@ export const TopMoversList = memo(function TopMoversList({ movers, baseCurrency 
                         </Badge>
                       </div>
                       <div
-                        className={`text-xs tabular-nums mt-0.5 ${isPositive ? "text-[var(--gain)]/80" : "text-[var(--loss)]/80"}`}
+                        className={`text-xs tabular-nums mt-0.5 ${isPositive ? "text-[var(--gain-ink)]/80" : "text-[var(--loss-ink)]/80"}`}
                       >
                         {privacyMode ? "***" : pct}
                       </div>

@@ -73,7 +73,9 @@ function ChangeTooltip({
           value={
             privacyMode ? pct : `${sign}${formatCurrency(b.deltaNetWorth, baseCurrency)} (${pct})`
           }
-          valueClassName={b.deltaNetWorth >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"}
+          valueClassName={
+            b.deltaNetWorth >= 0 ? "text-[var(--gain-ink)]" : "text-[var(--loss-ink)]"
+          }
         />
       </div>
     </ChartTooltipContainer>

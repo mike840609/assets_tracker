@@ -92,8 +92,8 @@ function DailyChangeTooltip({
             isZero
               ? "text-muted-foreground"
               : isPositive
-                ? "text-[var(--gain)]"
-                : "text-[var(--loss)]"
+                ? "text-[var(--gain-ink)]"
+                : "text-[var(--loss-ink)]"
           }
         />
       )}

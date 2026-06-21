@@ -38,11 +38,11 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
-    version: "0.8.4",
+    version: "0.8.6",
     date: "2026-06-21",
     summary: {
-      "en-US": "Reliable browser error reporting and Google avatar loading.",
-      "zh-TW": "修正瀏覽器錯誤回報與 Google 頭像載入。",
+      "en-US": "Reliable browser error reporting via first-party Sentry tunnel.",
+      "zh-TW": "透過第一方 Sentry 通道確保瀏覽器錯誤回報正常運作。",
     },
     changes: [
       {
@@ -61,6 +61,44 @@ export const CHANGELOG: Release[] = [
             "Google profile avatars now load when the PWA service worker is active, without triggering Content Security Policy errors.",
           "zh-TW":
             "PWA 服務工作者啟用時，Google 個人頭像現在可正常載入，不再觸發內容安全政策錯誤。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.8.5",
+    date: "2026-06-21",
+    summary: {
+      "en-US": "Sharper mobile legibility in light mode.",
+      "zh-TW": "淺色模式下行動版更清晰易讀。",
+    },
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Gain, loss, and accent values now meet WCAG AA contrast in light mode — green and blue figures on cards are easier to read in bright light.",
+          "zh-TW":
+            "淺色模式下的漲跌與重點數值現已符合 WCAG AA 對比標準，卡片上的綠色與藍色數字在強光下更易閱讀。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.8.4",
+    date: "2026-06-21",
+    summary: {
+      "en-US": "Fixed the Google profile avatar failing to load in the sidebar.",
+      "zh-TW": "修正側邊欄 Google 個人頭像無法載入的問題。",
+    },
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Sidebar avatar: Google profile pictures no longer fail to load (the request now omits the referrer that Google's image CDN was rejecting), and a broken avatar falls back to the version link instead of a broken-image icon.",
+          "zh-TW":
+            "側邊欄頭像：Google 個人頭像不再載入失敗（請求不再帶上 Google 圖片 CDN 會拒絕的來源資訊），且頭像載入失敗時會改顯示版本連結，而非破圖圖示。",
         },
       },
     ],
