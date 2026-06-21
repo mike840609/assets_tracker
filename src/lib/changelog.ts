@@ -41,18 +41,10 @@ export const CHANGELOG: Release[] = [
     version: "0.8.2",
     date: "2026-06-21",
     summary: {
-      "en-US": "Mobile header is cleaner and the Analysis treemap works on phones.",
-      "zh-TW": "行動版頁首更簡潔，分析熱圖在手機上也能正常使用。",
+      "en-US": "Cleaner mobile header.",
+      "zh-TW": "行動版頁首更簡潔。",
     },
     changes: [
-      {
-        type: "improved",
-        text: {
-          "en-US":
-            "Portfolio Composition on mobile now shows a tappable account chip list and detail strip instead of a tiny unreadable treemap.",
-          "zh-TW": "行動版投資組合熱圖改為可點擊的帳戶清單與詳情列，取代小螢幕上難以閱讀的熱圖。",
-        },
-      },
       {
         type: "improved",
         text: {

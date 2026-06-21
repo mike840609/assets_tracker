@@ -481,7 +481,7 @@ export function PortfolioHeatmap({
                   ref={chartRef}
                   aria-hidden={privacyMode || undefined}
                   className={cn(
-                    "relative hidden sm:block min-h-[168px] overflow-hidden bg-[color-mix(in_oklch,var(--muted)_24%,var(--card))] ring-1 ring-border/60 sm:min-h-[240px] transition-[filter] duration-300",
+                    "relative min-h-[168px] overflow-hidden bg-[color-mix(in_oklch,var(--muted)_24%,var(--card))] ring-1 ring-border/60 sm:min-h-[240px] transition-[filter] duration-300",
                     fillHeight ? "lg:flex-1" : "lg:min-h-0",
                     privacyMode && "blur-sm pointer-events-none select-none",
                   )}
