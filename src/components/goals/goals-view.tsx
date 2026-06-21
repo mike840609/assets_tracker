@@ -142,9 +142,11 @@ export function GoalsView({
     }
   }
   // Deep link: the dashboard's "View projections" link points at /goals#projections
-  // so the Projections sub-view opens directly. useSyncExternalStore reads the hash
-  // with a server snapshot of "" so SSR and hydration agree; a manual switch sets
-  // `override`, which wins and rewrites the hash for shareable, Back-friendly URLs.
+  // and "View all goals" at /goals#goals, so a tapped sub-view opens directly. The
+  // bare "Plan" tab (no hash) lands on Watchlist, the leftmost sub-tab.
+  // useSyncExternalStore reads the hash with a server snapshot of "" so SSR and
+  // hydration agree; a manual switch sets `override`, which wins and rewrites the
+  // hash for shareable, Back-friendly URLs.
   const hash = useSyncExternalStore(
     (onChange) => {
       window.addEventListener("hashchange", onChange);
@@ -155,7 +157,7 @@ export function GoalsView({
   );
   const [override, setOverride] = useState<MobilePlanTab | null>(null);
   const hashTab: MobilePlanTab =
-    hash === "#projections" ? "projections" : hash === "#goals" ? "goals" : "watchlist";
+    hash === "#goals" ? "goals" : hash === "#projections" ? "projections" : "watchlist";
   const activeTab: MobilePlanTab = override ?? hashTab;
 
   const handleTabChange = (tab: MobilePlanTab) => {

@@ -15,15 +15,9 @@ interface DashboardActionsProps {
   baseCurrency: string;
   lastPriceUpdate?: string | null;
   lastSnapshotDate?: string | null;
-  /** Most recent FX-rate write (ISO). The badge only renders once stale. */
-  lastRatesUpdate?: string | null;
 }
 
-export function DashboardActions({
-  lastPriceUpdate,
-  lastSnapshotDate,
-  lastRatesUpdate,
-}: DashboardActionsProps) {
+export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: DashboardActionsProps) {
   const router = useRouter();
   const t = useTranslations("dashboardActions");
   const [refreshing, setRefreshing] = useState(false);
@@ -94,11 +88,6 @@ export function DashboardActions({
         )}
         {lastSnapshotDate && (
           <FreshnessBadge kind="snapshot" timestamp={lastSnapshotDate} mobileShort />
-        )}
-        {lastRatesUpdate && (
-          // Warning signal only — fresh FX rates stay invisible so the bar
-          // doesn't grow a third always-on chip.
-          <FreshnessBadge kind="rates" timestamp={lastRatesUpdate} mobileShort showOnlyWhenStale />
         )}
         {!effectiveLastUpdate && !lastSnapshotDate && (
           <span className="inline-flex items-center gap-1">

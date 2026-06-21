@@ -276,10 +276,13 @@ export function MobileNav() {
   const [isPending, startTransition] = useTransition();
   const [optimisticHref, setOptimisticHref] = useState<string | null>(null);
 
+  // The mobile "Plan" tab opens the consolidated hub at /goals (Goals + Watchlist +
+  // Projections sub-tabs). Labeled "Plan" so the watchlist/projections sub-views are
+  // a discoverable promise — they have no slot of their own in the 5-item bar.
   const navItems = [
     { label: t("nav.dashboard"), href: "/", icon: LayoutDashboard },
     { label: t("nav.accounts"), href: "/accounts", icon: Copy },
-    { label: t("nav.goals"), href: "/goals", icon: Target },
+    { label: t("nav.plan"), href: "/goals", icon: Target },
     { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
     { label: t("nav.history"), href: "/history", icon: History },
   ];
