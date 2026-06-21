@@ -12,11 +12,16 @@ export default function ProjectionsLoading() {
   return (
     <div className="space-y-4 md:space-y-8">
       {/* Title — matches LargeTitleHeading (text-4xl md:text-3xl) */}
-      <Skeleton className="h-10 w-44 rounded-lg md:h-9" />
+      <div className="skeleton-stagger" style={{ "--i": 0 } as React.CSSProperties}>
+        <Skeleton className="h-10 w-44 rounded-lg md:h-9" />
+      </div>
 
       <div className="space-y-4 lg:space-y-6">
         {/* Header row: subtitle + value-lens segmented control */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div
+          className="skeleton-stagger flex flex-wrap items-center justify-between gap-3"
+          style={{ "--i": 1 } as React.CSSProperties}
+        >
           <Skeleton className="h-4 w-64 max-w-full rounded" />
           <div className="flex flex-col items-start gap-1 sm:items-end">
             <Skeleton className="h-7 w-40 rounded-lg" />
@@ -25,7 +30,10 @@ export default function ProjectionsLoading() {
         </div>
 
         {/* Verdict band (full width) */}
-        <div className="rounded-2xl bg-card py-5 ring-1 ring-foreground/10 sm:py-6">
+        <div
+          className="skeleton-stagger rounded-2xl bg-card py-5 ring-1 ring-foreground/10 sm:py-6"
+          style={{ "--i": 2 } as React.CSSProperties}
+        >
           <div className="grid gap-6 px-5 sm:px-6 lg:grid-cols-[1.5fr_1fr]">
             <div className="space-y-3">
               <Skeleton className="h-5 w-24 rounded-full" />
@@ -49,7 +57,10 @@ export default function ProjectionsLoading() {
         </div>
 
         {/* Cockpit: assumptions rail + projection chart */}
-        <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-6">
+        <div
+          className="skeleton-stagger grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-6"
+          style={{ "--i": 3 } as React.CSSProperties}
+        >
           {/* Assumptions rail (below the chart on mobile, left on desktop) */}
           <aside className="order-last lg:order-none">
             <div className="rounded-xl bg-card py-4 ring-1 ring-foreground/10">
@@ -91,7 +102,10 @@ export default function ProjectionsLoading() {
         </div>
 
         {/* Milestones timeline (full width) */}
-        <div className="rounded-xl bg-card py-4 ring-1 ring-foreground/10">
+        <div
+          className="skeleton-stagger rounded-xl bg-card py-4 ring-1 ring-foreground/10"
+          style={{ "--i": 4 } as React.CSSProperties}
+        >
           <div className="space-y-5 px-4">
             <div className="space-y-1.5">
               <Skeleton className="h-4 w-32 rounded" />
@@ -110,7 +124,10 @@ export default function ProjectionsLoading() {
         </div>
 
         {/* Collapsible guide (collapsed state) */}
-        <div className="rounded-xl bg-muted/30 ring-1 ring-border/50">
+        <div
+          className="skeleton-stagger rounded-xl bg-muted/30 ring-1 ring-border/50"
+          style={{ "--i": 5 } as React.CSSProperties}
+        >
           <div className="flex items-center justify-between px-6 py-4">
             <Skeleton className="h-5 w-36 rounded" />
             <Skeleton className="h-4 w-4 rounded" />

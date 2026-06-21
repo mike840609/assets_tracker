@@ -4,11 +4,17 @@ import { Card, CardContent } from "@/components/ui/card";
 export default function StocksLoading() {
   return (
     <div className="space-y-4 md:space-y-8">
-      <div className="space-y-2">
+      <div
+        className="skeleton-stagger space-y-2"
+        style={{ "--i": 0 } as React.CSSProperties}
+      >
         <Skeleton className="h-9 w-36" />
         <Skeleton className="h-4 w-80 max-w-full" />
       </div>
-      <div className="flex justify-between gap-3">
+      <div
+        className="skeleton-stagger flex justify-between gap-3"
+        style={{ "--i": 1 } as React.CSSProperties}
+      >
         <Skeleton className="h-8 w-36" />
         <div className="flex gap-2">
           <Skeleton className="h-8 w-28" />
@@ -17,7 +23,12 @@ export default function StocksLoading() {
       </div>
       <div className="space-y-3">
         {[0, 1, 2].map((item) => (
-          <Card key={item} size="sm">
+          <Card
+            key={item}
+            size="sm"
+            className="skeleton-stagger"
+            style={{ "--i": 2 + item } as React.CSSProperties}
+          >
             <CardContent className="space-y-3">
               <div className="flex justify-between gap-3">
                 <div className="space-y-2">

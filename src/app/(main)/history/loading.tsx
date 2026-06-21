@@ -4,13 +4,19 @@ export default function HistoryLoading() {
   return (
     <div className="space-y-4 md:space-y-8">
       {/* Title row — matches LargeTitleHeading (text-4xl md:text-3xl) + meta */}
-      <div className="flex flex-wrap items-end justify-between gap-2">
+      <div
+        className="skeleton-stagger flex flex-wrap items-end justify-between gap-2"
+        style={{ "--i": 0 } as React.CSSProperties}
+      >
         <Skeleton className="h-10 md:h-9 w-44 rounded-lg" />
         <Skeleton className="h-4 w-48 rounded" />
       </div>
 
       {/* Hero row — trend (8) + rail (4): summary over daily change */}
-      <div className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12">
+      <div
+        className="skeleton-stagger grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12"
+        style={{ "--i": 1 } as React.CSSProperties}
+      >
         <div className="lg:col-span-8 bg-card border border-border/50 rounded-xl shadow-sm">
           <div className="px-4 pt-4 pb-2 space-y-4">
             <Skeleton className="h-5 w-40" />
@@ -54,7 +60,10 @@ export default function HistoryLoading() {
       </div>
 
       {/* History ledger: title row + a month-grouped card (mirrors HistoryTable) */}
-      <div className="flex flex-col gap-3">
+      <div
+        className="skeleton-stagger flex flex-col gap-3"
+        style={{ "--i": 2 } as React.CSSProperties}
+      >
         <div className="flex items-center justify-between">
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-5 w-24 rounded-full" />

@@ -4,12 +4,17 @@ export default function SettingsLoading() {
   return (
     <div className="space-y-8 max-w-2xl lg:max-w-6xl pb-16">
       {/* Page title */}
-      <Skeleton className="h-10 md:h-9 w-28 rounded-lg" />
+      <div className="skeleton-stagger" style={{ "--i": 0 } as React.CSSProperties}>
+        <Skeleton className="h-10 md:h-9 w-28 rounded-lg" />
+      </div>
 
       {/* 2×3 section grid — mirrors page.tsx layout exactly */}
       <div className="grid gap-8 lg:grid-cols-2 lg:auto-rows-min lg:items-start lg:gap-x-10 lg:gap-y-10">
         {/* Col 1 Row 1 — Preferences */}
-        <div className="space-y-3 lg:col-start-1 lg:row-start-1">
+        <div
+          className="skeleton-stagger space-y-3 lg:col-start-1 lg:row-start-1"
+          style={{ "--i": 1 } as React.CSSProperties}
+        >
           <Skeleton className="h-6 w-36" />
           <div className="rounded-xl border overflow-hidden">
             {/* Currency */}
@@ -65,7 +70,10 @@ export default function SettingsLoading() {
         </div>
 
         {/* Col 1 Row 2 — Synchronization */}
-        <div className="space-y-3 lg:col-start-1 lg:row-start-2">
+        <div
+          className="skeleton-stagger space-y-3 lg:col-start-1 lg:row-start-2"
+          style={{ "--i": 2 } as React.CSSProperties}
+        >
           <Skeleton className="h-6 w-40" />
           <div className="rounded-xl border overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
@@ -85,7 +93,10 @@ export default function SettingsLoading() {
         </div>
 
         {/* Col 1 Row 3 — Version */}
-        <div className="space-y-3 lg:col-start-1 lg:row-start-3">
+        <div
+          className="skeleton-stagger space-y-3 lg:col-start-1 lg:row-start-3"
+          style={{ "--i": 3 } as React.CSSProperties}
+        >
           <Skeleton className="h-6 w-20" />
           <div className="rounded-xl border overflow-hidden">
             <div className="p-4 space-y-4">
@@ -108,7 +119,10 @@ export default function SettingsLoading() {
         </div>
 
         {/* Col 2 Row 1 — Privacy & Security */}
-        <div className="space-y-3 lg:col-start-2 lg:row-start-1">
+        <div
+          className="skeleton-stagger space-y-3 lg:col-start-2 lg:row-start-1"
+          style={{ "--i": 4 } as React.CSSProperties}
+        >
           <Skeleton className="h-6 w-44" />
           <div className="rounded-xl border overflow-hidden">
             {/* Summary row */}
@@ -167,7 +181,10 @@ export default function SettingsLoading() {
         </div>
 
         {/* Col 2 Row 2 — Data Management */}
-        <div className="space-y-3 lg:col-start-2 lg:row-start-2">
+        <div
+          className="skeleton-stagger space-y-3 lg:col-start-2 lg:row-start-2"
+          style={{ "--i": 5 } as React.CSSProperties}
+        >
           <Skeleton className="h-6 w-40" />
           <div className="rounded-xl border overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
@@ -181,7 +198,10 @@ export default function SettingsLoading() {
         </div>
 
         {/* Col 2 Row 3 — Add to Home Screen */}
-        <div className="space-y-3 lg:col-start-2 lg:row-start-3">
+        <div
+          className="skeleton-stagger space-y-3 lg:col-start-2 lg:row-start-3"
+          style={{ "--i": 6 } as React.CSSProperties}
+        >
           <Skeleton className="h-6 w-40" />
           <div className="rounded-xl border overflow-hidden">
             <div className="p-4 space-y-4">

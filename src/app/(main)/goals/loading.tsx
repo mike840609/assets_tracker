@@ -5,11 +5,16 @@ export default function GoalsLoading() {
   return (
     <div className="space-y-4 md:space-y-8">
       {/* Title — matches LargeTitleHeading (text-4xl md:text-3xl) */}
-      <Skeleton className="h-10 md:h-9 w-24 rounded-lg" />
+      <div className="skeleton-stagger" style={{ "--i": 0 } as React.CSSProperties}>
+        <Skeleton className="h-10 md:h-9 w-24 rounded-lg" />
+      </div>
 
       <div className="space-y-4">
         {/* Mobile-only tab switcher — mirrors GoalsView's underline tabs */}
-        <div className="md:hidden flex border-b">
+        <div
+          className="skeleton-stagger md:hidden flex border-b"
+          style={{ "--i": 1 } as React.CSSProperties}
+        >
           <div className="px-4 pb-2 -mb-px border-b-2 border-primary">
             <Skeleton className="h-4 w-20" />
           </div>
@@ -23,7 +28,10 @@ export default function GoalsLoading() {
 
         <div className="space-y-6">
           {/* Subtitle + Add button (size="sm" → h-7) */}
-          <div className="flex items-center justify-between">
+          <div
+            className="skeleton-stagger flex items-center justify-between"
+            style={{ "--i": 2 } as React.CSSProperties}
+          >
             <Skeleton className="h-4 w-48" />
             <Skeleton className="h-7 w-24 rounded-md" />
           </div>
@@ -31,7 +39,11 @@ export default function GoalsLoading() {
           {/* Goal cards — mirror GoalCard (icon + title, square actions, progress, meta) */}
           <div className="grid gap-4">
             {[...Array(3)].map((_, i) => (
-              <Card key={i} className="border border-border/50 bg-card shadow-sm rounded-xl">
+              <Card
+                key={i}
+                className="skeleton-stagger border border-border/50 bg-card shadow-sm rounded-xl"
+                style={{ "--i": 3 + i } as React.CSSProperties}
+              >
                 <CardContent className="p-5 space-y-4">
                   {/* Header row */}
                   <div className="flex items-start justify-between gap-3">

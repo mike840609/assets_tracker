@@ -31,12 +31,17 @@ export default function AnalysisLoading() {
   return (
     <div className="space-y-4 md:space-y-8">
       {/* Title — matches LargeTitleHeading (text-4xl md:text-3xl) */}
-      <Skeleton className="h-10 md:h-9 w-32 rounded-lg" />
+      <div className="skeleton-stagger" style={{ "--i": 0 } as React.CSSProperties}>
+        <Skeleton className="h-10 md:h-9 w-32 rounded-lg" />
+      </div>
 
       <div className="space-y-4">
         {/* Sticky freshness badge + range selector (Analysis is a single view; no
             History sub-tab). */}
-        <div className="sticky top-[env(safe-area-inset-top)] md:top-0 z-40 flex items-center justify-between gap-2 py-2 md:-mx-2 md:px-2">
+        <div
+          className="skeleton-stagger sticky top-[env(safe-area-inset-top)] md:top-0 z-40 flex items-center justify-between gap-2 py-2 md:-mx-2 md:px-2"
+          style={{ "--i": 1 } as React.CSSProperties}
+        >
           <Skeleton className="h-5 w-24 rounded-full" />
           <div className="inline-flex gap-1 rounded-full p-1 ring-1 ring-border/50">
             {[...Array(5)].map((_, i) => (
@@ -48,7 +53,8 @@ export default function AnalysisLoading() {
         <div className="space-y-6">
           {/* Lead balance-sheet chart with integrated KPI rail (rail stacks below
               the chart on mobile, sits beside it from xl up). */}
-          <Card size="sm" className="!py-0">
+          <div className="skeleton-stagger" style={{ "--i": 2 } as React.CSSProperties}>
+            <Card size="sm" className="!py-0">
             <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-stretch 2xl:grid-cols-[minmax(0,1fr)_22rem]">
               <div className="min-w-0 py-3">
                 <div className="space-y-1.5 px-2 sm:px-4">
@@ -90,10 +96,12 @@ export default function AnalysisLoading() {
               </div>
             </div>
           </Card>
+          </div>
 
           {/* Secondary charts — grouped into "Movement", then "Composition", each
               behind its own section heading (stacks single-column on mobile). */}
-          <div className="space-y-4">
+          <div className="skeleton-stagger" style={{ "--i": 3 } as React.CSSProperties}>
+            <div className="space-y-4">
             <div className="space-y-3">
               <SectionHeaderSkeleton />
               <div className="grid gap-6 xl:grid-cols-2">
@@ -109,9 +117,11 @@ export default function AnalysisLoading() {
               </div>
             </div>
           </div>
+          </div>
 
           {/* Top movers list — card with horizontally scrollable table rows */}
-          <Card>
+          <div className="skeleton-stagger" style={{ "--i": 4 } as React.CSSProperties}>
+            <Card>
             <div className="px-6 pt-2 pb-2">
               <Skeleton className="h-5 w-32 mb-2" />
               <Skeleton className="h-3 w-56 max-w-full" />
@@ -140,6 +150,7 @@ export default function AnalysisLoading() {
               </div>
             </div>
           </Card>
+          </div>
         </div>
       </div>
     </div>

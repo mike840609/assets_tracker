@@ -4,7 +4,10 @@ export default function AccountDetailLoading() {
   return (
     <div className="md:flex md:gap-6 md:items-start">
       {/* Nav panel — desktop only, mirrors AccountsNavPanel (w-44 xl:w-52) */}
-      <aside className="hidden md:flex flex-col w-44 xl:w-52 shrink-0 gap-2 pt-0.5">
+      <aside
+        className="skeleton-stagger hidden md:flex flex-col w-44 xl:w-52 shrink-0 gap-2 pt-0.5"
+        style={{ "--i": 0 } as React.CSSProperties}
+      >
         <Skeleton className="h-3 w-16 mx-2 mb-1" />
         {[...Array(5)].map((_, i) => (
           <Skeleton key={i} className="h-8 w-full rounded-lg" />
@@ -17,13 +20,19 @@ export default function AccountDetailLoading() {
 
       <div className="flex-1 min-w-0 space-y-6">
         {/* Header: back button + account name */}
-        <div className="flex items-center gap-3">
+        <div
+          className="skeleton-stagger flex items-center gap-3"
+          style={{ "--i": 1 } as React.CSSProperties}
+        >
           <Skeleton className="h-8 w-8" />
           <Skeleton className="h-10 md:h-9 w-48 rounded-lg" />
         </div>
 
         {/* Account summary card */}
-        <div className="rounded-xl border border-border/50 bg-card p-6 space-y-4">
+        <div
+          className="skeleton-stagger rounded-xl border border-border/50 bg-card p-6 space-y-4"
+          style={{ "--i": 2 } as React.CSSProperties}
+        >
           <div className="flex justify-between">
             <div className="space-y-2">
               <Skeleton className="h-4 w-20" />
