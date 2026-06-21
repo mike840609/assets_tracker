@@ -218,11 +218,12 @@ export function AnalysisView({
   const hasData = snapshots.length > 0;
   const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
 
-  // Analysis no longer shows History as a peer tab. The dashboard's "View full
-  // history" link still deep-links at /analysis#history, which renders the full
-  // history view on mobile; otherwise Analysis stands alone. (Keeping HistoryView
-  // imported and rendered here also keeps recharts in a shared chunk — dropping it
-  // makes Turbopack duplicate recharts across route bundles, ~+150KB gzip.)
+  // Analysis no longer shows History as a peer tab; History has its own route and
+  // the dashboard links there directly. The /analysis#history deep link still
+  // renders the full history view (valid for shared/bookmarked URLs), and keeping
+  // HistoryView imported + rendered here is also load-bearing: dropping it makes
+  // Turbopack duplicate recharts across route bundles (~+150KB gzip), so this
+  // reference must stay even though nothing in-app links to it.
   const hash = useSyncExternalStore(
     (onChange) => {
       window.addEventListener("hashchange", onChange);
