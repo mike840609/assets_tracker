@@ -38,6 +38,25 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.8.2",
+    date: "2026-06-21",
+    summary: {
+      "en-US": "Fixed the Google profile avatar failing to load in the sidebar.",
+      "zh-TW": "修正側邊欄 Google 個人頭像無法載入的問題。",
+    },
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Sidebar avatar: Google profile pictures no longer fail to load (the request now omits the referrer that Google's image CDN was rejecting), and a broken avatar falls back to the version link instead of a broken-image icon.",
+          "zh-TW":
+            "側邊欄頭像：Google 個人頭像不再載入失敗（請求不再帶上 Google 圖片 CDN 會拒絕的來源資訊），且頭像載入失敗時會改顯示版本連結，而非破圖圖示。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.8.1",
     date: "2026-06-20",
     summary: {
