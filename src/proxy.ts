@@ -108,6 +108,11 @@ const authMiddleware = auth((req) => {
 });
 
 export default function middleware(req: NextRequest, event: NextFetchEvent) {
+  const sentryTunnelPath = process.env._sentryRewritesTunnelPath;
+  if (sentryTunnelPath && req.nextUrl.pathname === sentryTunnelPath) {
+    return NextResponse.next();
+  }
+
   // Rate-limit auth callbacks before any NextAuth processing.
   if (req.nextUrl.pathname.startsWith("/api/auth")) {
     const limited = _authRateLimit(req);

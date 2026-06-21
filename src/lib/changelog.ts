@@ -38,6 +38,34 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.8.6",
+    date: "2026-06-21",
+    summary: {
+      "en-US": "Reliable browser error reporting via first-party Sentry tunnel.",
+      "zh-TW": "透過第一方 Sentry 通道確保瀏覽器錯誤回報正常運作。",
+    },
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Browser error reports now use a first-party tunnel so privacy tools such as Brave Shields no longer block them.",
+          "zh-TW":
+            "瀏覽器錯誤回報現在透過第一方通道傳送，不再被 Brave Shields 等隱私防護工具阻擋。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Google profile avatars now load when the PWA service worker is active, without triggering Content Security Policy errors.",
+          "zh-TW":
+            "PWA 服務工作者啟用時，Google 個人頭像現在可正常載入，不再觸發內容安全政策錯誤。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.8.5",
     date: "2026-06-21",
     summary: {
