@@ -87,7 +87,7 @@ const tickFormatter = (v: number) =>
       ? `${(v / 1_000).toFixed(0)}K`
       : String(Math.round(v));
 
-const MAX_LABEL_LEN = 18;
+const MAX_LABEL_LEN = 14;
 const truncate = (s: string) =>
   s.length > MAX_LABEL_LEN ? s.slice(0, MAX_LABEL_LEN - 1) + "…" : s;
 
@@ -188,7 +188,7 @@ export const AttributionChart = memo(function AttributionChart({ items, baseCurr
                     dataKey="accountName"
                     tick={{ fontSize: 12 }}
                     tickFormatter={truncate}
-                    width={130}
+                    width={150}
                   />
                   <ReferenceLine x={0} stroke="var(--border)" strokeWidth={1.5} />
                   <ChartTooltip
