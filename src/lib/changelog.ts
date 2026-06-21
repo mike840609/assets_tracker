@@ -38,7 +38,7 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
-    version: "0.8.2",
+    version: "0.8.4",
     date: "2026-06-21",
     summary: {
       "en-US": "Fixed the Google profile avatar failing to load in the sidebar.",
@@ -57,11 +57,57 @@ export const CHANGELOG: Release[] = [
     ],
   },
   {
+    version: "0.8.3",
+    date: "2026-06-21",
+    summary: {
+      "en-US": "Clearer Analysis page and quieter dashboard status bar.",
+      "zh-TW": "分析頁更清晰，儀表板狀態列更簡潔。",
+    },
+    changes: [
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Analysis section headers now show the active time range (e.g. 'Movement — All') so the selected period is always visible as you scroll.",
+          "zh-TW":
+            "分析頁各區段標題現在會顯示當前時間範圍（例如「變動 — 全部」），捲動時也能隨時確認所選期間。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Replaced 'Fixed YTD baseline' and 'year-start baseline' with plain language: 'Year to date' and 'Latest snapshot vs. Jan 1'.",
+          "zh-TW":
+            "將「固定年初至今基準」等專業術語改為更直白的說法：「年初至今」及「最新快照 vs. 1月1日」。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Dashboard status bar: the snapshot badge now only appears when the daily cron has missed two or more cycles, keeping the bar quiet during normal operation.",
+          "zh-TW":
+            "儀表板狀態列：快照標籤現在只在每日排程連續兩次以上未執行時才出現，正常運作時不再佔用版面。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Sidebar privacy toggle now shows 'Hide' or 'Show' text next to the eye icon, making the control discoverable without hovering.",
+          "zh-TW":
+            "側邊欄隱私切換按鈕現在在眼睛圖示旁顯示「Hide」或「Show」文字，不需滑鼠懸停也能一目了然。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.8.1",
     date: "2026-06-20",
     summary: {
-      "en-US": "Clearer mobile navigation, analysis charts, and labels.",
-      "zh-TW": "更清楚的行動版導覽、分析圖表與標籤。",
+      "en-US": "Clearer mobile navigation, analysis charts, and labels; settings desktop polish.",
+      "zh-TW": "更清楚的行動版導覽、分析圖表與標籤；設定頁桌面版優化。",
     },
     changes: [
       {
@@ -110,6 +156,31 @@ export const CHANGELOG: Release[] = [
           "en-US":
             "The Analysis loading placeholder now mirrors the page layout (section headings and chart cards), so content settles in place instead of shifting as it loads.",
           "zh-TW": "分析頁載入骨架改為對應實際版面（區段標題與圖表卡片），內容載入時不再跳動。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Settings now lays out in two columns on desktop instead of a single narrow column, so wide screens are no longer mostly empty space.",
+          "zh-TW": "設定頁在桌面改為雙欄排版，不再是單一窄欄，寬螢幕不再留下大片空白。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "On large monitors (1536px and wider) page content uses more of the available width instead of leaving wide side margins.",
+          "zh-TW": "在大型螢幕（1536px 以上）上，頁面內容會運用更多可用寬度，不再留下寬邊距。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Portfolio Composition treemap: the selection ring on a hovered tile now uses the tile's own color instead of a jarring near-black foreground stroke.",
+          "zh-TW":
+            "投資組合熱圖：滑鼠懸停時的選取框線現在使用圖塊本身的顏色，不再顯示突兀的深色邊框。",
         },
       },
     ],

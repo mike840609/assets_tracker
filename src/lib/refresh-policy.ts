@@ -23,5 +23,11 @@ export const FX_REFRESH_TTL_MS = 60 * 60 * 1000;
  */
 export const FX_RATES_STALE_MS = 48 * 60 * 60 * 1000;
 
+/**
+ * Treat a snapshot older than this as stale in the UI (warning badge). Two
+ * missed daily crons = a genuine gap, not a normal overnight window.
+ */
+export const SNAPSHOT_STALE_MS = 48 * 60 * 60 * 1000;
+
 /** Minimum client-side cooldown after any manual refresh attempt. */
 export const CLIENT_REFRESH_COOLDOWN_MS = 15_000;

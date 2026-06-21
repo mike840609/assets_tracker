@@ -87,7 +87,14 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
           <FreshnessBadge kind="price" timestamp={effectiveLastUpdate} mobileShort />
         )}
         {lastSnapshotDate && (
-          <FreshnessBadge kind="snapshot" timestamp={lastSnapshotDate} mobileShort />
+          // Only surfaces when the daily cron has missed 2+ days — a real gap,
+          // not the normal overnight window. Keeps the status bar quiet when healthy.
+          <FreshnessBadge
+            kind="snapshot"
+            timestamp={lastSnapshotDate}
+            mobileShort
+            showOnlyWhenStale
+          />
         )}
         {!effectiveLastUpdate && !lastSnapshotDate && (
           <span className="inline-flex items-center gap-1">
