@@ -40,8 +40,10 @@ async function SettingsContent() {
 
         {/* Single column on mobile; on desktop the tall preferences form sits
             beside a stack of the shorter cards so wide monitors aren't a narrow
-            column floating in empty space. items-start keeps columns independent. */}
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-x-8 lg:gap-y-10">
+            column floating in empty space. items-start keeps columns independent.
+            At xl+ the Version and Install cards pair up in a 2-col sub-grid so
+            the right column doesn't have a long tail of narrow single-row cards. */}
+        <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-x-10 lg:gap-y-10">
           <SettingsForm
             currentCurrency={settings.baseCurrency}
             currentLocale={settings.locale}
@@ -56,9 +58,15 @@ async function SettingsContent() {
                 await signOut({ redirectTo: "/login" });
               }}
             />
-            <DataManagement />
-            <VersionCard />
-            <InstallAppCard />
+            {/* Utility cluster: tighter internal spacing, visually subordinate
+                to Privacy & Security above. Version + Install pair at xl+. */}
+            <div className="space-y-5">
+              <DataManagement />
+              <div className="grid gap-5 xl:grid-cols-2 xl:items-start">
+                <VersionCard />
+                <InstallAppCard />
+              </div>
+            </div>
           </div>
         </div>
       </div>
