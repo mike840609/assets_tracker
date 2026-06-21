@@ -38,6 +38,25 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.8.5",
+    date: "2026-06-21",
+    summary: {
+      "en-US": "Google profile avatars now load reliably behind ad blockers.",
+      "zh-TW": "Google 個人頭像現在即使在廣告攔截器下也能可靠載入。",
+    },
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Sidebar avatar: Google profile pictures are now served through the app's own origin instead of loaded directly from Google. Privacy browsers and ad blockers (e.g. Brave Shields) block third-party requests to Google's image host, which left the avatar broken even after the earlier referrer fix.",
+          "zh-TW":
+            "側邊欄頭像：Google 個人頭像改由應用程式自身網域提供，而非直接向 Google 載入。隱私瀏覽器與廣告攔截器（如 Brave Shields）會封鎖對 Google 圖片主機的第三方請求，導致先前的來源修正後頭像仍然破圖。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.8.4",
     date: "2026-06-21",
     summary: {

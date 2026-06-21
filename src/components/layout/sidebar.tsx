@@ -214,14 +214,15 @@ export function Sidebar({
           {!collapsed &&
             (userImage && !avatarError ? (
               <img
-                src={userImage}
+                // Served through our own origin (/api/avatar) rather than the raw
+                // Google URL: privacy browsers / ad blockers (Brave Shields, etc.)
+                // block third-party requests to googleusercontent.com, so a direct
+                // <img src> silently fails. The proxy resolves the avatar from the
+                // session server-side, keeping the request same-origin.
+                src="/api/avatar"
                 width={28}
                 height={28}
                 alt={userName ?? "User avatar"}
-                // Google's image CDN returns 429/403 when a referrer is sent
-                // (the app's Referrer-Policy leaks the origin otherwise), which
-                // is what breaks the avatar. Strip the referrer on this request.
-                referrerPolicy="no-referrer"
                 onError={() => setAvatarError(true)}
                 className="h-7 w-7 rounded-full"
               />
