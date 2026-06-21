@@ -250,7 +250,7 @@ export function Sidebar({
                   title={privacyMode ? "Show values" : "Hide values"}
                   aria-label={privacyMode ? "Show values" : "Hide values"}
                   className={cn(
-                    "inline-flex items-center justify-center rounded-md p-1.5 text-sm transition-all motion-fast",
+                    "inline-flex items-center rounded-md p-1.5 text-sm transition-all motion-fast",
                     privacyMode
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground",

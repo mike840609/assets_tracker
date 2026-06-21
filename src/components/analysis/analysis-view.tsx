@@ -318,8 +318,11 @@ export function AnalysisView({
               >
                 <div className="flex flex-wrap items-end justify-between gap-2">
                   <div>
-                    <h2 className="text-sm font-semibold text-foreground">
+                    <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
                       {t("movementSectionTitle")}
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                        {activeRangeLabel}
+                      </span>
                     </h2>
                     <p className="text-xs text-muted-foreground">{t("movementSectionSubtitle")}</p>
                   </div>
@@ -344,8 +347,11 @@ export function AnalysisView({
               >
                 <div className="flex flex-wrap items-end justify-between gap-2">
                   <div>
-                    <h2 className="text-sm font-semibold text-foreground">
+                    <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
                       {t("compositionSectionTitle")}
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                        {activeRangeLabel}
+                      </span>
                     </h2>
                     <p className="text-xs text-muted-foreground">
                       {t("compositionSectionSubtitle")}

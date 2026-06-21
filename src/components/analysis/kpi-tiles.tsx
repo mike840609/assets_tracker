@@ -322,8 +322,8 @@ export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel }: Props) {
       </section>
 
       <div className="mt-auto border-t border-border/70 pt-3">
-        <div className="flex items-start gap-2 text-xs leading-snug text-muted-foreground">
-          <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+        <div className="flex items-start gap-2 rounded-md bg-muted/50 px-2.5 py-2 text-xs leading-snug text-muted-foreground">
+          <Info className="mt-0.5 size-3.5 shrink-0 text-foreground/50" aria-hidden />
           <div className="min-w-0">
             <div className="font-medium text-foreground">{t("methodologyShortTitle")}</div>
             <p className="mt-0.5">{t("kpiMethodology", { range: rangeLabel })}</p>
