@@ -4,10 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 export default function StocksLoading() {
   return (
     <div className="space-y-4 md:space-y-8">
-      <div
-        className="skeleton-stagger space-y-2"
-        style={{ "--i": 0 } as React.CSSProperties}
-      >
+      <div className="skeleton-stagger space-y-2" style={{ "--i": 0 } as React.CSSProperties}>
         <Skeleton className="h-9 w-36" />
         <Skeleton className="h-4 w-80 max-w-full" />
       </div>

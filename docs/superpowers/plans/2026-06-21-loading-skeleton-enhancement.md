@@ -22,9 +22,11 @@
 ### Task 1: CSS Foundation — Stagger Class, Shimmer Refinement, Dark-Mode Override
 
 **Files:**
+
 - Modify: `src/app/globals.css` (lines 387–410 shimmer block, lines 470–473 stagger area, lines 477–496 reduced-motion block)
 
 **Interfaces:**
+
 - Produces: `.skeleton-stagger` CSS class (consumed by Tasks 2–4), refined `.skeleton-shimmer` gradient, `.dark .skeleton-shimmer` override
 
 - [ ] **Step 1: Add `.skeleton-stagger` class after the existing `.stagger-rise` block**
@@ -85,22 +87,22 @@ This gives dark mode a `15%` foreground mix for better visibility against dark m
 In `src/app/globals.css`, inside the `@media (prefers-reduced-motion: reduce)` block, find the line that reads:
 
 ```css
-  .history-cell-in,
-  .history-rise-in,
-  .stagger-rise {
-    animation: none;
-  }
+.history-cell-in,
+.history-rise-in,
+.stagger-rise {
+  animation: none;
+}
 ```
 
 Replace with:
 
 ```css
-  .history-cell-in,
-  .history-rise-in,
-  .stagger-rise,
-  .skeleton-stagger {
-    animation: none;
-  }
+.history-cell-in,
+.history-rise-in,
+.stagger-rise,
+.skeleton-stagger {
+  animation: none;
+}
 ```
 
 - [ ] **Step 5: Verify build**
@@ -121,9 +123,11 @@ git commit -m "style: add skeleton-stagger class, refine shimmer gradient for li
 ### Task 2: Unify AppLoadingShell to Use Skeleton Component
 
 **Files:**
+
 - Modify: `src/components/layout/app-loading-shell.tsx` (all 33 lines)
 
 **Interfaces:**
+
 - Consumes: `Skeleton` from `@/components/ui/skeleton`, `.skeleton-stagger` from Task 1
 - Produces: Updated `AppLoadingShell` with consistent shimmer animation
 
@@ -158,7 +162,10 @@ export function AppLoadingShell({ children }: { children?: ReactNode }) {
             <div className="skeleton-stagger" style={{ "--i": 1 } as React.CSSProperties}>
               <Skeleton className="h-10 w-full rounded-lg" />
             </div>
-            <div className="skeleton-stagger grid grid-cols-2 gap-3" style={{ "--i": 2 } as React.CSSProperties}>
+            <div
+              className="skeleton-stagger grid grid-cols-2 gap-3"
+              style={{ "--i": 2 } as React.CSSProperties}
+            >
               <Skeleton className="col-span-2 h-32 rounded-2xl" />
               <Skeleton className="h-28 rounded-2xl" />
               <Skeleton className="h-28 rounded-2xl" />
@@ -189,9 +196,11 @@ git commit -m "refactor: unify AppLoadingShell to use Skeleton component with st
 ### Task 3: Add Stagger to DashboardSkeleton
 
 **Files:**
+
 - Modify: `src/components/dashboard/dashboard-skeleton.tsx` (lines 141–192, the `DashboardSkeleton` export)
 
 **Interfaces:**
+
 - Consumes: `.skeleton-stagger` from Task 1
 - Produces: Updated `DashboardSkeleton` with staggered tier entrance (used by `(main)/loading.tsx` re-export and the layout Suspense fallback)
 
@@ -254,10 +263,7 @@ export function DashboardSkeleton() {
       </div>
 
       {/* Tier 4 — accounts summary (matches AccountsSummarySkeleton) */}
-      <div
-        className="skeleton-stagger space-y-3"
-        style={{ "--i": 5 } as React.CSSProperties}
-      >
+      <div className="skeleton-stagger space-y-3" style={{ "--i": 5 } as React.CSSProperties}>
         <Skeleton className="h-5 w-40" />
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
@@ -288,6 +294,7 @@ git commit -m "style: add stagger entrance to DashboardSkeleton tiers"
 ### Task 4: Add Stagger to All Route Loading Pages
 
 **Files:**
+
 - Modify: `src/app/(main)/accounts/loading.tsx`
 - Modify: `src/app/(main)/accounts/[id]/loading.tsx`
 - Modify: `src/app/(main)/analysis/loading.tsx`
@@ -298,6 +305,7 @@ git commit -m "style: add stagger entrance to DashboardSkeleton tiers"
 - Modify: `src/app/(main)/stocks/loading.tsx`
 
 **Interfaces:**
+
 - Consumes: `.skeleton-stagger` from Task 1
 
 Each loading page wraps its top-level visual groups with `className="skeleton-stagger"` and an incrementing `--i` variable. The pattern is consistent across all files:
@@ -568,6 +576,7 @@ git commit -m "style: add stagger entrance animation to all route loading skelet
 ### Task 5: Visual Verification & Final Commit
 
 **Files:**
+
 - None new — verification only
 
 - [ ] **Step 1: Start dev server and verify visually**
@@ -575,6 +584,7 @@ git commit -m "style: add stagger entrance animation to all route loading skelet
 Run: `cd /Users/chuntsai/Projects/asset_tracker-wt-20260621-antigravity && npm run dev`
 
 Manually verify in browser:
+
 1. Navigate to `/` — dashboard skeleton should cascade title → actions → net worth → trend+rail → portfolio+donuts → accounts summary
 2. Navigate to `/accounts` — skeleton sections should stagger in
 3. Toggle dark mode in browser devtools — shimmer highlight should be more visible than before

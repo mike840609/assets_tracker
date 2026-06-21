@@ -18,6 +18,7 @@ Five workstreams, ordered by impact:
 **Solution:** Apply a stagger-rise entrance animation to skeleton groups using CSS custom properties.
 
 **Mechanism:**
+
 - Add a new `.skeleton-stagger` utility class in `globals.css` that reuses the existing `list-row-in` keyframes (`opacity: 0 → 1, translateY(8px → 0)`)
 - Each major skeleton section receives an incrementing `--i` CSS variable
 - Stagger delay: `calc(var(--i, 0) * 35ms)` — subtle 35ms per group
@@ -26,6 +27,7 @@ Five workstreams, ordered by impact:
 - Gated by `prefers-reduced-motion: reduce` → `animation: none` (already handled in the existing media query block)
 
 **Application pattern per loading.tsx:**
+
 ```tsx
 // Each top-level section gets a stagger index
 <div className="skeleton-stagger" style={{ '--i': 0 } as React.CSSProperties}>
@@ -62,6 +64,7 @@ Five workstreams, ordered by impact:
 ```
 
 **Dark mode override** (inside the existing `.dark` block):
+
 ```css
 .dark .skeleton-shimmer {
   background-image: linear-gradient(
@@ -74,6 +77,7 @@ Five workstreams, ordered by impact:
 ```
 
 Changes:
+
 - Light mode: `12% → 8%` — slightly softer, less "dirty" feel
 - Dark mode: explicit `15%` — more visible against dark muted backgrounds
 - Gradient stops: `20%/50%/80% → 25%/50%/75%` — slightly wider highlight band for smoother sweep
@@ -82,9 +86,10 @@ Changes:
 
 **Problem:** When Suspense resolves, the skeleton is hard-cut replaced with content. The content already has `animate-in fade-in duration-200`, but the skeleton disappears instantly.
 
-**Approach:** This is constrained by how Next.js streaming/Suspense works — we can't animate the removal of the fallback because React unmounts it. However, the content entrance animation (`animate-in fade-in`) already provides a soft arrival. 
+**Approach:** This is constrained by how Next.js streaming/Suspense works — we can't animate the removal of the fallback because React unmounts it. However, the content entrance animation (`animate-in fade-in`) already provides a soft arrival.
 
 **Enhancement:** Ensure every page's content wrapper consistently uses the entrance animation class (`animate-in fade-in duration-200`). Audit each `page.tsx` to confirm this is present. Where missing, add it. This creates the illusion of a crossfade because:
+
 - Skeleton is visible → skeleton disappears (instant, but the next frame renders…)
 - Content fades in over 200ms → perceived as a smooth transition
 
@@ -99,10 +104,13 @@ No additional CSS needed for this workstream — just consistency enforcement.
 **File:** `src/components/layout/app-loading-shell.tsx`
 
 Replace:
+
 ```tsx
 <div className="h-10 w-48 animate-pulse rounded-lg bg-muted" />
 ```
+
 With:
+
 ```tsx
 <Skeleton className="h-10 w-48 rounded-lg" />
 ```
@@ -113,19 +121,19 @@ Apply stagger-rise to the shell's children too, so even the very first paint (be
 
 Audit each `loading.tsx` to ensure structural fidelity to its page. Apply stagger-rise to each. Known issues to address:
 
-| Route | Issue | Fix |
-|-------|-------|-----|
-| All routes | No stagger animation | Add `skeleton-stagger` with `--i` per section |
-| `(main)/loading.tsx` | Re-exports `DashboardSkeleton` — no stagger | Add stagger in `DashboardSkeleton` |
-| `accounts/loading.tsx` | Good structure | Add stagger |
-| `accounts/[id]/loading.tsx` | Good structure | Add stagger |
-| `analysis/loading.tsx` | Good structure, detailed | Add stagger |
-| `goals/loading.tsx` | Good structure | Add stagger |
-| `history/loading.tsx` | Good structure | Add stagger |
-| `projections/loading.tsx` | Good structure, detailed | Add stagger |
-| `settings/loading.tsx` | Good structure, detailed | Add stagger |
-| `stocks/loading.tsx` | Good structure | Add stagger |
-| `app-loading-shell.tsx` | Uses inline `animate-pulse` divs, not `Skeleton` | Unify to use `Skeleton` component + stagger |
+| Route                       | Issue                                            | Fix                                           |
+| --------------------------- | ------------------------------------------------ | --------------------------------------------- |
+| All routes                  | No stagger animation                             | Add `skeleton-stagger` with `--i` per section |
+| `(main)/loading.tsx`        | Re-exports `DashboardSkeleton` — no stagger      | Add stagger in `DashboardSkeleton`            |
+| `accounts/loading.tsx`      | Good structure                                   | Add stagger                                   |
+| `accounts/[id]/loading.tsx` | Good structure                                   | Add stagger                                   |
+| `analysis/loading.tsx`      | Good structure, detailed                         | Add stagger                                   |
+| `goals/loading.tsx`         | Good structure                                   | Add stagger                                   |
+| `history/loading.tsx`       | Good structure                                   | Add stagger                                   |
+| `projections/loading.tsx`   | Good structure, detailed                         | Add stagger                                   |
+| `settings/loading.tsx`      | Good structure, detailed                         | Add stagger                                   |
+| `stocks/loading.tsx`        | Good structure                                   | Add stagger                                   |
+| `app-loading-shell.tsx`     | Uses inline `animate-pulse` divs, not `Skeleton` | Unify to use `Skeleton` component + stagger   |
 
 ## Files Changed
 
