@@ -38,6 +38,25 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.8.5",
+    date: "2026-06-21",
+    summary: {
+      "en-US": "Sharper mobile legibility in light mode.",
+      "zh-TW": "淺色模式下行動版更清晰易讀。",
+    },
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Gain, loss, and accent values now meet WCAG AA contrast in light mode — green and blue figures on cards are easier to read in bright light.",
+          "zh-TW":
+            "淺色模式下的漲跌與重點數值現已符合 WCAG AA 對比標準，卡片上的綠色與藍色數字在強光下更易閱讀。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.8.4",
     date: "2026-06-21",
     summary: {

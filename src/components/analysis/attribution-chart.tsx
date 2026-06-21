@@ -65,7 +65,9 @@ function AttributionTooltip({
         value={
           privacyMode ? "***" : `${mktSign}${formatCurrency(item.marketPerformance, baseCurrency)}`
         }
-        valueClassName={item.marketPerformance >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"}
+        valueClassName={
+          item.marketPerformance >= 0 ? "text-[var(--gain-ink)]" : "text-[var(--loss-ink)]"
+        }
       />
       <div className="pt-1.5 mt-1.5 border-t border-border/40">
         <ChartTooltipRow
@@ -73,7 +75,9 @@ function AttributionTooltip({
           value={
             privacyMode ? "***" : `${totalSign}${formatCurrency(item.totalDelta, baseCurrency)}`
           }
-          valueClassName={item.totalDelta >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"}
+          valueClassName={
+            item.totalDelta >= 0 ? "text-[var(--gain-ink)]" : "text-[var(--loss-ink)]"
+          }
         />
       </div>
     </ChartTooltipContainer>
@@ -255,7 +259,7 @@ export const AttributionChart = memo(function AttributionChart({ items, baseCurr
                 <div className="text-muted-foreground">{t("attrMarket")}</div>
                 <div
                   className={`tabular-nums font-medium mt-0.5 ${
-                    totalMarket >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"
+                    totalMarket >= 0 ? "text-[var(--gain-ink)]" : "text-[var(--loss-ink)]"
                   }`}
                 >
                   {totalMarket >= 0 ? "+" : ""}
@@ -266,7 +270,7 @@ export const AttributionChart = memo(function AttributionChart({ items, baseCurr
                 <div className="text-muted-foreground">{t("tooltipChange")}</div>
                 <div
                   className={`tabular-nums font-medium mt-0.5 ${
-                    totalDelta >= 0 ? "text-[var(--gain)]" : "text-[var(--loss)]"
+                    totalDelta >= 0 ? "text-[var(--gain-ink)]" : "text-[var(--loss-ink)]"
                   }`}
                 >
                   {totalDelta >= 0 ? "+" : ""}

@@ -678,9 +678,9 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                     className={cn(
                       "font-medium tabular-nums whitespace-nowrap",
                       tooltip.day.change > 0
-                        ? "text-[var(--gain)]"
+                        ? "text-[var(--gain-ink)]"
                         : tooltip.day.change < 0
-                          ? "text-[var(--loss)]"
+                          ? "text-[var(--loss-ink)]"
                           : "text-muted-foreground",
                     )}
                   >

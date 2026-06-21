@@ -40,11 +40,14 @@ function CountUpMoney({ amount, currency }: { amount: number; currency: string }
 function DirectionCaret({ tone, className }: { tone: Tone; className?: string }) {
   if (tone === "positive")
     return (
-      <ArrowUpRight className={`text-[var(--gain)] shrink-0 ${className ?? ""}`} aria-hidden />
+      <ArrowUpRight className={`text-[var(--gain-ink)] shrink-0 ${className ?? ""}`} aria-hidden />
     );
   if (tone === "negative")
     return (
-      <ArrowDownRight className={`text-[var(--loss)] shrink-0 ${className ?? ""}`} aria-hidden />
+      <ArrowDownRight
+        className={`text-[var(--loss-ink)] shrink-0 ${className ?? ""}`}
+        aria-hidden
+      />
     );
   return null;
 }
@@ -79,7 +82,7 @@ function MoneyValue({
           : isCompact
             ? "text-xs"
             : "text-sm",
-        tone === "negative" ? "text-[var(--loss)]" : "text-foreground",
+        tone === "negative" ? "text-[var(--loss-ink)]" : "text-foreground",
       )}
     >
       <DirectionCaret
@@ -124,9 +127,9 @@ function LeadMetric({
   const tone: Tone = privacyMode || amount === null ? "neutral" : toneFor(amount);
   const pillClass =
     tone === "negative"
-      ? "bg-[var(--loss)]/10 text-[var(--loss)]"
+      ? "bg-[var(--loss)]/10 text-[var(--loss-ink)]"
       : tone === "positive"
-        ? "bg-[var(--gain)]/10 text-[var(--gain)]"
+        ? "bg-[var(--gain)]/10 text-[var(--gain-ink)]"
         : "bg-muted text-muted-foreground";
 
   return (

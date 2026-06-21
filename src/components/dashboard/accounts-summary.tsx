@@ -112,9 +112,9 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
   const renderGroup = (accounts: typeof summary.accounts, isAsset: boolean) => {
     const totalDisplay = isAsset ? summary.totalAssets : summary.totalLiabilities;
     const label = isAsset ? t("common.asset").toUpperCase() : t("common.liability").toUpperCase();
-    const accentClass = isAsset ? "text-[var(--gain)]" : "text-[var(--loss)]";
+    const accentClass = isAsset ? "text-[var(--gain-ink)]" : "text-[var(--loss-ink)]";
     const dotClass = isAsset ? "bg-[var(--gain)]" : "bg-[var(--loss)]";
-    const totalAccentClass = isAsset ? "text-[var(--gain)]" : "text-[var(--loss)]";
+    const totalAccentClass = isAsset ? "text-[var(--gain-ink)]" : "text-[var(--loss-ink)]";
 
     return (
       <div>
