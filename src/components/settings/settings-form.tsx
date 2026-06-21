@@ -101,7 +101,7 @@ function CurrencyPicker({
         variant="outline"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        className="h-11 md:h-9 w-full justify-between gap-3 sm:w-[240px]"
+        className="h-11 md:h-8 w-full justify-between gap-3 sm:w-[240px]"
       >
         <span className="min-w-0 truncate text-left font-normal">
           {formatCurrencyLabel(selectedCurrency)}
@@ -244,9 +244,9 @@ export function SettingsForm({
   }
 
   return (
-    <div className="space-y-8 w-full">
+    <div className="space-y-8 w-full lg:space-y-0 lg:contents">
       {/* PREFERENCES SECTION */}
-      <section className="space-y-3">
+      <section className="space-y-3 lg:col-start-1 lg:row-start-1">
         <h3 className="text-lg font-semibold text-foreground">{t("settings.preferencesTitle")}</h3>
         <Card className="overflow-hidden p-0">
           <CardContent className="p-0">
@@ -273,7 +273,7 @@ export function SettingsForm({
                 <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
                   <SelectTrigger
                     id="language-select"
-                    className="min-h-11 md:min-h-0 flex-1 sm:flex-none sm:w-[200px]"
+                    className="h-11 md:h-8 flex-1 sm:flex-none sm:w-[240px]"
                   >
                     <SelectValue>{t(`languages.${locale}`)}</SelectValue>
                   </SelectTrigger>
@@ -391,7 +391,7 @@ export function SettingsForm({
       </section>
 
       {/* SYNCHRONIZATION SECTION */}
-      <section className="space-y-3">
+      <section className="space-y-3 lg:col-start-1 lg:row-start-2">
         <h3 className="text-lg font-semibold text-foreground">
           {t("settings.synchronizationTitle")}
         </h3>
