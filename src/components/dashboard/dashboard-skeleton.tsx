@@ -142,19 +142,29 @@ export function DashboardSkeleton() {
   return (
     <div className="space-y-4 md:space-y-8">
       {/* Title — matches LargeTitleHeading (text-4xl md:text-3xl) */}
-      <div className="flex items-center justify-between mb-2">
+      <div
+        className="skeleton-stagger flex items-center justify-between mb-2"
+        style={{ "--i": 0 } as React.CSSProperties}
+      >
         <Skeleton className="h-10 w-48 rounded-lg md:h-9" />
       </div>
 
       {/* Actions bar */}
-      <Skeleton className="h-10 w-full rounded-lg" />
+      <div className="skeleton-stagger" style={{ "--i": 1 } as React.CSSProperties}>
+        <Skeleton className="h-10 w-full rounded-lg" />
+      </div>
 
       {/* Net worth cards */}
-      <NetWorthSkeleton />
+      <div className="skeleton-stagger" style={{ "--i": 2 } as React.CSSProperties}>
+        <NetWorthSkeleton />
+      </div>
 
       {/* Tier 2 — trend chart + heatmap footer (8) beside the planning rail (4):
           goals/projection card over the watchlist card. */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6">
+      <div
+        className="skeleton-stagger grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6"
+        style={{ "--i": 3 } as React.CSSProperties}
+      >
         <div className="min-w-0 lg:col-span-8">
           <TrendChartSkeleton />
         </div>
@@ -168,7 +178,10 @@ export function DashboardSkeleton() {
           donut rail (4). Source order puts the donuts first so the phone reading
           order (allocation → currency → treemap) is preserved; on desktop the
           col-start values place the treemap left and the donuts right. */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6">
+      <div
+        className="skeleton-stagger grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6"
+        style={{ "--i": 4 } as React.CSSProperties}
+      >
         <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
           <ChartCardSkeleton />
           <ChartCardSkeleton />
@@ -179,7 +192,7 @@ export function DashboardSkeleton() {
       </div>
 
       {/* Tier 4 — accounts summary (matches AccountsSummarySkeleton) */}
-      <div className="space-y-3">
+      <div className="skeleton-stagger space-y-3" style={{ "--i": 5 } as React.CSSProperties}>
         <Skeleton className="h-5 w-40" />
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
