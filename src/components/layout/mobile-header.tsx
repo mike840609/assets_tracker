@@ -78,9 +78,14 @@ export function MobileHeader() {
           gradientId="mobile-icon-g"
           className="h-6 w-6 shrink-0 drop-shadow-lg dark:drop-shadow-[0_3px_10px_rgba(52,211,153,0.25)]"
         />
-        <h1 className="text-lg font-bold tracking-tight text-foreground truncate">
-          {t("app.name")}
-        </h1>
+        <div className="flex flex-col min-w-0">
+          <h1 className="text-lg font-bold tracking-tight text-foreground truncate">
+            {t("app.name")}
+          </h1>
+          <p className="text-[10px] text-muted-foreground font-medium -mt-1 opacity-80 uppercase tracking-wide truncate">
+            {t("app.subtitleMobile")}
+          </p>
+        </div>
       </div>
 
       {/* Centre: small page title — slides in when the large title collapses */}
