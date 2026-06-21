@@ -25,9 +25,10 @@ export default function AccountsLoading() {
 
       {/* Category sections */}
       <div className="space-y-3">
-        <div className="skeleton-stagger" style={{ "--i": 2 } as React.CSSProperties}>
-          <Skeleton className="h-5 w-16" />
-        </div>
+        <Skeleton
+          className="skeleton-stagger h-5 w-16"
+          style={{ "--i": 2 } as React.CSSProperties}
+        />
 
         {[...Array(3)].map((_, i) => (
           <div

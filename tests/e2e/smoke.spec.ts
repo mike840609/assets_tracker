@@ -163,21 +163,15 @@ test("2. create an account, add a holding manually, and see it in the list", asy
 test("3. dashboard renders the net-worth card and trend chart section", async ({ page }) => {
   await page.goto("/");
 
-  // Scope to the card container to skip the hidden MobileHeader subtitle ("Net Worth")
-  // that appears earlier in DOM order.
-  const dashboard = page.getByRole("main");
-  await expect(
-    dashboard
-      .locator("div")
-      .filter({ has: page.locator(".net-worth-card-accent") })
-      .getByText(/net worth/i)
-      .first(),
-  ).toBeVisible({
+  // Scope to the card's data-testid to skip the hidden MobileHeader subtitle
+  // ("Net Worth") that appears earlier in DOM order.
+  const netWorthCard = page.getByTestId("net-worth-card");
+  await expect(netWorthCard.getByText(/net worth/i).first()).toBeVisible({
     timeout: 15_000,
   });
 
   // Total-assets sub-card label
-  await expect(dashboard.getByText(/total assets/i).first()).toBeVisible({
+  await expect(netWorthCard.getByText(/total assets/i).first()).toBeVisible({
     timeout: 15_000,
   });
 
@@ -198,7 +192,7 @@ test("3. dashboard renders the net-worth card and trend chart section", async ({
     /currency exposure/i,
     /portfolio composition/i,
   ]) {
-    await expect(dashboard.getByText(chartLabel).first()).toBeAttached({
+    await expect(page.getByRole("main").getByText(chartLabel).first()).toBeAttached({
       timeout: 15_000,
     });
   }

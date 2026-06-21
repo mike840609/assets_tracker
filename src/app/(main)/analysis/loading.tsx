@@ -53,8 +53,11 @@ export default function AnalysisLoading() {
         <div className="space-y-6">
           {/* Lead balance-sheet chart with integrated KPI rail (rail stacks below
               the chart on mobile, sits beside it from xl up). */}
-          <div className="skeleton-stagger" style={{ "--i": 2 } as React.CSSProperties}>
-            <Card size="sm" className="!py-0">
+          <Card
+            size="sm"
+            className="skeleton-stagger !py-0"
+            style={{ "--i": 2 } as React.CSSProperties}
+          >
             <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-stretch 2xl:grid-cols-[minmax(0,1fr)_22rem]">
               <div className="min-w-0 py-3">
                 <div className="space-y-1.5 px-2 sm:px-4">
@@ -96,12 +99,13 @@ export default function AnalysisLoading() {
               </div>
             </div>
           </Card>
-          </div>
 
           {/* Secondary charts — grouped into "Movement", then "Composition", each
               behind its own section heading (stacks single-column on mobile). */}
-          <div className="skeleton-stagger" style={{ "--i": 3 } as React.CSSProperties}>
-            <div className="space-y-4">
+          <div
+            className="skeleton-stagger space-y-4"
+            style={{ "--i": 3 } as React.CSSProperties}
+          >
             <div className="space-y-3">
               <SectionHeaderSkeleton />
               <div className="grid gap-6 xl:grid-cols-2">
@@ -116,12 +120,13 @@ export default function AnalysisLoading() {
                 <ChartSkeleton height={200} />
               </div>
             </div>
-          </div>
           </div>
 
           {/* Top movers list — card with horizontally scrollable table rows */}
-          <div className="skeleton-stagger" style={{ "--i": 4 } as React.CSSProperties}>
-            <Card>
+          <Card
+            className="skeleton-stagger"
+            style={{ "--i": 4 } as React.CSSProperties}
+          >
             <div className="px-6 pt-2 pb-2">
               <Skeleton className="h-5 w-32 mb-2" />
               <Skeleton className="h-3 w-56 max-w-full" />
@@ -150,7 +155,6 @@ export default function AnalysisLoading() {
               </div>
             </div>
           </Card>
-          </div>
         </div>
       </div>
     </div>

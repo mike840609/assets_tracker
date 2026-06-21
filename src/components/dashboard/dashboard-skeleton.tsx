@@ -150,9 +150,10 @@ export function DashboardSkeleton() {
       </div>
 
       {/* Actions bar */}
-      <div className="skeleton-stagger" style={{ "--i": 1 } as React.CSSProperties}>
-        <Skeleton className="h-10 w-full rounded-lg" />
-      </div>
+      <Skeleton
+        className="skeleton-stagger h-10 w-full rounded-lg"
+        style={{ "--i": 1 } as React.CSSProperties}
+      />
 
       {/* Net worth cards */}
       <div className="skeleton-stagger" style={{ "--i": 2 } as React.CSSProperties}>
