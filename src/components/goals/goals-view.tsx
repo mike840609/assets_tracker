@@ -55,7 +55,7 @@ function ReorderGoalItem({ data }: { data: GoalWithProgress }) {
       <Target className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
       <p className="min-w-0 flex-1 truncate text-sm font-medium">{data.goal.name}</p>
       {data.isCompleted ? (
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--gain)]/15 px-2 py-0.5 text-xs font-semibold text-[var(--gain)]">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--gain)]/15 px-2 py-0.5 text-xs font-semibold text-[var(--gain-ink)]">
           <CheckCircle2 className="h-3 w-3 shrink-0" aria-hidden />
           {t("completed")}
         </span>

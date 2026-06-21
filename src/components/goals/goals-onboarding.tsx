@@ -21,7 +21,7 @@ export function GoalsOnboarding({ onAdd }: GoalsOnboardingProps) {
               {t("preview.cardSubtitle")}
             </p>
           </div>
-          <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+          <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-[var(--primary-ink)]">
             {t("preview.status")}
           </span>
         </div>
@@ -54,7 +54,7 @@ export function GoalsOnboarding({ onAdd }: GoalsOnboardingProps) {
         <div className="space-y-3">
           {["netWorth", "assets", "account"].map((key, index) => (
             <div key={key} className="flex items-center gap-3 rounded-lg bg-card/70 p-3">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-[var(--primary-ink)]">
                 {index + 1}
               </span>
               <div className="min-w-0 flex-1 space-y-1">

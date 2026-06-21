@@ -535,7 +535,7 @@ export function AccountsList({
                       <tr className="bg-[var(--gain)]/8">
                         <td
                           colSpan={8}
-                          className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-[var(--gain)]"
+                          className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-[var(--gain-ink)]"
                         >
                           {t("accountsList.assets")}
                         </td>
@@ -565,7 +565,7 @@ export function AccountsList({
                       <tr className="bg-[var(--loss)]/8">
                         <td
                           colSpan={8}
-                          className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-[var(--loss)]"
+                          className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-[var(--loss-ink)]"
                         >
                           {t("accountsList.liabilities")}
                         </td>
@@ -1131,13 +1131,13 @@ function MobileSummaryStrip({
       <div className="flex items-center gap-4">
         <div>
           <p className="text-xs text-muted-foreground">{t("accountsList.assets")}</p>
-          <p className="font-semibold tabular-nums text-[var(--gain)]">
+          <p className="font-semibold tabular-nums text-[var(--gain-ink)]">
             {privacyMode ? HIDDEN : formatCurrency(totalAssets, baseCurrency, true)}
           </p>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">{t("accountsList.liabilities")}</p>
-          <p className="font-semibold tabular-nums text-[var(--loss)]">
+          <p className="font-semibold tabular-nums text-[var(--loss-ink)]">
             {privacyMode ? HIDDEN : formatCurrency(totalLiabilities, baseCurrency, true)}
           </p>
         </div>

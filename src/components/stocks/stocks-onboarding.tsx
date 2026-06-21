@@ -10,7 +10,7 @@ interface StocksOnboardingProps {
 }
 
 const rows = [
-  { symbol: "AAPL", tone: "bg-primary/12 text-primary", gain: true },
+  { symbol: "AAPL", tone: "bg-primary/12 text-[var(--primary-ink)]", gain: true },
   { symbol: "NVDA", tone: "bg-chart-2/12 text-chart-2", gain: true },
   { symbol: "TSM", tone: "bg-chart-3/12 text-chart-3", gain: false },
 ] as const;
@@ -28,7 +28,7 @@ export function StocksOnboarding({ onAdd }: StocksOnboardingProps) {
               {t("preview.watchlistSubtitle")}
             </p>
           </div>
-          <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+          <span className="shrink-0 whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-[var(--primary-ink)]">
             {t("preview.manual")}
           </span>
         </div>

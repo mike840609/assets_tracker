@@ -161,9 +161,9 @@ export function HistoryTable({ snapshots, baseCurrency }: Props) {
                               className={cn(
                                 "text-xs tabular-nums mt-0.5",
                                 changePositive
-                                  ? "text-[var(--gain)]"
+                                  ? "text-[var(--gain-ink)]"
                                   : changeNegative
-                                    ? "text-[var(--loss)]"
+                                    ? "text-[var(--loss-ink)]"
                                     : "text-muted-foreground",
                               )}
                             >

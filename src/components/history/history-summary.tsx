@@ -127,7 +127,7 @@ export function HistorySummary({ snapshots, baseCurrency, className }: Props) {
     format.dateTime(new Date(dateStr + "T00:00:00"), { month: "short", day: "numeric" });
 
   const tone = (value: number) =>
-    value > 0 ? "text-[var(--gain)]" : value < 0 ? "text-[var(--loss)]" : "text-foreground";
+    value > 0 ? "text-[var(--gain-ink)]" : value < 0 ? "text-[var(--loss-ink)]" : "text-foreground";
 
   return (
     <Card className={cn(className)}>
@@ -150,7 +150,7 @@ export function HistorySummary({ snapshots, baseCurrency, className }: Props) {
           <span
             className={cn(
               "mt-1 text-xs tabular-nums",
-              stats.atHigh ? "text-[var(--gain)]" : "text-[var(--loss)]",
+              stats.atHigh ? "text-[var(--gain-ink)]" : "text-[var(--loss-ink)]",
             )}
           >
             {stats.atHigh
@@ -202,14 +202,14 @@ export function HistorySummary({ snapshots, baseCurrency, className }: Props) {
             style={{ "--i": 5 } as CSSProperties}
             label={t("bestDay")}
             value={stats.best ? signedMoney(stats.best.value) : "—"}
-            valueClass={stats.best ? "text-[var(--gain)]" : "text-muted-foreground"}
+            valueClass={stats.best ? "text-[var(--gain-ink)]" : "text-muted-foreground"}
             sub={stats.best ? shortDate(stats.best.date) : undefined}
           />
           <Stat
             style={{ "--i": 6 } as CSSProperties}
             label={t("worstDay")}
             value={stats.worst ? signedMoney(stats.worst.value) : "—"}
-            valueClass={stats.worst ? "text-[var(--loss)]" : "text-muted-foreground"}
+            valueClass={stats.worst ? "text-[var(--loss-ink)]" : "text-muted-foreground"}
             sub={stats.worst ? shortDate(stats.worst.date) : undefined}
           />
 
@@ -219,9 +219,9 @@ export function HistorySummary({ snapshots, baseCurrency, className }: Props) {
             label={t("upDownDays")}
             value={
               <>
-                <span className="text-[var(--gain)]">{stats.upDays}</span>
+                <span className="text-[var(--gain-ink)]">{stats.upDays}</span>
                 <span className="text-muted-foreground"> / </span>
-                <span className="text-[var(--loss)]">{stats.downDays}</span>
+                <span className="text-[var(--loss-ink)]">{stats.downDays}</span>
               </>
             }
           />

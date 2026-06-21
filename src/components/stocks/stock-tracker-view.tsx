@@ -530,8 +530,8 @@ function StockRow({
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-sm font-semibold tabular-nums leading-none ring-1 ring-inset",
                   isGain
-                    ? "bg-[var(--gain)]/15 text-[var(--gain)] ring-[var(--gain)]/25"
-                    : "bg-[var(--loss)]/15 text-[var(--loss)] ring-[var(--loss)]/25",
+                    ? "bg-[var(--gain)]/15 text-[var(--gain-ink)] ring-[var(--gain)]/25"
+                    : "bg-[var(--loss)]/15 text-[var(--loss-ink)] ring-[var(--loss)]/25",
                 )}
               >
                 <DirectionIcon className="h-3.5 w-3.5 shrink-0" />
@@ -567,8 +567,8 @@ function StockRow({
                   className={cn(
                     "inline-flex items-center gap-1 rounded-full px-3 py-1.5 font-mono text-base font-bold tabular-nums leading-none ring-1 ring-inset",
                     isGain
-                      ? "bg-[var(--gain)]/15 text-[var(--gain)] ring-[var(--gain)]/25"
-                      : "bg-[var(--loss)]/15 text-[var(--loss)] ring-[var(--loss)]/25",
+                      ? "bg-[var(--gain)]/15 text-[var(--gain-ink)] ring-[var(--gain)]/25"
+                      : "bg-[var(--loss)]/15 text-[var(--loss-ink)] ring-[var(--loss)]/25",
                   )}
                 >
                   <DirectionIcon className="h-4 w-4 shrink-0" />
@@ -675,8 +675,8 @@ function ReorderStockItem({ stock }: { stock: SerializedTrackedStock }) {
           className={cn(
             "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-mono text-xs font-semibold tabular-nums leading-none",
             isGain
-              ? "bg-[var(--gain)]/15 text-[var(--gain)]"
-              : "bg-[var(--loss)]/15 text-[var(--loss)]",
+              ? "bg-[var(--gain)]/15 text-[var(--gain-ink)]"
+              : "bg-[var(--loss)]/15 text-[var(--loss-ink)]",
           )}
         >
           <DirectionIcon className="h-3 w-3 shrink-0" aria-hidden />

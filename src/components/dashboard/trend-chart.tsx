@@ -264,8 +264,8 @@ export function TrendChart({
               aria-hidden={privacyMode || undefined}
               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold tabular-nums ${
                 periodChange.delta >= 0
-                  ? "bg-[var(--gain)]/10 text-[var(--gain)]"
-                  : "bg-[var(--loss)]/10 text-[var(--loss)]"
+                  ? "bg-[var(--gain)]/10 text-[var(--gain-ink)]"
+                  : "bg-[var(--loss)]/10 text-[var(--loss-ink)]"
               }`}
             >
               {privacyMode ? (
