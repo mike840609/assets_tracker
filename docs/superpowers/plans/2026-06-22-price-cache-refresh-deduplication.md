@@ -23,22 +23,24 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|---|---|---|
-| `prisma/schema.prisma` | Modify | Add `refreshingAt DateTime?` to `PriceCache` |
+| File                                                             | Action         | Responsibility                                                    |
+| ---------------------------------------------------------------- | -------------- | ----------------------------------------------------------------- |
+| `prisma/schema.prisma`                                           | Modify         | Add `refreshingAt DateTime?` to `PriceCache`                      |
 | `prisma/migrations/<ts>_price_cache_refreshing_at/migration.sql` | Auto-generated | `ALTER TABLE "PriceCache" ADD COLUMN "refreshingAt" TIMESTAMP(3)` |
-| `src/lib/services/price-service.ts` | Modify | Claim-before-fetch, cleanup on failure, clear claim on upsert |
-| `tests/unit/price-service.test.ts` | Create | Two unit tests: deduplication + claim release on failed fetch |
+| `src/lib/services/price-service.ts`                              | Modify         | Claim-before-fetch, cleanup on failure, clear claim on upsert     |
+| `tests/unit/price-service.test.ts`                               | Create         | Two unit tests: deduplication + claim release on failed fetch     |
 
 ---
 
 ### Task 1: Schema migration
 
 **Files:**
+
 - Modify: `prisma/schema.prisma` (the `PriceCache` model)
 - Auto-created: `prisma/migrations/<timestamp>_price_cache_refreshing_at/migration.sql`
 
 **Interfaces:**
+
 - Produces: `PriceCache.refreshingAt: DateTime?` available in Prisma client and raw SQL
 
 - [ ] **Step 1: Add `refreshingAt` to `PriceCache` in `prisma/schema.prisma`**
@@ -64,6 +66,7 @@ pnpm exec prisma migrate dev --name price_cache_refreshing_at
 ```
 
 Expected output includes a line like:
+
 ```
 ✔  Your database is now in sync with your schema.
 ```
@@ -101,9 +104,11 @@ git commit -m "feat(db): add refreshingAt claim column to PriceCache"
 ### Task 2: Failing unit tests
 
 **Files:**
+
 - Create: `tests/unit/price-service.test.ts`
 
 **Interfaces:**
+
 - Consumes: `refreshPricesForStockSymbols(symbols: string[], opts?: RefreshPricesOptions): Promise<RefreshPricesResult>` from `@/lib/services/price-service`
 - Consumes: `PRICE_REFRESH_TTL_MS: number` from `@/lib/refresh-policy`
 
@@ -179,9 +184,11 @@ describe("refreshPricesForStockSymbols — claim deduplication", () => {
     const result = await refreshPricesForStockSymbols(["AAPL"]);
 
     // Cleanup must be called: SET "refreshingAt" = NULL for claimed symbols
-    const cleanupCall = vi.mocked(prisma.$executeRawUnsafe).mock.calls.find(
-      ([sql]) => typeof sql === "string" && /refreshingAt/i.test(sql) && /NULL/i.test(sql),
-    );
+    const cleanupCall = vi
+      .mocked(prisma.$executeRawUnsafe)
+      .mock.calls.find(
+        ([sql]) => typeof sql === "string" && /refreshingAt/i.test(sql) && /NULL/i.test(sql),
+      );
     expect(cleanupCall).toBeDefined();
     expect(result.updated).toBe(0);
   });
@@ -208,9 +215,11 @@ git commit -m "test(price-service): add failing tests for claim deduplication"
 ### Task 3: Implement claim logic in price-service
 
 **Files:**
+
 - Modify: `src/lib/services/price-service.ts`
 
 **Interfaces:**
+
 - Consumes: `PriceCache.refreshingAt` (from Task 1 schema)
 - Produces: `refreshPricesForHoldings` with claim-before-fetch behaviour; `retryAfterSeconds: 30` when all symbols are mid-refresh
 
