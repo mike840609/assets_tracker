@@ -11,7 +11,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 vi.mock("@/lib/logger", () => ({
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
-  withTiming: <T>(_: string, fn: () => T) => fn(),
+  withTiming: <T>(_: string, fn: () => Promise<T>) => fn(),
 }));
 vi.mock("@/lib/services/yahoo-client");
 vi.mock("next/cache", () => ({
@@ -71,6 +71,7 @@ describe("refreshPricesForStockSymbols — claim deduplication", () => {
       .mock.calls.find(
         ([sql]) => typeof sql === "string" && /refreshingAt/i.test(sql) && /NULL/i.test(sql),
       );
+    expect(getYahooClient).toHaveBeenCalled();
     expect(cleanupCall).toBeDefined();
     expect(result.updated).toBe(0);
   });
