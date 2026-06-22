@@ -35,7 +35,7 @@ describe("refreshPricesForStockSymbols — claim deduplication", () => {
     // Existence+freshness check: AAPL exists in PriceCache but is stale
     vi.mocked(prisma.priceCache.findMany).mockResolvedValueOnce([
       { symbol: "AAPL", updatedAt: staleDate },
-    ]);
+    ] as never);
     // Claim UPDATE: returns [] — another instance already holds the claim
     vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce([]);
 
@@ -53,7 +53,7 @@ describe("refreshPricesForStockSymbols — claim deduplication", () => {
     // Existence+freshness check: AAPL exists and is stale
     vi.mocked(prisma.priceCache.findMany).mockResolvedValueOnce([
       { symbol: "AAPL", updatedAt: staleDate },
-    ]);
+    ] as never);
     // Claim UPDATE: AAPL claimed by this instance
     vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce([{ symbol: "AAPL" }]);
     // Yahoo always throws — fetchYahooQuotes will catch and return an empty Map

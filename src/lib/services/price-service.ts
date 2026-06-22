@@ -7,6 +7,7 @@ import { log, withTiming } from "@/lib/logger";
 
 const FETCH_TIMEOUT_MS = 5_000;
 const RETRY_DELAYS_MS = [500, 1_500]; // 2 retries: 500 ms then 1.5 s
+const CLAIM_LOCK_TTL_MS = 30_000; // dead-instance TTL for refreshingAt claim
 
 export type RefreshPricesResult = {
   updated: number;
@@ -286,6 +287,19 @@ export async function refreshPricesForStockSymbols(
   );
 }
 
+async function releaseClaims(symbols: string[]): Promise<void> {
+  if (symbols.length === 0) return;
+  const placeholders = symbols.map((_, i) => `$${i + 1}`).join(", ");
+  await prisma
+    .$executeRawUnsafe(
+      `UPDATE "PriceCache" SET "refreshingAt" = NULL WHERE symbol IN (${placeholders})`,
+      ...symbols,
+    )
+    .catch((err) => {
+      log.error("price.refresh.claim_cleanup_failed", { error: String(err) });
+    });
+}
+
 async function refreshPricesForHoldings(
   holdings: { symbol: string; assetType: string }[],
   opts: RefreshPricesOptions = {},
@@ -301,48 +315,98 @@ async function refreshPricesForHoldings(
     };
   }
 
-  // Freshness gate: drop symbols whose cached price is younger than the TTL
-  // so repeated manual refreshes don't re-hit Yahoo/CoinGecko. The DB
-  // updatedAt is the shared source of truth across serverless instances.
   let skippedFresh = 0;
   let earliestFreshUpdatedAt: Date | null = null;
+  let claimedSymbols: string[] = [];
+
   if (!opts.force) {
-    const freshRows = await prisma.priceCache.findMany({
-      where: {
-        symbol: { in: holdings.map((h) => h.symbol) },
-        updatedAt: { gte: new Date(Date.now() - PRICE_REFRESH_TTL_MS) },
-      },
+    // Single query: load all existing PriceCache rows for these symbols so we
+    // can derive fresh / stale-existing / stale-new in one round-trip.
+    const existingRows = await prisma.priceCache.findMany({
+      where: { symbol: { in: holdings.map((h) => h.symbol) } },
       select: { symbol: true, updatedAt: true },
     });
-    if (freshRows.length > 0) {
-      const freshSymbols = new Set(freshRows.map((row) => row.symbol));
-      skippedFresh = freshSymbols.size;
-      log.info("price.refresh.skipped_fresh", { count: skippedFresh });
-      for (const row of freshRows) {
+
+    const freshThreshold = new Date(Date.now() - PRICE_REFRESH_TTL_MS);
+    const freshSymbols = new Set<string>();
+    const existingSymbols = new Set<string>();
+
+    for (const row of existingRows) {
+      existingSymbols.add(row.symbol);
+      if (row.updatedAt >= freshThreshold) {
+        freshSymbols.add(row.symbol);
         if (!earliestFreshUpdatedAt || row.updatedAt < earliestFreshUpdatedAt) {
           earliestFreshUpdatedAt = row.updatedAt;
         }
       }
-      holdings = holdings.filter((h) => !freshSymbols.has(h.symbol));
-      if (holdings.length === 0) {
-        // Everything is fresh. Tell the caller when a retry will actually do
-        // something, in server-computed seconds so clients don't have to
-        // trust their own clock.
-        const nextRefreshAt = earliestFreshUpdatedAt
-          ? new Date(earliestFreshUpdatedAt.getTime() + PRICE_REFRESH_TTL_MS)
-          : null;
-        return {
-          updated: 0,
-          changed: 0,
-          skippedFresh,
-          errors: [],
-          nextRefreshAt: nextRefreshAt?.toISOString() ?? null,
-          retryAfterSeconds: nextRefreshAt
-            ? Math.max(1, Math.ceil((nextRefreshAt.getTime() - Date.now()) / 1000))
-            : null,
-        };
-      }
     }
+
+    skippedFresh = freshSymbols.size;
+    if (skippedFresh > 0) {
+      log.info("price.refresh.skipped_fresh", { count: skippedFresh });
+    }
+
+    holdings = holdings.filter((h) => !freshSymbols.has(h.symbol));
+
+    if (holdings.length === 0) {
+      const nextRefreshAt = earliestFreshUpdatedAt
+        ? new Date(earliestFreshUpdatedAt.getTime() + PRICE_REFRESH_TTL_MS)
+        : null;
+      return {
+        updated: 0,
+        changed: 0,
+        skippedFresh,
+        errors: [],
+        nextRefreshAt: nextRefreshAt?.toISOString() ?? null,
+        retryAfterSeconds: nextRefreshAt
+          ? Math.max(1, Math.ceil((nextRefreshAt.getTime() - Date.now()) / 1000))
+          : null,
+      };
+    }
+
+    // Split stale symbols: existing rows can be claimed; new symbols bypass the claim.
+    const staleExisting = holdings
+      .filter((h) => existingSymbols.has(h.symbol))
+      .map((h) => h.symbol);
+    const staleNew = holdings.filter((h) => !existingSymbols.has(h.symbol));
+
+    if (staleExisting.length > 0) {
+      // Atomic claim: set refreshingAt = NOW() only for symbols that are stale
+      // and not currently being refreshed (or whose claim has expired after 30s).
+      // $1 = lockCutoff (refreshingAt expiry), $2 = freshThreshold (updatedAt gate),
+      // $3...$N = symbol values — all positional, no string interpolation of values.
+      const lockCutoff = new Date(Date.now() - CLAIM_LOCK_TTL_MS);
+      const symbolPlaceholders = staleExisting.map((_, i) => `$${i + 3}`).join(", ");
+      const claimed = await prisma.$queryRawUnsafe<{ symbol: string }[]>(
+        `UPDATE "PriceCache"
+         SET "refreshingAt" = NOW()
+         WHERE symbol IN (${symbolPlaceholders})
+           AND ("refreshingAt" IS NULL OR "refreshingAt" < $1)
+           AND "updatedAt" < $2
+         RETURNING symbol`,
+        lockCutoff,
+        freshThreshold,
+        ...staleExisting,
+      );
+      claimedSymbols = claimed.map((r) => r.symbol);
+    }
+
+    if (claimedSymbols.length === 0 && staleNew.length === 0) {
+      // All existing stale symbols are being refreshed by another instance.
+      // Tell the client when the claim lock expires so it knows when to retry.
+      return {
+        updated: 0,
+        changed: 0,
+        skippedFresh,
+        errors: [],
+        nextRefreshAt: null,
+        retryAfterSeconds: Math.ceil(CLAIM_LOCK_TTL_MS / 1000),
+      };
+    }
+
+    // Narrow holdings to only the symbols this instance will fetch.
+    const fetchable = new Set([...claimedSymbols, ...staleNew.map((h) => h.symbol)]);
+    holdings = holdings.filter((h) => fetchable.has(h.symbol));
   }
 
   const stockSymbols = holdings
@@ -364,6 +428,9 @@ async function refreshPricesForHoldings(
 
   const entries = [...allPrices];
   if (entries.length === 0) {
+    // No prices came back (all fetches failed). Release claims so the next
+    // request can retry rather than waiting for the 30s dead-instance TTL.
+    await releaseClaims(claimedSymbols);
     return {
       updated: 0,
       changed: 0,
@@ -399,9 +466,10 @@ async function refreshPricesForHoldings(
       `INSERT INTO "PriceCache" (symbol, price, currency, "updatedAt")
        VALUES ${placeholders.join(", ")}
        ON CONFLICT (symbol) DO UPDATE SET
-         price       = EXCLUDED.price,
-         currency    = EXCLUDED.currency,
-         "updatedAt" = NOW()`,
+         price          = EXCLUDED.price,
+         currency       = EXCLUDED.currency,
+         "updatedAt"    = NOW(),
+         "refreshingAt" = NULL`,
       ...params,
     );
     updated = entries.length;
@@ -409,6 +477,8 @@ async function refreshPricesForHoldings(
     if (changed > 0) revalidateTag("prices", "max");
   } catch (error) {
     errors.push(`Bulk upsert failed: ${String(error)}`);
+    // Release claims so the next request can retry immediately.
+    await releaseClaims(claimedSymbols);
   }
 
   return { updated, changed, skippedFresh, errors, nextRefreshAt: null, retryAfterSeconds: null };
