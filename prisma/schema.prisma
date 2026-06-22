@@ -215,10 +215,11 @@ model RecurringInvestment {
 }
 
 model PriceCache {
-  symbol    String   @id
-  price     Decimal  @db.Decimal(18, 8)
-  currency  String   @default("USD")
-  updatedAt DateTime @updatedAt
+  symbol       String    @id
+  price        Decimal   @db.Decimal(18, 8)
+  currency     String    @default("USD")
+  updatedAt    DateTime  @updatedAt
+  refreshingAt DateTime?
 
   @@index([updatedAt])
 }
