@@ -1,11 +1,12 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ArrowDownRight, ArrowUpRight, CalendarDays, Info } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, CalendarDays, ChevronDown, Info } from "lucide-react";
 import { formatCurrency } from "@/lib/currencies";
 import { useCountUp } from "@/hooks/use-count-up";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { cn } from "@/lib/utils";
 import type { AnalysisKpis } from "@/lib/services/analysis-service";
 import { formatMonthLabel } from "@/lib/services/analysis-service";
@@ -192,7 +193,7 @@ function MetricRow({
       }`}
     >
       <div className="min-w-0">
-        <div className="text-xs font-medium leading-tight text-muted-foreground/90">{title}</div>
+        <div className="text-xs font-medium leading-tight text-muted-foreground">{title}</div>
         {subtitle && (
           <div className="mt-0.5 text-[11px] leading-tight tabular-nums text-muted-foreground">
             {subtitle}
@@ -218,6 +219,7 @@ export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel }: Props) {
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
   const isCompact = density === "compact";
+  const isMobile = useIsMobile();
 
   const bestSub =
     privacyMode || !kpis.best ? undefined : formatMonthLabel(kpis.best.monthKey, locale);
@@ -237,6 +239,47 @@ export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel }: Props) {
     privacyMode || kpis.ytdPct === null
       ? null
       : `${kpis.ytdPct >= 0 ? "+" : ""}${kpis.ytdPct.toFixed(1)}%`;
+
+  const metricRows = (
+    <div className="mt-1 divide-y divide-border/60">
+      <MetricRow
+        title={t("avgMonthly")}
+        amount={kpis.avgMonthlyDelta}
+        currency={baseCurrency}
+        privacyMode={privacyMode}
+        tone={privacyMode ? "neutral" : toneFor(kpis.avgMonthlyDelta)}
+        isCompact={isCompact}
+      />
+      <MetricRow
+        title={bestTitle}
+        amount={kpis.best ? kpis.best.deltaNetWorth : null}
+        currency={baseCurrency}
+        privacyMode={privacyMode}
+        subtitle={bestSub}
+        tone={privacyMode ? "neutral" : kpis.best ? toneFor(kpis.best.deltaNetWorth) : "neutral"}
+        isCompact={isCompact}
+      />
+      <MetricRow
+        title={worstTitle}
+        amount={kpis.worst ? kpis.worst.deltaNetWorth : null}
+        currency={baseCurrency}
+        privacyMode={privacyMode}
+        subtitle={worstSub}
+        tone={privacyMode ? "neutral" : kpis.worst ? toneFor(kpis.worst.deltaNetWorth) : "neutral"}
+        isCompact={isCompact}
+      />
+    </div>
+  );
+
+  const methodologyBox = (
+    <div className="flex items-start gap-2 rounded-md bg-muted/50 px-2.5 py-2 text-xs leading-snug text-muted-foreground">
+      <Info className="mt-0.5 size-3.5 shrink-0 text-foreground/50" aria-hidden />
+      <div className="min-w-0">
+        <div className="font-medium text-foreground">{t("methodologyShortTitle")}</div>
+        <p className="mt-0.5">{t("kpiMethodology", { range: rangeLabel })}</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className={cn("flex h-full min-w-0 flex-col", isCompact ? "gap-3" : "gap-4")}>
@@ -278,61 +321,43 @@ export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel }: Props) {
         />
       </section>
 
-      <section
-        className={cn("min-w-0 border-t border-border/70", isCompact ? "pt-2.5" : "pt-3")}
-        aria-label={t("selectedRangeMetrics", { range: rangeLabel })}
-      >
-        <div className="flex min-w-0 items-baseline justify-between gap-3">
-          <div className="text-xs font-semibold text-foreground">
-            {t("selectedRangeMetrics", { range: rangeLabel })}
-          </div>
-          <div className="text-[11px] font-medium text-muted-foreground">
-            {t("rangeDistribution")}
-          </div>
-        </div>
-        <div className="mt-1 divide-y divide-border/60">
-          <MetricRow
-            title={t("avgMonthly")}
-            amount={kpis.avgMonthlyDelta}
-            currency={baseCurrency}
-            privacyMode={privacyMode}
-            tone={privacyMode ? "neutral" : toneFor(kpis.avgMonthlyDelta)}
-            isCompact={isCompact}
-          />
-          <MetricRow
-            title={bestTitle}
-            amount={kpis.best ? kpis.best.deltaNetWorth : null}
-            currency={baseCurrency}
-            privacyMode={privacyMode}
-            subtitle={bestSub}
-            tone={
-              privacyMode ? "neutral" : kpis.best ? toneFor(kpis.best.deltaNetWorth) : "neutral"
-            }
-            isCompact={isCompact}
-          />
-          <MetricRow
-            title={worstTitle}
-            amount={kpis.worst ? kpis.worst.deltaNetWorth : null}
-            currency={baseCurrency}
-            privacyMode={privacyMode}
-            subtitle={worstSub}
-            tone={
-              privacyMode ? "neutral" : kpis.worst ? toneFor(kpis.worst.deltaNetWorth) : "neutral"
-            }
-            isCompact={isCompact}
-          />
-        </div>
-      </section>
+      {/* On mobile the lead YTD metric above is the headline; the range
+          distribution and methodology fold away so the card doesn't dominate
+          the scroll before the charts. Desktop (the side rail) shows it all. */}
+      {isMobile ? (
+        <details className="group/kpi min-w-0 border-t border-border/70 pt-2.5">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+            <span className="text-xs font-semibold text-foreground">
+              {t("selectedRangeMetrics", { range: rangeLabel })}
+            </span>
+            <ChevronDown
+              className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open/kpi:rotate-180"
+              aria-hidden
+            />
+          </summary>
+          {metricRows}
+          <div className="mt-3 border-t border-border/70 pt-3">{methodologyBox}</div>
+        </details>
+      ) : (
+        <>
+          <section
+            className={cn("min-w-0 border-t border-border/70", isCompact ? "pt-2.5" : "pt-3")}
+            aria-label={t("selectedRangeMetrics", { range: rangeLabel })}
+          >
+            <div className="flex min-w-0 items-baseline justify-between gap-3">
+              <div className="text-xs font-semibold text-foreground">
+                {t("selectedRangeMetrics", { range: rangeLabel })}
+              </div>
+              <div className="text-[11px] font-medium text-muted-foreground">
+                {t("rangeDistribution")}
+              </div>
+            </div>
+            {metricRows}
+          </section>
 
-      <div className="mt-auto border-t border-border/70 pt-3">
-        <div className="flex items-start gap-2 rounded-md bg-muted/50 px-2.5 py-2 text-xs leading-snug text-muted-foreground">
-          <Info className="mt-0.5 size-3.5 shrink-0 text-foreground/50" aria-hidden />
-          <div className="min-w-0">
-            <div className="font-medium text-foreground">{t("methodologyShortTitle")}</div>
-            <p className="mt-0.5">{t("kpiMethodology", { range: rangeLabel })}</p>
-          </div>
-        </div>
-      </div>
+          <div className="mt-auto border-t border-border/70 pt-3">{methodologyBox}</div>
+        </>
+      )}
     </div>
   );
 }

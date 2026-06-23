@@ -78,7 +78,7 @@ export const TopMoversList = memo(function TopMoversList({ movers, baseCurrency 
                         })}
                       </div>
                       {/* Mobile-only: collapsed start→end summary, hidden once columns appear */}
-                      <div className="sm:hidden text-[11px] text-muted-foreground/80 tabular-nums mt-0.5">
+                      <div className="sm:hidden text-[11px] text-muted-foreground tabular-nums mt-0.5">
                         {privacyMode
                           ? "***"
                           : `${formatCurrency(m.startValue, baseCurrency)} → ${formatCurrency(m.endValue, baseCurrency)}`}
