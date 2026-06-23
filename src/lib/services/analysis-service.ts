@@ -246,17 +246,6 @@ export interface CategoryDataPoint {
   [category: string]: number | string;
 }
 
-/** One account's value change over the selected period. */
-export interface TopMover {
-  accountId: string;
-  accountName: string;
-  category: string;
-  startValue: number;
-  endValue: number;
-  absoluteChange: number;
-  percentChange: number | null;
-}
-
 // ---------------------------------------------------------------------------
 // Phase 2 pure functions (no DB access)
 // ---------------------------------------------------------------------------
@@ -386,42 +375,5 @@ export function computePerformanceAttribution(
     })
     .filter((a) => a.totalDelta !== 0 || a.cashContribution !== 0)
     .sort((a, b) => Math.abs(b.totalDelta) - Math.abs(a.totalDelta))
-    .slice(0, 10);
-}
-
-/**
- * Return the top 10 accounts ranked by absolute value change between the
- * first and last snapshot in the (already-filtered) snapshots array.
- *
- * @param snapshots  From getRawHistoryWithBreakdown().snapshots, filtered to range.
- * @param accounts   From getRawHistoryWithBreakdown().accounts.
- */
-export function computeTopMovers(
-  snapshots: SnapshotBreakdown[],
-  accounts: AccountMeta[],
-): TopMover[] {
-  if (snapshots.length < 2) return [];
-
-  const startSnap = snapshots[0];
-  const endSnap = snapshots[snapshots.length - 1];
-
-  return accounts
-    .map((a) => {
-      const startValue = startSnap.accountValues[a.id] ?? 0;
-      const endValue = endSnap.accountValues[a.id] ?? 0;
-      const absoluteChange = endValue - startValue;
-      const percentChange = startValue === 0 ? null : (absoluteChange / startValue) * 100;
-      return {
-        accountId: a.id,
-        accountName: a.name,
-        category: a.category,
-        startValue,
-        endValue,
-        absoluteChange,
-        percentChange,
-      };
-    })
-    .filter((m) => m.startValue !== 0 || m.endValue !== 0)
-    .sort((a, b) => Math.abs(b.absoluteChange) - Math.abs(a.absoluteChange))
     .slice(0, 10);
 }

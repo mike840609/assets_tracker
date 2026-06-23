@@ -20,9 +20,9 @@ test("analysis renders populated desktop charts without layout overflow", async 
     await expect(page.getByText("Assets vs. Liabilities by Month")).toBeVisible({
       timeout: 20_000,
     });
-    await expect(page.getByText("Fixed YTD baseline")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Movement" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Composition" })).toBeVisible();
+    await expect(page.getByText("Year to date").first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Movement/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Composition/ })).toBeVisible();
     await expect(page.getByText("Performance Attribution")).toBeVisible();
 
     await page.getByRole("button", { name: "All", exact: true }).click();
@@ -48,9 +48,6 @@ test("analysis renders populated desktop charts without layout overflow", async 
       return {
         chartCount: document.querySelectorAll(".recharts-surface").length,
         hasHorizontalOverflow: documentElement.scrollWidth > documentElement.clientWidth,
-        monthlyCashHeightDiff: Math.abs(
-          cardHeight("Monthly Net Worth Change") - cardHeight("Cash Flow Decomposition"),
-        ),
         compositionHeightDiff: Math.abs(
           cardHeight("Category Trend") - cardHeight("Performance Attribution"),
         ),
@@ -58,8 +55,7 @@ test("analysis renders populated desktop charts without layout overflow", async 
     });
 
     expect(layout.hasHorizontalOverflow).toBeFalsy();
-    expect(layout.chartCount).toBeGreaterThanOrEqual(5);
-    expect(layout.monthlyCashHeightDiff).toBeLessThanOrEqual(8);
+    expect(layout.chartCount).toBeGreaterThanOrEqual(4);
     expect(layout.compositionHeightDiff).toBeLessThanOrEqual(8);
 
     await testInfo.attach("analysis-populated-desktop", {

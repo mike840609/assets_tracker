@@ -38,6 +38,41 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.8.7",
+    date: "2026-06-23",
+    summary: {
+      "en-US": "Clearer, leaner Analysis charts.",
+      "zh-TW": "更清晰、更精簡的分析圖表。",
+    },
+    changes: [
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Assets vs. Liabilities is now an area chart with a net-worth line, so the balance-sheet trend reads at a glance.",
+          "zh-TW": "「資產與負債」改為帶有淨資產走勢線的面積圖，資產負債趨勢一眼即懂。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Streamlined the Analysis tab: Cash Flow Decomposition now carries monthly movement, Category Trend became a stacked area, and the redundant Monthly Change and Top Movers panels were removed.",
+          "zh-TW":
+            "精簡分析頁：現金流分解圖現在同時呈現每月變化、類別趨勢改為堆疊面積圖，並移除重複的每月變化與最大變動面板。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "The Cash Flow chart now shows the true monthly net change even when deposits and market movement pull in opposite directions.",
+          "zh-TW": "即使存入金額與市場變動方向相反，現金流圖表現在也能正確顯示每月淨變化。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.8.6",
     date: "2026-06-21",
     summary: {

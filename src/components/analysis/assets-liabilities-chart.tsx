@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useEffect, useMemo, useState, startTransition } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, Line, ReferenceLine, XAxis, YAxis } from "recharts";
 import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartEmptyState } from "./chart-empty-state";
@@ -25,8 +25,9 @@ interface Props {
 interface AssetsTooltipEntry {
   label: string;
   isEmpty?: boolean;
-  assets: number;
-  liabilities: number;
+  assets: number | null;
+  liabilities: number | null;
+  netWorth: number | null;
 }
 
 function AssetsTooltip({
@@ -45,7 +46,7 @@ function AssetsTooltip({
   if (!active || !payload?.length) return null;
   const entry = payload[0].payload;
 
-  if (entry.isEmpty) {
+  if (entry.isEmpty || entry.assets === null) {
     return (
       <ChartTooltipContainer title={entry.label}>
         <div className="text-[11px] text-muted-foreground">{t("noDataMonth")}</div>
@@ -62,9 +63,16 @@ function AssetsTooltip({
       />
       <ChartTooltipRow
         label={t("seriesLiabilities")}
-        value={privacyMode ? "***" : formatCurrency(entry.liabilities, baseCurrency)}
+        value={privacyMode ? "***" : formatCurrency(entry.liabilities ?? 0, baseCurrency)}
         indicatorColor="var(--loss)"
       />
+      <div className="pt-1.5 mt-1.5 border-t border-border/40">
+        <ChartTooltipRow
+          label={t("seriesNetWorth")}
+          value={privacyMode ? "***" : formatCurrency(entry.netWorth ?? 0, baseCurrency)}
+          indicatorColor="var(--primary)"
+        />
+      </div>
     </ChartTooltipContainer>
   );
 }
@@ -87,16 +95,22 @@ export const AssetsLiabilitiesChart = memo(function AssetsLiabilitiesChart({
     () => ({
       assets: { label: t("seriesAssets"), color: "var(--gain)" },
       liabilities: { label: t("seriesLiabilities"), color: "var(--loss)" },
+      netWorth: { label: t("seriesNetWorth"), color: "var(--primary)" },
     }),
     [t],
   );
 
+  // Liabilities render below the zero baseline so net worth reads as the gap
+  // between the two areas. Empty (padded) months become null so the areas break
+  // instead of plunging to zero across gaps.
   const data = useMemo(
     () =>
       buckets.map((b) => ({
         label: formatMonthLabel(b.monthKey, locale),
-        assets: b.totalAssets,
-        liabilities: b.totalLiabilities,
+        assets: b.isEmpty ? null : b.totalAssets,
+        liabilities: b.isEmpty ? null : b.totalLiabilities,
+        liabilitiesNeg: b.isEmpty ? null : -b.totalLiabilities,
+        netWorth: b.isEmpty ? null : b.endNetWorth,
         isEmpty: b.isEmpty,
       })),
     [buckets, locale],
@@ -139,6 +153,14 @@ export const AssetsLiabilitiesChart = memo(function AssetsLiabilitiesChart({
                 />
                 {t("seriesLiabilities")}
               </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="inline-block h-0.5 w-3.5 rounded-full"
+                  style={{ background: "var(--primary)" }}
+                />
+                {t("seriesNetWorth")}
+              </span>
             </div>
             <div
               role="img"
@@ -151,11 +173,21 @@ export const AssetsLiabilitiesChart = memo(function AssetsLiabilitiesChart({
                 style={{ height: "100%" }}
                 initialDimension={{ width: 1, height: chartHeight }}
               >
-                <BarChart
+                <AreaChart
                   data={data}
                   margin={{ top: 8, right: 4, left: 0, bottom: 12 }}
                   {...crosshairHandlers}
                 >
+                  <defs>
+                    <linearGradient id="al-assets" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--gain)" stopOpacity={0.28} />
+                      <stop offset="100%" stopColor="var(--gain)" stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="al-liabilities" x1="0" y1="1" x2="0" y2="0">
+                      <stop offset="0%" stopColor="var(--loss)" stopOpacity={0.28} />
+                      <stop offset="100%" stopColor="var(--loss)" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis
                     dataKey="label"
@@ -170,27 +202,43 @@ export const AssetsLiabilitiesChart = memo(function AssetsLiabilitiesChart({
                     tick={{ fontSize: 12 }}
                     tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
                   />
+                  <ReferenceLine y={0} stroke="var(--border)" strokeWidth={1.5} />
                   <ChartTooltip
-                    cursor={{ fill: "var(--muted)", opacity: 0.3 }}
+                    cursor={{ stroke: "var(--muted-foreground)", strokeOpacity: 0.5 }}
                     content={
                       <AssetsTooltip baseCurrency={baseCurrency} t={t} privacyMode={privacyMode} />
                     }
                   />
-                  <Bar
+                  <Area
+                    type="monotone"
                     dataKey="assets"
-                    fill="var(--color-assets)"
-                    radius={[4, 4, 0, 0]}
+                    stroke="var(--gain)"
+                    strokeWidth={1.5}
+                    fill="url(#al-assets)"
+                    connectNulls={false}
                     isAnimationActive={isAnimationActive}
                     onAnimationEnd={onAnimationEnd}
                   />
-                  <Bar
-                    dataKey="liabilities"
-                    fill="var(--color-liabilities)"
-                    radius={[4, 4, 0, 0]}
+                  <Area
+                    type="monotone"
+                    dataKey="liabilitiesNeg"
+                    stroke="var(--loss)"
+                    strokeWidth={1.5}
+                    fill="url(#al-liabilities)"
+                    connectNulls={false}
                     isAnimationActive={isAnimationActive}
-                    onAnimationEnd={onAnimationEnd}
                   />
-                </BarChart>
+                  <Line
+                    type="monotone"
+                    dataKey="netWorth"
+                    stroke="var(--primary)"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 3 }}
+                    connectNulls={false}
+                    isAnimationActive={isAnimationActive}
+                  />
+                </AreaChart>
               </ChartContainer>
             </div>
             <p className="sr-only">{t("assetsVsLiabilitiesNote")}</p>

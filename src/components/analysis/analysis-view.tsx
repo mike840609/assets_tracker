@@ -23,19 +23,16 @@ import {
   fillMonthRange,
   buildCashFlowBuckets,
   aggregateCategoryHistory,
-  computeTopMovers,
   computePerformanceAttribution,
 } from "@/lib/services/analysis-service";
 import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/analysis-service";
 import {
-  LazyMonthlyChangeChart,
   LazyAssetsLiabilitiesChart,
   LazyCashFlowChart,
   LazyCategoryTrendChart,
   LazyAttributionChart,
 } from "./lazy-analysis-charts";
 import { KpiTiles } from "./kpi-tiles";
-import { TopMoversList } from "./top-movers-list";
 import { AnalysisEmptyState } from "./analysis-empty-state";
 
 interface Props {
@@ -199,11 +196,6 @@ export function AnalysisView({
     });
   }, [filteredRawSnapshots, rawHistory.accounts, buckets]);
 
-  const topMovers = useMemo(
-    () => computeTopMovers(filteredRawSnapshots, rawHistory.accounts),
-    [filteredRawSnapshots, rawHistory.accounts],
-  );
-
   const attributionItems = useMemo(
     () =>
       computePerformanceAttribution(
@@ -312,10 +304,7 @@ export function AnalysisView({
 
             {/* Secondary analysis is grouped by question: movement first, then composition. */}
             <div className={isCompact ? "space-y-3" : "space-y-4"}>
-              <section
-                aria-label={`${t("monthlyChange")} / ${t("cashFlow")}`}
-                className={isCompact ? "space-y-2" : "space-y-3"}
-              >
+              <section aria-label={t("cashFlow")} className={isCompact ? "space-y-2" : "space-y-3"}>
                 <div className="flex flex-wrap items-end justify-between gap-2">
                   <div>
                     <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -327,18 +316,9 @@ export function AnalysisView({
                     <p className="text-xs text-muted-foreground">{t("movementSectionSubtitle")}</p>
                   </div>
                 </div>
-                <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>
-                  <Card size="sm" className="h-full">
-                    <LazyMonthlyChangeChart
-                      buckets={buckets}
-                      baseCurrency={baseCurrency}
-                      locale={locale}
-                    />
-                  </Card>
-                  <Card size="sm" className="h-full">
-                    <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
-                  </Card>
-                </div>
+                <Card size="sm" className="h-full">
+                  <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+                </Card>
               </section>
 
               <section
@@ -372,9 +352,6 @@ export function AnalysisView({
                 </div>
               </section>
             </div>
-
-            {/* Per-account detail — full-width table reads best wide */}
-            <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
           </motion.div>
         )}
       </MountedAnalysis>

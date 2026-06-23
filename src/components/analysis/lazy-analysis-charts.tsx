@@ -21,11 +21,6 @@ function ChartSkeleton({ height = 200 }: { height?: number }) {
   );
 }
 
-export const LazyMonthlyChangeChart = dynamic(
-  () => import("./monthly-change-chart").then((m) => m.MonthlyChangeChart),
-  { loading: () => <ChartSkeleton /> },
-);
-
 export const LazyAssetsLiabilitiesChart = dynamic(
   () => import("./assets-liabilities-chart").then((m) => m.AssetsLiabilitiesChart),
   { loading: () => <ChartSkeleton height={180} /> },

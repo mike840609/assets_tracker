@@ -2,9 +2,9 @@
 
 import { memo, useEffect, useMemo, useState, startTransition } from "react";
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -56,15 +56,18 @@ function CategoryTooltip({
   label,
   baseCurrency,
   privacyMode,
+  totalLabel,
 }: {
   active?: boolean;
   payload?: TooltipPayload[];
   label?: string;
   baseCurrency: string;
   privacyMode?: boolean;
+  totalLabel: string;
 }) {
   if (!active || !payload?.length) return null;
   const sorted = [...payload].sort((a, b) => b.value - a.value);
+  const total = payload.reduce((s, p) => s + p.value, 0);
   return (
     <ChartTooltipContainer title={label} className="max-w-[200px]">
       {sorted.map((p) => (
@@ -75,6 +78,12 @@ function CategoryTooltip({
           indicatorColor={p.color}
         />
       ))}
+      <div className="pt-1.5 mt-1.5 border-t border-border/40">
+        <ChartTooltipRow
+          label={totalLabel}
+          value={privacyMode ? "***" : formatCurrency(total, baseCurrency)}
+        />
+      </div>
     </ChartTooltipContainer>
   );
 }
@@ -166,11 +175,27 @@ export const CategoryTrendChart = memo(function CategoryTrendChart({
               minWidth={0}
               initialDimension={{ width: 1, height: chartHeight }}
             >
-              <LineChart
+              <AreaChart
                 data={chartData}
                 margin={{ top: 8, right: 4, left: 0, bottom: 12 }}
                 {...crosshairHandlers}
               >
+                <defs>
+                  {visibleCategories.map((cat, idx) => (
+                    <linearGradient key={cat} id={`cat-${idx}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="0%"
+                        stopColor={CATEGORY_COLORS[idx % CATEGORY_COLORS.length]}
+                        stopOpacity={0.7}
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor={CATEGORY_COLORS[idx % CATEGORY_COLORS.length]}
+                        stopOpacity={0.4}
+                      />
+                    </linearGradient>
+                  ))}
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="label"
@@ -188,7 +213,11 @@ export const CategoryTrendChart = memo(function CategoryTrendChart({
                 />
                 <Tooltip
                   content={
-                    <CategoryTooltip baseCurrency={baseCurrency} privacyMode={privacyMode} />
+                    <CategoryTooltip
+                      baseCurrency={baseCurrency}
+                      privacyMode={privacyMode}
+                      totalLabel={t("total")}
+                    />
                   }
                 />
                 <Legend
@@ -201,20 +230,21 @@ export const CategoryTrendChart = memo(function CategoryTrendChart({
                   }}
                 />
                 {visibleCategories.map((cat, idx) => (
-                  <Line
+                  <Area
                     key={cat}
                     type="monotone"
                     dataKey={cat}
                     name={tCat(cat as Parameters<typeof tCat>[0], { defaultValue: cat })}
+                    stackId="1"
                     stroke={CATEGORY_COLORS[idx % CATEGORY_COLORS.length]}
-                    strokeWidth={2}
-                    dot={false}
+                    strokeWidth={1.5}
+                    fill={`url(#cat-${idx})`}
                     activeDot={{ r: 4 }}
                     isAnimationActive={isAnimationActive}
                     onAnimationEnd={onAnimationEnd}
                   />
                 ))}
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         )}

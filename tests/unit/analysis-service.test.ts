@@ -7,7 +7,6 @@ import {
   buildCashFlowBuckets,
   aggregateCategoryHistory,
   computePerformanceAttribution,
-  computeTopMovers,
 } from "@/lib/services/analysis-service";
 import type {
   NormalizedSnapshot,
@@ -185,29 +184,6 @@ describe("aggregateCategoryHistory", () => {
 
   it("returns [] when there are no snapshots", () => {
     expect(aggregateCategoryHistory([], accounts)).toEqual([]);
-  });
-});
-
-describe("computeTopMovers", () => {
-  const accounts: AccountMeta[] = [
-    { id: "a1", name: "Brokerage", category: "INVESTMENT" },
-    { id: "a2", name: "Savings", category: "CASH" },
-  ];
-
-  it("ranks by absolute change and drops untouched accounts", () => {
-    const snapshots: SnapshotBreakdown[] = [
-      { date: "2026-01-01", accountValues: { a1: 100, a2: 1000 } },
-      { date: "2026-02-01", accountValues: { a1: 400, a2: 1010 } },
-    ];
-    const movers = computeTopMovers(snapshots, accounts);
-    expect(movers.map((m) => m.accountId)).toEqual(["a1", "a2"]);
-    expect(movers[0]).toMatchObject({ absoluteChange: 300, percentChange: 300 });
-  });
-
-  it("returns [] when fewer than two snapshots", () => {
-    expect(computeTopMovers([{ date: "2026-01-01", accountValues: { a1: 1 } }], accounts)).toEqual(
-      [],
-    );
   });
 });
 
