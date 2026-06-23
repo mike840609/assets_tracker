@@ -278,6 +278,45 @@ export function buildCashFlowBuckets(
   });
 }
 
+/** One month's cumulative (running-total) decomposition of net-worth growth. */
+export interface CumulativeGrowthPoint {
+  /** "YYYY-MM" */
+  monthKey: string;
+  /** Human-readable label (carried from the source CashFlowBucket). */
+  label: string;
+  /** Running total of net cash deposited/withdrawn since the range start. */
+  cumulativeContributions: number;
+  /** Running total of market gains/losses since the range start. */
+  cumulativeMarket: number;
+  /** cumulativeContributions + cumulativeMarket. */
+  cumulativeTotal: number;
+  isEmpty?: boolean;
+}
+
+/**
+ * Turn per-month cash-flow buckets into cumulative running totals, so a stacked
+ * area can show how much of the range's net-worth growth came from saving vs.
+ * the market. Empty (padded) months add zero, leaving the running totals flat.
+ *
+ * @param buckets  Output of buildCashFlowBuckets() (padded, sorted asc).
+ */
+export function buildCumulativeGrowth(buckets: CashFlowBucket[]): CumulativeGrowthPoint[] {
+  let contrib = 0;
+  let market = 0;
+  return buckets.map((b) => {
+    contrib += b.contributions;
+    market += b.marketPerformance;
+    return {
+      monthKey: b.monthKey,
+      label: b.label,
+      cumulativeContributions: contrib,
+      cumulativeMarket: market,
+      cumulativeTotal: contrib + market,
+      isEmpty: b.isEmpty,
+    };
+  });
+}
+
 /**
  * Aggregate snapshot breakdown data into one CategoryDataPoint per calendar
  * month. Uses the last snapshot of each month (same convention as

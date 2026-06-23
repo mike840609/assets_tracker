@@ -38,13 +38,22 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
-    version: "0.8.7",
+    version: "0.9.0",
     date: "2026-06-23",
     summary: {
-      "en-US": "Clearer, leaner Analysis charts.",
-      "zh-TW": "更清晰、更精簡的分析圖表。",
+      "en-US": "Clearer, leaner Analysis charts, plus a cumulative growth view.",
+      "zh-TW": "更清晰、更精簡的分析圖表，並新增累積成長檢視。",
     },
     changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "New Cumulative Growth chart in Analysis shows how much of your net-worth growth came from deposits vs. market gains over the selected range.",
+          "zh-TW":
+            "分析頁新增「累積成長」圖表，呈現所選期間內淨資產成長有多少來自存入金額、多少來自市場收益。",
+        },
+      },
       {
         type: "improved",
         text: {

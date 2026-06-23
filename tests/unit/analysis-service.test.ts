@@ -5,6 +5,7 @@ import {
   computeKpis,
   formatMonthLabel,
   buildCashFlowBuckets,
+  buildCumulativeGrowth,
   aggregateCategoryHistory,
   computePerformanceAttribution,
 } from "@/lib/services/analysis-service";
@@ -162,6 +163,41 @@ describe("buildCashFlowBuckets", () => {
     ];
     const result = buildCashFlowBuckets(buckets, [], "en-US");
     expect(result[0]).toMatchObject({ contributions: 0, marketPerformance: -10 });
+  });
+});
+
+describe("buildCumulativeGrowth", () => {
+  const bucket = (
+    monthKey: string,
+    contributions: number,
+    marketPerformance: number,
+    isEmpty = false,
+  ) => ({
+    monthKey,
+    label: monthKey,
+    contributions,
+    marketPerformance,
+    deltaNetWorth: contributions + marketPerformance,
+    isEmpty,
+  });
+
+  it("accumulates contributions and market into running totals", () => {
+    const result = buildCumulativeGrowth([
+      bucket("2026-01", 100, 20),
+      bucket("2026-02", 50, -10),
+      bucket("2026-03", 0, 30),
+    ]);
+    expect(result.map((p) => p.cumulativeContributions)).toEqual([100, 150, 150]);
+    expect(result.map((p) => p.cumulativeMarket)).toEqual([20, 10, 40]);
+    expect(result.map((p) => p.cumulativeTotal)).toEqual([120, 160, 190]);
+  });
+
+  it("keeps the running total flat across empty padded months", () => {
+    const result = buildCumulativeGrowth([
+      bucket("2026-01", 100, 20),
+      bucket("2026-02", 0, 0, true),
+    ]);
+    expect(result[1]).toMatchObject({ cumulativeContributions: 100, cumulativeTotal: 120 });
   });
 });
 

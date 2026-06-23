@@ -22,6 +22,7 @@ import {
   computeKpis,
   fillMonthRange,
   buildCashFlowBuckets,
+  buildCumulativeGrowth,
   aggregateCategoryHistory,
   computePerformanceAttribution,
 } from "@/lib/services/analysis-service";
@@ -29,6 +30,7 @@ import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/anal
 import {
   LazyAssetsLiabilitiesChart,
   LazyCashFlowChart,
+  LazyCumulativeGrowthChart,
   LazyCategoryTrendChart,
   LazyAttributionChart,
 } from "./lazy-analysis-charts";
@@ -176,6 +178,8 @@ export function AnalysisView({
     return buildCashFlowBuckets(buckets, filtered, locale);
   }, [cashFlowData, buckets, rangeStartIso, locale]);
 
+  const cumulativeGrowth = useMemo(() => buildCumulativeGrowth(cashFlowBuckets), [cashFlowBuckets]);
+
   // Raw history filtered to range
   const filteredRawSnapshots = useMemo((): SnapshotBreakdown[] => {
     return rawHistory.snapshots.filter((s) => s.date >= rangeStartIso);
@@ -304,7 +308,10 @@ export function AnalysisView({
 
             {/* Secondary analysis is grouped by question: movement first, then composition. */}
             <div className={isCompact ? "space-y-3" : "space-y-4"}>
-              <section aria-label={t("cashFlow")} className={isCompact ? "space-y-2" : "space-y-3"}>
+              <section
+                aria-label={`${t("cashFlow")} / ${t("cumulativeGrowth")}`}
+                className={isCompact ? "space-y-2" : "space-y-3"}
+              >
                 <div className="flex flex-wrap items-end justify-between gap-2">
                   <div>
                     <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -316,9 +323,17 @@ export function AnalysisView({
                     <p className="text-xs text-muted-foreground">{t("movementSectionSubtitle")}</p>
                   </div>
                 </div>
-                <Card size="sm" className="h-full">
-                  <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
-                </Card>
+                <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>
+                  <Card size="sm" className="h-full">
+                    <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+                  </Card>
+                  <Card size="sm" className="h-full">
+                    <LazyCumulativeGrowthChart
+                      points={cumulativeGrowth}
+                      baseCurrency={baseCurrency}
+                    />
+                  </Card>
+                </div>
               </section>
 
               <section
