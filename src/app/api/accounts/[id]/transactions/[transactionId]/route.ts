@@ -286,14 +286,36 @@ export const DELETE = withAuth<TxCtx>(async (_request, { params }, userId) => {
       return failure("Transaction not found", 404);
     }
 
-    const delta = calculateBalanceDelta({ type: cashTx.type, amount: Number(cashTx.amount) }, null);
-    await prisma.$transaction([
-      prisma.account.update({
-        where: { id: accountId },
-        data: { cashBalance: { increment: delta } },
-      }),
-      prisma.cashTransaction.delete({ where: { id: transactionId } }),
-    ]);
+    // Guard the delete on the values the balance delta was measured against
+    // (same optimistic-lock contract as the cash PATCH / holding paths) so a
+    // DELETE racing an edit can't apply a stale balance delta against a row
+    // another request already changed.
+    try {
+      await prisma.$transaction(async (tx) => {
+        const result = await tx.cashTransaction.deleteMany({
+          where: { id: transactionId, type: cashTx.type, amount: cashTx.amount },
+        });
+        if (result.count !== 1) {
+          throw new StaleCashTransactionError();
+        }
+        const delta = calculateBalanceDelta(
+          { type: cashTx.type, amount: Number(cashTx.amount) },
+          null,
+        );
+        if (delta !== 0) {
+          await tx.account.update({
+            where: { id: accountId },
+            data: { cashBalance: { increment: delta } },
+          });
+        }
+      });
+    } catch (error) {
+      if (error instanceof StaleCashTransactionError) {
+        return failure("Transaction changed while deleting; please retry", 409);
+      }
+      throw error;
+    }
+
     invalidateAccountCaches(userId);
     return ok({ ok: true });
   }
