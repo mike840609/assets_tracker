@@ -87,7 +87,11 @@ export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
 
 export const DELETE = withAuth<IdCtx>(async (_request, { params }, userId) => {
   const { id } = await params;
-  await prisma.account.delete({ where: { id, userId } });
+  // Ownership folded into the write (mirrors the holdings / recurring DELETE
+  // pattern) so a missing or non-owned account returns 404 instead of throwing
+  // an unhandled P2025 -> 500.
+  const { count } = await prisma.account.deleteMany({ where: { id, userId } });
+  if (count === 0) return failure("Not found", 404);
   invalidateUserCaches(userId);
   return ok({ ok: true });
 });
