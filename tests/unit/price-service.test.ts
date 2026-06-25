@@ -75,4 +75,49 @@ describe("refreshPricesForStockSymbols — claim deduplication", () => {
     expect(cleanupCall).toBeDefined();
     expect(result.updated).toBe(0);
   });
+
+  it("releases only the unfetched claim on a partial fetch (one ticker missing)", async () => {
+    const staleDate = new Date(Date.now() - PRICE_REFRESH_TTL_MS - 5_000);
+
+    // Existence+freshness check: both stale and existing
+    vi.mocked(prisma.priceCache.findMany)
+      .mockResolvedValueOnce([
+        { symbol: "AAPL", updatedAt: staleDate },
+        { symbol: "MSFT", updatedAt: staleDate },
+      ] as never)
+      // currentRows lookup before the upsert (no prior values needed here)
+      .mockResolvedValueOnce([] as never);
+    // Claim UPDATE: both claimed by this instance
+    vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce([
+      { symbol: "AAPL" },
+      { symbol: "MSFT" },
+    ]);
+    // Yahoo returns a price for AAPL only — MSFT is the partial miss
+    vi.mocked(getYahooClient).mockResolvedValue({
+      quote: vi
+        .fn()
+        .mockResolvedValue([{ symbol: "AAPL", regularMarketPrice: 100, currency: "USD" }]),
+    } as never);
+    // 1st $executeRawUnsafe = upsert, 2nd = releaseClaims for the unfetched
+    vi.mocked(prisma.$executeRawUnsafe).mockResolvedValue(1 as never);
+
+    const result = await refreshPricesForStockSymbols(["AAPL", "MSFT"]);
+
+    expect(result.updated).toBe(1);
+
+    // The release call must target MSFT only, never AAPL (whose claim the
+    // upsert already cleared).
+    const releaseCall = vi
+      .mocked(prisma.$executeRawUnsafe)
+      .mock.calls.find(
+        ([sql]) =>
+          typeof sql === "string" &&
+          /^\s*UPDATE\s+"PriceCache"/i.test(sql) &&
+          /symbol IN/i.test(sql),
+      );
+    expect(releaseCall).toBeDefined();
+    const releasedSymbols = releaseCall!.slice(1);
+    expect(releasedSymbols).toContain("MSFT");
+    expect(releasedSymbols).not.toContain("AAPL");
+  });
 });
