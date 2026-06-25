@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createHoldingSchema, updateHoldingSchema, deleteHoldingSchema } from "@/lib/validators";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
@@ -138,7 +139,7 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
   }
 
   invalidateUserCaches(userId);
-  if (holding.currency) void maybeWarmExchangeRate(holding.currency);
+  if (holding.currency) after(() => maybeWarmExchangeRate(holding.currency));
   return ok(holding, { status: 201 });
 });
 
