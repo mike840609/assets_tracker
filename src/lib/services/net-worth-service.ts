@@ -219,6 +219,7 @@ async function getCachedNetWorthSummaryInner(
   "use cache";
   cacheTag("net-worth");
   cacheTag(`net-worth:${userId}`);
+  cacheTag("exchange-rates");
   cacheLife("hours");
   return computeNetWorthSummary(userId, baseCurrency);
 }
