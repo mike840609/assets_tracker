@@ -31,7 +31,13 @@ function getCurrentAmount(goal: SerializedGoal, summary: NetWorthSummary): numbe
       return summary.totalAssets;
     case "CATEGORY": {
       const matching = summary.accounts.filter((a) => a.category === goal.scopeRefId);
-      return matching.reduce((sum, a) => sum + a.totalValueInBaseCurrency, 0);
+      // Sign by account type to mirror net-worth accounting: assets add,
+      // liabilities subtract — so a debt category nets negative, not positive.
+      return matching.reduce(
+        (sum, a) =>
+          sum + (a.type === "LIABILITY" ? -a.totalValueInBaseCurrency : a.totalValueInBaseCurrency),
+        0,
+      );
     }
     case "ACCOUNT": {
       const account = summary.accounts.find((a) => a.id === goal.scopeRefId);
