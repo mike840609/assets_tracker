@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updateSettingsSchema } from "@/lib/validators";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
@@ -48,8 +49,9 @@ export const PATCH = withAuth(async (request, _ctx, userId) => {
   // If the base currency changed, the cached net-worth summary for this
   // user is stale (values are denominated in the old currency).
   if (parsed.data.baseCurrency !== undefined) {
+    const baseCurrency = parsed.data.baseCurrency;
     revalidateTag(`net-worth:${userId}`, { expire: 0 });
-    void maybeWarmExchangeRate(parsed.data.baseCurrency);
+    after(() => maybeWarmExchangeRate(baseCurrency));
   }
 
   const response = ok(settings);
