@@ -8,6 +8,7 @@ A modern, high-performance net worth and investment tracker. Built with **Next.j
 
 - **🔐 Google OAuth**: Secure multi-user authentication via NextAuth.js v5.
 - **🚀 Real-time Tracking**: Automatically fetch latest prices for Stocks, ETFs, Cryptocurrencies, and Options (via Yahoo Finance + CoinGecko fallback).
+- **🔁 Recurring Transactions**: Schedule recurring cash flows and investment contributions; the daily cron materializes due entries automatically (with catch-up).
 - **🌍 Multi-Currency Support**: Track assets in USD, TWD, EUR, and more. All values are automatically converted to your selected **Base Currency**.
 - **📈 Analysis & Charts**: Interactive charts for net-worth trend, assets/liabilities breakdown, monthly cash flow, top movers, and currency exposure.
 - **🔭 FIRE Projection**: Retirement projection page showing estimated FIRE date and portfolio growth curves from your real savings history.
@@ -18,6 +19,7 @@ A modern, high-performance net worth and investment tracker. Built with **Next.j
 - **⌨️ Keyboard-First Desktop**: Command palette (⌘K / Ctrl+K), Vim-style navigation chords, and configurable shortcuts for power users.
 - **📱 Native Mobile Feel**: iOS large-title navigation, swipe actions on list rows, bottom-sheet dialogs, pull-to-refresh, and haptic feedback.
 - **🌐 Internationalization**: English (en-US) and Traditional Chinese (zh-TW), auto-detected from browser.
+- **📲 Installable PWA**: Web app manifest + service worker for an installable, app-like experience.
 - **📊 Lossless Data Integrity**: Detailed breakdown of historical snapshots ensuring currency conversion accuracy over time.
 
 ## 🛠️ Tech Stack
@@ -30,6 +32,7 @@ A modern, high-performance net worth and investment tracker. Built with **Next.j
 - **Icons**: Lucide React
 - **Charts**: Recharts
 - **Validation**: Zod 4
+- **Monitoring**: Sentry (`@sentry/nextjs`) — optional, a no-op when no DSN is configured
 
 ## 🚀 Getting Started
 
@@ -54,6 +57,13 @@ CRON_SECRET="your_secure_random_string"
 # PREVIEW_AUTH_PASSWORD="shared_password_to_gate_preview_access"
 # PREVIEW_AUTH_DISABLED="true"  # optional, disables preview password gate
 # AUTH_REDIRECT_PROXY_URL="https://stable-preview-host.vercel.app"  # optional, for Google OAuth on preview URLs
+
+# Sentry (optional — all unset = no-op; no account needed for local/CI):
+# SENTRY_DSN="https://...ingest.sentry.io/..."          # server + edge
+# NEXT_PUBLIC_SENTRY_DSN="https://...ingest.sentry.io/..."  # browser SDK
+# SENTRY_AUTH_TOKEN="..."   # enables build-time source-map upload
+# SENTRY_ORG="your-org"     # for source-map upload
+# SENTRY_PROJECT="your-project"
 ```
 
 > [!TIP]
@@ -245,6 +255,8 @@ This project is optimized for **Vercel** and includes native Cron Job support vi
 - **Schedule**: Every day at 21:30 UTC (`30 21 * * *`, configured in `vercel.json`).
 - **Security**: Protected via `CRON_SECRET` header verification.
 - **Region**: Functions are pinned to `sin1` to colocate with the Neon database. If your Neon project lives in a different region, update `regions` in `vercel.json` to match.
+- **Work done**: Refreshes prices, materializes any due recurring cash/investment transactions (with catch-up), writes a `NetWorthSnapshot` per user, and records a `CronRun` row.
+- **Health probe**: `GET /api/health` is an unauthenticated, rate-limited liveness/readiness check. It reports DB reachability plus cron and snapshot freshness (`ok` / `degraded` / `unhealthy`, 503 when stale > 36h) and exposes no user data.
 
 To enable automation, deploy to Vercel and set all environment variables in your project settings. Vercel only runs cron jobs on production deployments, so preview deployments are unaffected.
 
