@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
 import { log } from "@/lib/logger";
@@ -34,7 +35,8 @@ const FRESHNESS_MAX_AGE_MS = 36 * 60 * 60 * 1000;
 const SNAPSHOT_CRON_NAME = "snapshot";
 
 export async function GET(request: Request) {
-  const limited = rateLimitCheckWithPrune(request, { limit: 30, prefix: "health" });
+  await connection();
+  const limited = await rateLimitCheckWithPrune(request, { limit: 30, prefix: "health" });
   if (limited) return limited;
 
   const now = Date.now();

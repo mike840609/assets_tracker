@@ -16,7 +16,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
   // Per-user (not per-IP): each call fans out to Yahoo/CoinGecko + the FX
   // source. The service-level freshness gates are the primary defense; this
   // just stops request loops from reaching the DB queries.
-  const limited = rateLimitCheckWithPrune(request, {
+  const limited = await rateLimitCheckWithPrune(request, {
     limit: 5,
     prefix: "market-refresh",
     key: userId,

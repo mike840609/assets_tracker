@@ -14,7 +14,7 @@ export function withAuth<Ctx = unknown>(
     if (!session?.user?.id) return failure("Unauthorized", 401);
     if (!(await userExists(session.user.id))) return failure("Unauthorized", 401);
     if (MUTATION_METHODS.has(req.method)) {
-      const limited = rateLimitCheckWithPrune(req, {
+      const limited = await rateLimitCheckWithPrune(req, {
         limit: 60,
         prefix: `mutation:${req.method}`,
         key: session.user.id,

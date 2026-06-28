@@ -268,7 +268,7 @@ export const GET = withAuth(async (_req, _ctx, userId) => {
 
 export const POST = withAuth(async (request, _ctx, userId) => {
   try {
-    const limited = rateLimitCheckWithPrune(request, {
+    const limited = await rateLimitCheckWithPrune(request, {
       limit: 5,
       prefix: "settings-import",
       key: userId,

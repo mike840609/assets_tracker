@@ -252,6 +252,15 @@ model ExchangeRate {
   @@id([fromCurrency, toCurrency])
 }
 
+model RateLimitBucket {
+  key       String   @id
+  count     Int      @default(0)
+  resetAt   DateTime @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([resetAt])
+}
+
 model NetWorthSnapshot {
   id               String   @id @default(cuid())
   userId           String

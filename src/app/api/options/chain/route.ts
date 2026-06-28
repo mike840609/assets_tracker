@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { ok } from "@/lib/api-responses";
 import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
 import { getYahooClient } from "@/lib/services/yahoo-client";
@@ -32,7 +33,8 @@ const slim = (arr: any[] | undefined): ChainContract[] =>
   }));
 
 export async function GET(request: Request) {
-  const limited = rateLimitCheckWithPrune(request, { limit: 60, prefix: "options-chain" });
+  await connection();
+  const limited = await rateLimitCheckWithPrune(request, { limit: 60, prefix: "options-chain" });
   if (limited) return limited;
 
   const { searchParams } = new URL(request.url);

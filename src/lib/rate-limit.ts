@@ -1,13 +1,15 @@
 /**
- * R3 — Sliding-window rate limiter (zero external dependencies).
+ * R3 — fixed-window route-handler rate limiter.
  *
- * Uses a module-level Map so the state is shared across requests that hit the
- * same warm serverless instance. On Vercel Node.js runtime this provides
- * meaningful per-IP throttling; cold starts reset the window, which is an
- * acceptable trade-off until Upstash / Vercel KV is wired in.
+ * Route handlers use a Prisma-backed bucket so limits are shared across
+ * serverless instances and survive cold starts. The write path is a single
+ * PostgreSQL upsert that increments or resets the bucket atomically.
+ *
+ * `getClientIp` intentionally stays dependency-free because `src/proxy.ts`
+ * imports it for the edge/proxy inline limiter.
  *
  * Usage:
- *   const limited = rateLimitCheckWithPrune(request, { limit: 60, windowMs: 60_000 });
+ *   const limited = await rateLimitCheckWithPrune(request, { limit: 60, windowMs: 60_000 });
  *   if (limited) return limited;          // 429 response
  */
 
@@ -25,13 +27,10 @@ interface RateLimitOptions {
   key?: string;
 }
 
-interface WindowEntry {
+interface RateLimitRow {
   count: number;
-  resetAt: number;
+  resetAt: Date;
 }
-
-// Module-level store — shared across warm invocations on the same instance.
-const store = new Map<string, WindowEntry>();
 
 /** Extract the best available IP from the request headers. */
 export function getClientIp(request: Request): string {
@@ -55,58 +54,121 @@ export function getClientIp(request: Request): string {
  *
  * @returns A 429 Response if the limit is exceeded, otherwise `null`.
  */
-function rateLimitCheck(request: Request, options: RateLimitOptions): Response | null {
+async function rateLimitCheck(
+  request: Request,
+  options: RateLimitOptions,
+): Promise<Response | null> {
   const { limit, windowMs = 60_000, prefix = "rl" } = options;
   const id = options.key ?? getClientIp(request);
   const key = `${prefix}:${id}`;
-  const now = Date.now();
+  const now = new Date();
+  const resetAt = new Date(now.getTime() + windowMs);
 
-  const entry = store.get(key);
+  try {
+    const rows = await incrementBucket(key, resetAt, now);
+    const entry = rows[0];
 
-  if (!entry || now >= entry.resetAt) {
-    // First request in window (or expired window) — initialise.
-    store.set(key, { count: 1, resetAt: now + windowMs });
+    if (!entry) {
+      throw new Error("Rate limit increment returned no rows");
+    }
+
+    if (entry.count > limit) {
+      return rateLimitedResponse(limit, entry.resetAt, now);
+    }
+
     return null;
-  }
-
-  entry.count += 1;
-
-  if (entry.count > limit) {
-    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-    return new Response(JSON.stringify({ error: { message: "Too many requests" } }), {
-      status: 429,
-      headers: {
-        "Content-Type": "application/json",
-        "Retry-After": String(retryAfter),
-        "X-RateLimit-Limit": String(limit),
-        "X-RateLimit-Remaining": "0",
-        "X-RateLimit-Reset": String(Math.ceil(entry.resetAt / 1000)),
+  } catch (error) {
+    await logLimiterError(error);
+    return new Response(
+      JSON.stringify({ error: { message: "Rate limit is temporarily unavailable" } }),
+      {
+        status: 503,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": "5",
+        },
       },
-    });
+    );
   }
+}
 
-  return null;
+async function incrementBucket(key: string, resetAt: Date, now: Date): Promise<RateLimitRow[]> {
+  const { prisma } = await import("@/lib/prisma");
+
+  return prisma.$queryRawUnsafe<RateLimitRow[]>(
+    `
+      INSERT INTO "RateLimitBucket" ("key", "count", "resetAt", "updatedAt")
+      VALUES ($1, 1, $2, NOW())
+      ON CONFLICT ("key") DO UPDATE SET
+        "count" = CASE
+          WHEN "RateLimitBucket"."resetAt" <= $3 THEN 1
+          ELSE "RateLimitBucket"."count" + 1
+        END,
+        "resetAt" = CASE
+          WHEN "RateLimitBucket"."resetAt" <= $3 THEN $2
+          ELSE "RateLimitBucket"."resetAt"
+        END,
+        "updatedAt" = NOW()
+      RETURNING "count", "resetAt"
+    `,
+    key,
+    resetAt,
+    now,
+  );
+}
+
+function rateLimitedResponse(limit: number, resetAt: Date, now: Date): Response {
+  const retryAfter = Math.max(1, Math.ceil((resetAt.getTime() - now.getTime()) / 1000));
+  return new Response(JSON.stringify({ error: { message: "Too many requests" } }), {
+    status: 429,
+    headers: {
+      "Content-Type": "application/json",
+      "Retry-After": String(retryAfter),
+      "X-RateLimit-Limit": String(limit),
+      "X-RateLimit-Remaining": "0",
+      "X-RateLimit-Reset": String(Math.ceil(resetAt.getTime() / 1000)),
+    },
+  });
 }
 
 /**
- * Periodically prune expired entries to prevent unbounded Map growth.
+ * Periodically prune expired buckets to prevent unbounded table growth.
  * Called lazily on each check; runs at most once per minute.
  */
 let lastPruned = 0;
-function maybePrune() {
+async function maybePrune(): Promise<void> {
   const now = Date.now();
   if (now - lastPruned < 60_000) return;
   lastPruned = now;
-  for (const [key, entry] of store) {
-    if (now >= entry.resetAt) store.delete(key);
+
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    await prisma.rateLimitBucket.deleteMany({
+      where: {
+        resetAt: {
+          lte: new Date(now),
+        },
+      },
+    });
+  } catch (error) {
+    await logLimiterError(error, "rate_limit.prune_failed");
+  }
+}
+
+async function logLimiterError(error: unknown, message = "rate_limit.check_failed"): Promise<void> {
+  try {
+    const { log } = await import("@/lib/logger");
+    log.error(message, { error: error instanceof Error ? error.message : String(error) });
+  } catch {
+    // Logging should never change rate-limit behavior.
   }
 }
 
 // Attach prune to the check function so callers don't need to think about it.
-export function rateLimitCheckWithPrune(
+export async function rateLimitCheckWithPrune(
   request: Request,
   options: RateLimitOptions,
-): Response | null {
-  maybePrune();
+): Promise<Response | null> {
+  await maybePrune();
   return rateLimitCheck(request, options);
 }
