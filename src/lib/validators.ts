@@ -9,8 +9,10 @@ import {
   OPTION_TYPES,
   GOAL_SCOPES,
 } from "./enums";
+import { SUPPORTED_LOCALES } from "@/i18n/config";
 
 const OCC_SHAPE = /^[A-Z][A-Z0-9.\-]{0,5}\d{6}[CP]\d{8}$/;
+const supportedLocaleSchema = z.enum(SUPPORTED_LOCALES);
 
 export const createAccountSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -105,7 +107,7 @@ export const deleteHoldingSchema = z.object({
 
 export const updateSettingsSchema = z.object({
   baseCurrency: z.string().length(3).optional(),
-  locale: z.enum(["en-US", "zh-TW"]).optional(),
+  locale: supportedLocaleSchema.optional(),
 });
 
 export const updateSnapshotAnnotationSchema = z.object({
@@ -334,7 +336,7 @@ export const dataImportSchema = z.object({
   settings: z
     .object({
       baseCurrency: z.string().length(3),
-      locale: z.string(),
+      locale: supportedLocaleSchema,
     })
     .optional()
     .nullable(),
