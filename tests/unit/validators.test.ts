@@ -9,6 +9,7 @@ import {
   createGoalSchema,
   createStockWatchItemSchema,
   updateSnapshotAnnotationSchema,
+  dataImportSchema,
 } from "@/lib/validators";
 
 // Locks in the E6 validator hardening (positive quantities, immutable
@@ -204,5 +205,17 @@ describe("updateSnapshotAnnotationSchema", () => {
   it("enforces label and note length limits", () => {
     expect(updateSnapshotAnnotationSchema.safeParse({ label: "x".repeat(81) }).success).toBe(false);
     expect(updateSnapshotAnnotationSchema.safeParse({ note: "x".repeat(501) }).success).toBe(false);
+  });
+});
+
+describe("dataImportSchema", () => {
+  it("rejects an imported settings locale outside supported locales", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.2",
+      settings: { baseCurrency: "USD", locale: "fr-FR" },
+      accounts: [],
+    });
+
+    expect(result.success).toBe(false);
   });
 });
