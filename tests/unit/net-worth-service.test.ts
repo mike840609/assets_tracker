@@ -82,13 +82,17 @@ const h = vi.hoisted(() => ({
   prices: [] as { symbol: string; price: number; currency: string }[],
   rates: new Map<string, number>(),
   warnings: [] as { msg: string; meta: unknown }[],
+  tags: [] as string[],
 }));
 
 vi.mock("react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react")>();
   return { ...actual, cache: <T>(fn: T): T => fn };
 });
-vi.mock("next/cache", () => ({ cacheTag: () => {}, cacheLife: () => {} }));
+vi.mock("next/cache", () => ({
+  cacheTag: (tag: string) => h.tags.push(tag),
+  cacheLife: () => {},
+}));
 vi.mock("@/lib/logger", () => ({
   log: {
     info: () => {},
@@ -141,6 +145,17 @@ describe("getCachedNetWorthSummary (two-pass valuation)", () => {
       { currency: "USD", value: 3000 },
       { currency: "TWD", value: 100 },
     ]);
+  });
+
+  it("tags the cached read with exchange-rates so a warmed FX rate invalidates it", async () => {
+    h.tags = [];
+    h.rates = new Map([["USD_TWD", 30]]);
+    h.prices = [];
+    h.accounts = [account({ id: "A", type: "ASSET", currency: "USD", cashBalance: 100 })];
+
+    await getCachedNetWorthSummary("u1", "USD");
+
+    expect(h.tags).toContain("exchange-rates");
   });
 
   it("falls back to rate 1 and warns for an unresolvable currency", async () => {
