@@ -55,3 +55,9 @@ next-env.d.ts
 
 # Impeccable design-review snapshots (local artifacts)
 .impeccable/
+
+# Local agent artifacts
+/repomix-output.xml
+/.claude/settings.local.json
+/.codex/hooks.json
+/.codex/hooks/
