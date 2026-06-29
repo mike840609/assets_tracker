@@ -22,6 +22,7 @@ import { GoalsMilestoneCard } from "@/components/dashboard/goals-milestone-card"
 import { ProjectionEntryCard } from "@/components/dashboard/projection-entry-card";
 import { PortfolioHeatmap } from "@/components/analysis/portfolio-heatmap";
 import { WatchlistCard } from "@/components/dashboard/watchlist-card";
+import { WatchlistCardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import Link from "next/link";
 import { ArrowRight, History } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -390,7 +391,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
           <Suspense fallback={null}>
             <GoalsMilestoneSection userId={userId} baseCurrency={baseCurrency} />
           </Suspense>
-          <Suspense fallback={<ChartCardSkeleton />}>
+          <Suspense fallback={<WatchlistCardSkeleton />}>
             <WatchlistSection userId={userId} />
           </Suspense>
         </div>

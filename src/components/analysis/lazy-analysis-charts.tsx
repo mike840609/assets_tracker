@@ -12,7 +12,9 @@ function ChartSkeleton({ height = 200 }: { height?: number }) {
   return (
     <>
       <CardHeader className="pb-2 px-2 sm:px-4">
-        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-5 w-40 max-w-full" />
+        {/* Subtitle line — every analysis chart header has one (e.g. monthlyChangeSubtitle) */}
+        <Skeleton className="mt-1.5 h-3 w-52 max-w-full" />
       </CardHeader>
       <CardContent className="flex flex-1 flex-col px-2 pb-4 sm:px-4">
         <Skeleton className="min-h-0 flex-1" style={{ minHeight: skeletonHeight }} />
