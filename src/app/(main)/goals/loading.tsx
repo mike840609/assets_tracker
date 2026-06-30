@@ -22,8 +22,8 @@ export default function GoalsLoading() {
         </div>
 
         <div className="space-y-6">
-          {/* Subtitle + Add button (size="sm" → h-7) */}
-          <div className="flex items-center justify-between">
+          {/* Subtitle + Add button (size="sm" → h-7); stacks on mobile like GoalsView */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Skeleton className="h-4 w-48" />
             <Skeleton className="h-7 w-24 rounded-md" />
           </div>
