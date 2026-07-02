@@ -38,6 +38,21 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.9.1",
+    date: "2026-07-02",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Cash Flow, Cumulative Growth, and Attribution now bucket transactions by their actual occurrence date, so backdated deposits and withdrawals land in the right month.",
+          "zh-TW":
+            "現金流、累積成長與績效歸因現在依實際發生日期歸類交易，補登的存提款會落在正確的月份。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.9.0",
     date: "2026-07-02",
     summary: {

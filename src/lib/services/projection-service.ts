@@ -78,7 +78,12 @@ export async function getProjectionData(
     where: {
       accountId: { in: accountIds },
       type: { in: ["DEPOSIT", "WITHDRAWAL"] },
-      createdAt: { gte: twelveMonthsAgo },
+      // Window by the effective date (occurrenceDate ?? createdAt) so backdated
+      // or catch-up-materialized flows count in the month they occurred (#498).
+      OR: [
+        { occurrenceDate: { gte: twelveMonthsAgo } },
+        { occurrenceDate: null, createdAt: { gte: twelveMonthsAgo } },
+      ],
     },
     select: { amount: true, type: true, accountId: true },
   });
