@@ -22,6 +22,8 @@ interface Props {
   locale: string;
 }
 
+const assetsLiabilitiesConfig = {} satisfies ChartConfig;
+
 interface AssetsTooltipEntry {
   label: string;
   isEmpty?: boolean;
@@ -90,15 +92,6 @@ export const AssetsLiabilitiesChart = memo(function AssetsLiabilitiesChart({
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   const { handlers: crosshairHandlers } = useChartCrosshair();
   useEffect(() => startTransition(() => setMounted(true)), []);
-
-  const config: ChartConfig = useMemo(
-    () => ({
-      assets: { label: t("seriesAssets"), color: "var(--gain)" },
-      liabilities: { label: t("seriesLiabilities"), color: "var(--loss)" },
-      netWorth: { label: t("seriesNetWorth"), color: "var(--primary)" },
-    }),
-    [t],
-  );
 
   // Liabilities are mirrored below the zero baseline to keep them legible next
   // to much larger assets; the dedicated net-worth line carries the
@@ -169,7 +162,7 @@ export const AssetsLiabilitiesChart = memo(function AssetsLiabilitiesChart({
               className="min-h-0 flex-1"
             >
               <ChartContainer
-                config={config}
+                config={assetsLiabilitiesConfig}
                 className="w-full"
                 style={{ height: "100%" }}
                 initialDimension={{ width: 1, height: chartHeight }}
