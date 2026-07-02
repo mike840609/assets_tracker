@@ -1,8 +1,25 @@
 import "server-only";
 import { cache } from "react";
+import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { fetchUserAccountsWithHoldings } from "@/lib/services/net-worth-service";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
+
+/**
+ * Cached active-account count. Gates the first paint of the dashboard and
+ * the empty states of /history, /projections, /analysis, so it must not
+ * cost a live DB roundtrip per view. Every account mutation route
+ * revalidates `accounts:${userId}`, which keeps this fresh.
+ */
+async function countActiveAccountsInner(userId: string): Promise<number> {
+  "use cache";
+  cacheTag("accounts");
+  cacheTag(`accounts:${userId}`);
+  cacheLife("hours");
+  return prisma.account.count({ where: { userId, isActive: true } });
+}
+
+export const countActiveAccounts = cache(countActiveAccountsInner);
 
 export const getAccountDetail = cache(
   async (userId: string, accountId: string): Promise<SerializedAccountWithHoldings | null> => {

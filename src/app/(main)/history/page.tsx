@@ -9,7 +9,7 @@ import {
   getFullNormalizedHistory,
   getSnapshotReconciliationWarning,
 } from "@/lib/services/history-service";
-import { prisma } from "@/lib/prisma";
+import { countActiveAccounts } from "@/lib/services/account-service";
 
 const CLIENT_NAMESPACES = ["trendChart", "history", "freshness"];
 
@@ -23,7 +23,7 @@ async function HistoryContent() {
       getMessages(),
       settingsP.then((s) => getFullNormalizedHistory(userId, s.baseCurrency)),
       settingsP,
-      prisma.account.count({ where: { userId, isActive: true } }),
+      countActiveAccounts(userId),
       settingsP.then((s) => getSnapshotReconciliationWarning(userId, s.baseCurrency)),
     ],
   );
