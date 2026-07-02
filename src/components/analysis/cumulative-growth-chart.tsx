@@ -39,6 +39,15 @@ function GrowthTooltip({
 }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
+
+  if (p.isEmpty) {
+    return (
+      <ChartTooltipContainer title={p.label}>
+        <div className="text-[11px] text-muted-foreground">{t("noDataMonth")}</div>
+      </ChartTooltipContainer>
+    );
+  }
+
   const sign = (n: number) => (n >= 0 ? "+" : "");
 
   return (
@@ -153,6 +162,7 @@ export const CumulativeGrowthChart = memo(function CumulativeGrowthChart({
               >
                 <ComposedChart
                   data={points}
+                  stackOffset="sign"
                   margin={{ top: 8, right: 4, left: 0, bottom: 12 }}
                   {...crosshairHandlers}
                 >
