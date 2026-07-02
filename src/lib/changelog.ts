@@ -38,7 +38,7 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
-    version: "0.8.7",
+    version: "0.8.8",
     date: "2026-07-02",
     summary: {
       "en-US": "Faster page loads through cached dashboard reads.",
@@ -60,6 +60,48 @@ export const CHANGELOG: Release[] = [
           "en-US":
             "Goal progress projections now read their snapshot history from cache, speeding up the dashboard milestone card and the Goals page.",
           "zh-TW": "目標進度預測現在從快取讀取快照歷史，加快儀表板里程碑卡片與目標頁面的載入。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.8.7",
+    date: "2026-06-24",
+    summary: {
+      "en-US": "Tidier Analysis tab on mobile.",
+      "zh-TW": "行動版分析頁面更整潔。",
+    },
+    changes: [
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "On mobile, the Analysis summary now shows the year-to-date headline up front and folds the range breakdown and methodology behind a tap, so the charts are reachable with less scrolling.",
+          "zh-TW":
+            "行動版的分析摘要現在優先顯示今年迄今的重點數字，並將區間明細與計算說明收合於點按之後，讓圖表更快可見、減少捲動。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Refined spacing and heading hierarchy on the mobile Analysis tab so each section reads as its own group.",
+          "zh-TW": "調整行動版分析頁面的間距與標題層級，讓每個區段更像獨立群組。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "The Analysis time-range selector no longer wraps onto two rows on small screens.",
+          "zh-TW": "分析頁面的時間範圍選擇器在小螢幕上不再換成兩行。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US": "Muted helper text on the Analysis tab now meets WCAG AA contrast.",
+          "zh-TW": "分析頁面的次要說明文字現已符合 WCAG AA 對比標準。",
         },
       },
     ],

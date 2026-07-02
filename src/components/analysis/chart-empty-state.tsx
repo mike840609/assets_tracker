@@ -38,7 +38,7 @@ export function ChartEmptyState({
     >
       <Icon className="size-6 text-muted-foreground/50" strokeWidth={1.5} aria-hidden />
       <p className="max-w-[34ch] text-pretty text-sm text-muted-foreground">{message}</p>
-      {hint && <p className="max-w-[34ch] text-pretty text-xs text-muted-foreground/70">{hint}</p>}
+      {hint && <p className="max-w-[34ch] text-pretty text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }

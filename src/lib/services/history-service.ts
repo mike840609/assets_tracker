@@ -130,6 +130,7 @@ export async function getNormalizedHistory(
   cacheTag("snapshots");
   cacheTag("net-worth");
   cacheTag(`history:${userId}`);
+  cacheTag("exchange-rates");
   cacheLife("hours");
 
   const fromDate = new Date();
@@ -160,6 +161,7 @@ export async function getCurrentYearNormalizedHistory(
   cacheTag("snapshots");
   cacheTag("net-worth");
   cacheTag(`history:${userId}`);
+  cacheTag("exchange-rates");
   cacheLife("hours");
 
   const now = new Date();
@@ -215,6 +217,7 @@ async function fetchFullHistoryCached(
   cacheTag("snapshots");
   cacheTag("net-worth");
   cacheTag(`history:${userId}`);
+  cacheTag("exchange-rates");
   cacheLife("hours");
 
   const [snapshotsRaw, allRatesMap] = await Promise.all([
@@ -260,6 +263,7 @@ export async function getSnapshotReconciliationWarning(
   cacheTag("net-worth");
   cacheTag(`history:${userId}`);
   cacheTag(`net-worth:${userId}`);
+  cacheTag("exchange-rates");
   cacheLife("minutes");
 
   const [latestSnapshot, currentSummary, allRatesMap] = await Promise.all([
@@ -411,6 +415,7 @@ export async function getAccountMonthlyCashFlow(
   "use cache";
   cacheTag(`accounts:${userId}`);
   cacheTag(`history:${userId}`);
+  cacheTag("exchange-rates");
   cacheLife("hours");
 
   const [accounts, allRatesMap, firstSnapshot] = await Promise.all([

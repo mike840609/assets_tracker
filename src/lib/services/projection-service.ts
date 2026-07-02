@@ -20,6 +20,7 @@ export async function getProjectionData(
   cacheTag("net-worth");
   cacheTag(`history:${userId}`);
   cacheTag(`accounts:${userId}`);
+  cacheTag("exchange-rates");
   cacheLife("hours");
 
   const [snapshotsRaw, accountsRaw, allRatesMap] = await Promise.all([
