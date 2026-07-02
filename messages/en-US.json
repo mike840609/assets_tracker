@@ -358,8 +358,6 @@
     "seriesAssets": "Assets",
     "seriesLiabilities": "Liabilities",
     "seriesNetWorth": "Net worth",
-    "tooltipStart": "Start",
-    "tooltipEnd": "End",
     "tooltipChange": "Change",
     "noData": "Not enough snapshots yet. Analysis appears after a few days of history.",
     "emptyHint": "Snapshots are captured daily, so charts fill in as your history grows.",

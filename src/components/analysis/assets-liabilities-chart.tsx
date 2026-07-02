@@ -100,9 +100,10 @@ export const AssetsLiabilitiesChart = memo(function AssetsLiabilitiesChart({
     [t],
   );
 
-  // Liabilities render below the zero baseline so net worth reads as the gap
-  // between the two areas. Empty (padded) months become null so the areas break
-  // instead of plunging to zero across gaps.
+  // Liabilities are mirrored below the zero baseline to keep them legible next
+  // to much larger assets; the dedicated net-worth line carries the
+  // assets-minus-liabilities reading. Empty (padded) months become null so the
+  // areas break instead of plunging to zero across gaps.
   const data = useMemo(
     () =>
       buckets.map((b) => ({

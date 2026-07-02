@@ -358,8 +358,6 @@
     "seriesAssets": "資產",
     "seriesLiabilities": "負債",
     "seriesNetWorth": "淨資產",
-    "tooltipStart": "期初",
-    "tooltipEnd": "期末",
     "tooltipChange": "變化",
     "noData": "尚無足夠的快照資料。累積幾天歷史後即可看到分析結果。",
     "emptyHint": "系統每日擷取快照，隨著歷史累積，圖表會逐漸顯示。",
