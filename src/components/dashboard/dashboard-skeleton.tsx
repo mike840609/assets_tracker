@@ -80,7 +80,7 @@ function GoalsCardSkeleton() {
 }
 
 /** Watchlist rail card — header + three quote rows (symbol/name + change pill). */
-function WatchlistCardSkeleton() {
+export function WatchlistCardSkeleton() {
   return (
     <Card>
       <CardHeader className="pb-2">

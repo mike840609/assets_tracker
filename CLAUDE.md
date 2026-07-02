@@ -12,18 +12,19 @@ A personal net-worth / asset tracking application built with **Next.js 16** (App
 
 ## Tech Stack
 
-| Layer      | Technology                                       |
-| ---------- | ------------------------------------------------ |
-| Framework  | Next.js 16.2 (App Router, React 19, RSC)         |
-| Language   | TypeScript 5, strict mode                        |
-| Database   | PostgreSQL via Prisma 7 (`@prisma/client`)       |
-| Styling    | Tailwind CSS 4 + shadcn/ui v4 (base-nova style)  |
-| Auth       | NextAuth.js v5 (Google OAuth, JWT sessions)      |
-| UI Icons   | Lucide React                                     |
-| Charts     | Recharts 3                                       |
-| Price Data | Yahoo Finance 2 (primary) + CoinGecko (fallback) |
-| Validation | Zod 4                                            |
-| Fonts      | Geist Sans / Geist Mono via `next/font/google`   |
+| Layer      | Technology                                           |
+| ---------- | ---------------------------------------------------- |
+| Framework  | Next.js 16.2 (App Router, React 19, RSC)             |
+| Language   | TypeScript 5, strict mode                            |
+| Database   | PostgreSQL via Prisma 7 (`@prisma/client`)           |
+| Styling    | Tailwind CSS 4 + shadcn/ui v4 (base-nova style)      |
+| Auth       | NextAuth.js v5 (Google OAuth, JWT sessions)          |
+| UI Icons   | Lucide React                                         |
+| Charts     | Recharts 3                                           |
+| Price Data | Yahoo Finance 2 (primary) + CoinGecko (fallback)     |
+| Validation | Zod 4                                                |
+| Monitoring | Sentry (`@sentry/nextjs`, optional/no-op when unset) |
+| Fonts      | Geist Sans / Geist Mono via `next/font/google`       |
 
 ## Commands
 
@@ -117,26 +118,34 @@ src/
 │   │   ├── page.tsx            # Dashboard
 │   │   ├── accounts/           # Accounts list + [id] detail
 │   │   ├── analysis/           # Analysis tab (charts: assets/liabilities, cash flow, movers)
+│   │   ├── changelog/          # Version history timeline (reads src/lib/changelog.ts)
 │   │   ├── goals/              # Net worth goals & milestones
 │   │   ├── history/            # Net worth history view
 │   │   ├── projections/        # FIRE/retirement projection page
 │   │   ├── settings/           # User settings
 │   │   └── stocks/             # Stock watchlist / tracker
+│   ├── manifest.ts             # PWA web app manifest (file-based metadata route)
 │   └── api/
 │       ├── auth/[...nextauth]/ # NextAuth handlers
-│       ├── accounts/           # CRUD for accounts
+│       ├── accounts/           # CRUD for accounts (+ reorder/)
 │       ├── accounts/[id]/holdings/          # Holdings CRUD
 │       ├── accounts/[id]/transactions/      # HoldingTransaction CRUD
 │       ├── accounts/[id]/cash-transactions/ # CashTransaction CRUD
+│       ├── accounts/[id]/recurring-cash-transactions/  # Recurring cash CRUD (F6)
+│       ├── accounts/[id]/recurring-investments/         # Recurring investment CRUD
 │       ├── exchange-rates/     # Fetch + refresh exchange rates
-│       ├── goals/              # Goals CRUD
+│       ├── goals/              # Goals CRUD (+ reorder/)
 │       ├── options/chain/      # Options chain data (Yahoo Finance)
-│       ├── prices/refresh/     # Manual price refresh trigger
-│       ├── snapshots/          # Net worth snapshot history
+│       ├── refresh/            # Manual market-data refresh trigger (prices + rates)
+│       ├── snapshots/          # Net worth snapshot history (+ [id])
 │       ├── search/             # Holding symbol search (Yahoo Finance)
-│       ├── settings/           # User settings API
-│       ├── stocks/             # Stock watchlist CRUD + quote + refresh
+│       ├── settings/           # User settings API (+ data/ for export)
+│       ├── stocks/             # Stock watchlist CRUD + quote + refresh + reorder
+│       ├── health/             # Unauthenticated liveness/readiness probe (rate-limited)
+│       ├── csp/report/         # CSP violation report sink
 │       └── cron/snapshot/      # Daily cron job (requires CRON_SECRET bearer token)
+├── instrumentation.ts          # Server/edge Sentry init (E19)
+├── instrumentation-client.ts   # Browser Sentry init (E19)
 ├── hooks/                      # Client hooks (use-chart-animation, use-count-up, use-is-mobile, use-refresh-cooldown, …)
 └── proxy.ts                    # Server-side proxy module (used by service layer)
 ```
@@ -238,6 +247,8 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 - `stock-watch-service.ts` — stock watchlist (`StockWatchItem`) reads/refresh (backs `/stocks`)
 - `yahoo-client.ts` — shared `yahoo-finance2` client singleton (see Price Pipeline above)
 - `projection-service.ts` — `getProjectionData` for FIRE/retirement projections (uses `"use cache"`)
+- `recurring-cash-service.ts` — recurring cash transactions (`RecurringCashTransaction`), materialized by the daily cron's catch-up loop (F6)
+- `recurring-investment-service.ts` — recurring investment contributions (`RecurringInvestment`), materialized alongside recurring cash
 - `settings-service.ts` — user settings reads/writes
 - `balance.ts` — shared balance/value computation helpers
 
@@ -257,7 +268,16 @@ Config entry point: `src/i18n/request.ts` (loaded by `next.config.ts` via `creat
 
 ### Daily Snapshot Cron
 
-`GET /api/cron/snapshot` — requires `Authorization: Bearer <CRON_SECRET>` header. Refreshes all prices, then creates `NetWorthSnapshot` records for every user. Scheduled in `vercel.json` at `30 21 * * *` (21:30 UTC daily); `maxDuration` is 60s and the function region is pinned to `sin1` to match the Neon database region. (Note: `README.md` still says "00:00 UTC" — `vercel.json` and this file are the source of truth.)
+`GET /api/cron/snapshot` — requires `Authorization: Bearer <CRON_SECRET>` header. Refreshes all prices, materializes due recurring cash/investment transactions (catch-up loop), then creates `NetWorthSnapshot` records for every user and records a `CronRun` row. Scheduled in `vercel.json` at `30 21 * * *` (21:30 UTC daily); `maxDuration` is 60s and the function region is pinned to `sin1` to match the Neon database region.
+
+### Observability (Sentry, CSP, health)
+
+- `@sentry/nextjs` is wired via `next.config.ts` (`withSentryConfig`) and the two `instrumentation*.ts` entry points. It is **fully optional**: with no `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` set it is a complete no-op, so local dev / CI / builds need no Sentry account.
+- `src/lib/sentry-config.ts` — `beforeSend` scrubbing (redacts financial + PII keys) and high-noise warning filtering. `src/lib/sentry-cron.ts` — wraps the daily cron in a Sentry check-in monitor.
+- `src/lib/logger.ts` warnings can be forwarded to Sentry by setting `SENTRY_CAPTURE_WARNINGS`.
+- **CSP**: `next.config.ts` sets a strict Content-Security-Policy; violations are POSTed to `/api/csp/report`. Add any new external host to the `connect-src` allowlist there.
+- **Health probe**: `GET /api/health` — unauthenticated but rate-limited. Rolls DB reachability + cron freshness + latest-snapshot freshness into `status` (`ok`/`degraded`/`unhealthy`); stale > 36h ⇒ 503. Exposes no user data.
+- **PWA**: `src/app/manifest.ts` (web app manifest) + `public/sw.js` (service worker — must never be long-cached; see the `next.config.ts` cache-header note and `tests/unit/service-worker.test.ts`).
 
 ### Unit Testing (Vitest)
 
@@ -280,6 +300,7 @@ src/components/
 ├── ui/           # shadcn/ui primitives (button, dialog, table, etc.)
 ├── accounts/     # Account detail, holding form, transaction history, inline editors
 ├── analysis/     # Analysis view, assets/liabilities chart, cash flow chart, movers list
+├── changelog/    # Version history timeline UI
 ├── dashboard/    # Net worth card, allocation chart, trend chart, accounts summary
 ├── goals/        # Goal cards, goal form dialog, goals view + onboarding
 ├── history/      # History table, pull-to-refresh
@@ -317,6 +338,14 @@ AUTH_REDIRECT_PROXY_URL   # OAuth proxy URL (for tunneled preview deployments)
 PREVIEW_AUTH_PASSWORD     # Required when VERCEL_ENV=preview (unless PREVIEW_AUTH_DISABLED)
 PREVIEW_AUTH_DISABLED     # Set to "1"/"true" to skip preview password gate
 VERCEL_ENV                # Set automatically by Vercel (production | preview | development)
+
+# Optional — Sentry observability (all no-op when unset)
+SENTRY_DSN                # Server + edge error reporting
+NEXT_PUBLIC_SENTRY_DSN    # Browser SDK DSN (client-exposed)
+SENTRY_AUTH_TOKEN         # Enables source-map upload at build time
+SENTRY_ORG                # Sentry org slug (source-map upload)
+SENTRY_PROJECT            # Sentry project slug (source-map upload)
+SENTRY_CAPTURE_WARNINGS   # Forward logger.warn() calls to Sentry
 ```
 
 `DATABASE_URL` is scoped per Vercel environment — Production uses the prod Neon branch, Preview uses a separate shared `preview` Neon branch, so previews never touch live data. Vercel runs the `build:vercel` script (wired via `vercel.json` → `buildCommand`); it runs `prisma migrate deploy` followed by `next build`, skipping the migrate step when no files under `prisma/migrations/` changed since `VERCEL_GIT_PREVIOUS_SHA` (`FORCE_PRISMA_MIGRATE_DEPLOY=1` overrides; `SKIP_PRISMA_MIGRATE_DEPLOY=1` skips unconditionally). CI/local `pnpm build` stays as plain `next build` so it doesn't need a database.

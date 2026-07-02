@@ -1,4 +1,6 @@
 import { revalidateTag } from "next/cache";
+import { after } from "next/server";
+import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 import { prisma } from "@/lib/prisma";
 import { createHoldingSchema, updateHoldingSchema, deleteHoldingSchema } from "@/lib/validators";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
@@ -9,6 +11,8 @@ import { parseOccSymbol, formatOptionLabel, OptionError } from "@/lib/options";
 import { log } from "@/lib/logger";
 
 type IdCtx = { params: Promise<{ id: string }> };
+
+class StaleHoldingError extends Error {}
 
 function invalidateUserCaches(userId: string) {
   revalidateTag(`accounts:${userId}`, { expire: 0 });
@@ -138,7 +142,7 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
   }
 
   invalidateUserCaches(userId);
-  if (holding.currency) void maybeWarmExchangeRate(holding.currency);
+  if (holding.currency) after(() => maybeWarmExchangeRate(holding.currency));
   return ok(holding, { status: 201 });
 });
 
@@ -168,27 +172,49 @@ export const PATCH = withAuth<IdCtx>(async (request, _ctx, userId) => {
     return failure("Quantity must be positive", 400);
   }
 
-  // Update and EDIT audit log commit together — a failed update must not
-  // leave a phantom EDIT transaction behind.
-  const holding = await prisma.$transaction(async (tx) => {
-    const updated = await tx.holding.update({ where: { id }, data });
+  // A manual quantity edit logs the difference as an EDIT holding transaction.
+  // The diff must be measured against the quantity we actually write over, so
+  // the write is guarded on that prior quantity: if a concurrent mutation moved
+  // it between our read and the commit, we reject with 409 rather than letting
+  // the EDIT row desync from the stored quantity. Update and EDIT audit log
+  // commit together — a failed update must not leave a phantom EDIT behind.
+  const quantityChanging =
+    data.quantity !== undefined && !new Decimal(data.quantity).equals(existing.quantity);
 
-    if (data.quantity !== undefined) {
-      const diff = data.quantity - Number(existing.quantity);
-      if (diff !== 0) {
-        await tx.holdingTransaction.create({
-          data: {
-            holdingId: id,
-            type: "EDIT",
-            quantity: diff,
-            note: `Quantity changed from ${Number(existing.quantity)} to ${data.quantity}`,
-          },
-        });
+  let holding;
+  try {
+    holding = await prisma.$transaction(async (tx) => {
+      if (!quantityChanging) {
+        return tx.holding.update({ where: { id }, data });
       }
-    }
 
-    return updated;
-  });
+      const diff = new Decimal(data.quantity!).minus(existing.quantity);
+      await tx.holdingTransaction.create({
+        data: {
+          holdingId: id,
+          type: "EDIT",
+          quantity: diff,
+          note: `Quantity changed from ${existing.quantity} to ${data.quantity}`,
+        },
+      });
+
+      const result = await tx.holding.updateMany({
+        where: { id, quantity: existing.quantity },
+        data,
+      });
+      if (result.count !== 1) {
+        throw new StaleHoldingError();
+      }
+
+      return tx.holding.findUniqueOrThrow({ where: { id } });
+    });
+  } catch (error) {
+    if (error instanceof StaleHoldingError) {
+      return failure("Holding changed while updating; please retry", 409);
+    }
+    throw error;
+  }
+
   invalidateUserCaches(userId);
   return ok(holding);
 });

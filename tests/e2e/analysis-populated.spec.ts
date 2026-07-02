@@ -20,7 +20,9 @@ test("analysis renders populated desktop charts without layout overflow", async 
     await expect(page.getByText("Assets vs. Liabilities by Month")).toBeVisible({
       timeout: 20_000,
     });
-    await expect(page.getByText("Year to date").first()).toBeVisible();
+    await expect(page.getByText("Latest snapshot vs. Jan 1")).toBeVisible();
+    // Section headings carry the active range as a suffix (e.g. "Composition YTD"),
+    // so anchor at the start to avoid matching "Cash Flow Decomposition".
     await expect(page.getByRole("heading", { name: /^Movement/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: /^Composition/ })).toBeVisible();
     await expect(page.getByText("Performance Attribution")).toBeVisible();

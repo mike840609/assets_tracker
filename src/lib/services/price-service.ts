@@ -475,6 +475,12 @@ async function refreshPricesForHoldings(
     updated = entries.length;
     changed = pendingChanged;
     if (changed > 0) revalidateTag("prices", "max");
+
+    // Partial fetch: symbols we claimed but got no price for (bad/transient
+    // ticker) keep their refreshingAt set by the upsert (it only clears rows it
+    // touched). Release them so a retry isn't blocked for the full 30s TTL.
+    const fetchedSet = new Set(entries.map(([symbol]) => symbol));
+    await releaseClaims(claimedSymbols.filter((symbol) => !fetchedSet.has(symbol)));
   } catch (error) {
     errors.push(`Bulk upsert failed: ${String(error)}`);
     // Release claims so the next request can retry immediately.

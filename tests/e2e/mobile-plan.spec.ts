@@ -67,7 +67,13 @@ test.describe("desktop plan split", () => {
     await page.goto("/stocks");
     // exact: the StocksOnboarding heading ("Start a watchlist from…") also matches a
     // substring-based "Watchlist" heading query.
-    await expect(page.getByRole("heading", { name: "Watchlist", exact: true })).toBeVisible();
+    // The page title + subtitle render from `stocks.title` / `stocks.subtitle` regardless of
+    // watchlist contents, so this is independent of any items a parallel stocks.spec.ts test
+    // may have left on the shared test user. Use a generous first-assertion timeout because the
+    // suite runs fullyParallel against a shared (sometimes cold) preview deployment.
+    await expect(page.getByRole("heading", { name: "Watchlist", exact: true })).toBeVisible({
+      timeout: 20_000,
+    });
     await expect(page.getByText("Track stocks from a chosen price and date.")).toBeVisible();
   });
 });

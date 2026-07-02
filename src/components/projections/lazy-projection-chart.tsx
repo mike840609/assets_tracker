@@ -1,16 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Card, CardContent } from "@/components/ui/card";
 
+// The chart renders directly inside the parent CardContent (no card of its own)
+// at the height ProjectionView passes (420). Match both so the chunk-load swap
+// doesn't add padding or jump the row.
 function ChartSkeleton() {
-  return (
-    <Card className="border-0 bg-transparent shadow-none">
-      <CardContent className="p-4">
-        <div className="h-[320px] bg-muted animate-pulse rounded" />
-      </CardContent>
-    </Card>
-  );
+  return <div className="h-[420px] w-full animate-pulse rounded-lg bg-muted" />;
 }
 
 export const LazyProjectionChart = dynamic(

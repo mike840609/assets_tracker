@@ -1,4 +1,5 @@
 import { Suspense, cache } from "react";
+import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { NetWorthCard } from "@/components/dashboard/net-worth-card";
 import { LazyAllocationChart, LazyCurrencyExposureChart } from "@/components/dashboard/lazy-charts";
@@ -22,6 +23,7 @@ import { GoalsMilestoneCard } from "@/components/dashboard/goals-milestone-card"
 import { ProjectionEntryCard } from "@/components/dashboard/projection-entry-card";
 import { PortfolioHeatmap } from "@/components/analysis/portfolio-heatmap";
 import { WatchlistCard } from "@/components/dashboard/watchlist-card";
+import { WatchlistCardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import Link from "next/link";
 import { ArrowRight, History } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -29,15 +31,52 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardOnboarding } from "./dashboard-onboarding";
 import { getCachedTrackedStocks } from "@/lib/services/stock-watch-service";
+import { countActiveAccounts } from "@/lib/services/account-service";
 import type { GoalWithProgress } from "@/lib/types";
 
-const fetchPreviousSnapshot = cache((userId: string) =>
-  prisma.netWorthSnapshot.findFirst({
+/**
+ * Cached previous-snapshot read — on the LCP critical path (NetWorthSection),
+ * so it must not cost a live DB roundtrip per view. Snapshots are only written
+ * by the cron and the data import, both of which revalidate `snapshots` /
+ * `history:${userId}`. Returns a serialized shape (`"use cache"` can't carry
+ * Prisma Decimal/Date).
+ */
+async function fetchPreviousSnapshotInner(userId: string) {
+  "use cache";
+  cacheTag("snapshots");
+  cacheTag(`history:${userId}`);
+  cacheLife("hours");
+  const snapshot = await prisma.netWorthSnapshot.findFirst({
     where: { userId },
     orderBy: { date: "desc" },
     select: { date: true, netWorth: true, baseCurrency: true, createdAt: true },
-  }),
-);
+  });
+  if (!snapshot) return null;
+  return {
+    date: snapshot.date.toISOString(),
+    netWorth: Number(snapshot.netWorth),
+    baseCurrency: snapshot.baseCurrency,
+    createdAt: snapshot.createdAt.toISOString(),
+  };
+}
+
+const fetchPreviousSnapshot = cache(fetchPreviousSnapshotInner);
+
+/**
+ * Cached "prices last updated" read. Invalidated via the `prices` tag on
+ * refresh paths; the client-side `clientRefreshAt` overlay in DashboardActions
+ * covers refreshes that changed nothing.
+ */
+async function fetchLastPriceUpdate(): Promise<string | null> {
+  "use cache";
+  cacheTag("prices");
+  cacheLife("hours");
+  const latest = await prisma.priceCache.findFirst({
+    orderBy: { updatedAt: "desc" },
+    select: { updatedAt: true },
+  });
+  return latest?.updatedAt.toISOString() ?? null;
+}
 
 /* ---------- Section skeleton helpers ---------- */
 
@@ -139,21 +178,16 @@ async function DashboardActionsSection({
   userId: string;
   baseCurrency: string;
 }) {
-  const [previousSnapshot, latestPrice] = await Promise.all([
+  const [previousSnapshot, lastPriceUpdate] = await Promise.all([
     fetchPreviousSnapshot(userId),
-    prisma.priceCache.findFirst({
-      orderBy: { updatedAt: "desc" },
-      select: { updatedAt: true },
-    }),
+    fetchLastPriceUpdate(),
   ]);
-
-  const latestSnapshotDate = previousSnapshot?.createdAt?.toISOString() ?? null;
 
   return (
     <DashboardActions
       baseCurrency={baseCurrency}
-      lastPriceUpdate={latestPrice?.updatedAt?.toISOString() ?? null}
-      lastSnapshotDate={latestSnapshotDate}
+      lastPriceUpdate={lastPriceUpdate}
+      lastSnapshotDate={previousSnapshot?.createdAt ?? null}
     />
   );
 }
@@ -173,11 +207,11 @@ async function NetWorthSection({ userId, baseCurrency }: { userId: string; baseC
   let previousNetWorth: number | undefined;
   if (previousSnapshot) {
     if (previousSnapshot.baseCurrency === baseCurrency) {
-      previousNetWorth = Number(previousSnapshot.netWorth);
+      previousNetWorth = previousSnapshot.netWorth;
     } else {
       const rateMap = await getAllExchangeRates();
       const rate = resolveRate(rateMap, previousSnapshot.baseCurrency, baseCurrency);
-      if (rate !== undefined) previousNetWorth = Number(previousSnapshot.netWorth) * rate;
+      if (rate !== undefined) previousNetWorth = previousSnapshot.netWorth * rate;
     }
   }
 
@@ -185,9 +219,7 @@ async function NetWorthSection({ userId, baseCurrency }: { userId: string; baseC
     <NetWorthCard
       summary={summary}
       previousNetWorth={previousNetWorth}
-      previousSnapshotDate={
-        previousNetWorth !== undefined ? previousSnapshot?.date?.toISOString() : undefined
-      }
+      previousSnapshotDate={previousNetWorth !== undefined ? previousSnapshot?.date : undefined}
     />
   );
 }
@@ -356,7 +388,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
   const [settings, accountCount] = await Promise.all([
     settingsP,
     // Fast check: does this user have any active accounts?
-    prisma.account.count({ where: { userId, isActive: true } }),
+    countActiveAccounts(userId),
   ]);
   const baseCurrency = settings.baseCurrency;
 
@@ -390,7 +422,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
           <Suspense fallback={null}>
             <GoalsMilestoneSection userId={userId} baseCurrency={baseCurrency} />
           </Suspense>
-          <Suspense fallback={<ChartCardSkeleton />}>
+          <Suspense fallback={<WatchlistCardSkeleton />}>
             <WatchlistSection userId={userId} />
           </Suspense>
         </div>

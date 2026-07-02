@@ -96,8 +96,10 @@ export function AnalysisView({
   const { density } = useDensity();
   const isMobile = useIsMobile();
   const isCompact = density === "compact";
-  // Keep side-by-side gaps equal to the vertical rhythm between stacked rows.
-  const gridGapClass = isCompact ? "gap-3" : "gap-6";
+  // On mobile the two charts in a section stack and read as one group, so the gap
+  // between them stays tighter than the gap between sections (set below). Desktop
+  // lays them side-by-side, where the wider gap matches the column rhythm.
+  const gridGapClass = isCompact ? "gap-3" : "gap-4 xl:gap-6";
   const stackGapClass = isCompact ? "space-y-3" : "space-y-6";
   const [range, setRange] = usePersistedRange<RangeLabel>(
     "analysis-view",
@@ -268,8 +270,8 @@ export function AnalysisView({
             value={range}
             onValueChange={setRange}
             aria-label={t("title")}
-            className="bg-background/80 dark:bg-card/70 ring-1 ring-border/50 backdrop-blur-md"
-            itemClassName="px-3 py-2 sm:px-2 sm:py-1"
+            className="flex-nowrap bg-background/80 dark:bg-card/70 ring-1 ring-border/50 backdrop-blur-md"
+            itemClassName="px-2 py-1.5 sm:px-2 sm:py-1"
           />
         </div>
 
@@ -306,19 +308,18 @@ export function AnalysisView({
               </Card>
             </section>
 
-            {/* Secondary analysis is grouped by question: movement first, then composition. */}
-            <div className={isCompact ? "space-y-3" : "space-y-4"}>
+            {/* Secondary analysis is grouped by question: movement first, then composition.
+                On mobile the sections separate more than the charts within them (gridGapClass),
+                so each question reads as its own group; desktop keeps them tighter. */}
+            <div className={isCompact ? "space-y-3" : "space-y-6 xl:space-y-4"}>
               <section
                 aria-label={`${t("cashFlow")} / ${t("cumulativeGrowth")}`}
                 className={isCompact ? "space-y-2" : "space-y-3"}
               >
                 <div className="flex flex-wrap items-end justify-between gap-2">
                   <div>
-                    <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <h2 className="text-lg font-semibold tracking-tight text-foreground">
                       {t("movementSectionTitle")}
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                        {activeRangeLabel}
-                      </span>
                     </h2>
                     <p className="text-xs text-muted-foreground">{t("movementSectionSubtitle")}</p>
                   </div>
@@ -342,11 +343,8 @@ export function AnalysisView({
               >
                 <div className="flex flex-wrap items-end justify-between gap-2">
                   <div>
-                    <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <h2 className="text-lg font-semibold tracking-tight text-foreground">
                       {t("compositionSectionTitle")}
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                        {activeRangeLabel}
-                      </span>
                     </h2>
                     <p className="text-xs text-muted-foreground">
                       {t("compositionSectionSubtitle")}

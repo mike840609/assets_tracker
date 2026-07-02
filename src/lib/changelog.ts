@@ -39,7 +39,7 @@ export interface Release {
 export const CHANGELOG: Release[] = [
   {
     version: "0.9.0",
-    date: "2026-06-23",
+    date: "2026-07-02",
     summary: {
       "en-US": "Clearer, leaner Analysis charts, plus a cumulative growth view.",
       "zh-TW": "更清晰、更精簡的分析圖表，並新增累積成長檢視。",
@@ -77,6 +77,75 @@ export const CHANGELOG: Release[] = [
           "en-US":
             "The Cash Flow chart now shows the true monthly net change even when deposits and market movement pull in opposite directions.",
           "zh-TW": "即使存入金額與市場變動方向相反，現金流圖表現在也能正確顯示每月淨變化。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.8.8",
+    date: "2026-07-02",
+    summary: {
+      "en-US": "Faster page loads through cached dashboard reads.",
+      "zh-TW": "透過快取儀表板讀取，加快頁面載入速度。",
+    },
+    changes: [
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "The dashboard, History, Analysis, and Projections pages now serve their remaining reads from cache, removing live database roundtrips from every page view.",
+          "zh-TW":
+            "儀表板、歷史、分析與預測頁面剩餘的讀取現在改由快取提供，每次瀏覽頁面不再需要即時資料庫往返。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Goal progress projections now read their snapshot history from cache, speeding up the dashboard milestone card and the Goals page.",
+          "zh-TW": "目標進度預測現在從快取讀取快照歷史，加快儀表板里程碑卡片與目標頁面的載入。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.8.7",
+    date: "2026-06-24",
+    summary: {
+      "en-US": "Tidier Analysis tab on mobile.",
+      "zh-TW": "行動版分析頁面更整潔。",
+    },
+    changes: [
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "On mobile, the Analysis summary now shows the year-to-date headline up front and folds the range breakdown and methodology behind a tap, so the charts are reachable with less scrolling.",
+          "zh-TW":
+            "行動版的分析摘要現在優先顯示今年迄今的重點數字，並將區間明細與計算說明收合於點按之後，讓圖表更快可見、減少捲動。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Refined spacing and heading hierarchy on the mobile Analysis tab so each section reads as its own group.",
+          "zh-TW": "調整行動版分析頁面的間距與標題層級，讓每個區段更像獨立群組。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "The Analysis time-range selector no longer wraps onto two rows on small screens.",
+          "zh-TW": "分析頁面的時間範圍選擇器在小螢幕上不再換成兩行。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US": "Muted helper text on the Analysis tab now meets WCAG AA contrast.",
+          "zh-TW": "分析頁面的次要說明文字現已符合 WCAG AA 對比標準。",
         },
       },
     ],

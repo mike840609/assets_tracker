@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAccountSchema } from "@/lib/validators";
 import { ok, failure, validationError } from "@/lib/api-responses";
@@ -85,6 +86,6 @@ export const POST = withAuth(async (request, _ctx, userId) => {
     },
   });
   invalidateUserCaches(userId);
-  void maybeWarmExchangeRate(account.currency);
+  after(() => maybeWarmExchangeRate(account.currency));
   return ok(account, { status: 201 });
 });

@@ -42,7 +42,39 @@ function getCurrentAmount(goal: SerializedGoal, summary: NetWorthSummary): numbe
   }
 }
 
-type SnapshotRow = { date: Date; netWorth: number; totalAssets: number };
+type SnapshotRow = { date: string; netWorth: number; totalAssets: number };
+
+/**
+ * Cached 90-day snapshot window backing the goal projections. Was the only
+ * uncached read on the dashboard's goals section; the cron / data import
+ * revalidate `snapshots` + `history:${userId}` after every snapshot write.
+ * The 90-day floor is captured at cache-fill time — same accepted drift as
+ * getNormalizedHistory. Serialized shape (`"use cache"` can't carry
+ * Prisma Decimal/Date).
+ */
+async function fetchRecentSnapshotsInner(
+  userId: string,
+  baseCurrency: string,
+): Promise<SnapshotRow[]> {
+  "use cache";
+  cacheTag("snapshots");
+  cacheTag(`history:${userId}`);
+  cacheLife("hours");
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  const rows = await prisma.netWorthSnapshot.findMany({
+    where: { userId, baseCurrency, date: { gte: ninetyDaysAgo } },
+    orderBy: { date: "asc" },
+    select: { date: true, netWorth: true, totalAssets: true },
+  });
+  return rows.map((s) => ({
+    date: s.date.toISOString(),
+    netWorth: Number(s.netWorth),
+    totalAssets: Number(s.totalAssets),
+  }));
+}
+
+const fetchRecentSnapshots = cache(fetchRecentSnapshotsInner);
 
 function computeProjection(
   goal: SerializedGoal,
@@ -66,7 +98,7 @@ function computeProjection(
 
   const daysDiff = Math.max(
     1,
-    (last.date.getTime() - first.date.getTime()) / (1000 * 60 * 60 * 24),
+    (Date.parse(last.date) - Date.parse(first.date)) / (1000 * 60 * 60 * 24),
   );
 
   let linearDate: string | null = null;
@@ -99,25 +131,12 @@ export async function computeGoalsWithProgress(
   userId: string,
   baseCurrency: string,
 ): Promise<GoalWithProgress[]> {
-  const ninetyDaysAgo = new Date();
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-
-  const [goals, summary, rateMap, rawSnapshots] = await Promise.all([
+  const [goals, summary, rateMap, snapshots] = await Promise.all([
     fetchUserGoals(userId),
     getCachedNetWorthSummary(userId, baseCurrency),
     getAllExchangeRates(),
-    prisma.netWorthSnapshot.findMany({
-      where: { userId, baseCurrency, date: { gte: ninetyDaysAgo } },
-      orderBy: { date: "asc" },
-      select: { date: true, netWorth: true, totalAssets: true },
-    }),
+    fetchRecentSnapshots(userId, baseCurrency),
   ]);
-
-  const snapshots: SnapshotRow[] = rawSnapshots.map((s) => ({
-    date: s.date as Date,
-    netWorth: Number(s.netWorth),
-    totalAssets: Number(s.totalAssets),
-  }));
 
   return goals.map((goal) => {
     const currentAmount = getCurrentAmount(goal, summary);
