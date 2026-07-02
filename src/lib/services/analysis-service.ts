@@ -246,17 +246,6 @@ export interface CategoryDataPoint {
   [category: string]: number | string;
 }
 
-/** One account's value change over the selected period. */
-export interface TopMover {
-  accountId: string;
-  accountName: string;
-  category: string;
-  startValue: number;
-  endValue: number;
-  absoluteChange: number;
-  percentChange: number | null;
-}
-
 // ---------------------------------------------------------------------------
 // Phase 2 pure functions (no DB access)
 // ---------------------------------------------------------------------------
@@ -284,6 +273,45 @@ export function buildCashFlowBuckets(
       contributions: contrib,
       marketPerformance: b.deltaNetWorth - contrib,
       deltaNetWorth: b.deltaNetWorth,
+      isEmpty: b.isEmpty,
+    };
+  });
+}
+
+/** One month's cumulative (running-total) decomposition of net-worth growth. */
+export interface CumulativeGrowthPoint {
+  /** "YYYY-MM" */
+  monthKey: string;
+  /** Human-readable label (carried from the source CashFlowBucket). */
+  label: string;
+  /** Running total of net cash deposited/withdrawn since the range start. */
+  cumulativeContributions: number;
+  /** Running total of market gains/losses since the range start. */
+  cumulativeMarket: number;
+  /** cumulativeContributions + cumulativeMarket. */
+  cumulativeTotal: number;
+  isEmpty?: boolean;
+}
+
+/**
+ * Turn per-month cash-flow buckets into cumulative running totals, so a stacked
+ * area can show how much of the range's net-worth growth came from saving vs.
+ * the market. Empty (padded) months add zero, leaving the running totals flat.
+ *
+ * @param buckets  Output of buildCashFlowBuckets() (padded, sorted asc).
+ */
+export function buildCumulativeGrowth(buckets: CashFlowBucket[]): CumulativeGrowthPoint[] {
+  let contrib = 0;
+  let market = 0;
+  return buckets.map((b) => {
+    contrib += b.contributions;
+    market += b.marketPerformance;
+    return {
+      monthKey: b.monthKey,
+      label: b.label,
+      cumulativeContributions: contrib,
+      cumulativeMarket: market,
+      cumulativeTotal: contrib + market,
       isEmpty: b.isEmpty,
     };
   });
@@ -386,42 +414,5 @@ export function computePerformanceAttribution(
     })
     .filter((a) => a.totalDelta !== 0 || a.cashContribution !== 0)
     .sort((a, b) => Math.abs(b.totalDelta) - Math.abs(a.totalDelta))
-    .slice(0, 10);
-}
-
-/**
- * Return the top 10 accounts ranked by absolute value change between the
- * first and last snapshot in the (already-filtered) snapshots array.
- *
- * @param snapshots  From getRawHistoryWithBreakdown().snapshots, filtered to range.
- * @param accounts   From getRawHistoryWithBreakdown().accounts.
- */
-export function computeTopMovers(
-  snapshots: SnapshotBreakdown[],
-  accounts: AccountMeta[],
-): TopMover[] {
-  if (snapshots.length < 2) return [];
-
-  const startSnap = snapshots[0];
-  const endSnap = snapshots[snapshots.length - 1];
-
-  return accounts
-    .map((a) => {
-      const startValue = startSnap.accountValues[a.id] ?? 0;
-      const endValue = endSnap.accountValues[a.id] ?? 0;
-      const absoluteChange = endValue - startValue;
-      const percentChange = startValue === 0 ? null : (absoluteChange / startValue) * 100;
-      return {
-        accountId: a.id,
-        accountName: a.name,
-        category: a.category,
-        startValue,
-        endValue,
-        absoluteChange,
-        percentChange,
-      };
-    })
-    .filter((m) => m.startValue !== 0 || m.endValue !== 0)
-    .sort((a, b) => Math.abs(b.absoluteChange) - Math.abs(a.absoluteChange))
     .slice(0, 10);
 }

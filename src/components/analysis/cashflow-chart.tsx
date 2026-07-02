@@ -1,7 +1,16 @@
 "use client";
 
-import { memo, useEffect, useState, startTransition } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
+import { memo, useEffect, useMemo, useState, startTransition } from "react";
+import {
+  Bar,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Line,
+  ReferenceLine,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartEmptyState } from "./chart-empty-state";
@@ -100,6 +109,12 @@ export const CashFlowChart = memo(function CashFlowChart({ buckets, baseCurrency
   useEffect(() => startTransition(() => setMounted(true)), []);
   const xAxisInterval = getMonthTickInterval(buckets.length, density === "compact" ? 5 : 6);
 
+  // Break the net-delta line on padded months instead of dragging it to zero.
+  const chartData = useMemo(
+    () => buckets.map((b) => ({ ...b, deltaLine: b.isEmpty ? null : b.deltaNetWorth })),
+    [buckets],
+  );
+
   return (
     <>
       <CardHeader className="pb-2 px-2 sm:px-4">
@@ -134,6 +149,14 @@ export const CashFlowChart = memo(function CashFlowChart({ buckets, baseCurrency
                 />
                 {t("seriesMarket")}
               </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="inline-block h-0.5 w-3.5 rounded-full"
+                  style={{ background: "var(--primary)" }}
+                />
+                {t("tooltipChange")}
+              </span>
             </div>
             <div
               role="img"
@@ -146,12 +169,13 @@ export const CashFlowChart = memo(function CashFlowChart({ buckets, baseCurrency
                 style={{ height: "100%" }}
                 initialDimension={{ width: 1, height: chartHeight }}
               >
-                <BarChart
-                  data={buckets}
+                <ComposedChart
+                  data={chartData}
                   margin={{ top: 8, right: 4, left: 0, bottom: 12 }}
                   {...crosshairHandlers}
                 >
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <ReferenceLine y={0} stroke="var(--border)" strokeWidth={1.5} />
                   <XAxis
                     dataKey="label"
                     interval={xAxisInterval}
@@ -213,7 +237,20 @@ export const CashFlowChart = memo(function CashFlowChart({ buckets, baseCurrency
                       />
                     ))}
                   </Bar>
-                </BarChart>
+                  {/* Net delta line — always shows the true monthly change, even in
+                      mixed-sign months where the stacked bars don't sum visually. */}
+                  <Line
+                    type="monotone"
+                    dataKey="deltaLine"
+                    name={t("tooltipChange")}
+                    stroke="var(--primary)"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 3 }}
+                    connectNulls={false}
+                    isAnimationActive={isAnimationActive}
+                  />
+                </ComposedChart>
               </ChartContainer>
             </div>
             <p className="mt-2 text-[11px] text-muted-foreground">{t("cashFlowNote")}</p>

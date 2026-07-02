@@ -22,20 +22,19 @@ import {
   computeKpis,
   fillMonthRange,
   buildCashFlowBuckets,
+  buildCumulativeGrowth,
   aggregateCategoryHistory,
-  computeTopMovers,
   computePerformanceAttribution,
 } from "@/lib/services/analysis-service";
 import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/analysis-service";
 import {
-  LazyMonthlyChangeChart,
   LazyAssetsLiabilitiesChart,
   LazyCashFlowChart,
+  LazyCumulativeGrowthChart,
   LazyCategoryTrendChart,
   LazyAttributionChart,
 } from "./lazy-analysis-charts";
 import { KpiTiles } from "./kpi-tiles";
-import { TopMoversList } from "./top-movers-list";
 import { AnalysisEmptyState } from "./analysis-empty-state";
 
 interface Props {
@@ -181,6 +180,8 @@ export function AnalysisView({
     return buildCashFlowBuckets(buckets, filtered, locale);
   }, [cashFlowData, buckets, rangeStartIso, locale]);
 
+  const cumulativeGrowth = useMemo(() => buildCumulativeGrowth(cashFlowBuckets), [cashFlowBuckets]);
+
   // Raw history filtered to range
   const filteredRawSnapshots = useMemo((): SnapshotBreakdown[] => {
     return rawHistory.snapshots.filter((s) => s.date >= rangeStartIso);
@@ -200,11 +201,6 @@ export function AnalysisView({
       return empty as CategoryDataPoint;
     });
   }, [filteredRawSnapshots, rawHistory.accounts, buckets]);
-
-  const topMovers = useMemo(
-    () => computeTopMovers(filteredRawSnapshots, rawHistory.accounts),
-    [filteredRawSnapshots, rawHistory.accounts],
-  );
 
   const attributionItems = useMemo(
     () =>
@@ -317,7 +313,7 @@ export function AnalysisView({
                 so each question reads as its own group; desktop keeps them tighter. */}
             <div className={isCompact ? "space-y-3" : "space-y-6 xl:space-y-4"}>
               <section
-                aria-label={`${t("monthlyChange")} / ${t("cashFlow")}`}
+                aria-label={`${t("cashFlow")} / ${t("cumulativeGrowth")}`}
                 className={isCompact ? "space-y-2" : "space-y-3"}
               >
                 <div className="flex flex-wrap items-end justify-between gap-2">
@@ -330,14 +326,13 @@ export function AnalysisView({
                 </div>
                 <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>
                   <Card size="sm" className="h-full">
-                    <LazyMonthlyChangeChart
-                      buckets={buckets}
-                      baseCurrency={baseCurrency}
-                      locale={locale}
-                    />
+                    <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
                   </Card>
                   <Card size="sm" className="h-full">
-                    <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+                    <LazyCumulativeGrowthChart
+                      points={cumulativeGrowth}
+                      baseCurrency={baseCurrency}
+                    />
                   </Card>
                 </div>
               </section>
@@ -370,9 +365,6 @@ export function AnalysisView({
                 </div>
               </section>
             </div>
-
-            {/* Per-account detail — full-width table reads best wide */}
-            <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
           </motion.div>
         )}
       </MountedAnalysis>

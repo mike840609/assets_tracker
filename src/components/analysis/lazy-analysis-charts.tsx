@@ -23,11 +23,6 @@ function ChartSkeleton({ height = 200 }: { height?: number }) {
   );
 }
 
-export const LazyMonthlyChangeChart = dynamic(
-  () => import("./monthly-change-chart").then((m) => m.MonthlyChangeChart),
-  { loading: () => <ChartSkeleton /> },
-);
-
 export const LazyAssetsLiabilitiesChart = dynamic(
   () => import("./assets-liabilities-chart").then((m) => m.AssetsLiabilitiesChart),
   { loading: () => <ChartSkeleton height={180} /> },
@@ -35,6 +30,11 @@ export const LazyAssetsLiabilitiesChart = dynamic(
 
 export const LazyCashFlowChart = dynamic(
   () => import("./cashflow-chart").then((m) => m.CashFlowChart),
+  { loading: () => <ChartSkeleton /> },
+);
+
+export const LazyCumulativeGrowthChart = dynamic(
+  () => import("./cumulative-growth-chart").then((m) => m.CumulativeGrowthChart),
   { loading: () => <ChartSkeleton /> },
 );
 

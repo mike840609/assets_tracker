@@ -5,9 +5,9 @@ import {
   computeKpis,
   formatMonthLabel,
   buildCashFlowBuckets,
+  buildCumulativeGrowth,
   aggregateCategoryHistory,
   computePerformanceAttribution,
-  computeTopMovers,
 } from "@/lib/services/analysis-service";
 import type {
   NormalizedSnapshot,
@@ -166,6 +166,41 @@ describe("buildCashFlowBuckets", () => {
   });
 });
 
+describe("buildCumulativeGrowth", () => {
+  const bucket = (
+    monthKey: string,
+    contributions: number,
+    marketPerformance: number,
+    isEmpty = false,
+  ) => ({
+    monthKey,
+    label: monthKey,
+    contributions,
+    marketPerformance,
+    deltaNetWorth: contributions + marketPerformance,
+    isEmpty,
+  });
+
+  it("accumulates contributions and market into running totals", () => {
+    const result = buildCumulativeGrowth([
+      bucket("2026-01", 100, 20),
+      bucket("2026-02", 50, -10),
+      bucket("2026-03", 0, 30),
+    ]);
+    expect(result.map((p) => p.cumulativeContributions)).toEqual([100, 150, 150]);
+    expect(result.map((p) => p.cumulativeMarket)).toEqual([20, 10, 40]);
+    expect(result.map((p) => p.cumulativeTotal)).toEqual([120, 160, 190]);
+  });
+
+  it("keeps the running total flat across empty padded months", () => {
+    const result = buildCumulativeGrowth([
+      bucket("2026-01", 100, 20),
+      bucket("2026-02", 0, 0, true),
+    ]);
+    expect(result[1]).toMatchObject({ cumulativeContributions: 100, cumulativeTotal: 120 });
+  });
+});
+
 describe("aggregateCategoryHistory", () => {
   const accounts: AccountMeta[] = [
     { id: "a1", name: "Brokerage", category: "INVESTMENT" },
@@ -185,29 +220,6 @@ describe("aggregateCategoryHistory", () => {
 
   it("returns [] when there are no snapshots", () => {
     expect(aggregateCategoryHistory([], accounts)).toEqual([]);
-  });
-});
-
-describe("computeTopMovers", () => {
-  const accounts: AccountMeta[] = [
-    { id: "a1", name: "Brokerage", category: "INVESTMENT" },
-    { id: "a2", name: "Savings", category: "CASH" },
-  ];
-
-  it("ranks by absolute change and drops untouched accounts", () => {
-    const snapshots: SnapshotBreakdown[] = [
-      { date: "2026-01-01", accountValues: { a1: 100, a2: 1000 } },
-      { date: "2026-02-01", accountValues: { a1: 400, a2: 1010 } },
-    ];
-    const movers = computeTopMovers(snapshots, accounts);
-    expect(movers.map((m) => m.accountId)).toEqual(["a1", "a2"]);
-    expect(movers[0]).toMatchObject({ absoluteChange: 300, percentChange: 300 });
-  });
-
-  it("returns [] when fewer than two snapshots", () => {
-    expect(computeTopMovers([{ date: "2026-01-01", accountValues: { a1: 1 } }], accounts)).toEqual(
-      [],
-    );
   });
 });
 

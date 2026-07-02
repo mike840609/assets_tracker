@@ -50,8 +50,8 @@ test("analysis renders populated desktop charts without layout overflow", async 
       return {
         chartCount: document.querySelectorAll(".recharts-surface").length,
         hasHorizontalOverflow: documentElement.scrollWidth > documentElement.clientWidth,
-        monthlyCashHeightDiff: Math.abs(
-          cardHeight("Monthly Net Worth Change") - cardHeight("Cash Flow Decomposition"),
+        movementHeightDiff: Math.abs(
+          cardHeight("Cash Flow Decomposition") - cardHeight("Cumulative Growth"),
         ),
         compositionHeightDiff: Math.abs(
           cardHeight("Category Trend") - cardHeight("Performance Attribution"),
@@ -61,7 +61,7 @@ test("analysis renders populated desktop charts without layout overflow", async 
 
     expect(layout.hasHorizontalOverflow).toBeFalsy();
     expect(layout.chartCount).toBeGreaterThanOrEqual(5);
-    expect(layout.monthlyCashHeightDiff).toBeLessThanOrEqual(8);
+    expect(layout.movementHeightDiff).toBeLessThanOrEqual(8);
     expect(layout.compositionHeightDiff).toBeLessThanOrEqual(8);
 
     await testInfo.attach("analysis-populated-desktop", {
