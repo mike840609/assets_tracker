@@ -6,7 +6,7 @@ import { getCachedAnalysisPayload } from "@/lib/services/analysis-payload-servic
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AnalysisView } from "@/components/analysis/analysis-view";
-import { prisma } from "@/lib/prisma";
+import { countActiveAccounts } from "@/lib/services/account-service";
 
 const CLIENT_NAMESPACES = ["analysis", "categories", "nav", "trendChart", "history", "freshness"];
 
@@ -29,7 +29,7 @@ async function AnalysisContent() {
     getLocale(),
     settingsP.then((s) => getCachedAnalysisPayload(userId, s.baseCurrency)),
     settingsP,
-    prisma.account.count({ where: { userId, isActive: true } }),
+    countActiveAccounts(userId),
   ]);
 
   return (

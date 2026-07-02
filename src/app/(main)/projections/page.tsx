@@ -7,7 +7,7 @@ import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { MobileHubRedirect } from "@/components/layout/mobile-hub-redirect";
 import { ProjectionView } from "@/components/projections/projection-view";
-import { prisma } from "@/lib/prisma";
+import { countActiveAccounts } from "@/lib/services/account-service";
 
 const CLIENT_NAMESPACES = ["projections"];
 
@@ -22,7 +22,7 @@ async function ProjectionsContent() {
     getMessages(),
     settingsP.then((s) => getProjectionData(userId, s.baseCurrency)),
     settingsP,
-    prisma.account.count({ where: { userId, isActive: true } }),
+    countActiveAccounts(userId),
   ]);
 
   return (

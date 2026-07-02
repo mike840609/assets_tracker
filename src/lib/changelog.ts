@@ -38,6 +38,33 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.8.8",
+    date: "2026-07-02",
+    summary: {
+      "en-US": "Faster page loads through cached dashboard reads.",
+      "zh-TW": "透過快取儀表板讀取，加快頁面載入速度。",
+    },
+    changes: [
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "The dashboard, History, Analysis, and Projections pages now serve their remaining reads from cache, removing live database roundtrips from every page view.",
+          "zh-TW":
+            "儀表板、歷史、分析與預測頁面剩餘的讀取現在改由快取提供，每次瀏覽頁面不再需要即時資料庫往返。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Goal progress projections now read their snapshot history from cache, speeding up the dashboard milestone card and the Goals page.",
+          "zh-TW": "目標進度預測現在從快取讀取快照歷史，加快儀表板里程碑卡片與目標頁面的載入。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.8.7",
     date: "2026-06-24",
     summary: {
