@@ -1,7 +1,10 @@
 import "server-only";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { refreshPricesForStockSymbols } from "@/lib/services/price-service";
+import {
+  normalizeMinorCurrencyQuote,
+  refreshPricesForStockSymbols,
+} from "@/lib/services/price-service";
 import { getYahooClient } from "@/lib/services/yahoo-client";
 import { PRICE_REFRESH_TTL_MS } from "@/lib/refresh-policy";
 import { log } from "@/lib/logger";
@@ -129,12 +132,20 @@ export async function fetchEquityQuote(symbol: string): Promise<{
     return null;
   }
 
+  // Normalize minor-unit quotes (LSE pence "GBp", JSE cents "ZAc") to the major
+  // ISO unit so both the PriceCache write in warmStockPrice and the watch item's
+  // stored currency stay consistent with the holdings pipeline.
+  const { price, currency } = normalizeMinorCurrencyQuote(
+    quote.regularMarketPrice,
+    quote.currency || "USD",
+  );
+
   return {
     symbol: quote.symbol || normalized,
     name: quote.longName || quote.shortName || normalized,
     exchange: quote.fullExchangeName || quote.exchange || "",
-    currency: quote.currency || "USD",
-    price: quote.regularMarketPrice,
+    currency,
+    price,
   };
 }
 

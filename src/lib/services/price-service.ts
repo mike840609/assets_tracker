@@ -93,6 +93,38 @@ const COINGECKO_IDS: Record<string, string> = {
   APT: "aptos",
 };
 
+// Some exchanges are quoted by Yahoo in a currency's *minor* unit rather than
+// its major ISO unit: London (`.L`) trades in pence tagged "GBp" and
+// Johannesburg (`.JO`) in cents tagged "ZAc" — each 1/100 of the major unit.
+// Stored verbatim, a £0.70 share (7000 "GBp") is later valued as if it were
+// £70 (100x overstatement) because no FX provider carries a "GBp"/"ZAc" rate.
+// Normalize such quotes to the major unit + ISO code at the single ingest
+// chokepoint so every downstream consumer (net worth, analysis, watchlist)
+// sees a consistent major-unit price.
+//
+// Case sensitivity matters: "GBp" (minor) and "GBP" (major) differ only by
+// case, so a naive lowercase compare would collapse them. We therefore match
+// the pence/cent tokens exactly (case-sensitive), and only the unambiguous
+// X-suffixed variants (GBX/ZAX — no major currency uses them) case-insensitively.
+const MINOR_UNIT_TO_MAJOR: Record<string, string> = {
+  GBp: "GBP",
+  ZAc: "ZAR",
+};
+
+export function normalizeMinorCurrencyQuote(
+  price: number,
+  currency: string,
+): { price: number; currency: string } {
+  let major = MINOR_UNIT_TO_MAJOR[currency];
+  if (!major) {
+    const upper = currency.toUpperCase();
+    if (upper === "GBX") major = "GBP";
+    else if (upper === "ZAX") major = "ZAR";
+  }
+  if (!major) return { price, currency };
+  return { price: price / 100, currency: major };
+}
+
 async function fetchYahooQuotes(
   symbols: string[],
 ): Promise<Map<string, { price: number; currency: string }>> {
@@ -112,10 +144,10 @@ async function fetchYahooQuotes(
     );
     for (const q of Array.isArray(quotes) ? quotes : [quotes]) {
       if (q?.regularMarketPrice && q.symbol) {
-        results.set(q.symbol, {
-          price: q.regularMarketPrice,
-          currency: q.currency || "USD",
-        });
+        results.set(
+          q.symbol,
+          normalizeMinorCurrencyQuote(q.regularMarketPrice, q.currency || "USD"),
+        );
       }
     }
   };
