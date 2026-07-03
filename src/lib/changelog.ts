@@ -38,6 +38,21 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.10.4",
+    date: "2026-07-03",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "London- and Johannesburg-listed holdings quoted in pence/cents (e.g. `.L` and `.JO` symbols) are now converted to pounds/rand, fixing a roughly 100x overstatement of their value.",
+          "zh-TW":
+            "以便士／分計價的倫敦及約翰尼斯堡上市持股（例如 `.L` 與 `.JO` 代號）現在會換算為英鎊／南非蘭特，修正先前約 100 倍的價值高估問題。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.10.3",
     date: "2026-07-03",
     changes: [
