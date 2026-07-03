@@ -38,6 +38,30 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.10.2",
+    date: "2026-07-03",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Dashboard net worth now updates immediately after a price refresh: the cached net-worth read is tagged with prices, so refreshing a watchlist stock you also hold no longer leaves the dashboard showing the old valuation.",
+          "zh-TW":
+            "刷新價格後，儀表板的淨值現在會立即更新：淨值的快取讀取已加上價格標籤，因此刷新你同時持有的追蹤股票後，儀表板不會再顯示舊的估值。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "The Analysis page no longer disagrees with the dashboard after an exchange-rate refresh: its bundled reads are now tagged with exchange-rates, so an FX refresh invalidates them instead of serving stale figures for up to five minutes.",
+          "zh-TW":
+            "匯率刷新後，分析頁不會再與儀表板數字不一致：其彙整的讀取已加上匯率標籤，因此匯率刷新會立即使其失效，而不會在最多五分鐘內顯示過期的數字。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.10.1",
     date: "2026-07-03",
     changes: [

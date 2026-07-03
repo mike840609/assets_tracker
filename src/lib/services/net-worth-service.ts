@@ -220,6 +220,9 @@ async function getCachedNetWorthSummaryInner(
   cacheTag("net-worth");
   cacheTag(`net-worth:${userId}`);
   cacheTag("exchange-rates");
+  // computeNetWorthSummary reads PriceCache, so a price-only refresh
+  // (watchlist stock, holdings write, cron) must be able to invalidate it.
+  cacheTag("prices");
   cacheLife("hours");
   return computeNetWorthSummary(userId, baseCurrency);
 }

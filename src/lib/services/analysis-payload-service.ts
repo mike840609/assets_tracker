@@ -37,7 +37,9 @@ export async function getCachedAnalysisPayload(
     ["analysis-payload", userId, baseCurrency],
     {
       revalidate: 300,
-      tags: ["net-worth", "snapshots", `history:${userId}`, `accounts:${userId}`],
+      // All four bundled reads convert at current FX (getAllExchangeRates +
+      // resolveRate), so an FX refresh must be able to invalidate this composite.
+      tags: ["net-worth", "snapshots", "exchange-rates", `history:${userId}`, `accounts:${userId}`],
     },
   )();
 }
