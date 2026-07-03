@@ -16,6 +16,8 @@ interface Props {
   baseCurrency: string;
   locale: string;
   rangeLabel: string;
+  /** Range's investment return as a fraction (0.072 = +7.2%); null = not computable. */
+  investmentReturnPct: number | null;
 }
 
 type Tone = "positive" | "negative" | "neutral";
@@ -61,6 +63,7 @@ function MoneyValue({
   isCompact,
   emphasis = "supporting",
   align = "left",
+  display,
 }: {
   amount: number | null;
   currency: string;
@@ -69,6 +72,7 @@ function MoneyValue({
   isCompact: boolean;
   emphasis?: "lead" | "supporting";
   align?: "left" | "right";
+  display?: string;
 }) {
   const isLead = emphasis === "lead";
   return (
@@ -95,6 +99,8 @@ function MoneyValue({
           "***"
         ) : amount === null ? (
           "—"
+        ) : display !== undefined ? (
+          display
         ) : (
           <CountUpMoney amount={amount} currency={currency} />
         )}
@@ -177,6 +183,7 @@ function MetricRow({
   subtitle,
   tone,
   isCompact,
+  display,
 }: {
   title: string;
   amount: number | null;
@@ -185,6 +192,7 @@ function MetricRow({
   subtitle?: string;
   tone: Tone;
   isCompact: boolean;
+  display?: string;
 }) {
   return (
     <div
@@ -208,13 +216,14 @@ function MetricRow({
           tone={tone}
           isCompact={isCompact}
           align="right"
+          display={display}
         />
       </div>
     </div>
   );
 }
 
-export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel }: Props) {
+export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel, investmentReturnPct }: Props) {
   const t = useTranslations("analysis");
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
@@ -240,8 +249,25 @@ export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel }: Props) {
       ? null
       : `${kpis.ytdPct >= 0 ? "+" : ""}${kpis.ytdPct.toFixed(1)}%`;
 
+  const returnDisplay =
+    investmentReturnPct === null
+      ? undefined
+      : `${investmentReturnPct >= 0 ? "+" : ""}${(investmentReturnPct * 100).toFixed(1)}%`;
+
   const metricRows = (
     <div className="mt-1 divide-y divide-border/60">
+      <MetricRow
+        title={t("portfolioReturn")}
+        amount={investmentReturnPct}
+        display={returnDisplay}
+        currency={baseCurrency}
+        privacyMode={privacyMode}
+        subtitle={t("portfolioReturnHint")}
+        tone={
+          privacyMode || investmentReturnPct === null ? "neutral" : toneFor(investmentReturnPct)
+        }
+        isCompact={isCompact}
+      />
       <MetricRow
         title={t("avgMonthly")}
         amount={kpis.avgMonthlyDelta}
@@ -277,6 +303,7 @@ export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel }: Props) {
       <div className="min-w-0">
         <div className="font-medium text-foreground">{t("methodologyShortTitle")}</div>
         <p className="mt-0.5">{t("kpiMethodology", { range: rangeLabel })}</p>
+        <p className="mt-0.5">{t("portfolioReturnMethodology")}</p>
       </div>
     </div>
   );
