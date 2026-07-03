@@ -371,6 +371,9 @@ export const POST = withAuth(async (request, _ctx, userId) => {
                     quantity: t.quantity,
                     note: t.note,
                     createdAt: t.createdAt,
+                    // Preserve null as null — analysis bucketing falls back to
+                    // createdAt only when occurrenceDate is null.
+                    occurrenceDate: t.occurrenceDate ?? null,
                   })),
                 });
               }
@@ -387,6 +390,9 @@ export const POST = withAuth(async (request, _ctx, userId) => {
                 amount: t.amount,
                 note: t.note,
                 createdAt: t.createdAt,
+                // Preserve null as null — analysis bucketing falls back to
+                // createdAt only when occurrenceDate is null.
+                occurrenceDate: t.occurrenceDate ?? null,
               })),
             });
           }
