@@ -38,6 +38,25 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.9.0",
+    date: "2026-07-04",
+    summary: {
+      "en-US": "New Portfolio Return metric on the Analysis tab.",
+      "zh-TW": "分析頁面新增投資報酬率指標。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "The Analysis summary now shows your Portfolio Return for the selected range — how much your brokerage and crypto accounts earned beyond what you deposited.",
+          "zh-TW":
+            "分析摘要現在會顯示所選期間的投資報酬率——券商與加密貨幣帳戶在扣除存入資金後的實際收益。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.8.8",
     date: "2026-07-02",
     summary: {
