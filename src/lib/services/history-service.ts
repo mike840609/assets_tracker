@@ -430,16 +430,21 @@ export async function getAccountMonthlyCashFlow(
 
   const accountCurrencyMap = new Map(accounts.map((a) => [a.id, a.currency]));
 
-  // PE29 — floor the transaction scan to the first day (UTC) of the month
-  // containing the user's earliest snapshot. Months before the first snapshot
-  // are unreachable by the analysis UI: the axis buckets and attribution math
-  // are snapshot-derived (including the "All" range), so this floor changes no
-  // rendered output — it only avoids scanning/converting unreachable rows.
-  // The floor compares against the effective date (occurrenceDate ?? createdAt)
-  // so it matches the month-key bucketing below.
-  const floor = firstSnapshot
-    ? new Date(Date.UTC(firstSnapshot.date.getUTCFullYear(), firstSnapshot.date.getUTCMonth(), 1))
-    : null;
+  // #509 — floor the transaction scan to the user's earliest snapshot instant,
+  // exclusive. The first analysis bucket uses its own first snapshot as the
+  // start baseline (see aggregateMonthlyChange), so any cash already present in
+  // that snapshot — e.g. a same-month opening deposit — is baked into the
+  // baseline. Counting such a pre-snapshot flow as a contribution double-counts
+  // it: the first bucket then reports contributions ≈ the deposit and a phantom
+  // marketPerformance ≈ −deposit that buildCumulativeGrowth carries across the
+  // whole range. Flooring at the first snapshot's date with a strict `gt`
+  // aligns the contribution window with that baseline, so only flows that
+  // occurred AFTER the starting snapshot are attributed to the first bucket.
+  // (Months before the first snapshot are unreachable by the analysis UI, so
+  // this also preserves PE29's scan-narrowing intent.) The floor compares
+  // against the effective date (occurrenceDate ?? createdAt) to match the
+  // month-key bucketing below.
+  const floor = firstSnapshot ? firstSnapshot.date : null;
 
   const transactions = await prisma.cashTransaction.findMany({
     where: {
@@ -448,8 +453,8 @@ export async function getAccountMonthlyCashFlow(
       ...(floor
         ? {
             OR: [
-              { occurrenceDate: { gte: floor } },
-              { occurrenceDate: null, createdAt: { gte: floor } },
+              { occurrenceDate: { gt: floor } },
+              { occurrenceDate: null, createdAt: { gt: floor } },
             ],
           }
         : {}),

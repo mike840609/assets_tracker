@@ -193,12 +193,11 @@ export function AnalysisView({
     return buckets.map((b) => {
       const existing = byKey.get(b.monthKey);
       if (existing) return existing;
-      // Pad empty months with 0s for all categories to match the other charts' X-axis length
-      const empty: CategoryDataPoint & Record<string, number | string> = { monthKey: b.monthKey };
-      for (const acc of rawHistory.accounts) {
-        empty[acc.category] = 0;
-      }
-      return empty as CategoryDataPoint;
+      // Padded month with no snapshot: keep it on the axis (to match the other
+      // charts' X length) but emit only the monthKey — no category values. The
+      // chart reads an absent category as null so the stacked area breaks at the
+      // gap instead of plunging to zero (#511).
+      return { monthKey: b.monthKey } as CategoryDataPoint;
     });
   }, [filteredRawSnapshots, rawHistory.accounts, buckets]);
 

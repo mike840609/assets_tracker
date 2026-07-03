@@ -38,6 +38,30 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.10.1",
+    date: "2026-07-03",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Analysis cash flow no longer misreads an account's opening deposit as a market loss: a deposit made in the same month as your first snapshot is no longer double-counted, so the first month's market performance and the Cumulative Growth chart stay accurate across the whole range.",
+          "zh-TW":
+            "分析頁的現金流不再把帳戶的初始存款誤判為市場虧損：與第一筆快照同月的存款不會再被重複計算，第一個月的市場績效與累積成長圖表在整個區間都能保持正確。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "The Analysis category trend area chart no longer plunges to zero at a trailing month with no snapshot; the stacked area now breaks at empty months instead.",
+          "zh-TW":
+            "分析頁的類別趨勢區域圖不會再在沒有快照的最後一個月驟降到零；堆疊區域現在會在空白月份中斷而非歸零。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.10.0",
     date: "2026-07-03",
     summary: {

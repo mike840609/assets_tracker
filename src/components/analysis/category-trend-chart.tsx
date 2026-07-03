@@ -45,7 +45,7 @@ interface Props {
 
 interface TooltipPayload {
   dataKey: string;
-  value: number;
+  value: number | null;
   color: string;
   name: string;
 }
@@ -66,8 +66,12 @@ function CategoryTooltip({
   totalLabel: string;
 }) {
   if (!active || !payload?.length) return null;
-  const sorted = [...payload].sort((a, b) => b.value - a.value);
-  const total = payload.reduce((s, p) => s + p.value, 0);
+  // Padded (no-snapshot) months carry null values; drop them so a hovered gap
+  // doesn't render NaN totals (#511).
+  const present = payload.filter((p): p is TooltipPayload & { value: number } => p.value != null);
+  if (present.length === 0) return null;
+  const sorted = [...present].sort((a, b) => b.value - a.value);
+  const total = present.reduce((s, p) => s + p.value, 0);
   return (
     <ChartTooltipContainer title={label} className="max-w-[200px]">
       {sorted.map((p) => (
@@ -124,7 +128,12 @@ export const CategoryTrendChart = memo(function CategoryTrendChart({
     const chartData = data.map((d) => ({
       monthKey: d.monthKey,
       label: formatMonthLabel(d.monthKey as string, locale),
-      ...Object.fromEntries(visibleCategories.map((cat) => [cat, Number(d[cat] ?? 0)])),
+      // Padded months carry no category values; emit null (not 0) so the
+      // stacked area breaks at the gap instead of plunging to zero (#511).
+      // A real category value of 0 is still a present number and stays 0.
+      ...Object.fromEntries(
+        visibleCategories.map((cat) => [cat, d[cat] == null ? null : Number(d[cat])]),
+      ),
     }));
     return { categories, visibleCategories, chartData };
   }, [data, locale]);
@@ -239,6 +248,7 @@ export const CategoryTrendChart = memo(function CategoryTrendChart({
                     stroke={CATEGORY_COLORS[idx % CATEGORY_COLORS.length]}
                     strokeWidth={1.5}
                     fill={`url(#cat-${idx})`}
+                    connectNulls={false}
                     activeDot={{ r: 4 }}
                     isAnimationActive={isAnimationActive}
                     onAnimationEnd={onAnimationEnd}
