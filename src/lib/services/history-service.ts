@@ -435,6 +435,8 @@ export async function getAccountMonthlyCashFlow(
   // are unreachable by the analysis UI: the axis buckets and attribution math
   // are snapshot-derived (including the "All" range), so this floor changes no
   // rendered output — it only avoids scanning/converting unreachable rows.
+  // The floor compares against the effective date (occurrenceDate ?? createdAt)
+  // so it matches the month-key bucketing below.
   const floor = firstSnapshot
     ? new Date(Date.UTC(firstSnapshot.date.getUTCFullYear(), firstSnapshot.date.getUTCMonth(), 1))
     : null;
@@ -443,16 +445,25 @@ export async function getAccountMonthlyCashFlow(
     where: {
       accountId: { in: accounts.map((a) => a.id) },
       type: { in: ["DEPOSIT", "WITHDRAWAL"] },
-      ...(floor ? { createdAt: { gte: floor } } : {}),
+      ...(floor
+        ? {
+            OR: [
+              { occurrenceDate: { gte: floor } },
+              { occurrenceDate: null, createdAt: { gte: floor } },
+            ],
+          }
+        : {}),
     },
-    select: { amount: true, type: true, createdAt: true, accountId: true },
+    select: { amount: true, type: true, createdAt: true, occurrenceDate: true, accountId: true },
     orderBy: { createdAt: "asc" },
   });
 
   const byKey = new Map<string, number>();
 
   for (const tx of transactions) {
-    const monthKey = tx.createdAt.toISOString().slice(0, 7);
+    // Bucket by when the cash flow actually happened (occurrenceDate), falling
+    // back to createdAt for legacy rows that never recorded one (#498).
+    const monthKey = (tx.occurrenceDate ?? tx.createdAt).toISOString().slice(0, 7);
     const key = `${tx.accountId}::${monthKey}`;
     const currency = accountCurrencyMap.get(tx.accountId) ?? "USD";
     const rate = resolveRate(allRatesMap, currency, baseCurrency) ?? 1;

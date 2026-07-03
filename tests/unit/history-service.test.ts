@@ -13,6 +13,13 @@ interface SnapshotRowFixture {
   label: string | null;
   note: string | null;
 }
+interface CashTransactionFixture {
+  amount: number;
+  type: "DEPOSIT" | "WITHDRAWAL";
+  createdAt: Date;
+  occurrenceDate: Date | null;
+  accountId: string;
+}
 const h = vi.hoisted(() => ({
   rows: [] as SnapshotRowFixture[],
   currentYearRows: [] as SnapshotRowFixture[],
@@ -20,6 +27,7 @@ const h = vi.hoisted(() => ({
   previousDateRow: null as { date: Date } | null,
   latestSnapshot: null as SnapshotRowFixture | null,
   accounts: [] as unknown[],
+  cashTransactions: [] as CashTransactionFixture[],
   prices: [] as { symbol: string; price: number; currency: string }[],
   rates: new Map<string, number>(),
 }));
@@ -48,6 +56,7 @@ vi.mock("@/lib/prisma", () => ({
         return h.latestSnapshot;
       }),
     },
+    cashTransaction: { findMany: vi.fn(async () => h.cashTransactions) },
     priceCache: { findMany: vi.fn(async () => h.prices) },
   },
 }));
@@ -57,10 +66,12 @@ vi.mock("@/lib/services/exchange-rate-service", async (importActual) => {
 });
 
 const {
+  getAccountMonthlyCashFlow,
   getCurrentYearNormalizedHistory,
   getFullNormalizedHistory,
   getSnapshotReconciliationWarning,
 } = await import("@/lib/services/history-service");
+const { prisma } = await import("@/lib/prisma");
 
 function row(
   over: Partial<SnapshotRowFixture> & Pick<SnapshotRowFixture, "id" | "date">,
@@ -106,6 +117,7 @@ beforeEach(() => {
   h.previousDateRow = null;
   h.latestSnapshot = null;
   h.accounts = [];
+  h.cashTransactions = [];
   h.prices = [];
   h.rates = new Map<string, number>();
 });
@@ -235,6 +247,80 @@ describe("getCurrentYearNormalizedHistory", () => {
     const result = await getCurrentYearNormalizedHistory("u1", "USD");
 
     expect(result.map((s) => s.date)).toEqual(["2026-01-01"]);
+  });
+});
+
+describe("getAccountMonthlyCashFlow (occurrence-date bucketing — locks #498)", () => {
+  function cashTx(over: Partial<CashTransactionFixture> = {}): CashTransactionFixture {
+    return {
+      amount: 100,
+      type: "DEPOSIT",
+      createdAt: new Date("2026-07-01T10:00:00.000Z"),
+      occurrenceDate: null,
+      accountId: "acc",
+      ...over,
+    };
+  }
+
+  it("buckets a backdated transaction into its occurrenceDate month, not its createdAt month", async () => {
+    h.accounts = [account()];
+    h.cashTransactions = [
+      cashTx({
+        occurrenceDate: new Date("2026-05-15T00:00:00.000Z"), // happened in May…
+        createdAt: new Date("2026-07-01T10:00:00.000Z"), // …entered in July
+      }),
+    ];
+
+    const result = await getAccountMonthlyCashFlow("u1", "USD");
+
+    expect(result).toEqual([{ accountId: "acc", monthKey: "2026-05", contributions: 100 }]);
+  });
+
+  it("falls back to createdAt when occurrenceDate is null", async () => {
+    h.accounts = [account()];
+    h.cashTransactions = [
+      cashTx({ occurrenceDate: null, createdAt: new Date("2026-06-10T08:00:00.000Z") }),
+      cashTx({
+        type: "WITHDRAWAL",
+        amount: 40,
+        occurrenceDate: null,
+        createdAt: new Date("2026-06-20T08:00:00.000Z"),
+      }),
+    ];
+
+    const result = await getAccountMonthlyCashFlow("u1", "USD");
+
+    expect(result).toEqual([{ accountId: "acc", monthKey: "2026-06", contributions: 60 }]);
+  });
+
+  it("applies the first-snapshot floor to the effective date (occurrenceDate ?? createdAt)", async () => {
+    h.accounts = [account()];
+    h.latestSnapshot = row({ id: "first", date: new Date("2026-03-05T00:00:00.000Z") });
+
+    await getAccountMonthlyCashFlow("u1", "USD");
+
+    const args = vi.mocked(prisma.cashTransaction.findMany).mock.lastCall?.[0] as {
+      where: Record<string, unknown>;
+    };
+    const floor = new Date(Date.UTC(2026, 2, 1));
+    expect(args.where.OR).toEqual([
+      { occurrenceDate: { gte: floor } },
+      { occurrenceDate: null, createdAt: { gte: floor } },
+    ]);
+    // The accountId/type conditions stay ANDed alongside the floor OR.
+    expect(args.where.accountId).toEqual({ in: ["acc"] });
+    expect(args.where.type).toEqual({ in: ["DEPOSIT", "WITHDRAWAL"] });
+  });
+
+  it("omits the floor filter entirely when the user has no snapshots", async () => {
+    h.accounts = [account()];
+
+    await getAccountMonthlyCashFlow("u1", "USD");
+
+    const args = vi.mocked(prisma.cashTransaction.findMany).mock.lastCall?.[0] as {
+      where: Record<string, unknown>;
+    };
+    expect(args.where.OR).toBeUndefined();
   });
 });
 
