@@ -278,4 +278,69 @@ describe("dataImportSchema", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("preserves transaction occurrenceDate through parsing, keeping null as null", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.2",
+      accounts: [
+        {
+          name: "Checking",
+          type: "ASSET",
+          category: "BANK",
+          currency: "USD",
+          cashBalance: "100",
+          holdings: [
+            {
+              symbol: "VT",
+              name: "Vanguard Total World",
+              quantity: "1",
+              currency: "USD",
+              assetType: "ETF",
+              transactions: [
+                { type: "BUY", quantity: "1", occurrenceDate: "2026-06-01T00:00:00.000Z" },
+                { type: "SELL", quantity: "1", occurrenceDate: null },
+              ],
+            },
+          ],
+          cashTransactions: [
+            { type: "DEPOSIT", amount: "50", occurrenceDate: "2026-06-15T00:00:00.000Z" },
+            { type: "WITHDRAWAL", amount: "10", occurrenceDate: null },
+            { type: "DEPOSIT", amount: "5" },
+          ],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    const account = result.data.accounts[0];
+    expect(account.holdings?.[0].transactions?.map((t) => t.occurrenceDate)).toEqual([
+      "2026-06-01T00:00:00.000Z",
+      null,
+    ]);
+    expect(account.cashTransactions?.map((t) => t.occurrenceDate)).toEqual([
+      "2026-06-15T00:00:00.000Z",
+      null,
+      undefined,
+    ]);
+  });
+
+  it("rejects a non-datetime occurrenceDate", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.2",
+      accounts: [
+        {
+          name: "Checking",
+          type: "ASSET",
+          category: "BANK",
+          currency: "USD",
+          cashBalance: "0",
+          cashTransactions: [{ type: "DEPOSIT", amount: "1", occurrenceDate: "not-a-date" }],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
 });

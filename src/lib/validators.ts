@@ -345,6 +345,11 @@ const MAX_IMPORT_GOALS = 500;
 // else turns a write-time Prisma 500 into a 400 with a field path.
 const importTimestamp = z.iso.datetime().optional();
 
+// Recurring-materialized transactions carry the UTC calendar day they belong
+// to; manual rows export it as null. Preserve null as null — never default it,
+// since analysis bucketing falls back to createdAt only when it is null.
+const importOccurrenceDate = z.iso.datetime().optional().nullable();
+
 export const dataImportSchema = z.object({
   version: z.string(),
   settings: z
@@ -390,6 +395,7 @@ export const dataImportSchema = z.object({
                     quantity: decimalSchema,
                     note: z.string().optional().nullable(),
                     createdAt: importTimestamp,
+                    occurrenceDate: importOccurrenceDate,
                   }),
                 )
                 .max(MAX_IMPORT_TRANSACTIONS_PER_HOLDING)
@@ -405,6 +411,7 @@ export const dataImportSchema = z.object({
               amount: decimalSchema,
               note: z.string().optional().nullable(),
               createdAt: importTimestamp,
+              occurrenceDate: importOccurrenceDate,
             }),
           )
           .max(MAX_IMPORT_CASH_TRANSACTIONS_PER_ACCOUNT)
