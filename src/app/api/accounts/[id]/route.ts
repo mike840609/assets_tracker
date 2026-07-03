@@ -34,7 +34,7 @@ export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
   const existingAccount = await prisma.account.findUnique({ where: { id, userId } });
   if (!existingAccount) return failure("Not found", 404);
 
-  const { note, ...accountData } = parsed.data;
+  const { note, occurrenceDate, ...accountData } = parsed.data;
   // A manual balance edit logs the difference as an EDIT cash transaction. The
   // diff must be measured against the balance we actually write over, so the
   // write is guarded on that prior balance: if a concurrent cash mutation moved
@@ -61,6 +61,11 @@ export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
           type: "EDIT",
           amount: diff,
           note: note || `Manual balance update (${diff.isNegative() ? "" : "+"}${diff})`,
+          // Calendar day the user says the cash flow happened (#500) — same
+          // UTC-midnight convention as the recurring-cash materialization.
+          ...(occurrenceDate !== undefined && {
+            occurrenceDate: new Date(`${occurrenceDate}T00:00:00.000Z`),
+          }),
         },
       });
 

@@ -27,6 +27,15 @@ describe("updateAccountSchema", () => {
   it("rejects an oversized manual balance edit note", () => {
     expect(updateAccountSchema.safeParse({ note: "x".repeat(501) }).success).toBe(false);
   });
+
+  it("accepts a YYYY-MM-DD occurrenceDate for backdated balance edits", () => {
+    expect(
+      updateAccountSchema.safeParse({ cashBalance: 125, occurrenceDate: "2026-06-01" }).success,
+    ).toBe(true);
+    expect(
+      updateAccountSchema.safeParse({ cashBalance: 125, occurrenceDate: "June 1st" }).success,
+    ).toBe(false);
+  });
 });
 
 describe("createHoldingSchema", () => {
@@ -143,6 +152,57 @@ describe("cash transaction schemas", () => {
     ).toBe(false);
     expect(
       updateCashTransactionSchema.safeParse({ id: "c1", type: "EDIT", amount: 0 }).success,
+    ).toBe(false);
+  });
+
+  it("accepts an optional YYYY-MM-DD occurrenceDate on create", () => {
+    expect(
+      createCashTransactionSchema.safeParse({
+        type: "DEPOSIT",
+        amount: 100,
+        occurrenceDate: "2026-01-15",
+      }).success,
+    ).toBe(true);
+    // Omitted is fine — analysis/display fall back to createdAt.
+    expect(createCashTransactionSchema.safeParse({ type: "DEPOSIT", amount: 100 }).success).toBe(
+      true,
+    );
+  });
+
+  it("rejects a malformed occurrenceDate on create", () => {
+    expect(
+      createCashTransactionSchema.safeParse({
+        type: "WITHDRAWAL",
+        amount: 50,
+        occurrenceDate: "not-a-date",
+      }).success,
+    ).toBe(false);
+    // Datetime strings are not calendar days.
+    expect(
+      createCashTransactionSchema.safeParse({
+        type: "WITHDRAWAL",
+        amount: 50,
+        occurrenceDate: "2026-01-15T00:00:00.000Z",
+      }).success,
+    ).toBe(false);
+    expect(
+      createCashTransactionSchema.safeParse({
+        type: "EDIT",
+        amount: -5,
+        occurrenceDate: "2026-13-40",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts occurrenceDate (or null to clear it) on update", () => {
+    expect(
+      updateCashTransactionSchema.safeParse({ id: "c1", occurrenceDate: "2025-12-31" }).success,
+    ).toBe(true);
+    expect(updateCashTransactionSchema.safeParse({ id: "c1", occurrenceDate: null }).success).toBe(
+      true,
+    );
+    expect(
+      updateCashTransactionSchema.safeParse({ id: "c1", occurrenceDate: "31/12/2025" }).success,
     ).toBe(false);
   });
 });

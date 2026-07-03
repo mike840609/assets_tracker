@@ -161,12 +161,12 @@ export function AccountDetail({
     ? filteredSortedHoldings
     : filteredSortedHoldings.slice(0, 20);
 
-  async function saveBalance(newBalance: number, note?: string) {
+  async function saveBalance(newBalance: number, note?: string, occurrenceDate?: string) {
     try {
       const res = await fetch(`/api/accounts/${account.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cashBalance: newBalance, note }),
+        body: JSON.stringify({ cashBalance: newBalance, note, occurrenceDate }),
       });
 
       if (!res.ok) {
