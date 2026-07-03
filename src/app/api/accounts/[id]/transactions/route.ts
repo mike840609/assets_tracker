@@ -10,26 +10,36 @@ interface UnifiedRow {
   quantity: unknown; // Decimal from DB
   note: string | null;
   createdAt: Date;
+  effectiveAt: Date;
   occurrenceDate: Date | null;
   holdingId: string | null;
 }
 
 const cursorSchema = z.object({
+  effectiveAt: z.string().datetime(),
   createdAt: z.string().datetime(),
   id: z.string().min(1),
 });
 
-function encodeCursor(row: { createdAt: Date; id: string }): string {
+function encodeCursor(row: { effectiveAt: Date; createdAt: Date; id: string }): string {
   return Buffer.from(
-    JSON.stringify({ createdAt: row.createdAt.toISOString(), id: row.id }),
+    JSON.stringify({
+      effectiveAt: row.effectiveAt.toISOString(),
+      createdAt: row.createdAt.toISOString(),
+      id: row.id,
+    }),
   ).toString("base64url");
 }
 
-function decodeCursor(cursor: string): { createdAt: Date; id: string } | null {
+function decodeCursor(cursor: string): { effectiveAt: Date; createdAt: Date; id: string } | null {
   try {
     const raw = JSON.parse(Buffer.from(cursor, "base64url").toString());
     const parsed = cursorSchema.parse(raw);
-    return { createdAt: new Date(parsed.createdAt), id: parsed.id };
+    return {
+      effectiveAt: new Date(parsed.effectiveAt),
+      createdAt: new Date(parsed.createdAt),
+      id: parsed.id,
+    };
   } catch {
     return null;
   }
@@ -56,22 +66,24 @@ export const GET = withAuth(
       // Cursor-based keyset pagination — O(1) regardless of position
       const decoded = decodeCursor(cursorParam);
       if (!decoded) return failure("Invalid cursor", 400);
-      const { createdAt: cursorDate, id: cursorId } = decoded;
+      const { effectiveAt: cursorEffectiveDate, createdAt: cursorDate, id: cursorId } = decoded;
 
       rows = await prisma.$queryRaw<UnifiedRow[]>`
-      SELECT id, false AS "isCash", type::text, quantity, note, "createdAt", NULL AS "occurrenceDate", "holdingId"
-      FROM "HoldingTransaction"
-      WHERE "holdingId" IN (SELECT id FROM "Holding" WHERE "accountId" = ${id})
-        AND ("createdAt", id) < (${cursorDate}::timestamptz, ${cursorId}::text)
+      SELECT *
+      FROM (
+        SELECT id, false AS "isCash", type::text, quantity, note, "createdAt", "createdAt" AS "effectiveAt", NULL AS "occurrenceDate", "holdingId"
+        FROM "HoldingTransaction"
+        WHERE "holdingId" IN (SELECT id FROM "Holding" WHERE "accountId" = ${id})
 
-      UNION ALL
+        UNION ALL
 
-      SELECT id, true AS "isCash", type::text, amount AS quantity, note, "createdAt", "occurrenceDate", NULL AS "holdingId"
-      FROM "CashTransaction"
-      WHERE "accountId" = ${id}
-        AND ("createdAt", id) < (${cursorDate}::timestamptz, ${cursorId}::text)
+        SELECT id, true AS "isCash", type::text, amount AS quantity, note, "createdAt", COALESCE("occurrenceDate"::timestamptz, "createdAt") AS "effectiveAt", "occurrenceDate", NULL AS "holdingId"
+        FROM "CashTransaction"
+        WHERE "accountId" = ${id}
+      ) ledger
+      WHERE ("effectiveAt", "createdAt", id) < (${cursorEffectiveDate}::timestamptz, ${cursorDate}::timestamptz, ${cursorId}::text)
 
-      ORDER BY "createdAt" DESC, id DESC
+      ORDER BY "effectiveAt" DESC, "createdAt" DESC, id DESC
       LIMIT ${limit + 1}
     `;
     } else {
@@ -80,17 +92,17 @@ export const GET = withAuth(
       const offset = (page - 1) * limit;
 
       rows = await prisma.$queryRaw<UnifiedRow[]>`
-      SELECT id, false AS "isCash", type::text, quantity, note, "createdAt", NULL AS "occurrenceDate", "holdingId"
+      SELECT id, false AS "isCash", type::text, quantity, note, "createdAt", "createdAt" AS "effectiveAt", NULL AS "occurrenceDate", "holdingId"
       FROM "HoldingTransaction"
       WHERE "holdingId" IN (SELECT id FROM "Holding" WHERE "accountId" = ${id})
 
       UNION ALL
 
-      SELECT id, true AS "isCash", type::text, amount AS quantity, note, "createdAt", "occurrenceDate", NULL AS "holdingId"
+      SELECT id, true AS "isCash", type::text, amount AS quantity, note, "createdAt", COALESCE("occurrenceDate"::timestamptz, "createdAt") AS "effectiveAt", "occurrenceDate", NULL AS "holdingId"
       FROM "CashTransaction"
       WHERE "accountId" = ${id}
 
-      ORDER BY "createdAt" DESC, id DESC
+      ORDER BY "effectiveAt" DESC, "createdAt" DESC, id DESC
       LIMIT ${limit + 1}
       OFFSET ${offset}
     `;

@@ -38,6 +38,30 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.10.1",
+    date: "2026-07-03",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Account transaction history now pages in the same effective-date order it displays, so backdated cash rows stay in the correct chronological position while loading more history.",
+          "zh-TW":
+            "帳戶交易紀錄現在會依顯示用的有效日期分頁，載入更多紀錄時補登現金交易仍會維持正確的時間順序。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Canceling or closing the inline balance editor now clears the draft amount, note, validation message, and occurrence date so stale edits do not reappear the next time it opens.",
+          "zh-TW":
+            "取消或關閉內嵌餘額編輯器時，現在會清除草稿金額、備註、驗證訊息與發生日期，下次開啟不會再看到舊輸入。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.10.0",
     date: "2026-07-03",
     summary: {

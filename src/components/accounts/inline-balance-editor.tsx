@@ -43,6 +43,14 @@ export function InlineBalanceEditor({
   const [saving, setSaving] = useState(false);
   const { privacyMode } = usePrivacyMode();
 
+  function resetEditor() {
+    setEditing(false);
+    setBalance("");
+    setNote("");
+    setError("");
+    setOccurredOn(localToday());
+  }
+
   function handleBalanceChange(e: React.ChangeEvent<HTMLInputElement>) {
     const next = maskAmountInput(e.target.value);
     if (next === null) return;
@@ -68,9 +76,7 @@ export function InlineBalanceEditor({
   async function handleSave() {
     const val = balance.replace(/,/g, "");
     if (val.trim() === "") {
-      setEditing(false);
-      setNote("");
-      setError("");
+      resetEditor();
       return;
     }
 
@@ -83,10 +89,7 @@ export function InlineBalanceEditor({
     setSaving(true);
     try {
       await onSave(parsed, note || undefined, occurredOn || undefined);
-      setEditing(false);
-      setBalance("");
-      setNote("");
-      setError("");
+      resetEditor();
     } catch {
       // onSave surfaces its own error toast; keep the editor open with the entered value.
     } finally {
@@ -125,15 +128,7 @@ export function InlineBalanceEditor({
           <Button size="sm" className="flex-1" onClick={handleSave} disabled={saving}>
             {saving ? "..." : "Save"}
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1"
-            onClick={() => {
-              setEditing(false);
-              setNote("");
-            }}
-          >
+          <Button size="sm" variant="outline" className="flex-1" onClick={resetEditor}>
             Cancel
           </Button>
         </div>
