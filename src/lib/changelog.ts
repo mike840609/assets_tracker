@@ -38,6 +38,21 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.10.3",
+    date: "2026-07-03",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            'The Goals page no longer errors out when a goal\'s trend is nearly flat against a large remaining gap: the projected "at current pace" date could run millions of years into the future and crash the page, so such out-of-range estimates are now simply omitted.',
+          "zh-TW":
+            "當某個目標的趨勢近乎持平、但距離目標金額仍差距很大時，目標頁面不會再發生錯誤：先前「依目前速度」的預估日期可能推算到數百萬年後而導致頁面崩潰，現在這類超出合理範圍的預估會直接略過不顯示。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.10.2",
     date: "2026-07-03",
     changes: [
