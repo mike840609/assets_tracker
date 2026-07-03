@@ -8,6 +8,7 @@ import {
   aggregateCategoryHistory,
   computePerformanceAttribution,
   computeTopMovers,
+  computeInvestmentReturn,
 } from "@/lib/services/analysis-service";
 import type {
   NormalizedSnapshot,
@@ -233,5 +234,79 @@ describe("computePerformanceAttribution", () => {
 
   it("returns [] when fewer than two snapshots", () => {
     expect(computePerformanceAttribution([], accounts, [], "2026-01")).toEqual([]);
+  });
+});
+
+describe("computeInvestmentReturn", () => {
+  const accounts: AccountMeta[] = [
+    { id: "a1", name: "Brokerage", category: "BROKERAGE" },
+    { id: "a2", name: "Checking", category: "BANK" },
+    { id: "a3", name: "Cold Wallet", category: "CRYPTO_WALLET" },
+  ];
+
+  it("computes Modified-Dietz return over investment accounts only", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-01-01", accountValues: { a1: 1000, a2: 5000, a3: 0 } },
+      { date: "2026-03-01", accountValues: { a1: 1500, a2: 9000, a3: 0 } },
+    ];
+    const cashFlows: AccountMonthlyContribution[] = [
+      { accountId: "a1", monthKey: "2025-12", contributions: 999 }, // before range — excluded
+      { accountId: "a1", monthKey: "2026-02", contributions: 200 },
+      { accountId: "a2", monthKey: "2026-02", contributions: 4000 }, // BANK — excluded
+    ];
+    // gain = 1500 − 1000 − 200 = 300; base = 1000 + 200/2 = 1100
+    const result = computeInvestmentReturn(snapshots, accounts, cashFlows, "2026-01");
+    expect(result).toBeCloseTo(300 / 1100, 10);
+  });
+
+  it("handles a withdrawal-heavy period (negative contributions)", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-01-01", accountValues: { a1: 1000 } },
+      { date: "2026-03-01", accountValues: { a1: 650 } },
+    ];
+    const cashFlows: AccountMonthlyContribution[] = [
+      { accountId: "a1", monthKey: "2026-02", contributions: -400 },
+    ];
+    // gain = 650 − 1000 − (−400) = 50; base = 1000 + (−400)/2 = 800
+    const result = computeInvestmentReturn(snapshots, accounts, cashFlows, "2026-01");
+    expect(result).toBeCloseTo(50 / 800, 10);
+  });
+
+  it("returns null when the base is zero or negative", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-01-01", accountValues: { a1: 0 } },
+      { date: "2026-03-01", accountValues: { a1: 0 } },
+    ];
+    expect(computeInvestmentReturn(snapshots, accounts, [], "2026-01")).toBeNull();
+    const withdrawnPast: AccountMonthlyContribution[] = [
+      { accountId: "a1", monthKey: "2026-02", contributions: -3000 },
+    ];
+    const bigSnapshots: SnapshotBreakdown[] = [
+      { date: "2026-01-01", accountValues: { a1: 1000 } },
+      { date: "2026-03-01", accountValues: { a1: 0 } },
+    ];
+    // base = 1000 + (−3000)/2 = −500 → null
+    expect(computeInvestmentReturn(bigSnapshots, accounts, withdrawnPast, "2026-01")).toBeNull();
+  });
+
+  it("returns null with fewer than two snapshots", () => {
+    expect(computeInvestmentReturn([], accounts, [], "2026-01")).toBeNull();
+    expect(
+      computeInvestmentReturn(
+        [{ date: "2026-01-01", accountValues: { a1: 1000 } }],
+        accounts,
+        [],
+        "2026-01",
+      ),
+    ).toBeNull();
+  });
+
+  it("returns null when the user has no investment accounts", () => {
+    const bankOnly: AccountMeta[] = [{ id: "a2", name: "Checking", category: "BANK" }];
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-01-01", accountValues: { a2: 5000 } },
+      { date: "2026-03-01", accountValues: { a2: 6000 } },
+    ];
+    expect(computeInvestmentReturn(snapshots, bankOnly, [], "2026-01")).toBeNull();
   });
 });
