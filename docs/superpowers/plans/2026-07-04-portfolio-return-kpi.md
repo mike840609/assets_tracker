@@ -24,10 +24,12 @@
 ### Task 1: `computeInvestmentReturn` in analysis-service
 
 **Files:**
+
 - Modify: `src/lib/services/analysis-service.ts` (append after `computePerformanceAttribution`, ~line 391)
 - Test: `tests/unit/analysis-service.test.ts` (append a new `describe` block at end of file)
 
 **Interfaces:**
+
 - Consumes: existing types from `src/lib/services/history-service.ts` — `SnapshotBreakdown` (`{ date: string; accountValues: Record<string, number> }`), `AccountMeta` (`{ id: string; name: string; category: string }`), `AccountMonthlyContribution` (`{ accountId: string; monthKey: string; contributions: number }`). All are already imported at the top of both files.
 - Produces: `computeInvestmentReturn(snapshots: SnapshotBreakdown[], accounts: AccountMeta[], accountCashFlows: AccountMonthlyContribution[], rangeStartMonthKey: string): number | null` — returns the period return as a **fraction** (0.072 = +7.2%), or `null` when it can't be computed. Task 2 imports this exact name from `@/lib/services/analysis-service`.
 
@@ -196,11 +198,13 @@ git commit -m "feat(analysis): add computeInvestmentReturn (Modified-Dietz perio
 ### Task 2: Wire the return into the KPI card (UI + i18n)
 
 **Files:**
+
 - Modify: `src/components/analysis/analysis-view.tsx` (import list ~line 22-28; memos ~line 209-218; `<KpiTiles>` render ~line 304-309)
 - Modify: `src/components/analysis/kpi-tiles.tsx` (Props ~line 14-19; `MoneyValue` ~line 56-104; `MetricRow` ~line 172-215; `metricRows` ~line 243-272; `methodologyBox` ~line 274-282)
 - Modify: `messages/en-US.json`, `messages/zh-TW.json` (`analysis` namespace)
 
 **Interfaces:**
+
 - Consumes: `computeInvestmentReturn(snapshots, accounts, accountCashFlows, rangeStartMonthKey): number | null` from `@/lib/services/analysis-service` (Task 1).
 - Produces: `KpiTiles` gains a required prop `investmentReturnPct: number | null` (fraction or null). No other component consumes it.
 
@@ -255,15 +259,17 @@ interface Props {
 2b. Extend `MoneyValue` with an optional `display` override (a pre-formatted string that replaces the currency count-up; privacy mode and null still win). Add `display?: string;` to its props type, and change the render branch to:
 
 ```tsx
-{privacyMode ? (
-  "***"
-) : amount === null ? (
-  "—"
-) : display !== undefined ? (
-  display
-) : (
-  <CountUpMoney amount={amount} currency={currency} />
-)}
+{
+  privacyMode ? (
+    "***"
+  ) : amount === null ? (
+    "—"
+  ) : display !== undefined ? (
+    display
+  ) : (
+    <CountUpMoney amount={amount} currency={currency} />
+  );
+}
 ```
 
 2c. Extend `MetricRow` the same way — add `display?: string;` to its props type and pass it through to `MoneyValue`:
@@ -303,9 +309,7 @@ const returnDisplay =
   currency={baseCurrency}
   privacyMode={privacyMode}
   subtitle={t("portfolioReturnHint")}
-  tone={
-    privacyMode || investmentReturnPct === null ? "neutral" : toneFor(investmentReturnPct)
-  }
+  tone={privacyMode || investmentReturnPct === null ? "neutral" : toneFor(investmentReturnPct)}
   isCompact={isCompact}
 />
 ```
@@ -354,10 +358,12 @@ git commit -m "feat(analysis): show portfolio return % KPI tile"
 ### Task 3: Release entry + final checks
 
 **Files:**
+
 - Modify: `src/lib/changelog.ts` (prepend to `CHANGELOG`, line 39)
 - Modify: `package.json` (`"version"` field)
 
 **Interfaces:**
+
 - Consumes: nothing from earlier tasks (pure release bookkeeping).
 - Produces: `APP_VERSION` becomes `0.9.0` (derived from `CHANGELOG[0]`).
 
