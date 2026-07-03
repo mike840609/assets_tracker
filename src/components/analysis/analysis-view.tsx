@@ -72,8 +72,11 @@ function pickDefaultRange(snapshots: NormalizedSnapshot[]): RangeLabel {
   if (snapshots.length === 0) return "YTD";
   const first = new Date(snapshots[0].date);
   const now = new Date();
+  // `first` is a snapshot date parsed from a UTC "YYYY-MM-DD" string (UTC-midnight),
+  // so read its month with UTC getters to match how snapshots are bucketed
+  // everywhere else; `now` is a genuine local instant (the user's current month).
   const historyMonths =
-    (now.getFullYear() - first.getFullYear()) * 12 + now.getMonth() - first.getMonth() + 1;
+    (now.getFullYear() - first.getUTCFullYear()) * 12 + now.getMonth() - first.getUTCMonth() + 1;
   if (historyMonths <= 6) return "All";
   if (now.getMonth() < 3) return "6M"; // Jan–Mar: YTD would be a thin 1–3 month slice
   return "YTD";
@@ -147,7 +150,14 @@ export function AnalysisView({
 
     if (selected.months === Infinity) {
       const firstDate = snapshots.length > 0 ? new Date(snapshots[0].date) : now;
-      const rangeStart = new Date(Date.UTC(firstDate.getFullYear(), firstDate.getMonth(), 1));
+      // firstDate from a snapshot is UTC-midnight; use UTC getters so the range
+      // starts on its UTC month (matching the snapshot buckets) rather than a
+      // phantom prior month west of UTC. The `now` fallback is a local instant,
+      // but with no snapshots the range is unused.
+      const rangeStart =
+        snapshots.length > 0
+          ? new Date(Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), 1))
+          : new Date(Date.UTC(firstDate.getFullYear(), firstDate.getMonth(), 1));
       return {
         filteredSnapshots: snapshots,
         rangeStart,

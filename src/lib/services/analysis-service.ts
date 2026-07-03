@@ -114,8 +114,12 @@ export function fillMonthRange(
 ): MonthlyBucket[] {
   const byKey = new Map(buckets.map((b) => [b.monthKey, b]));
   const result: MonthlyBucket[] = [];
-  const cursor = new Date(Date.UTC(rangeStart.getFullYear(), rangeStart.getMonth(), 1));
-  const endKey = `${rangeEnd.getFullYear()}-${String(rangeEnd.getMonth() + 1).padStart(2, "0")}`;
+  // rangeStart/rangeEnd are constructed as UTC-midnight (`new Date(Date.UTC(...))`)
+  // by callers, so read them back with UTC getters. Local getters would roll the
+  // boundary back a month in any timezone west of UTC (#507), dropping the current
+  // month and prepending a phantom empty one.
+  const cursor = new Date(Date.UTC(rangeStart.getUTCFullYear(), rangeStart.getUTCMonth(), 1));
+  const endKey = `${rangeEnd.getUTCFullYear()}-${String(rangeEnd.getUTCMonth() + 1).padStart(2, "0")}`;
   while (true) {
     const year = cursor.getUTCFullYear();
     const month = cursor.getUTCMonth();
