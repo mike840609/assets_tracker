@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import {
   aggregateMonthlyChange,
   fillMonthRange,
@@ -80,6 +80,34 @@ describe("fillMonthRange", () => {
     expect(filled.map((b) => b.monthKey)).toEqual(["2026-01", "2026-02", "2026-03"]);
     expect(filled[1]).toMatchObject({ monthKey: "2026-02", isEmpty: true, deltaNetWorth: 0 });
     expect(filled[0].isEmpty).toBe(false);
+  });
+
+  // Regression for #507: callers construct rangeStart/rangeEnd as UTC-midnight
+  // (`new Date(Date.UTC(...))`), so fillMonthRange must read them back with UTC
+  // getters. Read with local getters, a west-of-UTC timezone rolls the boundary
+  // back a month — the current month (holding the latest snapshots) is dropped
+  // and a phantom empty month is prepended. Force America/New_York (UTC-5) so
+  // this fails deterministically with the old local-getter code and passes with
+  // the fix, regardless of the CI runner's own timezone (UTC).
+  describe("under a west-of-UTC timezone (America/New_York)", () => {
+    const originalTz = process.env.TZ;
+    beforeAll(() => {
+      process.env.TZ = "America/New_York";
+    });
+    afterAll(() => {
+      process.env.TZ = originalTz;
+    });
+
+    it("keeps the first and current month when rangeStart/rangeEnd are UTC-midnight", () => {
+      // Jan-1-UTC is Dec-31 in New York; Jul-1-UTC is Jun-30 in New York.
+      const rangeStart = new Date(Date.UTC(2026, 0, 1));
+      const rangeEnd = new Date(Date.UTC(2026, 6, 1));
+      const filled = fillMonthRange([], rangeStart, rangeEnd);
+      const keys = filled.map((b) => b.monthKey);
+      expect(keys[0]).toBe("2026-01"); // no phantom "2025-12" lead
+      expect(keys[keys.length - 1]).toBe("2026-07"); // current month not dropped
+      expect(keys).not.toContain("2025-12");
+    });
   });
 });
 

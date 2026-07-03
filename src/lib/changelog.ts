@@ -38,6 +38,30 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.10.5",
+    date: "2026-07-04",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Analysis charts and KPIs no longer drop the current month for users in Americas (west-of-UTC) timezones — the month range was being read with local date getters off UTC-midnight boundaries, shifting the range back a month and hiding the latest data.",
+          "zh-TW":
+            "分析圖表與關鍵指標不再對位於美洲（UTC 以西）時區的使用者遺漏當月資料——先前月份範圍以本地時間讀取 UTC 午夜的邊界日期，導致範圍整體往前推一個月而隱藏最新資料。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "FIRE / retirement projections now group net-worth snapshots by their UTC year, so a January-1 snapshot is no longer misfiled into the previous year on non-UTC servers.",
+          "zh-TW":
+            "FIRE／退休預測現在以 UTC 年份彙整淨值快照，因此在非 UTC 伺服器上，1 月 1 日的快照不會再被誤歸入前一年。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.10.4",
     date: "2026-07-03",
     changes: [

@@ -61,7 +61,10 @@ export async function getProjectionData(
   // Last snapshot per calendar year
   const byYear = new Map<number, number>();
   for (const s of normalized) {
-    byYear.set(s.date.getFullYear(), s.netWorth);
+    // Snapshots are stored at UTC-midnight and deduped by their UTC date, so
+    // bucket by the UTC year. A local getter would land a Jan-1-UTC snapshot in
+    // the prior year on a west-of-UTC server (#514).
+    byYear.set(s.date.getUTCFullYear(), s.netWorth);
   }
   const annualSnapshots = Array.from(byYear.entries())
     .sort(([a], [b]) => a - b)
