@@ -10,6 +10,7 @@ interface UnifiedRow {
   quantity: unknown; // Decimal from DB
   note: string | null;
   createdAt: Date;
+  occurrenceDate: Date | null;
   holdingId: string | null;
 }
 
@@ -58,14 +59,14 @@ export const GET = withAuth(
       const { createdAt: cursorDate, id: cursorId } = decoded;
 
       rows = await prisma.$queryRaw<UnifiedRow[]>`
-      SELECT id, false AS "isCash", type::text, quantity, note, "createdAt", "holdingId"
+      SELECT id, false AS "isCash", type::text, quantity, note, "createdAt", NULL AS "occurrenceDate", "holdingId"
       FROM "HoldingTransaction"
       WHERE "holdingId" IN (SELECT id FROM "Holding" WHERE "accountId" = ${id})
         AND ("createdAt", id) < (${cursorDate}::timestamptz, ${cursorId}::text)
 
       UNION ALL
 
-      SELECT id, true AS "isCash", type::text, amount AS quantity, note, "createdAt", NULL AS "holdingId"
+      SELECT id, true AS "isCash", type::text, amount AS quantity, note, "createdAt", "occurrenceDate", NULL AS "holdingId"
       FROM "CashTransaction"
       WHERE "accountId" = ${id}
         AND ("createdAt", id) < (${cursorDate}::timestamptz, ${cursorId}::text)
@@ -79,13 +80,13 @@ export const GET = withAuth(
       const offset = (page - 1) * limit;
 
       rows = await prisma.$queryRaw<UnifiedRow[]>`
-      SELECT id, false AS "isCash", type::text, quantity, note, "createdAt", "holdingId"
+      SELECT id, false AS "isCash", type::text, quantity, note, "createdAt", NULL AS "occurrenceDate", "holdingId"
       FROM "HoldingTransaction"
       WHERE "holdingId" IN (SELECT id FROM "Holding" WHERE "accountId" = ${id})
 
       UNION ALL
 
-      SELECT id, true AS "isCash", type::text, amount AS quantity, note, "createdAt", NULL AS "holdingId"
+      SELECT id, true AS "isCash", type::text, amount AS quantity, note, "createdAt", "occurrenceDate", NULL AS "holdingId"
       FROM "CashTransaction"
       WHERE "accountId" = ${id}
 
@@ -131,6 +132,7 @@ export const GET = withAuth(
       quantity: row.quantity,
       note: row.note,
       createdAt: row.createdAt,
+      occurrenceDate: row.occurrenceDate,
       ...(row.holdingId
         ? { holdingId: row.holdingId, holding: holdingsMap.get(row.holdingId) ?? null }
         : {}),

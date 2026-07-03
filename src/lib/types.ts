@@ -68,6 +68,9 @@ export type SerializedTransaction = Serialized<HoldingTransaction, "quantity", "
     currency: string;
     assetType: string;
   };
+  // Cash transactions only: calendar day the cash flow actually happened
+  // (ISO string, UTC midnight). Display falls back to createdAt when null.
+  occurrenceDate?: string | null;
 };
 
 // ---------------------------------------------------------------------------

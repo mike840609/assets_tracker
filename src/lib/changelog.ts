@@ -38,6 +38,33 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.10.0",
+    date: "2026-07-03",
+    summary: {
+      "en-US": "Backdate manual cash transactions to the day they actually happened.",
+      "zh-TW": "手動現金交易可回填實際發生日期。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Manual cash entries can now set an occurrence date: the balance editor gets a date field (defaults to today) and cash transactions can be re-dated when editing, so backdated deposits and withdrawals count toward the right month in Analysis.",
+          "zh-TW":
+            "手動現金紀錄現在可以設定發生日期：餘額編輯器新增日期欄位（預設為今天），編輯現金交易時也可調整日期，補登的存提款會計入分析頁正確的月份。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "The account transaction list now shows backdated cash entries under the day they occurred instead of the day they were entered.",
+          "zh-TW": "帳戶交易列表現在會將補登的現金紀錄顯示在實際發生日，而非輸入日。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.9.1",
     date: "2026-07-02",
     changes: [

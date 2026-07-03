@@ -9,11 +9,17 @@ import { formatCurrency, formatNumber } from "@/lib/currencies";
 import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 
+/** Today as a local-timezone YYYY-MM-DD string (for the occurrence-date input). */
+function localToday(): string {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
 interface InlineBalanceEditorProps {
   currentBalance: number;
   currency: string;
   notePlaceholder?: string;
-  onSave: (newBalance: number, note?: string) => Promise<void>;
+  onSave: (newBalance: number, note?: string, occurrenceDate?: string) => Promise<void>;
   mode?: "hero" | "inline";
   inlineLabel?: string;
 }
@@ -31,6 +37,9 @@ export function InlineBalanceEditor({
   const [balance, setBalance] = useState("");
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
+  // Calendar day the cash flow happened (#500) — defaults to today each time
+  // the editor opens; the logged EDIT transaction is stamped with it.
+  const [occurredOn, setOccurredOn] = useState(localToday);
   const [saving, setSaving] = useState(false);
   const { privacyMode } = usePrivacyMode();
 
@@ -73,7 +82,7 @@ export function InlineBalanceEditor({
 
     setSaving(true);
     try {
-      await onSave(parsed, note || undefined);
+      await onSave(parsed, note || undefined, occurredOn || undefined);
       setEditing(false);
       setBalance("");
       setNote("");
@@ -99,6 +108,13 @@ export function InlineBalanceEditor({
           autoFocus
         />
         {error && <p className="text-xs text-destructive">{error}</p>}
+        <Input
+          type="date"
+          aria-label={t("accountDetail.labelOccurredOn")}
+          value={occurredOn}
+          onChange={(e) => setOccurredOn(e.target.value)}
+          className="h-11 md:h-8 text-sm"
+        />
         <Input
           placeholder={notePlaceholder}
           value={note}
@@ -132,7 +148,10 @@ export function InlineBalanceEditor({
     return (
       <button
         type="button"
-        onClick={() => setEditing(true)}
+        onClick={() => {
+          setOccurredOn(localToday());
+          setEditing(true);
+        }}
         aria-label={`${inlineLabel ?? ""} ${displayValue}. ${editLabel}`.trim()}
         className="group inline-flex items-center gap-1.5 rounded-md px-1 -mx-1 hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none transition-colors"
       >
@@ -151,7 +170,10 @@ export function InlineBalanceEditor({
   return (
     <button
       type="button"
-      onClick={() => setEditing(true)}
+      onClick={() => {
+        setOccurredOn(localToday());
+        setEditing(true);
+      }}
       aria-label={`${displayValue}. ${editLabel}`}
       className="group inline-flex items-center gap-2 rounded-md px-1 -mx-1 hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none transition-colors text-left"
     >

@@ -131,6 +131,64 @@ describe("account ledger routes", () => {
     });
   });
 
+  it("persists a manual occurrenceDate as UTC midnight on create", async () => {
+    const { POST } = await import("@/app/api/accounts/[id]/cash-transactions/route");
+
+    const response = await POST(
+      jsonRequest("POST", { type: "DEPOSIT", amount: 100, occurrenceDate: "2026-06-01" }),
+      { params: Promise.resolve({ id: "acc1" }) },
+    );
+
+    expect(response.status).toBe(201);
+    const created = h.calls.find((call) => call.op === "cashTransaction.create")?.args?.data as {
+      occurrenceDate?: Date;
+    };
+    expect(created.occurrenceDate).toEqual(new Date("2026-06-01T00:00:00.000Z"));
+  });
+
+  it("updates and clears occurrenceDate on a cash transaction edit", async () => {
+    h.cashTx = { id: "tx1", accountId: "acc1", type: "DEPOSIT", amount: 100 };
+    const { PATCH } = await import("@/app/api/accounts/[id]/transactions/[transactionId]/route");
+
+    let response = await PATCH(
+      jsonRequest("PATCH", { id: "tx1", occurrenceDate: "2026-06-01" }),
+      params(),
+    );
+    expect(response.status).toBe(200);
+    let write = h.calls.find((call) => call.op === "cashTransaction.updateMany")?.args?.data as {
+      occurrenceDate?: Date | null;
+    };
+    expect(write.occurrenceDate).toEqual(new Date("2026-06-01T00:00:00.000Z"));
+
+    h.calls = [];
+    response = await PATCH(jsonRequest("PATCH", { id: "tx1", occurrenceDate: null }), params());
+    expect(response.status).toBe(200);
+    write = h.calls.find((call) => call.op === "cashTransaction.updateMany")?.args?.data as {
+      occurrenceDate?: Date | null;
+    };
+    expect(write.occurrenceDate).toBeNull();
+  });
+
+  it("stamps occurrenceDate onto the EDIT row from a backdated balance edit", async () => {
+    const { PATCH } = await import("@/app/api/accounts/[id]/route");
+
+    const response = await PATCH(
+      jsonRequest("PATCH", { cashBalance: 25, occurrenceDate: "2026-06-01" }),
+      { params: Promise.resolve({ id: "acc1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    const edit = h.calls.find((call) => call.op === "cashTransaction.create")?.args?.data as {
+      occurrenceDate?: Date;
+    };
+    expect(edit.occurrenceDate).toEqual(new Date("2026-06-01T00:00:00.000Z"));
+    // occurrenceDate must not leak into the account row write.
+    const accountWrite = h.calls.find((call) => call.op === "account.updateMany")?.args as {
+      data?: Record<string, unknown>;
+    };
+    expect(accountWrite.data).toEqual({ cashBalance: 25 });
+  });
+
   it("records manual account balance edits atomically and strips note from account data", async () => {
     const { PATCH } = await import("@/app/api/accounts/[id]/route");
 
