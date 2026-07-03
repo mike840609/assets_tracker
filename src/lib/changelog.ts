@@ -38,6 +38,21 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.9.2",
+    date: "2026-07-03",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Data export/import now preserves each transaction's occurrence date, so recurring and backdated entries keep their correct month in analysis after restoring a backup.",
+          "zh-TW":
+            "資料匯出／匯入現在會保留每筆交易的發生日期，還原備份後定期與補登的交易在分析中仍會落在正確的月份。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.9.1",
     date: "2026-07-02",
     changes: [
