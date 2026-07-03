@@ -56,7 +56,34 @@ vi.mock("@/lib/prisma", () => ({
         return h.latestSnapshot;
       }),
     },
-    cashTransaction: { findMany: vi.fn(async () => h.cashTransactions) },
+    cashTransaction: {
+      findMany: vi.fn(async (args?: { where?: { OR?: Array<Record<string, unknown>> } }) => {
+        const or = args?.where?.OR;
+        if (!or) return h.cashTransactions;
+        // Faithfully apply the first-snapshot floor OR clause so tests that
+        // depend on which rows survive the DB filter (e.g. #509) exercise the
+        // real query semantics instead of ignoring `where`.
+        const cmp = (op: string, a: Date, b: Date) =>
+          op === "gt" ? a.getTime() > b.getTime() : a.getTime() >= b.getTime();
+        return h.cashTransactions.filter((tx) =>
+          or.some((branch) => {
+            const occ = branch.occurrenceDate as Record<string, Date> | null | undefined;
+            if (occ && typeof occ === "object") {
+              if (tx.occurrenceDate == null) return false;
+              const [op, floor] = Object.entries(occ)[0];
+              return cmp(op, tx.occurrenceDate, floor);
+            }
+            if (occ === null) {
+              if (tx.occurrenceDate != null) return false;
+              const created = branch.createdAt as Record<string, Date>;
+              const [op, floor] = Object.entries(created)[0];
+              return cmp(op, tx.createdAt, floor);
+            }
+            return false;
+          }),
+        );
+      }),
+    },
     priceCache: { findMany: vi.fn(async () => h.prices) },
   },
 }));
@@ -67,10 +94,13 @@ vi.mock("@/lib/services/exchange-rate-service", async (importActual) => {
 
 const {
   getAccountMonthlyCashFlow,
+  getMonthlyCashFlow,
   getCurrentYearNormalizedHistory,
   getFullNormalizedHistory,
   getSnapshotReconciliationWarning,
 } = await import("@/lib/services/history-service");
+const { aggregateMonthlyChange, fillMonthRange, buildCashFlowBuckets, buildCumulativeGrowth } =
+  await import("@/lib/services/analysis-service");
 const { prisma } = await import("@/lib/prisma");
 
 function row(
@@ -293,7 +323,7 @@ describe("getAccountMonthlyCashFlow (occurrence-date bucketing — locks #498)",
     expect(result).toEqual([{ accountId: "acc", monthKey: "2026-06", contributions: 60 }]);
   });
 
-  it("applies the first-snapshot floor to the effective date (occurrenceDate ?? createdAt)", async () => {
+  it("floors the effective date to the first snapshot instant, exclusive (#509)", async () => {
     h.accounts = [account()];
     h.latestSnapshot = row({ id: "first", date: new Date("2026-03-05T00:00:00.000Z") });
 
@@ -302,14 +332,65 @@ describe("getAccountMonthlyCashFlow (occurrence-date bucketing — locks #498)",
     const args = vi.mocked(prisma.cashTransaction.findMany).mock.lastCall?.[0] as {
       where: Record<string, unknown>;
     };
-    const floor = new Date(Date.UTC(2026, 2, 1));
+    // The floor is the first snapshot's date with a strict `gt`: flows on/before
+    // the first snapshot are already baked into the first bucket's baseline, so
+    // counting them as contributions double-counts the opening deposit (#509).
+    const floor = new Date("2026-03-05T00:00:00.000Z");
     expect(args.where.OR).toEqual([
-      { occurrenceDate: { gte: floor } },
-      { occurrenceDate: null, createdAt: { gte: floor } },
+      { occurrenceDate: { gt: floor } },
+      { occurrenceDate: null, createdAt: { gt: floor } },
     ]);
     // The accountId/type conditions stay ANDed alongside the floor OR.
     expect(args.where.accountId).toEqual({ in: ["acc"] });
     expect(args.where.type).toEqual({ in: ["DEPOSIT", "WITHDRAWAL"] });
+  });
+
+  it("keeps an opening deposit out of the first bucket's contributions (#509)", async () => {
+    // Account opened with a $100k deposit on Mar 10; the first snapshot on
+    // Mar 15 already reflects it (netWorth $100k). The market then earns $1k by
+    // April. The opening deposit must NOT be attributed to March as a
+    // contribution — otherwise marketPerformance shows a phantom −$100k loss
+    // that buildCumulativeGrowth carries across the whole range.
+    h.accounts = [account()];
+    h.latestSnapshot = row({ id: "first", date: new Date("2026-03-15T00:00:00.000Z") });
+    h.cashTransactions = [
+      cashTx({
+        amount: 100_000,
+        type: "DEPOSIT",
+        occurrenceDate: new Date("2026-03-10T00:00:00.000Z"),
+        createdAt: new Date("2026-03-10T00:00:00.000Z"),
+      }),
+    ];
+
+    const contributions = await getMonthlyCashFlow("u1", "USD");
+    // No contribution should survive: the only flow predates the first snapshot.
+    expect(contributions).toEqual([]);
+
+    const nSnap = (date: string, netWorth: number) => ({
+      id: date,
+      date,
+      createdAt: `${date}T00:00:00.000Z`,
+      netWorth,
+      totalAssets: netWorth,
+      totalLiabilities: 0,
+      baseCurrency: "USD",
+      label: null,
+      note: null,
+    });
+    const snapshots = [nSnap("2026-03-15", 100_000), nSnap("2026-04-15", 101_000)];
+    const buckets = fillMonthRange(
+      aggregateMonthlyChange(snapshots),
+      new Date(Date.UTC(2026, 2, 1)),
+      new Date(Date.UTC(2026, 3, 1)),
+    );
+    const cashFlow = buildCashFlowBuckets(buckets, contributions, "en-US");
+    const cumulative = buildCumulativeGrowth(cashFlow);
+
+    // First bucket: no fake market loss.
+    expect(cashFlow[0].contributions).toBe(0);
+    expect(cashFlow[0].marketPerformance).toBeCloseTo(0);
+    // Cumulative market reflects the real +$1k gain, not −$99k.
+    expect(cumulative.at(-1)!.cumulativeMarket).toBeCloseTo(1_000);
   });
 
   it("omits the floor filter entirely when the user has no snapshots", async () => {
