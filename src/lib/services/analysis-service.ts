@@ -420,3 +420,60 @@ export function computePerformanceAttribution(
     .sort((a, b) => Math.abs(b.totalDelta) - Math.abs(a.totalDelta))
     .slice(0, 10);
 }
+
+/** Account categories that count as "investments" for the portfolio return KPI. */
+const INVESTMENT_CATEGORIES = new Set(["BROKERAGE", "CRYPTO_WALLET"]);
+
+/**
+ * Period return of the user's investment accounts (BROKERAGE + CRYPTO_WALLET)
+ * over the selected range, as a fraction (0.072 = +7.2%).
+ *
+ * Simple Modified-Dietz approximation: contributions are assumed to arrive
+ * mid-period, so they carry half weight in the denominator.
+ * // ponytail: half-weight Dietz, upgrade to dated-flow Dietz/XIRR if it ever feels wrong
+ *
+ *   gain = Σ (endValue − startValue − cashContribution)
+ *   base = Σ startValue + (Σ cashContribution) / 2
+ *
+ * Returns null when: fewer than 2 snapshots, no investment accounts, or base ≤ 0.
+ *
+ * @param snapshots          Breakdown snapshots filtered to the selected range.
+ * @param accounts           All user accounts (from getRawHistoryWithBreakdown).
+ * @param accountCashFlows   Per-account monthly cash flows (from getAccountMonthlyCashFlow).
+ * @param rangeStartMonthKey "YYYY-MM" — cash flows before this month are excluded.
+ */
+export function computeInvestmentReturn(
+  snapshots: SnapshotBreakdown[],
+  accounts: AccountMeta[],
+  accountCashFlows: AccountMonthlyContribution[],
+  rangeStartMonthKey: string,
+): number | null {
+  if (snapshots.length < 2) return null;
+
+  const investmentIds = new Set(
+    accounts.filter((a) => INVESTMENT_CATEGORIES.has(a.category)).map((a) => a.id),
+  );
+  if (investmentIds.size === 0) return null;
+
+  const startSnap = snapshots[0];
+  const endSnap = snapshots[snapshots.length - 1];
+
+  const cashByAccount = new Map<string, number>();
+  for (const c of accountCashFlows) {
+    if (c.monthKey >= rangeStartMonthKey && investmentIds.has(c.accountId)) {
+      cashByAccount.set(c.accountId, (cashByAccount.get(c.accountId) ?? 0) + c.contributions);
+    }
+  }
+
+  let gain = 0;
+  let base = 0;
+  for (const id of investmentIds) {
+    const startValue = startSnap.accountValues[id] ?? 0;
+    const endValue = endSnap.accountValues[id] ?? 0;
+    const cash = cashByAccount.get(id) ?? 0;
+    gain += endValue - startValue - cash;
+    base += startValue + cash / 2;
+  }
+
+  return base > 0 ? gain / base : null;
+}

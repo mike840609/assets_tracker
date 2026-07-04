@@ -25,6 +25,7 @@ import {
   buildCumulativeGrowth,
   aggregateCategoryHistory,
   computePerformanceAttribution,
+  computeInvestmentReturn,
 } from "@/lib/services/analysis-service";
 import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/analysis-service";
 import {
@@ -222,6 +223,17 @@ export function AnalysisView({
     [filteredRawSnapshots, rawHistory.accounts, accountCashFlow, rangeStartIso],
   );
 
+  const investmentReturnPct = useMemo(
+    () =>
+      computeInvestmentReturn(
+        filteredRawSnapshots,
+        rawHistory.accounts,
+        accountCashFlow,
+        rangeStartIso.slice(0, 7),
+      ),
+    [filteredRawSnapshots, rawHistory.accounts, accountCashFlow, rangeStartIso],
+  );
+
   const hasData = snapshots.length > 0;
   const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
 
@@ -311,6 +323,7 @@ export function AnalysisView({
                       baseCurrency={baseCurrency}
                       locale={locale}
                       rangeLabel={activeRangeLabel}
+                      investmentReturnPct={investmentReturnPct}
                     />
                   </div>
                 </div>
