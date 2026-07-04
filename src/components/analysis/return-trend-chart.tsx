@@ -51,6 +51,13 @@ function ReturnTooltip({
     return (
       <ChartTooltipContainer title={p.label}>
         <div className="text-[11px] text-muted-foreground">{t("noDataMonth")}</div>
+        {p.cumulativeReturn !== null && (
+          <ChartTooltipRow
+            label={t("seriesCumulativeReturn")}
+            value={privacyMode ? "***" : formatPct(p.cumulativeReturn)}
+            indicatorColor="var(--primary)"
+          />
+        )}
       </ChartTooltipContainer>
     );
   }

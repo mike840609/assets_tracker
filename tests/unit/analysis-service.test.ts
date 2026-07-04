@@ -437,6 +437,26 @@ describe("computeInvestmentReturnSeries", () => {
     expect(points[2].cumulativeReturn).toBeCloseTo(0.1, 10);
   });
 
+  it("rolls cash flows from snapshot-less gap months into the next computable month", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-01-31", accountValues: { a1: 1000 } },
+      { date: "2026-03-31", accountValues: { a1: 11100 } },
+    ];
+    const cashFlows: AccountMonthlyContribution[] = [
+      { accountId: "a1", monthKey: "2026-02", contributions: 10000 }, // deposited during the gap
+    ];
+    const points = computeInvestmentReturnSeries(
+      snapshots,
+      accounts,
+      cashFlows,
+      ["2026-01", "2026-02", "2026-03"],
+      "en-US",
+    );
+    expect(points[1].isEmpty).toBe(true);
+    // Mar: gain = 11100 − 1000 − 10000 = 100; base = 1000 + 10000/2 = 6000
+    expect(points[2].monthlyReturn).toBeCloseTo(100 / 6000, 10);
+  });
+
   it("returns [] with fewer than two snapshots or no investment accounts", () => {
     expect(
       computeInvestmentReturnSeries(

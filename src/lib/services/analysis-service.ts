@@ -544,15 +544,18 @@ export function computeInvestmentReturnSeries(
 
   let prevEnd: number | null = null;
   let index: number | null = null;
+  let pendingCash = 0;
   return monthKeys.map((monthKey) => {
     const label = formatMonthLabel(monthKey, locale);
     const endSnap = monthLast.get(monthKey);
     if (!endSnap) {
+      pendingCash += cashByMonth.get(monthKey) ?? 0;
       return { monthKey, label, monthlyReturn: null, cumulativeReturn: index, isEmpty: true };
     }
     const start = prevEnd ?? investmentValue(monthFirst.get(monthKey)!);
     const end = investmentValue(endSnap);
-    const cash = cashByMonth.get(monthKey) ?? 0;
+    const cash = (cashByMonth.get(monthKey) ?? 0) + pendingCash;
+    pendingCash = 0;
     prevEnd = end;
     const base = start + cash / 2;
     if (base <= 0) {
