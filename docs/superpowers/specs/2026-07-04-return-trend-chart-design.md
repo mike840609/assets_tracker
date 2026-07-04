@@ -42,11 +42,11 @@ aligns with the other charts):
 
 ```ts
 interface ReturnTrendPoint {
-  monthKey: string;          // "YYYY-MM"
-  label: string;             // locale-formatted month label
-  monthlyReturn: number | null;    // fraction, e.g. 0.021
+  monthKey: string; // "YYYY-MM"
+  label: string; // locale-formatted month label
+  monthlyReturn: number | null; // fraction, e.g. 0.021
   cumulativeReturn: number | null; // fraction; null until first computable month
-  isEmpty?: boolean;         // no snapshot data this month
+  isEmpty?: boolean; // no snapshot data this month
 }
 ```
 

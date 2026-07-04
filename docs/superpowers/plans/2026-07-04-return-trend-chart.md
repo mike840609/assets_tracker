@@ -25,20 +25,22 @@
 ### Task 1: `computeInvestmentReturnSeries` in analysis-service
 
 **Files:**
+
 - Modify: `src/lib/services/analysis-service.ts` (append after `computeInvestmentReturn`, which is the last function in the file; the `INVESTMENT_CATEGORIES` set and `formatMonthLabel` already exist in this file)
 - Test: `tests/unit/analysis-service.test.ts` (append a new `describe` block at end of file)
 
 **Interfaces:**
+
 - Consumes: existing types from `src/lib/services/history-service.ts` — `SnapshotBreakdown` (`{ date: string; accountValues: Record<string, number> }`), `AccountMeta` (`{ id: string; name: string; category: string }`), `AccountMonthlyContribution` (`{ accountId: string; monthKey: string; contributions: number }`); the module-level `const INVESTMENT_CATEGORIES = new Set(["BROKERAGE", "CRYPTO_WALLET"])` and `formatMonthLabel(monthKey, locale)` already defined in `analysis-service.ts`.
 - Produces (Task 2 imports these exact names from `@/lib/services/analysis-service`):
 
 ```ts
 export interface ReturnTrendPoint {
-  monthKey: string;                // "YYYY-MM"
-  label: string;                   // locale-formatted month label
-  monthlyReturn: number | null;    // fraction; null when isEmpty or base ≤ 0
+  monthKey: string; // "YYYY-MM"
+  label: string; // locale-formatted month label
+  monthlyReturn: number | null; // fraction; null when isEmpty or base ≤ 0
   cumulativeReturn: number | null; // fraction; null until first computable month
-  isEmpty?: boolean;               // no snapshot data this month
+  isEmpty?: boolean; // no snapshot data this month
 }
 
 export function computeInvestmentReturnSeries(
@@ -276,12 +278,14 @@ git commit -m "feat(analysis): add computeInvestmentReturnSeries (monthly Dietz 
 ### Task 2: Return trend chart component + wiring + i18n
 
 **Files:**
+
 - Create: `src/components/analysis/return-trend-chart.tsx`
 - Modify: `src/components/analysis/lazy-analysis-charts.tsx` (append one lazy export)
 - Modify: `src/components/analysis/analysis-view.tsx` (import, memo after the `investmentReturnPct` memo ~line 216-224, third card in the movement grid ~line 349-359, section aria-label ~line 338)
 - Modify: `messages/en-US.json`, `messages/zh-TW.json` (`analysis` namespace)
 
 **Interfaces:**
+
 - Consumes: `computeInvestmentReturnSeries` and `ReturnTrendPoint` from `@/lib/services/analysis-service` (Task 1). Existing hooks/components visible in `cumulative-growth-chart.tsx`: `usePrivacyMode`, `useDensity`, `useChartAnimation`, `useChartCrosshair`, `ChartContainer`, `ChartTooltip`, `ChartTooltipContainer`, `ChartTooltipRow`, `ChartEmptyState`, `getMonthTickInterval`.
 - Produces: `ReturnTrendChart` (memo component, props `{ points: ReturnTrendPoint[] }`) and `LazyReturnTrendChart`.
 
@@ -353,9 +357,7 @@ function ReturnTooltip({
         label={t("seriesMonthlyReturn")}
         value={privacyMode ? "***" : formatPct(p.monthlyReturn)}
         indicatorColor={p.monthlyReturn >= 0 ? "var(--gain)" : "var(--loss)"}
-        valueClassName={
-          p.monthlyReturn >= 0 ? "text-[var(--gain-ink)]" : "text-[var(--loss-ink)]"
-        }
+        valueClassName={p.monthlyReturn >= 0 ? "text-[var(--gain-ink)]" : "text-[var(--loss-ink)]"}
       />
       {p.cumulativeReturn !== null && (
         <ChartTooltipRow
@@ -386,9 +388,7 @@ export const ReturnTrendChart = memo(function ReturnTrendChart({ points }: Props
   return (
     <>
       <CardHeader className="pb-2 px-2 sm:px-4">
-        <CardTitle className="text-base font-medium text-foreground">
-          {t("returnTrend")}
-        </CardTitle>
+        <CardTitle className="text-base font-medium text-foreground">{t("returnTrend")}</CardTitle>
         <p className="text-xs text-muted-foreground">{t("returnTrendSubtitle")}</p>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col px-2 pb-4 sm:px-4">
@@ -449,9 +449,7 @@ export const ReturnTrendChart = memo(function ReturnTrendChart({ points }: Props
                   <YAxis
                     width={50}
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(v: number) =>
-                      privacyMode ? "" : `${Math.round(v * 100)}%`
-                    }
+                    tickFormatter={(v: number) => (privacyMode ? "" : `${Math.round(v * 100)}%`)}
                   />
                   <ChartTooltip
                     cursor={{ stroke: "var(--muted-foreground)", strokeOpacity: 0.5 }}
@@ -582,10 +580,12 @@ git commit -m "feat(analysis): add return trend chart (monthly Dietz bars + cumu
 ### Task 3: Release entry + final checks
 
 **Files:**
+
 - Modify: `src/lib/changelog.ts` (prepend to `CHANGELOG`)
 - Modify: `package.json` (`"version"` field)
 
 **Interfaces:**
+
 - Consumes: nothing from earlier tasks (release bookkeeping).
 - Produces: `APP_VERSION` becomes `0.12.0`.
 
