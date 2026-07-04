@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatQuantity } from "@/lib/currencies";
 import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import type { SerializedTransaction } from "@/lib/types";
+import { compareTransactionsDesc, formatTransactionDateKey } from "@/lib/transaction-dates";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -102,8 +103,7 @@ function SwipeableTxRow({
           </Badge>
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {time}
-          {tx.note ? ` · ${tx.note}` : ""}
+          {[time, tx.note].filter(Boolean).join(" · ")}
         </p>
       </div>
       <div className="text-right shrink-0">
@@ -197,6 +197,9 @@ export function TransactionHistory({
   const [editQuantity, setEditQuantity] = useState("");
   const [editNote, setEditNote] = useState("");
   const [editDate, setEditDate] = useState("");
+  // Cash only: the calendar day the cash flow happened (YYYY-MM-DD). Cleared
+  // by the user ⇒ null on save ⇒ display/analysis fall back to createdAt.
+  const [editOccurredOn, setEditOccurredOn] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleEditQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -279,10 +282,18 @@ export function TransactionHistory({
     const tzOffset = date.getTimezoneOffset() * 60000;
     const localISOTime = new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
     setEditDate(localISOTime);
+
+    // Cash only: prefill with the stored occurrence day (already UTC
+    // midnight, so slice the ISO string directly) or the local entry day.
+    const isCash = Boolean((t as SerializedTransaction & { isCash?: boolean }).isCash);
+    setEditOccurredOn(isCash ? (t.occurrenceDate?.slice(0, 10) ?? localISOTime.slice(0, 10)) : "");
   };
 
   const handleEditSave = async () => {
     if (!editingTx) return;
+    const editingIsCash = Boolean(
+      (editingTx as SerializedTransaction & { isCash?: boolean }).isCash,
+    );
     setIsSubmitting(true);
     try {
       const res = await fetch(`/api/accounts/${accountId}/transactions/${editingTx.id}`, {
@@ -294,6 +305,7 @@ export function TransactionHistory({
           quantity: Number(editQuantity.replace(/,/g, "")),
           note: editNote,
           createdAt: new Date(editDate).toISOString(),
+          ...(editingIsCash && { occurrenceDate: editOccurredOn || null }),
         }),
       });
 
@@ -366,13 +378,14 @@ export function TransactionHistory({
     );
   }
 
-  const dateGroups = transactions.reduce<{ dateKey: string; items: SerializedTransaction[] }[]>(
-    (acc, tx) => {
-      const dateKey = new Date(tx.createdAt).toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
+  // Group by the effective date (occurrenceDate ?? createdAt) so a backdated
+  // cash entry lands under the day it actually happened. The server pages by
+  // createdAt, so re-sort the accumulated rows or a backdated entry would
+  // split its date group.
+  const dateGroups = [...transactions]
+    .sort(compareTransactionsDesc)
+    .reduce<{ dateKey: string; items: SerializedTransaction[] }[]>((acc, tx) => {
+      const dateKey = formatTransactionDateKey(tx);
       const last = acc[acc.length - 1];
       if (last && last.dateKey === dateKey) {
         last.items.push(tx);
@@ -380,9 +393,7 @@ export function TransactionHistory({
         acc.push({ dateKey, items: [tx] });
       }
       return acc;
-    },
-    [],
-  );
+    }, []);
 
   const editFormBody = (
     <div className="space-y-4">
@@ -439,6 +450,18 @@ export function TransactionHistory({
           className="min-h-11 md:min-h-8"
         />
       </div>
+      {Boolean((editingTx as SerializedTransaction & { isCash?: boolean })?.isCash) && (
+        <div className="space-y-2">
+          <Label htmlFor="occurredOn">{t("labelOccurredOn")}</Label>
+          <Input
+            id="occurredOn"
+            type="date"
+            value={editOccurredOn}
+            onChange={(e) => setEditOccurredOn(e.target.value)}
+            className="min-h-11 md:min-h-8"
+          />
+        </div>
+      )}
       <div className="space-y-2">
         <Label htmlFor="note">{t("labelNote")}</Label>
         <Input
@@ -508,10 +531,14 @@ export function TransactionHistory({
                   const symbol = isCash ? null : (tx.holding?.symbol ?? null);
                   const displayQuantity = getDisplayQuantity(tx, Boolean(isCash));
                   const qty = `${displayQuantity > 0 ? "+" : ""}${formatQuantity(displayQuantity, tx.holding?.assetType ?? "")}`;
-                  const time = new Date(tx.createdAt).toLocaleTimeString(undefined, {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  });
+                  // A backdated row's group header is its occurrence day, so
+                  // the entry clock time would be misleading — omit it.
+                  const time = tx.occurrenceDate
+                    ? ""
+                    : new Date(tx.createdAt).toLocaleTimeString(undefined, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      });
                   if (pendingDeleteIds.has(tx.id)) return null;
                   return (
                     <div key={tx.id}>

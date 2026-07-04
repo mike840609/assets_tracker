@@ -5,6 +5,12 @@ import { calculateBalanceDelta, getCashTransactionAmountError } from "@/lib/serv
 import { withAuth } from "@/lib/api-handler";
 import { ok, failure, validationError } from "@/lib/api-responses";
 
+// Same convention as the recurring-cash routes: occurrence dates are calendar
+// days (YYYY-MM-DD) persisted as UTC midnight into the `@db.Date` column.
+function toUtcDate(dateOnly: string): Date {
+  return new Date(`${dateOnly}T00:00:00.000Z`);
+}
+
 export const POST = withAuth(
   async (request, { params }: { params: Promise<{ id: string }> }, userId) => {
     const { id } = await params;
@@ -12,7 +18,7 @@ export const POST = withAuth(
     const parsed = createCashTransactionSchema.safeParse(body);
     if (!parsed.success) return validationError(parsed.error);
 
-    const { type, amount, note } = parsed.data;
+    const { type, amount, note, occurrenceDate } = parsed.data;
     const amountError = getCashTransactionAmountError({ type, amount });
     if (amountError) return failure(amountError, 400);
 
@@ -22,7 +28,13 @@ export const POST = withAuth(
     const delta = calculateBalanceDelta(null, { type, amount });
     const transaction = await prisma.$transaction(async (tx) => {
       const created = await tx.cashTransaction.create({
-        data: { accountId: id, type, amount, note },
+        data: {
+          accountId: id,
+          type,
+          amount,
+          note,
+          ...(occurrenceDate !== undefined && { occurrenceDate: toUtcDate(occurrenceDate) }),
+        },
       });
 
       await tx.account.update({

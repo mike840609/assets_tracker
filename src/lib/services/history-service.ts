@@ -430,29 +430,45 @@ export async function getAccountMonthlyCashFlow(
 
   const accountCurrencyMap = new Map(accounts.map((a) => [a.id, a.currency]));
 
-  // PE29 — floor the transaction scan to the first day (UTC) of the month
-  // containing the user's earliest snapshot. Months before the first snapshot
-  // are unreachable by the analysis UI: the axis buckets and attribution math
-  // are snapshot-derived (including the "All" range), so this floor changes no
-  // rendered output — it only avoids scanning/converting unreachable rows.
-  const floor = firstSnapshot
-    ? new Date(Date.UTC(firstSnapshot.date.getUTCFullYear(), firstSnapshot.date.getUTCMonth(), 1))
-    : null;
+  // #509 — floor the transaction scan to the user's earliest snapshot instant,
+  // exclusive. The first analysis bucket uses its own first snapshot as the
+  // start baseline (see aggregateMonthlyChange), so any cash already present in
+  // that snapshot — e.g. a same-month opening deposit — is baked into the
+  // baseline. Counting such a pre-snapshot flow as a contribution double-counts
+  // it: the first bucket then reports contributions ≈ the deposit and a phantom
+  // marketPerformance ≈ −deposit that buildCumulativeGrowth carries across the
+  // whole range. Flooring at the first snapshot's date with a strict `gt`
+  // aligns the contribution window with that baseline, so only flows that
+  // occurred AFTER the starting snapshot are attributed to the first bucket.
+  // (Months before the first snapshot are unreachable by the analysis UI, so
+  // this also preserves PE29's scan-narrowing intent.) The floor compares
+  // against the effective date (occurrenceDate ?? createdAt) to match the
+  // month-key bucketing below.
+  const floor = firstSnapshot ? firstSnapshot.date : null;
 
   const transactions = await prisma.cashTransaction.findMany({
     where: {
       accountId: { in: accounts.map((a) => a.id) },
       type: { in: ["DEPOSIT", "WITHDRAWAL"] },
-      ...(floor ? { createdAt: { gte: floor } } : {}),
+      ...(floor
+        ? {
+            OR: [
+              { occurrenceDate: { gt: floor } },
+              { occurrenceDate: null, createdAt: { gt: floor } },
+            ],
+          }
+        : {}),
     },
-    select: { amount: true, type: true, createdAt: true, accountId: true },
+    select: { amount: true, type: true, createdAt: true, occurrenceDate: true, accountId: true },
     orderBy: { createdAt: "asc" },
   });
 
   const byKey = new Map<string, number>();
 
   for (const tx of transactions) {
-    const monthKey = tx.createdAt.toISOString().slice(0, 7);
+    // Bucket by when the cash flow actually happened (occurrenceDate), falling
+    // back to createdAt for legacy rows that never recorded one (#498).
+    const monthKey = (tx.occurrenceDate ?? tx.createdAt).toISOString().slice(0, 7);
     const key = `${tx.accountId}::${monthKey}`;
     const currency = accountCurrencyMap.get(tx.accountId) ?? "USD";
     const rate = resolveRate(allRatesMap, currency, baseCurrency) ?? 1;

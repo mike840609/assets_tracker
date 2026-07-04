@@ -38,7 +38,7 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
-    version: "0.9.0",
+    version: "0.11.0",
     date: "2026-07-04",
     summary: {
       "en-US": "New Portfolio Return metric on the Analysis tab.",
@@ -52,6 +52,209 @@ export const CHANGELOG: Release[] = [
             "The Analysis summary now shows your Portfolio Return for the selected range — how much your brokerage and crypto accounts earned beyond what you deposited.",
           "zh-TW":
             "分析摘要現在會顯示所選期間的投資報酬率——券商與加密貨幣帳戶在扣除存入資金後的實際收益。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.10.5",
+    date: "2026-07-04",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Analysis charts and KPIs no longer drop the current month for users in Americas (west-of-UTC) timezones — the month range was being read with local date getters off UTC-midnight boundaries, shifting the range back a month and hiding the latest data.",
+          "zh-TW":
+            "分析圖表與關鍵指標不再對位於美洲（UTC 以西）時區的使用者遺漏當月資料——先前月份範圍以本地時間讀取 UTC 午夜的邊界日期，導致範圍整體往前推一個月而隱藏最新資料。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "FIRE / retirement projections now group net-worth snapshots by their UTC year, so a January-1 snapshot is no longer misfiled into the previous year on non-UTC servers.",
+          "zh-TW":
+            "FIRE／退休預測現在以 UTC 年份彙整淨值快照，因此在非 UTC 伺服器上，1 月 1 日的快照不會再被誤歸入前一年。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.10.4",
+    date: "2026-07-03",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "London- and Johannesburg-listed holdings quoted in pence/cents (e.g. `.L` and `.JO` symbols) are now converted to pounds/rand, fixing a roughly 100x overstatement of their value.",
+          "zh-TW":
+            "以便士／分計價的倫敦及約翰尼斯堡上市持股（例如 `.L` 與 `.JO` 代號）現在會換算為英鎊／南非蘭特，修正先前約 100 倍的價值高估問題。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.10.3",
+    date: "2026-07-03",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            'The Goals page no longer errors out when a goal\'s trend is nearly flat against a large remaining gap: the projected "at current pace" date could run millions of years into the future and crash the page, so such out-of-range estimates are now simply omitted.',
+          "zh-TW":
+            "當某個目標的趨勢近乎持平、但距離目標金額仍差距很大時，目標頁面不會再發生錯誤：先前「依目前速度」的預估日期可能推算到數百萬年後而導致頁面崩潰，現在這類超出合理範圍的預估會直接略過不顯示。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.10.2",
+    date: "2026-07-03",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Dashboard net worth now updates immediately after a price refresh: the cached net-worth read is tagged with prices, so refreshing a watchlist stock you also hold no longer leaves the dashboard showing the old valuation.",
+          "zh-TW":
+            "刷新價格後，儀表板的淨值現在會立即更新：淨值的快取讀取已加上價格標籤，因此刷新你同時持有的追蹤股票後，儀表板不會再顯示舊的估值。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "The Analysis page no longer disagrees with the dashboard after an exchange-rate refresh: its bundled reads are now tagged with exchange-rates, so an FX refresh invalidates them instead of serving stale figures for up to five minutes.",
+          "zh-TW":
+            "匯率刷新後，分析頁不會再與儀表板數字不一致：其彙整的讀取已加上匯率標籤，因此匯率刷新會立即使其失效，而不會在最多五分鐘內顯示過期的數字。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.10.1",
+    date: "2026-07-03",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Analysis cash flow no longer misreads an account's opening deposit as a market loss: a deposit made in the same month as your first snapshot is no longer double-counted, so the first month's market performance and the Cumulative Growth chart stay accurate across the whole range.",
+          "zh-TW":
+            "分析頁的現金流不再把帳戶的初始存款誤判為市場虧損：與第一筆快照同月的存款不會再被重複計算，第一個月的市場績效與累積成長圖表在整個區間都能保持正確。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "The Analysis category trend area chart no longer plunges to zero at a trailing month with no snapshot; the stacked area now breaks at empty months instead.",
+          "zh-TW":
+            "分析頁的類別趨勢區域圖不會再在沒有快照的最後一個月驟降到零；堆疊區域現在會在空白月份中斷而非歸零。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.10.0",
+    date: "2026-07-03",
+    summary: {
+      "en-US": "Backdate manual cash transactions to the day they actually happened.",
+      "zh-TW": "手動現金交易可回填實際發生日期。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Manual cash entries can now set an occurrence date: the balance editor gets a date field (defaults to today) and cash transactions can be re-dated when editing, so backdated deposits and withdrawals count toward the right month in Analysis.",
+          "zh-TW":
+            "手動現金紀錄現在可以設定發生日期：餘額編輯器新增日期欄位（預設為今天），編輯現金交易時也可調整日期，補登的存提款會計入分析頁正確的月份。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "The account transaction list now shows backdated cash entries under the day they occurred instead of the day they were entered.",
+          "zh-TW": "帳戶交易列表現在會將補登的現金紀錄顯示在實際發生日，而非輸入日。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.9.2",
+    date: "2026-07-03",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Data export/import now preserves each transaction's occurrence date, so recurring and backdated entries keep their correct month in analysis after restoring a backup.",
+          "zh-TW":
+            "資料匯出／匯入現在會保留每筆交易的發生日期，還原備份後定期與補登的交易在分析中仍會落在正確的月份。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.9.1",
+    date: "2026-07-02",
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Cash Flow, Cumulative Growth, and Attribution now bucket transactions by their actual occurrence date, so backdated deposits and withdrawals land in the right month.",
+          "zh-TW":
+            "現金流、累積成長與績效歸因現在依實際發生日期歸類交易，補登的存提款會落在正確的月份。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.9.0",
+    date: "2026-07-02",
+    summary: {
+      "en-US": "Clearer, leaner Analysis charts, plus a cumulative growth view.",
+      "zh-TW": "更清晰、更精簡的分析圖表，並新增累積成長檢視。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "New Cumulative Growth chart in Analysis shows how much of your net-worth growth came from deposits vs. market gains over the selected range.",
+          "zh-TW":
+            "分析頁新增「累積成長」圖表，呈現所選期間內淨資產成長有多少來自存入金額、多少來自市場收益。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Assets vs. Liabilities is now an area chart with a net-worth line, so the balance-sheet trend reads at a glance.",
+          "zh-TW": "「資產與負債」改為帶有淨資產走勢線的面積圖，資產負債趨勢一眼即懂。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Streamlined the Analysis tab: Cash Flow Decomposition now carries monthly movement, Category Trend became a stacked area, and the redundant Monthly Change and Top Movers panels were removed.",
+          "zh-TW":
+            "精簡分析頁：現金流分解圖現在同時呈現每月變化、類別趨勢改為堆疊面積圖，並移除重複的每月變化與最大變動面板。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "The Cash Flow chart now shows the true monthly net change even when deposits and market movement pull in opposite directions.",
+          "zh-TW": "即使存入金額與市場變動方向相反，現金流圖表現在也能正確顯示每月淨變化。",
         },
       },
     ],

@@ -24,6 +24,12 @@ class NegativeHoldingQuantityError extends Error {}
 class StaleHoldingTransactionError extends Error {}
 class StaleCashTransactionError extends Error {}
 
+// Same convention as the recurring-cash routes: occurrence dates are calendar
+// days (YYYY-MM-DD) persisted as UTC midnight into the `@db.Date` column.
+function toUtcDate(dateOnly: string): Date {
+  return new Date(`${dateOnly}T00:00:00.000Z`);
+}
+
 async function applyHoldingQuantityDelta(
   tx: Pick<typeof prisma, "holding">,
   holdingId: string,
@@ -187,6 +193,10 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
             ...(data.type !== undefined && { type: data.type }),
             ...(data.note !== undefined && { note: data.note }),
             ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
+            // `null` clears the backdate so analysis falls back to createdAt.
+            ...(data.occurrenceDate !== undefined && {
+              occurrenceDate: data.occurrenceDate === null ? null : toUtcDate(data.occurrenceDate),
+            }),
           },
         });
         if (result.count !== 1) {

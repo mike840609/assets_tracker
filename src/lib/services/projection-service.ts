@@ -61,7 +61,10 @@ export async function getProjectionData(
   // Last snapshot per calendar year
   const byYear = new Map<number, number>();
   for (const s of normalized) {
-    byYear.set(s.date.getFullYear(), s.netWorth);
+    // Snapshots are stored at UTC-midnight and deduped by their UTC date, so
+    // bucket by the UTC year. A local getter would land a Jan-1-UTC snapshot in
+    // the prior year on a west-of-UTC server (#514).
+    byYear.set(s.date.getUTCFullYear(), s.netWorth);
   }
   const annualSnapshots = Array.from(byYear.entries())
     .sort(([a], [b]) => a - b)
@@ -78,7 +81,12 @@ export async function getProjectionData(
     where: {
       accountId: { in: accountIds },
       type: { in: ["DEPOSIT", "WITHDRAWAL"] },
-      createdAt: { gte: twelveMonthsAgo },
+      // Window by the effective date (occurrenceDate ?? createdAt) so backdated
+      // or catch-up-materialized flows count in the month they occurred (#498).
+      OR: [
+        { occurrenceDate: { gte: twelveMonthsAgo } },
+        { occurrenceDate: null, createdAt: { gte: twelveMonthsAgo } },
+      ],
     },
     select: { amount: true, type: true, accountId: true },
   });

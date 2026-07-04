@@ -158,6 +158,24 @@ describe("getCachedNetWorthSummary (two-pass valuation)", () => {
     expect(h.tags).toContain("exchange-rates");
   });
 
+  it("tags the cached read with prices so a stock-only price refresh invalidates it", async () => {
+    h.tags = [];
+    h.rates = new Map([["USD_TWD", 30]]);
+    h.prices = [{ symbol: "AAPL", price: 200, currency: "USD" }];
+    h.accounts = [
+      account({
+        id: "A",
+        type: "ASSET",
+        currency: "USD",
+        holdings: [holding({ id: "h1", symbol: "AAPL", quantity: 1, currency: "USD" })],
+      }),
+    ];
+
+    await getCachedNetWorthSummary("u1", "USD");
+
+    expect(h.tags).toContain("prices");
+  });
+
   it("falls back to rate 1 and warns for an unresolvable currency", async () => {
     h.warnings = [];
     h.rates = new Map([["USD_TWD", 30]]); // no EUR path

@@ -27,6 +27,10 @@ export const updateAccountSchema = createAccountSchema
     isActive: z.boolean(),
     isPinned: z.boolean(),
     note: z.string().max(500).optional().nullable(),
+    // Calendar day (YYYY-MM-DD) stamped onto the EDIT cash transaction a
+    // manual balance change creates — lets the inline balance editor backdate
+    // the cash flow (#500). Ignored when the balance is not changing.
+    occurrenceDate: z.iso.date("Must be a valid YYYY-MM-DD date").optional(),
   })
   .partial();
 
@@ -150,22 +154,31 @@ const nonZeroCashAdjustment = z.number().refine((amount) => amount !== 0, {
   message: "Adjustment amount cannot be zero",
 });
 const cashNoteField = z.string().optional().nullable();
+// When the cash flow actually happened, as a calendar day (YYYY-MM-DD) —
+// matching the recurring-transaction date convention and the `@db.Date`
+// column. Optional: when omitted the analysis pipeline falls back to
+// `createdAt` (see #500). Nullable on update so an edit can clear a
+// backdate and restore the createdAt fallback.
+const cashOccurrenceDateField = z.iso.date("Must be a valid YYYY-MM-DD date");
 
 export const createCashTransactionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("DEPOSIT"),
     amount: positiveCashAmount,
     note: cashNoteField,
+    occurrenceDate: cashOccurrenceDateField.optional(),
   }),
   z.object({
     type: z.literal("WITHDRAWAL"),
     amount: positiveCashAmount,
     note: cashNoteField,
+    occurrenceDate: cashOccurrenceDateField.optional(),
   }),
   z.object({
     type: z.literal("EDIT"),
     amount: nonZeroCashAdjustment,
     note: cashNoteField,
+    occurrenceDate: cashOccurrenceDateField.optional(),
   }),
 ]);
 
@@ -176,6 +189,7 @@ export const updateCashTransactionSchema = z
     amount: z.number().optional(),
     note: cashNoteField,
     createdAt: z.iso.datetime().optional(),
+    occurrenceDate: cashOccurrenceDateField.optional().nullable(),
   })
   .superRefine((data, ctx) => {
     if (data.type === "DEPOSIT" || data.type === "WITHDRAWAL") {
@@ -331,6 +345,11 @@ const MAX_IMPORT_GOALS = 500;
 // else turns a write-time Prisma 500 into a 400 with a field path.
 const importTimestamp = z.iso.datetime().optional();
 
+// Recurring-materialized transactions carry the UTC calendar day they belong
+// to; manual rows export it as null. Preserve null as null — never default it,
+// since analysis bucketing falls back to createdAt only when it is null.
+const importOccurrenceDate = z.iso.datetime().optional().nullable();
+
 export const dataImportSchema = z.object({
   version: z.string(),
   settings: z
@@ -376,6 +395,7 @@ export const dataImportSchema = z.object({
                     quantity: decimalSchema,
                     note: z.string().optional().nullable(),
                     createdAt: importTimestamp,
+                    occurrenceDate: importOccurrenceDate,
                   }),
                 )
                 .max(MAX_IMPORT_TRANSACTIONS_PER_HOLDING)
@@ -391,6 +411,7 @@ export const dataImportSchema = z.object({
               amount: decimalSchema,
               note: z.string().optional().nullable(),
               createdAt: importTimestamp,
+              occurrenceDate: importOccurrenceDate,
             }),
           )
           .max(MAX_IMPORT_CASH_TRANSACTIONS_PER_ACCOUNT)

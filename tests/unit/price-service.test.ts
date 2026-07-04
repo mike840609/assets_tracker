@@ -21,8 +21,76 @@ vi.mock("next/cache", () => ({
 
 const { prisma } = await import("@/lib/prisma");
 const { getYahooClient } = await import("@/lib/services/yahoo-client");
-const { refreshPricesForStockSymbols } = await import("@/lib/services/price-service");
+const { refreshPricesForStockSymbols, normalizeMinorCurrencyQuote } =
+  await import("@/lib/services/price-service");
 const { PRICE_REFRESH_TTL_MS } = await import("@/lib/refresh-policy");
+
+describe("normalizeMinorCurrencyQuote — minor-unit (pence/cents) normalization", () => {
+  it("converts a London GBp (pence) quote to major GBP", () => {
+    // Yahoo quotes .L symbols in pence tagged "GBp": 7000p = £70.00
+    expect(normalizeMinorCurrencyQuote(7000, "GBp")).toEqual({ price: 70, currency: "GBP" });
+  });
+
+  it("converts a GBX quote identically to GBp", () => {
+    expect(normalizeMinorCurrencyQuote(7000, "GBX")).toEqual({ price: 70, currency: "GBP" });
+    // Lowercase X variant is unambiguous too
+    expect(normalizeMinorCurrencyQuote(7000, "GBx")).toEqual({ price: 70, currency: "GBP" });
+  });
+
+  it("converts a Johannesburg ZAc (cents) quote to major ZAR", () => {
+    // 1500c = R15.00
+    expect(normalizeMinorCurrencyQuote(1500, "ZAc")).toEqual({ price: 15, currency: "ZAR" });
+    expect(normalizeMinorCurrencyQuote(1500, "ZAX")).toEqual({ price: 15, currency: "ZAR" });
+  });
+
+  it("passes a major GBP quote through untouched (guards the GBp/GBP collision)", () => {
+    // "GBP" (all-caps, major) must NOT be divided by 100
+    expect(normalizeMinorCurrencyQuote(70, "GBP")).toEqual({ price: 70, currency: "GBP" });
+  });
+
+  it("passes a USD quote through unchanged", () => {
+    expect(normalizeMinorCurrencyQuote(123.45, "USD")).toEqual({
+      price: 123.45,
+      currency: "USD",
+    });
+  });
+});
+
+describe("fetchYahooQuotes — persists normalized minor-unit quotes to PriceCache", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("stores a London GBp quote of 7000 as 70 GBP in the upsert params", async () => {
+    // AAPL-style existence/fresh gate: LSE.L exists and is stale so it is fetched
+    const staleDate = new Date(Date.now() - PRICE_REFRESH_TTL_MS - 5_000);
+    vi.mocked(prisma.priceCache.findMany)
+      .mockResolvedValueOnce([{ symbol: "VOD.L", updatedAt: staleDate }] as never)
+      // currentRows lookup before the upsert
+      .mockResolvedValueOnce([] as never);
+    vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce([{ symbol: "VOD.L" }]);
+    vi.mocked(getYahooClient).mockResolvedValue({
+      quote: vi
+        .fn()
+        .mockResolvedValue([{ symbol: "VOD.L", regularMarketPrice: 7000, currency: "GBp" }]),
+    } as never);
+    vi.mocked(prisma.$executeRawUnsafe).mockResolvedValue(1 as never);
+
+    const result = await refreshPricesForStockSymbols(["VOD.L"]);
+    expect(result.updated).toBe(1);
+
+    const upsertCall = vi
+      .mocked(prisma.$executeRawUnsafe)
+      .mock.calls.find(([sql]) => typeof sql === "string" && /INSERT INTO "PriceCache"/i.test(sql));
+    expect(upsertCall).toBeDefined();
+    // Params are [symbol, price(string), currency, ...] per row
+    const params = upsertCall!.slice(1);
+    expect(params).toContain("70"); // 7000 / 100, stringified
+    expect(params).toContain("GBP"); // GBp normalized to major ISO code
+    expect(params).not.toContain("GBp");
+    expect(params).not.toContain("7000");
+  });
+});
 
 describe("refreshPricesForStockSymbols — claim deduplication", () => {
   beforeEach(() => {

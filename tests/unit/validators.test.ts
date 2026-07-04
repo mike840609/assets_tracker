@@ -27,6 +27,15 @@ describe("updateAccountSchema", () => {
   it("rejects an oversized manual balance edit note", () => {
     expect(updateAccountSchema.safeParse({ note: "x".repeat(501) }).success).toBe(false);
   });
+
+  it("accepts a YYYY-MM-DD occurrenceDate for backdated balance edits", () => {
+    expect(
+      updateAccountSchema.safeParse({ cashBalance: 125, occurrenceDate: "2026-06-01" }).success,
+    ).toBe(true);
+    expect(
+      updateAccountSchema.safeParse({ cashBalance: 125, occurrenceDate: "June 1st" }).success,
+    ).toBe(false);
+  });
 });
 
 describe("createHoldingSchema", () => {
@@ -145,6 +154,57 @@ describe("cash transaction schemas", () => {
       updateCashTransactionSchema.safeParse({ id: "c1", type: "EDIT", amount: 0 }).success,
     ).toBe(false);
   });
+
+  it("accepts an optional YYYY-MM-DD occurrenceDate on create", () => {
+    expect(
+      createCashTransactionSchema.safeParse({
+        type: "DEPOSIT",
+        amount: 100,
+        occurrenceDate: "2026-01-15",
+      }).success,
+    ).toBe(true);
+    // Omitted is fine — analysis/display fall back to createdAt.
+    expect(createCashTransactionSchema.safeParse({ type: "DEPOSIT", amount: 100 }).success).toBe(
+      true,
+    );
+  });
+
+  it("rejects a malformed occurrenceDate on create", () => {
+    expect(
+      createCashTransactionSchema.safeParse({
+        type: "WITHDRAWAL",
+        amount: 50,
+        occurrenceDate: "not-a-date",
+      }).success,
+    ).toBe(false);
+    // Datetime strings are not calendar days.
+    expect(
+      createCashTransactionSchema.safeParse({
+        type: "WITHDRAWAL",
+        amount: 50,
+        occurrenceDate: "2026-01-15T00:00:00.000Z",
+      }).success,
+    ).toBe(false);
+    expect(
+      createCashTransactionSchema.safeParse({
+        type: "EDIT",
+        amount: -5,
+        occurrenceDate: "2026-13-40",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts occurrenceDate (or null to clear it) on update", () => {
+    expect(
+      updateCashTransactionSchema.safeParse({ id: "c1", occurrenceDate: "2025-12-31" }).success,
+    ).toBe(true);
+    expect(updateCashTransactionSchema.safeParse({ id: "c1", occurrenceDate: null }).success).toBe(
+      true,
+    );
+    expect(
+      updateCashTransactionSchema.safeParse({ id: "c1", occurrenceDate: "31/12/2025" }).success,
+    ).toBe(false);
+  });
 });
 
 describe("createGoalSchema", () => {
@@ -214,6 +274,71 @@ describe("dataImportSchema", () => {
       version: "1.2",
       settings: { baseCurrency: "USD", locale: "fr-FR" },
       accounts: [],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("preserves transaction occurrenceDate through parsing, keeping null as null", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.2",
+      accounts: [
+        {
+          name: "Checking",
+          type: "ASSET",
+          category: "BANK",
+          currency: "USD",
+          cashBalance: "100",
+          holdings: [
+            {
+              symbol: "VT",
+              name: "Vanguard Total World",
+              quantity: "1",
+              currency: "USD",
+              assetType: "ETF",
+              transactions: [
+                { type: "BUY", quantity: "1", occurrenceDate: "2026-06-01T00:00:00.000Z" },
+                { type: "SELL", quantity: "1", occurrenceDate: null },
+              ],
+            },
+          ],
+          cashTransactions: [
+            { type: "DEPOSIT", amount: "50", occurrenceDate: "2026-06-15T00:00:00.000Z" },
+            { type: "WITHDRAWAL", amount: "10", occurrenceDate: null },
+            { type: "DEPOSIT", amount: "5" },
+          ],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    const account = result.data.accounts[0];
+    expect(account.holdings?.[0].transactions?.map((t) => t.occurrenceDate)).toEqual([
+      "2026-06-01T00:00:00.000Z",
+      null,
+    ]);
+    expect(account.cashTransactions?.map((t) => t.occurrenceDate)).toEqual([
+      "2026-06-15T00:00:00.000Z",
+      null,
+      undefined,
+    ]);
+  });
+
+  it("rejects a non-datetime occurrenceDate", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.2",
+      accounts: [
+        {
+          name: "Checking",
+          type: "ASSET",
+          category: "BANK",
+          currency: "USD",
+          cashBalance: "0",
+          cashTransactions: [{ type: "DEPOSIT", amount: "1", occurrenceDate: "not-a-date" }],
+        },
+      ],
     });
 
     expect(result.success).toBe(false);

@@ -11,7 +11,7 @@ const HIDDEN = "***";
 interface AccountStatCardsProps {
   account: SerializedAccountWithHoldings;
   totalHoldingsValue: number;
-  onSaveBalance: (newBalance: number, note?: string) => Promise<void>;
+  onSaveBalance: (newBalance: number, note?: string, occurrenceDate?: string) => Promise<void>;
 }
 
 export function AccountStatCards({

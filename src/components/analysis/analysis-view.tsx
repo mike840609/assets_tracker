@@ -22,21 +22,20 @@ import {
   computeKpis,
   fillMonthRange,
   buildCashFlowBuckets,
+  buildCumulativeGrowth,
   aggregateCategoryHistory,
-  computeTopMovers,
   computePerformanceAttribution,
   computeInvestmentReturn,
 } from "@/lib/services/analysis-service";
 import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/analysis-service";
 import {
-  LazyMonthlyChangeChart,
   LazyAssetsLiabilitiesChart,
   LazyCashFlowChart,
+  LazyCumulativeGrowthChart,
   LazyCategoryTrendChart,
   LazyAttributionChart,
 } from "./lazy-analysis-charts";
 import { KpiTiles } from "./kpi-tiles";
-import { TopMoversList } from "./top-movers-list";
 import { AnalysisEmptyState } from "./analysis-empty-state";
 
 interface Props {
@@ -74,8 +73,11 @@ function pickDefaultRange(snapshots: NormalizedSnapshot[]): RangeLabel {
   if (snapshots.length === 0) return "YTD";
   const first = new Date(snapshots[0].date);
   const now = new Date();
+  // `first` is a snapshot date parsed from a UTC "YYYY-MM-DD" string (UTC-midnight),
+  // so read its month with UTC getters to match how snapshots are bucketed
+  // everywhere else; `now` is a genuine local instant (the user's current month).
   const historyMonths =
-    (now.getFullYear() - first.getFullYear()) * 12 + now.getMonth() - first.getMonth() + 1;
+    (now.getFullYear() - first.getUTCFullYear()) * 12 + now.getMonth() - first.getUTCMonth() + 1;
   if (historyMonths <= 6) return "All";
   if (now.getMonth() < 3) return "6M"; // Jan–Mar: YTD would be a thin 1–3 month slice
   return "YTD";
@@ -149,7 +151,14 @@ export function AnalysisView({
 
     if (selected.months === Infinity) {
       const firstDate = snapshots.length > 0 ? new Date(snapshots[0].date) : now;
-      const rangeStart = new Date(Date.UTC(firstDate.getFullYear(), firstDate.getMonth(), 1));
+      // firstDate from a snapshot is UTC-midnight; use UTC getters so the range
+      // starts on its UTC month (matching the snapshot buckets) rather than a
+      // phantom prior month west of UTC. The `now` fallback is a local instant,
+      // but with no snapshots the range is unused.
+      const rangeStart =
+        snapshots.length > 0
+          ? new Date(Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), 1))
+          : new Date(Date.UTC(firstDate.getFullYear(), firstDate.getMonth(), 1));
       return {
         filteredSnapshots: snapshots,
         rangeStart,
@@ -182,6 +191,8 @@ export function AnalysisView({
     return buildCashFlowBuckets(buckets, filtered, locale);
   }, [cashFlowData, buckets, rangeStartIso, locale]);
 
+  const cumulativeGrowth = useMemo(() => buildCumulativeGrowth(cashFlowBuckets), [cashFlowBuckets]);
+
   // Raw history filtered to range
   const filteredRawSnapshots = useMemo((): SnapshotBreakdown[] => {
     return rawHistory.snapshots.filter((s) => s.date >= rangeStartIso);
@@ -193,19 +204,13 @@ export function AnalysisView({
     return buckets.map((b) => {
       const existing = byKey.get(b.monthKey);
       if (existing) return existing;
-      // Pad empty months with 0s for all categories to match the other charts' X-axis length
-      const empty: CategoryDataPoint & Record<string, number | string> = { monthKey: b.monthKey };
-      for (const acc of rawHistory.accounts) {
-        empty[acc.category] = 0;
-      }
-      return empty as CategoryDataPoint;
+      // Padded month with no snapshot: keep it on the axis (to match the other
+      // charts' X length) but emit only the monthKey — no category values. The
+      // chart reads an absent category as null so the stacked area breaks at the
+      // gap instead of plunging to zero (#511).
+      return { monthKey: b.monthKey } as CategoryDataPoint;
     });
   }, [filteredRawSnapshots, rawHistory.accounts, buckets]);
-
-  const topMovers = useMemo(
-    () => computeTopMovers(filteredRawSnapshots, rawHistory.accounts),
-    [filteredRawSnapshots, rawHistory.accounts],
-  );
 
   const attributionItems = useMemo(
     () =>
@@ -330,7 +335,7 @@ export function AnalysisView({
                 so each question reads as its own group; desktop keeps them tighter. */}
             <div className={isCompact ? "space-y-3" : "space-y-6 xl:space-y-4"}>
               <section
-                aria-label={`${t("monthlyChange")} / ${t("cashFlow")}`}
+                aria-label={`${t("cashFlow")} / ${t("cumulativeGrowth")}`}
                 className={isCompact ? "space-y-2" : "space-y-3"}
               >
                 <div className="flex flex-wrap items-end justify-between gap-2">
@@ -343,14 +348,13 @@ export function AnalysisView({
                 </div>
                 <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>
                   <Card size="sm" className="h-full">
-                    <LazyMonthlyChangeChart
-                      buckets={buckets}
-                      baseCurrency={baseCurrency}
-                      locale={locale}
-                    />
+                    <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
                   </Card>
                   <Card size="sm" className="h-full">
-                    <LazyCashFlowChart buckets={cashFlowBuckets} baseCurrency={baseCurrency} />
+                    <LazyCumulativeGrowthChart
+                      points={cumulativeGrowth}
+                      baseCurrency={baseCurrency}
+                    />
                   </Card>
                 </div>
               </section>
@@ -383,9 +387,6 @@ export function AnalysisView({
                 </div>
               </section>
             </div>
-
-            {/* Per-account detail — full-width table reads best wide */}
-            <TopMoversList movers={topMovers} baseCurrency={baseCurrency} />
           </motion.div>
         )}
       </MountedAnalysis>

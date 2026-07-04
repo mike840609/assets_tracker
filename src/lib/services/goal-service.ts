@@ -44,6 +44,28 @@ function getCurrentAmount(goal: SerializedGoal, summary: NetWorthSummary): numbe
 
 type SnapshotRow = { date: string; netWorth: number; totalAssets: number };
 
+// Cap ETA projections at ~100 years. A near-flat trend against a large
+// remaining gap can make `daysToGoal` astronomically large — well beyond the
+// JS Date range (±100,000,000 days from epoch) — so `Date.setDate()` would
+// yield an Invalid Date and the subsequent `.toISOString()` throws a
+// RangeError, 500ing /goals. Anything past this horizon is meaningless as a
+// forecast anyway, so we return the existing "no projection" sentinel (null).
+const MAX_PROJECTION_DAYS = 100 * 365;
+
+/**
+ * Project a date `daysFromToday` days into the future, returning `null` when
+ * the horizon is not a sane, finite, in-range number of days. Shared by both
+ * the linear and CAGR branches so the overflow guard can't drift between them.
+ */
+function projectDate(today: Date, daysFromToday: number): string | null {
+  if (!Number.isFinite(daysFromToday) || daysFromToday < 0 || daysFromToday > MAX_PROJECTION_DAYS) {
+    return null;
+  }
+  const projected = new Date(today);
+  projected.setDate(projected.getDate() + Math.ceil(daysFromToday));
+  return projected.toISOString();
+}
+
 /**
  * Cached 90-day snapshot window backing the goal projections. Was the only
  * uncached read on the dashboard's goals section; the cron / data import
@@ -108,9 +130,7 @@ function computeProjection(
   const dailyChange = (lastValue - firstValue) / daysDiff;
   if (dailyChange > 0) {
     const daysToGoal = (targetAmountInBase - currentAmount) / dailyChange;
-    const projected = new Date(today);
-    projected.setDate(projected.getDate() + Math.ceil(daysToGoal));
-    linearDate = projected.toISOString();
+    linearDate = projectDate(today, daysToGoal);
   }
 
   if (firstValue > 0 && lastValue > firstValue) {
@@ -118,9 +138,7 @@ function computeProjection(
     if (annualRate > 0 && currentAmount > 0) {
       const daysToGoal =
         (365 * Math.log(targetAmountInBase / currentAmount)) / Math.log(1 + annualRate);
-      const projected = new Date(today);
-      projected.setDate(projected.getDate() + Math.ceil(daysToGoal));
-      cagrDate = projected.toISOString();
+      cagrDate = projectDate(today, daysToGoal);
     }
   }
 
