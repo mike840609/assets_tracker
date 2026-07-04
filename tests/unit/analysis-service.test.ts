@@ -457,6 +457,26 @@ describe("computeInvestmentReturnSeries", () => {
     expect(points[2].monthlyReturn).toBeCloseTo(100 / 6000, 10);
   });
 
+  it("ignores cash flows in leading gap months before the first snapshot baseline", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-02-05", accountValues: { a1: 10000 } },
+      { date: "2026-02-28", accountValues: { a1: 10500 } },
+    ];
+    const cashFlows: AccountMonthlyContribution[] = [
+      { accountId: "a1", monthKey: "2026-01", contributions: 10000 }, // predates the baseline
+    ];
+    const points = computeInvestmentReturnSeries(
+      snapshots,
+      accounts,
+      cashFlows,
+      ["2026-01", "2026-02"],
+      "en-US",
+    );
+    expect(points[0].isEmpty).toBe(true);
+    // Feb baseline is the first snapshot within Feb (10000), which already contains the Jan deposit
+    expect(points[1].monthlyReturn).toBeCloseTo(500 / 10000, 10);
+  });
+
   it("returns [] with fewer than two snapshots or no investment accounts", () => {
     expect(
       computeInvestmentReturnSeries(

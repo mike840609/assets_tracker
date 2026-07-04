@@ -549,7 +549,7 @@ export function computeInvestmentReturnSeries(
     const label = formatMonthLabel(monthKey, locale);
     const endSnap = monthLast.get(monthKey);
     if (!endSnap) {
-      pendingCash += cashByMonth.get(monthKey) ?? 0;
+      if (prevEnd !== null) pendingCash += cashByMonth.get(monthKey) ?? 0;
       return { monthKey, label, monthlyReturn: null, cumulativeReturn: index, isEmpty: true };
     }
     const start = prevEnd ?? investmentValue(monthFirst.get(monthKey)!);
