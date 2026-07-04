@@ -38,6 +38,25 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.12.0",
+    date: "2026-07-04",
+    summary: {
+      "en-US": "New Return Trend chart on the Analysis tab.",
+      "zh-TW": "分析頁面新增投資報酬走勢圖。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "The Analysis tab now charts your monthly investment return alongside a cumulative return index, so you can see how your brokerage and crypto performance evolved over the selected range.",
+          "zh-TW":
+            "分析頁面現在會以圖表呈現每月投資報酬率與累積報酬指數，讓你看到券商與加密貨幣帳戶在所選期間的績效演變。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.11.0",
     date: "2026-07-04",
     summary: {

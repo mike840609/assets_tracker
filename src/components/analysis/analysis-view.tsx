@@ -26,6 +26,7 @@ import {
   aggregateCategoryHistory,
   computePerformanceAttribution,
   computeInvestmentReturn,
+  computeInvestmentReturnSeries,
 } from "@/lib/services/analysis-service";
 import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/analysis-service";
 import {
@@ -34,6 +35,7 @@ import {
   LazyCumulativeGrowthChart,
   LazyCategoryTrendChart,
   LazyAttributionChart,
+  LazyReturnTrendChart,
 } from "./lazy-analysis-charts";
 import { KpiTiles } from "./kpi-tiles";
 import { AnalysisEmptyState } from "./analysis-empty-state";
@@ -234,6 +236,18 @@ export function AnalysisView({
     [filteredRawSnapshots, rawHistory.accounts, accountCashFlow, rangeStartIso],
   );
 
+  const returnTrend = useMemo(
+    () =>
+      computeInvestmentReturnSeries(
+        filteredRawSnapshots,
+        rawHistory.accounts,
+        accountCashFlow,
+        buckets.map((b) => b.monthKey),
+        locale,
+      ),
+    [filteredRawSnapshots, rawHistory.accounts, accountCashFlow, buckets, locale],
+  );
+
   const hasData = snapshots.length > 0;
   const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
 
@@ -335,7 +349,7 @@ export function AnalysisView({
                 so each question reads as its own group; desktop keeps them tighter. */}
             <div className={isCompact ? "space-y-3" : "space-y-6 xl:space-y-4"}>
               <section
-                aria-label={`${t("cashFlow")} / ${t("cumulativeGrowth")}`}
+                aria-label={`${t("cashFlow")} / ${t("cumulativeGrowth")} / ${t("returnTrend")}`}
                 className={isCompact ? "space-y-2" : "space-y-3"}
               >
                 <div className="flex flex-wrap items-end justify-between gap-2">
@@ -355,6 +369,9 @@ export function AnalysisView({
                       points={cumulativeGrowth}
                       baseCurrency={baseCurrency}
                     />
+                  </Card>
+                  <Card size="sm" className="h-full xl:col-span-2">
+                    <LazyReturnTrendChart points={returnTrend} />
                   </Card>
                 </div>
               </section>

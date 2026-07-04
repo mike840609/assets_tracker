@@ -9,6 +9,7 @@ import {
   aggregateCategoryHistory,
   computePerformanceAttribution,
   computeInvestmentReturn,
+  computeInvestmentReturnSeries,
 } from "@/lib/services/analysis-service";
 import type {
   NormalizedSnapshot,
@@ -348,5 +349,151 @@ describe("computeInvestmentReturn", () => {
       { date: "2026-03-01", accountValues: { a2: 6000 } },
     ];
     expect(computeInvestmentReturn(snapshots, bankOnly, [], "2026-01")).toBeNull();
+  });
+});
+
+describe("computeInvestmentReturnSeries", () => {
+  const accounts: AccountMeta[] = [
+    { id: "a1", name: "Brokerage", category: "BROKERAGE" },
+    { id: "a2", name: "Checking", category: "BANK" },
+  ];
+
+  it("computes monthly Dietz returns and a chained cumulative index", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-01-05", accountValues: { a1: 1000, a2: 500 } },
+      { date: "2026-01-31", accountValues: { a1: 1100, a2: 500 } },
+      { date: "2026-02-28", accountValues: { a1: 1265, a2: 9999 } },
+    ];
+    const points = computeInvestmentReturnSeries(
+      snapshots,
+      accounts,
+      [],
+      ["2026-01", "2026-02", "2026-03"],
+      "en-US",
+    );
+    expect(points).toHaveLength(3);
+    // Jan: first-month baseline = first snapshot within the month (1000), end 1100
+    expect(points[0].monthlyReturn).toBeCloseTo(0.1, 10);
+    expect(points[0].cumulativeReturn).toBeCloseTo(0.1, 10);
+    // Feb: start = Jan month-end (1100), end 1265 → r = 0.15; index = 1.1*1.15 − 1
+    expect(points[1].monthlyReturn).toBeCloseTo(0.15, 10);
+    expect(points[1].cumulativeReturn).toBeCloseTo(0.265, 10);
+    // Mar: no snapshots → empty gap, index carries forward
+    expect(points[2]).toMatchObject({
+      monthKey: "2026-03",
+      monthlyReturn: null,
+      isEmpty: true,
+    });
+    expect(points[2].cumulativeReturn).toBeCloseTo(0.265, 10);
+    // BANK account movement (a2: 500 → 9999) must not affect any return
+  });
+
+  it("applies half-weight cash flows in the month they occur", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-01-31", accountValues: { a1: 1000 } },
+      { date: "2026-02-28", accountValues: { a1: 1500 } },
+    ];
+    const cashFlows: AccountMonthlyContribution[] = [
+      { accountId: "a1", monthKey: "2026-02", contributions: 200 },
+      { accountId: "a2", monthKey: "2026-02", contributions: 4000 }, // BANK — excluded
+    ];
+    const points = computeInvestmentReturnSeries(
+      snapshots,
+      accounts,
+      cashFlows,
+      ["2026-01", "2026-02"],
+      "en-US",
+    );
+    // Feb: gain = 1500 − 1000 − 200 = 300; base = 1000 + 100 = 1100
+    expect(points[1].monthlyReturn).toBeCloseTo(300 / 1100, 10);
+  });
+
+  it("skips base ≤ 0 months and carries the index through them", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-01-05", accountValues: { a1: 0 } },
+      { date: "2026-01-31", accountValues: { a1: 0 } },
+      { date: "2026-02-28", accountValues: { a1: 1000 } }, // funded by 1000 deposit
+      { date: "2026-03-31", accountValues: { a1: 1100 } },
+    ];
+    const cashFlows: AccountMonthlyContribution[] = [
+      { accountId: "a1", monthKey: "2026-02", contributions: 1000 },
+    ];
+    const points = computeInvestmentReturnSeries(
+      snapshots,
+      accounts,
+      cashFlows,
+      ["2026-01", "2026-02", "2026-03"],
+      "en-US",
+    );
+    // Jan: base = 0 → null return, index still null
+    expect(points[0].monthlyReturn).toBeNull();
+    expect(points[0].cumulativeReturn).toBeNull();
+    expect(points[0].isEmpty).toBeUndefined();
+    // Feb: start 0 + 1000/2 = 500 base, gain = 1000 − 0 − 1000 = 0 → r = 0
+    expect(points[1].monthlyReturn).toBeCloseTo(0, 10);
+    expect(points[1].cumulativeReturn).toBeCloseTo(0, 10);
+    // Mar: r = 100/1000 = 0.1; index = 1.0*1.1 − 1
+    expect(points[2].monthlyReturn).toBeCloseTo(0.1, 10);
+    expect(points[2].cumulativeReturn).toBeCloseTo(0.1, 10);
+  });
+
+  it("rolls cash flows from snapshot-less gap months into the next computable month", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-01-31", accountValues: { a1: 1000 } },
+      { date: "2026-03-31", accountValues: { a1: 11100 } },
+    ];
+    const cashFlows: AccountMonthlyContribution[] = [
+      { accountId: "a1", monthKey: "2026-02", contributions: 10000 }, // deposited during the gap
+    ];
+    const points = computeInvestmentReturnSeries(
+      snapshots,
+      accounts,
+      cashFlows,
+      ["2026-01", "2026-02", "2026-03"],
+      "en-US",
+    );
+    expect(points[1].isEmpty).toBe(true);
+    // Mar: gain = 11100 − 1000 − 10000 = 100; base = 1000 + 10000/2 = 6000
+    expect(points[2].monthlyReturn).toBeCloseTo(100 / 6000, 10);
+  });
+
+  it("ignores cash flows in leading gap months before the first snapshot baseline", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-02-05", accountValues: { a1: 10000 } },
+      { date: "2026-02-28", accountValues: { a1: 10500 } },
+    ];
+    const cashFlows: AccountMonthlyContribution[] = [
+      { accountId: "a1", monthKey: "2026-01", contributions: 10000 }, // predates the baseline
+    ];
+    const points = computeInvestmentReturnSeries(
+      snapshots,
+      accounts,
+      cashFlows,
+      ["2026-01", "2026-02"],
+      "en-US",
+    );
+    expect(points[0].isEmpty).toBe(true);
+    // Feb baseline is the first snapshot within Feb (10000), which already contains the Jan deposit
+    expect(points[1].monthlyReturn).toBeCloseTo(500 / 10000, 10);
+  });
+
+  it("returns [] with fewer than two snapshots or no investment accounts", () => {
+    expect(
+      computeInvestmentReturnSeries(
+        [{ date: "2026-01-31", accountValues: { a1: 1000 } }],
+        accounts,
+        [],
+        ["2026-01"],
+        "en-US",
+      ),
+    ).toEqual([]);
+    const bankOnly: AccountMeta[] = [{ id: "a2", name: "Checking", category: "BANK" }];
+    const snaps: SnapshotBreakdown[] = [
+      { date: "2026-01-31", accountValues: { a2: 500 } },
+      { date: "2026-02-28", accountValues: { a2: 600 } },
+    ];
+    expect(
+      computeInvestmentReturnSeries(snaps, bankOnly, [], ["2026-01", "2026-02"], "en-US"),
+    ).toEqual([]);
   });
 });

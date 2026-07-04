@@ -477,3 +477,92 @@ export function computeInvestmentReturn(
 
   return base > 0 ? gain / base : null;
 }
+
+/** One month of the investment return trend (bars = monthly, line = chained index). */
+export interface ReturnTrendPoint {
+  /** YYYY-MM. */
+  monthKey: string;
+  /** Locale-formatted month label for the X axis. */
+  label: string;
+  /** Half-weight Dietz return for the month as a fraction; null when the month is empty or its base ≤ 0. */
+  monthlyReturn: number | null;
+  /** Π(1 + rᵢ) − 1 over non-null months so far; null until the first computable month, carried forward through gaps. */
+  cumulativeReturn: number | null;
+  /** True when the month has no snapshot data (synthesized to align the X axis). */
+  isEmpty?: boolean;
+}
+
+/**
+ * Monthly investment-return series over the selected range, one point per
+ * entry in `monthKeys` (the shared month axis from the range's buckets).
+ *
+ * Same scope and math as computeInvestmentReturn, applied per month:
+ * start = previous month-end investment value (first month: first snapshot
+ * within that month), end = this month-end, cash at half weight.
+ * // ponytail: chained monthly Dietz ≠ single-period KPI Dietz — expected, not reconciled
+ *
+ * @param snapshots        Breakdown snapshots filtered to the selected range, sorted ascending.
+ * @param accounts         All user accounts (from getRawHistoryWithBreakdown).
+ * @param accountCashFlows Per-account monthly cash flows (from getAccountMonthlyCashFlow).
+ * @param monthKeys        Ordered "YYYY-MM" keys defining the X axis (from the range's buckets).
+ */
+export function computeInvestmentReturnSeries(
+  snapshots: SnapshotBreakdown[],
+  accounts: AccountMeta[],
+  accountCashFlows: AccountMonthlyContribution[],
+  monthKeys: string[],
+  locale = "en-US",
+): ReturnTrendPoint[] {
+  if (snapshots.length < 2) return [];
+
+  const investmentIds = new Set(
+    accounts.filter((a) => INVESTMENT_CATEGORIES.has(a.category)).map((a) => a.id),
+  );
+  if (investmentIds.size === 0) return [];
+
+  const investmentValue = (s: SnapshotBreakdown) => {
+    let total = 0;
+    for (const id of investmentIds) total += s.accountValues[id] ?? 0;
+    return total;
+  };
+
+  const cashByMonth = new Map<string, number>();
+  for (const c of accountCashFlows) {
+    if (investmentIds.has(c.accountId)) {
+      cashByMonth.set(c.monthKey, (cashByMonth.get(c.monthKey) ?? 0) + c.contributions);
+    }
+  }
+
+  // Input is sorted ascending by date, so `last` set wins per month.
+  const monthFirst = new Map<string, SnapshotBreakdown>();
+  const monthLast = new Map<string, SnapshotBreakdown>();
+  for (const s of snapshots) {
+    const key = s.date.slice(0, 7);
+    if (!monthFirst.has(key)) monthFirst.set(key, s);
+    monthLast.set(key, s);
+  }
+
+  let prevEnd: number | null = null;
+  let index: number | null = null;
+  let pendingCash = 0;
+  return monthKeys.map((monthKey) => {
+    const label = formatMonthLabel(monthKey, locale);
+    const endSnap = monthLast.get(monthKey);
+    if (!endSnap) {
+      if (prevEnd !== null) pendingCash += cashByMonth.get(monthKey) ?? 0;
+      return { monthKey, label, monthlyReturn: null, cumulativeReturn: index, isEmpty: true };
+    }
+    const start = prevEnd ?? investmentValue(monthFirst.get(monthKey)!);
+    const end = investmentValue(endSnap);
+    const cash = (cashByMonth.get(monthKey) ?? 0) + pendingCash;
+    pendingCash = 0;
+    prevEnd = end;
+    const base = start + cash / 2;
+    if (base <= 0) {
+      return { monthKey, label, monthlyReturn: null, cumulativeReturn: index };
+    }
+    const r = (end - start - cash) / base;
+    index = index === null ? r : (1 + index) * (1 + r) - 1;
+    return { monthKey, label, monthlyReturn: r, cumulativeReturn: index };
+  });
+}
