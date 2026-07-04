@@ -10,7 +10,6 @@ import {
   computePerformanceAttribution,
   computeInvestmentReturn,
   computeInvestmentReturnSeries,
-  type ReturnTrendPoint,
 } from "@/lib/services/analysis-service";
 import type {
   NormalizedSnapshot,
