@@ -47,3 +47,8 @@ export const LazyAttributionChart = dynamic(
   () => import("./attribution-chart").then((m) => m.AttributionChart),
   { loading: () => <ChartSkeleton /> },
 );
+
+export const LazyReturnTrendChart = dynamic(
+  () => import("./return-trend-chart").then((m) => m.ReturnTrendChart),
+  { loading: () => <ChartSkeleton /> },
+);
