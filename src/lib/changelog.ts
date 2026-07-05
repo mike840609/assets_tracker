@@ -38,6 +38,25 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.12.1",
+    date: "2026-07-06",
+    summary: {
+      "en-US": "Fixed daily snapshots dated a day early for Taiwan-time users.",
+      "zh-TW": "修正台灣時區使用者的每日快照日期提前一天的問題。",
+    },
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            'The daily snapshot cron runs at 05:30 Taiwan time but stamped snapshots with the UTC calendar day (still "yesterday" at that hour), so the History tab, heatmap, and other calendar views showed each day\'s snapshot dated one day early. Snapshots now bucket by the Taiwan calendar day the cron actually ran on.',
+          "zh-TW":
+            "每日快照排程於台灣時間 05:30 執行，但先前是以 UTC 曆日（此時仍是「昨天」）記錄快照日期，導致歷史紀錄頁、熱力圖等以日曆呈現的畫面都把當天的快照顯示為提前一天。現在快照會依照排程實際執行當下的台灣曆日歸類。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.12.0",
     date: "2026-07-04",
     summary: {
