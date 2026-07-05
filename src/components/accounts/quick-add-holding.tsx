@@ -45,6 +45,14 @@ const ASSET_TYPE_TO_CATEGORY: Record<string, string> = {
 
 type Mode = "stock" | "option";
 
+export function parseQuickAddUnitPrice(value: string): { value?: number; error?: "invalid" } {
+  const normalized = value.replace(/,/g, "").trim();
+  if (!normalized) return { value: undefined };
+  const parsed = parseAmountInput(normalized);
+  if (!Number.isFinite(parsed) || parsed <= 0) return { error: "invalid" };
+  return { value: parsed };
+}
+
 export function QuickAddHolding({
   open,
   onClose,
@@ -65,6 +73,7 @@ export function QuickAddHolding({
   const assetTypeId = `${fieldId}-asset-type`;
   const nameId = `${fieldId}-name`;
   const quantityId = `${fieldId}-quantity`;
+  const unitPriceId = `${fieldId}-unit-price`;
   const accountId = `${fieldId}-account`;
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"form" | "account">("form");
@@ -75,10 +84,11 @@ export function QuickAddHolding({
   const [quantity, setQuantity] = useState("");
   const [assetType, setAssetType] = useState("STOCK");
   const [currency, setCurrency] = useState(defaultCurrency);
-  const [unitPrice, setUnitPrice] = useState<number | undefined>();
+  const [unitPrice, setUnitPrice] = useState("");
   const [manualMode, setManualMode] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("");
   const [quantityError, setQuantityError] = useState("");
+  const [unitPriceError, setUnitPriceError] = useState("");
 
   function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
     const next = maskAmountInput(e.target.value);
@@ -102,6 +112,27 @@ export function QuickAddHolding({
     setQuantity(formatAmountInput(parsed, 6));
   }
 
+  function handleUnitPriceChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const next = maskAmountInput(e.target.value);
+    if (next === null) return;
+    setUnitPriceError("");
+    setUnitPrice(next);
+  }
+
+  function handleUnitPriceBlur() {
+    const result = parseQuickAddUnitPrice(unitPrice);
+    if (result.error) {
+      setUnitPriceError(t("quickAddHolding.invalidUnitPrice"));
+      return;
+    }
+    setUnitPriceError("");
+    if (result.value === undefined) {
+      setUnitPrice("");
+      return;
+    }
+    setUnitPrice(formatAmountInput(result.value, 6));
+  }
+
   function selectResult(result: SearchResult) {
     setSymbol(result.symbol);
     setName(result.name);
@@ -115,9 +146,10 @@ export function QuickAddHolding({
     setName("");
     setAssetType("STOCK");
     setCurrency(defaultCurrency);
-    setUnitPrice(undefined);
+    setUnitPrice("");
     setQuantity("");
     setQuantityError("");
+    setUnitPriceError("");
     setManualMode(false);
   }
 
@@ -147,12 +179,24 @@ export function QuickAddHolding({
   }
 
   function proceedToAccount(typeOverride?: string) {
+    const unitPriceResult = parseQuickAddUnitPrice(unitPrice);
+    if (unitPriceResult.error) {
+      setUnitPriceError(t("quickAddHolding.invalidUnitPrice"));
+      return;
+    }
+
     const matching = getMatchingAccounts(typeOverride);
     setSelectedAccountId(matching.length >= 1 ? matching[0].id : "");
     setStep("account");
   }
 
   async function handleSubmit() {
+    const unitPriceResult = parseQuickAddUnitPrice(unitPrice);
+    if (unitPriceResult.error) {
+      setUnitPriceError(t("quickAddHolding.invalidUnitPrice"));
+      return;
+    }
+
     setLoading(true);
     try {
       let accountId = selectedAccountId;
@@ -188,7 +232,7 @@ export function QuickAddHolding({
           quantity: parseAmountInput(quantity),
           assetType,
           currency,
-          ...(unitPrice !== undefined ? { unitPrice } : {}),
+          ...(unitPriceResult.value !== undefined ? { unitPrice: unitPriceResult.value } : {}),
         }),
       });
 
@@ -216,10 +260,13 @@ export function QuickAddHolding({
   }
 
   const tickerSelected = !!symbol;
+  const parsedUnitPrice = parseQuickAddUnitPrice(unitPrice);
   const canProceed =
     (tickerSelected || (manualMode && symbol && name)) &&
     !!quantity &&
-    parseAmountInput(quantity) > 0;
+    parseAmountInput(quantity) > 0 &&
+    !unitPriceError &&
+    parsedUnitPrice.error !== "invalid";
 
   const matchingAccounts = getMatchingAccounts();
   const targetCategory = ASSET_TYPE_TO_CATEGORY[assetType] || "BROKERAGE";
@@ -270,7 +317,10 @@ export function QuickAddHolding({
                 setAssetType("OPTION");
                 setQuantity(String(payload.quantity));
                 setCurrency("USD");
-                setUnitPrice(payload.unitPrice);
+                setUnitPrice(
+                  payload.unitPrice === undefined ? "" : formatAmountInput(payload.unitPrice, 6),
+                );
+                setUnitPriceError("");
                 proceedToAccount("OPTION");
               }}
               onCancel={requestClose}
@@ -392,6 +442,28 @@ export function QuickAddHolding({
                 {quantityError && (
                   <p id={`${quantityId}-error`} className="text-xs text-destructive" role="alert">
                     {quantityError}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor={unitPriceId} className="text-base font-medium">
+                  {t("quickAddHolding.labelUnitPrice")}
+                </Label>
+                <Input
+                  id={unitPriceId}
+                  type="text"
+                  inputMode="decimal"
+                  value={unitPrice}
+                  onChange={handleUnitPriceChange}
+                  onBlur={handleUnitPriceBlur}
+                  placeholder={t("quickAddHolding.placeholderUnitPrice")}
+                  className="text-lg h-12"
+                  aria-invalid={!!unitPriceError}
+                />
+                {unitPriceError && (
+                  <p className="text-xs text-destructive" role="alert">
+                    {unitPriceError}
                   </p>
                 )}
               </div>
