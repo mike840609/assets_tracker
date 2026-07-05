@@ -478,6 +478,15 @@ export interface CostBasisPosition {
   hasCostBasis: boolean;
 }
 
+export interface InvestmentCostBasisSummary {
+  marketValue: number;
+  costBasis: number;
+  unrealizedGain: number | null;
+  unrealizedGainPct: number | null;
+  pricedHoldingCount: number;
+  costedHoldingCount: number;
+}
+
 export function computeRemainingCostBasis(transactions: CostBasisTransaction[]): CostBasisPosition {
   let quantity = 0;
   let costBasis = 0;
