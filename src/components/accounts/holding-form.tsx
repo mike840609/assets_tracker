@@ -160,14 +160,19 @@ export function HoldingForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const parsedUnitPrice = unitPrice ? parseAmountInput(unitPrice) : undefined;
+    const normalizedUnitPrice = unitPrice.replace(/,/g, "").trim();
+    const parsedUnitPrice = parseAmountInput(normalizedUnitPrice);
+    if (normalizedUnitPrice && (!Number.isFinite(parsedUnitPrice) || parsedUnitPrice <= 0)) {
+      setUnitPriceError(t("invalidUnitPrice"));
+      return;
+    }
     await postHolding({
       symbol,
       name,
       quantity: parseAmountInput(quantity),
       assetType,
       currency,
-      ...(parsedUnitPrice !== undefined && { unitPrice: parsedUnitPrice }),
+      ...(normalizedUnitPrice ? { unitPrice: parsedUnitPrice } : {}),
     });
   }
 

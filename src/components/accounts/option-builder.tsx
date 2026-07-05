@@ -302,7 +302,12 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
     if (!Number.isFinite(strikeNum) || strikeNum <= 0) return;
     const qty = parseInt(quantity.replace(/,/g, ""), 10);
     if (!Number.isFinite(qty) || qty <= 0) return;
-    const parsedUnitPrice = unitPrice ? Number(unitPrice.replace(/,/g, "")) : undefined;
+    const normalizedUnitPrice = unitPrice.replace(/,/g, "").trim();
+    const parsedUnitPrice = Number(normalizedUnitPrice);
+    if (normalizedUnitPrice && (!Number.isFinite(parsedUnitPrice) || parsedUnitPrice <= 0)) {
+      setUnitPriceError(quickAddT("invalidUnitPrice"));
+      return;
+    }
     try {
       const occ = buildOccSymbol({
         underlying,
@@ -317,7 +322,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
         quantity: qty,
         assetType: "OPTION",
         currency: "USD",
-        ...(parsedUnitPrice !== undefined && { unitPrice: parsedUnitPrice }),
+        ...(normalizedUnitPrice ? { unitPrice: parsedUnitPrice } : {}),
       });
     } catch {
       // invalid inputs — buildOccSymbol threw
