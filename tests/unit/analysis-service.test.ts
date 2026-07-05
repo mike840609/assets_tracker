@@ -592,4 +592,16 @@ describe("computeConcentration", () => {
     );
     expect(r.top[0].label).toBe("BTC");
   });
+
+  it("aggregates holdings sharing the same label into a single position", () => {
+    const r = computeConcentration(
+      assetSummary(1000, [
+        { name: "Apple", symbol: "AAPL", marketValueInBaseCurrency: 300 },
+        { name: "Apple", symbol: "AAPL", marketValueInBaseCurrency: 200 },
+      ]),
+    );
+    expect(r.top).toHaveLength(1);
+    expect(r.top[0].pct).toBeCloseTo(50);
+    expect(r.hhi).toBeCloseTo(0.25);
+  });
 });

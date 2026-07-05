@@ -636,8 +636,7 @@ export interface ConcentrationResult {
  */
 export function computeConcentration(summary: NetWorthSummary): ConcentrationResult {
   const totalAssets = summary.totalAssets;
-  const positions: ConcentrationPosition[] = [];
-  let hhi = 0;
+  const valueByLabel = new Map<string, number>();
 
   if (totalAssets > 0) {
     for (const account of summary.accounts) {
@@ -645,11 +644,18 @@ export function computeConcentration(summary: NetWorthSummary): ConcentrationRes
       for (const h of account.holdings) {
         const value = h.marketValueInBaseCurrency ?? 0;
         if (value <= 0) continue;
-        const weight = value / totalAssets;
-        hhi += weight * weight;
-        positions.push({ label: h.name || h.symbol, pct: weight * 100 });
+        const label = h.name || h.symbol;
+        valueByLabel.set(label, (valueByLabel.get(label) ?? 0) + value);
       }
     }
+  }
+
+  let hhi = 0;
+  const positions: ConcentrationPosition[] = [];
+  for (const [label, value] of valueByLabel) {
+    const weight = value / totalAssets;
+    hhi += weight * weight;
+    positions.push({ label, pct: weight * 100 });
   }
 
   positions.sort((a, b) => b.pct - a.pct);

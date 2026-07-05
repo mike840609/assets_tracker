@@ -69,7 +69,9 @@ export const DrawdownChart = memo(function DrawdownChart({ points }: Props) {
           </div>
           <div className="text-right">
             <div className="text-[11px] text-muted-foreground">{t("maxDrawdown")}</div>
-            <div className="text-sm font-semibold tabular-nums text-[var(--loss-ink)]">
+            <div
+              className={`text-sm font-semibold tabular-nums ${maxDrawdown < 0 ? "text-[var(--loss-ink)]" : "text-foreground"}`}
+            >
               {privacyMode ? "***" : `${maxDrawdown.toFixed(1)}%`}
             </div>
           </div>
