@@ -340,6 +340,8 @@ const MAX_IMPORT_TRANSACTIONS_PER_HOLDING = 10_000;
 const MAX_IMPORT_CASH_TRANSACTIONS_PER_ACCOUNT = 10_000;
 const MAX_IMPORT_SNAPSHOTS = 10_000;
 const MAX_IMPORT_GOALS = 500;
+const MAX_IMPORT_RECURRING_RULES_PER_ACCOUNT = 100;
+const MAX_IMPORT_STOCK_WATCH_ITEMS = 500;
 
 // Exports are produced by NextResponse.json (Dates → full ISO 8601 strings),
 // so round-trip imports always carry valid ISO datetimes. Rejecting anything
@@ -404,6 +406,7 @@ export const dataImportSchema = z.object({
                     note: z.string().optional().nullable(),
                     createdAt: importTimestamp,
                     occurrenceDate: importOccurrenceDate,
+                    recurringId: z.string().optional().nullable(),
                   }),
                 )
                 .max(MAX_IMPORT_TRANSACTIONS_PER_HOLDING)
@@ -420,9 +423,49 @@ export const dataImportSchema = z.object({
               note: z.string().optional().nullable(),
               createdAt: importTimestamp,
               occurrenceDate: importOccurrenceDate,
+              recurringId: z.string().optional().nullable(),
             }),
           )
           .max(MAX_IMPORT_CASH_TRANSACTIONS_PER_ACCOUNT)
+          .optional(),
+        recurringCashTransactions: z
+          .array(
+            z.object({
+              id: z.string().optional(),
+              type: z.enum(RECURRING_CASH_TYPES),
+              amount: decimalSchema,
+              frequency: z.enum(RECURRING_FREQUENCIES),
+              note: z.string().optional().nullable(),
+              startDate: importTimestamp,
+              endDate: importTimestamp,
+              nextRunDate: importTimestamp,
+              isActive: z.boolean().default(true),
+              createdAt: importTimestamp,
+              updatedAt: importTimestamp,
+            }),
+          )
+          .max(MAX_IMPORT_RECURRING_RULES_PER_ACCOUNT)
+          .optional(),
+        recurringInvestments: z
+          .array(
+            z.object({
+              id: z.string().optional(),
+              symbol: z.string().min(1),
+              name: z.string().min(1),
+              assetType: z.enum(NON_OPTION_ASSET_TYPES),
+              holdingCurrency: z.string().length(3),
+              amount: decimalSchema,
+              frequency: z.enum(RECURRING_FREQUENCIES),
+              note: z.string().optional().nullable(),
+              startDate: importTimestamp,
+              endDate: importTimestamp,
+              nextRunDate: importTimestamp,
+              isActive: z.boolean().default(true),
+              createdAt: importTimestamp,
+              updatedAt: importTimestamp,
+            }),
+          )
+          .max(MAX_IMPORT_RECURRING_RULES_PER_ACCOUNT)
           .optional(),
       }),
     )
@@ -458,5 +501,23 @@ export const dataImportSchema = z.object({
       }),
     )
     .max(MAX_IMPORT_GOALS)
+    .optional(),
+  stockWatchItems: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        symbol: stockWatchItemFields.symbol,
+        name: stockWatchItemFields.name,
+        exchange: stockWatchItemFields.exchange.optional(),
+        currency: stockWatchItemFields.currency,
+        recordPrice: decimalSchema,
+        recordDate: importTimestamp,
+        note: stockWatchItemFields.note,
+        sortOrder: z.number().int().default(0),
+        createdAt: importTimestamp,
+        updatedAt: importTimestamp,
+      }),
+    )
+    .max(MAX_IMPORT_STOCK_WATCH_ITEMS)
     .optional(),
 });

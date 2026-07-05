@@ -38,6 +38,25 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.13.0",
+    date: "2026-07-06",
+    summary: {
+      "en-US": "Backup export/import now includes recurring rules and the stock watchlist.",
+      "zh-TW": "備份匯出/匯入現在包含定期規則與股票觀察清單。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Settings backup export and restore now cover recurring cash transactions, recurring investments (DCA rules), and the stock watchlist — previously a restore silently dropped these, so future recurring occurrences stopped generating and the watchlist came back empty.",
+          "zh-TW":
+            "設定頁的備份匯出與還原現在涵蓋定期現金交易、定期投資（定期定額規則）與股票觀察清單——先前還原備份時會悄悄遺失這些資料，導致往後不再產生定期交易，觀察清單也會清空。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.12.1",
     date: "2026-07-06",
     summary: {

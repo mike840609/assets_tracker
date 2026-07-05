@@ -235,22 +235,26 @@ export const GET = withAuth(async (_req, _ctx, userId) => {
           include: {
             holdings: { include: { transactions: true } },
             cashTransactions: true,
+            recurringCashTransactions: true,
+            recurringInvestments: true,
           },
         },
         snapshots: true,
         goals: true,
+        stockWatchItems: true,
       },
     });
 
     if (!data) return failure("User not found", 404);
 
     const exportData = {
-      version: "1.2",
+      version: "1.3",
       exportedAt: new Date().toISOString(),
       settings: data.appSettings,
       accounts: data.appAccounts,
       snapshots: data.snapshots,
       goals: data.goals,
+      stockWatchItems: data.stockWatchItems,
     };
 
     // Return as a raw JSON file download — NOT wrapped in ok() so the blob
@@ -300,10 +304,12 @@ export const POST = withAuth(async (request, _ctx, userId) => {
       async (tx) => {
         const accountIdMap = new Map<string, string>();
 
-        // 1. Delete existing data for the user (Cascades should handle holdings and transactions)
+        // 1. Delete existing data for the user (Cascades should handle holdings,
+        // transactions, and recurring rules via Account's onDelete: Cascade)
         await tx.account.deleteMany({ where: { userId } });
         await tx.netWorthSnapshot.deleteMany({ where: { userId } });
         await tx.goal.deleteMany({ where: { userId } });
+        await tx.stockWatchItem.deleteMany({ where: { userId } });
 
         // 2. Import settings if present
         if (importData.settings) {
@@ -341,6 +347,55 @@ export const POST = withAuth(async (request, _ctx, userId) => {
 
           if (acc.id) accountIdMap.set(acc.id, newAccount.id);
 
+          // Recurring rules — created before holdings/cashTransactions so their
+          // new ids are available to remap HoldingTransaction/CashTransaction.recurringId.
+          const recurringCashIdMap = new Map<string, string>();
+          if (Array.isArray(acc.recurringCashTransactions)) {
+            for (const rule of acc.recurringCashTransactions) {
+              const created = await tx.recurringCashTransaction.create({
+                data: {
+                  accountId: newAccount.id,
+                  type: rule.type,
+                  amount: rule.amount,
+                  frequency: rule.frequency,
+                  note: rule.note,
+                  startDate: new Date(rule.startDate ?? rule.nextRunDate ?? new Date()),
+                  endDate: rule.endDate ? new Date(rule.endDate) : null,
+                  nextRunDate: new Date(rule.nextRunDate ?? rule.startDate ?? new Date()),
+                  isActive: rule.isActive,
+                  createdAt: rule.createdAt,
+                  updatedAt: rule.updatedAt,
+                },
+              });
+              if (rule.id) recurringCashIdMap.set(rule.id, created.id);
+            }
+          }
+
+          const recurringInvestmentIdMap = new Map<string, string>();
+          if (Array.isArray(acc.recurringInvestments)) {
+            for (const rule of acc.recurringInvestments) {
+              const created = await tx.recurringInvestment.create({
+                data: {
+                  accountId: newAccount.id,
+                  symbol: rule.symbol,
+                  name: rule.name,
+                  assetType: rule.assetType,
+                  holdingCurrency: rule.holdingCurrency,
+                  amount: rule.amount,
+                  frequency: rule.frequency,
+                  note: rule.note,
+                  startDate: new Date(rule.startDate ?? rule.nextRunDate ?? new Date()),
+                  endDate: rule.endDate ? new Date(rule.endDate) : null,
+                  nextRunDate: new Date(rule.nextRunDate ?? rule.startDate ?? new Date()),
+                  isActive: rule.isActive,
+                  createdAt: rule.createdAt,
+                  updatedAt: rule.updatedAt,
+                },
+              });
+              if (rule.id) recurringInvestmentIdMap.set(rule.id, created.id);
+            }
+          }
+
           // Holdings
           if (Array.isArray(acc.holdings)) {
             for (const h of acc.holdings) {
@@ -375,6 +430,9 @@ export const POST = withAuth(async (request, _ctx, userId) => {
                     // Preserve null as null — analysis bucketing falls back to
                     // createdAt only when occurrenceDate is null.
                     occurrenceDate: t.occurrenceDate ?? null,
+                    recurringId: t.recurringId
+                      ? (recurringInvestmentIdMap.get(t.recurringId) ?? null)
+                      : null,
                   })),
                 });
               }
@@ -394,6 +452,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
                 // Preserve null as null — analysis bucketing falls back to
                 // createdAt only when occurrenceDate is null.
                 occurrenceDate: t.occurrenceDate ?? null,
+                recurringId: t.recurringId ? (recurringCashIdMap.get(t.recurringId) ?? null) : null,
               })),
             });
           }
@@ -455,6 +514,26 @@ export const POST = withAuth(async (request, _ctx, userId) => {
               sortOrder: g.sortOrder,
               ...(g.createdAt && { createdAt: new Date(g.createdAt) }),
               ...(g.updatedAt && { updatedAt: new Date(g.updatedAt) }),
+            })),
+          });
+        }
+
+        // 6. Import stock watchlist (user-scoped, not account-scoped — no id
+        // remapping needed since nothing else references it by id)
+        if (Array.isArray(importData.stockWatchItems) && importData.stockWatchItems.length > 0) {
+          await tx.stockWatchItem.createMany({
+            data: importData.stockWatchItems.map((item) => ({
+              userId,
+              symbol: item.symbol,
+              name: item.name,
+              exchange: item.exchange,
+              currency: item.currency,
+              recordPrice: item.recordPrice,
+              recordDate: new Date(item.recordDate ?? new Date()),
+              note: item.note,
+              sortOrder: item.sortOrder,
+              createdAt: item.createdAt,
+              updatedAt: item.updatedAt,
             })),
           });
         }

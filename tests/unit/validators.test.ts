@@ -396,4 +396,98 @@ describe("dataImportSchema", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("round-trips an account's recurring cash transaction and recurring investment", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.3",
+      accounts: [
+        {
+          name: "Checking",
+          type: "ASSET",
+          category: "BANK",
+          currency: "USD",
+          cashBalance: "100",
+          recurringCashTransactions: [
+            {
+              id: "rct_1",
+              type: "DEPOSIT",
+              amount: "500",
+              frequency: "MONTHLY",
+              startDate: "2026-01-01T00:00:00.000Z",
+              nextRunDate: "2026-08-01T00:00:00.000Z",
+              isActive: true,
+            },
+          ],
+          recurringInvestments: [
+            {
+              id: "ri_1",
+              symbol: "VT",
+              name: "Vanguard Total World",
+              assetType: "ETF",
+              holdingCurrency: "USD",
+              amount: "200",
+              frequency: "MONTHLY",
+              startDate: "2026-01-01T00:00:00.000Z",
+              nextRunDate: "2026-08-01T00:00:00.000Z",
+              isActive: true,
+            },
+          ],
+          cashTransactions: [{ type: "DEPOSIT", amount: "500", recurringId: "rct_1" }],
+          holdings: [
+            {
+              symbol: "VT",
+              name: "Vanguard Total World",
+              quantity: "1",
+              currency: "USD",
+              assetType: "ETF",
+              transactions: [{ type: "BUY", quantity: "1", recurringId: "ri_1" }],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    const account = result.data.accounts[0];
+    expect(account.recurringCashTransactions?.[0].id).toBe("rct_1");
+    expect(account.recurringInvestments?.[0].id).toBe("ri_1");
+    expect(account.cashTransactions?.[0].recurringId).toBe("rct_1");
+    expect(account.holdings?.[0].transactions?.[0].recurringId).toBe("ri_1");
+  });
+
+  it("rejects an over-limit stockWatchItems array", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.3",
+      accounts: [],
+      stockWatchItems: Array.from({ length: 501 }, (_, i) => ({
+        symbol: `SYM${i}`,
+        name: "Example Corp",
+        currency: "USD",
+        recordPrice: "100",
+        recordDate: "2026-06-01T00:00:00.000Z",
+      })),
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts a stockWatchItems array within the limit", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.3",
+      accounts: [],
+      stockWatchItems: [
+        {
+          symbol: "AAPL",
+          name: "Apple Inc",
+          currency: "USD",
+          recordPrice: "195.5",
+          recordDate: "2026-06-01T00:00:00.000Z",
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+  });
 });
