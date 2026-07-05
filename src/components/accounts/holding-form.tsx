@@ -47,6 +47,8 @@ export function HoldingForm({
   const [currency, setCurrency] = useState("USD");
   const [manualMode, setManualMode] = useState(false);
   const [quantityError, setQuantityError] = useState("");
+  const [unitPrice, setUnitPrice] = useState("");
+  const [unitPriceError, setUnitPriceError] = useState("");
 
   function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
     const next = maskAmountInput(e.target.value);
@@ -70,6 +72,28 @@ export function HoldingForm({
     setQuantity(formatAmountInput(parsed, 6));
   }
 
+  function handleUnitPriceChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const next = maskAmountInput(e.target.value);
+    if (next === null) return;
+    setUnitPriceError("");
+    setUnitPrice(next);
+  }
+
+  function handleUnitPriceBlur() {
+    const val = unitPrice.replace(/,/g, "");
+    if (!val) {
+      setUnitPriceError("");
+      return;
+    }
+    const parsed = parseAmountInput(val);
+    if (isNaN(parsed) || parsed <= 0) {
+      setUnitPriceError(t("invalidUnitPrice"));
+      return;
+    }
+    setUnitPriceError("");
+    setUnitPrice(formatAmountInput(parsed, 6));
+  }
+
   function selectResult(result: SearchResult) {
     setSymbol(result.symbol);
     setName(result.name);
@@ -85,6 +109,8 @@ export function HoldingForm({
     setCurrency("USD");
     setQuantity("");
     setQuantityError("");
+    setUnitPrice("");
+    setUnitPriceError("");
     setManualMode(false);
   }
 
@@ -104,6 +130,7 @@ export function HoldingForm({
     quantity: number;
     assetType: string;
     currency: string;
+    unitPrice?: number;
   }) {
     setLoading(true);
     try {
@@ -133,20 +160,30 @@ export function HoldingForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const normalizedUnitPrice = unitPrice.replace(/,/g, "").trim();
+    const parsedUnitPrice = parseAmountInput(normalizedUnitPrice);
+    if (normalizedUnitPrice && (!Number.isFinite(parsedUnitPrice) || parsedUnitPrice <= 0)) {
+      setUnitPriceError(t("invalidUnitPrice"));
+      return;
+    }
     await postHolding({
       symbol,
       name,
       quantity: parseAmountInput(quantity),
       assetType,
       currency,
+      ...(normalizedUnitPrice ? { unitPrice: parsedUnitPrice } : {}),
     });
   }
 
   const tickerSelected = !!symbol;
+  const parsedUnitPrice = unitPrice ? parseAmountInput(unitPrice) : undefined;
   const canSubmit =
     (tickerSelected || (manualMode && symbol && name)) &&
     !!quantity &&
-    parseAmountInput(quantity) > 0;
+    parseAmountInput(quantity) > 0 &&
+    !unitPriceError &&
+    (parsedUnitPrice === undefined || parsedUnitPrice > 0);
 
   // Dirty once the user has picked/typed a ticker, named it, or set a quantity.
   const isDirty = !!symbol || !!quantity || name.trim() !== "";
@@ -283,6 +320,20 @@ export function HoldingForm({
               className="text-lg h-12"
             />
             {quantityError && <p className="text-xs text-destructive">{quantityError}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-base font-medium">{t("labelUnitPrice")}</Label>
+            <Input
+              type="text"
+              inputMode="decimal"
+              value={unitPrice}
+              onChange={handleUnitPriceChange}
+              onBlur={handleUnitPriceBlur}
+              placeholder={t("placeholderUnitPrice")}
+              className="text-lg h-12"
+            />
+            {unitPriceError && <p className="text-xs text-destructive">{unitPriceError}</p>}
           </div>
 
           {/* ── Actions ── */}

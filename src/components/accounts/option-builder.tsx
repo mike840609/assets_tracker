@@ -55,6 +55,7 @@ type SubmitPayload = {
   quantity: number;
   assetType: "OPTION";
   currency: "USD";
+  unitPrice?: number;
 };
 
 interface OptionBuilderProps {
@@ -67,6 +68,7 @@ interface OptionBuilderProps {
 
 export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: OptionBuilderProps) {
   const t = useTranslations("optionBuilder");
+  const quickAddT = useTranslations("quickAddHolding");
   const [underlying, setUnderlying] = useState("");
   const [chain, setChain] = useState<ChainResponse | null>(null);
   const [chainLoading, setChainLoading] = useState(false);
@@ -78,6 +80,8 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
   const [strike, setStrike] = useState<string>("");
   const [quantity, setQuantity] = useState("");
   const [quantityError, setQuantityError] = useState("");
+  const [unitPrice, setUnitPrice] = useState("");
+  const [unitPriceError, setUnitPriceError] = useState("");
 
   function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value.replace(/,/g, "");
@@ -103,6 +107,34 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
     }
     setQuantityError("");
     setQuantity(formatAmountInput(parsed, 0));
+  }
+
+  function handleUnitPriceChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/,/g, "");
+    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) return;
+    setUnitPriceError("");
+    if (!raw) {
+      setUnitPrice("");
+      return;
+    }
+    const [whole, decimal] = raw.split(".");
+    const formattedWhole = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    setUnitPrice(decimal === undefined ? formattedWhole : `${formattedWhole}.${decimal}`);
+  }
+
+  function handleUnitPriceBlur() {
+    const val = unitPrice.replace(/,/g, "");
+    if (!val) {
+      setUnitPriceError("");
+      return;
+    }
+    const parsed = Number(val);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setUnitPriceError(quickAddT("invalidUnitPrice"));
+      return;
+    }
+    setUnitPriceError("");
+    setUnitPrice(formatAmountInput(parsed, 6));
   }
 
   const [showSearch, setShowSearch] = useState(false);
@@ -270,6 +302,12 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
     if (!Number.isFinite(strikeNum) || strikeNum <= 0) return;
     const qty = parseInt(quantity.replace(/,/g, ""), 10);
     if (!Number.isFinite(qty) || qty <= 0) return;
+    const normalizedUnitPrice = unitPrice.replace(/,/g, "").trim();
+    const parsedUnitPrice = Number(normalizedUnitPrice);
+    if (normalizedUnitPrice && (!Number.isFinite(parsedUnitPrice) || parsedUnitPrice <= 0)) {
+      setUnitPriceError(quickAddT("invalidUnitPrice"));
+      return;
+    }
     try {
       const occ = buildOccSymbol({
         underlying,
@@ -284,6 +322,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
         quantity: qty,
         assetType: "OPTION",
         currency: "USD",
+        ...(normalizedUnitPrice ? { unitPrice: parsedUnitPrice } : {}),
       });
     } catch {
       // invalid inputs — buildOccSymbol threw
@@ -322,13 +361,16 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
   const previewCost =
     ask !== null && Number.isFinite(qtyNum) && qtyNum > 0 ? ask * qtyNum * 100 : null;
 
+  const parsedUnitPrice = unitPrice ? Number(unitPrice.replace(/,/g, "")) : undefined;
   const canSubmit =
     !loading &&
     !!underlying &&
     !!expiration &&
     !!strike &&
     !!quantity &&
-    parseInt(quantity.replace(/,/g, ""), 10) > 0;
+    parseInt(quantity.replace(/,/g, ""), 10) > 0 &&
+    !unitPriceError &&
+    (parsedUnitPrice === undefined || parsedUnitPrice > 0);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -469,6 +511,19 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
         />
         {quantityError && <p className="text-xs text-destructive">{quantityError}</p>}
         <p className="text-xs text-muted-foreground">{t("contractNote")}</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label>{quickAddT("labelUnitPrice")}</Label>
+        <Input
+          type="text"
+          inputMode="decimal"
+          value={unitPrice}
+          onChange={handleUnitPriceChange}
+          onBlur={handleUnitPriceBlur}
+          placeholder={quickAddT("placeholderUnitPrice")}
+        />
+        {unitPriceError && <p className="text-xs text-destructive">{unitPriceError}</p>}
       </div>
 
       {/* ── Summary / cost preview ── */}

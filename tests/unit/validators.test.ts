@@ -58,6 +58,21 @@ describe("createHoldingSchema", () => {
     expect(createHoldingSchema.safeParse({ ...base, quantity: -1 }).success).toBe(false);
   });
 
+  it("accepts an optional positive buy unit price", () => {
+    expect(createHoldingSchema.safeParse(base).success).toBe(true);
+
+    const result = createHoldingSchema.safeParse({ ...base, unitPrice: 180.25 });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.unitPrice).toBe(180.25);
+    }
+  });
+
+  it("rejects a non-positive buy unit price", () => {
+    expect(createHoldingSchema.safeParse({ ...base, unitPrice: 0 }).success).toBe(false);
+    expect(createHoldingSchema.safeParse({ ...base, unitPrice: -1 }).success).toBe(false);
+  });
+
   it("accepts an OPTION holding with a valid OCC symbol", () => {
     const result = createHoldingSchema.safeParse({
       symbol: "AAPL240119C00150000",
@@ -321,6 +336,44 @@ describe("dataImportSchema", () => {
     ]);
     expect(account.cashTransactions?.map((t) => t.occurrenceDate)).toEqual([
       "2026-06-15T00:00:00.000Z",
+      null,
+      undefined,
+    ]);
+  });
+
+  it("preserves imported holding transaction unitPrice through parsing", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.2",
+      accounts: [
+        {
+          name: "Checking",
+          type: "ASSET",
+          category: "BANK",
+          currency: "USD",
+          cashBalance: "100",
+          holdings: [
+            {
+              symbol: "VT",
+              name: "Vanguard Total World",
+              quantity: "1",
+              currency: "USD",
+              assetType: "ETF",
+              transactions: [
+                { type: "BUY", quantity: "1", unitPrice: "180.25" },
+                { type: "SELL", quantity: "1", unitPrice: null },
+                { type: "EDIT", quantity: "-0.5" },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    expect(result.data.accounts[0].holdings?.[0].transactions?.map((t) => t.unitPrice)).toEqual([
+      "180.25",
       null,
       undefined,
     ]);
