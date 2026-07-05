@@ -489,12 +489,14 @@ export interface InvestmentCostBasisSummary {
 
 export function computeRemainingCostBasis(transactions: CostBasisTransaction[]): CostBasisPosition {
   let quantity = 0;
+  let costedQuantity = 0;
   let costBasis = 0;
 
   for (const tx of transactions) {
     if (tx.type === "EDIT") {
       const qty = Math.max(0, tx.quantity);
       quantity = qty;
+      costedQuantity = tx.unitPrice != null ? qty : 0;
       costBasis = tx.unitPrice != null ? qty * tx.unitPrice : 0;
       continue;
     }
@@ -504,17 +506,27 @@ export function computeRemainingCostBasis(transactions: CostBasisTransaction[]):
 
     if (tx.type === "BUY") {
       quantity += qty;
-      if (tx.unitPrice != null) costBasis += qty * tx.unitPrice;
+      if (tx.unitPrice != null) {
+        costedQuantity += qty;
+        costBasis += qty * tx.unitPrice;
+      }
       continue;
     }
 
     if (tx.type === "SELL") {
       if (quantity <= 0) continue;
       const sold = Math.min(qty, quantity);
-      const avgCost = costBasis / quantity;
       quantity = Math.max(0, quantity - sold);
-      costBasis = Math.max(0, costBasis - sold * avgCost);
-      if (quantity === 0) costBasis = 0;
+      if (costedQuantity > 0 && costBasis > 0) {
+        const costedSold = Math.min(sold, costedQuantity);
+        const avgCost = costBasis / costedQuantity;
+        costedQuantity = Math.max(0, costedQuantity - costedSold);
+        costBasis = Math.max(0, costBasis - costedSold * avgCost);
+      }
+      if (quantity === 0 || costedQuantity === 0) {
+        costedQuantity = 0;
+        costBasis = 0;
+      }
       continue;
     }
   }

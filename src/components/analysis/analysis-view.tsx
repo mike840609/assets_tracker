@@ -360,7 +360,7 @@ export function AnalysisView({
                 so each question reads as its own group; desktop keeps them tighter. */}
             <div className={isCompact ? "space-y-3" : "space-y-6 xl:space-y-4"}>
               <section
-                aria-label={`${t("cashFlow")} / ${t("cumulativeGrowth")} / ${t("returnTrend")}`}
+                aria-label={`${t("cashFlow")} / ${t("cumulativeGrowth")} / ${t("investmentCostBasis")} / ${t("returnTrend")}`}
                 className={isCompact ? "space-y-2" : "space-y-3"}
               >
                 <div className="flex flex-wrap items-end justify-between gap-2">

@@ -642,6 +642,18 @@ describe("computeRemainingCostBasis", () => {
     expect(result.hasCostBasis).toBe(false);
   });
 
+  it("does not fabricate cost basis when unknown-cost shares are sold", () => {
+    const result = computeRemainingCostBasis([
+      { type: "BUY", quantity: 10, unitPrice: 100 },
+      { type: "BUY", quantity: 10, unitPrice: null },
+      { type: "SELL", quantity: 10, unitPrice: null },
+    ]);
+
+    expect(result.quantity).toBe(10);
+    expect(result.costBasis).toBe(0);
+    expect(result.hasCostBasis).toBe(false);
+  });
+
   it("resets an edited position to edited quantity and edited unit price", () => {
     const result = computeRemainingCostBasis([
       { type: "BUY", quantity: 10, unitPrice: 100 },
