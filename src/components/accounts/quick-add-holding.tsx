@@ -75,6 +75,7 @@ export function QuickAddHolding({
   const [quantity, setQuantity] = useState("");
   const [assetType, setAssetType] = useState("STOCK");
   const [currency, setCurrency] = useState(defaultCurrency);
+  const [unitPrice, setUnitPrice] = useState<number | undefined>();
   const [manualMode, setManualMode] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("");
   const [quantityError, setQuantityError] = useState("");
@@ -114,6 +115,7 @@ export function QuickAddHolding({
     setName("");
     setAssetType("STOCK");
     setCurrency(defaultCurrency);
+    setUnitPrice(undefined);
     setQuantity("");
     setQuantityError("");
     setManualMode(false);
@@ -186,6 +188,7 @@ export function QuickAddHolding({
           quantity: parseAmountInput(quantity),
           assetType,
           currency,
+          ...(unitPrice !== undefined ? { unitPrice } : {}),
         }),
       });
 
@@ -267,6 +270,7 @@ export function QuickAddHolding({
                 setAssetType("OPTION");
                 setQuantity(String(payload.quantity));
                 setCurrency("USD");
+                setUnitPrice(payload.unitPrice);
                 proceedToAccount("OPTION");
               }}
               onCancel={requestClose}
