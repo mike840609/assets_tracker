@@ -10,6 +10,7 @@ import {
   computePerformanceAttribution,
   computeInvestmentReturn,
   computeInvestmentReturnSeries,
+  computeDrawdownSeries,
 } from "@/lib/services/analysis-service";
 import type {
   NormalizedSnapshot,
@@ -495,5 +496,37 @@ describe("computeInvestmentReturnSeries", () => {
     expect(
       computeInvestmentReturnSeries(snaps, bankOnly, [], ["2026-01", "2026-02"], "en-US"),
     ).toEqual([]);
+  });
+});
+
+describe("computeDrawdownSeries", () => {
+  it("returns [] for no snapshots", () => {
+    expect(computeDrawdownSeries([], "2020-01-01")).toEqual([]);
+  });
+
+  it("is all zeros for a strictly rising series", () => {
+    const s = [snap("2024-01-01", 100), snap("2024-02-01", 120), snap("2024-03-01", 150)];
+    expect(computeDrawdownSeries(s, "2024-01-01").map((p) => p.drawdownPct)).toEqual([0, 0, 0]);
+  });
+
+  it("computes the trough and recovery back to 0", () => {
+    const s = [snap("2024-01-01", 100), snap("2024-02-01", 80), snap("2024-03-01", 100)];
+    const r = computeDrawdownSeries(s, "2024-01-01");
+    expect(r[0].drawdownPct).toBe(0);
+    expect(r[1].drawdownPct).toBeCloseTo(-20);
+    expect(r[2].drawdownPct).toBe(0);
+  });
+
+  it("uses the all-time peak even when it precedes the range window", () => {
+    const s = [snap("2024-01-01", 200), snap("2024-02-01", 150), snap("2024-03-01", 150)];
+    const r = computeDrawdownSeries(s, "2024-02-01");
+    expect(r).toHaveLength(2);
+    expect(r[0].date).toBe("2024-02-01");
+    expect(r[0].drawdownPct).toBeCloseTo(-25); // 150 measured against all-time peak 200
+  });
+
+  it("guards divide-by-zero when the running peak is non-positive", () => {
+    const s = [snap("2024-01-01", -50), snap("2024-02-01", -80)];
+    expect(computeDrawdownSeries(s, "2024-01-01").every((p) => p.drawdownPct === 0)).toBe(true);
   });
 });

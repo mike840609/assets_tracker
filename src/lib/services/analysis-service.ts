@@ -353,6 +353,45 @@ export function aggregateCategoryHistory(
     });
 }
 
+/** One point in the drawdown ("underwater") series. */
+export interface DrawdownPoint {
+  /** Snapshot date, ISO "YYYY-MM-DD". */
+  date: string;
+  /** Same as date — X-axis / tooltip label. */
+  label: string;
+  /** Percent below the running all-time peak (<= 0). */
+  drawdownPct: number;
+}
+
+/**
+ * Net-worth drawdown series: how far below the prior all-time peak each snapshot
+ * sits, as a non-positive percentage.
+ *
+ * The running peak accumulates across the FULL input history, then only points on
+ * or after `rangeStartIso` are returned — so a drawdown that began before the
+ * visible window still renders truthfully (all-time peak, not window-local).
+ *
+ * @param snapshots  Full history, ascending by date.
+ * @param rangeStartIso  Inclusive lower bound ("YYYY-MM-DD") for the returned slice.
+ */
+export function computeDrawdownSeries(
+  snapshots: NormalizedSnapshot[],
+  rangeStartIso: string,
+): DrawdownPoint[] {
+  let peak = 0;
+  const out: DrawdownPoint[] = [];
+  for (const s of snapshots) {
+    if (s.netWorth > peak) peak = s.netWorth;
+    if (s.date < rangeStartIso) continue;
+    // ponytail: peak <= 0 (all-negative net worth) can't yield a meaningful ratio;
+    // emit 0 rather than dividing by zero. Upgrade only if negative-net-worth
+    // users ever need a signed drawdown.
+    const drawdownPct = peak > 0 ? ((s.netWorth - peak) / peak) * 100 : 0;
+    out.push({ date: s.date, label: s.date, drawdownPct });
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // F11 — Performance attribution
 // ---------------------------------------------------------------------------
