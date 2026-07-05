@@ -52,3 +52,8 @@ export const LazyReturnTrendChart = dynamic(
   () => import("./return-trend-chart").then((m) => m.ReturnTrendChart),
   { loading: () => <ChartSkeleton /> },
 );
+
+export const LazyDrawdownChart = dynamic(
+  () => import("./drawdown-chart").then((m) => m.DrawdownChart),
+  { loading: () => <ChartSkeleton /> },
+);
