@@ -114,7 +114,12 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
     });
 
     await tx.holdingTransaction.create({
-      data: { holdingId: upserted.id, type: "BUY", quantity: parsed.data.quantity },
+      data: {
+        holdingId: upserted.id,
+        type: "BUY",
+        quantity: parsed.data.quantity,
+        ...(parsed.data.unitPrice !== undefined && { unitPrice: parsed.data.unitPrice }),
+      },
     });
 
     return upserted;

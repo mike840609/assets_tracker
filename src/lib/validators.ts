@@ -53,6 +53,7 @@ const baseHoldingFields = {
     .transform((s) => s.toUpperCase()),
   name: z.string().min(1, "Name is required").max(100),
   quantity: z.number().positive("Quantity must be positive"),
+  unitPrice: z.number().positive("Buy unit price must be positive").optional(),
   currency: z.string().length(3).default("USD"),
 };
 

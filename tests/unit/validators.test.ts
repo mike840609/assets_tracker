@@ -58,6 +58,21 @@ describe("createHoldingSchema", () => {
     expect(createHoldingSchema.safeParse({ ...base, quantity: -1 }).success).toBe(false);
   });
 
+  it("accepts an optional positive buy unit price", () => {
+    expect(createHoldingSchema.safeParse(base).success).toBe(true);
+
+    const result = createHoldingSchema.safeParse({ ...base, unitPrice: 180.25 });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.unitPrice).toBe(180.25);
+    }
+  });
+
+  it("rejects a non-positive buy unit price", () => {
+    expect(createHoldingSchema.safeParse({ ...base, unitPrice: 0 }).success).toBe(false);
+    expect(createHoldingSchema.safeParse({ ...base, unitPrice: -1 }).success).toBe(false);
+  });
+
   it("accepts an OPTION holding with a valid OCC symbol", () => {
     const result = createHoldingSchema.safeParse({
       symbol: "AAPL240119C00150000",

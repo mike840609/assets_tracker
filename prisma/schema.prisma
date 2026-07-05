@@ -104,6 +104,7 @@ model HoldingTransaction {
   holding   Holding         @relation(fields: [holdingId], references: [id], onDelete: Cascade)
   type      TransactionType
   quantity  Decimal         @db.Decimal(18, 8)
+  unitPrice Decimal?        @db.Decimal(18, 8)
   note      String?
   createdAt DateTime        @default(now())
 
