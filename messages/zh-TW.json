@@ -756,6 +756,14 @@
     "noExposure": "找不到用於計算曝險的資產。",
     "total": "總計"
   },
+  "concentration": {
+    "title": "集中度",
+    "subtitle": "最大持倉佔總資產的比重。",
+    "largestPosition": "最大持倉",
+    "level_low": "分散良好",
+    "level_moderate": "中度集中",
+    "level_high": "高度集中"
+  },
   "accountsSummary": {
     "title": "所有帳戶",
     "noAccounts": "尚無帳戶。",

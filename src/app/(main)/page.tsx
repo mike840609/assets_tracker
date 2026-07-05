@@ -14,6 +14,7 @@ const CLIENT_NAMESPACES = [
   "trendChart",
   "allocationChart",
   "currencyExposure",
+  "concentration",
   "accountsSummary",
   "netWorthCard",
   "goalsMilestone",

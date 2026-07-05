@@ -756,6 +756,14 @@
     "noExposure": "No assets found to compute exposure.",
     "total": "Total"
   },
+  "concentration": {
+    "title": "Concentration",
+    "subtitle": "Largest positions as a share of total assets.",
+    "largestPosition": "Largest position",
+    "level_low": "Well diversified",
+    "level_moderate": "Moderately concentrated",
+    "level_high": "Highly concentrated"
+  },
   "accountsSummary": {
     "title": "All Accounts",
     "noAccounts": "No accounts yet.",
