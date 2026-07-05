@@ -369,6 +369,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
                     holdingId: newHolding.id,
                     type: t.type,
                     quantity: t.quantity,
+                    ...(t.unitPrice !== undefined && { unitPrice: t.unitPrice }),
                     note: t.note,
                     createdAt: t.createdAt,
                     // Preserve null as null — analysis bucketing falls back to

@@ -350,6 +350,12 @@ const importTimestamp = z.iso.datetime().optional();
 // to; manual rows export it as null. Preserve null as null — never default it,
 // since analysis bucketing falls back to createdAt only when it is null.
 const importOccurrenceDate = z.iso.datetime().optional().nullable();
+const importHoldingTransactionUnitPrice = decimalSchema
+  .optional()
+  .nullable()
+  .refine((value) => value == null || Number(value) > 0, {
+    message: "Buy unit price must be positive",
+  });
 
 export const dataImportSchema = z.object({
   version: z.string(),
@@ -394,6 +400,7 @@ export const dataImportSchema = z.object({
                   z.object({
                     type: z.enum(HOLDING_TRANSACTION_TYPES),
                     quantity: decimalSchema,
+                    unitPrice: importHoldingTransactionUnitPrice,
                     note: z.string().optional().nullable(),
                     createdAt: importTimestamp,
                     occurrenceDate: importOccurrenceDate,

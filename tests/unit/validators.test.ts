@@ -341,6 +341,44 @@ describe("dataImportSchema", () => {
     ]);
   });
 
+  it("preserves imported holding transaction unitPrice through parsing", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.2",
+      accounts: [
+        {
+          name: "Checking",
+          type: "ASSET",
+          category: "BANK",
+          currency: "USD",
+          cashBalance: "100",
+          holdings: [
+            {
+              symbol: "VT",
+              name: "Vanguard Total World",
+              quantity: "1",
+              currency: "USD",
+              assetType: "ETF",
+              transactions: [
+                { type: "BUY", quantity: "1", unitPrice: "180.25" },
+                { type: "SELL", quantity: "1", unitPrice: null },
+                { type: "EDIT", quantity: "-0.5" },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    expect(result.data.accounts[0].holdings?.[0].transactions?.map((t) => t.unitPrice)).toEqual([
+      "180.25",
+      null,
+      undefined,
+    ]);
+  });
+
   it("rejects a non-datetime occurrenceDate", () => {
     const result = dataImportSchema.safeParse({
       version: "1.2",
