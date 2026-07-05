@@ -46,3 +46,10 @@ DONE
 ## Concerns
 
 - None.
+
+## Fix Review Follow-up
+
+- Split `parsed.data` in the holdings POST route so `unitPrice` is stripped before the non-option `holding.upsert` create payload is built.
+- Hardened the holdings route unit test to assert the holding create payload never carries `unitPrice`, even when the request body includes it.
+- Verification: `pnpm test:unit -- tests/unit/validators.test.ts tests/unit/holdings-route.test.ts`
+  - Passed: 20 files, 172 tests.

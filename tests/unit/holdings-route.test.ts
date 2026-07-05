@@ -101,6 +101,17 @@ describe("holdings route", () => {
     );
 
     expect(response.status).toBe(201);
+    expect(h.calls.find((call) => call.op === "holding.upsert")?.args?.create).toMatchObject({
+      accountId: "acc1",
+      symbol: "AAPL",
+      name: "Apple",
+      quantity: 10,
+      currency: "USD",
+      assetType: "STOCK",
+    });
+    expect(h.calls.find((call) => call.op === "holding.upsert")?.args?.create).not.toHaveProperty(
+      "unitPrice",
+    );
     expect(h.calls.find((call) => call.op === "holdingTransaction.create")?.args?.data).toEqual({
       holdingId: "holding1",
       type: "BUY",

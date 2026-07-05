@@ -93,6 +93,7 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
   // race when two adds for the same symbol land concurrently, and the BUY log
   // commits with the holding so the audit trail can't diverge.
   const holding = await prisma.$transaction(async (tx) => {
+    const { unitPrice: _unitPrice, ...holdingData } = parsed.data;
     const upserted = await tx.holding.upsert({
       where: { accountId_symbol: { accountId: id, symbol: parsed.data.symbol } },
       update: { quantity: { increment: parsed.data.quantity } },
@@ -110,7 +111,7 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
             expiration: optionMetadata.expiration,
             contractMultiplier: optionMetadata.contractMultiplier,
           }
-        : { accountId: id, ...parsed.data },
+        : { accountId: id, ...holdingData },
     });
 
     await tx.holdingTransaction.create({
