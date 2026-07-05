@@ -220,6 +220,16 @@ describe("cash transaction schemas", () => {
       updateCashTransactionSchema.safeParse({ id: "c1", occurrenceDate: "31/12/2025" }).success,
     ).toBe(false);
   });
+
+  it("rejects an oversized note (#517)", () => {
+    expect(
+      createCashTransactionSchema.safeParse({
+        type: "DEPOSIT",
+        amount: 100,
+        note: "x".repeat(501),
+      }).success,
+    ).toBe(false);
+  });
 });
 
 describe("createGoalSchema", () => {
@@ -390,6 +400,120 @@ describe("dataImportSchema", () => {
           currency: "USD",
           cashBalance: "0",
           cashTransactions: [{ type: "DEPOSIT", amount: "1", occurrenceDate: "not-a-date" }],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  // #517 — bounded string lengths on imported rows (prevents multi-MB padding
+  // across up to 200 accounts x 2000 holdings x 10,000 transactions).
+  it("rejects oversized imported account name", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.2",
+      accounts: [
+        {
+          name: "x".repeat(101),
+          type: "ASSET",
+          category: "BANK",
+          currency: "USD",
+          cashBalance: "0",
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects oversized imported holding symbol and name", () => {
+    const baseAccount = {
+      name: "Checking",
+      type: "ASSET" as const,
+      category: "BANK" as const,
+      currency: "USD",
+      cashBalance: "0",
+    };
+
+    expect(
+      dataImportSchema.safeParse({
+        version: "1.2",
+        accounts: [
+          {
+            ...baseAccount,
+            holdings: [
+              {
+                symbol: "x".repeat(33),
+                name: "Vanguard Total World",
+                quantity: "1",
+                currency: "USD",
+                assetType: "ETF",
+              },
+            ],
+          },
+        ],
+      }).success,
+    ).toBe(false);
+
+    expect(
+      dataImportSchema.safeParse({
+        version: "1.2",
+        accounts: [
+          {
+            ...baseAccount,
+            holdings: [
+              {
+                symbol: "VT",
+                name: "x".repeat(101),
+                quantity: "1",
+                currency: "USD",
+                assetType: "ETF",
+              },
+            ],
+          },
+        ],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects oversized imported holding-transaction and cash-transaction notes", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.2",
+      accounts: [
+        {
+          name: "Checking",
+          type: "ASSET",
+          category: "BANK",
+          currency: "USD",
+          cashBalance: "0",
+          holdings: [
+            {
+              symbol: "VT",
+              name: "Vanguard Total World",
+              quantity: "1",
+              currency: "USD",
+              assetType: "ETF",
+              transactions: [{ type: "BUY", quantity: "1", note: "x".repeat(501) }],
+            },
+          ],
+          cashTransactions: [{ type: "DEPOSIT", amount: "1", note: "x".repeat(501) }],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects oversized imported goal name", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.2",
+      accounts: [],
+      goals: [
+        {
+          name: "x".repeat(101),
+          targetAmount: "100",
+          targetCurrency: "USD",
+          scope: "NET_WORTH",
         },
       ],
     });
