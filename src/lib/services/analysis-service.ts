@@ -464,6 +464,55 @@ export function computePerformanceAttribution(
 /** Account categories that count as "investments" for the portfolio return KPI. */
 const INVESTMENT_CATEGORIES = new Set(["BROKERAGE", "CRYPTO_WALLET"]);
 
+export type CostBasisTransactionType = "BUY" | "SELL" | "EDIT";
+
+export interface CostBasisTransaction {
+  type: CostBasisTransactionType;
+  quantity: number;
+  unitPrice?: number | null;
+}
+
+export interface CostBasisPosition {
+  quantity: number;
+  costBasis: number;
+  hasCostBasis: boolean;
+}
+
+export function computeRemainingCostBasis(transactions: CostBasisTransaction[]): CostBasisPosition {
+  let quantity = 0;
+  let costBasis = 0;
+
+  for (const tx of transactions) {
+    const qty = Math.max(0, tx.quantity);
+    if (qty === 0) continue;
+
+    if (tx.type === "BUY") {
+      quantity += qty;
+      if (tx.unitPrice != null) costBasis += qty * tx.unitPrice;
+      continue;
+    }
+
+    if (tx.type === "SELL") {
+      if (quantity <= 0) continue;
+      const sold = Math.min(qty, quantity);
+      const avgCost = costBasis / quantity;
+      quantity = Math.max(0, quantity - sold);
+      costBasis = Math.max(0, costBasis - sold * avgCost);
+      if (quantity === 0) costBasis = 0;
+      continue;
+    }
+
+    quantity = qty;
+    costBasis = tx.unitPrice != null ? qty * tx.unitPrice : 0;
+  }
+
+  return {
+    quantity,
+    costBasis,
+    hasCostBasis: costBasis > 0,
+  };
+}
+
 /**
  * Period return of the user's investment accounts (BROKERAGE + CRYPTO_WALLET)
  * over the selected range, as a fraction (0.072 = +7.2%).

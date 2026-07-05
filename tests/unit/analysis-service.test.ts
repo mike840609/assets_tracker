@@ -12,6 +12,7 @@ import {
   computeInvestmentReturnSeries,
   computeDrawdownSeries,
   computeConcentration,
+  computeRemainingCostBasis,
 } from "@/lib/services/analysis-service";
 import type {
   NormalizedSnapshot,
@@ -603,5 +604,63 @@ describe("computeConcentration", () => {
     expect(r.top).toHaveLength(1);
     expect(r.top[0].pct).toBeCloseTo(50);
     expect(r.hhi).toBeCloseTo(0.25);
+  });
+});
+
+describe("computeRemainingCostBasis", () => {
+  it("uses average cost when sells reduce a costed position", () => {
+    const result = computeRemainingCostBasis([
+      { type: "BUY", quantity: 10, unitPrice: 100 },
+      { type: "BUY", quantity: 10, unitPrice: 200 },
+      { type: "SELL", quantity: 5, unitPrice: null },
+    ]);
+
+    expect(result.quantity).toBeCloseTo(15, 10);
+    expect(result.costBasis).toBeCloseTo(2250, 10);
+    expect(result.hasCostBasis).toBe(true);
+  });
+
+  it("leaves quantity without cost when unit prices are missing", () => {
+    const result = computeRemainingCostBasis([
+      { type: "BUY", quantity: 10, unitPrice: null },
+      { type: "BUY", quantity: 5, unitPrice: undefined },
+    ]);
+
+    expect(result.quantity).toBeCloseTo(15, 10);
+    expect(result.costBasis).toBe(0);
+    expect(result.hasCostBasis).toBe(false);
+  });
+
+  it("does not produce negative cost basis when selling more than tracked costed quantity", () => {
+    const result = computeRemainingCostBasis([
+      { type: "BUY", quantity: 2, unitPrice: 100 },
+      { type: "SELL", quantity: 5, unitPrice: null },
+    ]);
+
+    expect(result.quantity).toBe(0);
+    expect(result.costBasis).toBe(0);
+    expect(result.hasCostBasis).toBe(false);
+  });
+
+  it("resets an edited position to edited quantity and edited unit price", () => {
+    const result = computeRemainingCostBasis([
+      { type: "BUY", quantity: 10, unitPrice: 100 },
+      { type: "EDIT", quantity: 3, unitPrice: 80 },
+    ]);
+
+    expect(result.quantity).toBeCloseTo(3, 10);
+    expect(result.costBasis).toBeCloseTo(240, 10);
+    expect(result.hasCostBasis).toBe(true);
+  });
+
+  it("clears cost basis on an edit without unit price", () => {
+    const result = computeRemainingCostBasis([
+      { type: "BUY", quantity: 10, unitPrice: 100 },
+      { type: "EDIT", quantity: 3, unitPrice: null },
+    ]);
+
+    expect(result.quantity).toBeCloseTo(3, 10);
+    expect(result.costBasis).toBe(0);
+    expect(result.hasCostBasis).toBe(false);
   });
 });
