@@ -663,4 +663,15 @@ describe("computeRemainingCostBasis", () => {
     expect(result.costBasis).toBe(0);
     expect(result.hasCostBasis).toBe(false);
   });
+
+  it("clears the position on a zero-quantity edit", () => {
+    const result = computeRemainingCostBasis([
+      { type: "BUY", quantity: 10, unitPrice: 100 },
+      { type: "EDIT", quantity: 0, unitPrice: 100 },
+    ]);
+
+    expect(result.quantity).toBe(0);
+    expect(result.costBasis).toBe(0);
+    expect(result.hasCostBasis).toBe(false);
+  });
 });

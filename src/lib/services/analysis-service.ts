@@ -483,6 +483,13 @@ export function computeRemainingCostBasis(transactions: CostBasisTransaction[]):
   let costBasis = 0;
 
   for (const tx of transactions) {
+    if (tx.type === "EDIT") {
+      const qty = Math.max(0, tx.quantity);
+      quantity = qty;
+      costBasis = tx.unitPrice != null ? qty * tx.unitPrice : 0;
+      continue;
+    }
+
     const qty = Math.max(0, tx.quantity);
     if (qty === 0) continue;
 
@@ -501,9 +508,6 @@ export function computeRemainingCostBasis(transactions: CostBasisTransaction[]):
       if (quantity === 0) costBasis = 0;
       continue;
     }
-
-    quantity = qty;
-    costBasis = tx.unitPrice != null ? qty * tx.unitPrice : 0;
   }
 
   return {
