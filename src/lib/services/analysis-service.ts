@@ -4,6 +4,7 @@ import type {
   AccountMeta,
   AccountMonthlyContribution,
 } from "./history-service";
+import type { NetWorthSummary } from "@/lib/types";
 
 /**
  * One month's worth of net-worth aggregation.
@@ -604,4 +605,57 @@ export function computeInvestmentReturnSeries(
     index = index === null ? r : (1 + index) * (1 + r) - 1;
     return { monthKey, label, monthlyReturn: r, cumulativeReturn: index };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Portfolio concentration
+// ---------------------------------------------------------------------------
+
+/** One position in the concentration breakdown (share of total assets). */
+export interface ConcentrationPosition {
+  label: string;
+  /** 0..100 — this holding's percent of total assets. */
+  pct: number;
+}
+
+/** Point-in-time portfolio concentration. */
+export interface ConcentrationResult {
+  /** Up to 5 largest positions, descending by pct. */
+  top: ConcentrationPosition[];
+  /** Largest single position as a percent of total assets (0 when empty). */
+  topHoldingPct: number;
+  /** Herfindahl index — sum of squared holding weights (0..1). */
+  hhi: number;
+}
+
+/**
+ * Portfolio concentration from the current net-worth summary: each priced holding
+ * across ASSET accounts as a share of total assets. Cash and liabilities are not
+ * positions, so they never appear (but total assets remains the denominator).
+ * Pure — no DB access.
+ */
+export function computeConcentration(summary: NetWorthSummary): ConcentrationResult {
+  const totalAssets = summary.totalAssets;
+  const positions: ConcentrationPosition[] = [];
+  let hhi = 0;
+
+  if (totalAssets > 0) {
+    for (const account of summary.accounts) {
+      if (account.type !== "ASSET") continue;
+      for (const h of account.holdings) {
+        const value = h.marketValueInBaseCurrency ?? 0;
+        if (value <= 0) continue;
+        const weight = value / totalAssets;
+        hhi += weight * weight;
+        positions.push({ label: h.name || h.symbol, pct: weight * 100 });
+      }
+    }
+  }
+
+  positions.sort((a, b) => b.pct - a.pct);
+  return {
+    top: positions.slice(0, 5),
+    topHoldingPct: positions[0]?.pct ?? 0,
+    hhi,
+  };
 }

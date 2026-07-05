@@ -11,6 +11,7 @@ import {
   computeInvestmentReturn,
   computeInvestmentReturnSeries,
   computeDrawdownSeries,
+  computeConcentration,
 } from "@/lib/services/analysis-service";
 import type {
   NormalizedSnapshot,
@@ -18,6 +19,7 @@ import type {
   AccountMeta,
 } from "@/lib/services/history-service";
 import type { AccountMonthlyContribution } from "@/lib/services/history-service";
+import type { NetWorthSummary } from "@/lib/types";
 
 function snap(
   date: string,
@@ -528,5 +530,66 @@ describe("computeDrawdownSeries", () => {
   it("guards divide-by-zero when the running peak is non-positive", () => {
     const s = [snap("2024-01-01", -50), snap("2024-02-01", -80)];
     expect(computeDrawdownSeries(s, "2024-01-01").every((p) => p.drawdownPct === 0)).toBe(true);
+  });
+});
+
+function assetSummary(
+  totalAssets: number,
+  holdings: { name: string; symbol: string; marketValueInBaseCurrency: number | null }[],
+): NetWorthSummary {
+  return {
+    totalAssets,
+    totalLiabilities: 0,
+    netWorth: totalAssets,
+    baseCurrency: "USD",
+    currencyExposure: [],
+    accounts: [
+      {
+        type: "ASSET",
+        holdings,
+      },
+    ],
+  } as unknown as NetWorthSummary; // test double: only the fields computeConcentration reads
+}
+
+describe("computeConcentration", () => {
+  it("returns zeros and no positions for an empty portfolio", () => {
+    const r = computeConcentration(assetSummary(0, []));
+    expect(r.top).toEqual([]);
+    expect(r.topHoldingPct).toBe(0);
+    expect(r.hhi).toBe(0);
+  });
+
+  it("reports 100% and hhi 1 for a single holding", () => {
+    const r = computeConcentration(
+      assetSummary(1000, [{ name: "Apple", symbol: "AAPL", marketValueInBaseCurrency: 1000 }]),
+    );
+    expect(r.topHoldingPct).toBeCloseTo(100);
+    expect(r.top[0].label).toBe("Apple");
+    expect(r.hhi).toBeCloseTo(1);
+  });
+
+  it("sorts descending, caps at 5, and skips non-positive/null holdings", () => {
+    const r = computeConcentration(
+      assetSummary(1000, [
+        { name: "A", symbol: "A", marketValueInBaseCurrency: 100 },
+        { name: "B", symbol: "B", marketValueInBaseCurrency: 400 },
+        { name: "C", symbol: "C", marketValueInBaseCurrency: 200 },
+        { name: "D", symbol: "D", marketValueInBaseCurrency: 50 },
+        { name: "E", symbol: "E", marketValueInBaseCurrency: 150 },
+        { name: "F", symbol: "F", marketValueInBaseCurrency: 100 },
+        { name: "Z", symbol: "Z", marketValueInBaseCurrency: null },
+        { name: "Y", symbol: "Y", marketValueInBaseCurrency: -10 },
+      ]),
+    );
+    expect(r.top.map((p) => p.label)).toEqual(["B", "C", "E", "A", "F"]);
+    expect(r.top[0].pct).toBeCloseTo(40);
+  });
+
+  it("falls back to symbol when a holding has no name", () => {
+    const r = computeConcentration(
+      assetSummary(500, [{ name: "", symbol: "BTC", marketValueInBaseCurrency: 500 }]),
+    );
+    expect(r.top[0].label).toBe("BTC");
   });
 });
