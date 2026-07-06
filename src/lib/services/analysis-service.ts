@@ -4,6 +4,7 @@ import type {
   AccountMeta,
   AccountMonthlyContribution,
 } from "./history-service";
+import type { NetWorthSummary } from "@/lib/types";
 
 /**
  * One month's worth of net-worth aggregation.
@@ -353,6 +354,45 @@ export function aggregateCategoryHistory(
     });
 }
 
+/** One point in the drawdown ("underwater") series. */
+export interface DrawdownPoint {
+  /** Snapshot date, ISO "YYYY-MM-DD". */
+  date: string;
+  /** Same as date — X-axis / tooltip label. */
+  label: string;
+  /** Percent below the running all-time peak (<= 0). */
+  drawdownPct: number;
+}
+
+/**
+ * Net-worth drawdown series: how far below the prior all-time peak each snapshot
+ * sits, as a non-positive percentage.
+ *
+ * The running peak accumulates across the FULL input history, then only points on
+ * or after `rangeStartIso` are returned — so a drawdown that began before the
+ * visible window still renders truthfully (all-time peak, not window-local).
+ *
+ * @param snapshots  Full history, ascending by date.
+ * @param rangeStartIso  Inclusive lower bound ("YYYY-MM-DD") for the returned slice.
+ */
+export function computeDrawdownSeries(
+  snapshots: NormalizedSnapshot[],
+  rangeStartIso: string,
+): DrawdownPoint[] {
+  let peak = 0;
+  const out: DrawdownPoint[] = [];
+  for (const s of snapshots) {
+    if (s.netWorth > peak) peak = s.netWorth;
+    if (s.date < rangeStartIso) continue;
+    // ponytail: peak <= 0 (all-negative net worth) can't yield a meaningful ratio;
+    // emit 0 rather than dividing by zero. Upgrade only if negative-net-worth
+    // users ever need a signed drawdown.
+    const drawdownPct = peak > 0 ? ((s.netWorth - peak) / peak) * 100 : 0;
+    out.push({ date: s.date, label: s.date, drawdownPct });
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // F11 — Performance attribution
 // ---------------------------------------------------------------------------
@@ -565,4 +605,63 @@ export function computeInvestmentReturnSeries(
     index = index === null ? r : (1 + index) * (1 + r) - 1;
     return { monthKey, label, monthlyReturn: r, cumulativeReturn: index };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Portfolio concentration
+// ---------------------------------------------------------------------------
+
+/** One position in the concentration breakdown (share of total assets). */
+export interface ConcentrationPosition {
+  label: string;
+  /** 0..100 — this holding's percent of total assets. */
+  pct: number;
+}
+
+/** Point-in-time portfolio concentration. */
+export interface ConcentrationResult {
+  /** Up to 5 largest positions, descending by pct. */
+  top: ConcentrationPosition[];
+  /** Largest single position as a percent of total assets (0 when empty). */
+  topHoldingPct: number;
+  /** Herfindahl index — sum of squared holding weights (0..1). */
+  hhi: number;
+}
+
+/**
+ * Portfolio concentration from the current net-worth summary: each priced holding
+ * across ASSET accounts as a share of total assets. Cash and liabilities are not
+ * positions, so they never appear (but total assets remains the denominator).
+ * Pure — no DB access.
+ */
+export function computeConcentration(summary: NetWorthSummary): ConcentrationResult {
+  const totalAssets = summary.totalAssets;
+  const valueByLabel = new Map<string, number>();
+
+  if (totalAssets > 0) {
+    for (const account of summary.accounts) {
+      if (account.type !== "ASSET") continue;
+      for (const h of account.holdings) {
+        const value = h.marketValueInBaseCurrency ?? 0;
+        if (value <= 0) continue;
+        const label = h.name || h.symbol;
+        valueByLabel.set(label, (valueByLabel.get(label) ?? 0) + value);
+      }
+    }
+  }
+
+  let hhi = 0;
+  const positions: ConcentrationPosition[] = [];
+  for (const [label, value] of valueByLabel) {
+    const weight = value / totalAssets;
+    hhi += weight * weight;
+    positions.push({ label, pct: weight * 100 });
+  }
+
+  positions.sort((a, b) => b.pct - a.pct);
+  return {
+    top: positions.slice(0, 5),
+    topHoldingPct: positions[0]?.pct ?? 0,
+    hhi,
+  };
 }

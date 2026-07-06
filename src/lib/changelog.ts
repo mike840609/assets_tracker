@@ -38,6 +38,32 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "0.13.0",
+    date: "2026-07-06",
+    summary: {
+      "en-US": "New drawdown chart and portfolio concentration card.",
+      "zh-TW": "新增回撤圖表與投資組合集中度卡片。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Analysis: a drawdown (underwater) chart showing how far net worth sits below its prior peak, with a max-drawdown readout.",
+          "zh-TW": "分析頁：新增回撤圖表，顯示淨資產距離前高的跌幅，並標示最大回撤。",
+        },
+      },
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Dashboard: a concentration card showing your largest positions as a share of total assets.",
+          "zh-TW": "儀表板：新增集中度卡片，顯示最大持倉佔總資產的比重。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.12.1",
     date: "2026-07-06",
     summary: {
