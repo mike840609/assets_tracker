@@ -367,6 +367,7 @@ export function AccountDetail({
         account={account}
         totalHoldingsValue={totalHoldingsValue}
         onSaveBalance={saveBalance}
+        onCashTransactionRecorded={() => setRefreshTrigger((prev) => prev + 1)}
       />
 
       {!isBank && (
