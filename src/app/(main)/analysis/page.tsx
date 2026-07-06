@@ -20,7 +20,7 @@ async function AnalysisContent() {
     t,
     messages,
     locale,
-    { snapshots, cashFlowData, rawHistory, accountCashFlow },
+    { snapshots, cashFlowData, rawHistory, accountCashFlow, investmentCostBasis },
     settings,
     accountCount,
   ] = await Promise.all([
@@ -42,6 +42,7 @@ async function AnalysisContent() {
           cashFlowData={cashFlowData}
           rawHistory={rawHistory}
           accountCashFlow={accountCashFlow}
+          investmentCostBasis={investmentCostBasis}
           baseCurrency={settings.baseCurrency}
           locale={locale}
           hasAccounts={accountCount > 0}

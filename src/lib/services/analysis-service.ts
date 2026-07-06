@@ -464,6 +464,80 @@ export function computePerformanceAttribution(
 /** Account categories that count as "investments" for the portfolio return KPI. */
 const INVESTMENT_CATEGORIES = new Set(["BROKERAGE", "CRYPTO_WALLET"]);
 
+export type CostBasisTransactionType = "BUY" | "SELL" | "EDIT";
+
+export interface CostBasisTransaction {
+  type: CostBasisTransactionType;
+  quantity: number;
+  unitPrice?: number | null;
+}
+
+export interface CostBasisPosition {
+  quantity: number;
+  costBasis: number;
+  hasCostBasis: boolean;
+}
+
+export interface InvestmentCostBasisSummary {
+  marketValue: number;
+  costBasis: number;
+  unrealizedGain: number | null;
+  unrealizedGainPct: number | null;
+  pricedHoldingCount: number;
+  costedHoldingCount: number;
+}
+
+export function computeRemainingCostBasis(transactions: CostBasisTransaction[]): CostBasisPosition {
+  let quantity = 0;
+  let costedQuantity = 0;
+  let costBasis = 0;
+
+  for (const tx of transactions) {
+    if (tx.type === "EDIT") {
+      const qty = Math.max(0, tx.quantity);
+      quantity = qty;
+      costedQuantity = tx.unitPrice != null ? qty : 0;
+      costBasis = tx.unitPrice != null ? qty * tx.unitPrice : 0;
+      continue;
+    }
+
+    const qty = Math.max(0, tx.quantity);
+    if (qty === 0) continue;
+
+    if (tx.type === "BUY") {
+      quantity += qty;
+      if (tx.unitPrice != null) {
+        costedQuantity += qty;
+        costBasis += qty * tx.unitPrice;
+      }
+      continue;
+    }
+
+    if (tx.type === "SELL") {
+      if (quantity <= 0) continue;
+      const sold = Math.min(qty, quantity);
+      quantity = Math.max(0, quantity - sold);
+      if (costedQuantity > 0 && costBasis > 0) {
+        const costedSold = Math.min(sold, costedQuantity);
+        const avgCost = costBasis / costedQuantity;
+        costedQuantity = Math.max(0, costedQuantity - costedSold);
+        costBasis = Math.max(0, costBasis - costedSold * avgCost);
+      }
+      if (quantity === 0 || costedQuantity === 0) {
+        costedQuantity = 0;
+        costBasis = 0;
+      }
+      continue;
+    }
+  }
+
+  return {
+    quantity,
+    costBasis,
+    hasCostBasis: costBasis > 0,
+  };
+}
+
 /**
  * Period return of the user's investment accounts (BROKERAGE + CRYPTO_WALLET)
  * over the selected range, as a fraction (0.072 = +7.2%).

@@ -1,0 +1,162 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const created = new Date("2026-01-01T00:00:00.000Z");
+
+interface TransactionFixture {
+  id: string;
+  type: "BUY" | "SELL" | "EDIT";
+  quantity: number;
+  unitPrice: number | null;
+  createdAt: Date;
+  occurrenceDate: Date | null;
+}
+
+interface HoldingFixture {
+  symbol: string;
+  quantity: number;
+  currency: string;
+  assetType: "STOCK" | "OPTION";
+  contractMultiplier: number | null;
+  transactions: TransactionFixture[];
+}
+
+interface AccountFixture {
+  currency: string;
+  holdings: HoldingFixture[];
+}
+
+const h = vi.hoisted(() => ({
+  accounts: [] as AccountFixture[],
+  prices: [] as { symbol: string; price: number; currency: string }[],
+  rates: new Map<string, number>(),
+}));
+
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    account: { findMany: vi.fn(async () => h.accounts) },
+    priceCache: { findMany: vi.fn(async () => h.prices) },
+  },
+}));
+
+vi.mock("@/lib/services/exchange-rate-service", async (importActual) => {
+  const actual = await importActual<typeof import("@/lib/services/exchange-rate-service")>();
+  return { ...actual, getAllExchangeRates: vi.fn(async () => h.rates) };
+});
+
+const { getInvestmentCostBasisSummary } =
+  await import("@/lib/services/investment-cost-basis-service");
+
+function tx(
+  over: Partial<TransactionFixture> & Pick<TransactionFixture, "id" | "type" | "quantity">,
+): TransactionFixture {
+  return {
+    unitPrice: null,
+    createdAt: created,
+    occurrenceDate: null,
+    ...over,
+  };
+}
+
+function holding(
+  over: Partial<HoldingFixture> &
+    Pick<HoldingFixture, "symbol" | "quantity" | "currency" | "assetType">,
+): HoldingFixture {
+  return {
+    contractMultiplier: null,
+    transactions: [],
+    ...over,
+  };
+}
+
+function account(over: Partial<AccountFixture> = {}): AccountFixture {
+  return {
+    currency: "USD",
+    holdings: [],
+    ...over,
+  };
+}
+
+beforeEach(() => {
+  h.accounts = [];
+  h.prices = [];
+  h.rates = new Map<string, number>();
+});
+
+describe("getInvestmentCostBasisSummary", () => {
+  it("replays transactions by effective date, then createdAt, then id", async () => {
+    h.accounts = [
+      account({
+        holdings: [
+          holding({
+            symbol: "AAPL",
+            quantity: 5,
+            currency: "USD",
+            assetType: "STOCK",
+            transactions: [
+              tx({
+                id: "buy-late-created",
+                type: "BUY",
+                quantity: 10,
+                unitPrice: 100,
+                createdAt: new Date("2026-01-03T00:00:00.000Z"),
+                occurrenceDate: new Date("2026-01-01T00:00:00.000Z"),
+              }),
+              tx({
+                id: "sell-early-created",
+                type: "SELL",
+                quantity: 5,
+                createdAt: new Date("2026-01-02T00:00:00.000Z"),
+                occurrenceDate: new Date("2026-01-02T00:00:00.000Z"),
+              }),
+            ],
+          }),
+        ],
+      }),
+    ];
+    h.prices = [{ symbol: "AAPL", price: 120, currency: "USD" }];
+
+    const summary = await getInvestmentCostBasisSummary("u1", "USD");
+
+    expect(summary.marketValue).toBeCloseTo(600);
+    expect(summary.costBasis).toBeCloseTo(500);
+    expect(summary.unrealizedGain).toBeCloseTo(100);
+    expect(summary.unrealizedGainPct).toBeCloseTo(0.2);
+    expect(summary.pricedHoldingCount).toBe(1);
+    expect(summary.costedHoldingCount).toBe(1);
+  });
+
+  it("applies option multiplier and FX conversion to market value and cost basis", async () => {
+    h.accounts = [
+      account({
+        holdings: [
+          holding({
+            symbol: "AAPL240119C00150000",
+            quantity: 2,
+            currency: "USD",
+            assetType: "OPTION",
+            contractMultiplier: 100,
+            transactions: [
+              tx({
+                id: "buy-option",
+                type: "BUY",
+                quantity: 2,
+                unitPrice: 2,
+              }),
+            ],
+          }),
+        ],
+      }),
+    ];
+    h.prices = [{ symbol: "AAPL240119C00150000", price: 5, currency: "USD" }];
+    h.rates = new Map([["USD_TWD", 30]]);
+
+    const summary = await getInvestmentCostBasisSummary("u1", "TWD");
+
+    expect(summary.marketValue).toBeCloseTo(30000);
+    expect(summary.costBasis).toBeCloseTo(12000);
+    expect(summary.unrealizedGain).toBeCloseTo(18000);
+    expect(summary.unrealizedGainPct).toBeCloseTo(1.5);
+    expect(summary.pricedHoldingCount).toBe(1);
+    expect(summary.costedHoldingCount).toBe(1);
+  });
+});

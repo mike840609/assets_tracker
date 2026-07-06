@@ -17,6 +17,7 @@ import type {
   SnapshotBreakdown,
   AccountMonthlyContribution,
 } from "@/lib/services/history-service";
+import type { InvestmentCostBasisSummary } from "@/lib/services/analysis-service";
 import {
   aggregateMonthlyChange,
   computeKpis,
@@ -34,6 +35,7 @@ import {
   LazyAssetsLiabilitiesChart,
   LazyCashFlowChart,
   LazyCumulativeGrowthChart,
+  LazyInvestmentCostBasisChart,
   LazyCategoryTrendChart,
   LazyAttributionChart,
   LazyReturnTrendChart,
@@ -47,6 +49,7 @@ interface Props {
   cashFlowData: MonthlyContribution[];
   rawHistory: RawHistoryData;
   accountCashFlow: AccountMonthlyContribution[];
+  investmentCostBasis: InvestmentCostBasisSummary;
   baseCurrency: string;
   locale: string;
   hasAccounts: boolean;
@@ -96,6 +99,7 @@ export function AnalysisView({
   cashFlowData,
   rawHistory,
   accountCashFlow,
+  investmentCostBasis,
   baseCurrency,
   locale,
   hasAccounts,
@@ -356,7 +360,7 @@ export function AnalysisView({
                 so each question reads as its own group; desktop keeps them tighter. */}
             <div className={isCompact ? "space-y-3" : "space-y-6 xl:space-y-4"}>
               <section
-                aria-label={`${t("cashFlow")} / ${t("cumulativeGrowth")} / ${t("returnTrend")}`}
+                aria-label={`${t("cashFlow")} / ${t("cumulativeGrowth")} / ${t("investmentCostBasis")} / ${t("returnTrend")}`}
                 className={isCompact ? "space-y-2" : "space-y-3"}
               >
                 <div className="flex flex-wrap items-end justify-between gap-2">
@@ -377,7 +381,13 @@ export function AnalysisView({
                       baseCurrency={baseCurrency}
                     />
                   </Card>
-                  <Card size="sm" className="h-full xl:col-span-2">
+                  <Card size="sm" className="h-full">
+                    <LazyInvestmentCostBasisChart
+                      summary={investmentCostBasis}
+                      baseCurrency={baseCurrency}
+                    />
+                  </Card>
+                  <Card size="sm" className="h-full">
                     <LazyReturnTrendChart points={returnTrend} />
                   </Card>
                   <Card size="sm" className="h-full xl:col-span-2">

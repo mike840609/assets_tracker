@@ -38,6 +38,11 @@ export const LazyCumulativeGrowthChart = dynamic(
   { loading: () => <ChartSkeleton /> },
 );
 
+export const LazyInvestmentCostBasisChart = dynamic(
+  () => import("./investment-cost-basis-chart").then((m) => m.InvestmentCostBasisChart),
+  { loading: () => <ChartSkeleton /> },
+);
+
 export const LazyCategoryTrendChart = dynamic(
   () => import("./category-trend-chart").then((m) => m.CategoryTrendChart),
   { loading: () => <ChartSkeleton /> },
