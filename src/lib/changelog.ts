@@ -38,7 +38,7 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
-    version: "0.13.0",
+    version: "0.14.0",
     date: "2026-07-06",
     summary: {
       "en-US": "Backup export/import now includes recurring rules and the stock watchlist.",
@@ -52,6 +52,32 @@ export const CHANGELOG: Release[] = [
             "Settings backup export and restore now cover recurring cash transactions, recurring investments (DCA rules), and the stock watchlist — previously a restore silently dropped these, so future recurring occurrences stopped generating and the watchlist came back empty.",
           "zh-TW":
             "設定頁的備份匯出與還原現在涵蓋定期現金交易、定期投資（定期定額規則）與股票觀察清單——先前還原備份時會悄悄遺失這些資料，導致往後不再產生定期交易，觀察清單也會清空。",
+        },
+      },
+    ],
+  },
+  {
+    version: "0.13.0",
+    date: "2026-07-06",
+    summary: {
+      "en-US": "New drawdown chart and portfolio concentration card.",
+      "zh-TW": "新增回撤圖表與投資組合集中度卡片。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Analysis: a drawdown (underwater) chart showing how far net worth sits below its prior peak, with a max-drawdown readout.",
+          "zh-TW": "分析頁：新增回撤圖表，顯示淨資產距離前高的跌幅，並標示最大回撤。",
+        },
+      },
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Dashboard: a concentration card showing your largest positions as a share of total assets.",
+          "zh-TW": "儀表板：新增集中度卡片，顯示最大持倉佔總資產的比重。",
         },
       },
     ],

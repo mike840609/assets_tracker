@@ -27,6 +27,7 @@ import {
   computePerformanceAttribution,
   computeInvestmentReturn,
   computeInvestmentReturnSeries,
+  computeDrawdownSeries,
 } from "@/lib/services/analysis-service";
 import type { MonthlyContribution, CategoryDataPoint } from "@/lib/services/analysis-service";
 import {
@@ -36,6 +37,7 @@ import {
   LazyCategoryTrendChart,
   LazyAttributionChart,
   LazyReturnTrendChart,
+  LazyDrawdownChart,
 } from "./lazy-analysis-charts";
 import { KpiTiles } from "./kpi-tiles";
 import { AnalysisEmptyState } from "./analysis-empty-state";
@@ -248,6 +250,11 @@ export function AnalysisView({
     [filteredRawSnapshots, rawHistory.accounts, accountCashFlow, buckets, locale],
   );
 
+  const drawdownSeries = useMemo(
+    () => computeDrawdownSeries(snapshots, rangeStartIso),
+    [snapshots, rangeStartIso],
+  );
+
   const hasData = snapshots.length > 0;
   const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
 
@@ -372,6 +379,9 @@ export function AnalysisView({
                   </Card>
                   <Card size="sm" className="h-full xl:col-span-2">
                     <LazyReturnTrendChart points={returnTrend} />
+                  </Card>
+                  <Card size="sm" className="h-full xl:col-span-2">
+                    <LazyDrawdownChart points={drawdownSeries} />
                   </Card>
                 </div>
               </section>

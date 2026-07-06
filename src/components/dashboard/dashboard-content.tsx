@@ -24,6 +24,7 @@ import { ProjectionEntryCard } from "@/components/dashboard/projection-entry-car
 import { PortfolioHeatmap } from "@/components/analysis/portfolio-heatmap";
 import { WatchlistCard } from "@/components/dashboard/watchlist-card";
 import { WatchlistCardSkeleton } from "@/components/dashboard/dashboard-skeleton";
+import { ConcentrationCard } from "./concentration-card";
 import Link from "next/link";
 import { ArrowRight, History } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -253,6 +254,22 @@ async function CurrencySection({ userId, baseCurrency }: { userId: string; baseC
 }
 
 /**
+ * Concentration card — largest positions as a share of total assets. Point-in-time
+ * (no per-holding history exists in snapshots). Shares the cached summary.
+ */
+async function ConcentrationSection({
+  userId,
+  baseCurrency,
+}: {
+  userId: string;
+  baseCurrency: string;
+}) {
+  const summary = await getCachedNetWorthSummary(userId, baseCurrency);
+  if (summary.totalAssets <= 0) return null;
+  return <ConcentrationCard summary={summary} />;
+}
+
+/**
  * Goals milestone card — shows the next active goal ranked by deadline, then progress.
  * Streams independently; a user with no goals gets nothing rendered.
  */
@@ -440,6 +457,9 @@ export async function DashboardContent({ userId }: { userId: string }) {
           </Suspense>
           <Suspense fallback={<ChartCardSkeleton />}>
             <CurrencySection userId={userId} baseCurrency={baseCurrency} />
+          </Suspense>
+          <Suspense fallback={<ChartCardSkeleton />}>
+            <ConcentrationSection userId={userId} baseCurrency={baseCurrency} />
           </Suspense>
         </div>
         {/* Force the treemap card to fill the row so its bottom aligns with the
