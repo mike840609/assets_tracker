@@ -172,7 +172,7 @@ export function resolveRate(
   const direct = rateMap.get(`${from}_${to}`);
   if (direct !== undefined) return direct;
   const inverse = rateMap.get(`${to}_${from}`);
-  if (inverse !== undefined) return 1 / inverse;
+  if (inverse !== undefined && inverse !== 0) return 1 / inverse;
   return crossRateViaUsd((key) => rateMap.get(key), from, to);
 }
 

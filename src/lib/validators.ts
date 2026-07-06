@@ -154,7 +154,7 @@ const positiveCashAmount = z.number().positive("Amount must be positive");
 const nonZeroCashAdjustment = z.number().refine((amount) => amount !== 0, {
   message: "Adjustment amount cannot be zero",
 });
-const cashNoteField = z.string().optional().nullable();
+const cashNoteField = z.string().max(500).optional().nullable();
 // When the cash flow actually happened, as a calendar day (YYYY-MM-DD) —
 // matching the recurring-transaction date convention and the `@db.Date`
 // column. Optional: when omitted the analysis pipeline falls back to
@@ -370,7 +370,7 @@ export const dataImportSchema = z.object({
     .array(
       z.object({
         id: z.string().optional(),
-        name: z.string().min(1),
+        name: z.string().min(1).max(100),
         type: z.enum(ACCOUNT_TYPES),
         category: z.enum(ACCOUNT_CATEGORIES),
         currency: z.string().length(3),
@@ -383,8 +383,8 @@ export const dataImportSchema = z.object({
         holdings: z
           .array(
             z.object({
-              symbol: z.string().min(1),
-              name: z.string().min(1),
+              symbol: z.string().min(1).max(32),
+              name: z.string().min(1).max(100),
               quantity: decimalSchema,
               currency: z.string().length(3),
               assetType: z.enum(HOLDING_ASSET_TYPES),
@@ -401,7 +401,7 @@ export const dataImportSchema = z.object({
                     type: z.enum(HOLDING_TRANSACTION_TYPES),
                     quantity: decimalSchema,
                     unitPrice: importHoldingTransactionUnitPrice,
-                    note: z.string().optional().nullable(),
+                    note: z.string().max(500).optional().nullable(),
                     createdAt: importTimestamp,
                     occurrenceDate: importOccurrenceDate,
                   }),
@@ -417,7 +417,7 @@ export const dataImportSchema = z.object({
             z.object({
               type: z.enum(CASH_TRANSACTION_TYPES),
               amount: decimalSchema,
-              note: z.string().optional().nullable(),
+              note: z.string().max(500).optional().nullable(),
               createdAt: importTimestamp,
               occurrenceDate: importOccurrenceDate,
             }),
@@ -446,7 +446,7 @@ export const dataImportSchema = z.object({
   goals: z
     .array(
       z.object({
-        name: z.string().min(1),
+        name: z.string().min(1).max(100),
         targetAmount: decimalSchema,
         targetCurrency: z.string().length(3),
         targetDate: z.string().optional().nullable(),

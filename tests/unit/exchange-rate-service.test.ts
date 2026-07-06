@@ -50,6 +50,18 @@ describe("resolveRate", () => {
     const map = new Map([["USD_TWD", 30]]);
     expect(resolveRate(map, "JPY", "GBP")).toBeUndefined();
   });
+
+  it("falls through to the cross rate instead of Infinity when the inverse rate is 0", () => {
+    // No direct EUR_TWD rate, and the reverse pair TWD_EUR is stored as 0 —
+    // it must not be inverted (1/0 = Infinity); it should fall through to
+    // the USD cross-rate path instead.
+    const map = new Map([
+      ["TWD_EUR", 0],
+      ["USD_TWD", 30],
+      ["USD_EUR", 0.9],
+    ]);
+    expect(resolveRate(map, "EUR", "TWD")).toBeCloseTo(30 / 0.9);
+  });
 });
 
 describe("fetchExchangeRates", () => {

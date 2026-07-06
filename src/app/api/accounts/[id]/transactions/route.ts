@@ -47,7 +47,8 @@ export const GET = withAuth(
 
     const { searchParams } = new URL(request.url);
 
-    const limit = Math.max(1, Math.min(100, Number(searchParams.get("limit") || "20")));
+    const rawLimit = Number(searchParams.get("limit") || "20");
+    const limit = Math.max(1, Math.min(100, Number.isFinite(rawLimit) ? rawLimit : 20));
     const cursorParam = searchParams.get("cursor");
 
     let rows: UnifiedRow[];
@@ -76,7 +77,8 @@ export const GET = withAuth(
     `;
     } else {
       // Initial load or legacy page-param fallback
-      const page = Math.max(1, Number(searchParams.get("page") || "1"));
+      const rawPage = Number(searchParams.get("page") || "1");
+      const page = Math.max(1, Number.isFinite(rawPage) ? rawPage : 1);
       const offset = (page - 1) * limit;
 
       rows = await prisma.$queryRaw<UnifiedRow[]>`
