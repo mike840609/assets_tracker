@@ -81,7 +81,7 @@ export function aggregateMonthlyChange(snapshots: NormalizedSnapshot[]): Monthly
     const startNetWorth = prevKey ? groups.get(prevKey)!.last.netWorth : group.first.netWorth;
     const endNetWorth = group.last.netWorth;
     const deltaNetWorth = endNetWorth - startNetWorth;
-    const deltaPct = startNetWorth === 0 ? null : (deltaNetWorth / startNetWorth) * 100;
+    const deltaPct = startNetWorth === 0 ? null : (deltaNetWorth / Math.abs(startNetWorth)) * 100;
 
     buckets.push({
       monthKey: key,
@@ -188,7 +188,7 @@ export function computeKpis(
     currentYearSnapshots[0]?.netWorth ??
     0;
   const ytdDelta = latest.netWorth - baseline;
-  const ytdPct = baseline === 0 ? null : (ytdDelta / baseline) * 100;
+  const ytdPct = baseline === 0 ? null : (ytdDelta / Math.abs(baseline)) * 100;
 
   return { best, worst, avgMonthlyDelta, ytdDelta, ytdPct };
 }
@@ -271,7 +271,7 @@ export function buildCashFlowBuckets(
   const contribMap = new Map(contributions.map((c) => [c.monthKey, c.contributions]));
 
   return buckets.map((b) => {
-    const contrib = contribMap.get(b.monthKey) ?? 0;
+    const contrib = b.isEmpty ? 0 : (contribMap.get(b.monthKey) ?? 0);
     return {
       monthKey: b.monthKey,
       label: formatMonthLabel(b.monthKey, locale),

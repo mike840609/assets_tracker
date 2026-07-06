@@ -72,6 +72,11 @@ describe("aggregateMonthlyChange", () => {
     const buckets = aggregateMonthlyChange([snap("2026-01-05", 0), snap("2026-01-20", 100)]);
     expect(buckets[0].deltaPct).toBeNull();
   });
+
+  it("uses the baseline magnitude for deltaPct when net worth recovers from negative", () => {
+    const buckets = aggregateMonthlyChange([snap("2026-01-05", -100), snap("2026-01-20", -50)]);
+    expect(buckets[0].deltaPct).toBeCloseTo(50);
+  });
 });
 
 describe("fillMonthRange", () => {
@@ -141,6 +146,13 @@ describe("computeKpis", () => {
     expect(kpis.ytdDelta).toBe(100);
     expect(kpis.ytdPct).toBeCloseTo(10);
   });
+
+  it("uses the baseline magnitude for YTD percent when net worth recovers from negative", () => {
+    const snapshots = [snap("2025-12-31", -1000), snap("2026-02-28", -500)];
+    const kpis = computeKpis(aggregateMonthlyChange(snapshots), snapshots);
+    expect(kpis.ytdDelta).toBe(500);
+    expect(kpis.ytdPct).toBeCloseTo(50);
+  });
 });
 
 describe("formatMonthLabel", () => {
@@ -196,6 +208,28 @@ describe("buildCashFlowBuckets", () => {
     ];
     const result = buildCashFlowBuckets(buckets, [], "en-US");
     expect(result[0]).toMatchObject({ contributions: 0, marketPerformance: -10 });
+  });
+
+  it("does not merge cash contributions into empty padded months", () => {
+    const buckets = [
+      {
+        monthKey: "2026-03",
+        endDate: "2026-03",
+        startNetWorth: 0,
+        endNetWorth: 0,
+        totalAssets: 0,
+        totalLiabilities: 0,
+        deltaNetWorth: 0,
+        deltaPct: null,
+        isEmpty: true,
+      },
+    ];
+    const result = buildCashFlowBuckets(
+      buckets,
+      [{ monthKey: "2026-03", contributions: 500 }],
+      "en-US",
+    );
+    expect(result[0]).toMatchObject({ contributions: 0, marketPerformance: 0 });
   });
 });
 
