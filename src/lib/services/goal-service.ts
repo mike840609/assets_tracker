@@ -4,6 +4,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCachedNetWorthSummary } from "./net-worth-service";
 import { getAllExchangeRates, resolveRate } from "./exchange-rate-service";
+import { getNormalizedHistory } from "./history-service";
 import { serializeGoal } from "@/lib/types";
 import type { GoalWithProgress, NetWorthSummary, SerializedGoal } from "@/lib/types";
 
@@ -66,37 +67,14 @@ function projectDate(today: Date, daysFromToday: number): string | null {
   return projected.toISOString();
 }
 
-/**
- * Cached 90-day snapshot window backing the goal projections. Was the only
- * uncached read on the dashboard's goals section; the cron / data import
- * revalidate `snapshots` + `history:${userId}` after every snapshot write.
- * The 90-day floor is captured at cache-fill time — same accepted drift as
- * getNormalizedHistory. Serialized shape (`"use cache"` can't carry
- * Prisma Decimal/Date).
- */
-async function fetchRecentSnapshotsInner(
-  userId: string,
-  baseCurrency: string,
-): Promise<SnapshotRow[]> {
-  "use cache";
-  cacheTag("snapshots");
-  cacheTag(`history:${userId}`);
-  cacheLife("hours");
-  const ninetyDaysAgo = new Date();
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-  const rows = await prisma.netWorthSnapshot.findMany({
-    where: { userId, baseCurrency, date: { gte: ninetyDaysAgo } },
-    orderBy: { date: "asc" },
-    select: { date: true, netWorth: true, totalAssets: true },
-  });
+async function fetchRecentSnapshots(userId: string, baseCurrency: string): Promise<SnapshotRow[]> {
+  const rows = await getNormalizedHistory(userId, baseCurrency);
   return rows.map((s) => ({
-    date: s.date.toISOString(),
-    netWorth: Number(s.netWorth),
-    totalAssets: Number(s.totalAssets),
+    date: s.date,
+    netWorth: s.netWorth,
+    totalAssets: s.totalAssets,
   }));
 }
-
-const fetchRecentSnapshots = cache(fetchRecentSnapshotsInner);
 
 function computeProjection(
   goal: SerializedGoal,

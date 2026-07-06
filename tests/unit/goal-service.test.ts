@@ -20,11 +20,14 @@ interface SnapshotFixture {
   date: Date;
   netWorth: number;
   totalAssets: number;
+  baseCurrency?: string;
+  createdAt?: Date;
 }
 const h = vi.hoisted(() => ({
   goals: [] as GoalFixture[],
   snapshots: [] as SnapshotFixture[],
   summary: null as NetWorthSummary | null,
+  rates: new Map<string, number>(),
 }));
 
 vi.mock("react", async (importOriginal) => {
@@ -39,12 +42,24 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     goal: { findMany: vi.fn(async () => h.goals) },
     netWorthSnapshot: {
-      findMany: vi.fn(async () =>
-        h.snapshots.map((s) => ({
-          date: s.date,
-          netWorth: s.netWorth,
-          totalAssets: s.totalAssets,
-        })),
+      findMany: vi.fn(async (args?: { where?: { baseCurrency?: string; date?: { gte?: Date } } }) =>
+        h.snapshots
+          .filter(
+            (s) =>
+              !args?.where?.baseCurrency || (s.baseCurrency ?? "USD") === args.where.baseCurrency,
+          )
+          .filter((s) => !args?.where?.date?.gte || s.date >= args.where.date.gte)
+          .map((s) => ({
+            id: s.date.toISOString(),
+            date: s.date,
+            createdAt: s.createdAt ?? s.date,
+            netWorth: s.netWorth,
+            totalAssets: s.totalAssets,
+            totalLiabilities: 0,
+            baseCurrency: s.baseCurrency ?? "USD",
+            label: null,
+            note: null,
+          })),
       ),
     },
   },
@@ -56,7 +71,7 @@ vi.mock("@/lib/services/net-worth-service", () => ({
 // the bulk loader so no DB/network is hit.
 vi.mock("@/lib/services/exchange-rate-service", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/services/exchange-rate-service")>();
-  return { ...actual, getAllExchangeRates: vi.fn(async () => new Map<string, number>()) };
+  return { ...actual, getAllExchangeRates: vi.fn(async () => h.rates) };
 });
 
 import { computeGoalsWithProgress } from "@/lib/services/goal-service";
@@ -94,6 +109,7 @@ describe("computeGoalsWithProgress projection bounds", () => {
     h.goals = [];
     h.snapshots = [];
     h.summary = null;
+    h.rates = new Map<string, number>();
   });
 
   it("returns null linear projection (does not throw RangeError) for a near-flat trend against a huge gap", async () => {
@@ -122,7 +138,7 @@ describe("computeGoalsWithProgress projection bounds", () => {
     h.goals = [makeGoal({ targetAmount: 200_000 })];
     h.summary = makeSummary(110_000);
     h.snapshots = [
-      { date: new Date("2026-04-04T00:00:00.000Z"), netWorth: 100_000, totalAssets: 100_000 },
+      { date: new Date("2026-04-08T00:00:00.000Z"), netWorth: 100_000, totalAssets: 100_000 },
       { date: new Date("2026-07-03T00:00:00.000Z"), netWorth: 110_000, totalAssets: 110_000 },
     ];
 
@@ -130,5 +146,29 @@ describe("computeGoalsWithProgress projection bounds", () => {
     const linear = result[0].projectedDateLinear;
     expect(linear).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     expect(Number.isNaN(Date.parse(linear!))).toBe(false);
+  });
+
+  it("projects from snapshots captured before a base-currency switch", async () => {
+    h.goals = [makeGoal({ targetAmount: 400 })];
+    h.summary = makeSummary(300);
+    h.rates = new Map([["TWD_USD", 0.25]]);
+    h.snapshots = [
+      {
+        date: new Date("2026-06-01T00:00:00.000Z"),
+        netWorth: 400,
+        totalAssets: 400,
+        baseCurrency: "TWD",
+      },
+      {
+        date: new Date("2026-07-01T00:00:00.000Z"),
+        netWorth: 800,
+        totalAssets: 800,
+        baseCurrency: "TWD",
+      },
+    ];
+
+    const result = await computeGoalsWithProgress("u1", "USD");
+
+    expect(result[0].projectedDateLinear).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 });
