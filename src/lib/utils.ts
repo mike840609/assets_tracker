@@ -11,12 +11,15 @@ export function localToday() {
   return local.toISOString().slice(0, 10);
 }
 
-function dateToLocalTime(value: string) {
+function dateToUtcMidnight(value: string) {
   const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day).getTime();
+  return Date.UTC(year, month - 1, day);
 }
 
 export function daysBetweenDates(startDate: string, endDate: string) {
   const DAY_MS = 24 * 60 * 60 * 1000;
-  return Math.max(0, Math.floor((dateToLocalTime(endDate) - dateToLocalTime(startDate)) / DAY_MS));
+  return Math.max(
+    0,
+    Math.floor((dateToUtcMidnight(endDate) - dateToUtcMidnight(startDate)) / DAY_MS),
+  );
 }
