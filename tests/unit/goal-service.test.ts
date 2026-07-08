@@ -30,6 +30,11 @@ const h = vi.hoisted(() => ({
   rates: new Map<string, number>(),
 }));
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+function daysAgo(days: number) {
+  return new Date(Date.now() - days * DAY_MS);
+}
+
 vi.mock("react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react")>();
   return { ...actual, cache: <T>(fn: T): T => fn };
@@ -119,8 +124,8 @@ describe("computeGoalsWithProgress projection bounds", () => {
     h.goals = [makeGoal({ targetAmount: 10_000_000 })];
     h.summary = makeSummary(2); // currentAmount = 2, target = 10M
     h.snapshots = [
-      { date: new Date("2026-04-04T00:00:00.000Z"), netWorth: 1, totalAssets: 1 },
-      { date: new Date("2026-07-03T00:00:00.000Z"), netWorth: 2, totalAssets: 2 },
+      { date: daysAgo(80), netWorth: 1, totalAssets: 1 },
+      { date: daysAgo(1), netWorth: 2, totalAssets: 2 },
     ];
 
     let result: Awaited<ReturnType<typeof computeGoalsWithProgress>>;
@@ -134,12 +139,12 @@ describe("computeGoalsWithProgress projection bounds", () => {
   });
 
   it("returns a valid ISO date for a reasonable trend (happy path unchanged)", async () => {
-    // +$10k over 90 days → ~$111/day; a $90k gap → ~810 days, well in range.
+    // +$10k over a recent window; a $90k gap remains well in range.
     h.goals = [makeGoal({ targetAmount: 200_000 })];
     h.summary = makeSummary(110_000);
     h.snapshots = [
-      { date: new Date("2026-04-08T00:00:00.000Z"), netWorth: 100_000, totalAssets: 100_000 },
-      { date: new Date("2026-07-03T00:00:00.000Z"), netWorth: 110_000, totalAssets: 110_000 },
+      { date: daysAgo(80), netWorth: 100_000, totalAssets: 100_000 },
+      { date: daysAgo(1), netWorth: 110_000, totalAssets: 110_000 },
     ];
 
     const result = await computeGoalsWithProgress("u1", "USD");
@@ -154,13 +159,13 @@ describe("computeGoalsWithProgress projection bounds", () => {
     h.rates = new Map([["TWD_USD", 0.25]]);
     h.snapshots = [
       {
-        date: new Date("2026-06-01T00:00:00.000Z"),
+        date: daysAgo(30),
         netWorth: 400,
         totalAssets: 400,
         baseCurrency: "TWD",
       },
       {
-        date: new Date("2026-07-01T00:00:00.000Z"),
+        date: daysAgo(1),
         netWorth: 800,
         totalAssets: 800,
         baseCurrency: "TWD",

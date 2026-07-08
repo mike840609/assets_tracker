@@ -225,8 +225,15 @@ function invalidateImportCaches(userId: string) {
   revalidateTag(`history:${userId}`, { expire: 0 });
 }
 
-export const GET = withAuth(async (_req, _ctx, userId) => {
+export const GET = withAuth(async (request, _ctx, userId) => {
   try {
+    const limited = rateLimitCheckWithPrune(request, {
+      limit: 5,
+      prefix: "settings-export",
+      key: userId,
+    });
+    if (limited) return limited;
+
     const data = await prisma.user.findUnique({
       where: { id: userId },
       include: {
