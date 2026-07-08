@@ -12,6 +12,7 @@ const h = vi.hoisted(() => ({
   cashTransactionCount: 0,
   holdingTransactionCount: 0,
   holdingCount: 0,
+  transactionRows: [] as Record<string, unknown>[],
   calls: [] as Array<{ op: string; args?: Record<string, unknown> }>,
 }));
 
@@ -65,6 +66,7 @@ vi.mock("@/lib/prisma", () => {
       }),
     },
     holding: {
+      findMany: vi.fn(async () => []),
       update: vi.fn(async (args: Record<string, unknown>) => {
         h.calls.push({ op: "holding.update", args });
         return { id: "holding1" };
@@ -99,6 +101,7 @@ vi.mock("@/lib/prisma", () => {
       if (Array.isArray(work)) return Promise.all(work);
       return (work as (tx: typeof prisma) => Promise<unknown>)(prisma);
     }),
+    $queryRaw: vi.fn(async () => h.transactionRows),
   };
   return { prisma };
 });
@@ -127,7 +130,45 @@ describe("account ledger routes", () => {
     h.cashTransactionCount = 0;
     h.holdingTransactionCount = 0;
     h.holdingCount = 0;
+    h.transactionRows = [];
     h.calls = [];
+  });
+
+  it("serializes holding transaction unitPrice as number or null", async () => {
+    const { GET } = await import("@/app/api/accounts/[id]/transactions/route");
+    h.transactionRows = [
+      {
+        id: "tx1",
+        isCash: false,
+        type: "BUY",
+        quantity: 2,
+        unitPrice: { valueOf: () => 123.45 },
+        note: null,
+        createdAt: new Date("2026-01-02T03:04:05.000Z"),
+        occurrenceDate: null,
+        holdingId: "holding1",
+      },
+      {
+        id: "tx2",
+        isCash: false,
+        type: "SELL",
+        quantity: 1,
+        unitPrice: null,
+        note: null,
+        createdAt: new Date("2026-01-01T03:04:05.000Z"),
+        occurrenceDate: null,
+        holdingId: "holding1",
+      },
+    ];
+
+    const response = await GET(new Request("http://unit.test?limit=20"), {
+      params: Promise.resolve({ id: "acc1" }),
+    });
+    const body = (await response.json()) as {
+      data: { transactions: Array<{ unitPrice?: number | null }> };
+    };
+
+    expect(body.data.transactions.map((tx) => tx.unitPrice)).toEqual([123.45, null]);
   });
 
   it("creates a manual cash transaction and balance increment in one transaction", async () => {
@@ -207,10 +248,10 @@ describe("account ledger routes", () => {
     expect(accountWrite.data).toEqual({ cashBalance: 25 });
   });
 
-  it("rejects account currency changes without writing", async () => {
+  it("rejects invalid account currency without writing", async () => {
     const { PATCH } = await import("@/app/api/accounts/[id]/route");
 
-    const response = await PATCH(jsonRequest("PATCH", { currency: "USD" }), {
+    const response = await PATCH(jsonRequest("PATCH", { currency: "US" }), {
       params: Promise.resolve({ id: "acc1" }),
     });
 

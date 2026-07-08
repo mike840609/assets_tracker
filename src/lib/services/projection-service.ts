@@ -2,6 +2,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAllExchangeRates, resolveRate } from "./exchange-rate-service";
+import { normalizeSnapshots } from "./history-service";
 
 export interface ProjectionData {
   latestNetWorth: number;
@@ -26,7 +27,17 @@ export async function getProjectionData(
   const [snapshotsRaw, accountsRaw, allRatesMap] = await Promise.all([
     prisma.netWorthSnapshot.findMany({
       where: { userId },
-      select: { date: true, netWorth: true, baseCurrency: true },
+      select: {
+        id: true,
+        date: true,
+        createdAt: true,
+        netWorth: true,
+        totalAssets: true,
+        totalLiabilities: true,
+        baseCurrency: true,
+        label: true,
+        note: true,
+      },
       orderBy: { date: "asc" },
     }),
     prisma.account.findMany({ where: { userId }, select: { id: true, currency: true } }),
@@ -37,24 +48,7 @@ export async function getProjectionData(
     return { latestNetWorth: 0, trailing12mSavings: 0, annualSnapshots: [], hasData: false };
   }
 
-  // Normalize to baseCurrency, dedupe per date (prefer baseCurrency-matching snapshot)
-  const dedupedMap = new Map<string, { date: Date; netWorth: number; bc: string }>();
-  for (const s of snapshotsRaw) {
-    const dateStr = s.date.toISOString().split("T")[0];
-    const existing = dedupedMap.get(dateStr);
-    if (!existing || s.baseCurrency === baseCurrency) {
-      const rate = resolveRate(allRatesMap, s.baseCurrency, baseCurrency) ?? 1;
-      dedupedMap.set(dateStr, {
-        date: s.date,
-        netWorth: Number(s.netWorth) * rate,
-        bc: s.baseCurrency,
-      });
-    }
-  }
-
-  const normalized = Array.from(dedupedMap.values()).sort(
-    (a, b) => a.date.getTime() - b.date.getTime(),
-  );
+  const normalized = normalizeSnapshots(snapshotsRaw, allRatesMap, baseCurrency);
 
   const latestNetWorth = normalized[normalized.length - 1].netWorth;
 
@@ -64,7 +58,7 @@ export async function getProjectionData(
     // Snapshots are stored at UTC-midnight and deduped by their UTC date, so
     // bucket by the UTC year. A local getter would land a Jan-1-UTC snapshot in
     // the prior year on a west-of-UTC server (#514).
-    byYear.set(s.date.getUTCFullYear(), s.netWorth);
+    byYear.set(new Date(`${s.date}T00:00:00.000Z`).getUTCFullYear(), s.netWorth);
   }
   const annualSnapshots = Array.from(byYear.entries())
     .sort(([a], [b]) => a - b)

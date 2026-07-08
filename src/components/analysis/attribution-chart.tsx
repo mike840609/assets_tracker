@@ -7,6 +7,7 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartEmptyState } from "./chart-empty-state";
 import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/currencies";
+import { formatChartTick } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
@@ -83,13 +84,6 @@ function AttributionTooltip({
     </ChartTooltipContainer>
   );
 }
-
-const tickFormatter = (v: number) =>
-  Math.abs(v) >= 1_000_000
-    ? `${(v / 1_000_000).toFixed(1)}M`
-    : Math.abs(v) >= 1_000
-      ? `${(v / 1_000).toFixed(0)}K`
-      : String(Math.round(v));
 
 const MAX_LABEL_LEN = 14;
 const truncate = (s: string) =>
@@ -185,7 +179,7 @@ export const AttributionChart = memo(function AttributionChart({ items, baseCurr
                   <XAxis
                     type="number"
                     tick={{ fontSize: 11 }}
-                    tickFormatter={(v) => (privacyMode ? "" : tickFormatter(v))}
+                    tickFormatter={(v) => (privacyMode ? "" : formatChartTick(v))}
                   />
                   <YAxis
                     type="category"

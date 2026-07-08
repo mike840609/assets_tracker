@@ -11,16 +11,18 @@ export const customPrismaAdapter = {
   ...PrismaAdapter(prisma),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createUser: async (data: any) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const user = await prisma.user.create({ data: data as any });
-    await prisma.setting.create({
-      data: {
-        userId: user.id,
-        locale: "en-US",
-        baseCurrency: "USD",
-      },
+    return prisma.$transaction(async (tx) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const user = await tx.user.create({ data: data as any });
+      await tx.setting.create({
+        data: {
+          userId: user.id,
+          locale: "en-US",
+          baseCurrency: "USD",
+        },
+      });
+      return user;
     });
-    return user;
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   linkAccount: (data: AnyRecord) => prisma.authAccount.create({ data: data as any }) as any,
