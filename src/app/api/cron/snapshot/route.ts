@@ -140,27 +140,48 @@ export async function GET(request: Request) {
     });
 
     // 3. Create snapshots for each user (in parallel)
-    const snapshots = await Promise.all(
-      users.map((user) => {
+    const snapshotResults = await Promise.allSettled(
+      users.map(async (user) => {
         const baseCurrency = user.appSettings?.baseCurrency ?? "USD";
         log.info("cron.snapshot.create", { userId: user.id, baseCurrency });
-        return createSnapshot(user.id, baseCurrency);
+        const snapshot = await createSnapshot(user.id, baseCurrency);
+        return { userId: user.id, snapshot };
       }),
     );
+    const snapshots: Awaited<ReturnType<typeof createSnapshot>>[] = [];
+    const successfulUserIds: string[] = [];
+    const failedUserIds: string[] = [];
+    for (let i = 0; i < snapshotResults.length; i++) {
+      const result = snapshotResults[i];
+      const userId = users[i].id;
+      if (result.status === "fulfilled") {
+        snapshots.push(result.value.snapshot);
+        successfulUserIds.push(result.value.userId);
+      } else {
+        failedUserIds.push(userId);
+        log.warn("cron.snapshot.user_failed", { userId, error: String(result.reason) });
+      }
+    }
+    if (users.length > 0 && failedUserIds.length === users.length) {
+      throw new Error(`Snapshot failed for users: ${failedUserIds.join(", ")}`);
+    }
 
     // 4. Invalidate snapshot/history caches now that new rows exist
-    revalidateTag("snapshots", "max");
-    for (const user of users) {
-      revalidateTag(`history:${user.id}`, "max");
+    if (snapshots.length > 0) revalidateTag("snapshots", "max");
+    for (const userId of successfulUserIds) {
+      revalidateTag(`history:${userId}`, "max");
     }
 
     const finishedAt = new Date();
+    const snapshotError =
+      failedUserIds.length > 0 ? `Snapshot failed for users: ${failedUserIds.join(", ")}` : null;
     await prisma.cronRun.update({
       where: { id: cronRun.id },
       data: {
         ok: true,
         finishedAt,
         durationMs: finishedAt.getTime() - startedAt.getTime(),
+        ...(snapshotError && { error: snapshotError }),
       },
     });
     finishSnapshotCronCheckIn(checkIn, "ok");
@@ -168,6 +189,7 @@ export async function GET(request: Request) {
     return ok({
       success: true,
       snapshotIds: snapshots.map((s) => s.id),
+      failedUserIds,
       timestamp: finishedAt.toISOString(),
     });
   } catch (error) {

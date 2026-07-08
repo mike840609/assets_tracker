@@ -3,6 +3,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 const h = vi.hoisted(() => ({
   events: [] as string[],
   expiredOptions: [] as Array<{ id: string; quantity: number }>,
+  users: [{ id: "user1", appSettings: { baseCurrency: "USD" } }],
+  snapshotFailures: new Set<string>(),
 }));
 
 vi.mock("@/lib/env", () => ({
@@ -16,7 +18,7 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("@/lib/logger", () => ({
-  log: { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} },
+  log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
 vi.mock("@/lib/sentry-cron", () => ({
@@ -41,9 +43,10 @@ vi.mock("@/lib/services/recurring-investment-service", () => ({
 }));
 
 vi.mock("@/lib/services/snapshot-service", () => ({
-  createSnapshot: vi.fn(async () => {
-    h.events.push("snapshot");
-    return { id: "snapshot1" };
+  createSnapshot: vi.fn(async (userId: string) => {
+    h.events.push(`snapshot:${userId}`);
+    if (h.snapshotFailures.has(userId)) throw new Error(`snapshot failed for ${userId}`);
+    return { id: `snapshot-${userId}` };
   }),
 }));
 
@@ -67,7 +70,7 @@ vi.mock("@/lib/prisma", () => {
       findMany: vi.fn(async () => []),
     },
     user: {
-      findMany: vi.fn(async () => [{ id: "user1", appSettings: { baseCurrency: "USD" } }]),
+      findMany: vi.fn(async () => h.users),
     },
     $transaction: vi.fn(async (work: unknown) => {
       if (Array.isArray(work)) return Promise.all(work);
@@ -79,8 +82,11 @@ vi.mock("@/lib/prisma", () => {
 
 describe("snapshot cron route", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     h.events = [];
     h.expiredOptions = [];
+    h.users = [{ id: "user1", appSettings: { baseCurrency: "USD" } }];
+    h.snapshotFailures = new Set();
   });
 
   it("invalidates net worth before snapshot creation when options expire", async () => {
@@ -96,6 +102,85 @@ describe("snapshot cron route", () => {
     expect(response.status).toBe(200);
     expect(h.events).toContain("revalidate:accounts");
     expect(h.events).toContain("revalidate:net-worth");
-    expect(h.events.indexOf("revalidate:net-worth")).toBeLessThan(h.events.indexOf("snapshot"));
+    expect(h.events.indexOf("revalidate:net-worth")).toBeLessThan(
+      h.events.indexOf("snapshot:user1"),
+    );
+  });
+
+  it("returns 200 and records failed user ids when only some snapshots fail", async () => {
+    h.users = [
+      { id: "user1", appSettings: { baseCurrency: "USD" } },
+      { id: "user2", appSettings: { baseCurrency: "TWD" } },
+    ];
+    h.snapshotFailures = new Set(["user2"]);
+    const { GET } = await import("@/app/api/cron/snapshot/route");
+    const { log } = await import("@/lib/logger");
+    const { prisma } = await import("@/lib/prisma");
+    const { finishSnapshotCronCheckIn } = await import("@/lib/sentry-cron");
+
+    const response = await GET(
+      new Request("http://unit.test/api/cron/snapshot", {
+        headers: { authorization: "Bearer test-secret" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      data: {
+        success: true,
+        snapshotIds: ["snapshot-user1"],
+        failedUserIds: ["user2"],
+      },
+    });
+    expect(h.events).toContain("revalidate:snapshots");
+    expect(h.events).toContain("revalidate:history:user1");
+    expect(h.events).not.toContain("revalidate:history:user2");
+    expect(log.warn).toHaveBeenCalledWith("cron.snapshot.user_failed", {
+      userId: "user2",
+      error: "Error: snapshot failed for user2",
+    });
+    expect(log.error).not.toHaveBeenCalled();
+    expect(prisma.cronRun.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          ok: true,
+          error: expect.stringContaining("user2"),
+        }),
+      }),
+    );
+    expect(finishSnapshotCronCheckIn).toHaveBeenCalledWith("check-in", "ok");
+  });
+
+  it("preserves failure semantics when every user snapshot fails", async () => {
+    h.users = [
+      { id: "user1", appSettings: { baseCurrency: "USD" } },
+      { id: "user2", appSettings: { baseCurrency: "TWD" } },
+    ];
+    h.snapshotFailures = new Set(["user1", "user2"]);
+    const { GET } = await import("@/app/api/cron/snapshot/route");
+    const { log } = await import("@/lib/logger");
+    const { prisma } = await import("@/lib/prisma");
+    const { finishSnapshotCronCheckIn } = await import("@/lib/sentry-cron");
+
+    const response = await GET(
+      new Request("http://unit.test/api/cron/snapshot", {
+        headers: { authorization: "Bearer test-secret" },
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    expect(h.events).not.toContain("revalidate:snapshots");
+    expect(log.error).toHaveBeenCalledWith("cron.snapshot.failed", {
+      error: "Error: Snapshot failed for users: user1, user2",
+    });
+    expect(prisma.cronRun.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          ok: false,
+          error: expect.stringContaining("user1"),
+        }),
+      }),
+    );
+    expect(finishSnapshotCronCheckIn).toHaveBeenCalledWith("check-in", "error");
   });
 });

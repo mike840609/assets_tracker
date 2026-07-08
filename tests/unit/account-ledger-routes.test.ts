@@ -189,6 +189,17 @@ describe("account ledger routes", () => {
     expect(accountWrite.data).toEqual({ cashBalance: 25 });
   });
 
+  it("rejects account currency changes without writing", async () => {
+    const { PATCH } = await import("@/app/api/accounts/[id]/route");
+
+    const response = await PATCH(jsonRequest("PATCH", { currency: "USD" }), {
+      params: Promise.resolve({ id: "acc1" }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(h.calls).toEqual([]);
+  });
+
   it("records manual account balance edits atomically and strips note from account data", async () => {
     const { PATCH } = await import("@/app/api/accounts/[id]/route");
 

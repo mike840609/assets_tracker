@@ -13,16 +13,22 @@ import { SUPPORTED_LOCALES } from "@/i18n/config";
 
 const OCC_SHAPE = /^[A-Z][A-Z0-9.\-]{0,5}\d{6}[CP]\d{8}$/;
 const supportedLocaleSchema = z.enum(SUPPORTED_LOCALES);
+const CRUD_DECIMAL_ABS_MAX = 10_000_000_000;
+const crudDecimalNumber = z
+  .number()
+  .gt(-CRUD_DECIMAL_ABS_MAX, "Value exceeds supported precision")
+  .lt(CRUD_DECIMAL_ABS_MAX, "Value exceeds supported precision");
 
 export const createAccountSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   type: z.enum(ACCOUNT_TYPES),
   category: z.enum(ACCOUNT_CATEGORIES),
   currency: z.string().length(3),
-  cashBalance: z.number().default(0),
+  cashBalance: crudDecimalNumber.default(0),
 });
 
 export const updateAccountSchema = createAccountSchema
+  .omit({ currency: true })
   .extend({
     isActive: z.boolean(),
     isPinned: z.boolean(),
@@ -32,7 +38,8 @@ export const updateAccountSchema = createAccountSchema
     // the cash flow (#500). Ignored when the balance is not changing.
     occurrenceDate: z.iso.date("Must be a valid YYYY-MM-DD date").optional(),
   })
-  .partial();
+  .partial()
+  .extend({ currency: z.never().optional() });
 
 export const reorderAccountsSchema = z.object({
   type: z.enum(ACCOUNT_TYPES),
@@ -52,8 +59,8 @@ const baseHoldingFields = {
     .max(32)
     .transform((s) => s.toUpperCase()),
   name: z.string().min(1, "Name is required").max(100),
-  quantity: z.number().positive("Quantity must be positive"),
-  unitPrice: z.number().positive("Buy unit price must be positive").optional(),
+  quantity: crudDecimalNumber.positive("Quantity must be positive"),
+  unitPrice: crudDecimalNumber.positive("Buy unit price must be positive").optional(),
   currency: z.string().length(3).default("USD"),
 };
 
@@ -68,7 +75,7 @@ const createOptionHoldingSchema = z
     assetType: z.literal("OPTION"),
     underlyingSymbol: z.string().min(1).max(8).optional(),
     optionType: z.enum(OPTION_TYPES).optional(),
-    strike: z.number().positive().optional(),
+    strike: crudDecimalNumber.positive().optional(),
     expiration: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}/)
@@ -97,7 +104,7 @@ export const updateHoldingSchema = z.object({
   // 0 is allowed only to close an OPTION position (preserves the transaction
   // audit trail, which a DELETE would cascade away). The PATCH route rejects
   // quantity 0 for non-option holdings, where the asset type is known.
-  quantity: z.number().nonnegative().optional(),
+  quantity: crudDecimalNumber.nonnegative().optional(),
   // OPTION is deliberately excluded: converting a holding to OPTION via PATCH
   // would produce a row without the OCC fields (underlyingSymbol, optionType,
   // strike, expiration). Options can only be created via POST, which derives
@@ -127,7 +134,7 @@ export const updateSnapshotAnnotationSchema = z.object({
 export const updateTransactionSchema = z
   .object({
     id: z.string(),
-    quantity: z.number().optional(),
+    quantity: crudDecimalNumber.optional(),
     type: z.enum(HOLDING_TRANSACTION_TYPES).optional(),
     note: z.string().optional().nullable(),
     createdAt: z.iso.datetime().optional(),
@@ -150,8 +157,8 @@ export const updateTransactionSchema = z
     }
   });
 
-const positiveCashAmount = z.number().positive("Amount must be positive");
-const nonZeroCashAdjustment = z.number().refine((amount) => amount !== 0, {
+const positiveCashAmount = crudDecimalNumber.positive("Amount must be positive");
+const nonZeroCashAdjustment = crudDecimalNumber.refine((amount) => amount !== 0, {
   message: "Adjustment amount cannot be zero",
 });
 const cashNoteField = z.string().max(500).optional().nullable();
@@ -187,7 +194,7 @@ export const updateCashTransactionSchema = z
   .object({
     id: z.string(),
     type: z.enum(CASH_TRANSACTION_TYPES).optional(),
-    amount: z.number().optional(),
+    amount: crudDecimalNumber.optional(),
     note: cashNoteField,
     createdAt: z.iso.datetime().optional(),
     occurrenceDate: cashOccurrenceDateField.optional().nullable(),
@@ -290,7 +297,7 @@ export const updateRecurringInvestmentSchema = z
 
 export const createGoalSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
-  targetAmount: z.number().positive("Target must be positive"),
+  targetAmount: crudDecimalNumber.positive("Target must be positive"),
   targetCurrency: z.string().length(3).default("USD"),
   targetDate: z.iso.date("Must be a valid YYYY-MM-DD date").optional().nullable(),
   scope: z.enum(GOAL_SCOPES),
@@ -312,7 +319,7 @@ const stockWatchItemFields = {
   name: z.string().min(1, "Name is required").max(120),
   exchange: z.string().max(80).default(""),
   currency: z.string().length(3).default("USD"),
-  recordPrice: z.number().positive("Record price must be positive"),
+  recordPrice: crudDecimalNumber.positive("Record price must be positive"),
   recordDate: z.iso.date("Must be a valid YYYY-MM-DD date"),
   note: z.string().max(2000).optional().nullable(),
 };
