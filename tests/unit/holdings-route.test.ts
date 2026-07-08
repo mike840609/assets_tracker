@@ -3,6 +3,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 const h = vi.hoisted(() => ({
   account: { id: "acc1" } as Record<string, unknown> | null,
   calls: [] as Array<{ op: string; args?: Record<string, unknown> }>,
+  existingHolding: null as Record<string, unknown> | null,
+  updateError: null as Error | null,
 }));
 
 vi.mock("next/cache", () => ({
@@ -39,6 +41,12 @@ vi.mock("@/lib/prisma", () => {
       findUnique: vi.fn(async () => h.account),
     },
     holding: {
+      findFirst: vi.fn(async () => h.existingHolding),
+      update: vi.fn(async (args: Record<string, unknown>) => {
+        if (h.updateError) throw h.updateError;
+        h.calls.push({ op: "holding.update", args });
+        return { ...h.existingHolding, ...(args.data as Record<string, unknown>) };
+      }),
       upsert: vi.fn(async (args: Record<string, unknown>) => {
         h.calls.push({ op: "holding.upsert", args });
         return {
@@ -83,6 +91,8 @@ describe("holdings route", () => {
   beforeEach(() => {
     h.account = { id: "acc1" };
     h.calls = [];
+    h.existingHolding = null;
+    h.updateError = null;
   });
 
   it("writes optional unitPrice to the initial BUY transaction", async () => {
@@ -140,5 +150,27 @@ describe("holdings route", () => {
       | undefined;
     expect(data).toMatchObject({ holdingId: "holding1", type: "BUY", quantity: 10 });
     expect(data).not.toHaveProperty("unitPrice");
+  });
+
+  it("maps a P2002 symbol conflict on PATCH to a 409", async () => {
+    const { Prisma } = await import("@/generated/prisma/client");
+    const { PATCH } = await import("@/app/api/accounts/[id]/holdings/route");
+
+    h.existingHolding = { id: "holding1", quantity: 10, assetType: "STOCK" };
+    h.updateError = new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
+      code: "P2002",
+      clientVersion: "test",
+    });
+
+    const response = await PATCH(
+      new Request("http://unit.test/api/accounts/acc1/holdings", {
+        method: "PATCH",
+        body: JSON.stringify({ id: "holding1", symbol: "MSFT" }),
+        headers: { "content-type": "application/json" },
+      }),
+      params,
+    );
+
+    expect(response.status).toBe(409);
   });
 });

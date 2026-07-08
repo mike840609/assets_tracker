@@ -115,6 +115,16 @@ export const deleteHoldingSchema = z.object({
   id: z.string().min(1, "Holding ID required"),
 });
 
+export const deleteAccountsSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1, "ids array required").max(200),
+});
+
+export const snapshotsQuerySchema = z.object({
+  from: z.coerce.date("Must be a valid date").optional(),
+  to: z.coerce.date("Must be a valid date").optional(),
+  currency: z.string().length(3).default("USD"),
+});
+
 export const updateSettingsSchema = z.object({
   baseCurrency: z.string().length(3).optional(),
   locale: supportedLocaleSchema.optional(),

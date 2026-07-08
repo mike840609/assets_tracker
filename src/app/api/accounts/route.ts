@@ -1,8 +1,8 @@
 import { revalidateTag } from "next/cache";
 import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createAccountSchema } from "@/lib/validators";
-import { ok, failure, validationError } from "@/lib/api-responses";
+import { createAccountSchema, deleteAccountsSchema } from "@/lib/validators";
+import { ok, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { log } from "@/lib/logger";
@@ -49,14 +49,12 @@ export const GET = withAuth(async (_req, _ctx, userId) => {
 
 export const DELETE = withAuth(async (request, _ctx, userId) => {
   const body = await request.json();
-  const ids: string[] = body.ids;
-  if (!Array.isArray(ids) || ids.length === 0) {
-    return failure("ids array required");
-  }
+  const parsed = deleteAccountsSchema.safeParse(body);
+  if (!parsed.success) return validationError(parsed.error);
 
   await prisma.account.deleteMany({
     where: {
-      id: { in: ids },
+      id: { in: parsed.data.ids },
       userId,
     },
   });
