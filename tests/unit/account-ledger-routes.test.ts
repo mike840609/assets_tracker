@@ -9,6 +9,9 @@ const h = vi.hoisted(() => ({
   holdingTransactionUpdateManyCount: 1,
   holdingTransactionDeleteManyCount: 1,
   holdingUpdateManyCount: 1,
+  cashTransactionCount: 0,
+  holdingTransactionCount: 0,
+  holdingCount: 0,
   calls: [] as Array<{ op: string; args?: Record<string, unknown> }>,
 }));
 
@@ -56,6 +59,10 @@ vi.mock("@/lib/prisma", () => {
         h.calls.push({ op: "cashTransaction.delete", args });
         return { id: "cash1" };
       }),
+      count: vi.fn(async (args: Record<string, unknown>) => {
+        h.calls.push({ op: "cashTransaction.count", args });
+        return h.cashTransactionCount;
+      }),
     },
     holding: {
       update: vi.fn(async (args: Record<string, unknown>) => {
@@ -65,6 +72,10 @@ vi.mock("@/lib/prisma", () => {
       updateMany: vi.fn(async (args: Record<string, unknown>) => {
         h.calls.push({ op: "holding.updateMany", args });
         return { count: h.holdingUpdateManyCount };
+      }),
+      count: vi.fn(async (args: Record<string, unknown>) => {
+        h.calls.push({ op: "holding.count", args });
+        return h.holdingCount;
       }),
     },
     holdingTransaction: {
@@ -77,6 +88,10 @@ vi.mock("@/lib/prisma", () => {
       deleteMany: vi.fn(async (args: Record<string, unknown>) => {
         h.calls.push({ op: "holdingTransaction.deleteMany", args });
         return { count: h.holdingTransactionDeleteManyCount };
+      }),
+      count: vi.fn(async (args: Record<string, unknown>) => {
+        h.calls.push({ op: "holdingTransaction.count", args });
+        return h.holdingTransactionCount;
       }),
     },
     $transaction: vi.fn(async (work: unknown) => {
@@ -101,7 +116,7 @@ const jsonRequest = (method: string, body: Record<string, unknown>) =>
 
 describe("account ledger routes", () => {
   beforeEach(() => {
-    h.account = { id: "acc1", userId: "user1", cashBalance: 10 };
+    h.account = { id: "acc1", userId: "user1", cashBalance: 10, currency: "USD" };
     h.cashTx = null;
     h.holdingTx = null;
     h.accountUpdateManyCount = 1;
@@ -109,6 +124,9 @@ describe("account ledger routes", () => {
     h.holdingTransactionUpdateManyCount = 1;
     h.holdingTransactionDeleteManyCount = 1;
     h.holdingUpdateManyCount = 1;
+    h.cashTransactionCount = 0;
+    h.holdingTransactionCount = 0;
+    h.holdingCount = 0;
     h.calls = [];
   });
 
@@ -324,5 +342,66 @@ describe("account ledger routes", () => {
 
     expect(response.status).toBe(409);
     expect(h.calls.some((call) => call.op === "account.update")).toBe(false);
+  });
+
+  it("rejects a currency change on an account with existing cash transactions (400)", async () => {
+    h.cashTransactionCount = 1;
+    const { PATCH } = await import("@/app/api/accounts/[id]/route");
+
+    const response = await PATCH(jsonRequest("PATCH", { currency: "TWD" }), {
+      params: Promise.resolve({ id: "acc1" }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(h.calls.some((call) => call.op === "$transaction")).toBe(false);
+  });
+
+  it("rejects a currency change on an account with existing holdings (400)", async () => {
+    h.holdingCount = 1;
+    const { PATCH } = await import("@/app/api/accounts/[id]/route");
+
+    const response = await PATCH(jsonRequest("PATCH", { currency: "TWD" }), {
+      params: Promise.resolve({ id: "acc1" }),
+    });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("rejects a currency change on an account with existing holding transactions (400)", async () => {
+    h.holdingTransactionCount = 1;
+    const { PATCH } = await import("@/app/api/accounts/[id]/route");
+
+    const response = await PATCH(jsonRequest("PATCH", { currency: "TWD" }), {
+      params: Promise.resolve({ id: "acc1" }),
+    });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("allows a currency change on an account with no history", async () => {
+    const { PATCH } = await import("@/app/api/accounts/[id]/route");
+
+    // cashBalance carries a schema default of 0 even when omitted, so this
+    // PATCH also takes the balance-changing (updateMany) branch — the point
+    // under test is simply that the currency guard doesn't block it.
+    const response = await PATCH(jsonRequest("PATCH", { currency: "TWD" }), {
+      params: Promise.resolve({ id: "acc1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(h.calls.find((call) => call.op === "account.updateMany")?.args?.data).toMatchObject({
+      currency: "TWD",
+    });
+  });
+
+  it("allows a PATCH that keeps currency unchanged without counting history", async () => {
+    const { PATCH } = await import("@/app/api/accounts/[id]/route");
+
+    const response = await PATCH(jsonRequest("PATCH", { currency: "USD", name: "Same" }), {
+      params: Promise.resolve({ id: "acc1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(h.calls.some((call) => call.op === "cashTransaction.count")).toBe(false);
   });
 });
