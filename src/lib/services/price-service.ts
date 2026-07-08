@@ -184,6 +184,13 @@ function stripCurrencySuffix(symbol: string): string {
   return symbol.replace(/-[A-Z]{3,4}$/, "");
 }
 
+// Extract the quote-currency suffix from a crypto pair (e.g. "BTC-EUR" -> "EUR").
+// Defaults to USD for symbols with no recognizable suffix (e.g. bare "BTC").
+function extractQuoteCurrency(symbol: string): string {
+  const match = symbol.match(/-([A-Z]{3,4})$/);
+  return match ? match[1] : "USD";
+}
+
 export async function fetchCryptoPrices(
   symbols: string[],
 ): Promise<Map<string, { price: number; currency: string }>> {
@@ -198,12 +205,18 @@ export async function fetchCryptoPrices(
     const symbolMap = missing.map((s) => {
       const base = stripCurrencySuffix(s);
       const geckoId = COINGECKO_IDS[base] || base.toLowerCase();
-      return { original: s, base, geckoId };
+      // Respect the pair's own quote currency (e.g. BTC-EUR -> "eur") instead
+      // of always pricing in USD — CoinGecko's `vs_currencies` supports most
+      // major fiat codes, and mismatching this against the pair silently
+      // crosses the FX leg at valuation time.
+      const quoteCurrency = extractQuoteCurrency(s);
+      return { original: s, base, geckoId, quoteCurrency };
     });
 
     const ids = symbolMap.map((s) => s.geckoId).filter(Boolean);
+    const vsCurrencies = [...new Set(symbolMap.map((s) => s.quoteCurrency.toLowerCase()))];
     if (ids.length > 0) {
-      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=usd`;
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=${vsCurrencies.join(",")}`;
       try {
         const data = await withTiming(
           "price.coingecko.fetch",
@@ -217,16 +230,17 @@ export async function fetchCryptoPrices(
                   next: { revalidate: 60, tags: ["prices:crypto"] },
                 } as RequestInit);
                 if (!res.ok) throw new Error(`CoinGecko returned HTTP ${res.status}`);
-                return res.json() as Promise<Record<string, { usd: number }>>;
+                return res.json() as Promise<Record<string, Record<string, number>>>;
               } finally {
                 clearTimeout(timeoutId);
               }
             }),
           { idCount: ids.length },
         );
-        for (const { original, geckoId } of symbolMap) {
-          if (data[geckoId]?.usd) {
-            results.set(original, { price: data[geckoId].usd, currency: "USD" });
+        for (const { original, geckoId, quoteCurrency } of symbolMap) {
+          const price = data[geckoId]?.[quoteCurrency.toLowerCase()];
+          if (price) {
+            results.set(original, { price, currency: quoteCurrency });
           }
         }
       } catch (error) {
