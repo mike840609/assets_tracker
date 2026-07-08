@@ -10,6 +10,7 @@ import { ok, failure } from "@/lib/api-responses";
 import { CRON_SECRET } from "@/lib/env";
 import { log } from "@/lib/logger";
 import { finishSnapshotCronCheckIn, startSnapshotCronCheckIn } from "@/lib/sentry-cron";
+import { classifyCronRunStatus, type CronUserOutcome } from "@/lib/cron-run-status";
 
 function hasValidCronSecret(authHeader: string | null): boolean {
   const expected = Buffer.from(`Bearer ${CRON_SECRET}`);
@@ -139,35 +140,78 @@ export async function GET(request: Request) {
       include: { appSettings: true },
     });
 
-    // 3. Create snapshots for each user (in parallel)
-    const snapshots = await Promise.all(
-      users.map((user) => {
+    // 3. Create snapshots for each user (in parallel). Use allSettled — one
+    // user's snapshot failure must not stop the others from committing, and
+    // must not skip revalidation for the users who succeeded (#558).
+    const settled = await Promise.allSettled(
+      users.map(async (user) => {
         const baseCurrency = user.appSettings?.baseCurrency ?? "USD";
         log.info("cron.snapshot.create", { userId: user.id, baseCurrency });
         return createSnapshot(user.id, baseCurrency);
       }),
     );
 
-    // 4. Invalidate snapshot/history caches now that new rows exist
-    revalidateTag("snapshots", "max");
-    for (const user of users) {
-      revalidateTag(`history:${user.id}`, "max");
+    const outcomes: CronUserOutcome[] = settled.map((result, i) => ({
+      userId: users[i].id,
+      status: result.status,
+      reason: result.status === "rejected" ? result.reason : undefined,
+    }));
+    const classification = classifyCronRunStatus(outcomes);
+
+    for (const outcome of outcomes) {
+      if (outcome.status === "rejected") {
+        log.error("cron.snapshot.user_failed", {
+          userId: outcome.userId,
+          error: String(outcome.reason),
+        });
+      }
+    }
+    if (classification.status !== "ok") {
+      log.error("cron.snapshot.partial_or_total_failure", {
+        status: classification.status,
+        succeeded: classification.succeededUserIds.length,
+        failed: classification.failedUserIds.length,
+        failedUserIds: classification.failedUserIds,
+      });
+    }
+
+    const snapshots = settled
+      .filter(
+        (result): result is PromiseFulfilledResult<Awaited<ReturnType<typeof createSnapshot>>> =>
+          result.status === "fulfilled",
+      )
+      .map((result) => result.value);
+
+    // 4. Invalidate snapshot/history caches for every user whose snapshot
+    // actually committed, regardless of whether other users failed.
+    if (classification.succeededUserIds.length > 0) {
+      revalidateTag("snapshots", "max");
+      for (const userId of classification.succeededUserIds) {
+        revalidateTag(`history:${userId}`, "max");
+      }
     }
 
     const finishedAt = new Date();
     await prisma.cronRun.update({
       where: { id: cronRun.id },
       data: {
-        ok: true,
+        ok: classification.ok,
         finishedAt,
         durationMs: finishedAt.getTime() - startedAt.getTime(),
+        error: classification.errorSummary,
       },
     });
-    finishSnapshotCronCheckIn(checkIn, "ok");
+    finishSnapshotCronCheckIn(checkIn, classification.ok ? "ok" : "error");
+
+    if (classification.status === "failed") {
+      return failure("All user snapshots failed", 500);
+    }
 
     return ok({
       success: true,
+      degraded: classification.status === "degraded",
       snapshotIds: snapshots.map((s) => s.id),
+      failedUserIds: classification.failedUserIds,
       timestamp: finishedAt.toISOString(),
     });
   } catch (error) {
