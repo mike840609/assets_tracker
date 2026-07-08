@@ -211,6 +211,42 @@ describe("getCachedNetWorthSummary (two-pass valuation)", () => {
     expect(summary.accounts[0].holdings[0].marketValue).toBeNull();
   });
 
+  it("values a crypto holding using the PriceCache's own currency, not the holding's mismatched stored currency (#550)", async () => {
+    h.warnings = [];
+    // BTC-EUR: the holding was created with currency USD (e.g. inferCurrency's
+    // no-crypto-mapping default), but the cached price is genuinely EUR-quoted.
+    // EURUSD = 1.1, i.e. 1 EUR = 1.1 USD -> USD_EUR resolves to 1/1.1.
+    h.rates = new Map([["EUR_USD", 1.1]]);
+    h.prices = [{ symbol: "BTC-EUR", price: 50000, currency: "EUR" }];
+    h.accounts = [
+      account({
+        id: "A",
+        type: "ASSET",
+        currency: "USD",
+        cashBalance: 0,
+        holdings: [
+          holding({
+            id: "h1",
+            symbol: "BTC-EUR",
+            quantity: 1,
+            currency: "USD", // mismatched: stored as USD, priced in EUR
+            assetType: "CRYPTO",
+          }),
+        ],
+      }),
+    ];
+
+    const summary = await getCachedNetWorthSummary("u1", "USD");
+
+    // Correct: 50000 EUR * 1.1 (EUR->USD) = 55000 USD.
+    // Buggy (trusting h.currency=USD, no conversion): would be 50000.
+    expect(summary.totalAssets).toBeCloseTo(55000);
+    expect(summary.accounts[0].holdings[0].marketValueInBaseCurrency).toBeCloseTo(55000);
+    expect(summary.currencyExposure).toHaveLength(1);
+    expect(summary.currencyExposure[0].currency).toBe("EUR");
+    expect(summary.currencyExposure[0].value).toBeCloseTo(55000);
+  });
+
   it("applies the option contract multiplier to market value", async () => {
     h.warnings = [];
     h.rates = new Map();

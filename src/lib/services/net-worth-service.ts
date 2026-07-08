@@ -154,7 +154,14 @@ async function computeNetWorthSummary(
     let holdingsInAccountCurrency = 0;
     for (const h of awv.holdings) {
       if (h.marketValue !== null) {
-        const holdingCurrency = h.currency || priceMap[h.symbol]?.currency || "USD";
+        // The market value above was computed from the PriceCache's own price,
+        // so its denomination — not the holding's stored currency — is the
+        // truth for conversion. They usually agree, but for crypto pairs not
+        // denominated in USD (e.g. BTC-EUR) the two can drift: the holding's
+        // currency is inferred at creation time (search route), while the
+        // cached price's currency reflects whatever the provider actually
+        // quoted. Trusting priceMap here keeps price and denomination together.
+        const holdingCurrency = priceMap[h.symbol]?.currency || h.currency || "USD";
         const holdingRateToBase = getRate(holdingCurrency, baseCurrency);
         const valueInBase = h.marketValue * holdingRateToBase;
         h.marketValueInBaseCurrency = valueInBase;
