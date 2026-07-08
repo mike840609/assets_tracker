@@ -1,11 +1,14 @@
 import { describe, it, expect } from "vitest";
 import {
+  createAccountSchema,
   createHoldingSchema,
   updateAccountSchema,
   updateHoldingSchema,
   updateTransactionSchema,
   createCashTransactionSchema,
   updateCashTransactionSchema,
+  createRecurringCashTransactionSchema,
+  createRecurringInvestmentSchema,
   createGoalSchema,
   createStockWatchItemSchema,
   updateSnapshotAnnotationSchema,
@@ -35,6 +38,104 @@ describe("updateAccountSchema", () => {
     expect(
       updateAccountSchema.safeParse({ cashBalance: 125, occurrenceDate: "June 1st" }).success,
     ).toBe(false);
+  });
+
+  it("rejects currency changes", () => {
+    expect(updateAccountSchema.safeParse({ currency: "USD" }).success).toBe(false);
+  });
+});
+
+describe("Decimal-backed CRUD number schemas", () => {
+  it.each([
+    [
+      "account cashBalance",
+      () =>
+        createAccountSchema.safeParse({
+          name: "Cash",
+          type: "ASSET",
+          category: "BANK",
+          currency: "USD",
+          cashBalance: 1e10,
+        }),
+    ],
+    [
+      "holding quantity",
+      () =>
+        createHoldingSchema.safeParse({
+          symbol: "AAPL",
+          name: "Apple",
+          assetType: "STOCK",
+          quantity: 1e10,
+        }),
+    ],
+    [
+      "holding unitPrice",
+      () =>
+        createHoldingSchema.safeParse({
+          symbol: "AAPL",
+          name: "Apple",
+          assetType: "STOCK",
+          quantity: 1,
+          unitPrice: 1e10,
+        }),
+    ],
+    [
+      "option strike",
+      () =>
+        createHoldingSchema.safeParse({
+          symbol: "AAPL240119C00150000",
+          name: "AAPL Call",
+          assetType: "OPTION",
+          quantity: 1,
+          strike: 1e10,
+        }),
+    ],
+    [
+      "holding transaction quantity",
+      () => updateTransactionSchema.safeParse({ id: "t1", type: "BUY", quantity: 1e10 }),
+    ],
+    [
+      "cash transaction amount",
+      () => createCashTransactionSchema.safeParse({ type: "DEPOSIT", amount: 1e10 }),
+    ],
+    [
+      "recurring cash amount",
+      () =>
+        createRecurringCashTransactionSchema.safeParse({
+          type: "DEPOSIT",
+          amount: 1e10,
+          frequency: "MONTHLY",
+          startDate: "2026-01-01",
+        }),
+    ],
+    [
+      "recurring investment amount",
+      () =>
+        createRecurringInvestmentSchema.safeParse({
+          symbol: "VT",
+          name: "Vanguard Total World",
+          assetType: "ETF",
+          amount: 1e10,
+          frequency: "MONTHLY",
+          startDate: "2026-01-01",
+        }),
+    ],
+    [
+      "goal targetAmount",
+      () => createGoalSchema.safeParse({ name: "House", targetAmount: 1e10, scope: "NET_WORTH" }),
+    ],
+    [
+      "stock watch recordPrice",
+      () =>
+        createStockWatchItemSchema.safeParse({
+          symbol: "TSLA",
+          name: "Tesla",
+          recordPrice: 1e10,
+          recordDate: "2026-06-14",
+        }),
+    ],
+  ])("rejects 1e10 for %s", (_label, parse) => {
+    expect(parse().success).toBe(false);
   });
 });
 
