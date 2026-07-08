@@ -111,21 +111,6 @@ async function getCachedExchangeRates(): Promise<Record<string, number>> {
 }
 
 /**
- * Cache Components read of the most recent ExchangeRate write (max
- * `updatedAt` across the table), as an ISO string — null when the table is
- * empty. Backs the user-facing "FX rates as of …" / stale-rates signal.
- * Kept separate from `getAllExchangeRates` so its many callers keep their
- * `Map<string, number>` shape.
- */
-export async function getExchangeRatesFreshness(): Promise<string | null> {
-  "use cache";
-  cacheTag("exchange-rates");
-  cacheLife("hours");
-  const result = await prisma.exchangeRate.aggregate({ _max: { updatedAt: true } });
-  return result._max.updatedAt?.toISOString() ?? null;
-}
-
-/**
  * Load ALL cached exchange rates.
  * Uses the Cache Components layer (invalidated by the `exchange-rates`
  * tag) plus React cache() for per-render dedup. Returns a Map keyed

@@ -20,7 +20,11 @@ import type {
  * @public Building block for new serialized model types.
  */
 export type Serialized<T, DecimalKeys extends keyof T = never, DateKeys extends keyof T = never> = {
-  [K in keyof T]: K extends DecimalKeys ? number : K extends DateKeys ? string : T[K];
+  [K in keyof T]: K extends DecimalKeys
+    ? number | Extract<T[K], null | undefined>
+    : K extends DateKeys
+      ? string | Extract<T[K], null | undefined>
+      : T[K];
 };
 
 /**
@@ -61,7 +65,11 @@ export type SerializedAccountWithHoldings = SerializedAccount & {
   holdings: SerializedHolding[];
 };
 
-export type SerializedTransaction = Serialized<HoldingTransaction, "quantity", "createdAt"> & {
+export type SerializedTransaction = Serialized<
+  HoldingTransaction,
+  "quantity" | "unitPrice",
+  "createdAt"
+> & {
   holding?: {
     symbol: string;
     name: string;

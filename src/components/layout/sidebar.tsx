@@ -155,7 +155,7 @@ export function Sidebar({
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("command-palette:open"))}
           title={`${t("commandPalette.searchHint")} (⌘K)`}
-          aria-label="Open command palette"
+          aria-label={t("commandPalette.openPalette")}
           aria-keyshortcuts="Control+K Meta+K"
           className={cn(
             "w-full flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 text-muted-foreground text-sm transition-colors hover:bg-muted/60 hover:text-foreground hover:border-border",

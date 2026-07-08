@@ -79,7 +79,7 @@ function isBetterDuplicate(
  * currency change), prefers the one whose baseCurrency already matches the
  * target; among equal matches, keeps the one with the greatest createdAt.
  */
-function normalizeSnapshots(
+export function normalizeSnapshots(
   snapshots: SnapshotRow[],
   allRatesMap: Map<string, number>,
   targetBaseCurrency: string,

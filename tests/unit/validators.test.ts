@@ -40,8 +40,12 @@ describe("updateAccountSchema", () => {
     ).toBe(false);
   });
 
-  it("rejects currency changes", () => {
-    expect(updateAccountSchema.safeParse({ currency: "USD" }).success).toBe(false);
+  it("accepts currency so the route can enforce the history guard", () => {
+    const result = updateAccountSchema.safeParse({ currency: "USD" });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.currency).toBe("USD");
+    }
   });
 });
 

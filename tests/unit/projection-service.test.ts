@@ -3,6 +3,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 // Hoisted fixtures so the vi.mock factories can close over them.
 interface SnapshotFixture {
   date: Date;
+  createdAt: Date;
   netWorth: number;
   baseCurrency: string;
 }
@@ -20,6 +21,7 @@ vi.mock("@/lib/prisma", () => ({
       findMany: vi.fn(async () =>
         h.snapshots.map((s) => ({
           date: s.date,
+          createdAt: s.createdAt,
           netWorth: s.netWorth,
           baseCurrency: s.baseCurrency,
         })),
@@ -56,8 +58,18 @@ describe("getProjectionData annual bucketing", () => {
 
     it("buckets a 2026-01-01T00:00:00Z snapshot into year 2026", async () => {
       h.snapshots = [
-        { date: new Date("2025-06-01T00:00:00.000Z"), netWorth: 500, baseCurrency: "USD" },
-        { date: new Date("2026-01-01T00:00:00.000Z"), netWorth: 1000, baseCurrency: "USD" },
+        {
+          date: new Date("2025-06-01T00:00:00.000Z"),
+          createdAt: new Date("2025-06-01T00:00:00.000Z"),
+          netWorth: 500,
+          baseCurrency: "USD",
+        },
+        {
+          date: new Date("2026-01-01T00:00:00.000Z"),
+          createdAt: new Date("2026-01-01T00:00:00.000Z"),
+          netWorth: 1000,
+          baseCurrency: "USD",
+        },
       ];
       const result = await getProjectionData("u1", "USD");
       const years = result.annualSnapshots.map((a) => a.year);
@@ -66,5 +78,33 @@ describe("getProjectionData annual bucketing", () => {
       const y2026 = result.annualSnapshots.find((a) => a.year === 2026);
       expect(y2026?.netWorth).toBe(1000);
     });
+  });
+
+  it("dedupes same-day snapshots by target base currency, then latest createdAt", async () => {
+    h.snapshots = [
+      {
+        date: new Date("2026-03-01T00:00:00.000Z"),
+        createdAt: new Date("2026-03-01T12:00:00.000Z"),
+        netWorth: 500,
+        baseCurrency: "USD",
+      },
+      {
+        date: new Date("2026-03-01T00:00:00.000Z"),
+        createdAt: new Date("2026-03-01T13:00:00.000Z"),
+        netWorth: 999,
+        baseCurrency: "EUR",
+      },
+      {
+        date: new Date("2026-03-01T00:00:00.000Z"),
+        createdAt: new Date("2026-03-01T10:00:00.000Z"),
+        netWorth: 300,
+        baseCurrency: "USD",
+      },
+    ];
+
+    const result = await getProjectionData("u1", "USD");
+
+    expect(result.latestNetWorth).toBe(500);
+    expect(result.annualSnapshots).toEqual([{ year: 2026, netWorth: 500 }]);
   });
 });

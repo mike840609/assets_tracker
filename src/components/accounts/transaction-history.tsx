@@ -242,6 +242,7 @@ export function TransactionHistory({
         const normalized = page.transactions.map((t) => ({
           ...t,
           quantity: Number(t.quantity),
+          unitPrice: t.unitPrice == null ? null : Number(t.unitPrice),
         })) as SerializedTransaction[];
         if (isInitial) {
           setTransactions(normalized);

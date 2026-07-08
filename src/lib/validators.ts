@@ -28,7 +28,6 @@ export const createAccountSchema = z.object({
 });
 
 export const updateAccountSchema = createAccountSchema
-  .omit({ currency: true })
   .extend({
     isActive: z.boolean(),
     isPinned: z.boolean(),
@@ -38,8 +37,7 @@ export const updateAccountSchema = createAccountSchema
     // the cash flow (#500). Ignored when the balance is not changing.
     occurrenceDate: z.iso.date("Must be a valid YYYY-MM-DD date").optional(),
   })
-  .partial()
-  .extend({ currency: z.never().optional() });
+  .partial();
 
 export const reorderAccountsSchema = z.object({
   type: z.enum(ACCOUNT_TYPES),
