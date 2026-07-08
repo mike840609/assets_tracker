@@ -37,8 +37,11 @@ const store = new Map<string, WindowEntry>();
 export function getClientIp(request: Request): string {
   const xff = request.headers.get("x-forwarded-for");
   if (xff) {
-    const first = xff.split(",")[0]?.trim();
-    if (first) return first;
+    const ip = xff
+      .split(",")
+      .map((part) => part.trim())
+      .findLast(Boolean);
+    if (ip) return ip;
   }
 
   const cfIp = request.headers.get("cf-connecting-ip")?.trim();
