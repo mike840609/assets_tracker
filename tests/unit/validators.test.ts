@@ -13,6 +13,8 @@ import {
   createStockWatchItemSchema,
   updateSnapshotAnnotationSchema,
   dataImportSchema,
+  deleteAccountsSchema,
+  snapshotsQuerySchema,
 } from "@/lib/validators";
 
 // Locks in the E6 validator hardening (positive quantities, immutable
@@ -395,6 +397,48 @@ describe("updateSnapshotAnnotationSchema", () => {
   it("enforces label and note length limits", () => {
     expect(updateSnapshotAnnotationSchema.safeParse({ label: "x".repeat(81) }).success).toBe(false);
     expect(updateSnapshotAnnotationSchema.safeParse({ note: "x".repeat(501) }).success).toBe(false);
+  });
+});
+
+describe("deleteAccountsSchema", () => {
+  it("accepts a non-empty array of string ids", () => {
+    expect(deleteAccountsSchema.safeParse({ ids: ["a1", "a2"] }).success).toBe(true);
+  });
+
+  it("rejects non-string elements, empty arrays, and non-array ids", () => {
+    expect(deleteAccountsSchema.safeParse({ ids: [123] }).success).toBe(false);
+    expect(deleteAccountsSchema.safeParse({ ids: [] }).success).toBe(false);
+    expect(deleteAccountsSchema.safeParse({ ids: { a: 1 } }).success).toBe(false);
+    expect(deleteAccountsSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("caps the array length at 200", () => {
+    expect(deleteAccountsSchema.safeParse({ ids: Array(201).fill("x") }).success).toBe(false);
+  });
+});
+
+describe("snapshotsQuerySchema", () => {
+  it("coerces valid date strings and defaults currency to USD", () => {
+    const result = snapshotsQuerySchema.safeParse({ from: "2026-01-01", to: "2026-06-30" });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.from).toBeInstanceOf(Date);
+      expect(result.data.currency).toBe("USD");
+    }
+  });
+
+  it("rejects garbage dates and malformed currency", () => {
+    expect(snapshotsQuerySchema.safeParse({ from: "garbage" }).success).toBe(false);
+    expect(snapshotsQuerySchema.safeParse({ currency: "USDX" }).success).toBe(false);
+  });
+
+  it("accepts an empty query", () => {
+    const result = snapshotsQuerySchema.safeParse({});
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.from).toBeUndefined();
+      expect(result.data.currency).toBe("USD");
+    }
   });
 });
 

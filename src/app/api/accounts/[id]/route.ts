@@ -34,27 +34,11 @@ export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
   const existingAccount = await prisma.account.findUnique({ where: { id, userId } });
   if (!existingAccount) return failure("Not found", 404);
 
+  // `currency` is immutable via PATCH — updateAccountSchema rejects it
+  // (z.never()): cash transactions store no currency of their own, so a
+  // currency change would silently re-denominate all history (#557, #563).
   const { note, occurrenceDate, ...accountData } = parsed.data;
 
-  // Cash transactions store no currency of their own — they're always
-  // interpreted in the account's *current* currency by analysis/projections.
-  // Changing `currency` on an account that already has history would silently
-  // re-denominate every past flow, so block it once any transactions/holdings
-  // exist (#557). There's no currency-migration UI yet; this is purely an
-  // API-level guard.
-  if (accountData.currency !== undefined && accountData.currency !== existingAccount.currency) {
-    const [cashTransactionCount, holdingTransactionCount, holdingCount] = await Promise.all([
-      prisma.cashTransaction.count({ where: { accountId: id } }),
-      prisma.holdingTransaction.count({ where: { holding: { accountId: id } } }),
-      prisma.holding.count({ where: { accountId: id } }),
-    ]);
-    if (cashTransactionCount > 0 || holdingTransactionCount > 0 || holdingCount > 0) {
-      return failure(
-        "Cannot change currency on an account with existing transactions or holdings",
-        400,
-      );
-    }
-  }
   // A manual balance edit logs the difference as an EDIT cash transaction. The
   // diff must be measured against the balance we actually write over, so the
   // write is guarded on that prior balance: if a concurrent cash mutation moved

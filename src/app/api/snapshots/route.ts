@@ -1,18 +1,23 @@
 import { getFullNormalizedHistory } from "@/lib/services/history-service";
-import { ok } from "@/lib/api-responses";
+import { snapshotsQuerySchema } from "@/lib/validators";
+import { ok, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 
 export const GET = withAuth(async (request, _ctx, userId) => {
   const { searchParams } = new URL(request.url);
-  const from = searchParams.get("from");
-  const to = searchParams.get("to");
-  const baseCurrency = searchParams.get("currency") ?? "USD";
+  const parsed = snapshotsQuerySchema.safeParse({
+    from: searchParams.get("from") ?? undefined,
+    to: searchParams.get("to") ?? undefined,
+    currency: searchParams.get("currency") ?? undefined,
+  });
+  if (!parsed.success) return validationError(parsed.error);
 
+  const { from, to, currency } = parsed.data;
   const options: { from?: Date; to?: Date } = {};
-  if (from) options.from = new Date(from);
-  if (to) options.to = new Date(to);
+  if (from) options.from = from;
+  if (to) options.to = to;
 
-  const snapshots = await getFullNormalizedHistory(userId, baseCurrency, options);
+  const snapshots = await getFullNormalizedHistory(userId, currency, options);
   // Per-user data: `private` keeps it out of shared caches while letting the
   // browser reuse the response briefly (snapshots only change once a day).
   return ok(snapshots, {

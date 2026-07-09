@@ -1,6 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { after } from "next/server";
 import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createHoldingSchema, updateHoldingSchema, deleteHoldingSchema } from "@/lib/validators";
 import { fetchStockPrices, fetchCryptoPrices } from "@/lib/services/price-service";
@@ -217,6 +218,11 @@ export const PATCH = withAuth<IdCtx>(async (request, _ctx, userId) => {
   } catch (error) {
     if (error instanceof StaleHoldingError) {
       return failure("Holding changed while updating; please retry", 409);
+    }
+    // Renaming the symbol onto one that already exists in the account violates
+    // the accountId_symbol unique index (P2002). Same 409 mapping as stocks POST.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return failure("A holding with this symbol already exists in this account", 409);
     }
     throw error;
   }
