@@ -12,7 +12,14 @@ import { NextIntlClientProvider } from "next-intl";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 
-const CLIENT_NAMESPACES = ["settings", "toast", "languages", "dataManagement", "freshness"];
+const CLIENT_NAMESPACES = [
+  "settings",
+  "toast",
+  "languages",
+  "dataManagement",
+  "freshness",
+  "common",
+];
 
 async function SettingsContent() {
   const session = await getSession();

@@ -46,10 +46,20 @@ interface _RLEntry {
   resetAt: number;
 }
 const _authRLStore = new Map<string, _RLEntry>();
+let _authRLLastPruned = 0;
+
+function _authRLMaybePrune(now: number): void {
+  if (now - _authRLLastPruned < 60_000) return;
+  _authRLLastPruned = now;
+  for (const [ip, entry] of _authRLStore) {
+    if (now >= entry.resetAt) _authRLStore.delete(ip);
+  }
+}
 
 function _authRateLimit(request: Request): Response | null {
   const ip = getClientIp(request);
   const now = Date.now();
+  _authRLMaybePrune(now);
   const windowMs = 60_000;
   const limit = 20;
   const entry = _authRLStore.get(ip);

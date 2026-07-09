@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 const h = vi.hoisted(() => ({
   account: { id: "acc1" } as Record<string, unknown> | null,
+  afterTasks: [] as Array<() => void | Promise<void>>,
   calls: [] as Array<{ op: string; args?: Record<string, unknown> }>,
   existingHolding: null as Record<string, unknown> | null,
   updateError: null as Error | null,
@@ -15,7 +16,9 @@ vi.mock("next/server", async (importOriginal) => {
   const actual = await importOriginal<typeof import("next/server")>();
   return {
     ...actual,
-    after: vi.fn((fn: () => void) => fn()),
+    after: vi.fn((fn: () => void | Promise<void>) => {
+      h.afterTasks.push(fn);
+    }),
   };
 });
 
@@ -90,9 +93,11 @@ const jsonRequest = (body: Record<string, unknown>) =>
 describe("holdings route", () => {
   beforeEach(() => {
     h.account = { id: "acc1" };
+    h.afterTasks = [];
     h.calls = [];
     h.existingHolding = null;
     h.updateError = null;
+    vi.clearAllMocks();
   });
 
   it("writes optional unitPrice to the initial BUY transaction", async () => {
@@ -150,6 +155,39 @@ describe("holdings route", () => {
       | undefined;
     expect(data).toMatchObject({ holdingId: "holding1", type: "BUY", quantity: 10 });
     expect(data).not.toHaveProperty("unitPrice");
+  });
+
+  it("schedules price cache warming after returning the created holding", async () => {
+    const { fetchStockPrices } = await import("@/lib/services/price-service");
+    const { prisma } = await import("@/lib/prisma");
+    vi.mocked(fetchStockPrices).mockResolvedValueOnce(
+      new Map([["AAPL", { price: 180.25, currency: "USD" }]]),
+    );
+    const { POST } = await import("@/app/api/accounts/[id]/holdings/route");
+
+    const response = await POST(
+      jsonRequest({
+        symbol: "aapl",
+        name: "Apple",
+        quantity: 10,
+        assetType: "STOCK",
+        currency: "USD",
+      }),
+      params,
+    );
+
+    expect(response.status).toBe(201);
+    expect(fetchStockPrices).not.toHaveBeenCalled();
+    expect(prisma.priceCache.upsert).not.toHaveBeenCalled();
+
+    await h.afterTasks[0]();
+
+    expect(fetchStockPrices).toHaveBeenCalledWith(["AAPL"]);
+    expect(prisma.priceCache.upsert).toHaveBeenCalledWith({
+      where: { symbol: "AAPL" },
+      update: { price: 180.25, currency: "USD", updatedAt: expect.any(Date) },
+      create: { symbol: "AAPL", price: 180.25, currency: "USD" },
+    });
   });
 
   it("maps a P2002 symbol conflict on PATCH to a 409", async () => {

@@ -19,6 +19,16 @@ export const PATCH = withAuth<IdCtx>(async (request, { params }, userId) => {
   const existing = await prisma.goal.findUnique({ where: { id, userId } });
   if (!existing) return failure("Not found", 404);
 
+  const scope = parsed.data.scope ?? existing.scope;
+  const scopeRefId =
+    parsed.data.scopeRefId !== undefined ? parsed.data.scopeRefId : existing.scopeRefId;
+  if (scope === "ACCOUNT") {
+    const account = scopeRefId
+      ? await prisma.account.findUnique({ where: { id: scopeRefId, userId }, select: { id: true } })
+      : null;
+    if (!account) return failure("Invalid account scope", 400);
+  }
+
   const { targetDate, ...rest } = parsed.data;
   const goal = await prisma.goal.update({
     where: { id, userId },

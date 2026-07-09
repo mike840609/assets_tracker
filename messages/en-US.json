@@ -49,7 +49,15 @@
     "discardTitle": "Discard changes?",
     "discardBody": "What you've entered will be lost.",
     "discardConfirm": "Discard",
-    "keepEditing": "Keep editing"
+    "keepEditing": "Keep editing",
+    "theme": {
+      "label": "Theme",
+      "change": "Change theme",
+      "switchTo": "Switch to {theme} mode",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    }
   },
   "errors": {
     "title": "Something went wrong",

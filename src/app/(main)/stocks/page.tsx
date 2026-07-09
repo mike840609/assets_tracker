@@ -22,7 +22,7 @@ async function StocksContent() {
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
       <MobileHubRedirect hash="#watchlist" />
-      <div className="space-y-4 md:space-y-8 animate-in fade-in duration-200">
+      <div className="hidden space-y-4 md:block md:space-y-8 md:animate-in md:fade-in md:duration-200">
         <div>
           <LargeTitleHeading>{t("title")}</LargeTitleHeading>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{t("subtitle")}</p>
