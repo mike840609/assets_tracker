@@ -4,7 +4,11 @@ const h = vi.hoisted(() => ({
   cashRule: null as Record<string, unknown> | null,
   investmentRule: null as Record<string, unknown> | null,
   cashUpdateCalls: [] as Array<Record<string, unknown>>,
+  cashUpdateManyCalls: [] as Array<Record<string, unknown>>,
+  cashUpdateManyCount: 1,
   investmentUpdateCalls: [] as Array<Record<string, unknown>>,
+  investmentUpdateManyCalls: [] as Array<Record<string, unknown>>,
+  investmentUpdateManyCount: 1,
 }));
 
 vi.mock("@/lib/api-handler", () => ({
@@ -22,6 +26,11 @@ vi.mock("@/lib/prisma", () => ({
         h.cashUpdateCalls.push(args);
         return { ...h.cashRule, ...(args.data as Record<string, unknown>) };
       }),
+      updateMany: vi.fn(async (args: Record<string, unknown>) => {
+        h.cashUpdateManyCalls.push(args);
+        return { count: h.cashUpdateManyCount };
+      }),
+      findUniqueOrThrow: vi.fn(async () => h.cashRule),
     },
     recurringInvestment: {
       findFirst: vi.fn(async () => h.investmentRule),
@@ -29,6 +38,11 @@ vi.mock("@/lib/prisma", () => ({
         h.investmentUpdateCalls.push(args);
         return { ...h.investmentRule, ...(args.data as Record<string, unknown>) };
       }),
+      updateMany: vi.fn(async (args: Record<string, unknown>) => {
+        h.investmentUpdateManyCalls.push(args);
+        return { count: h.investmentUpdateManyCount };
+      }),
+      findUniqueOrThrow: vi.fn(async () => h.investmentRule),
     },
   },
 }));
@@ -90,7 +104,11 @@ describe("recurring rule PATCH routes", () => {
     h.cashRule = recurringCashRule();
     h.investmentRule = recurringInvestmentRule();
     h.cashUpdateCalls = [];
+    h.cashUpdateManyCalls = [];
+    h.cashUpdateManyCount = 1;
     h.investmentUpdateCalls = [];
+    h.investmentUpdateManyCalls = [];
+    h.investmentUpdateManyCount = 1;
   });
 
   it("rejects a cash-rule end date before its persisted start date", async () => {
@@ -111,6 +129,16 @@ describe("recurring rule PATCH routes", () => {
 
     expect(response.status).toBe(400);
     expect(h.cashUpdateCalls).toHaveLength(0);
+  });
+
+  it("rejects a cash-rule edit when its date range changed concurrently", async () => {
+    h.cashUpdateManyCount = 0;
+    const { PATCH } =
+      await import("@/app/api/accounts/[id]/recurring-cash-transactions/[recurringId]/route");
+
+    const response = await PATCH(jsonRequest({ note: "updated" }), params("cash-rule-1"));
+
+    expect(response.status).toBe(409);
   });
 
   it("rejects an investment-rule end date before its persisted start date", async () => {
@@ -137,5 +165,15 @@ describe("recurring rule PATCH routes", () => {
 
     expect(response.status).toBe(400);
     expect(h.investmentUpdateCalls).toHaveLength(0);
+  });
+
+  it("rejects an investment-rule edit when its date range changed concurrently", async () => {
+    h.investmentUpdateManyCount = 0;
+    const { PATCH } =
+      await import("@/app/api/accounts/[id]/recurring-investments/[recurringId]/route");
+
+    const response = await PATCH(jsonRequest({ note: "updated" }), params("investment-rule-1"));
+
+    expect(response.status).toBe(409);
   });
 });

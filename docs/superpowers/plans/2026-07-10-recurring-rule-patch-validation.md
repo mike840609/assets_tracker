@@ -4,7 +4,7 @@
 
 **Goal:** Reject partial recurring-rule edits that would make `endDate` earlier than the effective `startDate`.
 
-**Architecture:** The two existing route handlers remain the validation boundary. Each reads the rule's persisted date range, merges it with the validated PATCH payload, and rejects an invalid merged range before the Prisma update. A focused route-test file supplies mocked Prisma delegates and proves no write occurs for either invalid one-field edit direction.
+**Architecture:** The two existing route handlers remain the validation boundary. Each reads the rule's persisted date range, merges it with the validated PATCH payload, and rejects an invalid merged range before a guarded Prisma update. The update matches the read date range so a conflicting date edit returns 409 rather than writing stale data. A focused route-test file proves both invalid partial-edit directions and stale-write handling.
 
 **Tech Stack:** Next.js 16 Route Handlers, TypeScript, Prisma, Zod, Vitest.
 
@@ -81,7 +81,7 @@ Replace the `select: { id: true }` selection with:
 select: { id: true, startDate: true, endDate: true },
 ```
 
-- [ ] **Step 2: Add the merged-range guard after payload validation**
+- [ ] **Step 2: Add the merged-range guard and conditional write after payload validation**
 
 After destructuring `startDate` and `endDate`, calculate the effective values and return before constructing `data`:
 
@@ -94,7 +94,26 @@ if (effectiveEndDate && effectiveEndDate < effectiveStartDate) {
 }
 ```
 
-Apply the same logic to the cash and investment handlers.
+Replace the final `update` with `updateMany` that also matches the persisted range, then return 409 if no row was affected:
+
+```ts
+const result = await prisma.recurringCashTransaction.updateMany({
+  where: {
+    id: recurringId,
+    startDate: existing.startDate,
+    endDate: existing.endDate,
+  },
+  data,
+});
+if (result.count !== 1) {
+  return failure("Recurring transaction changed while updating; please retry", 409);
+}
+const rule = await prisma.recurringCashTransaction.findUniqueOrThrow({
+  where: { id: recurringId },
+});
+```
+
+Use the analogous `recurringInvestment` delegate and message in the investment handler. Add one stale-write test per route by returning `count: 0` from the mocked `updateMany` and expecting HTTP 409.
 
 - [ ] **Step 3: Run the focused test to verify it passes**
 
