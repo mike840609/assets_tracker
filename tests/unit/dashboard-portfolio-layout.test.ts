@@ -13,7 +13,17 @@ describe("dashboard portfolio layout", () => {
 
   it("separates concentration from the 8/4 portfolio overview row", () => {
     const overviewStart = dashboardSource.indexOf('data-testid="portfolio-overview-row"');
-    const concentrationStart = dashboardSource.indexOf('data-testid="portfolio-concentration-row"');
+    const concentrationBoundary = `            </Suspense>
+          </div>
+        </div>
+        <Suspense
+          fallback={
+            <div>
+              <ConcentrationCardSkeleton />
+            </div>
+          }
+        >`;
+    const concentrationStart = dashboardSource.indexOf(concentrationBoundary, overviewStart);
 
     expect(overviewStart).toBeGreaterThan(-1);
     expect(concentrationStart).toBeGreaterThan(overviewStart);
@@ -22,6 +32,12 @@ describe("dashboard portfolio layout", () => {
     expect(overviewSource).toContain("lg:col-span-8");
     expect(overviewSource).toContain("lg:col-span-4");
     expect(overviewSource).not.toContain("<ConcentrationSection");
+    expect(dashboardSource).toContain(`  if (summary.totalAssets <= 0) return null;
+  return (
+    <div data-testid="portfolio-concentration-row">
+      <ConcentrationCard summary={summary} />
+    </div>
+  );`);
   });
 
   it("keeps the loading skeleton topology aligned with the dashboard", () => {
@@ -38,6 +54,12 @@ describe("dashboard portfolio layout", () => {
     expect(overviewSource).toContain("lg:col-span-8");
     expect(overviewSource).toContain("lg:col-span-4");
     expect(overviewSource).not.toContain("<ConcentrationCardSkeleton />");
+    expect(skeletonSource)
+      .toContain(`          <div className="min-w-0 lg:col-span-8 lg:col-start-1 lg:row-start-1">
+            <PortfolioHeatmapSkeleton />
+          </div>
+        </div>
+        <ConcentrationCardSkeleton />`);
     expect(skeletonSource).toContain('data-testid="portfolio-concentration-skeleton"');
     expect(skeletonSource).toContain("export function ConcentrationCardSkeleton()");
   });

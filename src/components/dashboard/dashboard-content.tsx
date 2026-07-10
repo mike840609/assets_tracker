@@ -269,7 +269,11 @@ async function ConcentrationSection({
 }) {
   const summary = await getCachedNetWorthSummary(userId, baseCurrency);
   if (summary.totalAssets <= 0) return null;
-  return <ConcentrationCard summary={summary} />;
+  return (
+    <div data-testid="portfolio-concentration-row">
+      <ConcentrationCard summary={summary} />
+    </div>
+  );
 }
 
 /**
@@ -470,11 +474,15 @@ export async function DashboardContent({ userId }: { userId: string }) {
             </Suspense>
           </div>
         </div>
-        <div data-testid="portfolio-concentration-row">
-          <Suspense fallback={<ConcentrationCardSkeleton />}>
-            <ConcentrationSection userId={userId} baseCurrency={baseCurrency} />
-          </Suspense>
-        </div>
+        <Suspense
+          fallback={
+            <div>
+              <ConcentrationCardSkeleton />
+            </div>
+          }
+        >
+          <ConcentrationSection userId={userId} baseCurrency={baseCurrency} />
+        </Suspense>
       </div>
 
       {/* Tier 4 — drill-in detail: full-width accounts summary */}
