@@ -464,7 +464,7 @@ export async function DashboardContent({ userId }: { userId: string }) {
               <CurrencySection userId={userId} baseCurrency={baseCurrency} />
             </Suspense>
           </div>
-          <div className="min-w-0 lg:col-span-8 lg:col-start-1 lg:row-start-1">
+          <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">
             <Suspense fallback={<PortfolioHeatmapSkeleton />}>
               <PortfolioHeatmapSection userId={userId} baseCurrency={baseCurrency} />
             </Suspense>

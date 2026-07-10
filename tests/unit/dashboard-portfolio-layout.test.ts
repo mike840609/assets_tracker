@@ -4,12 +4,19 @@ import { describe, expect, it } from "vitest";
 const dashboardSource = readFileSync("src/components/dashboard/dashboard-content.tsx", "utf8");
 const skeletonSource = readFileSync("src/components/dashboard/dashboard-skeleton.tsx", "utf8");
 const concentrationSource = readFileSync("src/components/dashboard/concentration-card.tsx", "utf8");
+const heatmapSource = readFileSync("src/components/analysis/portfolio-heatmap.tsx", "utf8");
 
 describe("dashboard portfolio layout", () => {
-  it("fills the composition card internally without stretching the overview column", () => {
+  it("aligns the composition card with the desktop overview row and fills it internally", () => {
     expect(dashboardSource).toContain("<PortfolioHeatmap summary={summary} fillHeight />");
-    expect(dashboardSource).not.toContain("[&>*]:min-h-0");
-    expect(dashboardSource).not.toContain("[&>*]:flex-1");
+    expect(dashboardSource).toContain("lg:[&>*]:flex-1");
+    expect(dashboardSource).toContain("lg:[&>*]:min-h-0");
+    expect(dashboardSource).toContain("lg:min-h-0");
+    expect(dashboardSource).toContain("lg:contain-size");
+    expect(heatmapSource).not.toContain('fillHeight && "lg:h-full"');
+    expect(heatmapSource).toContain('fillHeight && "lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"');
+    expect(heatmapSource).toContain('fillHeight && "lg:min-h-0 lg:flex-1"');
+    expect(heatmapSource.match(/fillHeight && "lg:flex lg:min-h-0 lg:flex-col"/g)).toHaveLength(2);
   });
 
   it("separates concentration from the 8/4 portfolio overview row", () => {
@@ -64,9 +71,11 @@ describe("dashboard portfolio layout", () => {
     const overviewSource = skeletonSource.slice(overviewStart, concentrationStart);
     expect(overviewSource).toContain("lg:col-span-8");
     expect(overviewSource).toContain("lg:col-span-4");
+    expect(overviewSource).toContain("lg:contain-size");
+    expect(overviewSource).toContain("lg:[&>*]:flex-1");
     expect(overviewSource).not.toContain("<ConcentrationCardSkeleton />");
     expect(skeletonSource)
-      .toContain(`          <div className="min-w-0 lg:col-span-8 lg:col-start-1 lg:row-start-1">
+      .toContain(`          <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">
             <PortfolioHeatmapSkeleton />
           </div>
         </div>

@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the height-coupled dashboard portfolio row with a content-sized 8/4 overview row and a separate full-width horizontal Concentration summary.
+**Goal:** Replace the former three-card height coupling with an aligned 8/4 overview row and a separate full-width horizontal Concentration summary. On desktop, Portfolio Composition ends on the same baseline as Currency Exposure without blank treemap space.
 
-**Architecture:** Keep `DashboardContent` as the server-side streaming orchestrator and preserve each existing Suspense boundary. Change the dashboard grid topology, keep dashboard `fillHeight` scoped to the Portfolio Composition card's internal chart/list row, update matching skeletons, and adjust the responsive internal layout of `ConcentrationCard`; all calculations and client interactions stay in their current components.
+**Architecture:** Keep `DashboardContent` as the server-side streaming orchestrator and preserve each existing Suspense boundary. Change the dashboard grid topology, contain the Portfolio Composition grid item's intrinsic size so the two-card rail resolves the desktop row height, keep dashboard `fillHeight` scoped to the card's shrinkable internal chart/list row, update matching skeletons, and adjust the responsive internal layout of `ConcentrationCard`; all calculations and client interactions stay in their current components.
 
 **Tech Stack:** Next.js 16.2 App Router, React 19 Server and Client Components, TypeScript 5, Tailwind CSS 4, Recharts 3, Vitest 4, Playwright 1.52.
 
@@ -23,14 +23,15 @@
 
 ## File Map
 
-- Modify `src/components/dashboard/dashboard-content.tsx`: retain dashboard `fillHeight` for internal card filling, remove the parent stretch coupling, restructure Tier 3 into two rows, and consume the shared concentration skeleton.
-- Modify `src/components/dashboard/dashboard-skeleton.tsx`: export the concentration skeleton and mirror the final two-row topology.
+- Modify `src/components/dashboard/dashboard-content.tsx`: retain dashboard `fillHeight` for internal card filling, use desktop size containment to align Portfolio Composition with Currency Exposure, restructure Tier 3 into two rows, and consume the shared concentration skeleton.
+- Modify `src/components/analysis/portfolio-heatmap.tsx`: make the desktop chart and account-list columns shrinkable so they share the externally resolved card height without blank space or overflow.
+- Modify `src/components/dashboard/dashboard-skeleton.tsx`: export the concentration skeleton and mirror the final aligned two-row topology.
 - Modify `src/components/dashboard/concentration-card.tsx`: make the full-width card horizontal at `lg` while retaining the current stacked mobile layout.
 - Create `tests/unit/dashboard-portfolio-layout.test.ts`: guard the dashboard-only height fix, the two-row topology, skeleton parity, and horizontal concentration layout using the repository's existing source-inspection test pattern.
 
 ---
 
-### Task 1: Decouple Portfolio Composition from the right rail
+### Task 1: Align Portfolio Composition with the two-card right rail
 
 **Files:**
 
@@ -55,10 +56,11 @@ const dashboardSource = readFileSync("src/components/dashboard/dashboard-content
 const skeletonSource = readFileSync("src/components/dashboard/dashboard-skeleton.tsx", "utf8");
 
 describe("dashboard portfolio layout", () => {
-  it("fills the composition card internally without stretching the overview column", () => {
+  it("fills the composition card within the right rail's resolved desktop row", () => {
     expect(dashboardSource).toContain("<PortfolioHeatmap summary={summary} fillHeight />");
-    expect(dashboardSource).not.toContain("[&>*]:min-h-0");
-    expect(dashboardSource).not.toContain("[&>*]:flex-1");
+    expect(dashboardSource).toContain("lg:contain-size");
+    expect(dashboardSource).toContain("lg:[&>*]:min-h-0");
+    expect(dashboardSource).toContain("lg:[&>*]:flex-1");
   });
 
   it("separates concentration from the 8/4 portfolio overview row", () => {
@@ -134,7 +136,7 @@ export function ConcentrationCardSkeleton() {
 Replace the existing Tier 3 skeleton block in `src/components/dashboard/dashboard-skeleton.tsx` with:
 
 ```text
-{/* Tier 3 — content-sized portfolio overview, then full-width concentration. */}
+{/* Tier 3 — aligned portfolio overview, then full-width concentration. */}
 <div className="space-y-3 sm:space-y-6">
   <div
     data-testid="portfolio-overview-skeleton"
@@ -144,7 +146,7 @@ Replace the existing Tier 3 skeleton block in `src/components/dashboard/dashboar
       <ChartCardSkeleton />
       <ChartCardSkeleton />
     </div>
-    <div className="min-w-0 lg:col-span-8 lg:col-start-1 lg:row-start-1">
+    <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">
       <PortfolioHeatmapSkeleton />
     </div>
   </div>
@@ -160,7 +162,7 @@ In `PortfolioHeatmapSection` inside `src/components/dashboard/dashboard-content.
 return <PortfolioHeatmap summary={summary} fillHeight />;
 ```
 
-Do not restore the removed parent flex/stretch utilities. `fillHeight` may fill the card's internal treemap/list row, but the Portfolio Composition card must continue sizing independently from the external allocation/currency rail.
+Use size containment only on the desktop Portfolio Composition grid item. `fillHeight` fills the card and its shrinkable internal treemap/list row, while the Asset Allocation/Currency Exposure rail determines the external row height. The internal account list may scroll rather than increasing that row.
 
 - [ ] **Step 6: Import the shared concentration skeleton**
 
@@ -178,7 +180,7 @@ import {
 Replace the existing Tier 3 block in `src/components/dashboard/dashboard-content.tsx` with:
 
 ```text
-{/* Tier 3 — "what it's made of": a content-sized 8/4 overview row followed
+{/* Tier 3 — "what it's made of": an aligned 8/4 overview row followed
     by a full-width concentration summary. Source order stays allocation →
     currency → portfolio → concentration for mobile and assistive technology. */}
 <div className="space-y-3 sm:space-y-6 animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
@@ -194,7 +196,7 @@ Replace the existing Tier 3 block in `src/components/dashboard/dashboard-content
         <CurrencySection userId={userId} baseCurrency={baseCurrency} />
       </Suspense>
     </div>
-    <div className="min-w-0 lg:col-span-8 lg:col-start-1 lg:row-start-1">
+    <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">
       <Suspense fallback={<PortfolioHeatmapSkeleton />}>
         <PortfolioHeatmapSection userId={userId} baseCurrency={baseCurrency} />
       </Suspense>
@@ -409,7 +411,7 @@ Expected: the authenticated dashboard test passes and the dashboard continues to
 At a desktop viewport around 1440×900, confirm:
 
 - `portfolio-overview-row` renders Portfolio Composition on the left and only Asset Allocation plus Currency Exposure on the right.
-- The Portfolio Composition card ends after its own responsive chart and legend content; it does not stretch to the former three-card rail height. On desktop, the responsive calculation supplies the treemap's minimum height and `fillHeight` grows it only to match the card's internal detail/account-list column. On mobile, the existing phone width rules remain authoritative.
+- The Portfolio Composition card and Currency Exposure share the same bottom edge on desktop. The right rail resolves the row height, the contained left item fills that row, and its shrinkable treemap/detail columns use the available height with no bottom gap or content overflow. On mobile, the existing phone width rules remain authoritative.
 - `portfolio-concentration-row` starts below both first-row columns and spans the available dashboard width.
 - Concentration shows its headline/status region on the left and a two- or three-column position grid on the right.
 - All Accounts follows the Concentration row without overlap or excessive gap.
@@ -433,4 +435,4 @@ git diff HEAD~2 --check
 git diff HEAD~2 -- src/components/dashboard/dashboard-content.tsx src/components/dashboard/dashboard-skeleton.tsx src/components/dashboard/concentration-card.tsx tests/unit/dashboard-portfolio-layout.test.ts
 ```
 
-Expected: no whitespace errors, no unrelated files, no parent flex/stretch coupling, dashboard `fillHeight` present only at the Portfolio Composition call site, and no financial or translation changes.
+Expected: no whitespace errors, no unrelated files, desktop containment/fill utilities mirrored in the skeleton, dashboard `fillHeight` present only at the Portfolio Composition call site, and no financial or translation changes.

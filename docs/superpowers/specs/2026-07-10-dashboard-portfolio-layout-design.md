@@ -17,7 +17,7 @@ Use a two-row portfolio composition zone on desktop:
 1. First row:
    - Portfolio Composition spans eight of twelve columns.
    - Asset Allocation and Currency Exposure form a four-column vertical rail.
-   - Each side sizes itself from its content. The Portfolio Composition card is not stretched to the rail height.
+   - On desktop, Portfolio Composition ends on the same baseline as Currency Exposure. Size containment on the left grid item lets the two-card rail resolve the row height without allowing the treemap's intrinsic height to inflate it.
 2. Second row:
    - Concentration spans all twelve columns.
    - Its content becomes a compact horizontal summary rather than a tall narrow card.
@@ -27,11 +27,11 @@ This preserves the dashboard's existing sequence of “what changed,” “what 
 
 ## Portfolio Composition
 
-- Keep dashboard `fillHeight` so the treemap fills the Portfolio Composition card's own chart/list row, while removing the parent flex-stretch rules that previously tied the card to the external allocation/currency rail.
+- Keep dashboard `fillHeight` so the treemap fills the Portfolio Composition card's internal chart/list row, while the external card fills only the desktop overview row resolved by the allocation/currency rail.
 - Keep the existing treemap, account selection, holding drill-in, privacy behavior, accessible chart summary, and reduced-motion behavior.
-- Use the component's existing responsive chart height as the minimum, then let the treemap grow to the height of its internal detail/account-list column on desktop. Mobile keeps the existing width-based height rules.
+- On desktop, let the treemap and detail/account-list columns share the available card height. The account list may scroll within that height instead of forcing the row taller. Mobile keeps the existing width-based height rules and document flow.
 - Keep the detail card and account list beside the treemap on desktop.
-- Let the card end after its content instead of visually aligning its bottom edge with the neighboring rail.
+- Align the card's bottom edge with Currency Exposure without introducing blank space below the treemap or internal overflow.
 - Keep the total-assets label and unpriced-holdings warning in the header.
 
 ## Concentration Summary
@@ -82,7 +82,7 @@ At narrower widths, including mobile, the concentration content falls back to th
    - Compact density reduces the treemap height without collapsing labels or controls.
 3. Visual checks at representative widths:
    - Wide desktop: 8/4 first row plus full-width horizontal Concentration.
-   - Standard desktop: no stretched Portfolio Composition card and no large internal blank area.
+   - Standard desktop: Portfolio Composition and Currency Exposure share a bottom edge; treemap bottom gap and internal overflow are both zero.
    - Tablet/mobile: single-column order, readable labels, and 44px touch targets.
    - Dark and light themes: existing borders, surfaces, and chart colors remain legible.
 

@@ -195,7 +195,7 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      {/* Tier 3 — content-sized portfolio overview, then full-width concentration. */}
+      {/* Tier 3 — aligned portfolio overview, then full-width concentration. */}
       <div className="space-y-3 sm:space-y-6">
         <div
           data-testid="portfolio-overview-skeleton"
@@ -205,7 +205,7 @@ export function DashboardSkeleton() {
             <ChartCardSkeleton />
             <ChartCardSkeleton />
           </div>
-          <div className="min-w-0 lg:col-span-8 lg:col-start-1 lg:row-start-1">
+          <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">
             <PortfolioHeatmapSkeleton />
           </div>
         </div>
