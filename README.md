@@ -100,7 +100,7 @@ We recommend using a local PostgreSQL database via Docker for development to avo
 2. **Push the schema to your local DB:**
 
    ```bash
-   pnpm exec prisma db push
+   pnpm exec prisma migrate deploy
    ```
 
 3. **Start the development server:**
@@ -113,7 +113,7 @@ Open [http://localhost:3000](http://localhost:3000) to see your dashboard.
 When you are done developing for the day, you can stop the database with `pnpm db:down`.
 
 > [!TIP]
-> **Resetting the Local Database**: If you need to clear all data and rebuild the database schema from scratch, run `pnpm exec prisma db push --force-reset`. Avoid using `pnpm exec prisma migrate reset` locally, as the repository does not have a baseline migration file (it relies on `db push` for schema sync) and the command will fail.
+> **Resetting the local database**: To clear all local data and rebuild the schema from the committed migration history, run `pnpm exec prisma migrate reset`. This destroys every row in the target database. `prisma db push --force-reset` remains useful for disposable prototypes, but bypasses migration history.
 
 ### 5. Tests
 
