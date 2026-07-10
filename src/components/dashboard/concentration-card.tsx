@@ -22,8 +22,8 @@ export function ConcentrationCard({ summary }: { summary: NetWorthSummary }) {
         <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
         <p className="text-xs text-muted-foreground">{t("subtitle")}</p>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col">
-        <div className="mb-3 flex items-baseline justify-between gap-2">
+      <CardContent className="grid flex-1 gap-4 lg:grid-cols-[minmax(12rem,0.3fr)_minmax(0,1fr)] lg:gap-6">
+        <div className="flex items-baseline justify-between gap-3 lg:flex-col lg:items-start lg:justify-start lg:gap-3">
           <div>
             <div className="text-2xl font-semibold tabular-nums text-foreground">
               {privacyMode ? "***" : `${topHoldingPct.toFixed(1)}%`}
@@ -34,19 +34,19 @@ export function ConcentrationCard({ summary }: { summary: NetWorthSummary }) {
             {t(`level_${level}` as "level_low" | "level_moderate" | "level_high")}
           </span>
         </div>
-        <ul className="space-y-2">
-          {top.map((p) => (
-            <li key={p.label}>
+        <ul className="grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
+          {top.map((position) => (
+            <li key={position.label} className="min-w-0">
               <div className="mb-1 flex items-baseline justify-between gap-2 text-xs">
-                <span className="min-w-0 truncate text-foreground">{p.label}</span>
+                <span className="min-w-0 truncate text-foreground">{position.label}</span>
                 <span className="shrink-0 tabular-nums text-muted-foreground">
-                  {privacyMode ? "***" : `${p.pct.toFixed(1)}%`}
+                  {privacyMode ? "***" : `${position.pct.toFixed(1)}%`}
                 </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                 <div
                   className="h-full rounded-full bg-primary"
-                  style={{ width: `${Math.min(100, p.pct)}%` }}
+                  style={{ width: `${Math.min(100, position.pct)}%` }}
                 />
               </div>
             </li>
