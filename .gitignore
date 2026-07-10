@@ -47,14 +47,18 @@ next-env.d.ts
 /src/generated/prisma
 
 
-# claude 
-.claude/worktrees
-.agents/skills
-.claude/skills
-.github/skills
-
-# Impeccable design-review snapshots (local artifacts)
-.impeccable/
+# Local AI/agent tooling
+/.agent/
+/.agents/
+/.claude/
+/.codex/
+/.impeccable/
+/.superpowers/
+/.github/skills/
+/AGENTS.md
+/CLAUDE.md
+/.worktreeinclude
+/docs/superpowers/
 
 # Local agent artifacts
 /repomix-output.xml

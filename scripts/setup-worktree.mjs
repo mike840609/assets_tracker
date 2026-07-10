@@ -7,7 +7,7 @@ import { dirname, join, resolve } from "node:path";
 // by pnpm's global content-addressable store (a single shared store hardlinks
 // node_modules across every worktree), and the store location is configured
 // natively too — pnpm's default global store locally, or `npm_config_store_dir`
-// / an `.npmrc` `store-dir` in ephemeral sandboxes (see .codex/environments).
+// / an `.npmrc` `store-dir` in ephemeral sandboxes.
 
 const ENV_FILES = [".env", ".env.local"];
 

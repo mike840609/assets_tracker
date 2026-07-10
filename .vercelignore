@@ -13,6 +13,15 @@ docs/
 *.md
 !README.md
 
+# Local AI / agent tooling — never needed at runtime
+.agent/
+.agents/
+.claude/
+.codex/
+.impeccable/
+.superpowers/
+.worktreeinclude
+
 # CI / git tooling — not needed in Vercel build
 .github/
 .husky/

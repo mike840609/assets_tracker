@@ -38,6 +38,34 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.0.0",
+    date: "2026-07-11",
+    summary: {
+      "en-US": "First stable open-source release, ready for self-hosting.",
+      "zh-TW": "首個穩定的開源版本，已可自行部署。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Open-source project essentials: the MIT License, contribution guide, security policy, issue templates, and automated dependency updates.",
+          "zh-TW":
+            "補齊開源專案基礎：MIT 授權、貢獻指南、安全性政策、Issue 範本與自動化相依套件更新。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Self-hosting documentation now uses Prisma migrations, and a restored baseline migration lets a fresh PostgreSQL database initialize reliably.",
+          "zh-TW":
+            "自架文件改用 Prisma migrations，並補回基礎 migration，讓全新的 PostgreSQL 資料庫能可靠初始化。",
+        },
+      },
+    ],
+  },
+  {
     version: "0.14.0",
     date: "2026-07-06",
     summary: {
