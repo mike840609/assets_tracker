@@ -444,15 +444,25 @@ export function PortfolioHeatmap({
           </div>
         </div>
       </CardHeader>
-      <CardContent className={isCompact ? "space-y-3 pt-1" : "space-y-4 pt-1"}>
+      <CardContent
+        className={cn(
+          isCompact ? "space-y-3 pt-1" : "space-y-4 pt-1",
+          fillHeight && "lg:flex lg:min-h-0 lg:flex-1 lg:flex-col",
+        )}
+      >
         {accounts.length === 0 ? (
           <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/20 px-6 text-center text-sm text-muted-foreground">
             {t("heatmapEmpty")}
           </div>
         ) : (
           <>
-            <div className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
-              <div className={cn("min-w-0", fillHeight && "lg:flex lg:flex-col")}>
+            <div
+              className={cn(
+                "grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]",
+                fillHeight && "lg:min-h-0 lg:flex-1",
+              )}
+            >
+              <div className={cn("min-w-0", fillHeight && "lg:flex lg:min-h-0 lg:flex-col")}>
                 <div className="mb-2 flex min-h-8 items-center gap-2 overflow-hidden">
                   {selectedAccount && (
                     <>
@@ -519,11 +529,18 @@ export function PortfolioHeatmap({
                 </div>
               </div>
 
-              <div className="min-w-0 space-y-3">
+              <div
+                className={cn("min-w-0 space-y-3", fillHeight && "lg:flex lg:min-h-0 lg:flex-col")}
+              >
                 {renderDetailCard("hidden sm:block")}
 
                 {selectedAccount?.children && selectedAccount.children.length > 0 ? (
-                  <div className="max-h-[15rem] space-y-1 overflow-y-auto rounded-xl border border-border/60 bg-muted/10 p-1 sm:max-h-[18rem] lg:max-h-[23rem]">
+                  <div
+                    className={cn(
+                      "max-h-[15rem] space-y-1 overflow-y-auto rounded-xl border border-border/60 bg-muted/10 p-1 sm:max-h-[18rem] lg:max-h-[23rem]",
+                      fillHeight && "lg:min-h-0 lg:flex-1",
+                    )}
+                  >
                     {selectedAccount.children.map((child) => (
                       <button
                         key={child.id}
@@ -572,7 +589,10 @@ export function PortfolioHeatmap({
                 ) : (
                   <div className="relative sm:contents">
                     <div
-                      className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 pr-2 overscroll-x-contain scrollbar-none sm:mx-0 sm:grid sm:max-h-[18rem] sm:grid-cols-2 sm:gap-1.5 sm:overflow-x-visible sm:overflow-y-auto sm:px-0 lg:block lg:max-h-[23rem] lg:space-y-1.5"
+                      className={cn(
+                        "-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 pr-2 overscroll-x-contain scrollbar-none sm:mx-0 sm:grid sm:max-h-[18rem] sm:grid-cols-2 sm:gap-1.5 sm:overflow-x-visible sm:overflow-y-auto sm:px-0 lg:block lg:max-h-[23rem] lg:space-y-1.5",
+                        fillHeight && "lg:min-h-0 lg:flex-1",
+                      )}
                       style={
                         isPhone
                           ? ({
