@@ -1,7 +1,7 @@
 {
   "$comment": "P2 — Vercel Firewall rules spec. Consolidated to 3 rules to fit the Hobby-plan custom-rule cap. Rules 1 and 2 overlap intentionally (e.g. /wp-admin/install.php matches both); the firewall short-circuits on first match, so duplication is harmless and gives us redundant coverage. Apply via Vercel dashboard (Project → Settings → Firewall → Custom Rules) or the REST API. Re-export after each dashboard change so this file stays in sync.",
   "project": "asset-tracker",
-  "team": "mike840609s-projects",
+  "team": "<your-vercel-team-slug>",
   "rules": [
     {
       "name": "block-extensions-and-dotfiles",
