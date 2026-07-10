@@ -11,6 +11,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { pickMessages } from "@/lib/i18n-utils";
+import { getAppUrl } from "@/lib/app-url";
 import "./globals.css";
 
 const geist = localFont({
@@ -27,8 +28,10 @@ const geistMono = localFont({
   preload: false,
 });
 
+const appUrl = getAppUrl();
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://assets-tracker-ct.vercel.app"),
+  metadataBase: appUrl,
   title: "Assets Tracker",
   description: "Track your net worth, assets, and investments",
   appleWebApp: {
@@ -39,7 +42,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Assets Tracker",
     description: "Track your net worth, assets, and investments",
-    url: "https://assets-tracker-ct.vercel.app",
+    url: appUrl,
     siteName: "Assets Tracker",
     images: [{ url: "/opengraph-image.png", width: 1024, height: 682, alt: "Assets Tracker" }],
     type: "website",

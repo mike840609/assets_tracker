@@ -3,6 +3,9 @@ name: E2E Smoke Tests
 on:
   deployment_status:
 
+permissions:
+  contents: read
+
 concurrency:
   group: e2e-${{ github.event.deployment.sha }}
   cancel-in-progress: true

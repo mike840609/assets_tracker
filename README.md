@@ -69,6 +69,12 @@ CRON_SECRET="your_secure_random_string"
 > [!TIP]
 > Generate `AUTH_SECRET` and `CRON_SECRET` with `openssl rand -base64 32`.
 
+## Self-hosting and data responsibility
+
+Each deployment owner provides and controls its own Google OAuth credentials, PostgreSQL database, deployment, cron secret, and optional Vercel/Sentry integrations. `NEXT_PUBLIC_APP_URL` must be the deployed public URL, and [`.env.example`](./.env.example) is the complete configuration reference.
+
+Assets Tracker is personal-tracking software, not financial, tax, or investment advice. Self-hosters are responsible for their users' data security, privacy disclosures, regulatory compliance, backups, and access controls.
+
 ### 3. Installation
 
 ```bash
@@ -293,6 +299,10 @@ This approach ensures that your trend lines always remain continuous and compara
 ## 🏷️ Versioning
 
 The app follows [Semantic Versioning](https://semver.org). Version history lives in `src/lib/changelog.ts` (the single source of truth — the displayed version derives from the newest entry) and is shown in-app on the **`/changelog`** page and the Settings "Version" card. To cut a release, add an entry there and bump `package.json`'s `version`. See [VERSIONING.md](./docs/VERSIONING.md) for the bump rules and full process.
+
+## Contributing and security
+
+Contributions are welcome; see [CONTRIBUTING.md](./CONTRIBUTING.md). Please report vulnerabilities privately under the [Security Policy](./SECURITY.md). Community participation is governed by the [Code of Conduct](./CODE_OF_CONDUCT.md).
 
 ## 📄 License
 
