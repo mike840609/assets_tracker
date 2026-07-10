@@ -414,7 +414,7 @@ Expected: the authenticated dashboard test passes and the dashboard continues to
 At a desktop viewport around 1440×900, confirm:
 
 - `portfolio-overview-row` renders Portfolio Composition on the left and only Asset Allocation plus Currency Exposure on the right.
-- The Portfolio Composition card ends after its 280px chart and legend content; it does not stretch to the former three-card rail height.
+- The Portfolio Composition card ends after its responsive chart and legend content; it does not stretch to the former three-card rail height. Treat the 1440px viewport width separately from the measured inner chart-column width: the phone branch takes precedence, then chart columns below 420px use `max(190, round(width * 0.62))`, columns below 760px use `max(240, round(width * 0.55))`, and only columns at least 760px use the density fallback (280px comfortable or 220px compact).
 - `portfolio-concentration-row` starts below both first-row columns and spans the available dashboard width.
 - Concentration shows its headline/status region on the left and a two- or three-column position grid on the right.
 - All Accounts follows the Concentration row without overlap or excessive gap.
@@ -426,7 +426,7 @@ At a mobile viewport around 412×915, confirm:
 - Concentration returns to a single-column card with its metric/status row above the positions grid.
 - No horizontal document overflow appears.
 
-Repeat one desktop check in compact density and one in dark mode. Confirm the chart height drops to 220px in compact density and all text, bars, borders, and focus states remain legible.
+Repeat one desktop check in compact density and one in dark mode. Confirm the chart height follows the same measured chart-column branches in compact density; expect 220px only when the inner chart column is at least 760px. Confirm all text, bars, borders, and focus states remain legible.
 
 - [ ] **Step 5: Review the final diff**
 

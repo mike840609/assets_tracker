@@ -25,7 +25,19 @@ describe("dashboard portfolio layout", () => {
   });
 
   it("keeps the loading skeleton topology aligned with the dashboard", () => {
-    expect(skeletonSource).toContain('data-testid="portfolio-overview-skeleton"');
+    const overviewStart = skeletonSource.indexOf('data-testid="portfolio-overview-skeleton"');
+    const concentrationStart = skeletonSource.indexOf(
+      "<ConcentrationCardSkeleton />",
+      overviewStart,
+    );
+
+    expect(overviewStart).toBeGreaterThan(-1);
+    expect(concentrationStart).toBeGreaterThan(overviewStart);
+
+    const overviewSource = skeletonSource.slice(overviewStart, concentrationStart);
+    expect(overviewSource).toContain("lg:col-span-8");
+    expect(overviewSource).toContain("lg:col-span-4");
+    expect(overviewSource).not.toContain("<ConcentrationCardSkeleton />");
     expect(skeletonSource).toContain('data-testid="portfolio-concentration-skeleton"');
     expect(skeletonSource).toContain("export function ConcentrationCardSkeleton()");
   });
