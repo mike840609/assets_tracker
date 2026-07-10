@@ -110,7 +110,7 @@ export type NetWorthSummary = {
 // Serialization helpers
 // ---------------------------------------------------------------------------
 
-/** @public Documented serialization helper (see CLAUDE.md — RSC → Client serialization). */
+/** @public Serializes Prisma Decimal and Date fields for Client Components. */
 export function serializeAccount(account: Account): SerializedAccount {
   return serializeModel(account, {
     decimals: ["cashBalance"] as const,
@@ -118,7 +118,7 @@ export function serializeAccount(account: Account): SerializedAccount {
   });
 }
 
-/** @public Documented serialization helper (see CLAUDE.md — RSC → Client serialization). */
+/** @public Serializes Prisma Decimal and Date fields for Client Components. */
 export function serializeHolding(holding: Holding): SerializedHolding {
   const result: Record<string, unknown> = {};
   for (const key of Object.keys(holding) as (keyof Holding)[]) {

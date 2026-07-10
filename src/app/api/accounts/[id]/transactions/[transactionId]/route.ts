@@ -39,8 +39,8 @@ async function applyHoldingQuantityDelta(
   // to Prisma. A raw `number` delta produced by float arithmetic (e.g. 0.1 + 0.2
   // = 0.30000000000000004) would otherwise drift the stored quantity away from
   // its transaction ledger and, worse, spuriously trip the `gte` guard below
-  // when closing an exact-quantity position. CLAUDE.md: never hand a raw
-  // `number` to Prisma for monetary/quantity values.
+  // when closing an exact-quantity position. Never hand a raw `number` to
+  // Prisma for monetary/quantity values.
   const change = new Decimal(delta.toFixed(8));
 
   if (change.gt(0)) {
