@@ -45,8 +45,17 @@ DIRECT_URL="postgresql://postgres:postgres@localhost:5432/asset_tracker_fresh_se
 ```
 
 Expected: Prisma fails on `202604120001_add_hot_path_indexes` because
-`HoldingTransaction` does not exist. Do not drop the database yet; it is the
-same clean target used for the post-fix verification.
+`HoldingTransaction` does not exist. Record the expected P3018 failure, then
+remove only the disposable database and confirm it is absent:
+
+```bash
+docker compose exec -T db dropdb -U postgres asset_tracker_fresh_self_host_verify
+docker compose exec -T db psql -U postgres -d postgres -Atc \
+  "SELECT NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'asset_tracker_fresh_self_host_verify');"
+```
+
+Expected: the catalog query prints `t`. Task 2 creates a new clean database for
+post-fix verification.
 
 - [ ] **Step 2: Restore the exact historical baseline files**
 
@@ -127,7 +136,7 @@ docker compose exec -T db createdb -U postgres asset_tracker_fresh_self_host_ver
 ```
 
 Expected: the command succeeds because Task 1 removed this exact database after
-its pre-fix/post-fix reproduction.
+recording the expected pre-fix failure.
 
 - [ ] **Step 2: Apply all migrations to the clean database**
 
