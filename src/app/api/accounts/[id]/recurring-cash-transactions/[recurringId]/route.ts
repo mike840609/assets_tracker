@@ -47,7 +47,7 @@ export const PATCH = withAuth(
       data.nextRunDate = toUtcDate(startDate);
     }
 
-    const result = await prisma.recurringCashTransaction.updateMany({
+    const [rule] = await prisma.recurringCashTransaction.updateManyAndReturn({
       where: {
         id: recurringId,
         startDate: existing.startDate,
@@ -55,13 +55,9 @@ export const PATCH = withAuth(
       },
       data,
     });
-    if (result.count !== 1) {
+    if (!rule) {
       return failure("Recurring transaction changed while updating; please retry", 409);
     }
-
-    const rule = await prisma.recurringCashTransaction.findUniqueOrThrow({
-      where: { id: recurringId },
-    });
 
     return ok(serializeRecurringCashTransaction(rule));
   },

@@ -3,12 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const h = vi.hoisted(() => ({
   cashRule: null as Record<string, unknown> | null,
   investmentRule: null as Record<string, unknown> | null,
-  cashUpdateCalls: [] as Array<Record<string, unknown>>,
-  cashUpdateManyCalls: [] as Array<Record<string, unknown>>,
-  cashUpdateManyCount: 1,
-  investmentUpdateCalls: [] as Array<Record<string, unknown>>,
-  investmentUpdateManyCalls: [] as Array<Record<string, unknown>>,
-  investmentUpdateManyCount: 1,
+  cashUpdateManyAndReturnCalls: [] as Array<Record<string, unknown>>,
+  cashUpdateManyAndReturnCount: 1,
+  cashFindUniqueOrThrowCalls: [] as Array<Record<string, unknown>>,
+  investmentUpdateManyAndReturnCalls: [] as Array<Record<string, unknown>>,
+  investmentUpdateManyAndReturnCount: 1,
+  investmentFindUniqueOrThrowCalls: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock("@/lib/api-handler", () => ({
@@ -22,27 +22,29 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     recurringCashTransaction: {
       findFirst: vi.fn(async () => h.cashRule),
-      update: vi.fn(async (args: Record<string, unknown>) => {
-        h.cashUpdateCalls.push(args);
-        return { ...h.cashRule, ...(args.data as Record<string, unknown>) };
+      updateManyAndReturn: vi.fn(async (args: Record<string, unknown>) => {
+        h.cashUpdateManyAndReturnCalls.push(args);
+        return h.cashUpdateManyAndReturnCount === 0
+          ? []
+          : [{ ...h.cashRule, ...(args.data as Record<string, unknown>) }];
       }),
-      updateMany: vi.fn(async (args: Record<string, unknown>) => {
-        h.cashUpdateManyCalls.push(args);
-        return { count: h.cashUpdateManyCount };
+      findUniqueOrThrow: vi.fn(async (args: Record<string, unknown>) => {
+        h.cashFindUniqueOrThrowCalls.push(args);
+        return h.cashRule;
       }),
-      findUniqueOrThrow: vi.fn(async () => h.cashRule),
     },
     recurringInvestment: {
       findFirst: vi.fn(async () => h.investmentRule),
-      update: vi.fn(async (args: Record<string, unknown>) => {
-        h.investmentUpdateCalls.push(args);
-        return { ...h.investmentRule, ...(args.data as Record<string, unknown>) };
+      updateManyAndReturn: vi.fn(async (args: Record<string, unknown>) => {
+        h.investmentUpdateManyAndReturnCalls.push(args);
+        return h.investmentUpdateManyAndReturnCount === 0
+          ? []
+          : [{ ...h.investmentRule, ...(args.data as Record<string, unknown>) }];
       }),
-      updateMany: vi.fn(async (args: Record<string, unknown>) => {
-        h.investmentUpdateManyCalls.push(args);
-        return { count: h.investmentUpdateManyCount };
+      findUniqueOrThrow: vi.fn(async (args: Record<string, unknown>) => {
+        h.investmentFindUniqueOrThrowCalls.push(args);
+        return h.investmentRule;
       }),
-      findUniqueOrThrow: vi.fn(async () => h.investmentRule),
     },
   },
 }));
@@ -103,12 +105,12 @@ describe("recurring rule PATCH routes", () => {
   beforeEach(() => {
     h.cashRule = recurringCashRule();
     h.investmentRule = recurringInvestmentRule();
-    h.cashUpdateCalls = [];
-    h.cashUpdateManyCalls = [];
-    h.cashUpdateManyCount = 1;
-    h.investmentUpdateCalls = [];
-    h.investmentUpdateManyCalls = [];
-    h.investmentUpdateManyCount = 1;
+    h.cashUpdateManyAndReturnCalls = [];
+    h.cashUpdateManyAndReturnCount = 1;
+    h.cashFindUniqueOrThrowCalls = [];
+    h.investmentUpdateManyAndReturnCalls = [];
+    h.investmentUpdateManyAndReturnCount = 1;
+    h.investmentFindUniqueOrThrowCalls = [];
   });
 
   it("rejects a cash-rule end date before its persisted start date", async () => {
@@ -118,7 +120,7 @@ describe("recurring rule PATCH routes", () => {
     const response = await PATCH(jsonRequest({ endDate: "2026-07-31" }), params("cash-rule-1"));
 
     expect(response.status).toBe(400);
-    expect(h.cashUpdateCalls).toHaveLength(0);
+    expect(h.cashUpdateManyAndReturnCalls).toHaveLength(0);
   });
 
   it("rejects a cash-rule start date after its persisted end date", async () => {
@@ -128,11 +130,11 @@ describe("recurring rule PATCH routes", () => {
     const response = await PATCH(jsonRequest({ startDate: "2026-09-01" }), params("cash-rule-1"));
 
     expect(response.status).toBe(400);
-    expect(h.cashUpdateCalls).toHaveLength(0);
+    expect(h.cashUpdateManyAndReturnCalls).toHaveLength(0);
   });
 
   it("rejects a cash-rule edit when its date range changed concurrently", async () => {
-    h.cashUpdateManyCount = 0;
+    h.cashUpdateManyAndReturnCount = 0;
     const { PATCH } =
       await import("@/app/api/accounts/[id]/recurring-cash-transactions/[recurringId]/route");
 
@@ -151,7 +153,7 @@ describe("recurring rule PATCH routes", () => {
     );
 
     expect(response.status).toBe(400);
-    expect(h.investmentUpdateCalls).toHaveLength(0);
+    expect(h.investmentUpdateManyAndReturnCalls).toHaveLength(0);
   });
 
   it("rejects an investment-rule start date after its persisted end date", async () => {
@@ -164,16 +166,38 @@ describe("recurring rule PATCH routes", () => {
     );
 
     expect(response.status).toBe(400);
-    expect(h.investmentUpdateCalls).toHaveLength(0);
+    expect(h.investmentUpdateManyAndReturnCalls).toHaveLength(0);
   });
 
   it("rejects an investment-rule edit when its date range changed concurrently", async () => {
-    h.investmentUpdateManyCount = 0;
+    h.investmentUpdateManyAndReturnCount = 0;
     const { PATCH } =
       await import("@/app/api/accounts/[id]/recurring-investments/[recurringId]/route");
 
     const response = await PATCH(jsonRequest({ note: "updated" }), params("investment-rule-1"));
 
     expect(response.status).toBe(409);
+  });
+
+  it("returns the cash rule from its guarded write without a follow-up read", async () => {
+    const { PATCH } =
+      await import("@/app/api/accounts/[id]/recurring-cash-transactions/[recurringId]/route");
+
+    const response = await PATCH(jsonRequest({ note: "updated" }), params("cash-rule-1"));
+
+    expect(response.status).toBe(200);
+    expect(h.cashUpdateManyAndReturnCalls).toHaveLength(1);
+    expect(h.cashFindUniqueOrThrowCalls).toHaveLength(0);
+  });
+
+  it("returns the investment rule from its guarded write without a follow-up read", async () => {
+    const { PATCH } =
+      await import("@/app/api/accounts/[id]/recurring-investments/[recurringId]/route");
+
+    const response = await PATCH(jsonRequest({ note: "updated" }), params("investment-rule-1"));
+
+    expect(response.status).toBe(200);
+    expect(h.investmentUpdateManyAndReturnCalls).toHaveLength(1);
+    expect(h.investmentFindUniqueOrThrowCalls).toHaveLength(0);
   });
 });

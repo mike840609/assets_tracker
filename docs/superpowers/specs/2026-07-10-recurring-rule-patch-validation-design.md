@@ -17,7 +17,7 @@ No database migration, cron behavior change, or change to valid scheduling seman
 
 Each handler will select `startDate` and `endDate` alongside the existing ownership lookup. After the existing Zod payload validation succeeds, it will merge the submitted date fields with the persisted fields. If the effective end date exists and is earlier than the effective start date, the handler returns the existing 400 failure response before creating the Prisma update.
 
-The write uses `updateMany` guarded by the same persisted start/end values that were read. If a concurrent edit has changed either date, the guarded write affects zero rows and the handler returns 409 rather than committing against a stale schedule. This keeps two individually valid partial edits from combining into an invalid range.
+The write uses `updateManyAndReturn` guarded by the same persisted start/end values that were read. If a concurrent edit has changed either date, the guarded write returns no rows and the handler returns 409 rather than committing against a stale schedule. The returned row is serialized directly, avoiding a post-write read that could race with a delete or later edit. This keeps two individually valid partial edits from combining into an invalid range.
 
 The existing schema-level refinement remains responsible for payloads that contain both dates. The route-level check covers the missing case where a one-field PATCH interacts with the other persisted field. A `null` end date remains valid and clears an existing schedule limit.
 

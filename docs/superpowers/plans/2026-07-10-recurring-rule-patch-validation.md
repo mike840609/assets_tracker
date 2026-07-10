@@ -4,7 +4,7 @@
 
 **Goal:** Reject partial recurring-rule edits that would make `endDate` earlier than the effective `startDate`.
 
-**Architecture:** The two existing route handlers remain the validation boundary. Each reads the rule's persisted date range, merges it with the validated PATCH payload, and rejects an invalid merged range before a guarded Prisma update. The update matches the read date range so a conflicting date edit returns 409 rather than writing stale data. A focused route-test file proves both invalid partial-edit directions and stale-write handling.
+**Architecture:** The two existing route handlers remain the validation boundary. Each reads the rule's persisted date range, merges it with the validated PATCH payload, and rejects an invalid merged range before a guarded Prisma update. The `updateManyAndReturn` write matches the read date range so a conflicting date edit returns 409 rather than writing stale data, while the returned row avoids a post-write read race. A focused route-test file proves both invalid partial-edit directions, stale-write handling, and direct returned-row responses.
 
 **Tech Stack:** Next.js 16 Route Handlers, TypeScript, Prisma, Zod, Vitest.
 
@@ -94,10 +94,10 @@ if (effectiveEndDate && effectiveEndDate < effectiveStartDate) {
 }
 ```
 
-Replace the final `update` with `updateMany` that also matches the persisted range, then return 409 if no row was affected:
+Replace the final `update` with `updateManyAndReturn` that also matches the persisted range, then return 409 if no row was affected:
 
 ```ts
-const result = await prisma.recurringCashTransaction.updateMany({
+const [rule] = await prisma.recurringCashTransaction.updateManyAndReturn({
   where: {
     id: recurringId,
     startDate: existing.startDate,
@@ -105,15 +105,12 @@ const result = await prisma.recurringCashTransaction.updateMany({
   },
   data,
 });
-if (result.count !== 1) {
+if (!rule) {
   return failure("Recurring transaction changed while updating; please retry", 409);
 }
-const rule = await prisma.recurringCashTransaction.findUniqueOrThrow({
-  where: { id: recurringId },
-});
 ```
 
-Use the analogous `recurringInvestment` delegate and message in the investment handler. Add one stale-write test per route by returning `count: 0` from the mocked `updateMany` and expecting HTTP 409.
+Use the analogous `recurringInvestment` delegate and message in the investment handler. Add one stale-write test per route by returning an empty array from the mocked `updateManyAndReturn` and expecting HTTP 409, plus one successful-write test per route that proves no follow-up lookup occurs.
 
 - [ ] **Step 3: Run the focused test to verify it passes**
 
