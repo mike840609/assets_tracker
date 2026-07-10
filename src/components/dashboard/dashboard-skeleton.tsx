@@ -138,6 +138,37 @@ function PortfolioHeatmapSkeleton() {
   );
 }
 
+export function ConcentrationCardSkeleton() {
+  return (
+    <Card data-testid="portfolio-concentration-skeleton">
+      <CardHeader className="pb-2">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-4 w-64 max-w-full" />
+      </CardHeader>
+      <CardContent className="grid gap-4 lg:grid-cols-[minmax(12rem,0.3fr)_minmax(0,1fr)] lg:gap-6">
+        <div className="flex items-end justify-between gap-3 lg:flex-col lg:items-start lg:justify-start">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-20" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+          <Skeleton className="h-6 w-28 rounded-full" />
+        </div>
+        <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
+          {[...Array(5)].map((_, index) => (
+            <div key={index} className="space-y-2">
+              <div className="flex justify-between gap-3">
+                <Skeleton className="h-3 w-32 max-w-[70%]" />
+                <Skeleton className="h-3 w-10" />
+              </div>
+              <Skeleton className="h-1.5 w-full rounded-full" />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function DashboardSkeleton() {
   return (
     <div className="space-y-4 md:space-y-8">
@@ -164,18 +195,21 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      {/* Tier 3 — portfolio treemap (8) beside the stacked allocation + currency
-          donut rail (4). Source order puts the donuts first so the phone reading
-          order (allocation → currency → treemap) is preserved; on desktop the
-          col-start values place the treemap left and the donuts right. */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6">
-        <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
-          <ChartCardSkeleton />
-          <ChartCardSkeleton />
+      {/* Tier 3 — content-sized portfolio overview, then full-width concentration. */}
+      <div className="space-y-3 sm:space-y-6">
+        <div
+          data-testid="portfolio-overview-skeleton"
+          className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12"
+        >
+          <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
+            <ChartCardSkeleton />
+            <ChartCardSkeleton />
+          </div>
+          <div className="min-w-0 lg:col-span-8 lg:col-start-1 lg:row-start-1">
+            <PortfolioHeatmapSkeleton />
+          </div>
         </div>
-        <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 [&>*]:min-h-0 [&>*]:flex-1">
-          <PortfolioHeatmapSkeleton />
-        </div>
+        <ConcentrationCardSkeleton />
       </div>
 
       {/* Tier 4 — accounts summary (matches AccountsSummarySkeleton) */}

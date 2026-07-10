@@ -23,7 +23,10 @@ import { GoalsMilestoneCard } from "@/components/dashboard/goals-milestone-card"
 import { ProjectionEntryCard } from "@/components/dashboard/projection-entry-card";
 import { PortfolioHeatmap } from "@/components/analysis/portfolio-heatmap";
 import { WatchlistCard } from "@/components/dashboard/watchlist-card";
-import { WatchlistCardSkeleton } from "@/components/dashboard/dashboard-skeleton";
+import {
+  ConcentrationCardSkeleton,
+  WatchlistCardSkeleton,
+} from "@/components/dashboard/dashboard-skeleton";
 import { ConcentrationCard } from "./concentration-card";
 import Link from "next/link";
 import { ArrowRight, History } from "lucide-react";
@@ -386,7 +389,7 @@ async function PortfolioHeatmapSection({
   );
   if (!hasAssets) return null;
 
-  return <PortfolioHeatmap summary={summary} fillHeight />;
+  return <PortfolioHeatmap summary={summary} />;
 }
 
 /* ---------- Orchestrator ---------- */
@@ -445,28 +448,31 @@ export async function DashboardContent({ userId }: { userId: string }) {
         </div>
       </div>
 
-      {/* Tier 3 — "what it's made of": the portfolio treemap (wide) sits beside a
-          stacked allocation + currency-exposure column so the short currency card
-          no longer leaves a gap. Source order is allocation → currency → portfolio
-          (the phone reading order); on desktop the donut stack is placed in the
-          right column and the treemap fills the left, same row. */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
-        <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
-          <Suspense fallback={<ChartCardSkeleton />}>
-            <AllocationSection userId={userId} baseCurrency={baseCurrency} />
-          </Suspense>
-          <Suspense fallback={<ChartCardSkeleton />}>
-            <CurrencySection userId={userId} baseCurrency={baseCurrency} />
-          </Suspense>
-          <Suspense fallback={<ChartCardSkeleton />}>
-            <ConcentrationSection userId={userId} baseCurrency={baseCurrency} />
-          </Suspense>
+      {/* Tier 3 — "what it's made of": a content-sized 8/4 overview row followed
+          by a full-width concentration summary. Source order stays allocation →
+          currency → portfolio → concentration for mobile and assistive technology. */}
+      <div className="space-y-3 sm:space-y-6 animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
+        <div
+          data-testid="portfolio-overview-row"
+          className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12"
+        >
+          <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
+            <Suspense fallback={<ChartCardSkeleton />}>
+              <AllocationSection userId={userId} baseCurrency={baseCurrency} />
+            </Suspense>
+            <Suspense fallback={<ChartCardSkeleton />}>
+              <CurrencySection userId={userId} baseCurrency={baseCurrency} />
+            </Suspense>
+          </div>
+          <div className="min-w-0 lg:col-span-8 lg:col-start-1 lg:row-start-1">
+            <Suspense fallback={<PortfolioHeatmapSkeleton />}>
+              <PortfolioHeatmapSection userId={userId} baseCurrency={baseCurrency} />
+            </Suspense>
+          </div>
         </div>
-        {/* Force the treemap card to fill the row so its bottom aligns with the
-            stacked allocation + currency column to its right. */}
-        <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 [&>*]:min-h-0 [&>*]:flex-1">
-          <Suspense fallback={<PortfolioHeatmapSkeleton />}>
-            <PortfolioHeatmapSection userId={userId} baseCurrency={baseCurrency} />
+        <div data-testid="portfolio-concentration-row">
+          <Suspense fallback={<ConcentrationCardSkeleton />}>
+            <ConcentrationSection userId={userId} baseCurrency={baseCurrency} />
           </Suspense>
         </div>
       </div>
