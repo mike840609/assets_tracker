@@ -33,9 +33,19 @@ describe("dashboard portfolio layout", () => {
     expect(overviewSource).toContain("lg:col-span-4");
     expect(overviewSource).not.toContain("<ConcentrationSection");
     expect(dashboardSource).toContain(`  if (summary.totalAssets <= 0) return null;
-  return (
+  return <ConcentrationCard summary={summary} />;`);
+
+    const emptyGuard = concentrationSource.indexOf("if (top.length === 0) return null;");
+    const loadedRow = concentrationSource.indexOf(
+      '<div data-testid="portfolio-concentration-row">',
+    );
+
+    expect(emptyGuard).toBeGreaterThan(-1);
+    expect(loadedRow).toBeGreaterThan(emptyGuard);
+    expect(concentrationSource).toContain(`  return (
     <div data-testid="portfolio-concentration-row">
-      <ConcentrationCard summary={summary} />
+      <Card className="flex flex-col">`);
+    expect(concentrationSource).toContain(`      </Card>
     </div>
   );`);
   });

@@ -269,11 +269,7 @@ async function ConcentrationSection({
 }) {
   const summary = await getCachedNetWorthSummary(userId, baseCurrency);
   if (summary.totalAssets <= 0) return null;
-  return (
-    <div data-testid="portfolio-concentration-row">
-      <ConcentrationCard summary={summary} />
-    </div>
-  );
+  return <ConcentrationCard summary={summary} />;
 }
 
 /**
