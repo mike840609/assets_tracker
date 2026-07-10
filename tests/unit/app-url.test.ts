@@ -3,7 +3,7 @@ import { getAppUrl } from "@/lib/app-url";
 
 describe("getAppUrl", () => {
   it("uses the production URL when no override is provided", () => {
-    expect(getAppUrl().toString()).toBe("https://assets-tracker-ct.vercel.app/");
+    expect(getAppUrl("").toString()).toBe("https://assets-tracker-ct.vercel.app/");
   });
 
   it("uses a self-hoster's configured URL", () => {
