@@ -4,7 +4,7 @@
 
 **Goal:** Replace the height-coupled dashboard portfolio row with a content-sized 8/4 overview row and a separate full-width horizontal Concentration summary.
 
-**Architecture:** Keep `DashboardContent` as the server-side streaming orchestrator and preserve each existing Suspense boundary. Change only the dashboard grid topology, the dashboard-only `fillHeight` call site, matching skeletons, and the responsive internal layout of `ConcentrationCard`; all calculations and client interactions stay in their current components.
+**Architecture:** Keep `DashboardContent` as the server-side streaming orchestrator and preserve each existing Suspense boundary. Change the dashboard grid topology, keep dashboard `fillHeight` scoped to the Portfolio Composition card's internal chart/list row, update matching skeletons, and adjust the responsive internal layout of `ConcentrationCard`; all calculations and client interactions stay in their current components.
 
 **Tech Stack:** Next.js 16.2 App Router, React 19 Server and Client Components, TypeScript 5, Tailwind CSS 4, Recharts 3, Vitest 4, Playwright 1.52.
 
@@ -23,7 +23,7 @@
 
 ## File Map
 
-- Modify `src/components/dashboard/dashboard-content.tsx`: remove dashboard `fillHeight`, restructure Tier 3 into two rows, and consume the shared concentration skeleton.
+- Modify `src/components/dashboard/dashboard-content.tsx`: retain dashboard `fillHeight` for internal card filling, remove the parent stretch coupling, restructure Tier 3 into two rows, and consume the shared concentration skeleton.
 - Modify `src/components/dashboard/dashboard-skeleton.tsx`: export the concentration skeleton and mirror the final two-row topology.
 - Modify `src/components/dashboard/concentration-card.tsx`: make the full-width card horizontal at `lg` while retaining the current stacked mobile layout.
 - Create `tests/unit/dashboard-portfolio-layout.test.ts`: guard the dashboard-only height fix, the two-row topology, skeleton parity, and horizontal concentration layout using the repository's existing source-inspection test pattern.
@@ -55,9 +55,10 @@ const dashboardSource = readFileSync("src/components/dashboard/dashboard-content
 const skeletonSource = readFileSync("src/components/dashboard/dashboard-skeleton.tsx", "utf8");
 
 describe("dashboard portfolio layout", () => {
-  it("keeps the dashboard treemap at its content-driven height", () => {
-    expect(dashboardSource).toContain("<PortfolioHeatmap summary={summary} />");
-    expect(dashboardSource).not.toContain("<PortfolioHeatmap summary={summary} fillHeight />");
+  it("fills the composition card internally without stretching the overview column", () => {
+    expect(dashboardSource).toContain("<PortfolioHeatmap summary={summary} fillHeight />");
+    expect(dashboardSource).not.toContain("[&>*]:min-h-0");
+    expect(dashboardSource).not.toContain("[&>*]:flex-1");
   });
 
   it("separates concentration from the 8/4 portfolio overview row", () => {
@@ -89,7 +90,7 @@ Run:
 pnpm vitest run tests/unit/dashboard-portfolio-layout.test.ts
 ```
 
-Expected: FAIL because the dashboard still passes `fillHeight`, the two data test IDs do not exist, and `ConcentrationCardSkeleton` is not exported.
+Expected: FAIL because the two data test IDs do not exist and `ConcentrationCardSkeleton` is not exported.
 
 - [ ] **Step 3: Add and export the full-width concentration skeleton**
 
@@ -151,21 +152,15 @@ Replace the existing Tier 3 skeleton block in `src/components/dashboard/dashboar
 </div>
 ```
 
-- [ ] **Step 5: Stop enabling height fill on the dashboard heatmap**
+- [ ] **Step 5: Keep height fill scoped to the dashboard heatmap's internal row**
 
-In `PortfolioHeatmapSection` inside `src/components/dashboard/dashboard-content.tsx`, replace:
+In `PortfolioHeatmapSection` inside `src/components/dashboard/dashboard-content.tsx`, keep:
 
 ```tsx
 return <PortfolioHeatmap summary={summary} fillHeight />;
 ```
 
-with:
-
-```tsx
-return <PortfolioHeatmap summary={summary} />;
-```
-
-Do not remove the optional `fillHeight` API from `PortfolioHeatmap`; the Accounts page still uses it for its own layout.
+Do not restore the removed parent flex/stretch utilities. `fillHeight` may fill the card's internal treemap/list row, but the Portfolio Composition card must continue sizing independently from the external allocation/currency rail.
 
 - [ ] **Step 6: Import the shared concentration skeleton**
 
@@ -414,7 +409,7 @@ Expected: the authenticated dashboard test passes and the dashboard continues to
 At a desktop viewport around 1440×900, confirm:
 
 - `portfolio-overview-row` renders Portfolio Composition on the left and only Asset Allocation plus Currency Exposure on the right.
-- The Portfolio Composition card ends after its responsive chart and legend content; it does not stretch to the former three-card rail height. Treat the 1440px viewport width separately from the measured inner chart-column width: the phone branch takes precedence, then chart columns below 420px use `max(190, round(width * 0.62))`, columns below 760px use `max(240, round(width * 0.55))`, and only columns at least 760px use the density fallback (280px comfortable or 220px compact).
+- The Portfolio Composition card ends after its own responsive chart and legend content; it does not stretch to the former three-card rail height. On desktop, the responsive calculation supplies the treemap's minimum height and `fillHeight` grows it only to match the card's internal detail/account-list column. On mobile, the existing phone width rules remain authoritative.
 - `portfolio-concentration-row` starts below both first-row columns and spans the available dashboard width.
 - Concentration shows its headline/status region on the left and a two- or three-column position grid on the right.
 - All Accounts follows the Concentration row without overlap or excessive gap.
@@ -438,4 +433,4 @@ git diff HEAD~2 --check
 git diff HEAD~2 -- src/components/dashboard/dashboard-content.tsx src/components/dashboard/dashboard-skeleton.tsx src/components/dashboard/concentration-card.tsx tests/unit/dashboard-portfolio-layout.test.ts
 ```
 
-Expected: no whitespace errors, no unrelated files, no dashboard `fillHeight` call, and no financial or translation changes.
+Expected: no whitespace errors, no unrelated files, no parent flex/stretch coupling, dashboard `fillHeight` present only at the Portfolio Composition call site, and no financial or translation changes.

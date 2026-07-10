@@ -27,9 +27,9 @@ This preserves the dashboard's existing sequence of “what changed,” “what 
 
 ## Portfolio Composition
 
-- Remove dashboard `fillHeight` behavior and its parent flex-stretch rules.
+- Keep dashboard `fillHeight` so the treemap fills the Portfolio Composition card's own chart/list row, while removing the parent flex-stretch rules that previously tied the card to the external allocation/currency rail.
 - Keep the existing treemap, account selection, holding drill-in, privacy behavior, accessible chart summary, and reduced-motion behavior.
-- Use the component's existing content-driven responsive chart height: 280px in comfortable desktop density and 220px in compact density at wide desktop widths, with the current width-based smaller-container rules preserved.
+- Use the component's existing responsive chart height as the minimum, then let the treemap grow to the height of its internal detail/account-list column on desktop. Mobile keeps the existing width-based height rules.
 - Keep the detail card and account list beside the treemap on desktop.
 - Let the card end after its content instead of visually aligning its bottom edge with the neighboring rail.
 - Keep the total-assets label and unpriced-holdings warning in the header.

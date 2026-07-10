@@ -389,7 +389,7 @@ async function PortfolioHeatmapSection({
   );
   if (!hasAssets) return null;
 
-  return <PortfolioHeatmap summary={summary} />;
+  return <PortfolioHeatmap summary={summary} fillHeight />;
 }
 
 /* ---------- Orchestrator ---------- */

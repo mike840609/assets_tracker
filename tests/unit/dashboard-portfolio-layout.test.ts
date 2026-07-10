@@ -6,9 +6,10 @@ const skeletonSource = readFileSync("src/components/dashboard/dashboard-skeleton
 const concentrationSource = readFileSync("src/components/dashboard/concentration-card.tsx", "utf8");
 
 describe("dashboard portfolio layout", () => {
-  it("keeps the dashboard treemap at its content-driven height", () => {
-    expect(dashboardSource).toContain("<PortfolioHeatmap summary={summary} />");
-    expect(dashboardSource).not.toContain("<PortfolioHeatmap summary={summary} fillHeight />");
+  it("fills the composition card internally without stretching the overview column", () => {
+    expect(dashboardSource).toContain("<PortfolioHeatmap summary={summary} fillHeight />");
+    expect(dashboardSource).not.toContain("[&>*]:min-h-0");
+    expect(dashboardSource).not.toContain("[&>*]:flex-1");
   });
 
   it("separates concentration from the 8/4 portfolio overview row", () => {
