@@ -19,11 +19,17 @@ export const PATCH = withAuth(
     // Scope ownership into the lookup so a foreign rule can't be edited.
     const existing = await prisma.recurringCashTransaction.findFirst({
       where: { id: recurringId, accountId: id, account: { userId } },
-      select: { id: true },
+      select: { id: true, startDate: true, endDate: true },
     });
     if (!existing) return failure("Recurring transaction not found", 404);
 
     const { type, amount, frequency, note, startDate, endDate, isActive } = parsed.data;
+    const effectiveStartDate = startDate ? toUtcDate(startDate) : existing.startDate;
+    const effectiveEndDate =
+      endDate === undefined ? existing.endDate : endDate ? toUtcDate(endDate) : null;
+    if (effectiveEndDate && effectiveEndDate < effectiveStartDate) {
+      return failure("End date must be on or after the start date", 400);
+    }
 
     const data: Record<string, unknown> = {};
     if (type !== undefined) data.type = type;

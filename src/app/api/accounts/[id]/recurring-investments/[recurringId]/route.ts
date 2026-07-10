@@ -18,11 +18,17 @@ export const PATCH = withAuth(
 
     const existing = await prisma.recurringInvestment.findFirst({
       where: { id: recurringId, accountId: id, account: { userId } },
-      select: { id: true },
+      select: { id: true, startDate: true, endDate: true },
     });
     if (!existing) return failure("Recurring investment not found", 404);
 
     const { amount, frequency, note, startDate, endDate, isActive } = parsed.data;
+    const effectiveStartDate = startDate ? toUtcDate(startDate) : existing.startDate;
+    const effectiveEndDate =
+      endDate === undefined ? existing.endDate : endDate ? toUtcDate(endDate) : null;
+    if (effectiveEndDate && effectiveEndDate < effectiveStartDate) {
+      return failure("End date must be on or after the start date", 400);
+    }
 
     const data: Record<string, unknown> = {};
     if (amount !== undefined) data.amount = amount;
