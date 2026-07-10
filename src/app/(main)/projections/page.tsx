@@ -28,7 +28,7 @@ async function ProjectionsContent() {
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
       <MobileHubRedirect hash="#projections" />
-      <div className="space-y-4 md:space-y-8 animate-in fade-in duration-200">
+      <div className="hidden space-y-4 md:block md:space-y-8 md:animate-in md:fade-in md:duration-200">
         <LargeTitleHeading>{t("title")}</LargeTitleHeading>
 
         <ProjectionView

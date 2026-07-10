@@ -424,7 +424,7 @@ export async function getAccountMonthlyCashFlow(
     prisma.netWorthSnapshot.findFirst({
       where: { userId },
       orderBy: { date: "asc" },
-      select: { date: true },
+      select: { date: true, createdAt: true },
     }),
   ]);
 
@@ -437,14 +437,14 @@ export async function getAccountMonthlyCashFlow(
   // baseline. Counting such a pre-snapshot flow as a contribution double-counts
   // it: the first bucket then reports contributions ≈ the deposit and a phantom
   // marketPerformance ≈ −deposit that buildCumulativeGrowth carries across the
-  // whole range. Flooring at the first snapshot's date with a strict `gt`
+  // whole range. Flooring at the first snapshot's createdAt with a strict `gt`
   // aligns the contribution window with that baseline, so only flows that
   // occurred AFTER the starting snapshot are attributed to the first bucket.
   // (Months before the first snapshot are unreachable by the analysis UI, so
   // this also preserves PE29's scan-narrowing intent.) The floor compares
   // against the effective date (occurrenceDate ?? createdAt) to match the
   // month-key bucketing below.
-  const floor = firstSnapshot ? firstSnapshot.date : null;
+  const floor = firstSnapshot ? (firstSnapshot.createdAt ?? firstSnapshot.date) : null;
 
   const transactions = await prisma.cashTransaction.findMany({
     where: {

@@ -1,15 +1,16 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const themes = [
-  { value: "light", icon: Sun, label: "Light" },
-  { value: "dark", icon: Moon, label: "Dark" },
-  { value: "system", icon: Monitor, label: "System" },
+  { value: "light", icon: Sun },
+  { value: "dark", icon: Moon },
+  { value: "system", icon: Monitor },
 ] as const;
 
 type ThemeValue = (typeof themes)[number]["value"];
@@ -29,6 +30,7 @@ export function ThemeToggle({
   variant?: "compact" | "full" | "cycle" | "popover";
 }) {
   const { theme, setTheme } = useTheme();
+  const t = useTranslations("common.theme");
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -86,6 +88,7 @@ export function ThemeToggle({
     const CurrentIcon = mounted
       ? (themes.find((t) => t.value === theme)?.icon ?? Monitor)
       : Monitor;
+    const changeTheme = t("change");
 
     return (
       <div ref={containerRef} className="relative">
@@ -94,8 +97,8 @@ export function ThemeToggle({
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           aria-haspopup="listbox"
-          aria-label="Change theme"
-          title="Change theme"
+          aria-label={changeTheme}
+          title={changeTheme}
           className="inline-flex items-center justify-center rounded-md h-11 w-11 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <CurrentIcon className="h-4 w-4" />
@@ -104,10 +107,11 @@ export function ThemeToggle({
         {open && (
           <div
             role="listbox"
-            aria-label="Theme"
+            aria-label={t("label")}
             className="absolute top-full right-0 mt-1 z-[60] w-36 rounded-xl border border-border bg-popover shadow-lg shadow-black/10 dark:shadow-black/30 overflow-hidden"
           >
-            {themes.map(({ value, icon: Icon, label }) => {
+            {themes.map(({ value, icon: Icon }) => {
+              const label = t(value);
               const isActive = mounted && theme === value;
               return (
                 <button
@@ -140,7 +144,8 @@ export function ThemeToggle({
   if (variant === "full") {
     return (
       <div className="flex w-full items-center gap-1 rounded-lg border p-1 bg-muted/30 sm:w-fit">
-        {themes.map(({ value, icon: Icon, label }) => {
+        {themes.map(({ value, icon: Icon }) => {
+          const label = t(value);
           const isActive = mounted && theme === value;
           return (
             <button
@@ -169,6 +174,7 @@ export function ThemeToggle({
     const currentIndex = CYCLE_ORDER.indexOf((theme as ThemeValue) ?? "system");
     const nextTheme = CYCLE_ORDER[(currentIndex + 1) % CYCLE_ORDER.length];
     const nextEntry = themes.find((t) => t.value === nextTheme)!;
+    const nextLabel = t(nextEntry.value);
     const CurrentIcon = mounted
       ? (themes.find((t) => t.value === theme)?.icon ?? Monitor)
       : Monitor;
@@ -177,8 +183,8 @@ export function ThemeToggle({
       <button
         type="button"
         onClick={(e) => handleSelect(nextTheme, e)}
-        aria-label={`Switch to ${nextEntry.label} mode`}
-        title={`Switch to ${nextEntry.label} mode`}
+        aria-label={t("switchTo", { theme: nextLabel })}
+        title={t("switchTo", { theme: nextLabel })}
         className="inline-flex items-center justify-center rounded-md h-11 w-11 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <CurrentIcon className="h-4 w-4" />
@@ -200,21 +206,24 @@ export function ThemeToggle({
 
   return (
     <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-0.5">
-      {themes.map(({ value, icon: Icon, label }) => (
-        <button
-          key={value}
-          onClick={(e) => handleSelect(value, e)}
-          className={cn(
-            "inline-flex items-center justify-center rounded-md p-1.5 text-sm transition-all duration-200",
-            theme === value
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-          title={label}
-        >
-          <Icon className="h-4 w-4" />
-        </button>
-      ))}
+      {themes.map(({ value, icon: Icon }) => {
+        const label = t(value);
+        return (
+          <button
+            key={value}
+            onClick={(e) => handleSelect(value, e)}
+            className={cn(
+              "inline-flex items-center justify-center rounded-md p-1.5 text-sm transition-all duration-200",
+              theme === value
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            title={label}
+          >
+            <Icon className="h-4 w-4" />
+          </button>
+        );
+      })}
     </div>
   );
 }

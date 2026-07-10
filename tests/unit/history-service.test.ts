@@ -325,17 +325,21 @@ describe("getAccountMonthlyCashFlow (occurrence-date bucketing — locks #498)",
 
   it("floors the effective date to the first snapshot instant, exclusive (#509)", async () => {
     h.accounts = [account()];
-    h.latestSnapshot = row({ id: "first", date: new Date("2026-03-05T00:00:00.000Z") });
+    h.latestSnapshot = row({
+      id: "first",
+      date: new Date("2026-03-05T00:00:00.000Z"),
+      createdAt: new Date("2026-03-05T21:30:00.000Z"),
+    });
 
     await getAccountMonthlyCashFlow("u1", "USD");
 
     const args = vi.mocked(prisma.cashTransaction.findMany).mock.lastCall?.[0] as {
       where: Record<string, unknown>;
     };
-    // The floor is the first snapshot's date with a strict `gt`: flows on/before
+    // The floor is the first snapshot's createdAt with a strict `gt`: flows on/before
     // the first snapshot are already baked into the first bucket's baseline, so
     // counting them as contributions double-counts the opening deposit (#509).
-    const floor = new Date("2026-03-05T00:00:00.000Z");
+    const floor = new Date("2026-03-05T21:30:00.000Z");
     expect(args.where.OR).toEqual([
       { occurrenceDate: { gt: floor } },
       { occurrenceDate: null, createdAt: { gt: floor } },
@@ -343,6 +347,31 @@ describe("getAccountMonthlyCashFlow (occurrence-date bucketing — locks #498)",
     // The accountId/type conditions stay ANDed alongside the floor OR.
     expect(args.where.accountId).toEqual({ in: ["acc"] });
     expect(args.where.type).toEqual({ in: ["DEPOSIT", "WITHDRAWAL"] });
+  });
+
+  it("excludes flows between snapshot date midnight and the snapshot creation instant (#551)", async () => {
+    h.accounts = [account()];
+    h.latestSnapshot = row({
+      id: "first",
+      date: new Date("2026-03-05T00:00:00.000Z"),
+      createdAt: new Date("2026-03-05T21:30:00.000Z"),
+    });
+    h.cashTransactions = [
+      cashTx({
+        amount: 100,
+        occurrenceDate: null,
+        createdAt: new Date("2026-03-05T12:00:00.000Z"),
+      }),
+      cashTx({
+        amount: 25,
+        occurrenceDate: null,
+        createdAt: new Date("2026-03-05T22:00:00.000Z"),
+      }),
+    ];
+
+    const result = await getAccountMonthlyCashFlow("u1", "USD");
+
+    expect(result).toEqual([{ accountId: "acc", monthKey: "2026-03", contributions: 25 }]);
   });
 
   it("keeps an opening deposit out of the first bucket's contributions (#509)", async () => {

@@ -347,7 +347,8 @@ export const reorderStocksSchema = z.object({
   orderedIds: z.array(z.string().min(1)),
 });
 
-const decimalSchema = z.union([z.string(), z.number()]);
+const decimalStringSchema = z.string().regex(/^-?\d+(\.\d+)?$/, "Must be a decimal number");
+const decimalSchema = z.union([decimalStringSchema, z.number().finite()]);
 
 const MAX_IMPORT_ACCOUNTS = 200;
 const MAX_IMPORT_HOLDINGS_PER_ACCOUNT = 2_000;
@@ -410,7 +411,7 @@ export const dataImportSchema = z.object({
               underlyingSymbol: z.string().optional().nullable(),
               optionType: z.enum(OPTION_TYPES).optional().nullable(),
               strike: decimalSchema.optional().nullable(),
-              expiration: z.string().optional().nullable(),
+              expiration: z.iso.datetime().optional().nullable(),
               contractMultiplier: z.number().int().optional().nullable(),
               transactions: z
                 .array(
@@ -450,7 +451,7 @@ export const dataImportSchema = z.object({
               type: z.enum(RECURRING_CASH_TYPES),
               amount: decimalSchema,
               frequency: z.enum(RECURRING_FREQUENCIES),
-              note: z.string().optional().nullable(),
+              note: z.string().max(500).optional().nullable(),
               startDate: importTimestamp,
               endDate: importTimestamp,
               nextRunDate: importTimestamp,
@@ -471,7 +472,7 @@ export const dataImportSchema = z.object({
               holdingCurrency: z.string().length(3),
               amount: decimalSchema,
               frequency: z.enum(RECURRING_FREQUENCIES),
-              note: z.string().optional().nullable(),
+              note: z.string().max(500).optional().nullable(),
               startDate: importTimestamp,
               endDate: importTimestamp,
               nextRunDate: importTimestamp,
@@ -488,7 +489,7 @@ export const dataImportSchema = z.object({
   snapshots: z
     .array(
       z.object({
-        date: z.string(),
+        date: z.iso.datetime(),
         totalAssets: decimalSchema,
         totalLiabilities: decimalSchema,
         netWorth: decimalSchema,
@@ -507,7 +508,7 @@ export const dataImportSchema = z.object({
         name: z.string().min(1).max(100),
         targetAmount: decimalSchema,
         targetCurrency: z.string().length(3),
-        targetDate: z.string().optional().nullable(),
+        targetDate: z.iso.datetime().optional().nullable(),
         scope: z.enum(GOAL_SCOPES),
         scopeRefId: z.string().optional().nullable(),
         sortOrder: z.number().int().default(0),

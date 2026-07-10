@@ -48,3 +48,27 @@ describe("Sentry tunnel proxy bypass", () => {
     expect(response.headers.get("location")).toBe("https://astt.app/login");
   });
 });
+
+describe("auth proxy rate limiter", () => {
+  it("prunes expired IP windows lazily", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-06T00:00:00.000Z"));
+    const deleteSpy = vi.spyOn(Map.prototype, "delete");
+
+    const first = new NextRequest("https://astt.app/api/auth/session", {
+      headers: { "x-forwarded-for": "198.51.100.1" },
+    });
+    expect(proxy(first, {} as NextFetchEvent)).toBeUndefined();
+
+    vi.setSystemTime(new Date("2026-07-06T00:01:01.000Z"));
+    const second = new NextRequest("https://astt.app/api/auth/session", {
+      headers: { "x-forwarded-for": "198.51.100.2" },
+    });
+    expect(proxy(second, {} as NextFetchEvent)).toBeUndefined();
+
+    expect(deleteSpy).toHaveBeenCalledWith("198.51.100.1");
+
+    deleteSpy.mockRestore();
+    vi.useRealTimers();
+  });
+});

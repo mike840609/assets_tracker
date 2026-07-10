@@ -127,26 +127,26 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
     return upserted;
   });
 
-  // Auto-fetch the market price for the holding
-  try {
-    const isCrypto = parsed.data.assetType === "CRYPTO";
-    const priceResults = isCrypto
-      ? await fetchCryptoPrices([holding.symbol])
-      : await fetchStockPrices([holding.symbol]);
+  after(async () => {
+    try {
+      const isCrypto = holding.assetType === "CRYPTO";
+      const priceResults = isCrypto
+        ? await fetchCryptoPrices([holding.symbol])
+        : await fetchStockPrices([holding.symbol]);
 
-    const result = priceResults.get(holding.symbol);
-    if (result) {
-      await prisma.priceCache.upsert({
-        where: { symbol: holding.symbol },
-        update: { price: result.price, currency: result.currency, updatedAt: new Date() },
-        create: { symbol: holding.symbol, price: result.price, currency: result.currency },
-      });
-      revalidateTag("prices", { expire: 0 });
+      const result = priceResults.get(holding.symbol);
+      if (result) {
+        await prisma.priceCache.upsert({
+          where: { symbol: holding.symbol },
+          update: { price: result.price, currency: result.currency, updatedAt: new Date() },
+          create: { symbol: holding.symbol, price: result.price, currency: result.currency },
+        });
+        revalidateTag("prices", { expire: 0 });
+      }
+    } catch (error) {
+      log.error("holdings.price_fetch.failed", { symbol: holding.symbol, error: String(error) });
     }
-  } catch (error) {
-    // Non-blocking: if price fetch fails, holding is still created
-    log.error("holdings.price_fetch.failed", { symbol: holding.symbol, error: String(error) });
-  }
+  });
 
   invalidateUserCaches(userId);
   if (holding.currency) after(() => maybeWarmExchangeRate(holding.currency));

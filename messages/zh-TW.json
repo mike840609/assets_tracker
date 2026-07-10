@@ -49,7 +49,15 @@
     "discardTitle": "捨棄變更？",
     "discardBody": "您輸入的內容將會遺失。",
     "discardConfirm": "捨棄",
-    "keepEditing": "繼續編輯"
+    "keepEditing": "繼續編輯",
+    "theme": {
+      "label": "外觀",
+      "change": "切換外觀",
+      "switchTo": "切換為{theme}模式",
+      "light": "淺色",
+      "dark": "深色",
+      "system": "系統"
+    }
   },
   "errors": {
     "title": "發生錯誤",

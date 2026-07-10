@@ -556,6 +556,57 @@ describe("dataImportSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects non-numeric imported decimals", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.2",
+      accounts: [
+        {
+          name: "Checking",
+          type: "ASSET",
+          category: "BANK",
+          currency: "USD",
+          cashBalance: "not-a-number",
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects malformed imported snapshot and goal dates", () => {
+    expect(
+      dataImportSchema.safeParse({
+        version: "1.2",
+        accounts: [],
+        snapshots: [
+          {
+            date: "not-a-date",
+            totalAssets: "1",
+            totalLiabilities: "0",
+            netWorth: "1",
+            baseCurrency: "USD",
+          },
+        ],
+      }).success,
+    ).toBe(false);
+
+    expect(
+      dataImportSchema.safeParse({
+        version: "1.2",
+        accounts: [],
+        goals: [
+          {
+            name: "House",
+            targetAmount: "100",
+            targetCurrency: "USD",
+            targetDate: "not-a-date",
+            scope: "NET_WORTH",
+          },
+        ],
+      }).success,
+    ).toBe(false);
+  });
+
   // #517 — bounded string lengths on imported rows (prevents multi-MB padding
   // across up to 200 accounts x 2000 holdings x 10,000 transactions).
   it("rejects oversized imported account name", () => {
