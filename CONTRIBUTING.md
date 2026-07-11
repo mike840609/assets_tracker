@@ -1,16 +1,35 @@
 # Contributing
 
-## Development
+Thank you for improving Assets Tracker. Use GitHub Issues for reproducible bugs and focused feature proposals. Security vulnerabilities must follow [SECURITY.md](./SECURITY.md) instead of a public issue.
 
-1. Copy `.env.example` to `.env` and provide your own local credentials.
-2. Start PostgreSQL with `pnpm db:up`.
-3. Sync the schema with `pnpm exec prisma db push`.
-4. Start the app with `pnpm dev`.
+## Development setup
 
-Never commit `.env`, `.env.local`, database exports, or credentials. Report
-vulnerabilities through [the security policy](SECURITY.md), not a public issue.
+```bash
+cp .env.example .env
+corepack enable
+pnpm install
+pnpm db:up
+pnpm exec prisma migrate deploy
+pnpm dev
+```
+
+See [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) for tests, builds, database changes, worktrees, and diagnostics.
+
+## Pull requests
+
+- Keep each pull request focused on one outcome.
+- Add or update tests when behavior changes.
+- Update user-facing documentation and the bilingual changelog when appropriate.
+- Create Prisma migrations for persistent schema changes; do not use `db push` as an upgrade mechanism.
+- Avoid committing generated files, environment files, reports, exports, or credentials.
 
 ## Before opening a pull request
 
-Run `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, and `pnpm test:unit`.
-Update tests and documentation when the change affects behavior.
+```bash
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+```
+
+By participating, you agree to follow the [Code of Conduct](./CODE_OF_CONDUCT.md). Contributions are licensed under the repository's [MIT License](./LICENSE).

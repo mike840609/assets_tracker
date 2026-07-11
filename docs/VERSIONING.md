@@ -18,7 +18,7 @@ Look at the release's change types and **bump by the highest-impact change**:
 
 Rule of thumb: **any `added` → MINOR, otherwise → PATCH.**
 
-### Pre-1.0 (where we are now)
+### Pre-1.0 releases
 
 Strict SemVer relaxes the rules below `1.0.0`, but we keep it simple and use the table
 above (feature → MINOR, fix → PATCH). Reserve `1.0.0` for when the data model and core
