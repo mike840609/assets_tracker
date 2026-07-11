@@ -1,6 +1,15 @@
 # 💰 Assets Tracker
 
+[![CI](https://github.com/mike840609/asset_tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/mike840609/asset_tracker/actions/workflows/ci.yml)
+[![E2E](https://github.com/mike840609/asset_tracker/actions/workflows/e2e.yml/badge.svg)](https://github.com/mike840609/asset_tracker/actions/workflows/e2e.yml)
+[![Release](https://img.shields.io/github/v/release/mike840609/asset_tracker)](https://github.com/mike840609/asset_tracker/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mike840609/asset_tracker)
+
 A modern, high-performance net worth and investment tracker. Built with **Next.js 16**, **Prisma**, and **Tailwind CSS**.
+
+[Live Demo](https://astt.app) · [Self-hosting](#self-hosting-and-data-responsibility) · [Security](./SECURITY.md) · [Contributing](./CONTRIBUTING.md) · [Releases](https://github.com/mike840609/asset_tracker/releases)
 
 ![Assets Tracker](./public/opengraph-image.png)
 
@@ -20,7 +29,6 @@ A modern, high-performance net worth and investment tracker. Built with **Next.j
 - **📱 Native Mobile Feel**: iOS large-title navigation, swipe actions on list rows, bottom-sheet dialogs, pull-to-refresh, and haptic feedback.
 - **🌐 Internationalization**: English (en-US) and Traditional Chinese (zh-TW), auto-detected from browser.
 - **📲 Installable PWA**: Web app manifest + service worker for an installable, app-like experience.
-- **📊 Lossless Data Integrity**: Detailed breakdown of historical snapshots ensuring currency conversion accuracy over time.
 
 ## 🛠️ Tech Stack
 
