@@ -7,311 +7,132 @@
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mike840609/asset_tracker)
 
-A modern, high-performance net worth and investment tracker. Built with **Next.js 16**, **Prisma**, and **Tailwind CSS**.
+[English](./README.md) | [繁體中文](./README.zh-TW.md)
 
-[Live Demo](https://astt.app) · [Self-hosting](#self-hosting-and-data-responsibility) · [Security](./SECURITY.md) · [Contributing](./CONTRIBUTING.md) · [Releases](https://github.com/mike840609/asset_tracker/releases)
+A self-hosted, multi-currency net worth and investment tracker for people who want a private, unified view of their finances.
 
-![Assets Tracker](./public/opengraph-image.png)
+[Live Demo](https://astt.app) · [Quick Start](#quick-start) · [Deployment](./docs/DEPLOYMENT.md) · [Security](./SECURITY.md) · [Contributing](./CONTRIBUTING.md)
 
-## ✨ Features
+![Assets Tracker dashboard on desktop and mobile](./public/opengraph-image.png)
 
-- **🔐 Google OAuth**: Secure multi-user authentication via NextAuth.js v5.
-- **🚀 Real-time Tracking**: Automatically fetch latest prices for Stocks, ETFs, Cryptocurrencies, and Options (via Yahoo Finance + CoinGecko fallback).
-- **🔁 Recurring Transactions**: Schedule recurring cash flows and investment contributions; the daily cron materializes due entries automatically (with catch-up).
-- **🌍 Multi-Currency Support**: Track assets in USD, TWD, EUR, and more. All values are automatically converted to your selected **Base Currency**.
-- **📈 Analysis & Charts**: Interactive charts for net-worth trend, assets/liabilities breakdown, monthly cash flow, top movers, and currency exposure.
-- **🔭 FIRE Projection**: Retirement projection page showing estimated FIRE date and portfolio growth curves from your real savings history.
-- **🔄 Lossless History**: Snapshots store original account balances and currencies, allowing perfectly accurate history normalization even if you change your base currency later.
-- **🤖 Automated Snapshots**: Built-in Vercel Cron integration to automatically record your net worth daily.
-- **🌗 Light / Dark / System Theme**: Full theme support, plus multiple color schemes (chooseable from Settings).
-- **💼 Unified Portfolio**: Combine bank accounts, brokerages, crypto wallets, and options positions into one dashboard.
-- **⌨️ Keyboard-First Desktop**: Command palette (⌘K / Ctrl+K), Vim-style navigation chords, and configurable shortcuts for power users.
-- **📱 Native Mobile Feel**: iOS large-title navigation, swipe actions on list rows, bottom-sheet dialogs, pull-to-refresh, and haptic feedback.
-- **🌐 Internationalization**: English (en-US) and Traditional Chinese (zh-TW), auto-detected from browser.
-- **📲 Installable PWA**: Web app manifest + service worker for an installable, app-like experience.
+## Why Assets Tracker?
 
-## 🛠️ Tech Stack
+- **Own your data** — run your own instance with PostgreSQL using Docker or deploy to Vercel and Neon.
+- **One financial view** — combine bank accounts, brokerages, crypto wallets, property, liabilities, and options.
+- **Multi-currency by design** — preserve original balances and normalize history into your preferred base currency.
+- **Current market data** — refresh stocks, ETFs, crypto, options, and exchange rates through Yahoo Finance and CoinGecko.
+- **Planning and automation** — track recurring cash flow, recurring investments, daily snapshots, goals, and FIRE projections.
+- **Desktop and mobile** — responsive charts, keyboard navigation, themes, English/Traditional Chinese, and an installable PWA.
 
-- **Framework**: Next.js 16 (App Router, React Server Components)
-- **Database**: PostgreSQL via Prisma 7 (Neon serverless adapter)
-- **Auth**: NextAuth.js v5 (Google OAuth, JWT sessions)
-- **Styling**: Tailwind CSS 4 + shadcn/ui v4
-- **i18n**: next-intl
-- **Icons**: Lucide React
-- **Charts**: Recharts
-- **Validation**: Zod 4
-- **Monitoring**: Sentry (`@sentry/nextjs`) — optional, a no-op when no DSN is configured
+Built with Next.js 16, React 19, Prisma 7, PostgreSQL, Tailwind CSS 4, and NextAuth.js 5.
 
-## 🚀 Getting Started
+> Assets Tracker v1 is stable for personal self-hosting. Review the [data responsibility](#data-responsibility) notice before serving other users.
 
-### 1. Prerequisites
+## Quick Start
 
-- Node.js 24.x (required by Next.js 16)
-- A [Neon](https://neon.tech) PostgreSQL database (or any PostgreSQL with a Neon-compatible connection string)
-- A Google OAuth app (for authentication)
+### Prerequisites
 
-### 2. Environment Variables
+- Node.js 24
+- Docker with Docker Compose
+- A Google OAuth application
 
-Create a `.env` file in the root directory:
-
-```env
-DATABASE_URL="your_neon_postgresql_connection_string"
-AUTH_SECRET="your_secure_random_string"
-AUTH_GOOGLE_ID="your_google_oauth_client_id"
-AUTH_GOOGLE_SECRET="your_google_oauth_client_secret"
-CRON_SECRET="your_secure_random_string"
-
-# Preview-only (required when VERCEL_ENV=preview):
-# PREVIEW_AUTH_PASSWORD="shared_password_to_gate_preview_access"
-# PREVIEW_AUTH_DISABLED="true"  # optional, disables preview password gate
-# AUTH_REDIRECT_PROXY_URL="https://stable-preview-host.vercel.app"  # optional, for Google OAuth on preview URLs
-
-# Sentry (optional — all unset = no-op; no account needed for local/CI):
-# SENTRY_DSN="https://...ingest.sentry.io/..."          # server + edge
-# NEXT_PUBLIC_SENTRY_DSN="https://...ingest.sentry.io/..."  # browser SDK
-# SENTRY_AUTH_TOKEN="..."   # enables build-time source-map upload
-# SENTRY_ORG="your-org"     # for source-map upload
-# SENTRY_PROJECT="your-project"
-```
-
-> [!TIP]
-> Generate `AUTH_SECRET` and `CRON_SECRET` with `openssl rand -base64 32`.
-
-## Self-hosting and data responsibility
-
-Each deployment owner provides and controls its own Google OAuth credentials, PostgreSQL database, deployment, cron secret, and optional Vercel/Sentry integrations. `NEXT_PUBLIC_APP_URL` must be the deployed public URL, and [`.env.example`](./.env.example) is the complete configuration reference.
-
-Assets Tracker is personal-tracking software, not financial, tax, or investment advice. Self-hosters are responsible for their users' data security, privacy disclosures, regulatory compliance, backups, and access controls.
-
-### 3. Installation
+### 1. Configure the environment
 
 ```bash
-corepack enable     # pins the pnpm version declared in package.json
-pnpm install
-pnpm exec prisma generate
-pnpm exec prisma migrate deploy   # apply committed migrations to your database
+cp .env.example .env
 ```
 
-> [!NOTE]
-> For brand-new schema changes during local development, use `pnpm exec prisma migrate dev --name <description>` to generate a new migration file. `prisma db push` is still useful for quick prototyping but bypasses migration history; commit a migration before pushing the change.
+Replace the generated-placeholder values for `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, and `CRON_SECRET`. The example database URLs are ready for the bundled local PostgreSQL container.
 
-### 4. Running Locally
+Configure the Google OAuth client with:
 
-We recommend using a local PostgreSQL database via Docker for development to avoid incurring Neon compute costs.
+- Authorized JavaScript origin: `http://localhost:3000`
+- Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
 
-1. **Start the local database:**
+Use your HTTPS production origin and the same `/api/auth/callback/google` path when deploying.
 
-   ```bash
-   pnpm db:up
-   ```
-
-2. **Push the schema to your local DB:**
-
-   ```bash
-   pnpm exec prisma migrate deploy
-   ```
-
-3. **Start the development server:**
-   ```bash
-   pnpm dev
-   ```
-
-Open [http://localhost:3000](http://localhost:3000) to see your dashboard.
-
-When you are done developing for the day, you can stop the database with `pnpm db:down`.
-
-> [!TIP]
-> **Resetting the local database**: To clear all local data and rebuild the schema from the committed migration history, run `pnpm exec prisma migrate reset`. This destroys every row in the target database. `prisma db push --force-reset` remains useful for disposable prototypes, but bypasses migration history.
-
-### 5. Tests
-
-**Unit tests (Vitest).** A fast, DB-free suite lives in `tests/unit/`, covering the pure service-layer logic — net-worth two-pass valuation, exchange-rate resolution, history normalize/dedupe, analysis aggregations, serializers, and Zod validators. Server-only/DB modules are exercised through their real public functions with their dependencies mocked, so no database or env vars are needed.
-
-```bash
-pnpm test:unit        # Run once (headless)
-pnpm test:unit:watch  # Watch mode
-```
-
-**End-to-end tests (Playwright).** A suite lives in `tests/e2e/`. The global setup provisions a dedicated test user so runs don't pollute real data.
-
-```bash
-pnpm test:e2e         # Run headless
-pnpm test:e2e:ui      # Open the Playwright UI runner
-pnpm test:e2e:report  # Open the last HTML report
-```
-
-## 🌳 Git Worktrees (parallel dev / AI agents)
-
-When you want to work on several branches in parallel — or hand a branch to an AI agent in an isolated sandbox — use git worktrees with the bundled setup script. pnpm keeps a single global **content-addressable store** and builds each worktree's `node_modules` from **hardlinks** into it, so every worktree gets a real `node_modules` while package files are never duplicated on disk and installs after the first are near-instant.
-
-```bash
-# 1. Create a worktree for the branch you want to work on
-git worktree add ../asset_tracker-<task-name> -b <branch-name>
-cd ../asset_tracker-<task-name>
-
-# 2. Install deps + auto-copy env files from the main worktree
-pnpm setup:worktree
-
-# 3. Develop as usual
-pnpm dev
-```
-
-`setup:worktree`:
-
-- Copies `.env` and `.env.local` from the main worktree on first run (won't overwrite — delete in the worktree to refresh; set `ASSET_TRACKER_SKIP_ENV_COPY=1` to opt out). This env-copy is the only thing the script does that pnpm can't.
-- Runs `pnpm install --frozen-lockfile`. pnpm hardlinks `node_modules` from its shared global store (so packages are never duplicated across worktrees), and the `postinstall` (`prisma generate`) and `prepare` (`husky`) lifecycle scripts run automatically, so `src/generated/prisma/` and `.husky/_/` are always regenerated.
-- Pass `--prune` to garbage-collect unreferenced packages from the store (`pnpm setup:worktree -- --prune`).
-
-When the task is done:
-
-```bash
-cd ../asset_tracker             # back to the main checkout
-git worktree remove ../asset_tracker-<task-name>
-```
-
-> [!TIP]
-> pnpm uses one global store (default `~/.local/share/pnpm/store`) shared across all projects and worktrees, so dedup is automatic — no config needed for normal local dev. In ephemeral sandboxes/containers where `$HOME` isn't persisted across sessions, redirect the store to a persistent volume with pnpm's native setting, e.g. `export npm_config_store_dir=/persistent/pnpm-store` before installing. Hardlinks need the store and worktree on the same filesystem; if they differ, pnpm transparently falls back to copying (still correct, just less space-efficient).
-
-> [!NOTE]
-> Because each worktree now has its own real `node_modules`, you can run `pnpm add <pkg>` directly in a worktree — it updates `package.json` + `pnpm-lock.yaml` without affecting other worktrees.
-
-## ✅ Verifying Locally
-
-Steps to validate a fresh checkout end-to-end — these mirror what CI and Vercel run.
-
-**1. Activate the pinned pnpm**
+### 2. Install and initialize
 
 ```bash
 corepack enable
-pnpm --version          # should print the version pinned in package.json (pnpm 11)
+pnpm install
+pnpm db:up
+pnpm exec prisma migrate deploy
 ```
 
-> If you still have a `node_modules` from an older npm setup, pnpm may ask to purge it once. Let it (`CI=true pnpm install` auto-confirms in non-interactive shells).
-
-**2. Install + the CI check suite (no database needed)**
+### 3. Run the app
 
 ```bash
-pnpm install --frozen-lockfile   # hardlinks from the shared store; runs prisma generate + husky
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). Stop the local database with `pnpm db:down`.
+
+## Production Deployment
+
+### Docker Compose
+
+Set `NEXT_PUBLIC_APP_URL`, `POSTGRES_PASSWORD`, and the production secrets in `.env`, then build the complete application and PostgreSQL stack:
+
+```bash
+docker compose --profile full up --build -d
+```
+
+The one-shot migration service must finish successfully before the application starts. PostgreSQL data is stored in the `postgres_data` volume.
+
+### Vercel
+
+Vercel with a separate Neon production/preview database is the supported hosted path. See the [deployment guide](./docs/DEPLOYMENT.md) for environment variables, migrations, preview isolation, cron scheduling, health checks, and non-Vercel hosting.
+
+## Upgrading
+
+Docker deployments:
+
+```bash
+git pull
+docker compose --profile full up --build -d
+```
+
+Source deployments:
+
+```bash
+git pull
+pnpm install --frozen-lockfile
+pnpm exec prisma migrate deploy
+pnpm build
+```
+
+Always back up the database before an upgrade and review the [release notes](https://github.com/mike840609/asset_tracker/releases).
+
+## Documentation
+
+- [Deployment and self-hosting](./docs/DEPLOYMENT.md)
+- [Development workflow](./docs/DEVELOPMENT.md)
+- [CI policy](./docs/CI.md)
+- [Architecture](./docs/ARCHITECTURE.md)
+- [Database and migrations](./docs/DATABASE.md)
+- [Versioning](./docs/VERSIONING.md)
+- [Environment variable reference](./.env.example)
+
+## Development
+
+```bash
 pnpm format:check
 pnpm lint
 pnpm typecheck
 pnpm test:unit
 ```
 
-**3. Production build**
+Contributions are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a pull request; community participation is governed by the [Code of Conduct](./CODE_OF_CONDUCT.md).
 
-```bash
-pnpm build                       # uses your .env
-```
+## Support and Security
 
-No `.env`? Use the CI placeholders just to confirm it compiles:
+Use [GitHub Issues](https://github.com/mike840609/asset_tracker/issues) for reproducible bugs and feature requests. Report vulnerabilities privately through the [Security Policy](./SECURITY.md), not a public issue.
 
-```bash
-DATABASE_URL="postgresql://ci:ci@localhost:5432/ci" \
-AUTH_SECRET=x AUTH_GOOGLE_ID=x AUTH_GOOGLE_SECRET=x CRON_SECRET=x \
-pnpm build
-```
+## Data Responsibility
 
-**4. Worktree flow (env-copy + install)**
+Each deployment owner controls its OAuth credentials, PostgreSQL database, backups, cron secret, and optional monitoring integrations. Assets Tracker is personal-tracking software, not financial, tax, or investment advice. Self-hosters are responsible for data security, privacy disclosures, regulatory compliance, backups, and access controls.
 
-```bash
-git worktree add ../asset_tracker-pnpm-test -b tmp/pnpm-check
-cd ../asset_tracker-pnpm-test
-pnpm setup:worktree              # copies .env/.env.local from main, then pnpm install
-ls -la node_modules              # a real directory (hardlinked from the store), not a symlink
-cd ../asset_tracker
-git worktree remove ../asset_tracker-pnpm-test
-git branch -D tmp/pnpm-check
-```
+## License
 
-**5. (Optional) Inspect the shared store**
-
-```bash
-pnpm store path                  # global store location (default ~/.local/share/pnpm/store)
-pnpm store status
-```
-
-Every worktree's `node_modules` hardlinks into this one store, so package files are stored once.
-
-**6. (Optional) Run the app**
-
-```bash
-pnpm db:up
-pnpm exec prisma db push
-pnpm dev                         # http://localhost:3000
-pnpm db:down                     # when done
-```
-
-> [!NOTE]
-> `.nvmrc` pins Node 24. On a different version pnpm prints an `Unsupported engine` warning — harmless; run `nvm use` to match.
-
-## 🔁 GitHub Actions policy (to control free-plan minutes)
-
-This repository uses a **light-vs-heavy CI split**:
-
-- **Pull requests**: run fast checks only (`format:check`, `lint`, `typecheck`, `test:unit`).
-- **Push to `master`** (production merge path): run heavy checks (`build`).
-- **Vercel preview deployments**: the Playwright `e2e` smoke suite runs against the live preview URL (`deployment_status` trigger; production deployments are skipped since they never render the preview-credentials login). Requires the `E2E_PASSWORD` repo secret to match `PREVIEW_AUTH_PASSWORD` on Vercel previews.
-- **Docs-only / markdown-only changes** on push are skipped via workflow `paths-ignore`.
-- Add `[skip ci]` to a commit message to skip push-triggered heavy jobs.
-- Add `[skip ci]` to PR title/body to skip PR lint/typecheck jobs.
-
-Workflow files:
-
-- `.github/workflows/ci.yml`
-- `.github/workflows/e2e.yml`
-
-## 🤖 Automated Snapshots (Cron Jobs)
-
-This project is optimized for **Vercel** and includes native Cron Job support via `vercel.json`.
-
-- **Endpoint**: `/api/cron/snapshot`
-- **Schedule**: Every day at 21:30 UTC (`30 21 * * *`, configured in `vercel.json`).
-- **Security**: Protected via `CRON_SECRET` header verification.
-- **Region**: Functions are pinned to `sin1` to colocate with the Neon database. If your Neon project lives in a different region, update `regions` in `vercel.json` to match.
-- **Work done**: Refreshes prices, materializes any due recurring cash/investment transactions (with catch-up), writes a `NetWorthSnapshot` per user, and records a `CronRun` row.
-- **Health probe**: `GET /api/health` is an unauthenticated, rate-limited liveness/readiness check. It reports DB reachability plus cron and snapshot freshness (`ok` / `degraded` / `unhealthy`, 503 when stale > 36h) and exposes no user data.
-
-To enable automation, deploy to Vercel and set all environment variables in your project settings. Vercel only runs cron jobs on production deployments, so preview deployments are unaffected.
-
-### Preview deployments
-
-Vercel preview deployments use a **separate Neon branch** so they never touch production data:
-
-- Set `DATABASE_URL` with two scopes in Vercel → Settings → Environment Variables: one for **Production** (prod Neon branch) and one for **Preview** (a dedicated `preview` Neon branch). If your `DATABASE_URL` is managed by the Neon-Vercel integration, configure the per-environment branch mapping inside the integration UI instead.
-- The Vercel build runs `pnpm run build:vercel`, which runs the idempotent `prisma migrate deploy` command before `next build`. Migration failures stop the deployment so a build cannot be published against a stale schema. `SKIP_PRISMA_MIGRATE_DEPLOY=1` remains an explicit emergency escape hatch.
-- CI / local `pnpm build` is plain `next build` and does **not** require a database.
-
-## 💹 Net Worth History & Currency Normalization
-
-Tracking net worth across multiple currencies and time periods is complex. This project uses a **Lossless Snapshot** architecture to ensure your history remains accurate even if you change your base currency.
-
-### 1. Snapshot Creation (`snapshot-service.ts`)
-
-When a snapshot is taken (manually or via Cron), the system:
-
-- Calculates your current net worth in your current **Base Currency**.
-- Stores a **Lossless Breakdown** in a JSON field, recording every account's **original balance** and **original currency**.
-
-### 2. History Normalization (`history-service.ts`)
-
-When you view your history chart or table, the system:
-
-- Fetches all historical snapshots for your user ID.
-- Identifies your current preferred **Base Currency** from settings.
-- **On-the-fly Conversion**: For each snapshot, it converts every account balance from its original currency to your current base currency using the **latest available exchange rates**.
-- **Legacy Support**: If a snapshot was taken before the lossless system was implemented, it converts the snapshot's total value from its original base currency to your current one.
-
-This approach ensures that your trend lines always remain continuous and comparable, regardless of currency fluctuations or setting changes.
-
-## 🏷️ Versioning
-
-The app follows [Semantic Versioning](https://semver.org). Version history lives in `src/lib/changelog.ts` (the single source of truth — the displayed version derives from the newest entry) and is shown in-app on the **`/changelog`** page and the Settings "Version" card. To cut a release, add an entry there and bump `package.json`'s `version`. See [VERSIONING.md](./docs/VERSIONING.md) for the bump rules and full process.
-
-## Contributing and security
-
-Contributions are welcome; see [CONTRIBUTING.md](./CONTRIBUTING.md). Please report vulnerabilities privately under the [Security Policy](./SECURITY.md). Community participation is governed by the [Code of Conduct](./CODE_OF_CONDUCT.md).
-
-## 📄 License
-
-MIT
+Licensed under the [MIT License](./LICENSE) © 2026 Mike Tsai.

@@ -21,6 +21,9 @@ docs/
 .impeccable/
 .superpowers/
 .worktreeinclude
+Dockerfile
+.dockerignore
+docker-compose.yml
 
 # CI / git tooling — not needed in Vercel build
 .github/

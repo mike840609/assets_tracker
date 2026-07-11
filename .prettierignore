@@ -18,3 +18,5 @@ pnpm-workspace.yaml
 docs/superpowers
 AGENTS.md
 CLAUDE.md
+Dockerfile
+.dockerignore

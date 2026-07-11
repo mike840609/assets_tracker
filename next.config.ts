@@ -57,6 +57,7 @@ const contentSecurityPolicy = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   cacheComponents: true,
   poweredByHeader: false,
   ...(turbopackRoot ? { turbopack: { root: turbopackRoot } } : {}),
