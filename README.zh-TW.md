@@ -13,7 +13,7 @@
 
 [線上展示](https://astt.app) · [快速開始](#快速開始) · [部署指南](./docs/DEPLOYMENT.md) · [安全政策](./SECURITY.md) · [參與貢獻](./CONTRIBUTING.md)
 
-![資產追蹤器桌面與行動版儀表板](./public/readme-hero.png)
+![資產追蹤器桌面與行動版儀表板](./public/readme-hero.jpg)
 
 ## 為什麼選擇資產追蹤器？
 
