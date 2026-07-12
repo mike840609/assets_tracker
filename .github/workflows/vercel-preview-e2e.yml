@@ -116,7 +116,7 @@ jobs:
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: vercel-preview-playwright-report
