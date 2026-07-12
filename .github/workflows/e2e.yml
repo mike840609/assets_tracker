@@ -1,31 +1,53 @@
 name: E2E Smoke Tests
 
 on:
-  deployment_status:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: e2e-${{ github.event.deployment.sha }}
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   e2e:
     name: Playwright smoke tests
-    # Run only on preview deployments — production uses VERCEL_ENV=production
-    # which never renders the preview-credentials password form.
-    if: >-
-      github.event.deployment_status.state == 'success' &&
-      github.event.deployment.environment != 'Production'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/asset_app?sslmode=disable
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/asset_app?sslmode=disable
+      AUTH_SECRET: e2e-auth-secret-placeholder-not-real
+      AUTH_GOOGLE_ID: e2e-google-id
+      AUTH_GOOGLE_SECRET: e2e-google-secret
+      CRON_SECRET: e2e-cron-secret-placeholder-not-real
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      VERCEL_ENV: preview
+      PREVIEW_AUTH_PASSWORD: e2e-smoke-test
+      E2E_PASSWORD: e2e-smoke-test
+      PLAYWRIGHT_TEST_BASE_URL: http://127.0.0.1:3000
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: asset_app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d asset_app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
 
     steps:
       - uses: actions/checkout@v5
-        with:
-          # Check out the exact commit that was deployed
-          ref: ${{ github.event.deployment.sha }}
 
       - uses: pnpm/action-setup@v4
 
@@ -44,27 +66,43 @@ jobs:
           version=$(node -p "require('@playwright/test/package.json').version")
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Cache Playwright browsers
+      - name: Cache Playwright browser
         id: playwright-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
-      - name: Install Playwright browsers (cache miss)
+      - name: Install Playwright browser (cache miss)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Install Playwright system deps (cache hit)
+      - name: Install Playwright system dependencies (cache hit)
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps chromium
 
+      - name: Apply database migrations
+        run: pnpm exec prisma migrate deploy
+
+      - name: Build application
+        run: pnpm build
+
+      - name: Start application
+        run: pnpm start > /tmp/e2e-server.log 2>&1 &
+
+      - name: Wait for application
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/login > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/e2e-server.log
+          exit 1
+
       - name: Run E2E tests
         run: pnpm test:e2e
-        env:
-          # Vercel posts the live URL here automatically — no hardcoding needed
-          PLAYWRIGHT_TEST_BASE_URL: ${{ github.event.deployment_status.environment_url }}
-          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -72,4 +110,12 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
+          retention-days: 30
+
+      - name: Upload application log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-server-log
+          path: /tmp/e2e-server.log
           retention-days: 30

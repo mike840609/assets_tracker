@@ -74,6 +74,10 @@ test.describe("desktop plan split", () => {
     await expect(page.getByRole("heading", { name: "Watchlist", exact: true })).toBeVisible({
       timeout: 20_000,
     });
-    await expect(page.getByText("Track stocks from a chosen price and date.")).toBeVisible();
+    await expect(
+      page
+        .getByRole("main")
+        .getByText("Track stocks from a chosen price and date.", { exact: true }),
+    ).toBeVisible();
   });
 });

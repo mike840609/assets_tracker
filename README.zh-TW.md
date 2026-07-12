@@ -1,7 +1,7 @@
 # 💰 資產追蹤器
 
 [![CI](https://github.com/mike840609/asset_tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/mike840609/asset_tracker/actions/workflows/ci.yml)
-[![E2E](https://github.com/mike840609/asset_tracker/actions/workflows/e2e.yml/badge.svg)](https://github.com/mike840609/asset_tracker/actions/workflows/e2e.yml)
+[![E2E](https://github.com/mike840609/asset_tracker/actions/workflows/e2e.yml/badge.svg?branch=master&event=push)](https://github.com/mike840609/asset_tracker/actions/workflows/e2e.yml?query=branch%3Amaster+event%3Apush)
 [![Release](https://img.shields.io/github/v/release/mike840609/asset_tracker)](https://github.com/mike840609/asset_tracker/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
