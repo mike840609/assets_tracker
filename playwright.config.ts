@@ -10,7 +10,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: 2,
+  // Authenticated specs share one preview user and mutate its account data.
+  // Keep CI serial so a fresh database produces deterministic results.
+  workers: process.env.CI ? 1 : 2,
   reporter: process.env.CI
     ? [["github"], ["html", { open: "never" }]]
     : [["html", { open: "never" }]],

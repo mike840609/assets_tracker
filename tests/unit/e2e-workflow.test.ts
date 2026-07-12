@@ -6,6 +6,10 @@ const root = path.resolve(import.meta.dirname, "../..");
 const read = (relativePath: string) => fs.readFileSync(path.join(root, relativePath), "utf8");
 
 describe("E2E CI contract", () => {
+  test("serializes CI tests that share the preview user", () => {
+    expect(read("playwright.config.ts")).toContain("workers: process.env.CI ? 1 : 2");
+  });
+
   test("runs the primary smoke suite for pull requests and master pushes without secrets", () => {
     const workflow = read(".github/workflows/e2e.yml");
     const e2eJob = workflow.slice(workflow.indexOf("\n  e2e:\n"));
