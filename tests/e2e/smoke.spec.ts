@@ -60,7 +60,7 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   // ── Create account ──────────────────────────────────────────────────────
   // A fresh account page shows both the page action and the onboarding action.
   // Either opens the same dialog; choose the stable page action in DOM order.
-  const addAccountButton = page.getByRole("button", { name: "Add Account", exact: true }).first();
+  const addAccountButton = page.getByRole("button", { name: /^add account$/i }).first();
   await expect(addAccountButton).toBeVisible({ timeout: 15_000 });
   await addAccountButton.click();
 
