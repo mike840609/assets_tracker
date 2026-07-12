@@ -13,6 +13,8 @@ pnpm dev
 
 The application runs at `http://localhost:3000`. `pnpm db:up` starts only PostgreSQL; the application runs directly on the host for faster hot reload.
 
+Local development includes a one-click **Preview Login** for the dedicated test user. It does not require `PREVIEW_AUTH_PASSWORD`; hosted Vercel previews remain password-protected by default.
+
 ## Validation
 
 Run the same fast checks used for pull requests:

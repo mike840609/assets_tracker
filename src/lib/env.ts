@@ -1,10 +1,6 @@
 import "server-only";
 import { z } from "zod";
-
-/** Parse a boolean-ish env flag: "1" | "true" | "yes" | "on" (case-insensitive) → true. */
-function isTruthyFlag(value: string | undefined): boolean {
-  return ["1", "true", "yes", "on"].includes((value ?? "").trim().toLowerCase());
-}
+import { requiresPreviewAuthPassword } from "@/lib/preview-auth-policy";
 
 const envSchema = z
   .object({
@@ -23,6 +19,7 @@ const envSchema = z
     AUTH_REDIRECT_PROXY_URL: z.string().url("must be a valid URL").optional(),
     PREVIEW_AUTH_PASSWORD: z.string().trim().min(1, "must not be empty").optional(),
     PREVIEW_AUTH_DISABLED: z.string().trim().optional(),
+    VERCEL: z.literal("1").optional(),
     VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
     // E19 — Sentry error reporting. All optional: when no DSN is set the
     // integration is a complete no-op (local dev / CI / build need no Sentry
@@ -36,14 +33,17 @@ const envSchema = z
   })
   .superRefine((value, ctx) => {
     if (
-      value.VERCEL_ENV === "preview" &&
-      !isTruthyFlag(value.PREVIEW_AUTH_DISABLED) &&
+      requiresPreviewAuthPassword({
+        vercel: value.VERCEL,
+        vercelEnv: value.VERCEL_ENV,
+        authDisabled: value.PREVIEW_AUTH_DISABLED,
+      }) &&
       !value.PREVIEW_AUTH_PASSWORD
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["PREVIEW_AUTH_PASSWORD"],
-        message: 'is required when VERCEL_ENV is "preview"',
+        message: 'is required on a hosted Vercel preview when VERCEL_ENV is "preview"',
       });
     }
   });
@@ -57,6 +57,7 @@ const parsedEnv = envSchema.safeParse({
   AUTH_REDIRECT_PROXY_URL: process.env.AUTH_REDIRECT_PROXY_URL,
   PREVIEW_AUTH_PASSWORD: process.env.PREVIEW_AUTH_PASSWORD,
   PREVIEW_AUTH_DISABLED: process.env.PREVIEW_AUTH_DISABLED,
+  VERCEL: process.env.VERCEL,
   VERCEL_ENV: process.env.VERCEL_ENV,
   SENTRY_DSN: process.env.SENTRY_DSN,
   NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -88,6 +89,7 @@ export const {
   AUTH_REDIRECT_PROXY_URL,
   PREVIEW_AUTH_PASSWORD,
   PREVIEW_AUTH_DISABLED,
+  VERCEL,
   VERCEL_ENV,
   SENTRY_DSN,
   NEXT_PUBLIC_SENTRY_DSN,
@@ -103,5 +105,8 @@ export const {
 export const isPreviewOrLocal =
   VERCEL_ENV === "preview" || VERCEL_ENV === "development" || !VERCEL_ENV;
 
-/** When set, preview login skips the password check (passwordless preview). */
-export const previewAuthDisabled = isTruthyFlag(PREVIEW_AUTH_DISABLED);
+export const previewAuthRequiresPassword = requiresPreviewAuthPassword({
+  vercel: VERCEL,
+  vercelEnv: VERCEL_ENV,
+  authDisabled: PREVIEW_AUTH_DISABLED,
+});
