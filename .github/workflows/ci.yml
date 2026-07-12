@@ -96,7 +96,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Restore Next.js build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .next/cache
           key: nextjs-${{ runner.os }}-${{ hashFiles('.nvmrc', 'pnpm-lock.yaml', 'prisma/schema.prisma', 'next.config.ts') }}-${{ github.sha }}
@@ -109,7 +109,7 @@ jobs:
         run: node scripts/ci/bundle-size.mjs --write bundle-baseline.json
 
       - name: Save bundle baseline
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: bundle-baseline.json
           key: bundle-baseline-${{ github.sha }}
@@ -128,7 +128,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Restore Next.js build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .next/cache
           key: nextjs-${{ runner.os }}-${{ hashFiles('.nvmrc', 'pnpm-lock.yaml', 'prisma/schema.prisma', 'next.config.ts') }}-${{ github.sha }}
@@ -141,7 +141,7 @@ jobs:
         run: node scripts/ci/bundle-size.mjs --write bundle-head.json
 
       - name: Restore bundle baseline
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: bundle-baseline.json
           key: bundle-baseline-pr-${{ github.sha }}
