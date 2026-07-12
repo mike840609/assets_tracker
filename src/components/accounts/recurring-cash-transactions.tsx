@@ -24,12 +24,9 @@ import { RECURRING_FREQUENCIES } from "@/lib/enums";
 import type { SerializedRecurringCashTransaction } from "@/lib/types";
 import { formatRunDate } from "./recurring-utils";
 import { RecurringRowMenu } from "./recurring-row-menu";
+import { localToday } from "@/lib/utils";
 
 type Rule = SerializedRecurringCashTransaction;
-
-function todayDateOnly(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 export function RecurringCashTransactions({
   accountId,
@@ -65,7 +62,7 @@ export function RecurringCashTransactions({
   const [type, setType] = useState<"DEPOSIT" | "WITHDRAWAL">("DEPOSIT");
   const [amount, setAmount] = useState("");
   const [frequency, setFrequency] = useState<Rule["frequency"]>("MONTHLY");
-  const [startDate, setStartDate] = useState(todayDateOnly());
+  const [startDate, setStartDate] = useState(localToday());
   const [endDate, setEndDate] = useState("");
   const [note, setNote] = useState("");
 
@@ -95,7 +92,7 @@ export function RecurringCashTransactions({
     setType("DEPOSIT");
     setAmount("");
     setFrequency("MONTHLY");
-    setStartDate(todayDateOnly());
+    setStartDate(localToday());
     setEndDate("");
     setNote("");
   }

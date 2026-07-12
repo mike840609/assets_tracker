@@ -133,6 +133,8 @@ describe("materializeDueInvestments", () => {
     // 1000 / 200 = 5 shares
     expect(Number(h.createManyCalls[0].data[0].quantity)).toBe(5);
     expect(h.createManyCalls[0].data[0].type).toBe("BUY");
+    // Execution price must be persisted or the position has no cost basis (#592).
+    expect(Number(h.createManyCalls[0].data[0].unitPrice)).toBe(200);
     expect(Number(h.holdingUpdates[0].data.quantity.increment)).toBe(5);
     expect(Number(h.accountUpdates[0].data.cashBalance.decrement)).toBe(1000);
   });

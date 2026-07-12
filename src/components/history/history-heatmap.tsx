@@ -435,7 +435,11 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                       ? "bg-muted/20 dark:bg-muted/10"
                       : "bg-muted/40 dark:bg-muted/20";
                     if (!day.isFuture && day.hasSnapshot) {
-                      if (day.change !== null && day.change < 0) {
+                      if (day.change === null || day.change === 0) {
+                        // Baseline (first snapshot) or flat day — neutral, matching
+                        // daily-change-chart, but darker than the no-snapshot tile.
+                        bgClass = "bg-muted-foreground/30 dark:bg-muted-foreground/25";
+                      } else if (day.change < 0) {
                         const intensity = maxNeg > 0 ? Math.abs(day.change) / maxNeg : 1;
                         if (intensity < 0.25) bgClass = "bg-[var(--loss)]/20";
                         else if (intensity < 0.5) bgClass = "bg-[var(--loss)]/40";
@@ -443,8 +447,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                         else if (intensity < 0.95) bgClass = "bg-[var(--loss)]/80";
                         else bgClass = "bg-[var(--loss)]";
                       } else {
-                        const intensity =
-                          maxPos > 0 && day.change !== null ? day.change / maxPos : 1;
+                        const intensity = maxPos > 0 ? day.change / maxPos : 1;
                         if (intensity < 0.25) bgClass = "bg-[var(--gain)]/20";
                         else if (intensity < 0.5) bgClass = "bg-[var(--gain)]/40";
                         else if (intensity < 0.75) bgClass = "bg-[var(--gain)]/60";

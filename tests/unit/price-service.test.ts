@@ -5,6 +5,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     priceCache: { findMany: vi.fn() },
+    holding: { findMany: vi.fn() },
+    stockWatchItem: { findMany: vi.fn() },
     $queryRawUnsafe: vi.fn(),
     $executeRawUnsafe: vi.fn(),
   },
@@ -21,7 +23,7 @@ vi.mock("next/cache", () => ({
 
 const { prisma } = await import("@/lib/prisma");
 const { getYahooClient } = await import("@/lib/services/yahoo-client");
-const { refreshPricesForStockSymbols, normalizeMinorCurrencyQuote } =
+const { refreshPricesForStockSymbols, refreshAllPrices, normalizeMinorCurrencyQuote } =
   await import("@/lib/services/price-service");
 const { PRICE_REFRESH_TTL_MS } = await import("@/lib/refresh-policy");
 
@@ -89,6 +91,38 @@ describe("fetchYahooQuotes — persists normalized minor-unit quotes to PriceCac
     expect(params).toContain("GBP"); // GBp normalized to major ISO code
     expect(params).not.toContain("GBp");
     expect(params).not.toContain("7000");
+  });
+});
+
+describe("refreshAllPrices — cron-wide symbol collection", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("includes watch-only stockWatchItem symbols alongside held symbols (#592)", async () => {
+    vi.mocked(prisma.holding.findMany).mockResolvedValueOnce([
+      { symbol: "AAPL", assetType: "STOCK" },
+    ] as never);
+    // TSLA is watch-only; AAPL is watched AND held (must not be fetched twice).
+    vi.mocked(prisma.stockWatchItem.findMany).mockResolvedValueOnce([
+      { symbol: "TSLA" },
+      { symbol: "AAPL" },
+    ] as never);
+    // currentRows lookup before the upsert (force skips the freshness gate)
+    vi.mocked(prisma.priceCache.findMany).mockResolvedValueOnce([] as never);
+    const quote = vi.fn().mockResolvedValue([
+      { symbol: "AAPL", regularMarketPrice: 100, currency: "USD" },
+      { symbol: "TSLA", regularMarketPrice: 200, currency: "USD" },
+    ]);
+    vi.mocked(getYahooClient).mockResolvedValue({ quote } as never);
+    vi.mocked(prisma.$executeRawUnsafe).mockResolvedValue(2 as never);
+
+    const result = await refreshAllPrices();
+
+    expect(result.updated).toBe(2);
+    const fetched = quote.mock.calls.flatMap(([syms]) => syms as string[]);
+    expect(fetched).toContain("TSLA");
+    expect(fetched.filter((s) => s === "AAPL")).toHaveLength(1);
   });
 });
 

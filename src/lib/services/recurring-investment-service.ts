@@ -169,6 +169,10 @@ export async function materializeDueInvestments(
             holdingId: holding.id,
             type: "BUY" as const,
             quantity: sharesPerOccurrence,
+            // Execution price in the holding's currency — without it the cost
+            // basis engine treats these shares as un-costed (zero cost basis).
+            // Catch-up occurrences share the current price (see header).
+            unitPrice: priced.price,
             note: rule.note,
             recurringId: rule.id,
             occurrenceDate: d,

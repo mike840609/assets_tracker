@@ -29,6 +29,10 @@ export const createAccountSchema = z.object({
 
 export const updateAccountSchema = createAccountSchema
   .extend({
+    // Currency is immutable after creation: cash transactions store no currency
+    // of their own, so re-denominating an account would silently corrupt all
+    // history (#557, #563). `z.never()` + `.partial()` = reject when present.
+    currency: z.never(),
     isActive: z.boolean(),
     isPinned: z.boolean(),
     note: z.string().max(500).optional().nullable(),

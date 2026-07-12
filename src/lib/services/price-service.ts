@@ -280,11 +280,26 @@ export async function getCachedPricesForSymbols(
 }
 
 export async function refreshAllPrices(): Promise<RefreshPricesResult> {
-  const holdings = await prisma.holding.findMany({
-    select: { symbol: true, assetType: true },
-    distinct: ["symbol"],
-  });
-  return refreshPricesForHoldings(holdings, { force: true });
+  // Watch-only symbols (no holding anywhere) must be included, or the daily
+  // cron never updates them and the watchlist price stays frozen at the value
+  // warmed when the item was added. Mirrors refreshPricesForUser below.
+  const [holdings, trackedStocks] = await Promise.all([
+    prisma.holding.findMany({
+      select: { symbol: true, assetType: true },
+      distinct: ["symbol"],
+    }),
+    prisma.stockWatchItem.findMany({
+      select: { symbol: true },
+      distinct: ["symbol"],
+    }),
+  ]);
+
+  const holdingKeys = new Set(holdings.map((holding) => holding.symbol));
+  const stockWatchHoldings = trackedStocks
+    .filter((stock) => !holdingKeys.has(stock.symbol))
+    .map((stock) => ({ symbol: stock.symbol, assetType: "STOCK" }));
+
+  return refreshPricesForHoldings([...holdings, ...stockWatchHoldings], { force: true });
 }
 
 export async function refreshPricesForUser(

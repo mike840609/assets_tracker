@@ -42,12 +42,15 @@ describe("updateAccountSchema", () => {
     ).toBe(false);
   });
 
-  it("accepts currency so the route can enforce the history guard", () => {
-    const result = updateAccountSchema.safeParse({ currency: "USD" });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.currency).toBe("USD");
-    }
+  it("rejects currency — immutable after creation (#557, #563, #592)", () => {
+    expect(updateAccountSchema.safeParse({ currency: "JPY" }).success).toBe(false);
+    expect(updateAccountSchema.safeParse({ name: "Broker", currency: "JPY" }).success).toBe(false);
+  });
+
+  it("still accepts partial updates that omit currency", () => {
+    expect(
+      updateAccountSchema.safeParse({ name: "Broker", cashBalance: 10, isPinned: true }).success,
+    ).toBe(true);
   });
 });
 
