@@ -61,7 +61,7 @@ test.describe("desktop plan split", () => {
     test.skip(testInfo.project.name !== "chromium", "Desktop-only navigation check");
 
     await page.goto("/goals");
-    await expect(page.getByRole("heading", { name: "Goals" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Goals", exact: true })).toBeVisible();
     await expect(page.getByRole("tablist")).toHaveCount(0);
 
     await page.goto("/stocks");
@@ -70,10 +70,14 @@ test.describe("desktop plan split", () => {
     // The page title + subtitle render from `stocks.title` / `stocks.subtitle` regardless of
     // watchlist contents, so this is independent of any items a parallel stocks.spec.ts test
     // may have left on the shared test user. Use a generous first-assertion timeout because the
-    // suite runs fullyParallel against a shared (sometimes cold) preview deployment.
+    // preview deployment can be cold on the first request.
     await expect(page.getByRole("heading", { name: "Watchlist", exact: true })).toBeVisible({
       timeout: 20_000,
     });
-    await expect(page.getByText("Track stocks from a chosen price and date.")).toBeVisible();
+    await expect(
+      page
+        .getByRole("main")
+        .getByText("Track stocks from a chosen price and date.", { exact: true }),
+    ).toBeVisible();
   });
 });

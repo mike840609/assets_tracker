@@ -58,7 +58,9 @@ test("2. create an account, add a holding manually, and see it in the list", asy
   await page.goto("/accounts");
 
   // ── Create account ──────────────────────────────────────────────────────
-  const addAccountButton = page.getByRole("button", { name: "Add Account" });
+  // A fresh account page shows both the page action and the onboarding action.
+  // Either opens the same dialog; choose the stable page action in DOM order.
+  const addAccountButton = page.getByRole("button", { name: /^add account$/i }).first();
   await expect(addAccountButton).toBeVisible({ timeout: 15_000 });
   await addAccountButton.click();
 
@@ -161,27 +163,36 @@ test("2. create an account, add a holding manually, and see it in the list", asy
 // ---------------------------------------------------------------------------
 
 test("3. dashboard renders the net-worth card and trend chart section", async ({ page }) => {
-  await page.goto("/");
-
-  // Net-worth card: scope to the card's data-testid to skip the hidden
-  // MobileHeader subtitle ("Net Worth") that appears earlier in DOM order.
-  const netWorthCard = page.getByTestId("net-worth-card");
-  await expect(netWorthCard.getByText(/net worth/i).first()).toBeVisible({
-    timeout: 15_000,
+  const accountRes = await page.request.post("/api/accounts", {
+    data: {
+      name: `E2E Dashboard ${Date.now()}`,
+      type: "ASSET",
+      category: "BANK",
+      currency: "USD",
+      cashBalance: 1_000,
+    },
   });
+  expect(accountRes.ok()).toBeTruthy();
+  const accountBody = (await accountRes.json()) as { data: { id: string } };
 
-  // Total-assets sub-card label
-  await expect(netWorthCard.getByText(/total assets/i).first()).toBeVisible({
-    timeout: 15_000,
-  });
+  try {
+    await page.goto("/");
 
-  // Trend-chart section heading
-  await expect(
-    page
-      .getByRole("main")
-      .getByText(/net worth trend/i)
-      .first(),
-  ).toBeVisible({
-    timeout: 15_000,
-  });
+    const netWorthCard = page.getByTestId("net-worth-card");
+    await expect(netWorthCard).toBeVisible({ timeout: 15_000 });
+    await expect(netWorthCard.getByText(/net worth/i).first()).toBeVisible();
+    await expect(netWorthCard.getByText(/total assets/i).first()).toBeVisible();
+
+    await expect(
+      page
+        .getByRole("main")
+        .getByText(/net worth trend/i)
+        .first(),
+    ).toBeVisible({ timeout: 15_000 });
+  } finally {
+    const deleteRes = await page.request.delete("/api/accounts", {
+      data: { ids: [accountBody.data.id] },
+    });
+    expect(deleteRes.ok()).toBeTruthy();
+  }
 });
