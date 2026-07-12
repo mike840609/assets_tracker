@@ -13,7 +13,7 @@ A self-hosted, multi-currency net worth and investment tracker for people who wa
 
 [Live Demo](https://astt.app) · [Quick Start](#quick-start) · [Deployment](./docs/DEPLOYMENT.md) · [Security](./SECURITY.md) · [Contributing](./CONTRIBUTING.md)
 
-![Assets Tracker dashboard on desktop and mobile](./public/opengraph-image.png)
+![Assets Tracker dashboard on desktop and mobile](./public/readme-hero.png)
 
 ## Why Assets Tracker?
 
