@@ -30,7 +30,6 @@ async function globalSetup() {
 
   const browser = await chromium.launch();
   const context = await browser.newContext();
-  const page = await context.newPage();
 
   // Programmatic credentials sign-in (more deterministic than UI server-action submit).
   const csrfRes = await context.request.get(`${baseURL}/api/auth/csrf`, { timeout: 60_000 });
@@ -64,9 +63,9 @@ async function globalSetup() {
     );
   }
 
-  await page.goto(`${baseURL}/`);
-  await page.waitForURL((url) => !url.pathname.includes("login"), { timeout: 30_000 });
-
+  // Do not visit an application page here. A fresh self-host has no data yet,
+  // and rendering the dashboard before per-test fixtures are seeded would warm
+  // Next.js caches with an empty result.
   await context.storageState({ path: authFile });
   await browser.close();
 }
