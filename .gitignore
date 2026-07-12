@@ -58,6 +58,7 @@ next-env.d.ts
 /AGENTS.md
 /CLAUDE.md
 /.worktreeinclude
+/.worktrees/
 /docs/superpowers/
 
 # Local agent artifacts
