@@ -27,7 +27,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
     "db:up": "docker compose up -d db",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "seed:demo": "node scripts/seed-demo.mjs"
   },
   "lint-staged": {
     "**/*.{ts,tsx,mjs,js}": [
