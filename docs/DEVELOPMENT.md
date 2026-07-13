@@ -15,6 +15,23 @@ The application runs at `http://localhost:3000`. `pnpm db:up` starts only Postgr
 
 Local development includes a one-click **Preview Login** for the dedicated test user. It does not require `PREVIEW_AUTH_PASSWORD`; hosted Vercel previews remain password-protected by default.
 
+## Demo data
+
+The preview user starts with zero accounts. Populate it without waiting for the daily cron:
+
+```bash
+pnpm seed:demo
+```
+
+This seeds accounts, holdings with cost basis, cached prices and exchange rates, 180 days of net-worth snapshot history, and a goal for `e2e-test@preview.local`. It is idempotent (wipes and re-inserts that user's data in a transaction) and refuses to run against a non-localhost `DATABASE_URL` unless `--force` is passed. Restart the dev server afterwards if already-cached pages still show the empty state.
+
+To exercise the real cron pipeline instead (price/FX refresh, recurring materialization, today's snapshot):
+
+```bash
+curl -H "Authorization: Bearer $(grep '^CRON_SECRET=' .env.local | cut -d= -f2)" \
+  http://localhost:3000/api/cron/snapshot
+```
+
 ## Validation
 
 Run the same fast checks used for pull requests:
