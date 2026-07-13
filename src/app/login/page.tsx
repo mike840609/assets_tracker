@@ -5,7 +5,7 @@ import { auth, signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Lock, ShieldCheck, EyeOff } from "lucide-react";
 import { SESSION_COOKIE_NAMES } from "@/lib/auth-cookies";
-import { isPreviewOrLocal, previewAuthDisabled } from "@/lib/env";
+import { isPreviewOrLocal, previewAuthRequiresPassword } from "@/lib/env";
 import { getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import Link from "next/link";
@@ -125,7 +125,7 @@ async function LoginContent() {
               }}
             >
               <div className="flex flex-col gap-3">
-                {!previewAuthDisabled && (
+                {previewAuthRequiresPassword && (
                   <input
                     name="password"
                     type="password"
