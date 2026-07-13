@@ -16,6 +16,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Vendored agent skills — not part of the app source.
     ".agents/**",
+    // Nested git worktrees (see docs/DEVELOPMENT.md) each have their own
+    // .next build output; .claude/** above only covers agent-managed ones.
+    ".worktrees/**",
   ]),
   // Disallow raw console calls — use src/lib/logger.ts instead (server) or eslint-disable for client components
   {
