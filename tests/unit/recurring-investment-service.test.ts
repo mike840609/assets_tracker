@@ -5,6 +5,7 @@ const h = vi.hoisted(() => ({
   rates: new Map<string, number>(),
   prices: [] as Array<{ symbol: string; price: number; currency: string }>,
   existingHoldingCurrency: null as string | null,
+  transactionalHoldingCurrency: "USD",
   upserts: [] as Array<Record<string, unknown>>,
   createManyCalls: [] as Array<{ data: Array<Record<string, unknown>> }>,
   holdingUpdates: [] as Array<{ where: unknown; data: { quantity: { increment: unknown } } }>,
@@ -60,7 +61,7 @@ vi.mock("@/lib/prisma", () => ({
       ),
       upsert: vi.fn(async (args: Record<string, unknown>) => {
         h.upserts.push(args);
-        return { id: "holding1" };
+        return { id: "holding1", currency: h.transactionalHoldingCurrency };
       }),
       update: vi.fn(
         async (args: { where: unknown; data: { quantity: { increment: unknown } } }) => {
@@ -119,6 +120,7 @@ describe("materializeDueInvestments", () => {
     h.rates = new Map();
     h.prices = [{ symbol: "NVDA", price: 200, currency: "USD" }];
     h.existingHoldingCurrency = null;
+    h.transactionalHoldingCurrency = "USD";
     h.upserts = [];
     h.createManyCalls = [];
     h.holdingUpdates = [];
@@ -211,6 +213,21 @@ describe("materializeDueInvestments", () => {
 
     expect(result).toEqual({ created: 0, rulesProcessed: 1 });
     expect(h.upserts).toHaveLength(0);
+    expect(h.createManyCalls).toHaveLength(0);
+    expect(h.holdingUpdates).toHaveLength(0);
+    expect(h.accountUpdates).toHaveLength(0);
+    expect(h.ruleUpdates).toHaveLength(0); // nextRunDate untouched → retries after data is fixed
+  });
+
+  it("rolls back when a concurrent holding has a different currency", async () => {
+    h.existingHoldingCurrency = null;
+    h.transactionalHoldingCurrency = "TWD";
+    h.dueRules = [rule()];
+
+    const result = await materializeDueInvestments(d("2026-06-14"));
+
+    expect(result).toEqual({ created: 0, rulesProcessed: 1 });
+    expect(h.upserts).toHaveLength(1);
     expect(h.createManyCalls).toHaveLength(0);
     expect(h.holdingUpdates).toHaveLength(0);
     expect(h.accountUpdates).toHaveLength(0);
