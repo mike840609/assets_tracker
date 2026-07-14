@@ -27,6 +27,7 @@ jobs:
       CRON_SECRET: e2e-cron-secret-placeholder-not-real
       NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
       VERCEL_ENV: preview
+      PREVIEW_AUTH_ENABLED: "true"
       PREVIEW_AUTH_PASSWORD: e2e-smoke-test
       E2E_PASSWORD: e2e-smoke-test
       PLAYWRIGHT_TEST_BASE_URL: http://127.0.0.1:3000

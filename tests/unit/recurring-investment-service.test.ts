@@ -4,6 +4,8 @@ const h = vi.hoisted(() => ({
   dueRules: [] as Array<Record<string, unknown>>,
   rates: new Map<string, number>(),
   prices: [] as Array<{ symbol: string; price: number; currency: string }>,
+  existingHoldingCurrency: null as string | null,
+  transactionalHoldingCurrency: "USD",
   upserts: [] as Array<Record<string, unknown>>,
   createManyCalls: [] as Array<{ data: Array<Record<string, unknown>> }>,
   holdingUpdates: [] as Array<{ where: unknown; data: { quantity: { increment: unknown } } }>,
@@ -54,12 +56,12 @@ vi.mock("@/lib/prisma", () => ({
       upsert: vi.fn(async () => ({})),
     },
     holding: {
-      // Pre-existing-holding lookup for the currency-mismatch diagnostic warning.
-      // Null = no pre-existing holding (the common case), so no behavior change.
-      findUnique: vi.fn(async () => null),
+      findUnique: vi.fn(async () =>
+        h.existingHoldingCurrency ? { currency: h.existingHoldingCurrency } : null,
+      ),
       upsert: vi.fn(async (args: Record<string, unknown>) => {
         h.upserts.push(args);
-        return { id: "holding1" };
+        return { id: "holding1", currency: h.transactionalHoldingCurrency };
       }),
       update: vi.fn(
         async (args: { where: unknown; data: { quantity: { increment: unknown } } }) => {
@@ -117,6 +119,8 @@ describe("materializeDueInvestments", () => {
     h.dueRules = [];
     h.rates = new Map();
     h.prices = [{ symbol: "NVDA", price: 200, currency: "USD" }];
+    h.existingHoldingCurrency = null;
+    h.transactionalHoldingCurrency = "USD";
     h.upserts = [];
     h.createManyCalls = [];
     h.holdingUpdates = [];
@@ -132,6 +136,7 @@ describe("materializeDueInvestments", () => {
     expect(result).toEqual({ created: 1, rulesProcessed: 1 });
     // 1000 / 200 = 5 shares
     expect(Number(h.createManyCalls[0].data[0].quantity)).toBe(5);
+    expect(Number(h.createManyCalls[0].data[0].unitPrice)).toBe(200);
     expect(h.createManyCalls[0].data[0].type).toBe("BUY");
     expect(Number(h.holdingUpdates[0].data.quantity.increment)).toBe(5);
     expect(Number(h.accountUpdates[0].data.cashBalance.decrement)).toBe(1000);
@@ -198,6 +203,35 @@ describe("materializeDueInvestments", () => {
     expect(h.createManyCalls).toHaveLength(0);
     expect(h.accountUpdates).toHaveLength(0);
     expect(h.ruleUpdates).toHaveLength(0); // nextRunDate untouched → retries next run
+  });
+
+  it("skips (no writes, no advance) when the holding and price currencies differ", async () => {
+    h.existingHoldingCurrency = "TWD";
+    h.dueRules = [rule()];
+
+    const result = await materializeDueInvestments(d("2026-06-14"));
+
+    expect(result).toEqual({ created: 0, rulesProcessed: 1 });
+    expect(h.upserts).toHaveLength(0);
+    expect(h.createManyCalls).toHaveLength(0);
+    expect(h.holdingUpdates).toHaveLength(0);
+    expect(h.accountUpdates).toHaveLength(0);
+    expect(h.ruleUpdates).toHaveLength(0); // nextRunDate untouched → retries after data is fixed
+  });
+
+  it("rolls back when a concurrent holding has a different currency", async () => {
+    h.existingHoldingCurrency = null;
+    h.transactionalHoldingCurrency = "TWD";
+    h.dueRules = [rule()];
+
+    const result = await materializeDueInvestments(d("2026-06-14"));
+
+    expect(result).toEqual({ created: 0, rulesProcessed: 1 });
+    expect(h.upserts).toHaveLength(1);
+    expect(h.createManyCalls).toHaveLength(0);
+    expect(h.holdingUpdates).toHaveLength(0);
+    expect(h.accountUpdates).toHaveLength(0);
+    expect(h.ruleUpdates).toHaveLength(0); // nextRunDate untouched → retries after data is fixed
   });
 
   it("increments by inserted count, not occurrence count, on idempotent skip", async () => {

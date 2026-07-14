@@ -4,14 +4,18 @@ import Credentials from "next-auth/providers/credentials";
 import authConfig from "./auth.config";
 import { customPrismaAdapter } from "@/lib/auth-adapter";
 import { prisma } from "@/lib/prisma";
-import { isPreviewOrLocal, previewAuthRequiresPassword, PREVIEW_AUTH_PASSWORD } from "@/lib/env";
+import {
+  isPreviewAuthEnabled,
+  previewAuthRequiresPassword,
+  PREVIEW_AUTH_PASSWORD,
+} from "@/lib/env";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: customPrismaAdapter as NextAuthConfig["adapter"],
   providers: [
     ...authConfig.providers,
-    ...(isPreviewOrLocal
+    ...(isPreviewAuthEnabled
       ? [
           Credentials({
             credentials: {

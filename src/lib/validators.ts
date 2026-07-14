@@ -29,6 +29,7 @@ export const createAccountSchema = z.object({
 
 export const updateAccountSchema = createAccountSchema
   .extend({
+    currency: z.never("Currency cannot be changed after account creation"),
     isActive: z.boolean(),
     isPinned: z.boolean(),
     note: z.string().max(500).optional().nullable(),

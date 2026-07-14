@@ -6,6 +6,13 @@ import { computeDueOccurrences, utcDateOnly } from "./recurring-cash-service";
 import { resolveRate } from "./exchange-rate-service";
 import { fetchStockPrices, fetchCryptoPrices } from "./price-service";
 
+class HoldingCurrencyMismatchError extends Error {
+  constructor(readonly holdingCurrency: string) {
+    super("Holding currency changed before recurring investment materialization");
+    this.name = "HoldingCurrencyMismatchError";
+  }
+}
+
 /**
  * Recurring investments (F6 — dollar-cost averaging).
  *
@@ -130,10 +137,9 @@ export async function materializeDueInvestments(
     const amountInPriceCcy = new Decimal(rule.amount).times(fxRate);
     const sharesPerOccurrence = amountInPriceCcy.div(priced.price);
 
-    // net-worth values a holding by its stored `currency` assuming it matches
-    // the price currency (net-worth-service.ts). A pre-existing holding whose
-    // currency drifted from the live price currency would be mis-valued — that
-    // bad data predates this feature, but surface it so it's diagnosable.
+    // Cost basis and net worth interpret transaction prices in the holding's
+    // stored currency. Do not post or advance a rule if that currency has
+    // drifted from the live price currency; retry after the data is corrected.
     const existingHolding = await prisma.holding.findUnique({
       where: { accountId_symbol: { accountId: rule.accountId, symbol: rule.symbol } },
       select: { currency: true },
@@ -145,6 +151,7 @@ export async function materializeDueInvestments(
         holdingCurrency: existingHolding.currency,
         priceCurrency: priced.currency,
       });
+      continue;
     }
 
     try {
@@ -161,14 +168,19 @@ export async function materializeDueInvestments(
             currency: priced.currency,
             quantity: 0,
           },
-          select: { id: true },
+          select: { id: true, currency: true },
         });
+
+        if (holding.currency !== priced.currency) {
+          throw new HoldingCurrencyMismatchError(holding.currency);
+        }
 
         const res = await tx.holdingTransaction.createMany({
           data: occurrences.map((d) => ({
             holdingId: holding.id,
             type: "BUY" as const,
             quantity: sharesPerOccurrence,
+            unitPrice: priced.price,
             note: rule.note,
             recurringId: rule.id,
             occurrenceDate: d,
@@ -202,7 +214,16 @@ export async function materializeDueInvestments(
         posted: inserted,
       });
     } catch (error) {
-      log.error("cron.investment.materialize_failed", { ruleId: rule.id, error: String(error) });
+      if (error instanceof HoldingCurrencyMismatchError) {
+        log.warn("cron.investment.currency_mismatch", {
+          ruleId: rule.id,
+          symbol: rule.symbol,
+          holdingCurrency: error.holdingCurrency,
+          priceCurrency: priced.currency,
+        });
+      } else {
+        log.error("cron.investment.materialize_failed", { ruleId: rule.id, error: String(error) });
+      }
     }
   }
 
