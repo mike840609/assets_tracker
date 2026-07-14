@@ -68,6 +68,8 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000). Stop the local database with `pnpm db:down`.
 
+To explore the app with sample data, sign in with the one-click **Preview Login** (local development only) and run `pnpm seed:demo`. See the [development workflow](./docs/DEVELOPMENT.md) for details.
+
 ## Production Deployment
 
 ### Docker Compose

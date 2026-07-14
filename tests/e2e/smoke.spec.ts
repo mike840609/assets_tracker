@@ -7,10 +7,11 @@
  *   3. Dashboard loads with net-worth card + trend chart
  *
  * Auth strategy: Google OAuth is stubbed via Next.js's built-in
- * Credentials provider, enabled when VERCEL_ENV=preview.  This avoids
- * needing real Google tokens in CI while still exercising the full
- * NextAuth session-creation path.  The global-setup logs in once and
- * saves storage state; tests 2 & 3 reuse that state.
+ * Credentials provider, explicitly enabled with PREVIEW_AUTH_ENABLED=true
+ * for the production-mode local E2E build. This avoids needing real Google
+ * tokens in CI while still exercising the full NextAuth session-creation
+ * path. The global-setup logs in once and saves storage state; tests 2 & 3
+ * reuse that state.
  */
 
 import { test, expect } from "@playwright/test";

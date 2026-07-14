@@ -68,6 +68,8 @@ pnpm dev
 
 開啟 [http://localhost:3000](http://localhost:3000)。使用 `pnpm db:down` 停止本機資料庫。
 
+想以示範資料瀏覽應用程式，可使用一鍵 **Preview Login**（僅限本機開發）登入，並執行 `pnpm seed:demo`。詳見[開發流程](./docs/DEVELOPMENT.md)。
+
 ## 正式部署
 
 ### Docker Compose

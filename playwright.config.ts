@@ -49,6 +49,7 @@ export default defineConfig({
           reuseExistingServer: false,
           env: {
             VERCEL_ENV: "preview",
+            PREVIEW_AUTH_ENABLED: "true",
             PREVIEW_AUTH_PASSWORD: E2E_PASSWORD,
           },
         },
