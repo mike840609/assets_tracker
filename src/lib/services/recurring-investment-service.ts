@@ -130,10 +130,9 @@ export async function materializeDueInvestments(
     const amountInPriceCcy = new Decimal(rule.amount).times(fxRate);
     const sharesPerOccurrence = amountInPriceCcy.div(priced.price);
 
-    // net-worth values a holding by its stored `currency` assuming it matches
-    // the price currency (net-worth-service.ts). A pre-existing holding whose
-    // currency drifted from the live price currency would be mis-valued — that
-    // bad data predates this feature, but surface it so it's diagnosable.
+    // Cost basis and net worth interpret transaction prices in the holding's
+    // stored currency. Do not post or advance a rule if that currency has
+    // drifted from the live price currency; retry after the data is corrected.
     const existingHolding = await prisma.holding.findUnique({
       where: { accountId_symbol: { accountId: rule.accountId, symbol: rule.symbol } },
       select: { currency: true },
@@ -145,6 +144,7 @@ export async function materializeDueInvestments(
         holdingCurrency: existingHolding.currency,
         priceCurrency: priced.currency,
       });
+      continue;
     }
 
     try {
