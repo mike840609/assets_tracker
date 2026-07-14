@@ -169,6 +169,7 @@ export async function materializeDueInvestments(
             holdingId: holding.id,
             type: "BUY" as const,
             quantity: sharesPerOccurrence,
+            unitPrice: priced.price,
             note: rule.note,
             recurringId: rule.id,
             occurrenceDate: d,

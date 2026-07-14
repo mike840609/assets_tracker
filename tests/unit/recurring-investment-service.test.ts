@@ -132,6 +132,7 @@ describe("materializeDueInvestments", () => {
     expect(result).toEqual({ created: 1, rulesProcessed: 1 });
     // 1000 / 200 = 5 shares
     expect(Number(h.createManyCalls[0].data[0].quantity)).toBe(5);
+    expect(Number(h.createManyCalls[0].data[0].unitPrice)).toBe(200);
     expect(h.createManyCalls[0].data[0].type).toBe("BUY");
     expect(Number(h.holdingUpdates[0].data.quantity.increment)).toBe(5);
     expect(Number(h.accountUpdates[0].data.cashBalance.decrement)).toBe(1000);
