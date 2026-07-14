@@ -50,6 +50,18 @@ describe("resolvePreviewAuthPolicy", () => {
     ).toEqual({ enabled: true, requiresPassword: true });
   });
 
+  it("keeps Vercel production disabled even when explicitly enabled", () => {
+    expect(
+      resolvePreviewAuthPolicy({
+        nodeEnv: "production",
+        vercel: "1",
+        vercelEnv: "production",
+        authEnabled: "true",
+        authDisabled: undefined,
+      }),
+    ).toEqual({ enabled: false, requiresPassword: false });
+  });
+
   it("honors the explicit passwordless override on a hosted preview", () => {
     expect(
       resolvePreviewAuthPolicy({

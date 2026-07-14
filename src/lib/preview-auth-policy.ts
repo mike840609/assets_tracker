@@ -19,7 +19,7 @@ export function resolvePreviewAuthPolicy({
 }: PreviewAuthEnvironment): { enabled: boolean; requiresPassword: boolean } {
   const localDevelopment = nodeEnv === "development" || nodeEnv === "test";
   const hostedVercelPreview = vercel === "1" && vercelEnv === "preview";
-  const explicitlyEnabled = isTruthyFlag(authEnabled);
+  const explicitlyEnabled = vercel !== "1" && isTruthyFlag(authEnabled);
   const enabled = localDevelopment || hostedVercelPreview || explicitlyEnabled;
   const requiresPassword = enabled && !localDevelopment && !isTruthyFlag(authDisabled);
 

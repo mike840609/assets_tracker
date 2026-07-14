@@ -10,6 +10,7 @@ const authFile = path.join(__dirname, ".auth/user.json");
  *
  * Requirements on the server:
  *   VERCEL_ENV=preview
+ *   PREVIEW_AUTH_ENABLED=true
  *   PREVIEW_AUTH_PASSWORD=<same value as E2E_PASSWORD env var here>
  */
 async function globalSetup() {
