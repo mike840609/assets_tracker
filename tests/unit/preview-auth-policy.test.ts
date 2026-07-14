@@ -1,34 +1,64 @@
 import { describe, expect, it } from "vitest";
-import { requiresPreviewAuthPassword } from "@/lib/preview-auth-policy";
+import { resolvePreviewAuthPolicy } from "@/lib/preview-auth-policy";
 
-describe("requiresPreviewAuthPassword", () => {
-  it("does not require a password for a local preview simulation", () => {
+describe("resolvePreviewAuthPolicy", () => {
+  it("enables passwordless auth in local development", () => {
     expect(
-      requiresPreviewAuthPassword({
+      resolvePreviewAuthPolicy({
+        nodeEnv: "development",
         vercel: undefined,
-        vercelEnv: "preview",
+        vercelEnv: undefined,
+        authEnabled: undefined,
         authDisabled: undefined,
       }),
-    ).toBe(false);
+    ).toEqual({ enabled: true, requiresPassword: false });
   });
 
-  it("requires a password on a hosted Vercel preview", () => {
+  it("disables auth by default in non-Vercel production", () => {
     expect(
-      requiresPreviewAuthPassword({
-        vercel: "1",
-        vercelEnv: "preview",
+      resolvePreviewAuthPolicy({
+        nodeEnv: "production",
+        vercel: undefined,
+        vercelEnv: undefined,
+        authEnabled: undefined,
         authDisabled: undefined,
       }),
-    ).toBe(true);
+    ).toEqual({ enabled: false, requiresPassword: false });
+  });
+
+  it("enables password-protected auth on a hosted Vercel preview", () => {
+    expect(
+      resolvePreviewAuthPolicy({
+        nodeEnv: "production",
+        vercel: "1",
+        vercelEnv: "preview",
+        authEnabled: undefined,
+        authDisabled: undefined,
+      }),
+    ).toEqual({ enabled: true, requiresPassword: true });
+  });
+
+  it("enables password-protected auth when explicitly enabled in non-Vercel production", () => {
+    expect(
+      resolvePreviewAuthPolicy({
+        nodeEnv: "production",
+        vercel: undefined,
+        vercelEnv: undefined,
+        authEnabled: "true",
+        authDisabled: undefined,
+      }),
+    ).toEqual({ enabled: true, requiresPassword: true });
   });
 
   it("honors the explicit passwordless override on a hosted preview", () => {
     expect(
-      requiresPreviewAuthPassword({
+      resolvePreviewAuthPolicy({
+        nodeEnv: "production",
         vercel: "1",
         vercelEnv: "preview",
+        authEnabled: undefined,
         authDisabled: "true",
       }),
-    ).toBe(false);
+    ).toEqual({ enabled: true, requiresPassword: false });
   });
 });

@@ -5,7 +5,7 @@ import { auth, signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Lock, ShieldCheck, EyeOff } from "lucide-react";
 import { SESSION_COOKIE_NAMES } from "@/lib/auth-cookies";
-import { isPreviewOrLocal, previewAuthRequiresPassword } from "@/lib/env";
+import { isPreviewAuthEnabled, previewAuthRequiresPassword } from "@/lib/env";
 import { getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import Link from "next/link";
@@ -107,7 +107,7 @@ async function LoginContent() {
           </div>
         </div>
 
-        {isPreviewOrLocal && (
+        {isPreviewAuthEnabled && (
           <>
             <div className="flex items-center gap-3 pt-2">
               <div className="flex-1 h-px bg-border" />
