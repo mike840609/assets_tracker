@@ -280,11 +280,23 @@ export async function getCachedPricesForSymbols(
 }
 
 export async function refreshAllPrices(): Promise<RefreshPricesResult> {
-  const holdings = await prisma.holding.findMany({
-    select: { symbol: true, assetType: true },
-    distinct: ["symbol"],
-  });
-  return refreshPricesForHoldings(holdings, { force: true });
+  const [holdings, trackedStocks] = await Promise.all([
+    prisma.holding.findMany({
+      select: { symbol: true, assetType: true },
+      distinct: ["symbol"],
+    }),
+    prisma.stockWatchItem.findMany({
+      select: { symbol: true },
+      distinct: ["symbol"],
+    }),
+  ]);
+
+  const holdingKeys = new Set(holdings.map((holding) => holding.symbol));
+  const stockWatchHoldings = trackedStocks
+    .filter((stock) => !holdingKeys.has(stock.symbol))
+    .map((stock) => ({ symbol: stock.symbol, assetType: "STOCK" }));
+
+  return refreshPricesForHoldings([...holdings, ...stockWatchHoldings], { force: true });
 }
 
 export async function refreshPricesForUser(

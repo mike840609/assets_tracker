@@ -21,16 +21,13 @@ import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currencies";
 import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import { RECURRING_FREQUENCIES } from "@/lib/enums";
+import { localToday } from "@/lib/utils";
 import { HoldingSearch, type SearchResult } from "./holding-search";
 import type { SerializedRecurringInvestment } from "@/lib/types";
 import { formatRunDate } from "./recurring-utils";
 import { RecurringRowMenu } from "./recurring-row-menu";
 
 type Rule = SerializedRecurringInvestment;
-
-function todayDateOnly(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 export function RecurringInvestments({
   accountId,
@@ -57,7 +54,7 @@ export function RecurringInvestments({
   const [selected, setSelected] = useState<SearchResult | null>(null);
   const [amount, setAmount] = useState("");
   const [frequency, setFrequency] = useState<Rule["frequency"]>("MONTHLY");
-  const [startDate, setStartDate] = useState(todayDateOnly());
+  const [startDate, setStartDate] = useState(localToday());
   const [endDate, setEndDate] = useState("");
   const [note, setNote] = useState("");
 
@@ -87,7 +84,7 @@ export function RecurringInvestments({
     setSelected(null);
     setAmount("");
     setFrequency("MONTHLY");
-    setStartDate(todayDateOnly());
+    setStartDate(localToday());
     setEndDate("");
     setNote("");
   }
