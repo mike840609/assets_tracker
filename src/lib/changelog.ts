@@ -38,6 +38,43 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.0.1",
+    date: "2026-07-15",
+    summary: {
+      "en-US": "Security and correctness hardening for the first public release.",
+      "zh-TW": "為首次公開發布補強安全性與資料正確性。",
+    },
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Self-hosted production no longer exposes preview credentials by default, Vercel production remains Google-only, and high-severity runtime dependency findings have been remediated.",
+          "zh-TW":
+            "自行部署的正式環境預設不再開放預覽帳號登入，Vercel 正式環境維持僅限 Google 登入，並修補高嚴重度的執行期相依套件弱點。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Account currency is now immutable after creation, and recurring investment transactions preserve their execution price while safely rejecting holding/price currency mismatches.",
+          "zh-TW":
+            "帳戶建立後不可再變更幣別；定期投資交易會保存成交價格，並安全拒絕持倉幣別與報價幣別不一致的情況。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Daily refreshes now include watch-only stocks, recurring forms use the local calendar date, history heatmap colors treat flat days neutrally, and pull-to-refresh stays active until navigation finishes.",
+          "zh-TW":
+            "每日更新現在涵蓋僅加入觀察清單的股票；定期規則表單改用本地日期；歷史熱力圖以中性色顯示持平日期；下拉更新會等待導覽完成後再結束。",
+        },
+      },
+    ],
+  },
+  {
     version: "1.0.0",
     date: "2026-07-11",
     summary: {
