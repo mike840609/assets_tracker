@@ -34,7 +34,6 @@ Built with Next.js 16, React 19, Prisma 7, PostgreSQL, Tailwind CSS 4, and NextA
 
 - Node.js 24
 - Docker with Docker Compose
-- A Google OAuth application
 
 ### 1. Configure the environment
 
@@ -42,14 +41,14 @@ Built with Next.js 16, React 19, Prisma 7, PostgreSQL, Tailwind CSS 4, and NextA
 cp .env.example .env
 ```
 
-Replace the generated-placeholder values for `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, and `CRON_SECRET`. The example database URLs are ready for the bundled local PostgreSQL container.
+Replace the generated-placeholder values for `AUTH_SECRET`, `AUTH_SELF_HOST_PASSWORD`, and `CRON_SECRET`. The example database URLs are ready for the bundled local PostgreSQL container.
 
-Configure the Google OAuth client with:
+The default self-host login is a single owner account protected by `AUTH_SELF_HOST_PASSWORD`. Google OAuth is optional for non-Vercel deployments. To enable it, set both `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`, then configure the OAuth client with:
 
 - Authorized JavaScript origin: `http://localhost:3000`
 - Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
 
-Use your HTTPS production origin and the same `/api/auth/callback/google` path when deploying.
+Use your HTTPS production origin and the same `/api/auth/callback/google` path when deploying. Vercel production continues to require Google OAuth.
 
 ### 2. Install and initialize
 

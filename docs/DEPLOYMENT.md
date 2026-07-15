@@ -1,23 +1,27 @@
 # Deployment and Self-Hosting
 
-Assets Tracker can run as a single Docker container backed by PostgreSQL or as a Vercel project backed by Neon. The application must use HTTPS in production because Google OAuth redirects and financial data should never travel over plaintext connections.
+Assets Tracker can run as a single Docker container backed by PostgreSQL or as a Vercel project backed by Neon. The application must use HTTPS in production because authentication credentials and financial data should never travel over plaintext connections.
 
 ## Required environment variables
 
-| Variable              | Purpose                               |
-| --------------------- | ------------------------------------- |
-| `DATABASE_URL`        | Runtime PostgreSQL connection         |
-| `DIRECT_URL`          | Optional direct migration connection  |
-| `AUTH_SECRET`         | NextAuth signing/encryption secret    |
-| `AUTH_GOOGLE_ID`      | Google OAuth client ID                |
-| `AUTH_GOOGLE_SECRET`  | Google OAuth client secret            |
-| `CRON_SECRET`         | Bearer token for `/api/cron/snapshot` |
-| `NEXT_PUBLIC_APP_URL` | Canonical public application URL      |
-| `POSTGRES_PASSWORD`   | Bundled Docker PostgreSQL password    |
+| Variable                  | Purpose                                          |
+| ------------------------- | ------------------------------------------------ |
+| `DATABASE_URL`            | Runtime PostgreSQL connection                    |
+| `DIRECT_URL`              | Optional direct migration connection             |
+| `AUTH_SECRET`             | NextAuth signing/encryption secret               |
+| `AUTH_SELF_HOST_PASSWORD` | Single-owner password for a non-Vercel self-host |
+| `CRON_SECRET`             | Bearer token for `/api/cron/snapshot`            |
+| `NEXT_PUBLIC_APP_URL`     | Canonical public application URL                 |
+| `POSTGRES_PASSWORD`       | Bundled Docker PostgreSQL password               |
 
-Generate URL-safe secrets with `openssl rand -hex 32`. See [`.env.example`](../.env.example) for optional Preview and Sentry settings.
+Generate URL-safe secrets with `openssl rand -hex 32`. `AUTH_SELF_HOST_PASSWORD` must contain at least 16 characters. See [`.env.example`](../.env.example) for optional Google OAuth, Preview, and Sentry settings.
 
-Google OAuth requires an authorized origin matching `NEXT_PUBLIC_APP_URL` and an authorized redirect URI at:
+Non-Vercel production requires at least one authentication method:
+
+- Set `AUTH_SELF_HOST_PASSWORD` for the built-in single-owner login.
+- Optionally set both `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` to enable Google OAuth alongside or instead of the self-host password.
+
+Vercel production requires Google OAuth and never enables the self-host credentials provider. Google OAuth requires an authorized origin matching `NEXT_PUBLIC_APP_URL` and an authorized redirect URI at:
 
 ```text
 https://your-domain.example/api/auth/callback/google
@@ -35,7 +39,7 @@ The `full` profile builds and starts migrations plus the standalone Next.js appl
 
 ```bash
 cp .env.example .env
-# Set production secrets and NEXT_PUBLIC_APP_URL in .env
+# Set AUTH_SECRET, AUTH_SELF_HOST_PASSWORD, CRON_SECRET, and NEXT_PUBLIC_APP_URL
 docker compose --profile full up --build -d
 ```
 

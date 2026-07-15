@@ -52,8 +52,11 @@ jobs:
       - name: Wait for the login page
         run: |
           for attempt in {1..30}; do
-            if curl --fail --silent --show-error http://127.0.0.1:3000/login > /dev/null; then
-              exit 0
+            if login_page=$(curl --fail --silent --show-error http://127.0.0.1:3000/login); then
+              if grep -q "Self-host password" <<< "$login_page" && \
+                 ! grep -q "Continue with Google" <<< "$login_page"; then
+                exit 0
+              fi
             fi
             sleep 5
           done

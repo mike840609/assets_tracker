@@ -46,8 +46,9 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/asset_app?sslmode=disable
       AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env}
-      AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID:?Set AUTH_GOOGLE_ID in .env}
-      AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET:?Set AUTH_GOOGLE_SECRET in .env}
+      AUTH_SELF_HOST_PASSWORD: ${AUTH_SELF_HOST_PASSWORD:-}
+      AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID:-}
+      AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET:-}
       CRON_SECRET: ${CRON_SECRET:?Set CRON_SECRET in .env}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
     depends_on:

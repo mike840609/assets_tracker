@@ -15,7 +15,7 @@ The application runs at `http://localhost:3000`. `pnpm db:up` starts only Postgr
 
 Local development includes a one-click **Preview Login** for the dedicated test user. It does not require `PREVIEW_AUTH_PASSWORD`; hosted Vercel previews remain password-protected by default.
 
-Docker and other non-Vercel production deployments leave the preview credentials provider disabled by default. Set `PREVIEW_AUTH_ENABLED=true` only for a non-Vercel production-mode preview; when enabled in production, `PREVIEW_AUTH_PASSWORD` is required unless `PREVIEW_AUTH_DISABLED` is explicitly enabled.
+Docker and other non-Vercel production deployments use `AUTH_SELF_HOST_PASSWORD` for the single-owner login by default. The separate preview credentials provider remains disabled. Set `PREVIEW_AUTH_ENABLED=true` only for a non-Vercel production-mode preview; when enabled in production, `PREVIEW_AUTH_PASSWORD` is required unless `PREVIEW_AUTH_DISABLED` is explicitly enabled.
 
 ## Demo data
 

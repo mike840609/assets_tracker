@@ -11,7 +11,7 @@ Assets Tracker is a Next.js App Router application backed by PostgreSQL through 
 - `prisma/schema.prisma` — persistent data model
 - `prisma/migrations/` — ordered production schema history
 
-Authentication uses NextAuth.js with Google OAuth and JWT sessions. `src/auth.config.ts` stays runtime-safe while `src/auth.ts` contains server-only adapter configuration.
+Authentication uses NextAuth.js with JWT sessions. Non-Vercel deployments may use a built-in single-owner password, Google OAuth, or both; Vercel production remains Google-only. `src/auth.config.ts` stays runtime-safe while `src/auth.ts` contains server-only adapter and credentials-provider configuration.
 
 ## Database adapters
 
