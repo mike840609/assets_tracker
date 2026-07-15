@@ -72,6 +72,30 @@ pnpm exec prisma migrate deploy
 
 `prisma db push` is reserved for disposable experiments. See [DATABASE.md](./DATABASE.md).
 
+### Reset the local database
+
+These commands permanently delete all local database data. Before running them, confirm that `DATABASE_URL` points to `localhost` or `127.0.0.1`.
+
+Reset the configured development database and reapply all migrations:
+
+```bash
+pnpm exec prisma migrate reset --force
+```
+
+Optionally repopulate the preview user afterwards:
+
+```bash
+pnpm seed:demo
+```
+
+To also delete and recreate the Docker database volume:
+
+```bash
+docker compose down -v
+pnpm db:up
+pnpm exec prisma migrate deploy
+```
+
 ## Git worktrees
 
 Worktrees allow several isolated branches to share one Git object database and pnpm content-addressable store:
