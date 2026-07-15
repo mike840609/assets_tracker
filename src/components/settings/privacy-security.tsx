@@ -130,7 +130,7 @@ export function PrivacySecurity({ userEmail, signOutAction }: PrivacySecurityPro
                 <KeyRoundIcon className="size-4" aria-hidden="true" />
               </RowIcon>
               <div className="space-y-1">
-                <p className="text-sm font-medium">{t("privacy.signedInWithGoogle")}</p>
+                <p className="text-sm font-medium">{t("privacy.signedInSecurely")}</p>
                 <p className="max-w-[55ch] text-sm text-muted-foreground">
                   {userEmail
                     ? t("privacy.sessionDescriptionWithEmail", { email: userEmail })
