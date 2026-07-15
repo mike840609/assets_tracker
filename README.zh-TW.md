@@ -34,7 +34,6 @@
 
 - Node.js 24
 - Docker 與 Docker Compose
-- Google OAuth 應用程式
 
 ### 1. 設定環境變數
 
@@ -42,14 +41,14 @@
 cp .env.example .env
 ```
 
-替換 `AUTH_SECRET`、`AUTH_GOOGLE_ID`、`AUTH_GOOGLE_SECRET` 與 `CRON_SECRET` 的預留值。範例中的資料庫連線已可直接搭配內建的本機 PostgreSQL 容器。
+替換 `AUTH_SECRET`、`AUTH_SELF_HOST_PASSWORD` 與 `CRON_SECRET` 的預留值。範例中的資料庫連線已可直接搭配內建的本機 PostgreSQL 容器。
 
-Google OAuth 用戶端請設定：
+自行部署預設使用由 `AUTH_SELF_HOST_PASSWORD` 保護的單一擁有者帳號。非 Vercel 部署可選擇啟用 Google OAuth；請同時設定 `AUTH_GOOGLE_ID` 與 `AUTH_GOOGLE_SECRET`，並將 OAuth 用戶端設定為：
 
 - 已授權的 JavaScript 來源：`http://localhost:3000`
 - 已授權的重新導向 URI：`http://localhost:3000/api/auth/callback/google`
 
-正式部署時請改用 HTTPS 網域，並保留相同的 `/api/auth/callback/google` 路徑。
+正式部署時請改用 HTTPS 網域，並保留相同的 `/api/auth/callback/google` 路徑。Vercel 正式環境仍強制使用 Google OAuth。
 
 ### 2. 安裝並初始化
 

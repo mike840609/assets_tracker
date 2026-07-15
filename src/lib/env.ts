@@ -2,6 +2,11 @@ import "server-only";
 import { z } from "zod";
 import { resolvePreviewAuthPolicy } from "@/lib/preview-auth-policy";
 
+const optionalString = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z.string().trim().min(1, "must not be empty").optional(),
+);
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]),
@@ -14,15 +19,25 @@ const envSchema = z
         "must be a valid PostgreSQL connection string",
       ),
     AUTH_SECRET: z.string().trim().min(1, "is required"),
-    AUTH_GOOGLE_ID: z.string().trim().min(1, "is required"),
-    AUTH_GOOGLE_SECRET: z.string().trim().min(1, "is required"),
+    AUTH_GOOGLE_ID: optionalString,
+    AUTH_GOOGLE_SECRET: optionalString,
+    AUTH_SELF_HOST_PASSWORD: z.preprocess(
+      (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+      z.string().trim().min(16, "must be at least 16 characters").optional(),
+    ),
     CRON_SECRET: z.string().trim().min(1, "is required"),
-    AUTH_REDIRECT_PROXY_URL: z.string().url("must be a valid URL").optional(),
-    PREVIEW_AUTH_PASSWORD: z.string().trim().min(1, "must not be empty").optional(),
+    AUTH_REDIRECT_PROXY_URL: z.preprocess(
+      (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+      z.string().url("must be a valid URL").optional(),
+    ),
+    PREVIEW_AUTH_PASSWORD: optionalString,
     PREVIEW_AUTH_ENABLED: z.string().trim().optional(),
     PREVIEW_AUTH_DISABLED: z.string().trim().optional(),
-    VERCEL: z.literal("1").optional(),
-    VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
+    VERCEL: z.preprocess((value) => (value === "" ? undefined : value), z.literal("1").optional()),
+    VERCEL_ENV: z.preprocess(
+      (value) => (value === "" ? undefined : value),
+      z.enum(["production", "preview", "development"]).optional(),
+    ),
     // E19 — Sentry error reporting. All optional: when no DSN is set the
     // integration is a complete no-op (local dev / CI / build need no Sentry
     // account). SENTRY_DSN drives server + edge init; NEXT_PUBLIC_SENTRY_DSN is
@@ -34,16 +49,41 @@ const envSchema = z
     SENTRY_CAPTURE_WARNINGS: z.string().trim().optional(),
   })
   .superRefine((value, ctx) => {
+    const hasGoogleId = Boolean(value.AUTH_GOOGLE_ID);
+    const hasGoogleSecret = Boolean(value.AUTH_GOOGLE_SECRET);
+
+    if (hasGoogleId !== hasGoogleSecret) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [hasGoogleId ? "AUTH_GOOGLE_SECRET" : "AUTH_GOOGLE_ID"],
+        message: "is required when Google authentication is configured",
+      });
+    }
+
+    const previewPolicy = resolvePreviewAuthPolicy({
+      nodeEnv: value.NODE_ENV,
+      vercel: value.VERCEL,
+      vercelEnv: value.VERCEL_ENV,
+      authEnabled: value.PREVIEW_AUTH_ENABLED,
+      authDisabled: value.PREVIEW_AUTH_DISABLED,
+    });
+    const googleEnabled = hasGoogleId && hasGoogleSecret;
+    const selfHostEnabled = value.VERCEL !== "1" && Boolean(value.AUTH_SELF_HOST_PASSWORD);
+
     if (
-      resolvePreviewAuthPolicy({
-        nodeEnv: value.NODE_ENV,
-        vercel: value.VERCEL,
-        vercelEnv: value.VERCEL_ENV,
-        authEnabled: value.PREVIEW_AUTH_ENABLED,
-        authDisabled: value.PREVIEW_AUTH_DISABLED,
-      }).requiresPassword &&
-      !value.PREVIEW_AUTH_PASSWORD
+      value.NODE_ENV === "production" &&
+      !googleEnabled &&
+      !selfHostEnabled &&
+      !previewPolicy.enabled
     ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["AUTH_SELF_HOST_PASSWORD"],
+        message: "or Google authentication is required in production",
+      });
+    }
+
+    if (previewPolicy.requiresPassword && !value.PREVIEW_AUTH_PASSWORD) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["PREVIEW_AUTH_PASSWORD"],
@@ -58,6 +98,7 @@ const parsedEnv = envSchema.safeParse({
   AUTH_SECRET: process.env.AUTH_SECRET,
   AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
   AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
+  AUTH_SELF_HOST_PASSWORD: process.env.AUTH_SELF_HOST_PASSWORD,
   CRON_SECRET: process.env.CRON_SECRET,
   AUTH_REDIRECT_PROXY_URL: process.env.AUTH_REDIRECT_PROXY_URL,
   PREVIEW_AUTH_PASSWORD: process.env.PREVIEW_AUTH_PASSWORD,
@@ -92,6 +133,7 @@ export const {
   AUTH_SECRET,
   AUTH_GOOGLE_ID,
   AUTH_GOOGLE_SECRET,
+  AUTH_SELF_HOST_PASSWORD,
   CRON_SECRET,
   AUTH_REDIRECT_PROXY_URL,
   PREVIEW_AUTH_PASSWORD,
@@ -119,3 +161,5 @@ const previewAuthPolicy = resolvePreviewAuthPolicy({
 
 export const isPreviewAuthEnabled = previewAuthPolicy.enabled;
 export const previewAuthRequiresPassword = previewAuthPolicy.requiresPassword;
+export const isGoogleAuthEnabled = Boolean(AUTH_GOOGLE_ID && AUTH_GOOGLE_SECRET);
+export const isSelfHostAuthEnabled = VERCEL !== "1" && Boolean(AUTH_SELF_HOST_PASSWORD);
