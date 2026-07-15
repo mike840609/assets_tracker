@@ -35,8 +35,9 @@ describe("demo portfolio", () => {
       expect(
         holding.transactions.reduce((sum, transaction) => sum + transaction.quantity, 0),
       ).toBeCloseTo(holding.quantity);
-      expect(PRICES[holding.symbol]).toBeGreaterThan(0);
+      expect(Object.hasOwn(PRICES, holding.symbol)).toBe(true);
     }
+    expect(Object.values(PRICES).every((price) => price > 0)).toBe(true);
   });
 
   it("keeps bank ledger activity consistent with the current cash balance", () => {
