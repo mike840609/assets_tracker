@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 const h = vi.hoisted(() => ({
   events: [] as string[],
   expiredOptions: [] as Array<{ id: string; quantity: number }>,
+  optionSweepGuardFails: false,
   users: [{ id: "user1", appSettings: { baseCurrency: "USD" } }],
   snapshotFailures: new Set<string>(),
 }));
@@ -58,9 +59,12 @@ vi.mock("@/lib/prisma", () => {
     },
     holding: {
       findMany: vi.fn(async () => h.expiredOptions),
-      updateMany: vi.fn(async () => ({ count: h.expiredOptions.length })),
+      // Per-holding guarded zeroing: count 0 simulates a concurrent writer
+      // moving the quantity between the sweep's read and its write.
+      updateMany: vi.fn(async () => ({ count: h.optionSweepGuardFails ? 0 : 1 })),
     },
     holdingTransaction: {
+      create: vi.fn(async () => ({})),
       createMany: vi.fn(async () => ({ count: h.expiredOptions.length })),
     },
     account: {
@@ -85,6 +89,7 @@ describe("snapshot cron route", () => {
     vi.clearAllMocks();
     h.events = [];
     h.expiredOptions = [];
+    h.optionSweepGuardFails = false;
     h.users = [{ id: "user1", appSettings: { baseCurrency: "USD" } }];
     h.snapshotFailures = new Set();
   });
@@ -105,6 +110,44 @@ describe("snapshot cron route", () => {
     expect(h.events.indexOf("revalidate:net-worth")).toBeLessThan(
       h.events.indexOf("snapshot:user1"),
     );
+  });
+
+  it("mints a SELL row for the read quantity when the expiry sweep guard holds", async () => {
+    h.expiredOptions = [{ id: "holding1", quantity: 2 }];
+    const { GET } = await import("@/app/api/cron/snapshot/route");
+    const { prisma } = await import("@/lib/prisma");
+
+    const response = await GET(
+      new Request("http://unit.test/api/cron/snapshot", {
+        headers: { authorization: "Bearer test-secret" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(vi.mocked(prisma.holding.updateMany)).toHaveBeenCalledWith({
+      where: { id: "holding1", quantity: 2 },
+      data: { quantity: 0 },
+    });
+    expect(vi.mocked(prisma.holdingTransaction.create)).toHaveBeenCalledWith({
+      data: { holdingId: "holding1", type: "SELL", quantity: 2, note: "Expired" },
+    });
+  });
+
+  it("skips the SELL row when another writer changed the option quantity mid-sweep", async () => {
+    h.expiredOptions = [{ id: "holding1", quantity: 2 }];
+    h.optionSweepGuardFails = true;
+    const { GET } = await import("@/app/api/cron/snapshot/route");
+    const { prisma } = await import("@/lib/prisma");
+
+    const response = await GET(
+      new Request("http://unit.test/api/cron/snapshot", {
+        headers: { authorization: "Bearer test-secret" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(vi.mocked(prisma.holdingTransaction.create)).not.toHaveBeenCalled();
+    expect(vi.mocked(prisma.holdingTransaction.createMany)).not.toHaveBeenCalled();
   });
 
   it("returns 200 and records failed user ids when only some snapshots fail", async () => {
