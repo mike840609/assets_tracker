@@ -14,6 +14,9 @@ import { log } from "@/lib/logger";
 function invalidateUserCaches(userId: string) {
   revalidateTag(`accounts:${userId}`, { expire: 0 });
   revalidateTag(`net-worth:${userId}`, { expire: 0 });
+  // getAccountMonthlyCashFlow (tagged history:{u}) reads the account set, and
+  // the [id] sibling route already busts it — keep the two paths aligned.
+  revalidateTag(`history:${userId}`, { expire: 0 });
 }
 
 // Fire-and-forget rate refresh for a currency that doesn't yet exist in
