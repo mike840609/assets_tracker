@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
+import { after } from "next/server";
 import type { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { refreshExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
+import { refreshPricesForUser } from "@/lib/services/price-service";
 import { dataImportSchema } from "@/lib/validators";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
@@ -549,6 +551,14 @@ export const POST = withAuth(async (request, _ctx, userId) => {
     );
 
     invalidateImportCaches(userId);
+
+    // Imported holdings may reference symbols with no PriceCache row yet —
+    // without this they render unpriced until the next manual refresh / cron.
+    after(() =>
+      refreshPricesForUser(userId).catch((error) =>
+        log.error("import.price_warm_failed", { error: String(error) }),
+      ),
+    );
 
     const response = ok({ ok: true });
     if (importData.settings?.locale) {
