@@ -26,7 +26,9 @@ function invalidateUserCaches(userId: string) {
 async function warmPriceCacheFor(symbol: string, assetType: string) {
   try {
     const isCrypto = assetType === "CRYPTO";
-    const priceResults = isCrypto ? await fetchCryptoPrices([symbol]) : await fetchStockPrices([symbol]);
+    const priceResults = isCrypto
+      ? await fetchCryptoPrices([symbol])
+      : await fetchStockPrices([symbol]);
 
     const result = priceResults.get(symbol);
     if (result) {
