@@ -98,6 +98,7 @@ const {
   getCurrentYearNormalizedHistory,
   getFullNormalizedHistory,
   getSnapshotReconciliationWarning,
+  isBetterDuplicate,
 } = await import("@/lib/services/history-service");
 const { aggregateMonthlyChange, fillMonthRange, buildCashFlowBuckets, buildCumulativeGrowth } =
   await import("@/lib/services/analysis-service");
@@ -464,5 +465,25 @@ describe("getSnapshotReconciliationWarning", () => {
     h.accounts = [account({ cashBalance: 1030 })];
 
     await expect(getSnapshotReconciliationWarning("u1", "USD")).resolves.toBeNull();
+  });
+});
+
+describe("isBetterDuplicate (exported for import dedupe)", () => {
+  it("prefers a currency match over a newer non-match", () => {
+    expect(
+      isBetterDuplicate(
+        { matchesTarget: true, createdAt: new Date("2026-01-01T00:00:00Z") },
+        { matchesTarget: false, createdAt: new Date("2026-06-01T00:00:00Z") },
+      ),
+    ).toBe(true);
+  });
+
+  it("prefers the newest createdAt among equal matches", () => {
+    expect(
+      isBetterDuplicate(
+        { matchesTarget: true, createdAt: new Date("2026-01-01T00:00:00Z") },
+        { matchesTarget: true, createdAt: new Date("2026-06-01T00:00:00Z") },
+      ),
+    ).toBe(false);
   });
 });
