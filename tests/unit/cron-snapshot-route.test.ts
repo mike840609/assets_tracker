@@ -189,12 +189,10 @@ describe("snapshot cron route", () => {
     vi.setSystemTime(new Date("2026-07-05T21:30:00.000Z")); // 07-06 05:30 Taipei
     try {
       const { GET } = await import("@/app/api/cron/snapshot/route");
-      const { materializeDueRecurringTransactions } = await import(
-        "@/lib/services/recurring-cash-service"
-      );
-      const { materializeDueInvestments } = await import(
-        "@/lib/services/recurring-investment-service"
-      );
+      const { materializeDueRecurringTransactions } =
+        await import("@/lib/services/recurring-cash-service");
+      const { materializeDueInvestments } =
+        await import("@/lib/services/recurring-investment-service");
 
       await GET(
         new Request("http://unit.test/api/cron/snapshot", {

@@ -10,7 +10,5 @@ export const TAIWAN_OFFSET_MS = 8 * 60 * 60 * 1000;
 /** UTC-midnight Date of the Taiwan calendar day containing `now`. */
 export function taiwanCalendarDay(now: Date): Date {
   const shifted = new Date(now.getTime() + TAIWAN_OFFSET_MS);
-  return new Date(
-    Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate()),
-  );
+  return new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate()));
 }
