@@ -133,6 +133,56 @@ describe("recurring rule PATCH routes", () => {
     expect(h.cashUpdateManyAndReturnCalls).toHaveLength(0);
   });
 
+  it("clamps nextRunDate to the next scheduled occurrence when startDate moves into the past", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-20T12:00:00.000Z"));
+    try {
+      h.cashRule = recurringCashRule({ endDate: null });
+      const { PATCH } = await import(
+        "@/app/api/accounts/[id]/recurring-cash-transactions/[recurringId]/route"
+      );
+
+      const response = await PATCH(
+        jsonRequest({ startDate: "2026-01-15" }),
+        params("cash-rule-1"),
+      );
+
+      expect(response.status).toBe(200);
+      const call = h.cashUpdateManyAndReturnCalls[0] as { data: Record<string, unknown> };
+      expect(call.data.startDate).toEqual(date("2026-01-15"));
+      // Monthly anchored to the 15th, today = 2026-03-20 → next occurrence is
+      // 2026-04-15, NOT the past startDate (which would replay Jan–Mar).
+      expect(call.data.nextRunDate).toEqual(date("2026-04-15"));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("clamps nextRunDate to the next scheduled occurrence for investment rules when startDate moves into the past", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-20T12:00:00.000Z"));
+    try {
+      h.investmentRule = recurringInvestmentRule({ endDate: null });
+      const { PATCH } = await import(
+        "@/app/api/accounts/[id]/recurring-investments/[recurringId]/route"
+      );
+
+      const response = await PATCH(
+        jsonRequest({ startDate: "2026-01-15" }),
+        params("investment-rule-1"),
+      );
+
+      expect(response.status).toBe(200);
+      const call = h.investmentUpdateManyAndReturnCalls[0] as { data: Record<string, unknown> };
+      expect(call.data.startDate).toEqual(date("2026-01-15"));
+      // Monthly anchored to the 15th, today = 2026-03-20 → next occurrence is
+      // 2026-04-15, NOT the past startDate (which would replay Jan–Mar).
+      expect(call.data.nextRunDate).toEqual(date("2026-04-15"));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("rejects a cash-rule edit when its date range changed concurrently", async () => {
     h.cashUpdateManyAndReturnCount = 0;
     const { PATCH } =

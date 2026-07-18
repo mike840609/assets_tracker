@@ -71,6 +71,26 @@ export function advanceRecurringDate(
 }
 
 /**
+ * First scheduled occurrence on/after `from`, walking the schedule from
+ * `startDate` (anchored to its day-of-month). Used by the PATCH routes so a
+ * startDate edit re-anchors the schedule WITHOUT replaying missed history —
+ * only rule *creation* intentionally backfills past occurrences.
+ */
+export function firstOccurrenceOnOrAfter(
+  startDate: Date,
+  frequency: RecurringFrequency,
+  from: Date,
+): Date {
+  const anchorDay = utcDateOnly(startDate).getUTCDate();
+  const target = utcDateOnly(from);
+  let cursor = utcDateOnly(startDate);
+  while (cursor.getTime() < target.getTime()) {
+    cursor = advanceRecurringDate(cursor, frequency, anchorDay);
+  }
+  return cursor;
+}
+
+/**
  * Computes every occurrence due on or before `today` (catch-up), starting from
  * `nextRunDate`, bounded by `endDate`. Returns the occurrences plus the new
  * `nextRunDate` (the first date beyond what was produced) to persist back.
