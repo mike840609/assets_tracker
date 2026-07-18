@@ -138,14 +138,10 @@ describe("recurring rule PATCH routes", () => {
     vi.setSystemTime(new Date("2026-03-20T12:00:00.000Z"));
     try {
       h.cashRule = recurringCashRule({ endDate: null });
-      const { PATCH } = await import(
-        "@/app/api/accounts/[id]/recurring-cash-transactions/[recurringId]/route"
-      );
+      const { PATCH } =
+        await import("@/app/api/accounts/[id]/recurring-cash-transactions/[recurringId]/route");
 
-      const response = await PATCH(
-        jsonRequest({ startDate: "2026-01-15" }),
-        params("cash-rule-1"),
-      );
+      const response = await PATCH(jsonRequest({ startDate: "2026-01-15" }), params("cash-rule-1"));
 
       expect(response.status).toBe(200);
       const call = h.cashUpdateManyAndReturnCalls[0] as { data: Record<string, unknown> };
@@ -163,9 +159,8 @@ describe("recurring rule PATCH routes", () => {
     vi.setSystemTime(new Date("2026-03-20T12:00:00.000Z"));
     try {
       h.investmentRule = recurringInvestmentRule({ endDate: null });
-      const { PATCH } = await import(
-        "@/app/api/accounts/[id]/recurring-investments/[recurringId]/route"
-      );
+      const { PATCH } =
+        await import("@/app/api/accounts/[id]/recurring-investments/[recurringId]/route");
 
       const response = await PATCH(
         jsonRequest({ startDate: "2026-01-15" }),
