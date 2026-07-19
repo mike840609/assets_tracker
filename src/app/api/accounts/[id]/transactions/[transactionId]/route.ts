@@ -8,6 +8,7 @@ import {
   getCashTransactionAmountError,
   getHoldingTransactionQuantityError,
   normalizeHoldingTransactionQuantity,
+  toDbMoneyDelta,
 } from "@/lib/services/balance";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
@@ -210,7 +211,7 @@ export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
           if (delta !== 0) {
             await tx.account.update({
               where: { id: accountId },
-              data: { cashBalance: { increment: delta } },
+              data: { cashBalance: { increment: toDbMoneyDelta(delta) } },
             });
           }
         }
@@ -315,7 +316,7 @@ export const DELETE = withAuth<TxCtx>(async (_request, { params }, userId) => {
         if (delta !== 0) {
           await tx.account.update({
             where: { id: accountId },
-            data: { cashBalance: { increment: delta } },
+            data: { cashBalance: { increment: toDbMoneyDelta(delta) } },
           });
         }
       });

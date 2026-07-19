@@ -1,7 +1,11 @@
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createCashTransactionSchema } from "@/lib/validators";
-import { calculateBalanceDelta, getCashTransactionAmountError } from "@/lib/services/balance";
+import {
+  calculateBalanceDelta,
+  getCashTransactionAmountError,
+  toDbMoneyDelta,
+} from "@/lib/services/balance";
 import { withAuth } from "@/lib/api-handler";
 import { ok, failure, validationError } from "@/lib/api-responses";
 
@@ -39,7 +43,7 @@ export const POST = withAuth(
 
       await tx.account.update({
         where: { id },
-        data: { cashBalance: { increment: delta } },
+        data: { cashBalance: { increment: toDbMoneyDelta(delta) } },
       });
 
       return created;
