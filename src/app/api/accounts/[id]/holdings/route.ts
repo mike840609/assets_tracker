@@ -21,6 +21,29 @@ function invalidateUserCaches(userId: string) {
   revalidateTag(`history:${userId}`, { expire: 0 });
 }
 
+// Fetch + cache a market price for a symbol so it renders priced immediately
+// (POST after create, PATCH after a symbol rename). Fire-and-forget via after().
+async function warmPriceCacheFor(symbol: string, assetType: string) {
+  try {
+    const isCrypto = assetType === "CRYPTO";
+    const priceResults = isCrypto
+      ? await fetchCryptoPrices([symbol])
+      : await fetchStockPrices([symbol]);
+
+    const result = priceResults.get(symbol);
+    if (result) {
+      await prisma.priceCache.upsert({
+        where: { symbol },
+        update: { price: result.price, currency: result.currency, updatedAt: new Date() },
+        create: { symbol, price: result.price, currency: result.currency },
+      });
+      revalidateTag("prices", { expire: 0 });
+    }
+  } catch (error) {
+    log.error("holdings.price_fetch.failed", { symbol, error: String(error) });
+  }
+}
+
 async function maybeWarmExchangeRate(currency: string) {
   try {
     const existing = await prisma.exchangeRate.findFirst({
@@ -127,26 +150,7 @@ export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
     return upserted;
   });
 
-  after(async () => {
-    try {
-      const isCrypto = holding.assetType === "CRYPTO";
-      const priceResults = isCrypto
-        ? await fetchCryptoPrices([holding.symbol])
-        : await fetchStockPrices([holding.symbol]);
-
-      const result = priceResults.get(holding.symbol);
-      if (result) {
-        await prisma.priceCache.upsert({
-          where: { symbol: holding.symbol },
-          update: { price: result.price, currency: result.currency, updatedAt: new Date() },
-          create: { symbol: holding.symbol, price: result.price, currency: result.currency },
-        });
-        revalidateTag("prices", { expire: 0 });
-      }
-    } catch (error) {
-      log.error("holdings.price_fetch.failed", { symbol: holding.symbol, error: String(error) });
-    }
-  });
+  after(() => warmPriceCacheFor(holding.symbol, holding.assetType));
 
   invalidateUserCaches(userId);
   if (holding.currency) after(() => maybeWarmExchangeRate(holding.currency));
@@ -228,6 +232,11 @@ export const PATCH = withAuth<IdCtx>(async (request, _ctx, userId) => {
   }
 
   invalidateUserCaches(userId);
+  // A renamed symbol may have no PriceCache row yet — warm it like POST does,
+  // or the holding renders unpriced until the next refresh/cron.
+  if (data.symbol !== undefined && data.symbol !== existing.symbol) {
+    after(() => warmPriceCacheFor(holding.symbol, holding.assetType));
+  }
   return ok(holding);
 });
 

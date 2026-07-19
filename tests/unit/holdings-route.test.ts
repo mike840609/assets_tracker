@@ -190,6 +190,39 @@ describe("holdings route", () => {
     });
   });
 
+  it("warms the price cache for the new symbol when a holding is renamed", async () => {
+    h.existingHolding = {
+      id: "h1",
+      symbol: "OLD",
+      name: "Old Corp",
+      quantity: 5,
+      currency: "USD",
+      assetType: "STOCK",
+    };
+    const { fetchStockPrices } = await import("@/lib/services/price-service");
+    vi.mocked(fetchStockPrices).mockResolvedValueOnce(
+      new Map([["NEW", { price: 42, currency: "USD" }]]),
+    );
+    const { PATCH } = await import("@/app/api/accounts/[id]/holdings/route");
+
+    const response = await PATCH(
+      new Request("http://unit.test", {
+        method: "PATCH",
+        body: JSON.stringify({ id: "h1", symbol: "NEW" }),
+        headers: { "content-type": "application/json" },
+      }),
+      { params: Promise.resolve({ id: "acc1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    for (const task of h.afterTasks) await task();
+    expect(vi.mocked(fetchStockPrices)).toHaveBeenCalledWith(["NEW"]);
+    const { prisma } = await import("@/lib/prisma");
+    expect(vi.mocked(prisma.priceCache.upsert)).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { symbol: "NEW" } }),
+    );
+  });
+
   it("maps a P2002 symbol conflict on PATCH to a 409", async () => {
     const { Prisma } = await import("@/generated/prisma/client");
     const { PATCH } = await import("@/app/api/accounts/[id]/holdings/route");
