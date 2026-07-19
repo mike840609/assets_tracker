@@ -754,6 +754,9 @@
     "noData": "尚無資料",
     "refreshing": "更新中..."
   },
+  "fxWarning": {
+    "unresolvedRates": "無法取得 {pairs} 匯率，受影響的金額以未換算數值顯示。"
+  },
   "trendChart": {
     "title": "淨資產趨勢",
     "noData": "尚無資料。新增帳戶後，系統每天會自動記錄你的淨資產。",

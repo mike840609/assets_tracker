@@ -4,14 +4,31 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // `@/lib/prisma` (loads env + a real DB client) and `@/lib/logger`
 // (loads Sentry). resolveRate is pure, so we stub those import-time
 // dependencies and exercise the function against an in-memory rate map.
-vi.mock("@/lib/prisma", () => ({ prisma: {} }));
+const db = vi.hoisted(() => ({
+  accounts: [] as { currency: string; holdings: { currency: string; symbol: string }[] }[],
+  goals: [] as { targetCurrency: string }[],
+  snapshotCurrencies: [] as { baseCurrency: string }[],
+  priceCurrencies: [] as { currency: string }[],
+  exchangeRates: [] as { fromCurrency: string; toCurrency: string; rate: number }[],
+}));
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    account: { findMany: vi.fn(async () => db.accounts) },
+    goal: { findMany: vi.fn(async () => db.goals) },
+    netWorthSnapshot: { findMany: vi.fn(async () => db.snapshotCurrencies) },
+    priceCache: { findMany: vi.fn(async () => db.priceCurrencies) },
+    exchangeRate: { findMany: vi.fn(async () => db.exchangeRates) },
+  },
+}));
+vi.mock("next/cache", () => ({ cacheTag: () => {}, cacheLife: () => {} }));
 const logSpies = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
 vi.mock("@/lib/logger", () => ({
   log: logSpies,
   withTiming: <T>(_name: string, fn: () => T) => fn(),
 }));
 
-const { resolveRate, fetchExchangeRates } = await import("@/lib/services/exchange-rate-service");
+const { resolveRate, fetchExchangeRates, getUnresolvedRatePairs } =
+  await import("@/lib/services/exchange-rate-service");
 
 describe("resolveRate", () => {
   it("returns 1 for an identity conversion", () => {
@@ -61,6 +78,50 @@ describe("resolveRate", () => {
       ["USD_EUR", 0.9],
     ]);
     expect(resolveRate(map, "EUR", "TWD")).toBeCloseTo(30 / 0.9);
+  });
+});
+
+describe("getUnresolvedRatePairs", () => {
+  beforeEach(() => {
+    db.accounts = [];
+    db.goals = [];
+    db.snapshotCurrencies = [];
+    db.priceCurrencies = [];
+    db.exchangeRates = [];
+  });
+
+  it("reports currencies that cannot resolve to base", async () => {
+    // TWD resolves via the inverse of USD_TWD; JPY (a price-cache
+    // denomination) has no direct, inverse, or USD-cross path.
+    db.accounts = [{ currency: "TWD", holdings: [{ currency: "USD", symbol: "N225" }] }];
+    db.priceCurrencies = [{ currency: "JPY" }];
+    db.exchangeRates = [{ fromCurrency: "USD", toCurrency: "TWD", rate: 30 }];
+
+    await expect(getUnresolvedRatePairs("user-1", "USD")).resolves.toEqual(["JPY→USD"]);
+  });
+
+  it("returns empty when all currencies resolve (incl. inverse and USD cross)", async () => {
+    db.accounts = [{ currency: "TWD", holdings: [{ currency: "EUR", symbol: "VWCE" }] }];
+    db.priceCurrencies = [{ currency: "EUR" }];
+    db.exchangeRates = [
+      { fromCurrency: "USD", toCurrency: "TWD", rate: 30 },
+      { fromCurrency: "USD", toCurrency: "EUR", rate: 0.9 },
+    ];
+
+    await expect(getUnresolvedRatePairs("user-1", "TWD")).resolves.toEqual([]);
+  });
+
+  it("ignores the base currency itself", async () => {
+    db.accounts = [{ currency: "USD", holdings: [] }];
+
+    await expect(getUnresolvedRatePairs("user-1", "USD")).resolves.toEqual([]);
+  });
+
+  it("covers goal and snapshot currencies, sorted", async () => {
+    db.goals = [{ targetCurrency: "GBP" }];
+    db.snapshotCurrencies = [{ baseCurrency: "AUD" }];
+
+    await expect(getUnresolvedRatePairs("user-1", "USD")).resolves.toEqual(["AUD→USD", "GBP→USD"]);
   });
 });
 
