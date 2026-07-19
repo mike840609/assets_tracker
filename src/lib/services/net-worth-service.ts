@@ -230,6 +230,11 @@ async function getCachedNetWorthSummaryInner(
   // computeNetWorthSummary reads PriceCache, so a price-only refresh
   // (watchlist stock, holdings write, cron) must be able to invalidate it.
   cacheTag("prices");
+  // Defense-in-depth: the summary is computed FROM accounts/holdings, so an
+  // accounts-tag invalidation must reach it even if a future mutation path
+  // forgets to co-invalidate net-worth:{userId}.
+  cacheTag("accounts");
+  cacheTag(`accounts:${userId}`);
   cacheLife("hours");
   return computeNetWorthSummary(userId, baseCurrency);
 }
