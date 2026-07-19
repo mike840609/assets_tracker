@@ -30,10 +30,16 @@
 
 ## 操作展示
 
-<p align="center">
-  <img src="./public/readme-demo-desktop.gif" width="68%" alt="資產追蹤器桌面版儀表板操作展示">
-  <img src="./public/readme-demo-mobile.png" width="25%" alt="資產追蹤器行動版儀表板">
-</p>
+<table>
+  <tr>
+    <th width="70%">桌面版</th>
+    <th width="30%">行動版</th>
+  </tr>
+  <tr>
+    <td><img src="./public/readme-demo-desktop.gif" alt="資產追蹤器桌面版儀表板操作展示"></td>
+    <td><img src="./public/readme-demo-mobile.png" alt="資產追蹤器行動版儀表板"></td>
+  </tr>
+</table>
 
 ## 快速開始
 

@@ -30,10 +30,16 @@ Built with Next.js 16, React 19, Prisma 7, PostgreSQL, Tailwind CSS 4, and NextA
 
 ## Demo
 
-<p align="center">
-  <img src="./public/readme-demo-desktop.gif" width="68%" alt="Assets Tracker desktop dashboard demo">
-  <img src="./public/readme-demo-mobile.png" width="25%" alt="Assets Tracker mobile dashboard">
-</p>
+<table>
+  <tr>
+    <th width="70%">Desktop</th>
+    <th width="30%">Mobile</th>
+  </tr>
+  <tr>
+    <td><img src="./public/readme-demo-desktop.gif" alt="Assets Tracker desktop dashboard demo"></td>
+    <td><img src="./public/readme-demo-mobile.png" alt="Assets Tracker mobile dashboard"></td>
+  </tr>
+</table>
 
 ## Quick Start
 
