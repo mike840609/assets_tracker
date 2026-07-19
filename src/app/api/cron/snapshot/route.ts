@@ -6,6 +6,7 @@ import { refreshAllPrices } from "@/lib/services/price-service";
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { materializeDueRecurringTransactions } from "@/lib/services/recurring-cash-service";
 import { materializeDueInvestments } from "@/lib/services/recurring-investment-service";
+import { taiwanCalendarDay } from "@/lib/app-day";
 import { ok, failure } from "@/lib/api-responses";
 import { CRON_SECRET } from "@/lib/env";
 import { log } from "@/lib/logger";
@@ -52,21 +53,28 @@ export async function GET(request: Request) {
     });
     if (expiredOptions.length > 0) {
       log.info("cron.options.expire", { count: expiredOptions.length });
-      await prisma.$transaction([
-        prisma.holdingTransaction.createMany({
-          data: expiredOptions.map((h) => ({
-            holdingId: h.id,
-            type: "SELL" as const,
-            quantity: Number(h.quantity),
-            note: "Expired",
-          })),
-        }),
-        prisma.holding.updateMany({
-          where: { id: { in: expiredOptions.map((h) => h.id) } },
-          data: { quantity: 0 },
-        }),
-      ]);
-      expiredOptionsChanged = true;
+      for (const h of expiredOptions) {
+        // Guard the zeroing on the quantity we read: if the user traded this
+        // contract between the read and the write, skip it (it is re-checked
+        // on the next run) instead of minting a SELL for a stale quantity.
+        await prisma.$transaction(async (tx) => {
+          const res = await tx.holding.updateMany({
+            where: { id: h.id, quantity: h.quantity },
+            data: { quantity: 0 },
+          });
+          if (res.count === 1) {
+            await tx.holdingTransaction.create({
+              data: {
+                holdingId: h.id,
+                type: "SELL",
+                quantity: h.quantity,
+                note: "Expired",
+              },
+            });
+            expiredOptionsChanged = true;
+          }
+        });
+      }
     }
 
     // 1. Warm the ExchangeRate cache (so render paths never need to fetch
@@ -105,13 +113,17 @@ export async function GET(request: Request) {
     // the day's snapshot reflects the posted cash. This piggybacks on the daily
     // cron — no dedicated cron is added (Free-plan compatible). The catch-up
     // loop inside also covers any days a prior cron run was skipped/failed.
-    const recurring = await materializeDueRecurringTransactions();
+    // Materialize against the TAIWAN business day so a rule due "today"
+    // (Taipei) posts in the same run whose snapshot is stamped with that day —
+    // at 21:30 UTC the raw UTC day is still yesterday in Taipei.
+    const businessDay = taiwanCalendarDay(new Date());
+    const recurring = await materializeDueRecurringTransactions(businessDay);
     if (recurring.rulesProcessed > 0) {
       log.info("cron.recurring.summary", recurring);
     }
     // Recurring investments (DCA) — runs after cash so cash deposits land before
     // they're spent on buys; prices are already refreshed above.
-    const investments = await materializeDueInvestments();
+    const investments = await materializeDueInvestments(businessDay);
     if (investments.rulesProcessed > 0) {
       log.info("cron.investment.summary", investments);
     }

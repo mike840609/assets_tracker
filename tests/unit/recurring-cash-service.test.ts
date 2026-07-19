@@ -49,6 +49,7 @@ vi.mock("@/lib/prisma", () => ({
 import {
   advanceRecurringDate,
   computeDueOccurrences,
+  firstOccurrenceOnOrAfter,
   materializeDueRecurringTransactions,
   utcDateOnly,
 } from "@/lib/services/recurring-cash-service";
@@ -157,6 +158,37 @@ describe("computeDueOccurrences", () => {
       10,
     );
     expect(occurrences).toHaveLength(10);
+  });
+});
+
+describe("firstOccurrenceOnOrAfter", () => {
+  it("returns startDate itself when it is in the future", () => {
+    const result = firstOccurrenceOnOrAfter(
+      new Date("2026-08-15T00:00:00.000Z"),
+      "MONTHLY",
+      new Date("2026-07-20T00:00:00.000Z"),
+    );
+    expect(result.toISOString()).toBe("2026-08-15T00:00:00.000Z");
+  });
+
+  it("skips past occurrences and lands on the next scheduled one", () => {
+    // Monthly from Jan 15; asked on Mar 20 → Apr 15 (not Mar 20, not Jan 15)
+    const result = firstOccurrenceOnOrAfter(
+      new Date("2026-01-15T00:00:00.000Z"),
+      "MONTHLY",
+      new Date("2026-03-20T00:00:00.000Z"),
+    );
+    expect(result.toISOString()).toBe("2026-04-15T00:00:00.000Z");
+  });
+
+  it("keeps the month-end anchor while clamping short months", () => {
+    // Monthly from Jan 31; asked on Feb 1 → Feb 28, and the anchor stays 31
+    const result = firstOccurrenceOnOrAfter(
+      new Date("2026-01-31T00:00:00.000Z"),
+      "MONTHLY",
+      new Date("2026-02-01T00:00:00.000Z"),
+    );
+    expect(result.toISOString()).toBe("2026-02-28T00:00:00.000Z");
   });
 });
 

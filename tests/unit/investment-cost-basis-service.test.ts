@@ -159,4 +159,34 @@ describe("getInvestmentCostBasisSummary", () => {
     expect(summary.pricedHoldingCount).toBe(1);
     expect(summary.costedHoldingCount).toBe(1);
   });
+
+  it("converts market value using the price-cache currency, not the stale holding currency", async () => {
+    // Holding says USD, but the provider actually quotes BTC-EUR in EUR.
+    h.accounts = [
+      account({
+        currency: "USD",
+        holdings: [
+          holding({
+            symbol: "BTC-EUR",
+            quantity: 1,
+            currency: "USD",
+            assetType: "STOCK",
+            transactions: [tx({ id: "t1", type: "BUY", quantity: 1, unitPrice: 10000 })],
+          }),
+        ],
+      }),
+    ];
+    h.prices = [{ symbol: "BTC-EUR", price: 20000, currency: "EUR" }];
+    h.rates = new Map([
+      ["EUR_USD", 2], // deliberately extreme so a wrong leg is obvious
+      ["USD_USD", 1],
+    ]);
+
+    const summary = await getInvestmentCostBasisSummary("user1", "USD");
+
+    // Market value must cross the EUR leg: 20000 * 2 = 40000 (not 20000).
+    expect(summary.marketValue).toBeCloseTo(40000, 6);
+    // Cost basis stays in the holding's stored currency (USD): 10000.
+    expect(summary.costBasis).toBeCloseTo(10000, 6);
+  });
 });
