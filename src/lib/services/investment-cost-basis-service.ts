@@ -68,12 +68,20 @@ export async function getInvestmentCostBasisSummary(
       if (!cached) continue;
 
       const multiplier = holding.assetType === "OPTION" ? (holding.contractMultiplier ?? 100) : 1;
-      const holdingCurrency = holding.currency || cached.currency || account.currency;
-      const rate = resolveRate(allRatesMap, holdingCurrency, baseCurrency) ?? 1;
+      // The cached price's own currency is the truth for valuing that price —
+      // same precedence as net-worth-service (see its comment at the
+      // marketValue conversion). The holding's stored currency still governs
+      // the cost-basis leg, because transaction unit prices are denominated
+      // in it.
+      const priceCurrency = cached.currency || holding.currency || account.currency;
+      const priceRate = resolveRate(allRatesMap, priceCurrency, baseCurrency) ?? 1;
       const quantity = Number(holding.quantity);
-      const holdingMarketValue = Number(cached.price) * quantity * multiplier * rate;
+      const holdingMarketValue = Number(cached.price) * quantity * multiplier * priceRate;
       marketValue += holdingMarketValue;
       pricedHoldingCount += 1;
+
+      const costCurrency = holding.currency || priceCurrency;
+      const costRate = resolveRate(allRatesMap, costCurrency, baseCurrency) ?? 1;
 
       const position = computeRemainingCostBasis(
         holding.transactions
@@ -94,7 +102,7 @@ export async function getInvestmentCostBasisSummary(
           })),
       );
       if (position.hasCostBasis) {
-        costBasis += position.costBasis * rate;
+        costBasis += position.costBasis * costRate;
         costedHoldingCount += 1;
       }
     }

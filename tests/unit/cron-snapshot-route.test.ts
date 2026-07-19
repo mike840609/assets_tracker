@@ -183,4 +183,28 @@ describe("snapshot cron route", () => {
     );
     expect(finishSnapshotCronCheckIn).toHaveBeenCalledWith("check-in", "error");
   });
+
+  it("materializes recurring rules for the Taiwan calendar day", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-05T21:30:00.000Z")); // 07-06 05:30 Taipei
+    try {
+      const { GET } = await import("@/app/api/cron/snapshot/route");
+      const { materializeDueRecurringTransactions } =
+        await import("@/lib/services/recurring-cash-service");
+      const { materializeDueInvestments } =
+        await import("@/lib/services/recurring-investment-service");
+
+      await GET(
+        new Request("http://unit.test/api/cron/snapshot", {
+          headers: { authorization: "Bearer test-secret" },
+        }),
+      );
+
+      const expected = new Date("2026-07-06T00:00:00.000Z");
+      expect(vi.mocked(materializeDueRecurringTransactions)).toHaveBeenCalledWith(expected);
+      expect(vi.mocked(materializeDueInvestments)).toHaveBeenCalledWith(expected);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -6,6 +6,7 @@ import { refreshAllPrices } from "@/lib/services/price-service";
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { materializeDueRecurringTransactions } from "@/lib/services/recurring-cash-service";
 import { materializeDueInvestments } from "@/lib/services/recurring-investment-service";
+import { taiwanCalendarDay } from "@/lib/app-day";
 import { ok, failure } from "@/lib/api-responses";
 import { CRON_SECRET } from "@/lib/env";
 import { log } from "@/lib/logger";
@@ -105,13 +106,17 @@ export async function GET(request: Request) {
     // the day's snapshot reflects the posted cash. This piggybacks on the daily
     // cron — no dedicated cron is added (Free-plan compatible). The catch-up
     // loop inside also covers any days a prior cron run was skipped/failed.
-    const recurring = await materializeDueRecurringTransactions();
+    // Materialize against the TAIWAN business day so a rule due "today"
+    // (Taipei) posts in the same run whose snapshot is stamped with that day —
+    // at 21:30 UTC the raw UTC day is still yesterday in Taipei.
+    const businessDay = taiwanCalendarDay(new Date());
+    const recurring = await materializeDueRecurringTransactions(businessDay);
     if (recurring.rulesProcessed > 0) {
       log.info("cron.recurring.summary", recurring);
     }
     // Recurring investments (DCA) — runs after cash so cash deposits land before
     // they're spent on buys; prices are already refreshed above.
-    const investments = await materializeDueInvestments();
+    const investments = await materializeDueInvestments(businessDay);
     if (investments.rulesProcessed > 0) {
       log.info("cron.investment.summary", investments);
     }
