@@ -4,6 +4,7 @@ import type { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { refreshExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
+import { isBetterDuplicate, type DedupeCandidate } from "@/lib/services/history-service";
 import { dataImportSchema } from "@/lib/validators";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
@@ -90,18 +91,23 @@ function remapGoalScopeRefId(goal: ImportGoal, accountIdMap: Map<string, string>
 }
 
 function dedupeSnapshots(snapshots: ImportSnapshot[] | undefined, targetBaseCurrency: string) {
-  const deduped = new Map<string, ImportSnapshot>();
+  // Same tie-break as normalizeSnapshots: prefer a baseCurrency match with the
+  // target, then the greatest createdAt. The export's snapshot order is not
+  // deterministic, so last-write-wins here silently kept arbitrary duplicates.
+  const deduped = new Map<string, DedupeCandidate & { snapshot: ImportSnapshot }>();
 
   for (const snapshot of snapshots ?? []) {
-    const date = new Date(snapshot.date);
-    const key = date.toISOString().slice(0, 10);
-    const existing = deduped.get(key);
-    if (!existing || snapshot.baseCurrency === targetBaseCurrency) {
-      deduped.set(key, snapshot);
+    const key = new Date(snapshot.date).toISOString().slice(0, 10);
+    const candidate: DedupeCandidate = {
+      matchesTarget: snapshot.baseCurrency === targetBaseCurrency,
+      createdAt: snapshot.createdAt ? new Date(snapshot.createdAt) : new Date(0),
+    };
+    if (isBetterDuplicate(candidate, deduped.get(key))) {
+      deduped.set(key, { ...candidate, snapshot });
     }
   }
 
-  return Array.from(deduped.values());
+  return Array.from(deduped.values()).map((entry) => entry.snapshot);
 }
 
 function collectImportCurrencies(importData: ImportData, targetBaseCurrency: string) {

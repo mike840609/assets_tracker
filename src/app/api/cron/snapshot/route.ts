@@ -53,21 +53,28 @@ export async function GET(request: Request) {
     });
     if (expiredOptions.length > 0) {
       log.info("cron.options.expire", { count: expiredOptions.length });
-      await prisma.$transaction([
-        prisma.holdingTransaction.createMany({
-          data: expiredOptions.map((h) => ({
-            holdingId: h.id,
-            type: "SELL" as const,
-            quantity: Number(h.quantity),
-            note: "Expired",
-          })),
-        }),
-        prisma.holding.updateMany({
-          where: { id: { in: expiredOptions.map((h) => h.id) } },
-          data: { quantity: 0 },
-        }),
-      ]);
-      expiredOptionsChanged = true;
+      for (const h of expiredOptions) {
+        // Guard the zeroing on the quantity we read: if the user traded this
+        // contract between the read and the write, skip it (it is re-checked
+        // on the next run) instead of minting a SELL for a stale quantity.
+        await prisma.$transaction(async (tx) => {
+          const res = await tx.holding.updateMany({
+            where: { id: h.id, quantity: h.quantity },
+            data: { quantity: 0 },
+          });
+          if (res.count === 1) {
+            await tx.holdingTransaction.create({
+              data: {
+                holdingId: h.id,
+                type: "SELL",
+                quantity: h.quantity,
+                note: "Expired",
+              },
+            });
+            expiredOptionsChanged = true;
+          }
+        });
+      }
     }
 
     // 1. Warm the ExchangeRate cache (so render paths never need to fetch
