@@ -3,6 +3,7 @@ import { withAuth } from "@/lib/api-handler";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { updateRecurringInvestmentSchema } from "@/lib/validators";
 import { serializeRecurringInvestment } from "@/lib/types";
+import { firstOccurrenceOnOrAfter } from "@/lib/services/recurring-cash-service";
 
 /** Parses a YYYY-MM-DD date string to a UTC-midnight Date for a `@db.Date` column. */
 function toUtcDate(dateOnly: string): Date {
@@ -18,7 +19,7 @@ export const PATCH = withAuth(
 
     const existing = await prisma.recurringInvestment.findFirst({
       where: { id: recurringId, accountId: id, account: { userId } },
-      select: { id: true, startDate: true, endDate: true },
+      select: { id: true, startDate: true, endDate: true, frequency: true },
     });
     if (!existing) return failure("Recurring investment not found", 404);
 
@@ -36,12 +37,16 @@ export const PATCH = withAuth(
     if (note !== undefined) data.note = note;
     if (endDate !== undefined) data.endDate = endDate ? toUtcDate(endDate) : null;
     if (isActive !== undefined) data.isActive = isActive;
-    // Changing the start date redefines the schedule anchor; reset the next run.
-    // The (recurringId, occurrenceDate) unique index keeps re-materialization a
-    // no-op for any day already posted.
+    // Changing the start date re-anchors the schedule. Clamp the next run to
+    // the first scheduled occurrence on/after today: resetting it to a past
+    // startDate would make the next cron replay every missed occurrence —
+    // and DCA backfills would even be priced at today's price. Intentional
+    // backfill remains available by CREATING a rule with a past startDate.
     if (startDate !== undefined) {
-      data.startDate = toUtcDate(startDate);
-      data.nextRunDate = toUtcDate(startDate);
+      const start = toUtcDate(startDate);
+      const effectiveFrequency = frequency ?? existing.frequency;
+      data.startDate = start;
+      data.nextRunDate = firstOccurrenceOnOrAfter(start, effectiveFrequency, new Date());
     }
 
     const [rule] = await prisma.recurringInvestment.updateManyAndReturn({

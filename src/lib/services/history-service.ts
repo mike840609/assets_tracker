@@ -54,17 +54,18 @@ interface SnapshotRow {
 }
 
 /** Tie-break metadata for same-day snapshot dedupes. */
-interface DedupeCandidate {
+export interface DedupeCandidate {
   matchesTarget: boolean;
   createdAt: Date;
 }
 
 /**
- * Deterministic same-day tie-break shared by both dedupe sites:
- * prefer a baseCurrency match with the target, then the greatest createdAt
- * (a later candidate wins on equal createdAt, so re-takes replace originals).
+ * Deterministic same-day tie-break shared by all dedupe sites (normalize,
+ * breakdown, and the data-import route): prefer a baseCurrency match with the
+ * target, then the greatest createdAt (a later candidate wins on equal
+ * createdAt, so re-takes replace originals).
  */
-function isBetterDuplicate(
+export function isBetterDuplicate(
   candidate: DedupeCandidate,
   existing: DedupeCandidate | undefined,
 ): boolean {

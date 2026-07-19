@@ -31,6 +31,10 @@ jobs:
       PREVIEW_AUTH_PASSWORD: e2e-smoke-test
       E2E_PASSWORD: e2e-smoke-test
       PLAYWRIGHT_TEST_BASE_URL: http://127.0.0.1:3000
+      # Deterministic offline Yahoo stub (see src/lib/services/yahoo-client.ts):
+      # Yahoo 429s GitHub runner IPs unpredictably, which made server-side quote
+      # fetches (POST /api/stocks) a latent smoke flake.
+      E2E_YAHOO_STUB: "1"
 
     services:
       postgres:

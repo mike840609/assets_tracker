@@ -7,6 +7,9 @@ const h = vi.hoisted(() => ({
 
 vi.mock("next/cache", () => ({
   revalidateTag: vi.fn(),
+  // The data route imports price-service (import price warm), which builds an
+  // unstable_cache wrapper at module scope.
+  unstable_cache: (fn: unknown) => fn,
 }));
 
 vi.mock("@/lib/api-handler", () => ({
