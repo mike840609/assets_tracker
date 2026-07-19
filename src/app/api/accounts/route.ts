@@ -79,12 +79,28 @@ export const POST = withAuth(async (request, _ctx, userId) => {
     _max: { sortOrder: true },
   });
 
-  const account = await prisma.account.create({
-    data: {
-      ...parsed.data,
-      userId,
-      sortOrder: (maxSortOrder._max.sortOrder ?? -1) + 1,
-    },
+  const account = await prisma.$transaction(async (tx) => {
+    const created = await tx.account.create({
+      data: {
+        ...parsed.data,
+        userId,
+        sortOrder: (maxSortOrder._max.sortOrder ?? -1) + 1,
+      },
+    });
+    // Ledger completeness: a nonzero opening balance gets an EDIT row so the
+    // transaction history explains cashBalance from day one. EDIT is excluded
+    // from analysis contributions, so this changes no analytics.
+    if (parsed.data.cashBalance !== 0) {
+      await tx.cashTransaction.create({
+        data: {
+          accountId: created.id,
+          type: "EDIT",
+          amount: parsed.data.cashBalance,
+          note: "Opening balance",
+        },
+      });
+    }
+    return created;
   });
   invalidateUserCaches(userId);
   after(() => maybeWarmExchangeRate(account.currency));

@@ -1,73 +1,69 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import {
-  HISTORY_DAYS,
-  PRICES,
-  accountValue,
-  buildSnapshotHistory,
-  createDemoAccounts,
-  portfolioTotals,
-} from "../../scripts/demo-data.mjs";
+import { dataImportSchema } from "@/lib/validators";
 
-let nextId = 0;
-const accounts = createDemoAccounts(() => `account-${nextId++}`);
-const account = (name: string) => accounts.find((item) => item.name === name)!;
+const demo = JSON.parse(
+  readFileSync(new URL("../../demo-data.json", import.meta.url), "utf8"),
+) as import("zod").z.infer<typeof dataImportSchema>;
 
-describe("demo portfolio", () => {
-  it("contains the requested diversified accounts and holdings", () => {
-    expect(accounts.map(({ name }) => name)).toEqual([
-      "Cathay Bank",
-      "Fidelity Brokerage",
-      "Cold Wallet",
-      "Visa Credit Card",
-    ]);
-    expect(
-      account("Fidelity Brokerage")
-        .holdings.map(({ symbol }) => symbol)
-        .sort(),
-    ).toEqual(["AAPL", "NVDA", "TSLA"]);
-    expect(account("Cold Wallet").holdings.map(({ symbol }) => symbol)).toEqual(["BTC-USD"]);
+describe("demo-data.json", () => {
+  it("passes the import schema it is meant to round-trip through", () => {
+    const result = dataImportSchema.safeParse(demo);
+    expect(result.success, JSON.stringify(result.error?.format?.() ?? "")).toBe(true);
   });
 
-  it("gives every holding multiple purchases that total its current quantity", () => {
-    for (const holding of accounts.flatMap(({ holdings }) => holdings)) {
-      expect(holding.transactions.length).toBeGreaterThan(1);
-      expect(
-        holding.transactions.reduce((sum, transaction) => sum + transaction.quantity, 0),
-      ).toBeCloseTo(holding.quantity);
-      expect(Object.hasOwn(PRICES, holding.symbol)).toBe(true);
+  it("has holding quantities that equal the net of their transactions", () => {
+    for (const account of demo.accounts) {
+      for (const holding of account.holdings ?? []) {
+        const net = (holding.transactions ?? []).reduce(
+          (sum, t) => sum + (t.type === "SELL" ? -Number(t.quantity) : Number(t.quantity)),
+          0,
+        );
+        expect(net, `${account.name} ${holding.symbol}`).toBeCloseTo(Number(holding.quantity));
+      }
     }
-    expect(Object.values(PRICES).every((price) => price > 0)).toBe(true);
   });
 
-  it("keeps bank ledger activity consistent with the current cash balance", () => {
-    const bank = account("Cathay Bank");
-    const ledgerBalance = bank.cashTransactions.reduce(
-      (sum, transaction) =>
-        sum + (transaction.type === "DEPOSIT" ? transaction.amount : -transaction.amount),
-      0,
-    );
-    expect(ledgerBalance).toBe(bank.cash);
+  it("keeps each asset account's ledger consistent with its cash balance", () => {
+    for (const account of demo.accounts) {
+      if (account.type !== "ASSET") continue;
+      let cash = 0;
+      for (const t of account.cashTransactions ?? []) {
+        cash += t.type === "DEPOSIT" ? Number(t.amount) : -Number(t.amount);
+      }
+      for (const holding of account.holdings ?? []) {
+        for (const t of holding.transactions ?? []) {
+          const cost = Number(t.quantity) * Number(t.unitPrice ?? 0);
+          cash += t.type === "SELL" ? cost : -cost;
+        }
+      }
+      expect(cash, account.name).toBeCloseTo(Number(account.cashBalance), 1);
+    }
   });
 
-  it("computes fixed account and portfolio values", () => {
-    expect(accountValue(account("Fidelity Brokerage"))).toBeCloseTo(23_193.5);
-    expect(accountValue(account("Cold Wallet"))).toBeCloseTo(12_540);
-    expect(portfolioTotals(accounts)).toEqual({
-      totalAssets: 48_053.5,
-      totalLiabilities: 1_860,
-      netWorth: 46_193.5,
-    });
+  it("has strictly increasing snapshots whose latest lands near the ~$60k (NT$2M) target", () => {
+    const dates = (demo.snapshots ?? []).map((s) => Date.parse(s.date));
+    for (let i = 1; i < dates.length; i++) expect(dates[i]).toBeGreaterThan(dates[i - 1]);
+
+    const last = demo.snapshots?.at(-1);
+    expect(last).toBeDefined();
+    expect(Number(last!.totalAssets)).toBeGreaterThan(45_000);
+    expect(Number(last!.totalAssets)).toBeLessThan(80_000);
+    for (const s of demo.snapshots ?? []) {
+      expect(Number(s.netWorth)).toBeCloseTo(Number(s.totalAssets) - Number(s.totalLiabilities), 1);
+    }
   });
 
-  it("generates deterministic history whose final snapshot is exact", () => {
-    const now = new Date("2026-07-15T12:00:00.000Z");
-    const first = buildSnapshotHistory(accounts, now);
-    const second = buildSnapshotHistory(accounts, now);
-    expect(first).toEqual(second);
-    expect(first).toHaveLength(HISTORY_DAYS);
-    expect(first.at(-1)).toMatchObject(portfolioTotals(accounts));
-    expect(first.at(-1)?.date.toISOString()).toBe("2026-07-15T00:00:00.000Z");
-    expect(first[0].breakdown).not.toEqual(first.at(-1)?.breakdown);
+  it("only references existing accounts from goals and snapshot breakdowns", () => {
+    const accountIds = new Set(demo.accounts.map((a) => a.id));
+    for (const goal of demo.goals ?? []) {
+      if (goal.scope === "ACCOUNT") expect(accountIds.has(goal.scopeRefId ?? "")).toBe(true);
+    }
+    for (const s of demo.snapshots ?? []) {
+      for (const key of Object.keys(s.breakdown ?? {})) {
+        expect(accountIds.has(key), `snapshot ${s.date} references ${key}`).toBe(true);
+      }
+    }
   });
 });
