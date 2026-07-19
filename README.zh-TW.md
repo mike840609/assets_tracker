@@ -28,6 +28,13 @@
 
 > Assets Tracker v1 已可穩定供個人自行部署。若要提供其他使用者使用，請先閱讀[資料責任](#資料責任)說明。
 
+## 操作展示
+
+<p align="center">
+  <img src="./public/readme-demo-desktop.gif" width="68%" alt="資產追蹤器桌面版儀表板操作展示">
+  <img src="./public/readme-demo-mobile.png" width="25%" alt="資產追蹤器行動版儀表板">
+</p>
+
 ## 快速開始
 
 ### 必要條件
