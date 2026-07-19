@@ -3,6 +3,7 @@ import { withAuth } from "@/lib/api-handler";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { updateRecurringCashTransactionSchema } from "@/lib/validators";
 import { serializeRecurringCashTransaction } from "@/lib/types";
+import { firstOccurrenceOnOrAfter } from "@/lib/services/recurring-cash-service";
 
 /** Parses a YYYY-MM-DD date string to a UTC-midnight Date for a `@db.Date` column. */
 function toUtcDate(dateOnly: string): Date {
@@ -19,7 +20,7 @@ export const PATCH = withAuth(
     // Scope ownership into the lookup so a foreign rule can't be edited.
     const existing = await prisma.recurringCashTransaction.findFirst({
       where: { id: recurringId, accountId: id, account: { userId } },
-      select: { id: true, startDate: true, endDate: true },
+      select: { id: true, startDate: true, endDate: true, frequency: true },
     });
     if (!existing) return failure("Recurring transaction not found", 404);
 
@@ -38,13 +39,16 @@ export const PATCH = withAuth(
     if (note !== undefined) data.note = note;
     if (endDate !== undefined) data.endDate = endDate ? toUtcDate(endDate) : null;
     if (isActive !== undefined) data.isActive = isActive;
-    // Changing the start date redefines the schedule anchor, so reset the next
-    // run to it. Already-posted occurrences won't double-post — the
-    // (recurringId, occurrenceDate) unique index makes re-materialization a
-    // no-op for any day that already has a row.
+    // Changing the start date re-anchors the schedule. Clamp the next run to
+    // the first scheduled occurrence on/after today: resetting it to a past
+    // startDate would make the next cron replay every missed occurrence
+    // (and DCA backfills would even be priced at today's price). Intentional
+    // backfill remains available by CREATING a rule with a past startDate.
     if (startDate !== undefined) {
-      data.startDate = toUtcDate(startDate);
-      data.nextRunDate = toUtcDate(startDate);
+      const start = toUtcDate(startDate);
+      const effectiveFrequency = frequency ?? existing.frequency;
+      data.startDate = start;
+      data.nextRunDate = firstOccurrenceOnOrAfter(start, effectiveFrequency, new Date());
     }
 
     const [rule] = await prisma.recurringCashTransaction.updateManyAndReturn({
