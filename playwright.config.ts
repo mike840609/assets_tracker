@@ -51,6 +51,9 @@ export default defineConfig({
             VERCEL_ENV: "preview",
             PREVIEW_AUTH_ENABLED: "true",
             PREVIEW_AUTH_PASSWORD: E2E_PASSWORD,
+            // Deterministic offline Yahoo stub (see yahoo-client.ts) — the
+            // smoke suite must not depend on Yahoo's rate limiter.
+            E2E_YAHOO_STUB: "1",
           },
         },
       }),

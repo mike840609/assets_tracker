@@ -1,4 +1,5 @@
 import type { CashTransactionType, TransactionType } from "@/generated/prisma/client";
+import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 
 type CashTxInput = { type: CashTransactionType; amount: number };
 type HoldingTxInput = { type: TransactionType; quantity: number };
@@ -27,6 +28,15 @@ export function calculateBalanceDelta(
     return tx.amount; // EDIT: amount is the explicit balance adjustment
   };
   return (newTx ? toSign(newTx) : 0) - (oldTx ? toSign(oldTx) : 0);
+}
+
+/**
+ * Snap a float money delta to the DB's Decimal(18, 8) scale before handing it
+ * to Prisma — float subtraction noise must never reach the column. Same
+ * invariant as applyHoldingQuantityDelta in the transactions route.
+ */
+export function toDbMoneyDelta(delta: number): Decimal {
+  return new Decimal(delta.toFixed(8));
 }
 
 export function getHoldingTransactionQuantityError(tx: HoldingTxInput): string | null {
