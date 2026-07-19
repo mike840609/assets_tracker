@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getCachedNetWorthSummary } from "./net-worth-service";
+import { taiwanCalendarDay } from "@/lib/app-day";
 
 export async function createSnapshot(userId: string, baseCurrency: string) {
   const summary = await getCachedNetWorthSummary(userId, baseCurrency);
@@ -12,11 +13,7 @@ export async function createSnapshot(userId: string, baseCurrency: string) {
   // bucketing elsewhere in the app (history table, heatmap, projections) that a
   // Taipei user actually sees. The result is still a fixed UTC-midnight Date, so
   // the `userId_date_baseCurrency` upsert key stays timezone-independent.
-  const TAIWAN_OFFSET_MS = 8 * 60 * 60 * 1000;
-  const taiwanNow = new Date(snapshotTakenAt.getTime() + TAIWAN_OFFSET_MS);
-  const today = new Date(
-    Date.UTC(taiwanNow.getUTCFullYear(), taiwanNow.getUTCMonth(), taiwanNow.getUTCDate()),
-  );
+  const today = taiwanCalendarDay(snapshotTakenAt);
 
   const breakdown = Object.fromEntries(
     summary.accounts.map((a) => [a.id, { value: a.totalValue, currency: a.currency }]),
