@@ -26,6 +26,7 @@ const h = vi.hoisted(() => ({
   previousRows: [] as SnapshotRowFixture[],
   previousDateRow: null as { date: Date } | null,
   latestSnapshot: null as SnapshotRowFixture | null,
+  foreignCurrencySnapshot: null as { id: string } | null,
   accounts: [] as unknown[],
   cashTransactions: [] as CashTransactionFixture[],
   prices: [] as { symbol: string; price: number; currency: string }[],
@@ -51,10 +52,13 @@ vi.mock("@/lib/prisma", () => ({
         if (dateWhere && "gte" in dateWhere) return h.currentYearRows;
         return h.rows;
       }),
-      findFirst: vi.fn(async (args?: { where?: { date?: { lt?: Date } } }) => {
-        if (args?.where?.date?.lt) return h.previousDateRow;
-        return h.latestSnapshot;
-      }),
+      findFirst: vi.fn(
+        async (args?: { where?: { date?: { lt?: Date }; baseCurrency?: { not?: string } } }) => {
+          if (args?.where?.baseCurrency?.not) return h.foreignCurrencySnapshot;
+          if (args?.where?.date?.lt) return h.previousDateRow;
+          return h.latestSnapshot;
+        },
+      ),
     },
     cashTransaction: {
       findMany: vi.fn(async (args?: { where?: { OR?: Array<Record<string, unknown>> } }) => {
@@ -98,6 +102,7 @@ const {
   getCurrentYearNormalizedHistory,
   getFullNormalizedHistory,
   getSnapshotReconciliationWarning,
+  hasForeignCurrencySnapshots,
   isBetterDuplicate,
 } = await import("@/lib/services/history-service");
 const { aggregateMonthlyChange, fillMonthRange, buildCashFlowBuckets, buildCumulativeGrowth } =
@@ -147,6 +152,7 @@ beforeEach(() => {
   h.previousRows = [];
   h.previousDateRow = null;
   h.latestSnapshot = null;
+  h.foreignCurrencySnapshot = null;
   h.accounts = [];
   h.cashTransactions = [];
   h.prices = [];
@@ -485,5 +491,22 @@ describe("isBetterDuplicate (exported for import dedupe)", () => {
         { matchesTarget: true, createdAt: new Date("2026-06-01T00:00:00Z") },
       ),
     ).toBe(false);
+  });
+});
+
+describe("hasForeignCurrencySnapshots", () => {
+  it("true when any snapshot was stored in another base currency", async () => {
+    h.foreignCurrencySnapshot = { id: "snap-1" };
+
+    await expect(hasForeignCurrencySnapshots("user-1", "USD")).resolves.toBe(true);
+
+    const args = vi.mocked(prisma.netWorthSnapshot.findFirst).mock.lastCall?.[0] as {
+      where?: Record<string, unknown>;
+    };
+    expect(args.where).toEqual({ userId: "user-1", baseCurrency: { not: "USD" } });
+  });
+
+  it("false when all snapshots match the target", async () => {
+    await expect(hasForeignCurrencySnapshots("user-1", "USD")).resolves.toBe(false);
   });
 });

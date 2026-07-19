@@ -651,6 +651,7 @@
       "description": "The latest snapshot differs from current balances by {amount} ({percent}). Review the ledger before making corrections.",
       "descriptionPrivate": "The latest snapshot differs from current balances by {percent}. Review the ledger before making corrections."
     },
+    "convertedNote": "Part of this history was recorded in a different base currency and is converted at today's rate.",
     "snapshotLabel": {
       "addSnapshotAction": "Add label for {date}",
       "editSnapshotAction": "Edit label for {date}",

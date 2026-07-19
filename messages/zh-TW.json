@@ -651,6 +651,7 @@
       "description": "最新快照與目前餘額相差 {amount}（{percent}）。請先檢查分類帳再進行修正。",
       "descriptionPrivate": "最新快照與目前餘額相差 {percent}。請先檢查分類帳再進行修正。"
     },
+    "convertedNote": "部分歷史紀錄原以其他基準貨幣記錄，已按目前匯率換算。",
     "snapshotLabel": {
       "addSnapshotAction": "為 {date} 加上標籤",
       "editSnapshotAction": "編輯 {date} 的標籤",
