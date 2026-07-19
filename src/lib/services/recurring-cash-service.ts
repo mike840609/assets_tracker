@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { log } from "@/lib/logger";
+import { taiwanCalendarDay } from "@/lib/app-day";
 import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 import type { RecurringFrequency } from "@/generated/prisma/client";
 
@@ -142,10 +143,13 @@ export function computeDueOccurrences(
  */
 export async function materializeDueRecurringTransactions(
   now: Date = new Date(),
+  ruleId?: string,
 ): Promise<{ created: number; rulesProcessed: number }> {
-  const today = utcDateOnly(now);
+  // Taiwan day, not UTC day: the 21:30 UTC cron IS the next Taipei morning,
+  // and snapshot bucketing (app-day.ts) already lives on that calendar.
+  const today = taiwanCalendarDay(now);
   const dueRules = await prisma.recurringCashTransaction.findMany({
-    where: { isActive: true, nextRunDate: { lte: today } },
+    where: { isActive: true, nextRunDate: { lte: today }, ...(ruleId ? { id: ruleId } : {}) },
   });
 
   let created = 0;
