@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
+import { isBackdated } from "@/lib/transaction-dates";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -209,6 +210,9 @@ export function AccountStatCards({
           className="min-h-11 md:min-h-8"
           required
         />
+        {isBackdated(cashDate) && (
+          <p className="text-xs text-muted-foreground">{t("accountDetail.backdateNote")}</p>
+        )}
       </div>
       <div className="space-y-2">
         <Label htmlFor="one-off-cash-note">{t("recurringCash.labelNote")}</Label>

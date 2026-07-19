@@ -52,3 +52,16 @@ export function formatTransactionDateKey(tx: TransactionDateFields, locale?: str
   }
   return new Date(tx.createdAt).toLocaleDateString(locale, options);
 }
+
+/**
+ * True when a form's YYYY-MM-DD date value is before the user's local today.
+ * Drives the "past net-worth history isn't recalculated" disclosure caption —
+ * client-local today is deliberate; exactness doesn't matter for a caption.
+ */
+export function isBackdated(dateOnly: string, now: Date = new Date()): boolean {
+  if (!dateOnly) return false;
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate(),
+  ).padStart(2, "0")}`;
+  return dateOnly < today;
+}

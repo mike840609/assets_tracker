@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   compareTransactionsDesc,
+  isBackdated,
   effectiveTransactionTime,
   formatTransactionDateKey,
 } from "@/lib/transaction-dates";
@@ -73,5 +74,20 @@ describe("formatTransactionDateKey", () => {
       day: "numeric",
     });
     expect(formatTransactionDateKey(tx, "en-US")).toBe(expected);
+  });
+});
+
+describe("isBackdated", () => {
+  const now = new Date(2026, 6, 20, 12, 0); // 2026-07-20 local noon
+
+  it("true for a date before local today", () => {
+    expect(isBackdated("2026-07-19", now)).toBe(true);
+    expect(isBackdated("2025-12-31", now)).toBe(true);
+  });
+
+  it("false for today, future, and empty input", () => {
+    expect(isBackdated("2026-07-20", now)).toBe(false);
+    expect(isBackdated("2026-07-21", now)).toBe(false);
+    expect(isBackdated("", now)).toBe(false);
   });
 });
