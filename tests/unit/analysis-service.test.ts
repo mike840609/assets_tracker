@@ -688,36 +688,58 @@ describe("computeRemainingCostBasis", () => {
     expect(result.hasCostBasis).toBe(false);
   });
 
-  it("resets an edited position to edited quantity and edited unit price", () => {
+  it("applies a positive EDIT delta with a unit price", () => {
     const result = computeRemainingCostBasis([
       { type: "BUY", quantity: 10, unitPrice: 100 },
       { type: "EDIT", quantity: 3, unitPrice: 80 },
     ]);
 
-    expect(result.quantity).toBeCloseTo(3, 10);
-    expect(result.costBasis).toBeCloseTo(240, 10);
+    expect(result.quantity).toBeCloseTo(13, 10);
+    expect(result.costBasis).toBeCloseTo(1240, 10);
     expect(result.hasCostBasis).toBe(true);
   });
 
-  it("clears cost basis on an edit without unit price", () => {
+  it("keeps existing cost basis on an uncosted positive EDIT delta", () => {
     const result = computeRemainingCostBasis([
       { type: "BUY", quantity: 10, unitPrice: 100 },
       { type: "EDIT", quantity: 3, unitPrice: null },
     ]);
 
-    expect(result.quantity).toBeCloseTo(3, 10);
-    expect(result.costBasis).toBe(0);
-    expect(result.hasCostBasis).toBe(false);
+    expect(result.quantity).toBeCloseTo(13, 10);
+    expect(result.costBasis).toBeCloseTo(1000, 10);
+    expect(result.hasCostBasis).toBe(true);
   });
 
-  it("clears the position on a zero-quantity edit", () => {
+  it("reduces cost basis at average cost on a negative EDIT delta", () => {
     const result = computeRemainingCostBasis([
       { type: "BUY", quantity: 10, unitPrice: 100 },
-      { type: "EDIT", quantity: 0, unitPrice: 100 },
+      { type: "EDIT", quantity: -4, unitPrice: null },
+    ]);
+
+    expect(result.quantity).toBeCloseTo(6, 10);
+    expect(result.costBasis).toBeCloseTo(600, 10);
+    expect(result.hasCostBasis).toBe(true);
+  });
+
+  it("clears the position when a negative EDIT delta empties it", () => {
+    const result = computeRemainingCostBasis([
+      { type: "BUY", quantity: 10, unitPrice: 100 },
+      { type: "EDIT", quantity: -10, unitPrice: null },
     ]);
 
     expect(result.quantity).toBe(0);
     expect(result.costBasis).toBe(0);
     expect(result.hasCostBasis).toBe(false);
+  });
+
+  it("treats a zero EDIT delta as a no-op", () => {
+    const result = computeRemainingCostBasis([
+      { type: "BUY", quantity: 10, unitPrice: 100 },
+      { type: "EDIT", quantity: 0, unitPrice: 100 },
+    ]);
+
+    expect(result.quantity).toBeCloseTo(10, 10);
+    expect(result.costBasis).toBeCloseTo(1000, 10);
+    expect(result.hasCostBasis).toBe(true);
   });
 });

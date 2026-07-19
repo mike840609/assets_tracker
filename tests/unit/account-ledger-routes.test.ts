@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { toDbMoneyDelta } from "@/lib/services/balance";
 
 const h = vi.hoisted(() => ({
   account: null as Record<string, unknown> | null,
@@ -102,6 +103,18 @@ const jsonRequest = (method: string, body: Record<string, unknown>) =>
     headers: { "content-type": "application/json" },
   });
 
+describe("toDbMoneyDelta", () => {
+  it("snaps float-arithmetic noise to the DB's 8-dp scale", () => {
+    // 0.1 + 0.2 style error: (0.3 - 0.2) - 0.1 leaves ~2.8e-17 noise
+    const noisy = 0.3 - 0.2 - 0.1 + 0.25;
+    expect(toDbMoneyDelta(noisy).toString()).toBe("0.25");
+  });
+
+  it("preserves sign and legitimate 8-dp precision", () => {
+    expect(toDbMoneyDelta(-123.45678901).toString()).toBe("-123.45678901");
+  });
+});
+
 describe("account ledger routes", () => {
   beforeEach(() => {
     h.account = { id: "acc1", userId: "user1", cashBalance: 10, currency: "USD" };
@@ -168,7 +181,7 @@ describe("account ledger routes", () => {
       amount: 100,
     });
     expect(h.calls.find((call) => call.op === "account.update")?.args?.data).toEqual({
-      cashBalance: { increment: 100 },
+      cashBalance: { increment: toDbMoneyDelta(100) },
     });
   });
 
@@ -363,7 +376,7 @@ describe("account ledger routes", () => {
       amount: 100,
     });
     expect(h.calls.find((call) => call.op === "account.update")?.args?.data).toEqual({
-      cashBalance: { increment: 50 },
+      cashBalance: { increment: toDbMoneyDelta(50) },
     });
   });
 
