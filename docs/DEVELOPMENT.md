@@ -25,7 +25,7 @@ The preview user starts with zero accounts. Populate it without waiting for the 
 pnpm seed:demo
 ```
 
-This seeds a TWD bank account with realistic cash activity, a USD brokerage holding AAPL, NVDA, and TSLA, a BTC cold wallet, a credit-card liability, and a net-worth goal for `e2e-test@preview.local`. Dated purchases provide cost basis, while fixed offline prices and exchange rates produce 180 days of deterministic net-worth history without calling a market-data service. The command is idempotent (wipes and re-inserts that user's data in a transaction) and refuses to run against a non-localhost `DATABASE_URL` unless `--force` is passed. Restart the dev server afterwards if already-cached pages still show the empty state.
+This seeds `e2e-test@preview.local` from `demo-data.json` (repo root) — the same file users can import via Settings → Data: a TWD bank account, Yuanta Securities (2330 + 0050), Charles Schwab (NVDA/TSLA incl. a SELL), Firstrade (AAPL/VOO), a credit-card liability, a goal, recurring rules, a stock watchlist, and 180 consecutive daily net-worth snapshots built from real historical closes (total assets ≈ $62k / NT$2M, base currency USD). All dates are shifted at seed time so the newest snapshot lands on today's Taiwan calendar day — the history always covers the trailing 180 days — and fixed offline prices/exchange rates are cached so nothing calls a market-data service. The command is idempotent (wipes and re-inserts that user's data in a transaction) and refuses to run against a non-localhost `DATABASE_URL` unless `--force` is passed. Restart the dev server afterwards if already-cached pages still show the empty state.
 
 To exercise the real cron pipeline instead (price/FX refresh, recurring materialization, today's snapshot):
 

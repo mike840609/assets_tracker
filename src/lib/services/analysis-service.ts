@@ -494,10 +494,31 @@ export function computeRemainingCostBasis(transactions: CostBasisTransaction[]):
 
   for (const tx of transactions) {
     if (tx.type === "EDIT") {
-      const qty = Math.max(0, tx.quantity);
-      quantity = qty;
-      costedQuantity = tx.unitPrice != null ? qty : 0;
-      costBasis = tx.unitPrice != null ? qty * tx.unitPrice : 0;
+      // EDIT rows store a signed quantity *delta* (see balance.ts /
+      // holdings PATCH), never an absolute position size. Positive deltas
+      // behave like a BUY (costed only when unitPrice is present); negative
+      // deltas behave like a SELL at average cost.
+      const delta = tx.quantity;
+      if (delta > 0) {
+        quantity += delta;
+        if (tx.unitPrice != null) {
+          costedQuantity += delta;
+          costBasis += delta * tx.unitPrice;
+        }
+      } else if (delta < 0) {
+        const removed = Math.min(-delta, quantity);
+        quantity = Math.max(0, quantity + delta);
+        if (costedQuantity > 0 && costBasis > 0) {
+          const costedRemoved = Math.min(removed, costedQuantity);
+          const avgCost = costBasis / costedQuantity;
+          costedQuantity = Math.max(0, costedQuantity - costedRemoved);
+          costBasis = Math.max(0, costBasis - costedRemoved * avgCost);
+        }
+        if (quantity === 0 || costedQuantity === 0) {
+          costedQuantity = 0;
+          costBasis = 0;
+        }
+      }
       continue;
     }
 
