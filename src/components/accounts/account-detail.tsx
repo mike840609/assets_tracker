@@ -90,8 +90,14 @@ export function AccountDetail({
         });
       }
     }
+    // pagehide too: mobile browsers kill backgrounded tabs without firing
+    // beforeunload, which silently dropped the pending delete.
     window.addEventListener("beforeunload", flush);
-    return () => window.removeEventListener("beforeunload", flush);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      window.removeEventListener("pagehide", flush);
+    };
   }, [account.id]);
 
   const handleSort = (field: HoldingSortField) => {
