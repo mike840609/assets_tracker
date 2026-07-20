@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { log } from "@/lib/logger";
 import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 import { computeDueOccurrences, utcDateOnly } from "./recurring-cash-service";
+import { taiwanCalendarDay } from "@/lib/app-day";
 import { resolveRate } from "./exchange-rate-service";
 import { fetchStockPrices, fetchCryptoPrices } from "./price-service";
 
@@ -87,10 +88,12 @@ async function resolvePrice(
  */
 export async function materializeDueInvestments(
   now: Date = new Date(),
+  ruleId?: string,
 ): Promise<{ created: number; rulesProcessed: number }> {
-  const today = utcDateOnly(now);
+  // Taiwan day, not UTC day — same cutoff as the cash sweep (see app-day.ts).
+  const today = taiwanCalendarDay(now);
   const dueRules = await prisma.recurringInvestment.findMany({
-    where: { isActive: true, nextRunDate: { lte: today } },
+    where: { isActive: true, nextRunDate: { lte: today }, ...(ruleId ? { id: ruleId } : {}) },
     include: { account: { select: { currency: true } } },
   });
   if (dueRules.length === 0) return { created: 0, rulesProcessed: 0 };
