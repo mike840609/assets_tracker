@@ -26,6 +26,8 @@ type Props = {
   className?: string;
   hasAccounts?: boolean;
   reconciliationWarning?: SnapshotReconciliationWarning | null;
+  /** True when some snapshots were recorded in a different base currency. */
+  hasConvertedSnapshots?: boolean;
 };
 
 export function HistoryView({
@@ -36,6 +38,7 @@ export function HistoryView({
   className,
   hasAccounts,
   reconciliationWarning = null,
+  hasConvertedSnapshots = false,
 }: Props) {
   const t = useTranslations("history");
   const format = useFormatter();
@@ -108,6 +111,10 @@ export function HistoryView({
             </p>
           </div>
         </div>
+      )}
+
+      {hasConvertedSnapshots && (
+        <p className="text-xs text-muted-foreground">{t("convertedNote")}</p>
       )}
 
       {/* Hero row: trend + heatmap hold the width; the rail stacks the derived
