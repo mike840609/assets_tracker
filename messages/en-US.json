@@ -463,7 +463,7 @@
     "unrealizedGain": "Unrealized gain/loss",
     "unrealizedGainPct": "Unrealized %",
     "costBasisNoData": "No priced investment holdings yet.",
-    "costBasisPartialNote": "Cost basis only includes holdings with buy unit prices.",
+    "costBasisPartialNote": "Cost basis and unrealized gain cover only holdings with buy unit prices.",
     "returnTrend": "Return Trend",
     "returnTrendSubtitle": "Monthly investment return and cumulative index, brokerage and crypto accounts only.",
     "returnTrendNote": "Monthly returns use the Modified Dietz approximation (deposits at half weight); the line chains them geometrically. Not annualized.",

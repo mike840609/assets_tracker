@@ -244,3 +244,26 @@ describe("materializeDueInvestments", () => {
     expect(Number(h.accountUpdates[0].data.cashBalance.decrement)).toBe(1000);
   });
 });
+
+describe("materializeDueInvestments — cutoff & filtering", () => {
+  it("materializes only the given ruleId when provided", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    await materializeDueInvestments(d("2026-06-14"), "rule-7");
+
+    const where = vi.mocked(prisma.recurringInvestment.findMany).mock.lastCall?.[0]
+      ?.where as Record<string, unknown>;
+    expect(where.id).toBe("rule-7");
+    expect(where.isActive).toBe(true);
+  });
+
+  it("uses the Taiwan calendar day as the due cutoff", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    await materializeDueInvestments(new Date("2026-07-19T21:30:00.000Z"));
+
+    const where = vi.mocked(prisma.recurringInvestment.findMany).mock.lastCall?.[0]?.where as {
+      nextRunDate: { lte: Date };
+    };
+    // 21:30 UTC Jul 19 is already Jul 20 in Taipei.
+    expect(where.nextRunDate.lte.toISOString()).toBe("2026-07-20T00:00:00.000Z");
+  });
+});
