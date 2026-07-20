@@ -35,13 +35,16 @@ The default Compose profile starts PostgreSQL only for local development:
 pnpm db:up
 ```
 
-The `full` profile builds and starts migrations plus the standalone Next.js application:
+The `full` profile pulls and starts the published migration and application images:
 
 ```bash
 cp .env.example .env
 # Set AUTH_SECRET, AUTH_SELF_HOST_PASSWORD, CRON_SECRET, and NEXT_PUBLIC_APP_URL
-docker compose --profile full up --build -d
+docker compose --profile full pull
+docker compose --profile full up --no-build -d
 ```
+
+Set `ASSETS_TRACKER_VERSION` in `.env` to pin both images to a release tag. Leave it unset to follow `latest`. To build both images from source, use `docker compose --profile full up --build -d`.
 
 Services start in this order:
 

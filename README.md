@@ -1,11 +1,12 @@
 # 💰 Assets Tracker
 
-[![CI](https://github.com/mike840609/asset_tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/mike840609/asset_tracker/actions/workflows/ci.yml)
-[![E2E](https://github.com/mike840609/asset_tracker/actions/workflows/e2e.yml/badge.svg?branch=master&event=push)](https://github.com/mike840609/asset_tracker/actions/workflows/e2e.yml?query=branch%3Amaster+event%3Apush)
-[![Release](https://img.shields.io/github/v/release/mike840609/asset_tracker)](https://github.com/mike840609/asset_tracker/releases/latest)
+[![CI](https://github.com/mike840609/assets_tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/mike840609/assets_tracker/actions/workflows/ci.yml)
+[![E2E](https://github.com/mike840609/assets_tracker/actions/workflows/e2e.yml/badge.svg?branch=master&event=push)](https://github.com/mike840609/assets_tracker/actions/workflows/e2e.yml?query=branch%3Amaster+event%3Apush)
+[![Release](https://img.shields.io/github/v/release/mike840609/assets_tracker)](https://github.com/mike840609/assets_tracker/releases/latest)
+[![GHCR](https://img.shields.io/badge/GHCR-container-blue?logo=docker)](https://github.com/mike840609/assets_tracker/pkgs/container/assets_tracker)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mike840609/asset_tracker)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mike840609/assets_tracker)
 
 [English](./README.md) | [繁體中文](./README.zh-TW.md)
 
@@ -103,7 +104,14 @@ To explore the app with sample data, sign in with the one-click **Preview Login*
 
 ### Docker Compose
 
-Set `NEXT_PUBLIC_APP_URL`, `POSTGRES_PASSWORD`, and the production secrets in `.env`, then build the complete application and PostgreSQL stack:
+Set `NEXT_PUBLIC_APP_URL`, `POSTGRES_PASSWORD`, and the production secrets in `.env`, then pull the prebuilt application and migration images from GHCR and start the complete stack:
+
+```bash
+docker compose --profile full pull
+docker compose --profile full up --no-build -d
+```
+
+To build both images from source instead:
 
 ```bash
 docker compose --profile full up --build -d
@@ -121,7 +129,8 @@ Docker deployments:
 
 ```bash
 git pull
-docker compose --profile full up --build -d
+docker compose --profile full pull
+docker compose --profile full up --no-build -d
 ```
 
 Source deployments:
@@ -133,7 +142,7 @@ pnpm exec prisma migrate deploy
 pnpm build
 ```
 
-Always back up the database before an upgrade and review the [release notes](https://github.com/mike840609/asset_tracker/releases).
+Always back up the database before an upgrade and review the [release notes](https://github.com/mike840609/assets_tracker/releases).
 
 ## Documentation
 
@@ -158,7 +167,7 @@ Contributions are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md) before open
 
 ## Support and Security
 
-Use [GitHub Issues](https://github.com/mike840609/asset_tracker/issues) for reproducible bugs and feature requests. Report vulnerabilities privately through the [Security Policy](./SECURITY.md), not a public issue.
+Use [GitHub Issues](https://github.com/mike840609/assets_tracker/issues) for reproducible bugs and feature requests. Report vulnerabilities privately through the [Security Policy](./SECURITY.md), not a public issue.
 
 ## Data Responsibility
 

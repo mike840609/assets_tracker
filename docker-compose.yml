@@ -18,6 +18,7 @@ services:
 
   migrate:
     profiles: ["full"]
+    image: ghcr.io/mike840609/assets_tracker-migrate:${ASSETS_TRACKER_VERSION:-latest}
     build:
       context: .
       target: migrate
@@ -31,6 +32,7 @@ services:
 
   app:
     profiles: ["full"]
+    image: ghcr.io/mike840609/assets_tracker:${ASSETS_TRACKER_VERSION:-latest}
     build:
       context: .
       target: runner
