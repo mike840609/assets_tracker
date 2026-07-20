@@ -480,6 +480,8 @@ export interface CostBasisPosition {
 
 export interface InvestmentCostBasisSummary {
   marketValue: number;
+  /** Market value of only the holdings that have a known cost basis. */
+  costedMarketValue: number;
   costBasis: number;
   unrealizedGain: number | null;
   unrealizedGainPct: number | null;
