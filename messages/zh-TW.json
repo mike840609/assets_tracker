@@ -1026,6 +1026,7 @@
     "closeHint": "設為 0 即可平倉。"
   },
   "accountDetail": {
+    "backdateNote": "會顯示於帳目與分析；過去的淨值歷史不會重新計算。",
     "breadcrumb": "帳戶",
     "deleteAccount": "刪除帳戶",
     "deleting": "刪除中...",
@@ -1281,6 +1282,7 @@
     "reorderSaveFailed": "儲存追蹤清單排序失敗"
   },
   "transactionHistory": {
+    "backdateNote": "會顯示於帳目與分析；過去的淨值歷史不會重新計算。",
     "title": "交易紀錄",
     "loading": "載入中...",
     "empty": "尚無交易紀錄。",

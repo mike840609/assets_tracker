@@ -8,7 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { formatQuantity } from "@/lib/currencies";
 import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import type { SerializedTransaction } from "@/lib/types";
-import { compareTransactionsDesc, formatTransactionDateKey } from "@/lib/transaction-dates";
+import {
+  compareTransactionsDesc,
+  formatTransactionDateKey,
+  isBackdated,
+} from "@/lib/transaction-dates";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -467,6 +471,9 @@ export function TransactionHistory({
             onChange={(e) => setEditOccurredOn(e.target.value)}
             className="min-h-11 md:min-h-8"
           />
+          {isBackdated(editOccurredOn) && (
+            <p className="text-xs text-muted-foreground">{t("backdateNote")}</p>
+          )}
         </div>
       )}
       <div className="space-y-2">

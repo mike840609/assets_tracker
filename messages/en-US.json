@@ -1026,6 +1026,7 @@
     "closeHint": "Set to 0 to close the position."
   },
   "accountDetail": {
+    "backdateNote": "Shows in ledgers and analysis; past net-worth history isn't recalculated.",
     "breadcrumb": "Accounts",
     "deleteAccount": "Delete Account",
     "deleting": "Deleting...",
@@ -1281,6 +1282,7 @@
     "reorderSaveFailed": "Failed to save watchlist order"
   },
   "transactionHistory": {
+    "backdateNote": "Shows in ledgers and analysis; past net-worth history isn't recalculated.",
     "title": "Transaction History",
     "loading": "Loading...",
     "empty": "No transactions yet.",
