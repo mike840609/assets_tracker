@@ -1,11 +1,12 @@
 # 💰 資產追蹤器
 
-[![CI](https://github.com/mike840609/asset_tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/mike840609/asset_tracker/actions/workflows/ci.yml)
-[![E2E](https://github.com/mike840609/asset_tracker/actions/workflows/e2e.yml/badge.svg?branch=master&event=push)](https://github.com/mike840609/asset_tracker/actions/workflows/e2e.yml?query=branch%3Amaster+event%3Apush)
-[![Release](https://img.shields.io/github/v/release/mike840609/asset_tracker)](https://github.com/mike840609/asset_tracker/releases/latest)
+[![CI](https://github.com/mike840609/assets_tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/mike840609/assets_tracker/actions/workflows/ci.yml)
+[![E2E](https://github.com/mike840609/assets_tracker/actions/workflows/e2e.yml/badge.svg?branch=master&event=push)](https://github.com/mike840609/assets_tracker/actions/workflows/e2e.yml?query=branch%3Amaster+event%3Apush)
+[![Release](https://img.shields.io/github/v/release/mike840609/assets_tracker)](https://github.com/mike840609/assets_tracker/releases/latest)
+[![GHCR](https://img.shields.io/badge/GHCR-container-blue?logo=docker)](https://github.com/mike840609/assets_tracker/pkgs/container/assets_tracker)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mike840609/asset_tracker)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mike840609/assets_tracker)
 
 [English](./README.md) | [繁體中文](./README.zh-TW.md)
 
@@ -103,7 +104,14 @@ pnpm dev
 
 ### Docker Compose
 
-在 `.env` 設定 `NEXT_PUBLIC_APP_URL`、`POSTGRES_PASSWORD` 與正式環境 secrets，然後建立完整的應用程式與 PostgreSQL stack：
+在 `.env` 設定 `NEXT_PUBLIC_APP_URL`、`POSTGRES_PASSWORD` 與正式環境 secrets，接著從 GHCR 拉取預先建置的應用程式與 migration images，再啟動完整 stack：
+
+```bash
+docker compose --profile full pull
+docker compose --profile full up --no-build -d
+```
+
+若要從原始碼建置兩個 images，請改用：
 
 ```bash
 docker compose --profile full up --build -d
@@ -121,7 +129,8 @@ Docker 部署：
 
 ```bash
 git pull
-docker compose --profile full up --build -d
+docker compose --profile full pull
+docker compose --profile full up --no-build -d
 ```
 
 原始碼部署：
@@ -133,7 +142,7 @@ pnpm exec prisma migrate deploy
 pnpm build
 ```
 
-升級前請先備份資料庫，並查看 [Release Notes](https://github.com/mike840609/asset_tracker/releases)。
+升級前請先備份資料庫，並查看 [Release Notes](https://github.com/mike840609/assets_tracker/releases)。
 
 ## 文件
 
@@ -158,7 +167,7 @@ pnpm test:unit
 
 ## 支援與安全性
 
-可透過 [GitHub Issues](https://github.com/mike840609/asset_tracker/issues) 回報可重現的錯誤或提出功能需求。安全漏洞請依照[安全政策](./SECURITY.md)私下回報，請勿建立公開 Issue。
+可透過 [GitHub Issues](https://github.com/mike840609/assets_tracker/issues) 回報可重現的錯誤或提出功能需求。安全漏洞請依照[安全政策](./SECURITY.md)私下回報，請勿建立公開 Issue。
 
 ## 資料責任
 
