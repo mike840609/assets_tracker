@@ -754,6 +754,9 @@
     "noData": "No data yet",
     "refreshing": "Refreshing..."
   },
+  "fxWarning": {
+    "unresolvedRates": "Exchange rate unavailable for {pairs}. Affected values are shown unconverted."
+  },
   "trendChart": {
     "title": "Net Worth Trend",
     "noData": "No data to display yet. Add accounts and your net worth will be tracked automatically each day.",
