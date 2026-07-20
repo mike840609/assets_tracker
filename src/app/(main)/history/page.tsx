@@ -8,6 +8,7 @@ import { HistoryView } from "@/components/history/history-view";
 import {
   getFullNormalizedHistory,
   getSnapshotReconciliationWarning,
+  hasForeignCurrencySnapshots,
 } from "@/lib/services/history-service";
 import { countActiveAccounts } from "@/lib/services/account-service";
 
@@ -18,15 +19,15 @@ async function HistoryContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
   const settingsP = getOrCreateSettings(userId);
-  const [allMessages, snapshots, settings, accountCount, reconciliationWarning] = await Promise.all(
-    [
+  const [allMessages, snapshots, settings, accountCount, reconciliationWarning, converted] =
+    await Promise.all([
       getMessages(),
       settingsP.then((s) => getFullNormalizedHistory(userId, s.baseCurrency)),
       settingsP,
       countActiveAccounts(userId),
       settingsP.then((s) => getSnapshotReconciliationWarning(userId, s.baseCurrency)),
-    ],
-  );
+      settingsP.then((s) => hasForeignCurrencySnapshots(userId, s.baseCurrency)),
+    ]);
 
   return (
     <NextIntlClientProvider messages={pickMessages(allMessages, CLIENT_NAMESPACES)}>
@@ -38,6 +39,7 @@ async function HistoryContent() {
           className="animate-in fade-in duration-200"
           hasAccounts={accountCount > 0}
           reconciliationWarning={reconciliationWarning}
+          hasConvertedSnapshots={converted}
         />
       </HistoryPullRefresh>
     </NextIntlClientProvider>

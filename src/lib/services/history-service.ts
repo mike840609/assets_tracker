@@ -513,3 +513,24 @@ export async function getMonthlyCashFlow(
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([monthKey, contributions]) => ({ monthKey, contributions }));
 }
+
+/**
+ * True when any of the user's snapshots was recorded under a different base
+ * currency than the current one — meaning the history view converts those
+ * rows at TODAY's rate, not the rate of their day. Drives a disclosure note.
+ */
+export async function hasForeignCurrencySnapshots(
+  userId: string,
+  targetBaseCurrency: string,
+): Promise<boolean> {
+  "use cache";
+  cacheTag("snapshots");
+  cacheTag(`history:${userId}`);
+  cacheLife("minutes");
+
+  const row = await prisma.netWorthSnapshot.findFirst({
+    where: { userId, baseCurrency: { not: targetBaseCurrency } },
+    select: { id: true },
+  });
+  return row !== null;
+}
