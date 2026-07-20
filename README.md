@@ -41,6 +41,23 @@ Built with Next.js 16, React 19, Prisma 7, PostgreSQL, Tailwind CSS 4, and NextA
   </tr>
 </table>
 
+## How It Compares
+
+Assets Tracker focuses on net worth and investments. If you mainly want double-entry bookkeeping or envelope budgeting, [Firefly III](https://github.com/firefly-iii/firefly-iii) and [Actual Budget](https://github.com/actualbudget/actual) are excellent at that — here is where each tool fits:
+
+|                                         | Assets Tracker          | [Ghostfolio](https://github.com/ghostfolio/ghostfolio) | [Firefly III](https://github.com/firefly-iii/firefly-iii) | [Actual Budget](https://github.com/actualbudget/actual) |
+| --------------------------------------- | ----------------------- | ------------------------------------------------------ | --------------------------------------------------------- | ------------------------------------------------------- |
+| Primary focus                           | Net worth + investments | Investment portfolio                                   | Bookkeeping & budgets                                     | Envelope budgeting                                      |
+| Live market data (stocks, ETFs, crypto) | ✅                      | ✅                                                     | —                                                         | —                                                       |
+| Options positions                       | ✅                      | —                                                      | —                                                         | —                                                       |
+| Multi-currency accounts & history       | ✅                      | ✅                                                     | ✅                                                        | —                                                       |
+| Recurring rules                         | ✅ cash + DCA investing | —                                                      | ✅ cash                                                   | ✅ cash                                                 |
+| Goals & FIRE projections                | ✅                      | ✅                                                     | —                                                         | —                                                       |
+| Budgeting / double-entry ledger         | —                       | —                                                      | ✅                                                        | ✅                                                      |
+| License                                 | MIT                     | AGPL-3.0                                               | AGPL-3.0                                                  | MIT                                                     |
+
+<sub>Summarized from each project's public documentation as of July 2026 — check their sites for the latest.</sub>
+
 ## Quick Start
 
 ### Prerequisites

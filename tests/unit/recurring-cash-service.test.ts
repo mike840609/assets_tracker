@@ -300,3 +300,47 @@ describe("materializeDueRecurringTransactions", () => {
     expect(h.ruleUpdates[0].data.isActive).toBe(false);
   });
 });
+
+describe("materializeDueRecurringTransactions — cutoff & filtering", () => {
+  beforeEach(() => {
+    h.dueRules = [];
+    h.createManyCalls = [];
+    h.accountUpdates = [];
+    h.ruleUpdates = [];
+    h.createManyCount = null;
+  });
+
+  it("uses the Taiwan calendar day as the due cutoff", async () => {
+    // 21:30 UTC Jul 19 = 05:30 Taipei Jul 20 — the real cron moment. A rule
+    // whose nextRunDate is Jul 20 (UTC midnight) must be due NOW; the old
+    // utcDateOnly(now) cutoff said "Jul 19" and skipped it for a full day.
+    h.dueRules = [
+      {
+        id: "rule-tw",
+        accountId: "acc1",
+        type: "DEPOSIT",
+        amount: 100,
+        note: null,
+        frequency: "MONTHLY",
+        startDate: d("2026-07-20"),
+        endDate: null,
+        nextRunDate: d("2026-07-20"),
+      },
+    ];
+
+    const result = await materializeDueRecurringTransactions(new Date("2026-07-19T21:30:00.000Z"));
+
+    expect(result).toEqual({ created: 1, rulesProcessed: 1 });
+    expect(iso(h.createManyCalls[0].data[0].occurrenceDate as Date)).toBe("2026-07-20");
+  });
+
+  it("materializes only the given ruleId when provided", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    await materializeDueRecurringTransactions(d("2026-06-14"), "rule-1");
+
+    const where = vi.mocked(prisma.recurringCashTransaction.findMany).mock.lastCall?.[0]
+      ?.where as Record<string, unknown>;
+    expect(where.id).toBe("rule-1");
+    expect(where.isActive).toBe(true);
+  });
+});

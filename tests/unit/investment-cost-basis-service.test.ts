@@ -160,6 +160,67 @@ describe("getInvestmentCostBasisSummary", () => {
     expect(summary.costedHoldingCount).toBe(1);
   });
 
+  it("excludes uncosted holdings' market value from unrealized gain", async () => {
+    h.accounts = [
+      account({
+        holdings: [
+          holding({
+            symbol: "COSTED",
+            quantity: 10,
+            currency: "USD",
+            assetType: "STOCK",
+            transactions: [tx({ id: "b1", type: "BUY", quantity: 10, unitPrice: 800 })],
+          }),
+          holding({
+            symbol: "UNCOSTED",
+            quantity: 10,
+            currency: "USD",
+            assetType: "STOCK",
+            // Quantity-only import: BUY without a unit price → no cost basis.
+            transactions: [tx({ id: "b2", type: "BUY", quantity: 10 })],
+          }),
+        ],
+      }),
+    ];
+    h.prices = [
+      { symbol: "COSTED", price: 1000, currency: "USD" },
+      { symbol: "UNCOSTED", price: 1000, currency: "USD" },
+    ];
+
+    const summary = await getInvestmentCostBasisSummary("u1", "USD");
+
+    expect(summary.marketValue).toBeCloseTo(20000); // total stays total
+    expect(summary.costedMarketValue).toBeCloseTo(10000); // only the costed holding
+    expect(summary.costBasis).toBeCloseTo(8000);
+    expect(summary.unrealizedGain).toBeCloseTo(2000); // NOT 12000
+    expect(summary.unrealizedGainPct).toBeCloseTo(0.25);
+    expect(summary.pricedHoldingCount).toBe(2);
+    expect(summary.costedHoldingCount).toBe(1);
+  });
+
+  it("returns null gain when no holding has cost basis", async () => {
+    h.accounts = [
+      account({
+        holdings: [
+          holding({
+            symbol: "UNCOSTED",
+            quantity: 10,
+            currency: "USD",
+            assetType: "STOCK",
+            transactions: [tx({ id: "b1", type: "BUY", quantity: 10 })],
+          }),
+        ],
+      }),
+    ];
+    h.prices = [{ symbol: "UNCOSTED", price: 1000, currency: "USD" }];
+
+    const summary = await getInvestmentCostBasisSummary("u1", "USD");
+
+    expect(summary.unrealizedGain).toBeNull();
+    expect(summary.unrealizedGainPct).toBeNull();
+    expect(summary.costedMarketValue).toBe(0);
+  });
+
   it("converts market value using the price-cache currency, not the stale holding currency", async () => {
     // Holding says USD, but the provider actually quotes BTC-EUR in EUR.
     h.accounts = [

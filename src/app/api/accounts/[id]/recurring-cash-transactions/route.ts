@@ -1,9 +1,15 @@
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { withAuth } from "@/lib/api-handler";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { createRecurringCashTransactionSchema } from "@/lib/validators";
-import { listRecurringForAccount } from "@/lib/services/recurring-cash-service";
+import {
+  listRecurringForAccount,
+  materializeDueRecurringTransactions,
+} from "@/lib/services/recurring-cash-service";
 import { serializeRecurringCashTransaction } from "@/lib/types";
+import { taiwanCalendarDay } from "@/lib/app-day";
+import { log } from "@/lib/logger";
 
 /** Parses a YYYY-MM-DD date string to a UTC-midnight Date for a `@db.Date` column. */
 function toUtcDate(dateOnly: string): Date {
@@ -39,8 +45,6 @@ export const POST = withAuth(
 
     const { type, amount, frequency, note, startDate, endDate } = parsed.data;
 
-    // First occurrence is on startDate; the cron posts it (and any catch-up) on
-    // its next run — rules are never materialized synchronously here.
     const rule = await prisma.recurringCashTransaction.create({
       data: {
         accountId: id,
@@ -54,6 +58,29 @@ export const POST = withAuth(
       },
     });
 
-    return ok(serializeRecurringCashTransaction(rule), { status: 201 });
+    // A rule starting today (or backdated) posts immediately instead of
+    // sitting inert until the nightly cron. Idempotent: the
+    // (recurringId, occurrenceDate) unique index makes a cron double-run safe.
+    // Failure falls back to the cron — rule creation never fails for this.
+    let created = rule;
+    if (rule.nextRunDate.getTime() <= taiwanCalendarDay(new Date()).getTime()) {
+      try {
+        const { created: posted } = await materializeDueRecurringTransactions(new Date(), rule.id);
+        if (posted > 0) {
+          revalidateTag(`accounts:${userId}`, { expire: 0 });
+          revalidateTag(`net-worth:${userId}`, { expire: 0 });
+          revalidateTag(`history:${userId}`, { expire: 0 });
+        }
+        created =
+          (await prisma.recurringCashTransaction.findUnique({ where: { id: rule.id } })) ?? rule;
+      } catch (error) {
+        log.error("recurring.materialize_on_create_failed", {
+          ruleId: rule.id,
+          error: String(error),
+        });
+      }
+    }
+
+    return ok(serializeRecurringCashTransaction(created), { status: 201 });
   },
 );

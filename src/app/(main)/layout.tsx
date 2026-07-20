@@ -10,6 +10,7 @@ import { DensityProvider } from "@/components/layout/density-context";
 import { PullToRefreshProvider } from "@/components/layout/pull-to-refresh-context";
 import { LargeTitleProvider } from "@/components/layout/large-title-context";
 import { LazyCommandPalette } from "@/components/layout/lazy-command-palette";
+import { FxWarningBanner } from "@/components/layout/fx-warning-banner";
 import { getSession } from "@/lib/auth-session";
 import { APP_VERSION } from "@/lib/changelog";
 
@@ -59,6 +60,9 @@ export default async function MainLayout({
               <MobileMainShell>
                 <MobileHeader />
                 <div className="mx-auto w-full max-w-7xl 2xl:max-w-[88rem] p-4 md:p-6">
+                  <Suspense fallback={null}>
+                    <FxWarningBanner />
+                  </Suspense>
                   {children}
                 </div>
               </MobileMainShell>
