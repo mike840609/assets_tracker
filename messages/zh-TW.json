@@ -463,7 +463,7 @@
     "unrealizedGain": "未實現損益",
     "unrealizedGainPct": "未實現 %",
     "costBasisNoData": "目前沒有可定價的投資持倉。",
-    "costBasisPartialNote": "成本基準僅包含有買入單價的持倉。",
+    "costBasisPartialNote": "成本基準與未實現損益僅涵蓋有買入單價的持倉。",
     "returnTrend": "投資報酬走勢",
     "returnTrendSubtitle": "每月投資報酬率與累積報酬指數，僅計入券商與加密貨幣帳戶。",
     "returnTrendNote": "每月報酬採 Modified Dietz 近似法（存入資金以半權重計入），折線為幾何鏈接的累積值，未年化。",
@@ -753,6 +753,9 @@
     "snapshotHint": "系統每天會自動建立一次快照。",
     "noData": "尚無資料",
     "refreshing": "更新中..."
+  },
+  "fxWarning": {
+    "unresolvedRates": "無法取得 {pairs} 匯率，受影響的金額以未換算數值顯示。"
   },
   "trendChart": {
     "title": "淨資產趨勢",

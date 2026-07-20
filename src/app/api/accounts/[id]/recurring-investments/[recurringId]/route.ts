@@ -1,9 +1,13 @@
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { withAuth } from "@/lib/api-handler";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { updateRecurringInvestmentSchema } from "@/lib/validators";
 import { serializeRecurringInvestment } from "@/lib/types";
 import { firstOccurrenceOnOrAfter } from "@/lib/services/recurring-cash-service";
+import { materializeDueInvestments } from "@/lib/services/recurring-investment-service";
+import { taiwanCalendarDay } from "@/lib/app-day";
+import { log } from "@/lib/logger";
 
 /** Parses a YYYY-MM-DD date string to a UTC-midnight Date for a `@db.Date` column. */
 function toUtcDate(dateOnly: string): Date {
@@ -46,7 +50,11 @@ export const PATCH = withAuth(
       const start = toUtcDate(startDate);
       const effectiveFrequency = frequency ?? existing.frequency;
       data.startDate = start;
-      data.nextRunDate = firstOccurrenceOnOrAfter(start, effectiveFrequency, new Date());
+      data.nextRunDate = firstOccurrenceOnOrAfter(
+        start,
+        effectiveFrequency,
+        taiwanCalendarDay(new Date()),
+      );
     }
 
     const [rule] = await prisma.recurringInvestment.updateManyAndReturn({
@@ -61,7 +69,29 @@ export const PATCH = withAuth(
       return failure("Recurring investment changed while updating; please retry", 409);
     }
 
-    return ok(serializeRecurringInvestment(rule));
+    // An update can make the rule due right now (reactivation, startDate set
+    // to today) — buy immediately rather than waiting for the nightly cron.
+    // Best-effort like the POST route: no price / failure → cron picks it up.
+    let updated = rule;
+    if (rule.isActive && rule.nextRunDate.getTime() <= taiwanCalendarDay(new Date()).getTime()) {
+      try {
+        const { created: posted } = await materializeDueInvestments(new Date(), rule.id);
+        if (posted > 0) {
+          revalidateTag(`accounts:${userId}`, { expire: 0 });
+          revalidateTag(`net-worth:${userId}`, { expire: 0 });
+          revalidateTag(`history:${userId}`, { expire: 0 });
+          revalidateTag("prices", { expire: 0 });
+        }
+        updated = (await prisma.recurringInvestment.findUnique({ where: { id: rule.id } })) ?? rule;
+      } catch (error) {
+        log.error("recurring.investment_materialize_on_update_failed", {
+          ruleId: rule.id,
+          error: String(error),
+        });
+      }
+    }
+
+    return ok(serializeRecurringInvestment(updated));
   },
 );
 

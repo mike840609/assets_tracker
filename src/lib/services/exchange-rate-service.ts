@@ -346,3 +346,63 @@ export async function refreshExchangeRates(
     fetchFailed: false,
   };
 }
+
+/**
+ * Every "FROM→BASE" pair the user's data references that resolveRate cannot
+ * resolve (no direct, inverse, or USD-cross rate). Non-empty means some
+ * displayed values are silently unconverted (the render-time ?? 1 fallback),
+ * so the layout shows a warning banner while this is non-empty.
+ */
+export async function getUnresolvedRatePairs(
+  userId: string,
+  baseCurrency: string,
+): Promise<string[]> {
+  "use cache";
+  cacheTag("exchange-rates");
+  cacheTag(`accounts:${userId}`);
+  cacheTag("goals");
+  cacheTag("snapshots");
+  cacheLife("minutes");
+
+  const [accounts, goals, snapshotCurrencies, allRatesMap] = await Promise.all([
+    prisma.account.findMany({
+      where: { userId, isActive: true },
+      select: { currency: true, holdings: { select: { currency: true, symbol: true } } },
+    }),
+    prisma.goal.findMany({ where: { userId }, select: { targetCurrency: true } }),
+    prisma.netWorthSnapshot.findMany({
+      where: { userId },
+      select: { baseCurrency: true },
+      distinct: ["baseCurrency"],
+    }),
+    getAllExchangeRates(),
+  ]);
+
+  const currencies = new Set<string>();
+  for (const account of accounts) {
+    currencies.add(account.currency);
+    for (const holding of account.holdings) currencies.add(holding.currency);
+  }
+  // Cached prices can be denominated differently from the holding's stored
+  // currency (see net-worth-service's marketValue conversion comment).
+  const symbols = accounts.flatMap((a) => a.holdings.map((h) => h.symbol));
+  if (symbols.length > 0) {
+    const prices = await prisma.priceCache.findMany({
+      where: { symbol: { in: symbols } },
+      select: { currency: true },
+      distinct: ["currency"],
+    });
+    for (const price of prices) currencies.add(price.currency);
+  }
+  for (const goal of goals) currencies.add(goal.targetCurrency);
+  for (const snapshot of snapshotCurrencies) currencies.add(snapshot.baseCurrency);
+
+  const unresolved: string[] = [];
+  for (const currency of currencies) {
+    if (currency === baseCurrency) continue;
+    if (resolveRate(allRatesMap, currency, baseCurrency) === undefined) {
+      unresolved.push(`${currency}→${baseCurrency}`);
+    }
+  }
+  return unresolved.sort();
+}

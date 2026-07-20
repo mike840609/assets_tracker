@@ -58,6 +58,7 @@ export async function getInvestmentCostBasisSummary(
   );
 
   let marketValue = 0;
+  let costedMarketValue = 0;
   let costBasis = 0;
   let pricedHoldingCount = 0;
   let costedHoldingCount = 0;
@@ -103,14 +104,18 @@ export async function getInvestmentCostBasisSummary(
       );
       if (position.hasCostBasis) {
         costBasis += position.costBasis * costRate;
+        costedMarketValue += holdingMarketValue;
         costedHoldingCount += 1;
       }
     }
   }
 
-  const unrealizedGain = costBasis > 0 ? marketValue - costBasis : null;
+  // Gain compares like with like: only holdings with a known cost contribute
+  // market value here, or uncosted imports would read as pure profit.
+  const unrealizedGain = costBasis > 0 ? costedMarketValue - costBasis : null;
   return {
     marketValue,
+    costedMarketValue,
     costBasis,
     unrealizedGain,
     unrealizedGainPct: unrealizedGain == null ? null : unrealizedGain / costBasis,
