@@ -28,6 +28,19 @@ Built with Next.js 16, React 19, Prisma 7, PostgreSQL, Tailwind CSS 4, and NextA
 
 > Assets Tracker v1 is stable for personal self-hosting. Review the [data responsibility](#data-responsibility) notice before serving other users.
 
+## Demo
+
+<table>
+  <tr>
+    <th width="70%">Desktop</th>
+    <th width="30%">Mobile</th>
+  </tr>
+  <tr>
+    <td><img src="./public/readme-demo-desktop.gif" alt="Assets Tracker desktop dashboard demo"></td>
+    <td><img src="./public/readme-demo-mobile.png" alt="Assets Tracker mobile dashboard"></td>
+  </tr>
+</table>
+
 ## How It Compares
 
 Assets Tracker focuses on net worth and investments. If you mainly want double-entry bookkeeping or envelope budgeting, [Firefly III](https://github.com/firefly-iii/firefly-iii) and [Actual Budget](https://github.com/actualbudget/actual) are excellent at that — here is where each tool fits:
@@ -44,19 +57,6 @@ Assets Tracker focuses on net worth and investments. If you mainly want double-e
 | License                                 | MIT                     | AGPL-3.0                                               | AGPL-3.0                                                  | MIT                                                     |
 
 <sub>Summarized from each project's public documentation as of July 2026 — check their sites for the latest.</sub>
-
-## Demo
-
-<table>
-  <tr>
-    <th width="70%">Desktop</th>
-    <th width="30%">Mobile</th>
-  </tr>
-  <tr>
-    <td><img src="./public/readme-demo-desktop.gif" alt="Assets Tracker desktop dashboard demo"></td>
-    <td><img src="./public/readme-demo-mobile.png" alt="Assets Tracker mobile dashboard"></td>
-  </tr>
-</table>
 
 ## Quick Start
 
