@@ -8,16 +8,17 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ArrowUpDown, CheckCircle2, GripVertical, Plus, Save, Target, X } from "lucide-react";
-import type { GoalWithProgress, SerializedAccount } from "@/lib/types";
+import type { GoalWithProgress, SerializedAccount, SerializedCalendarEntry } from "@/lib/types";
 import type { ProjectionData } from "@/lib/services/projection-service";
 import type { SerializedTrackedStock } from "@/lib/services/stock-watch-service";
 import { ProjectionView } from "@/components/projections/projection-view";
 import { StockTrackerView } from "@/components/stocks/stock-tracker-view";
+import { CalendarView } from "@/components/calendar/calendar-view";
 import { GoalCard } from "./goal-card";
 import { GoalFormDialog } from "./goal-form-dialog";
 import { GoalsOnboarding } from "./goals-onboarding";
 
-type MobilePlanTab = "watchlist" | "goals" | "projections";
+type MobilePlanTab = "watchlist" | "goals" | "projections" | "calendar";
 
 interface GoalsViewProps {
   goalsWithProgress: GoalWithProgress[];
@@ -25,6 +26,11 @@ interface GoalsViewProps {
   accounts: SerializedAccount[];
   projectionData: ProjectionData;
   stocks: SerializedTrackedStock[];
+  calendarEntries: SerializedCalendarEntry[];
+  calendarMonth: string;
+  calendarSelectedDate: string;
+  calendarToday: string;
+  locale: string;
 }
 
 function ReorderGoalItem({ data }: { data: GoalWithProgress }) {
@@ -101,6 +107,11 @@ export function GoalsView({
   accounts,
   projectionData,
   stocks,
+  calendarEntries,
+  calendarMonth,
+  calendarSelectedDate,
+  calendarToday,
+  locale,
 }: GoalsViewProps) {
   const t = useTranslations("goals");
   const tNav = useTranslations("nav");
@@ -141,9 +152,8 @@ export function GoalsView({
       setSavingOrder(false);
     }
   }
-  // Deep link: the dashboard's "View projections" link points at /goals#projections
-  // and "View all goals" at /goals#goals, so a tapped sub-view opens directly. The
-  // bare "Plan" tab (no hash) lands on Watchlist, the leftmost sub-tab.
+  // Deep links for goals, projections, and Calendar open their matching sub-view.
+  // The bare "Plan" tab (no hash) lands on Watchlist, the leftmost sub-tab.
   // useSyncExternalStore reads the hash with a server snapshot of "" so SSR and
   // hydration agree; a manual switch sets `override`, which wins and rewrites the
   // hash for shareable, Back-friendly URLs.
@@ -157,7 +167,13 @@ export function GoalsView({
   );
   const [override, setOverride] = useState<MobilePlanTab | null>(null);
   const hashTab: MobilePlanTab =
-    hash === "#goals" ? "goals" : hash === "#projections" ? "projections" : "watchlist";
+    hash === "#goals"
+      ? "goals"
+      : hash === "#projections"
+        ? "projections"
+        : hash === "#calendar"
+          ? "calendar"
+          : "watchlist";
   const activeTab: MobilePlanTab = override ?? hashTab;
 
   const handleTabChange = (tab: MobilePlanTab) => {
@@ -170,7 +186,7 @@ export function GoalsView({
     <div className="space-y-4">
       {/* Mobile-only tab switcher */}
       <div role="tablist" className="md:hidden flex border-b">
-        {(["watchlist", "goals", "projections"] as const).map((tab) => (
+        {(["watchlist", "goals", "projections", "calendar"] as const).map((tab) => (
           <button
             key={tab}
             role="tab"
@@ -179,7 +195,7 @@ export function GoalsView({
             aria-selected={activeTab === tab}
             tabIndex={activeTab === tab ? 0 : -1}
             className={cn(
-              "pb-2 px-4 text-sm font-medium border-b-2 -mb-px transition-colors capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "-mb-px min-w-0 flex-1 border-b-2 px-2 pb-2 text-sm font-medium capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               activeTab === tab
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground",
@@ -272,6 +288,20 @@ export function GoalsView({
       {activeTab === "projections" && (
         <div role="tabpanel" className="md:hidden">
           <ProjectionView projectionData={projectionData} baseCurrency={baseCurrency} />
+        </div>
+      )}
+
+      {/* Calendar tab — mobile only */}
+      {activeTab === "calendar" && (
+        <div role="tabpanel" className="md:hidden">
+          <CalendarView
+            initialEntries={calendarEntries}
+            month={calendarMonth}
+            selectedDate={calendarSelectedDate}
+            today={calendarToday}
+            locale={locale}
+            showHeader={false}
+          />
         </div>
       )}
     </div>

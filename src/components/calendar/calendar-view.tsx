@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { CalendarDayAgenda } from "@/components/calendar/calendar-day-agenda";
 import { CalendarEntryForm } from "@/components/calendar/calendar-entry-form";
 import { CalendarMonthGrid } from "@/components/calendar/calendar-month-grid";
+import { buildCalendarNavigationHref } from "@/components/calendar/calendar-navigation";
 import { groupCalendarEntriesByDate } from "@/components/calendar/calendar-view-model";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { Button } from "@/components/ui/button";
@@ -39,10 +40,15 @@ export function CalendarView({
   const [editingEntry, setEditingEntry] = useState<SerializedCalendarEntry | null>(null);
 
   function navigate(date: string) {
-    const params = new URLSearchParams(window.location.search);
-    params.set("month", date.slice(0, 7));
-    params.set("date", date);
-    router.replace(`${pathname}?${params.toString()}${window.location.hash}`, { scroll: false });
+    router.replace(
+      buildCalendarNavigationHref({
+        pathname,
+        search: window.location.search,
+        hash: window.location.hash,
+        date,
+      }),
+      { scroll: false },
+    );
   }
 
   function addEntry() {

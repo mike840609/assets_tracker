@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
 import { CalendarView } from "@/components/calendar/calendar-view";
+import { MobileHubRedirect } from "@/components/layout/mobile-hub-redirect";
 import { taiwanCalendarDay } from "@/lib/app-day";
 import {
   formatDateOnly,
@@ -34,7 +35,8 @@ async function CalendarContent({ searchParams }: CalendarPageProps) {
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
-      <div className="space-y-4 md:space-y-8 animate-in fade-in duration-200">
+      <MobileHubRedirect hash="#calendar" search={`?month=${month}&date=${date}`} />
+      <div className="hidden space-y-4 md:block md:space-y-8 md:animate-in md:fade-in md:duration-200">
         <CalendarView
           initialEntries={entries}
           month={month}
