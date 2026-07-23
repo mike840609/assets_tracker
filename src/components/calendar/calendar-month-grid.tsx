@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, type KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 
 import { CalendarCategoryBadge } from "@/components/calendar/calendar-category-badge";
+import { isCalendarFocusDestinationReady } from "@/components/calendar/calendar-view-model";
 import { addCalendarDays, buildMonthGrid, moveCalendarMonth } from "@/lib/calendar-date";
 import { cn } from "@/lib/utils";
 import type { SerializedCalendarEntry } from "@/lib/types";
@@ -61,8 +62,19 @@ export function CalendarMonthGrid({
 
   useEffect(() => {
     const focusDate = pendingFocusDate.current;
-    if (!focusDate) return;
+    if (
+      !focusDate ||
+      !isCalendarFocusDestinationReady({
+        pendingDate: focusDate,
+        selectedDate,
+        month,
+      })
+    ) {
+      return;
+    }
+
     const frame = requestAnimationFrame(() => {
+      if (pendingFocusDate.current !== focusDate) return;
       const button = buttonRefs.current.get(focusDate);
       if (!button) return;
       button.focus();
@@ -72,14 +84,14 @@ export function CalendarMonthGrid({
   }, [month, selectedDate]);
 
   function selectAndFocus(date: string) {
-    pendingFocusDate.current = date;
+    pendingFocusDate.current = isCalendarFocusDestinationReady({
+      pendingDate: date,
+      selectedDate,
+      month,
+    })
+      ? null
+      : date;
     onSelectDate(date);
-    requestAnimationFrame(() => {
-      const button = buttonRefs.current.get(date);
-      if (!button) return;
-      button.focus();
-      pendingFocusDate.current = null;
-    });
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, date: string, index: number) {

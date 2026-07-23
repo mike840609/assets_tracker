@@ -1,5 +1,17 @@
 import type { SerializedCalendarEntry } from "@/lib/types";
 
+export function isCalendarFocusDestinationReady({
+  pendingDate,
+  selectedDate,
+  month,
+}: {
+  pendingDate: string | null;
+  selectedDate: string;
+  month: string;
+}) {
+  return pendingDate !== null && selectedDate === pendingDate && month === pendingDate.slice(0, 7);
+}
+
 export function sortCalendarDayEntries(entries: readonly SerializedCalendarEntry[]) {
   return [...entries].sort((a, b) => {
     if (a.startTimeMinutes === null && b.startTimeMinutes !== null) return -1;

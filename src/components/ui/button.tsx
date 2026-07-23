@@ -34,10 +34,15 @@ const buttonVariants = cva(
           "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
         "icon-lg": "size-9",
       },
+      mobileTouch: {
+        true: "min-h-11 min-w-11 md:min-h-0 md:min-w-0",
+        false: null,
+      },
     },
     defaultVariants: {
       variant: "default",
       size: "default",
+      mobileTouch: false,
     },
   },
 );
@@ -46,12 +51,13 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  mobileTouch = false,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(buttonVariants({ variant, size, mobileTouch, className }))}
       {...props}
     />
   );

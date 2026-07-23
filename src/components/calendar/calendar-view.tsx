@@ -73,19 +73,21 @@ export function CalendarView({
             type="button"
             variant="outline"
             size="icon"
+            mobileTouch
             aria-label={t("previousMonth")}
             title={t("previousMonth")}
             onClick={() => navigate(moveCalendarMonth(selectedDate, -1))}
           >
             <ChevronLeft />
           </Button>
-          <Button type="button" variant="outline" onClick={() => navigate(today)}>
+          <Button type="button" variant="outline" mobileTouch onClick={() => navigate(today)}>
             {t("today")}
           </Button>
           <Button
             type="button"
             variant="outline"
             size="icon"
+            mobileTouch
             aria-label={t("nextMonth")}
             title={t("nextMonth")}
             onClick={() => navigate(moveCalendarMonth(selectedDate, 1))}
@@ -94,7 +96,7 @@ export function CalendarView({
           </Button>
         </div>
 
-        <Button type="button" onClick={addEntry}>
+        <Button type="button" mobileTouch onClick={addEntry}>
           <Plus data-icon="inline-start" />
           {t("addEntry")}
         </Button>

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatCalendarWallClock,
   groupCalendarEntriesByDate,
+  isCalendarFocusDestinationReady,
   sortCalendarDayEntries,
 } from "@/components/calendar/calendar-view-model";
 
@@ -80,5 +81,32 @@ describe("calendar view model", () => {
   it("localizes wall-clock display without shifting the stored time", () => {
     expect(formatCalendarWallClock(510, "en-US")).toBe("8:30 AM");
     expect(formatCalendarWallClock(510, "en-GB")).toBe("08:30");
+  });
+});
+
+describe("calendar focus readiness", () => {
+  it("waits for both the selected date and active month to reach the destination", () => {
+    const pendingDate = "2026-09-01";
+    expect(
+      isCalendarFocusDestinationReady({
+        pendingDate,
+        selectedDate: "2026-08-31",
+        month: "2026-08",
+      }),
+    ).toBe(false);
+    expect(
+      isCalendarFocusDestinationReady({
+        pendingDate,
+        selectedDate: pendingDate,
+        month: "2026-08",
+      }),
+    ).toBe(false);
+    expect(
+      isCalendarFocusDestinationReady({
+        pendingDate,
+        selectedDate: pendingDate,
+        month: "2026-09",
+      }),
+    ).toBe(true);
   });
 });

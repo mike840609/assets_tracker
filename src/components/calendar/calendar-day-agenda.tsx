@@ -91,7 +91,7 @@ export function CalendarDayAgenda({
         <div className="flex min-h-52 flex-col items-start justify-center px-4 py-8">
           <p className="font-medium text-foreground">{t("emptyTitle")}</p>
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">{t("emptyDescription")}</p>
-          <Button size="sm" className="mt-4" onClick={onAdd}>
+          <Button size="sm" mobileTouch className="mt-4" onClick={onAdd}>
             <Plus data-icon="inline-start" />
             {t("addEntry")}
           </Button>
@@ -128,15 +128,21 @@ export function CalendarDayAgenda({
                       }
                       variant="ghost"
                       size="xs"
+                      mobileTouch
                     >
                       <ExternalLink data-icon="inline-start" />
                       {t("source")}
                     </Button>
                   )}
-                  <Button variant="ghost" size="xs" onClick={() => onEdit(entry)}>
+                  <Button variant="ghost" size="xs" mobileTouch onClick={() => onEdit(entry)}>
                     {t("edit")}
                   </Button>
-                  <Button variant="destructive" size="xs" onClick={() => setPendingDelete(entry)}>
+                  <Button
+                    variant="destructive"
+                    size="xs"
+                    mobileTouch
+                    onClick={() => setPendingDelete(entry)}
+                  >
                     {t("delete")}
                   </Button>
                 </div>
