@@ -275,7 +275,7 @@ test.describe("calendar entry workflows", () => {
       await page
         .getByRole("gridcell")
         .getByRole("button", { name: /November 1, 2033/ })
-        .click();
+        .tap();
       await expect(page).toHaveURL(/\/goals\?month=2033-11&date=2033-11-01#calendar$/);
 
       await page.getByRole("button", { name: "Add entry" }).first().click();
