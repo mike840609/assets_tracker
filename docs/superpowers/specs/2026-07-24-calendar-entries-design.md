@@ -89,6 +89,7 @@ The following invariants are enforced by application validation:
 - An all-day entry has both `startTimeMinutes` and `timeZone` set to `null`.
 - A timed entry has both fields present.
 - `timeZone` must be accepted by `Intl.DateTimeFormat`.
+- Timed entries display their stored wall-clock time and timezone; v1 does not convert them into the viewer's current timezone or move their explicit `eventDate`.
 - Title is trimmed and contains 1–120 characters.
 - Description is at most 4,000 characters.
 - Source URL is at most 2,048 characters and uses `http` or `https`.
@@ -135,7 +136,7 @@ Add authenticated routes:
 
 The standalone Server Component reads through the service directly. The authenticated `GET` route preserves a clean programmatic boundary for client refreshes and future consumers.
 
-Add Zod schemas for creation, update, and bounded range queries. A range may not exceed 42 days. Mutation payloads accept:
+Add Zod schemas for creation, update, and bounded range queries. A range must have `from <= to` and may not exceed 42 inclusive dates. Mutation payloads accept:
 
 - `title`
 - `eventDate`
@@ -146,6 +147,8 @@ Add Zod schemas for creation, update, and bounded range queries. A range may not
 - `sourceUrl`
 
 The item routes first resolve the row by `{ id, userId }`. A missing row and a cross-user row both return 404. Writes use the project's existing response helpers and authenticated route wrapper.
+
+For partial updates, the item route validates the final state after merging the submitted fields with the stored row. This prevents a PATCH that changes only one member of the time/timezone pair from leaving an invalid record.
 
 V1 uses last-write-wins for concurrent updates. `updatedAt` remains available for a later synchronization or optimistic-concurrency policy.
 
@@ -161,6 +164,8 @@ The URL stores view state:
 - `date=YYYY-MM-DD`
 
 Missing or invalid values fall back to the current app business day. Month navigation replaces the query parameters rather than keeping hidden client-only state, so refresh, Back, bookmarks, and deep links preserve the view.
+
+Previous/next month navigation preserves the selected day of month when possible and clamps it to the target month's last day when necessary. Today resets both parameters to the current app business day.
 
 ### Mobile
 
@@ -201,7 +206,7 @@ The approved layout is **month plus selected-day panel**.
 - Selecting an adjacent-month date moves the displayed month to that date.
 - Today and the selected date have distinct, non-color-only states.
 - Dates containing entries show compact category markers and an accessible entry-count label.
-- Arrow keys move by day or week; Page Up and Page Down move by month; Home moves focus to today.
+- Left/Right Arrow moves by one day, Up/Down Arrow by one week, Page Up/Page Down by one month, and Home/End to the beginning/end of the focused week. The separate Today control returns to today.
 - Each date is a named button with full localized date and entry-count context.
 
 ### Selected-day agenda
@@ -224,7 +229,7 @@ Create `CalendarEntryForm`, rendered with the existing desktop `Dialog` and mobi
 5. Description — optional
 6. Source URL — optional
 
-When the user adds a time, the browser's `Intl.DateTimeFormat().resolvedOptions().timeZone` value is captured and shown as helper text. If the browser does not expose a valid timezone, the form uses `UTC` and shows it explicitly. Clearing the time clears the timezone.
+When a user creates a timed entry or adds a time to an all-day entry, the browser's `Intl.DateTimeFormat().resolvedOptions().timeZone` value is captured and shown as helper text. Editing an already-timed entry preserves its stored timezone even when the browser is currently in another timezone. If the browser does not expose a valid timezone when one must be captured, the form uses `UTC` and shows it explicitly. Clearing the time clears the timezone. V1 does not include a timezone picker.
 
 The submit control is disabled while saving. Source URLs open in a new tab with `noopener` and `noreferrer`.
 
