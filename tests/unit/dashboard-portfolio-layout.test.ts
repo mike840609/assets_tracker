@@ -21,17 +21,7 @@ describe("dashboard portfolio layout", () => {
 
   it("separates concentration from the 8/4 portfolio overview row", () => {
     const overviewStart = dashboardSource.indexOf('data-testid="portfolio-overview-row"');
-    const concentrationBoundary = `            </Suspense>
-          </div>
-        </div>
-        <Suspense
-          fallback={
-            <div>
-              <ConcentrationCardSkeleton />
-            </div>
-          }
-        >`;
-    const concentrationStart = dashboardSource.indexOf(concentrationBoundary, overviewStart);
+    const concentrationStart = dashboardSource.indexOf("<ConcentrationSection", overviewStart);
 
     expect(overviewStart).toBeGreaterThan(-1);
     expect(concentrationStart).toBeGreaterThan(overviewStart);

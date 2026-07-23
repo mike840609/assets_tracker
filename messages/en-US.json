@@ -199,6 +199,9 @@
     "emptyAction": "Add your first account",
     "emptyHint": "Snapshots are captured daily, so charts fill in as your history grows.",
     "viewFullHistory": "View full history",
+    "portfolioDetails": "Portfolio details",
+    "showPortfolioDetails": "Show portfolio details",
+    "hidePortfolioDetails": "Hide portfolio details",
     "onboarding": {
       "eyebrow": "Private by default",
       "title": "Your dashboard is ready for the first account.",

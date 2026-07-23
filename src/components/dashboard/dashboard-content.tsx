@@ -37,6 +37,7 @@ import { DashboardOnboarding } from "./dashboard-onboarding";
 import { getCachedTrackedStocks } from "@/lib/services/stock-watch-service";
 import { countActiveAccounts } from "@/lib/services/account-service";
 import type { GoalWithProgress } from "@/lib/types";
+import { DashboardPortfolioDisclosure } from "./dashboard-portfolio-disclosure";
 
 /**
  * Cached previous-snapshot read — on the LCP critical path (NetWorthSection),
@@ -448,45 +449,43 @@ export async function DashboardContent({ userId }: { userId: string }) {
         </div>
       </div>
 
-      {/* Tier 3 — "what it's made of": a content-sized 8/4 overview row followed
-          by a full-width concentration summary. Source order stays allocation →
-          currency → portfolio → concentration for mobile and assistive technology. */}
-      <div className="space-y-3 sm:space-y-6 animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
-        <div
-          data-testid="portfolio-overview-row"
-          className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12"
-        >
-          <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
-            <Suspense fallback={<ChartCardSkeleton />}>
-              <AllocationSection userId={userId} baseCurrency={baseCurrency} />
-            </Suspense>
-            <Suspense fallback={<ChartCardSkeleton />}>
-              <CurrencySection userId={userId} baseCurrency={baseCurrency} />
-            </Suspense>
-          </div>
-          <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">
-            <Suspense fallback={<PortfolioHeatmapSkeleton />}>
-              <PortfolioHeatmapSection userId={userId} baseCurrency={baseCurrency} />
-            </Suspense>
-          </div>
-        </div>
-        <Suspense
-          fallback={
-            <div>
-              <ConcentrationCardSkeleton />
+      <DashboardPortfolioDisclosure>
+        <div className="space-y-3 sm:space-y-6 animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
+          <div
+            data-testid="portfolio-overview-row"
+            className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12"
+          >
+            <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
+              <Suspense fallback={<ChartCardSkeleton />}>
+                <AllocationSection userId={userId} baseCurrency={baseCurrency} />
+              </Suspense>
+              <Suspense fallback={<ChartCardSkeleton />}>
+                <CurrencySection userId={userId} baseCurrency={baseCurrency} />
+              </Suspense>
             </div>
-          }
-        >
-          <ConcentrationSection userId={userId} baseCurrency={baseCurrency} />
-        </Suspense>
-      </div>
+            <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">
+              <Suspense fallback={<PortfolioHeatmapSkeleton />}>
+                <PortfolioHeatmapSection userId={userId} baseCurrency={baseCurrency} />
+              </Suspense>
+            </div>
+          </div>
+          <Suspense
+            fallback={
+              <div>
+                <ConcentrationCardSkeleton />
+              </div>
+            }
+          >
+            <ConcentrationSection userId={userId} baseCurrency={baseCurrency} />
+          </Suspense>
+        </div>
 
-      {/* Tier 4 — drill-in detail: full-width accounts summary */}
-      <div className="animate-in fade-in slide-in-from-bottom-12 motion-slow fill-mode-both delay-150">
-        <Suspense fallback={<AccountsSummarySkeleton />}>
-          <AccountsSummarySection userId={userId} baseCurrency={baseCurrency} />
-        </Suspense>
-      </div>
+        <div className="animate-in fade-in slide-in-from-bottom-12 motion-slow fill-mode-both delay-150">
+          <Suspense fallback={<AccountsSummarySkeleton />}>
+            <AccountsSummarySection userId={userId} baseCurrency={baseCurrency} />
+          </Suspense>
+        </div>
+      </DashboardPortfolioDisclosure>
     </>
   );
 }

@@ -199,6 +199,9 @@
     "emptyAction": "新增您的第一個帳戶",
     "emptyHint": "系統每日擷取快照，隨著歷史累積，圖表會逐漸顯示。",
     "viewFullHistory": "查看完整歷史記錄",
+    "portfolioDetails": "投資組合詳情",
+    "showPortfolioDetails": "顯示投資組合詳情",
+    "hidePortfolioDetails": "隱藏投資組合詳情",
     "onboarding": {
       "eyebrow": "預設保護隱私",
       "title": "儀表板已準備好加入第一個帳戶。",
