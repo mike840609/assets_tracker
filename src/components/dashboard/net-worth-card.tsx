@@ -117,7 +117,7 @@ export function NetWorthCard({
   const { density } = useDensity();
   const isCompact = density === "compact";
 
-  const animatedNetWorth = useCountUp(netWorth, 600);
+  const animatedNetWorth = useCountUp(netWorth, 600, { animateOnMount: false });
 
   const delta = previousNetWorth !== undefined ? netWorth - previousNetWorth : null;
   const pct =
@@ -170,6 +170,7 @@ export function NetWorthCard({
             </p>
           </div>
           <p
+            data-testid="net-worth-value"
             className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mt-1 whitespace-nowrap tabular-nums truncate"
             style={{ letterSpacing: "-0.02em" }}
             title={privacyMode ? undefined : formatCurrency(netWorth, baseCurrency)}

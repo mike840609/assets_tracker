@@ -62,3 +62,18 @@ test("portfolio details are compact on mobile and persistently visible on deskto
     await deleteDashboardAccount(page, accountId);
   }
 });
+
+test("net-worth hero paints its real value in the SSR response", async ({ page }) => {
+  const accountId = await createDashboardAccount(page, "E2E Dashboard First Paint");
+
+  try {
+    const response = await page.request.get("/");
+    expect(response.ok()).toBeTruthy();
+    const html = await response.text();
+    const match = html.match(/data-testid="net-worth-value"[^>]*>([^<]+)</);
+    expect(match?.[1]).toBeTruthy();
+    expect(match?.[1]).not.toBe("$0.00");
+  } finally {
+    await deleteDashboardAccount(page, accountId);
+  }
+});

@@ -1,22 +1,28 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 
-export function useCountUp(end: number, duration: number = 1000) {
+interface CountUpOptions {
+  animateOnMount?: boolean;
+}
+
+export function useCountUp(
+  end: number,
+  duration: number = 1000,
+  { animateOnMount = true }: CountUpOptions = {},
+) {
   const shouldReduceMotion = useReducedMotion();
-  const [count, setCount] = useState(0);
-  // The value the next animation starts from. 0 on first mount gives the intro
-  // count-up; afterward it holds the last displayed figure so a value change
-  // (e.g. net worth after a price refresh) rolls from the previous number to the
-  // new one — conveying the change — instead of snapping back to zero and
-  // replaying the load animation.
-  const fromRef = useRef(0);
+  const [count, setCount] = useState(() => (animateOnMount ? 0 : end));
+  const fromRef = useRef(animateOnMount ? 0 : end);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
-    if (shouldReduceMotion) {
-      // The returned value is `end` via the ternary below, so there's nothing to
-      // animate or set here; just remember it as the next start point.
+    const firstRun = !mountedRef.current;
+    mountedRef.current = true;
+
+    if (shouldReduceMotion || (firstRun && !animateOnMount)) {
+      setCount(end);
       fromRef.current = end;
       return;
     }
@@ -28,7 +34,6 @@ export function useCountUp(end: number, duration: number = 1000) {
       if (cancelled) return;
       if (startTimestamp === null) startTimestamp = timestamp;
       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      // easeOutCubic — decelerates the way iOS does
       const ease = 1 - Math.pow(1 - progress, 3);
       const value = from + (end - from) * ease;
       setCount(value);
@@ -43,7 +48,7 @@ export function useCountUp(end: number, duration: number = 1000) {
     return () => {
       cancelled = true;
     };
-  }, [end, duration, shouldReduceMotion]);
+  }, [animateOnMount, duration, end, shouldReduceMotion]);
 
   return shouldReduceMotion ? end : count;
 }
