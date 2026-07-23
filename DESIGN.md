@@ -244,6 +244,14 @@ Cards frame data modules, not entire page sections.
 
 The net-worth card may carry a soft animated mesh and bottom accent, but both must derive from schema tokens (`--gain`, `--loss`, `--primary`, and chart tokens). The mesh is a data/state wash, not a marketing hero.
 
+### Dashboard Information Priority
+
+The dashboard answers the quick-check questions in this order: current net worth, what changed, and what needs attention. On viewports below 768px, allocation, currency exposure, portfolio composition, concentration, and the complete account list live behind one accessible “Portfolio details” disclosure that starts collapsed. Goals/projections and the watchlist remain visible because they are short, actionable status previews.
+
+At 768px and above, the disclosure control is hidden and the complete portfolio area remains visible in its 8/4 overview layout, followed by concentration and account detail. Loading states must mirror the same responsive hierarchy so hidden mobile details do not produce a long skeleton page before collapsing.
+
+The net-worth hero renders its real value on the server and at first paint. Motion is reserved for a later value change, such as a successful market-data refresh; it must never delay the first trustworthy number.
+
 ### App Icon / Favicon
 
 The app mark is a rounded square with a diagonal gradient and white chart-arrow glyph. Preserve the original shape, radius, white stroke, and shadow treatment. Only recolor the gradient using the active schema's dedicated app-icon gradient tokens. The browser favicon may update through a generated SVG data URL; Apple/PWA icons remain stable because iOS caches them aggressively.
