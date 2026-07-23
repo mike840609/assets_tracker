@@ -10,6 +10,8 @@ import {
   GOAL_SCOPES,
 } from "./enums";
 import { SUPPORTED_LOCALES } from "@/i18n/config";
+import { getCalendarRangeLength, parseDateOnly } from "@/lib/calendar-date";
+import { CALENDAR_ENTRY_CATEGORIES } from "@/lib/types";
 
 const OCC_SHAPE = /^[A-Z][A-Z0-9.\-]{0,5}\d{6}[CP]\d{8}$/;
 const supportedLocaleSchema = z.enum(SUPPORTED_LOCALES);
@@ -538,3 +540,81 @@ export const dataImportSchema = z.object({
     .max(MAX_IMPORT_STOCK_WATCH_ITEMS)
     .optional(),
 });
+
+const nullableTrimmedText = (max: number) =>
+  z
+    .string()
+    .max(max)
+    .trim()
+    .transform((value) => value || null)
+    .nullable()
+    .optional();
+
+const calendarTimeZone = z
+  .string()
+  .max(64)
+  .refine((value) => {
+    try {
+      new Intl.DateTimeFormat("en-US", { timeZone: value }).format();
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Must be a valid IANA timezone")
+  .nullable();
+
+const calendarEntryFields = z.object({
+  title: z.string().trim().min(1, "Title is required").max(120),
+  eventDate: z.string().refine((value) => parseDateOnly(value) !== null, "Invalid date"),
+  startTimeMinutes: z.number().int().min(0).max(1439).nullable(),
+  timeZone: calendarTimeZone,
+  category: z.enum(CALENDAR_ENTRY_CATEGORIES),
+  description: nullableTrimmedText(4000),
+  sourceUrl: z
+    .string()
+    .max(2048)
+    .trim()
+    .refine((value) => {
+      if (!value) return true;
+      try {
+        const protocol = new URL(value).protocol;
+        return protocol === "http:" || protocol === "https:";
+      } catch {
+        return false;
+      }
+    }, "Source URL must use http or https")
+    .transform((value) => value || null)
+    .nullable()
+    .optional(),
+});
+
+function enforceCalendarTimePair(
+  value: { startTimeMinutes?: number | null; timeZone?: string | null },
+  ctx: z.RefinementCtx,
+) {
+  if ((value.startTimeMinutes === null) !== (value.timeZone === null)) {
+    ctx.addIssue({
+      code: "custom",
+      path: value.startTimeMinutes === null ? ["timeZone"] : ["startTimeMinutes"],
+      message: "Time and timezone must both be set or both be empty",
+    });
+  }
+}
+
+export const calendarEntryInputSchema = calendarEntryFields.superRefine(enforceCalendarTimePair);
+export const createCalendarEntrySchema = calendarEntryInputSchema;
+export const updateCalendarEntrySchema = calendarEntryFields.partial();
+
+export const calendarEntriesRangeSchema = z
+  .object({
+    from: z.string().refine((value) => parseDateOnly(value) !== null, "Invalid from date"),
+    to: z.string().refine((value) => parseDateOnly(value) !== null, "Invalid to date"),
+  })
+  .superRefine(({ from, to }, ctx) => {
+    const length = getCalendarRangeLength(from, to);
+    if (length < 1) {
+      ctx.addIssue({ code: "custom", path: ["to"], message: "to must be on or after from" });
+    } else if (length > 42) {
+      ctx.addIssue({ code: "custom", path: ["to"], message: "Range cannot exceed 42 days" });
+    }
+  });
