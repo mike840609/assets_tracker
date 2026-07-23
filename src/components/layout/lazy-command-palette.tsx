@@ -68,6 +68,8 @@ export function LazyCommandPalette() {
 
       const target = event.target as HTMLElement | null;
       if (target?.closest("input,textarea,[contenteditable=true]")) return;
+      const hasModifier = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
+      if (pendingGoTo.current && hasModifier) clearGoTo();
 
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
@@ -120,7 +122,7 @@ export function LazyCommandPalette() {
         return;
       }
 
-      if (/^[1-9]$/.test(event.key)) {
+      if (!hasModifier && /^[1-9]$/.test(event.key)) {
         const href = NAV_HREFS[Number(event.key) - 1];
         if (href) {
           navigateTo(href);
@@ -159,7 +161,7 @@ export function LazyCommandPalette() {
         return;
       }
 
-      if (event.key.toLowerCase() === "g") {
+      if (!hasModifier && event.key.toLowerCase() === "g") {
         pendingGoTo.current = true;
         if (goToTimeoutRef.current !== null) window.clearTimeout(goToTimeoutRef.current);
         goToTimeoutRef.current = window.setTimeout(() => {
