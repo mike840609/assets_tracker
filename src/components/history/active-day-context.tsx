@@ -25,14 +25,23 @@ export function createActiveDayStore(): ActiveDayStore {
     },
     subscribe: (listener) => {
       listeners.add(listener);
-      return () => listeners.delete(listener);
+      return () => {
+        listeners.delete(listener);
+      };
     },
   };
 }
 
-// Inert default: a TrendChart rendered outside a provider (the dashboard) reads
-// null forever, so its linked marker is a no-op there.
-const ActiveDayContext = createContext<ActiveDayStore>(createActiveDayStore());
+// A provider-less consumer (e.g. the dashboard, which renders the heatmap
+// and trend chart without an ActiveDayProvider) must be a complete no-op:
+// set does nothing, get is always null, so no marker ever appears there.
+const INERT_STORE: ActiveDayStore = {
+  get: () => null,
+  set: () => {},
+  subscribe: () => () => {},
+};
+
+const ActiveDayContext = createContext<ActiveDayStore>(INERT_STORE);
 
 export const ActiveDayProvider = ActiveDayContext.Provider;
 
