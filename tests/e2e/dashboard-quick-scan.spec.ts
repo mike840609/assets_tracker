@@ -72,7 +72,7 @@ test("net-worth hero paints its real value in the SSR response", async ({ page }
     const html = await response.text();
     const match = html.match(/data-testid="net-worth-value"[^>]*>([^<]+)</);
     expect(match?.[1]).toBeTruthy();
-    expect(match?.[1]).not.toBe("$0.00");
+    expect(match?.[1]).not.toBe("$0");
   } finally {
     await deleteDashboardAccount(page, accountId);
   }
