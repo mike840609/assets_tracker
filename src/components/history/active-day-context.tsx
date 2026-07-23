@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useSyncExternalStore } from "react";
+import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
 
 export type ActiveDayStore = {
   get: () => string | null;
@@ -44,6 +44,17 @@ const INERT_STORE: ActiveDayStore = {
 const ActiveDayContext = createContext<ActiveDayStore>(INERT_STORE);
 
 export const ActiveDayProvider = ActiveDayContext.Provider;
+
+/**
+ * Wraps a subtree that pairs a HistoryHeatmap (emitter) with a TrendChart
+ * (LinkedMarker consumer) so the two are linked. Each boundary owns its own
+ * store, so the History page and the dashboard stay independent. Server
+ * components can render this and pass their content as children.
+ */
+export function ActiveDayBoundary({ children }: { children: ReactNode }) {
+  const store = useMemo(() => createActiveDayStore(), []);
+  return <ActiveDayProvider value={store}>{children}</ActiveDayProvider>;
+}
 
 export function useActiveDayStore(): ActiveDayStore {
   return useContext(ActiveDayContext);

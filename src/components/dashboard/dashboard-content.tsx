@@ -17,6 +17,7 @@ import {
   getNormalizedHistory,
 } from "@/lib/services/history-service";
 import { HistoryHeatmap } from "@/components/history/history-heatmap";
+import { ActiveDayBoundary } from "@/components/history/active-day-context";
 import { computeGoalsWithProgress } from "@/lib/services/goal-service";
 import { TrendChartSection } from "@/components/dashboard/trend-chart-section";
 import { GoalsMilestoneCard } from "@/components/dashboard/goals-milestone-card";
@@ -325,27 +326,29 @@ async function TrendSection({ userId, baseCurrency }: { userId: string; baseCurr
   ]);
 
   return (
-    <TrendChartSection
-      baseCurrency={baseCurrency}
-      snapshots={trendSnapshots}
-      footer={
-        <>
-          <HistoryHeatmap snapshots={heatmapSnapshots} baseCurrency={baseCurrency} />
-          {/* Mobile-only entry point — the trend chart is the preview; this
+    <ActiveDayBoundary>
+      <TrendChartSection
+        baseCurrency={baseCurrency}
+        snapshots={trendSnapshots}
+        footer={
+          <>
+            <HistoryHeatmap snapshots={heatmapSnapshots} baseCurrency={baseCurrency} />
+            {/* Mobile-only entry point — the trend chart is the preview; this
               names the History destination inline. Desktop uses the sidebar route. */}
-          <Link
-            href="/history"
-            className="md:hidden mt-3 flex items-center justify-between gap-2 rounded-sm border-t border-border/40 pt-3 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            <span className="flex items-center gap-1.5">
-              <History className="h-3.5 w-3.5" aria-hidden="true" />
-              {t("viewFullHistory")}
-            </span>
-            <ArrowRight className="h-3 w-3" aria-hidden="true" />
-          </Link>
-        </>
-      }
-    />
+            <Link
+              href="/history"
+              className="md:hidden mt-3 flex items-center justify-between gap-2 rounded-sm border-t border-border/40 pt-3 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <span className="flex items-center gap-1.5">
+                <History className="h-3.5 w-3.5" aria-hidden="true" />
+                {t("viewFullHistory")}
+              </span>
+              <ArrowRight className="h-3 w-3" aria-hidden="true" />
+            </Link>
+          </>
+        }
+      />
+    </ActiveDayBoundary>
   );
 }
 

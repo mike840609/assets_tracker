@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { AlertTriangle } from "lucide-react";
 import { TrendChart } from "@/components/dashboard/trend-chart";
@@ -9,7 +8,7 @@ import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { FreshnessBadge } from "@/components/ui/freshness-badge";
 import { formatCurrency } from "@/lib/currencies";
 import { cn } from "@/lib/utils";
-import { ActiveDayProvider, createActiveDayStore } from "./active-day-context";
+import { ActiveDayBoundary } from "./active-day-context";
 import { HistoryOnboarding } from "./history-onboarding";
 import type {
   NormalizedSnapshot,
@@ -45,7 +44,6 @@ export function HistoryView({
   const t = useTranslations("history");
   const format = useFormatter();
   const { privacyMode } = usePrivacyMode();
-  const activeDayStore = useMemo(() => createActiveDayStore(), []);
 
   const firstSnapshot = snapshots[0];
   const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
@@ -122,7 +120,7 @@ export function HistoryView({
 
       {/* Hero row: trend + heatmap hold the width; the rail stacks the derived
           summary over recent daily volatility, mirroring the dashboard's 8/4 split. */}
-      <ActiveDayProvider value={activeDayStore}>
+      <ActiveDayBoundary>
         <div className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12">
           <div className="min-w-0 lg:col-span-8">
             <TrendChart
@@ -147,7 +145,7 @@ export function HistoryView({
             />
           </div>
         </div>
-      </ActiveDayProvider>
+      </ActiveDayBoundary>
 
       <HistoryTable snapshots={snapshots} baseCurrency={baseCurrency} />
     </div>
