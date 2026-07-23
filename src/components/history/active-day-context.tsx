@@ -32,9 +32,11 @@ export function createActiveDayStore(): ActiveDayStore {
   };
 }
 
-// A provider-less consumer (e.g. the dashboard, which renders the heatmap
-// and trend chart without an ActiveDayProvider) must be a complete no-op:
-// set does nothing, get is always null, so no marker ever appears there.
+// Default for any consumer rendered outside an ActiveDayBoundary: a complete
+// no-op (get always null, set/subscribe do nothing) so no marker appears and
+// a stray emitter can't leak into an unrelated chart. Both the History page
+// and the dashboard supply a real per-page store via ActiveDayBoundary; this
+// is the safety net for anything mounted without one.
 const INERT_STORE: ActiveDayStore = {
   get: () => null,
   set: () => {},
