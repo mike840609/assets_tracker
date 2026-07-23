@@ -20,6 +20,7 @@ const NAV_HREFS = [
   "/stocks",
   "/analysis",
   "/projections",
+  "/calendar",
   "/history",
   "/settings",
 ] as const;
@@ -119,7 +120,7 @@ export function LazyCommandPalette() {
         return;
       }
 
-      if (/^[1-8]$/.test(event.key)) {
+      if (/^[1-9]$/.test(event.key)) {
         const href = NAV_HREFS[Number(event.key) - 1];
         if (href) {
           navigateTo(href);
@@ -144,11 +145,13 @@ export function LazyCommandPalette() {
                     ? "/analysis"
                     : key === "p"
                       ? "/projections"
-                      : key === "h"
-                        ? "/history"
-                        : key === "s"
-                          ? "/settings"
-                          : null;
+                      : key === "c"
+                        ? "/calendar"
+                        : key === "h"
+                          ? "/history"
+                          : key === "s"
+                            ? "/settings"
+                            : null;
         if (href) {
           navigateTo(href);
           setOpen(false);
