@@ -3,6 +3,14 @@ import { describe, expect, it } from "vitest";
 
 const dashboardSource = readFileSync("src/components/dashboard/dashboard-content.tsx", "utf8");
 const skeletonSource = readFileSync("src/components/dashboard/dashboard-skeleton.tsx", "utf8");
+const disclosureSource = readFileSync(
+  "src/components/dashboard/dashboard-portfolio-disclosure.tsx",
+  "utf8",
+);
+const sectionSkeletonSource = readFileSync(
+  "src/components/dashboard/dashboard-section-skeletons.tsx",
+  "utf8",
+);
 const concentrationSource = readFileSync("src/components/dashboard/concentration-card.tsx", "utf8");
 const heatmapSource = readFileSync("src/components/analysis/portfolio-heatmap.tsx", "utf8");
 
@@ -65,13 +73,29 @@ describe("dashboard portfolio layout", () => {
     expect(overviewSource).toContain("lg:[&>*]:flex-1");
     expect(overviewSource).not.toContain("<ConcentrationCardSkeleton />");
     expect(skeletonSource)
-      .toContain(`          <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">
-            <PortfolioHeatmapSkeleton />
-          </div>
-        </div>
-        <ConcentrationCardSkeleton />`);
-    expect(skeletonSource).toContain('data-testid="portfolio-concentration-skeleton"');
-    expect(skeletonSource).toContain("export function ConcentrationCardSkeleton()");
+      .toContain(`              <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">
+                <PortfolioHeatmapSkeleton />
+              </div>
+            </div>
+            <ConcentrationCardSkeleton />`);
+    expect(sectionSkeletonSource).toContain('data-testid="portfolio-concentration-skeleton"');
+  });
+
+  it("wraps portfolio analytics without changing the desktop 8/4 topology", () => {
+    const disclosureStart = dashboardSource.indexOf("<DashboardPortfolioDisclosure>");
+    const disclosureEnd = dashboardSource.indexOf(
+      "</DashboardPortfolioDisclosure>",
+      disclosureStart,
+    );
+    const disclosureChildren = dashboardSource.slice(disclosureStart, disclosureEnd);
+
+    expect(disclosureStart).toBeGreaterThan(-1);
+    expect(disclosureChildren).toContain('data-testid="portfolio-overview-row"');
+    expect(disclosureChildren).toContain("lg:col-span-8");
+    expect(disclosureChildren).toContain("lg:col-span-4");
+    expect(disclosureChildren).toContain("<ConcentrationSection");
+    expect(disclosureChildren).toContain("<AccountsSummarySection");
+    expect(disclosureSource).toContain('"space-y-4 md:block md:space-y-8"');
   });
 
   it("lays concentration out horizontally on desktop", () => {

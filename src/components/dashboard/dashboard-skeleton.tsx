@@ -1,57 +1,14 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AccountsSummarySkeleton,
+  ChartCardSkeleton,
+  ConcentrationCardSkeleton,
+  NetWorthSkeleton,
+  PortfolioHeatmapSkeleton,
+  WatchlistCardSkeleton,
+} from "@/components/dashboard/dashboard-section-skeletons";
 import { TrendChartSkeleton } from "@/components/dashboard/trend-chart-skeleton";
-
-function ChartCardSkeleton() {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <Skeleton className="h-5 w-32" />
-      </CardHeader>
-      <CardContent>
-        <Skeleton className="h-[250px]" />
-      </CardContent>
-    </Card>
-  );
-}
-
-/** Net worth cards — mirrors NetWorthSkeleton in dashboard-content so the route
- *  skeleton and the streaming fallback are identical (no jump on reveal). */
-function NetWorthSkeleton() {
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-      {/* Primary: Net Worth — spans half the row, mirroring NetWorthCard's
-          col-span-2 in a 4-col grid. */}
-      <Card className="col-span-2 rounded-2xl">
-        <CardContent className="h-full p-4 sm:p-6 flex flex-col justify-center">
-          <div className="flex items-center gap-2.5 mb-1.5">
-            <Skeleton className="h-8 w-8 rounded-full shrink-0" />
-            <Skeleton className="h-3.5 sm:h-4 w-20" />
-          </div>
-          <Skeleton className="h-7 sm:h-8 w-40 max-w-full mt-1" />
-          <Skeleton className="h-6 w-28 rounded-full mt-3" />
-        </CardContent>
-      </Card>
-      {/* Secondary: Assets + Liabilities (with share bar + labels) */}
-      {[0, 1].map((i) => (
-        <Card key={i} className="col-span-1 rounded-2xl">
-          <CardContent className="h-full p-4 sm:p-6 flex flex-col justify-center">
-            <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
-              <Skeleton className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-sm shrink-0" />
-              <Skeleton className="h-3.5 sm:h-4 w-16" />
-            </div>
-            <Skeleton className="h-5 sm:h-6 w-24 max-w-full mt-1" />
-            <Skeleton className="h-1.5 w-full rounded-full mt-3 sm:mt-4" />
-            <div className="mt-1.5 flex items-center justify-between">
-              <Skeleton className="h-3 w-16" />
-              <Skeleton className="h-3 w-8" />
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
 
 /** Planning rail card — GoalsMilestoneCard / ProjectionEntryCard shape:
  *  header (icon + title + view-all) over a goal name, progress bar, and bounds. */
@@ -73,96 +30,6 @@ function GoalsCardSkeleton() {
         <div className="flex items-center justify-between">
           <Skeleton className="h-3 w-16" />
           <Skeleton className="h-3 w-16" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/** Watchlist rail card — header + three quote rows (symbol/name + change pill). */
-export function WatchlistCardSkeleton() {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <Skeleton className="h-4 w-4 rounded-sm shrink-0" />
-            <Skeleton className="h-5 w-24" />
-          </div>
-          <Skeleton className="h-4 w-14" />
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        {[...Array(3)].map((_, i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between gap-3 border-t border-border/50 py-2.5 first:border-t-0 first:pt-0 last:pb-0"
-          >
-            <div className="min-w-0 space-y-1.5">
-              <Skeleton className="h-3.5 w-20" />
-              <Skeleton className="h-3 w-28 max-w-full" />
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-1.5">
-              <Skeleton className="h-5 w-16 rounded-full" />
-              <Skeleton className="h-3 w-12" />
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-/** Portfolio treemap — wide chart beside a desktop-only legend column. */
-function PortfolioHeatmapSkeleton() {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <Skeleton className="h-5 w-36" />
-        <Skeleton className="h-4 w-64 max-w-full" />
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
-          <Skeleton className="h-[240px] sm:h-[280px]" />
-          <div className="hidden space-y-3 lg:block">
-            <Skeleton className="h-24" />
-            <div className="space-y-2">
-              {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-10" />
-              ))}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-export function ConcentrationCardSkeleton() {
-  return (
-    <Card data-testid="portfolio-concentration-skeleton">
-      <CardHeader className="pb-2">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-4 w-64 max-w-full" />
-      </CardHeader>
-      <CardContent className="grid gap-4 lg:grid-cols-[minmax(12rem,0.3fr)_minmax(0,1fr)] lg:gap-6">
-        <div className="flex items-end justify-between gap-3 lg:flex-col lg:items-start lg:justify-start">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-20" />
-            <Skeleton className="h-3 w-24" />
-          </div>
-          <Skeleton className="h-6 w-28 rounded-full" />
-        </div>
-        <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
-          {[...Array(5)].map((_, index) => (
-            <div key={index} className="space-y-2">
-              <div className="flex justify-between gap-3">
-                <Skeleton className="h-3 w-32 max-w-[70%]" />
-                <Skeleton className="h-3 w-10" />
-              </div>
-              <Skeleton className="h-1.5 w-full rounded-full" />
-            </div>
-          ))}
         </div>
       </CardContent>
     </Card>
@@ -195,30 +62,25 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      {/* Tier 3 — aligned portfolio overview, then full-width concentration. */}
-      <div className="space-y-3 sm:space-y-6">
-        <div
-          data-testid="portfolio-overview-skeleton"
-          className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12"
-        >
-          <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
-            <ChartCardSkeleton />
-            <ChartCardSkeleton />
+      <div data-testid="dashboard-portfolio-disclosure-skeleton" className="space-y-4 md:space-y-8">
+        <Skeleton className="h-11 w-full rounded-xl md:hidden" />
+        <div className="hidden space-y-4 md:block md:space-y-8">
+          <div className="space-y-3 sm:space-y-6">
+            <div
+              data-testid="portfolio-overview-skeleton"
+              className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12"
+            >
+              <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
+                <ChartCardSkeleton />
+                <ChartCardSkeleton />
+              </div>
+              <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">
+                <PortfolioHeatmapSkeleton />
+              </div>
+            </div>
+            <ConcentrationCardSkeleton />
           </div>
-          <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">
-            <PortfolioHeatmapSkeleton />
-          </div>
-        </div>
-        <ConcentrationCardSkeleton />
-      </div>
-
-      {/* Tier 4 — accounts summary (matches AccountsSummarySkeleton) */}
-      <div className="space-y-3">
-        <Skeleton className="h-5 w-40" />
-        <div className="space-y-3">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-10" />
-          ))}
+          <AccountsSummarySkeleton />
         </div>
       </div>
     </div>
