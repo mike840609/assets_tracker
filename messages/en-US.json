@@ -47,6 +47,32 @@
       "FILING": "Filing",
       "REMINDER": "Reminder",
       "OTHER": "Other"
+    },
+    "form": {
+      "createTitle": "Add calendar entry",
+      "editTitle": "Edit calendar entry",
+      "title": "Title",
+      "titlePlaceholder": "e.g. US CPI report",
+      "date": "Date",
+      "time": "Time",
+      "timeOptional": "Optional — leave empty for an all-day entry",
+      "timeZone": "Timezone: {timeZone}",
+      "category": "Category",
+      "description": "Description",
+      "descriptionPlaceholder": "Add context, expectations, or follow-up notes",
+      "sourceUrl": "Source URL",
+      "sourceUrlPlaceholder": "https://…",
+      "cancel": "Cancel",
+      "create": "Add entry",
+      "save": "Save changes",
+      "created": "Calendar entry added",
+      "updated": "Calendar entry updated",
+      "failed": "Could not save calendar entry",
+      "titleRequired": "Enter a title",
+      "dateInvalid": "Choose a valid date",
+      "timeInvalid": "Choose a valid time",
+      "categoryInvalid": "Choose a category",
+      "sourceInvalid": "Use a valid http or https URL"
     }
   },
   "commandPalette": {

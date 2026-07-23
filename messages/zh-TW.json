@@ -47,6 +47,32 @@
       "FILING": "申報文件",
       "REMINDER": "提醒",
       "OTHER": "其他"
+    },
+    "form": {
+      "createTitle": "新增行事曆項目",
+      "editTitle": "編輯行事曆項目",
+      "title": "標題",
+      "titlePlaceholder": "例如：美國 CPI 報告",
+      "date": "日期",
+      "time": "時間",
+      "timeOptional": "選填—留空即為全天項目",
+      "timeZone": "時區：{timeZone}",
+      "category": "類別",
+      "description": "說明",
+      "descriptionPlaceholder": "新增背景、預期或後續備註",
+      "sourceUrl": "來源網址",
+      "sourceUrlPlaceholder": "https://…",
+      "cancel": "取消",
+      "create": "新增項目",
+      "save": "儲存變更",
+      "created": "已新增行事曆項目",
+      "updated": "已更新行事曆項目",
+      "failed": "無法儲存行事曆項目",
+      "titleRequired": "請輸入標題",
+      "dateInvalid": "請選擇有效日期",
+      "timeInvalid": "請選擇有效時間",
+      "categoryInvalid": "請選擇類別",
+      "sourceInvalid": "請使用有效的 http 或 https 網址"
     }
   },
   "commandPalette": {

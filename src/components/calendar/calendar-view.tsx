@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { startTransition, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 import { CalendarDayAgenda } from "@/components/calendar/calendar-day-agenda";
+import { CalendarEntryForm } from "@/components/calendar/calendar-entry-form";
 import { CalendarMonthGrid } from "@/components/calendar/calendar-month-grid";
 import { groupCalendarEntriesByDate } from "@/components/calendar/calendar-view-model";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
@@ -35,11 +36,7 @@ export function CalendarView({
   const pathname = usePathname();
   const entriesByDate = useMemo(() => groupCalendarEntriesByDate(initialEntries), [initialEntries]);
   const [formOpen, setFormOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<SerializedCalendarEntry | null>(null);
-
-  // Task 7 consumes these state values when it adds CalendarEntryForm.
-  void formOpen;
-  void editTarget;
+  const [editingEntry, setEditingEntry] = useState<SerializedCalendarEntry | null>(null);
 
   function navigate(date: string) {
     const params = new URLSearchParams(window.location.search);
@@ -49,13 +46,19 @@ export function CalendarView({
   }
 
   function addEntry() {
-    setEditTarget(null);
+    setEditingEntry(null);
     setFormOpen(true);
   }
 
   function editEntry(entry: SerializedCalendarEntry) {
-    setEditTarget(entry);
+    setEditingEntry(entry);
     setFormOpen(true);
+  }
+
+  function handleMutationComplete() {
+    setFormOpen(false);
+    setEditingEntry(null);
+    startTransition(() => router.refresh());
   }
 
   return (
@@ -118,10 +121,21 @@ export function CalendarView({
             locale={locale}
             onAdd={addEntry}
             onEdit={editEntry}
-            onDeleted={() => router.refresh()}
+            onDeleted={handleMutationComplete}
           />
         </div>
       </div>
+
+      <CalendarEntryForm
+        open={formOpen}
+        onOpenChange={(open) => {
+          setFormOpen(open);
+          if (!open) setEditingEntry(null);
+        }}
+        selectedDate={selectedDate}
+        entry={editingEntry}
+        onSaved={handleMutationComplete}
+      />
     </div>
   );
 }
