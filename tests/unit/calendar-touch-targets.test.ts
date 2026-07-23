@@ -26,4 +26,17 @@ describe("calendar mobile touch targets", () => {
     expect(actionCount).toBe(4);
     expect(mobileTouchCount).toBe(actionCount);
   });
+
+  it("keeps calendar form category options touch-safe on mobile and compact on desktop", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src/components/calendar/calendar-entry-form.tsx"),
+      "utf8",
+    );
+    const optionProps = source.match(
+      /<SelectItem\s+key=\{value\}\s+value=\{value\}([\s\S]*?)>/,
+    )?.[1];
+
+    expect(optionProps).toContain("min-h-11");
+    expect(optionProps).toContain("md:min-h-0");
+  });
 });

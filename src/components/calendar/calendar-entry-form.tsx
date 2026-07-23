@@ -278,7 +278,7 @@ function CalendarEntryFormController({
           </SelectTrigger>
           <SelectContent>
             {CALENDAR_ENTRY_CATEGORIES.map((value) => (
-              <SelectItem key={value} value={value}>
+              <SelectItem key={value} value={value} className="min-h-11 md:min-h-0">
                 {t(`categories.${value}`)}
               </SelectItem>
             ))}
