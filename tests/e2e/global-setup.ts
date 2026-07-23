@@ -4,6 +4,18 @@ import fs from "fs";
 
 const authFile = path.join(__dirname, ".auth/user.json");
 
+type AuthSession = { user?: { id?: string } } | null;
+
+export function requireAuthenticatedSession(sessionBody: AuthSession) {
+  if (!sessionBody?.user?.id) {
+    throw new Error(
+      "Global setup could not establish authenticated session via credentials provider. " +
+        "The session endpoint returned null or omitted the user id; inspect the credentials " +
+        "callback and server logs for the underlying failure.",
+    );
+  }
+}
+
 /**
  * Logs in once via the preview-credentials endpoint and saves storage state.
  * All smoke tests that need authentication reuse this saved state.
@@ -57,12 +69,8 @@ async function globalSetup() {
       `Failed to verify auth session: ${sessionRes.status()} ${sessionRes.statusText()}`,
     );
   }
-  const sessionBody = (await sessionRes.json()) as { user?: { id?: string } };
-  if (!sessionBody.user?.id) {
-    throw new Error(
-      "Global setup could not establish authenticated session via credentials provider.",
-    );
-  }
+  const sessionBody = (await sessionRes.json()) as AuthSession;
+  requireAuthenticatedSession(sessionBody);
 
   // Do not visit an application page here. A fresh self-host has no data yet,
   // and rendering the dashboard before per-test fixtures are seeded would warm
