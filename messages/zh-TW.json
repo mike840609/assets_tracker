@@ -1100,6 +1100,7 @@
     "transactionsCount": "交易",
     "snapshotsCount": "快照",
     "goalsCount": "目標",
+    "calendarEntriesCount": "行事曆項目",
     "replaceWarning": "這會替換您目前的資料。如尚未匯出備份，請先匯出後再繼續。",
     "mixedCurrencyNormalization": "混合幣別歷史會轉換為 {currency}，讓趨勢與分析圖表保持連續。",
     "typeToConfirmLabel": "輸入 REPLACE 以繼續",

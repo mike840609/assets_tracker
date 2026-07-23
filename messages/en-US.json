@@ -1100,6 +1100,7 @@
     "transactionsCount": "Transactions",
     "snapshotsCount": "Snapshots",
     "goalsCount": "Goals",
+    "calendarEntriesCount": "Calendar entries",
     "replaceWarning": "This will replace your current data. Export a backup first if you have not already done so.",
     "mixedCurrencyNormalization": "Mixed-currency history will be converted to {currency} so trend and analysis charts stay continuous.",
     "typeToConfirmLabel": "Type REPLACE to continue",

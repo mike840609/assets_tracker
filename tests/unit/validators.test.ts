@@ -812,6 +812,77 @@ describe("dataImportSchema", () => {
 
     expect(result.success).toBe(true);
   });
+
+  it("accepts a v1.3 backup without calendarEntries", () => {
+    const result = dataImportSchema.safeParse({ version: "1.3", accounts: [] });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.calendarEntries).toBeUndefined();
+  });
+
+  it("round-trips valid v1.4 calendar entries", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.4",
+      accounts: [],
+      calendarEntries: [
+        {
+          title: "US CPI",
+          eventDate: "2026-08-12",
+          startTimeMinutes: 510,
+          timeZone: "Asia/Taipei",
+          category: "ECONOMIC_INDICATOR",
+          description: "Consensus 2.8%",
+          sourceUrl: "https://example.gov/cpi",
+          createdAt: "2026-07-24T01:00:00.000Z",
+          updatedAt: "2026-07-24T02:00:00.000Z",
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.calendarEntries).toEqual([
+        {
+          title: "US CPI",
+          eventDate: "2026-08-12",
+          startTimeMinutes: 510,
+          timeZone: "Asia/Taipei",
+          category: "ECONOMIC_INDICATOR",
+          description: "Consensus 2.8%",
+          sourceUrl: "https://example.gov/cpi",
+          createdAt: "2026-07-24T01:00:00.000Z",
+          updatedAt: "2026-07-24T02:00:00.000Z",
+        },
+      ]);
+    }
+  });
+
+  it("rejects invalid calendar time pairs and non-http source URLs in backups", () => {
+    const base = {
+      version: "1.4",
+      accounts: [],
+      calendarEntries: [
+        {
+          title: "US CPI",
+          eventDate: "2026-08-12",
+          startTimeMinutes: 510,
+          timeZone: null,
+          category: "ECONOMIC_INDICATOR",
+        },
+      ],
+    };
+    expect(dataImportSchema.safeParse(base).success).toBe(false);
+    expect(
+      dataImportSchema.safeParse({
+        ...base,
+        calendarEntries: [
+          {
+            ...base.calendarEntries[0],
+            startTimeMinutes: null,
+            sourceUrl: "javascript:alert(1)",
+          },
+        ],
+      }).success,
+    ).toBe(false);
+  });
 });
 
 describe("calendar entry schemas", () => {

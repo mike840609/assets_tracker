@@ -46,6 +46,7 @@ vi.mock("@/lib/prisma", () => ({
           goals: [],
           snapshots: [],
           stockWatchItems: [],
+          calendarEntries: [],
         };
       }),
     },

@@ -350,6 +350,70 @@ export const reorderStocksSchema = z.object({
   orderedIds: z.array(z.string().min(1)),
 });
 
+const nullableTrimmedText = (max: number) =>
+  z
+    .string()
+    .max(max)
+    .trim()
+    .transform((value) => value || null)
+    .nullable()
+    .optional();
+
+const calendarTimeZone = z
+  .string()
+  .max(64)
+  .refine((value) => {
+    try {
+      new Intl.DateTimeFormat("en-US", { timeZone: value }).format();
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Must be a valid IANA timezone")
+  .nullable();
+
+const calendarEntryFields = z.object({
+  title: z.string().trim().min(1, "Title is required").max(120),
+  eventDate: z.string().refine((value) => parseDateOnly(value) !== null, "Invalid date"),
+  startTimeMinutes: z.number().int().min(0).max(1439).nullable(),
+  timeZone: calendarTimeZone,
+  category: z.enum(CALENDAR_ENTRY_CATEGORIES),
+  description: nullableTrimmedText(4000),
+  sourceUrl: z
+    .string()
+    .max(2048)
+    .trim()
+    .refine((value) => {
+      if (!value) return true;
+      try {
+        const protocol = new URL(value).protocol;
+        return protocol === "http:" || protocol === "https:";
+      } catch {
+        return false;
+      }
+    }, "Source URL must use http or https")
+    .transform((value) => value || null)
+    .nullable()
+    .optional(),
+});
+
+function enforceCalendarTimePair(
+  value: { startTimeMinutes?: number | null; timeZone?: string | null },
+  ctx: z.RefinementCtx,
+) {
+  if ((value.startTimeMinutes === null) !== (value.timeZone === null)) {
+    ctx.addIssue({
+      code: "custom",
+      path: value.startTimeMinutes === null ? ["timeZone"] : ["startTimeMinutes"],
+      message: "Time and timezone must both be set or both be empty",
+    });
+  }
+}
+
+export const calendarEntryInputSchema = calendarEntryFields.superRefine(enforceCalendarTimePair);
+export const createCalendarEntrySchema = calendarEntryInputSchema;
+export const updateCalendarEntrySchema = calendarEntryFields.partial();
+
 const decimalStringSchema = z.string().regex(/^-?\d+(\.\d+)?$/, "Must be a decimal number");
 const decimalSchema = z.union([decimalStringSchema, z.number().finite()]);
 
@@ -361,6 +425,7 @@ const MAX_IMPORT_SNAPSHOTS = 10_000;
 const MAX_IMPORT_GOALS = 500;
 const MAX_IMPORT_RECURRING_RULES_PER_ACCOUNT = 100;
 const MAX_IMPORT_STOCK_WATCH_ITEMS = 500;
+const MAX_IMPORT_CALENDAR_ENTRIES = 10_000;
 
 // Exports are produced by NextResponse.json (Dates → full ISO 8601 strings),
 // so round-trip imports always carry valid ISO datetimes. Rejecting anything
@@ -539,71 +604,16 @@ export const dataImportSchema = z.object({
     )
     .max(MAX_IMPORT_STOCK_WATCH_ITEMS)
     .optional(),
-});
-
-const nullableTrimmedText = (max: number) =>
-  z
-    .string()
-    .max(max)
-    .trim()
-    .transform((value) => value || null)
-    .nullable()
-    .optional();
-
-const calendarTimeZone = z
-  .string()
-  .max(64)
-  .refine((value) => {
-    try {
-      new Intl.DateTimeFormat("en-US", { timeZone: value }).format();
-      return true;
-    } catch {
-      return false;
-    }
-  }, "Must be a valid IANA timezone")
-  .nullable();
-
-const calendarEntryFields = z.object({
-  title: z.string().trim().min(1, "Title is required").max(120),
-  eventDate: z.string().refine((value) => parseDateOnly(value) !== null, "Invalid date"),
-  startTimeMinutes: z.number().int().min(0).max(1439).nullable(),
-  timeZone: calendarTimeZone,
-  category: z.enum(CALENDAR_ENTRY_CATEGORIES),
-  description: nullableTrimmedText(4000),
-  sourceUrl: z
-    .string()
-    .max(2048)
-    .trim()
-    .refine((value) => {
-      if (!value) return true;
-      try {
-        const protocol = new URL(value).protocol;
-        return protocol === "http:" || protocol === "https:";
-      } catch {
-        return false;
-      }
-    }, "Source URL must use http or https")
-    .transform((value) => value || null)
-    .nullable()
+  calendarEntries: z
+    .array(
+      calendarEntryInputSchema.safeExtend({
+        createdAt: importTimestamp,
+        updatedAt: importTimestamp,
+      }),
+    )
+    .max(MAX_IMPORT_CALENDAR_ENTRIES)
     .optional(),
 });
-
-function enforceCalendarTimePair(
-  value: { startTimeMinutes?: number | null; timeZone?: string | null },
-  ctx: z.RefinementCtx,
-) {
-  if ((value.startTimeMinutes === null) !== (value.timeZone === null)) {
-    ctx.addIssue({
-      code: "custom",
-      path: value.startTimeMinutes === null ? ["timeZone"] : ["startTimeMinutes"],
-      message: "Time and timezone must both be set or both be empty",
-    });
-  }
-}
-
-export const calendarEntryInputSchema = calendarEntryFields.superRefine(enforceCalendarTimePair);
-export const createCalendarEntrySchema = calendarEntryInputSchema;
-export const updateCalendarEntrySchema = calendarEntryFields.partial();
 
 export const calendarEntriesRangeSchema = z
   .object({
