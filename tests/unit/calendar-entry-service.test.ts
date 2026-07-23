@@ -78,6 +78,28 @@ describe("calendar entry service", () => {
     expect(result[0].eventDate).toBe("2026-08-12");
   });
 
+  it("normalizes valid range dates to UTC midnight before querying", async () => {
+    h.findMany.mockResolvedValue([]);
+
+    await getCalendarEntriesInRange(
+      "user_1",
+      new Date("2026-08-01T12:34:56.000Z"),
+      new Date("2026-09-11T23:59:59.999Z"),
+    );
+
+    expect(h.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          userId: "user_1",
+          eventDate: {
+            gte: new Date("2026-08-01T00:00:00.000Z"),
+            lte: new Date("2026-09-11T00:00:00.000Z"),
+          },
+        },
+      }),
+    );
+  });
+
   it("invalidates global and user-scoped tags immediately", () => {
     invalidateCalendarEntryCaches("user_1");
     expect(h.revalidateTag).toHaveBeenNthCalledWith(1, "calendar-entries", { expire: 0 });

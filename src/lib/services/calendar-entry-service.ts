@@ -1,6 +1,6 @@
 import "server-only";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
-import { formatDateOnly, getCalendarRangeLength } from "@/lib/calendar-date";
+import { formatDateOnly, getCalendarRangeLength, parseDateOnly } from "@/lib/calendar-date";
 import { prisma } from "@/lib/prisma";
 import { serializeCalendarEntry, type SerializedCalendarEntry } from "@/lib/types";
 
@@ -10,8 +10,12 @@ export async function getCalendarEntriesInRange(
   toDate: Date,
 ): Promise<SerializedCalendarEntry[]> {
   "use cache";
-  const rangeLength = getCalendarRangeLength(formatDateOnly(fromDate), formatDateOnly(toDate));
-  if (rangeLength < 1 || rangeLength > 42) {
+  const from = formatDateOnly(fromDate);
+  const to = formatDateOnly(toDate);
+  const fromDateOnly = parseDateOnly(from);
+  const toDateOnly = parseDateOnly(to);
+  const rangeLength = getCalendarRangeLength(from, to);
+  if (!fromDateOnly || !toDateOnly || rangeLength < 1 || rangeLength > 42) {
     throw new RangeError("Calendar range must contain 1 through 42 inclusive dates");
   }
   cacheTag("calendar-entries");
@@ -19,7 +23,7 @@ export async function getCalendarEntriesInRange(
   cacheLife("hours");
 
   const entries = await prisma.calendarEntry.findMany({
-    where: { userId, eventDate: { gte: fromDate, lte: toDate } },
+    where: { userId, eventDate: { gte: fromDateOnly, lte: toDateOnly } },
     orderBy: [
       { eventDate: "asc" },
       { startTimeMinutes: { sort: "asc", nulls: "first" } },
