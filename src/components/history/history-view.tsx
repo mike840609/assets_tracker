@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { AlertTriangle } from "lucide-react";
 import { TrendChart } from "@/components/dashboard/trend-chart";
@@ -8,6 +9,7 @@ import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { FreshnessBadge } from "@/components/ui/freshness-badge";
 import { formatCurrency } from "@/lib/currencies";
 import { cn } from "@/lib/utils";
+import { ActiveDayProvider, createActiveDayStore } from "./active-day-context";
 import { HistoryOnboarding } from "./history-onboarding";
 import type {
   NormalizedSnapshot,
@@ -43,6 +45,7 @@ export function HistoryView({
   const t = useTranslations("history");
   const format = useFormatter();
   const { privacyMode } = usePrivacyMode();
+  const activeDayStore = useMemo(() => createActiveDayStore(), []);
 
   const firstSnapshot = snapshots[0];
   const latestSnapshotAt = snapshots.at(-1)?.createdAt ?? null;
@@ -119,26 +122,32 @@ export function HistoryView({
 
       {/* Hero row: trend + heatmap hold the width; the rail stacks the derived
           summary over recent daily volatility, mirroring the dashboard's 8/4 split. */}
-      <div className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12">
-        <div className="min-w-0 lg:col-span-8">
-          <TrendChart
-            snapshots={snapshots}
-            baseCurrency={baseCurrency}
-            hideRangeFilter={hideTrendRangeFilter}
-            footer={
-              <HistoryHeatmap
-                snapshots={snapshots}
-                baseCurrency={baseCurrency}
-                labels={{ netWorth: t("colNetWorth"), change: t("colChange") }}
-              />
-            }
-          />
+      <ActiveDayProvider value={activeDayStore}>
+        <div className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12">
+          <div className="min-w-0 lg:col-span-8">
+            <TrendChart
+              snapshots={snapshots}
+              baseCurrency={baseCurrency}
+              hideRangeFilter={hideTrendRangeFilter}
+              footer={
+                <HistoryHeatmap
+                  snapshots={snapshots}
+                  baseCurrency={baseCurrency}
+                  labels={{ netWorth: t("colNetWorth"), change: t("colChange") }}
+                />
+              }
+            />
+          </div>
+          <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4">
+            <HistorySummary snapshots={snapshots} baseCurrency={baseCurrency} />
+            <DailyChangeChart
+              snapshots={snapshots}
+              baseCurrency={baseCurrency}
+              className="flex-1"
+            />
+          </div>
         </div>
-        <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4">
-          <HistorySummary snapshots={snapshots} baseCurrency={baseCurrency} />
-          <DailyChangeChart snapshots={snapshots} baseCurrency={baseCurrency} className="flex-1" />
-        </div>
-      </div>
+      </ActiveDayProvider>
 
       <HistoryTable snapshots={snapshots} baseCurrency={baseCurrency} />
     </div>
