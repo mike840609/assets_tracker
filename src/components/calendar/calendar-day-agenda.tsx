@@ -88,10 +88,11 @@ export function CalendarDayAgenda({
       </header>
 
       {sortedEntries.length === 0 ? (
-        <div className="flex min-h-52 flex-col items-start justify-center px-4 py-8">
+        <div className="flex min-h-44 flex-col items-start justify-center px-4 py-6">
           <p className="font-medium text-foreground">{t("emptyTitle")}</p>
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">{t("emptyDescription")}</p>
-          <Button size="sm" mobileTouch className="mt-4" onClick={onAdd}>
+          <p className="mt-3 hidden text-xs text-muted-foreground md:block">{t("keyboardHint")}</p>
+          <Button size="sm" variant="ghost" mobileTouch className="mt-3 md:hidden" onClick={onAdd}>
             <Plus data-icon="inline-start" />
             {t("addEntry")}
           </Button>

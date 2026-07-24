@@ -34,8 +34,12 @@ export function DiscardConfirmDialog({
           <AlertDialogDescription>{t("discardBody")}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t("keepEditing")}</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={onDiscard}>
+          <AlertDialogCancel className="min-h-11 md:min-h-0">{t("keepEditing")}</AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            className="min-h-11 md:min-h-0"
+            onClick={onDiscard}
+          >
             {t("discardConfirm")}
           </AlertDialogAction>
         </AlertDialogFooter>

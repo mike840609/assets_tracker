@@ -78,6 +78,17 @@ test.describe("calendar entry workflows", () => {
       await expect(dialog).not.toBeVisible();
       await expect(page.getByRole("heading", { name: "ACME earnings" })).toBeVisible();
 
+      const categoryLegend = page.getByRole("list", { name: "Entry categories" });
+      await expect(categoryLegend).toBeVisible();
+      await expect(categoryLegend.getByText("Earnings", { exact: true })).toBeVisible();
+      await expect(categoryLegend.getByText("Economic indicator", { exact: true })).toBeVisible();
+      await expect(categoryLegend.getByText("Other", { exact: true })).toBeVisible();
+      await expect(
+        page.getByRole("gridcell").getByRole("button", {
+          name: /August 12, 2031.*Earnings: 1.*Economic indicator: 1.*Other: 1/,
+        }),
+      ).toBeVisible();
+
       const agenda = page.getByRole("region", { name: /on Tuesday, August 12, 2031/ });
       await expect(agenda.getByRole("heading", { level: 3 })).toHaveText([
         "ACME earnings",
@@ -277,6 +288,23 @@ test.describe("calendar entry workflows", () => {
         .getByRole("button", { name: /November 1, 2033/ })
         .tap();
       await expect(page).toHaveURL(/\/goals\?month=2033-11&date=2033-11-01#calendar$/);
+      const adjacentAgenda = page.getByRole("region", {
+        name: /on Tuesday, November 1, 2033/,
+      });
+      await expect
+        .poll(async () => {
+          const [agendaBox, viewport] = await Promise.all([
+            adjacentAgenda.boundingBox(),
+            Promise.resolve(page.viewportSize()),
+          ]);
+          return Boolean(
+            agendaBox &&
+            viewport &&
+            agendaBox.y < viewport.height &&
+            agendaBox.y + agendaBox.height > 0,
+          );
+        })
+        .toBe(true);
 
       await page.getByRole("button", { name: "Add entry" }).first().click();
       const drawer = page.getByRole("dialog", { name: "Add calendar entry" });
@@ -303,9 +331,6 @@ test.describe("calendar entry workflows", () => {
       await drawer.getByRole("button", { name: "Add entry" }).click();
       await expect(drawer).not.toBeVisible();
       await expect(page.getByRole("heading", { name: "Quarterly tax reminder" })).toBeVisible();
-      const adjacentAgenda = page.getByRole("region", {
-        name: /on Tuesday, November 1, 2033/,
-      });
       await expect(adjacentAgenda.getByText("All day", { exact: true })).toBeVisible();
       await expect(adjacentAgenda.getByText("Reminder", { exact: true })).toBeVisible();
     } finally {
@@ -327,6 +352,22 @@ test.describe("calendar entry workflows", () => {
     try {
       await page.goto("/calendar?month=2034-11&date=2034-11-14");
 
+      let dialog = await openCreateForm(page);
+      await dialog.getByRole("textbox", { name: "Title" }).fill("Unsaved calendar entry");
+      await dialog.getByRole("button", { name: "Cancel" }).click();
+      const discardConfirmation = page.getByRole("alertdialog", {
+        name: "Discard changes?",
+      });
+      await expect(discardConfirmation).toBeVisible();
+      await discardConfirmation.getByRole("button", { name: "Keep editing" }).click();
+      await expect(dialog).toBeVisible();
+      await expect(dialog.getByRole("textbox", { name: "Title" })).toHaveValue(
+        "Unsaved calendar entry",
+      );
+      await dialog.getByRole("button", { name: "Cancel" }).click();
+      await discardConfirmation.getByRole("button", { name: "Discard" }).click();
+      await expect(dialog).not.toBeVisible();
+
       await page.route(
         "**/api/calendar-entries",
         async (route) => {
@@ -340,7 +381,7 @@ test.describe("calendar entry workflows", () => {
         { times: 1 },
       );
 
-      let dialog = await openCreateForm(page);
+      dialog = await openCreateForm(page);
       await dialog.getByRole("textbox", { name: "Title" }).fill("Retryable calendar entry");
       await dialog.getByLabel("Time").fill("09:15");
       await chooseCategory(page, dialog, "Reminder");
@@ -454,7 +495,7 @@ test.describe("calendar entry workflows", () => {
         );
         await confirmation.getByRole("button", { name: "Delete" }).click();
 
-        await expect(page.getByText("Could not delete calendar entry")).toBeVisible();
+        await expect(page.getByText("Calendar entry was not deleted. Try again.")).toBeVisible();
         await expect(
           page.getByRole("heading", { name: "Authoritative delete retry" }),
         ).toBeVisible();

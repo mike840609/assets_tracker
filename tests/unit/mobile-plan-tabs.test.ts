@@ -96,16 +96,17 @@ describe("mobile Plan tabs", () => {
     }
   });
 
-  it("keeps 44px tab targets and both locale label sets robust in the narrow layout", () => {
+  it("keeps 44px, non-truncating, scrollable tabs robust in the narrow layout", () => {
     const source = readFileSync("src/components/goals/goals-view.tsx", "utf8");
     const english = JSON.parse(readFileSync("messages/en-US.json", "utf8"));
     const traditionalChinese = JSON.parse(readFileSync("messages/zh-TW.json", "utf8"));
 
     expect(source).toContain("min-h-11");
-    expect(source).toContain("min-w-0");
-    expect(source).toContain("flex-1");
+    expect(source).toContain("overflow-x-auto");
+    expect(source).toContain("shrink-0");
     expect(source).toContain("whitespace-nowrap");
-    expect(source).toContain("text-xs");
+    expect(source).toContain("scrollIntoView");
+    expect(source).not.toContain("flex-1 truncate whitespace-nowrap");
     expect([
       english.nav.stocks,
       english.nav.goals,

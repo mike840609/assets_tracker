@@ -1,4 +1,8 @@
-import type { SerializedCalendarEntry } from "@/lib/types";
+import {
+  CALENDAR_ENTRY_CATEGORIES,
+  type CalendarEntryCategoryValue,
+  type SerializedCalendarEntry,
+} from "@/lib/types";
 
 export function isCalendarFocusDestinationReady({
   pendingDate,
@@ -32,6 +36,18 @@ export function groupCalendarEntriesByDate(entries: readonly SerializedCalendarE
   }
   for (const [date, day] of groups) groups.set(date, sortCalendarDayEntries(day));
   return groups;
+}
+
+export function summarizeCalendarEntryCategories(entries: readonly SerializedCalendarEntry[]) {
+  const counts = new Map<CalendarEntryCategoryValue, number>();
+  for (const entry of entries) {
+    counts.set(entry.category, (counts.get(entry.category) ?? 0) + 1);
+  }
+
+  return CALENDAR_ENTRY_CATEGORIES.flatMap((category) => {
+    const count = counts.get(category);
+    return count ? [{ category, count }] : [];
+  });
 }
 
 export function formatCalendarWallClock(minutes: number, locale: string) {

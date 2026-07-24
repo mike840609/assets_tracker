@@ -4,10 +4,13 @@ import { useEffect, useId, useMemo, useRef, type KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 
 import { CalendarCategoryBadge } from "@/components/calendar/calendar-category-badge";
-import { isCalendarFocusDestinationReady } from "@/components/calendar/calendar-view-model";
+import {
+  isCalendarFocusDestinationReady,
+  summarizeCalendarEntryCategories,
+} from "@/components/calendar/calendar-view-model";
 import { addCalendarDays, buildMonthGrid, moveCalendarMonth } from "@/lib/calendar-date";
 import { cn } from "@/lib/utils";
-import type { SerializedCalendarEntry } from "@/lib/types";
+import { CALENDAR_ENTRY_CATEGORIES, type SerializedCalendarEntry } from "@/lib/types";
 
 type CalendarMonthGridProps = {
   month: string;
@@ -15,7 +18,7 @@ type CalendarMonthGridProps = {
   today: string;
   entriesByDate: ReadonlyMap<string, readonly SerializedCalendarEntry[]>;
   locale: string;
-  onSelectDate: (date: string) => void;
+  onSelectDate: (date: string, source: "pointer" | "keyboard") => void;
 };
 
 const MONDAY_UTC = Date.UTC(1970, 0, 5);
@@ -83,7 +86,7 @@ export function CalendarMonthGrid({
     return () => cancelAnimationFrame(frame);
   }, [month, selectedDate]);
 
-  function selectAndFocus(date: string) {
+  function selectAndFocus(date: string, source: "pointer" | "keyboard") {
     pendingFocusDate.current = isCalendarFocusDestinationReady({
       pendingDate: date,
       selectedDate,
@@ -91,13 +94,13 @@ export function CalendarMonthGrid({
     })
       ? null
       : date;
-    onSelectDate(date);
+    onSelectDate(date, source);
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, date: string, index: number) {
     if (event.key === "PageUp" || event.key === "PageDown") {
       event.preventDefault();
-      selectAndFocus(moveCalendarMonth(date, event.key === "PageUp" ? -1 : 1));
+      selectAndFocus(moveCalendarMonth(date, event.key === "PageUp" ? -1 : 1), "keyboard");
       return;
     }
 
@@ -118,14 +121,26 @@ export function CalendarMonthGrid({
 
     if (delta === null) return;
     event.preventDefault();
-    selectAndFocus(addCalendarDays(date, delta));
+    selectAndFocus(addCalendarDays(date, delta), "keyboard");
   }
 
   return (
     <section className="min-w-0" aria-labelledby={headingId}>
-      <h2 id={headingId} className="mb-3 text-lg font-semibold text-foreground">
-        {monthLabel}
-      </h2>
+      <div className="mb-3 flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+        <h2 id={headingId} className="shrink-0 text-lg font-semibold text-foreground">
+          {monthLabel}
+        </h2>
+        <ul
+          aria-label={t("categoryLegend")}
+          className="flex max-w-full gap-1.5 overflow-x-auto pb-1 lg:flex-wrap lg:justify-end lg:overflow-visible lg:pb-0"
+        >
+          {CALENDAR_ENTRY_CATEGORIES.map((category) => (
+            <li key={category} className="shrink-0">
+              <CalendarCategoryBadge category={category} />
+            </li>
+          ))}
+        </ul>
+      </div>
 
       <div
         role="grid"
@@ -150,6 +165,7 @@ export function CalendarMonthGrid({
               {days.slice(weekIndex * 7, weekIndex * 7 + 7).map((date, dayIndex) => {
                 const index = weekIndex * 7 + dayIndex;
                 const entries = entriesByDate.get(date) ?? [];
+                const categoryCounts = summarizeCalendarEntryCategories(entries);
                 const categories = [...new Set(entries.map((entry) => entry.category))];
                 const shownCategories = categories.slice(0, 3);
                 const remainingCategories = categories.length - shownCategories.length;
@@ -158,6 +174,19 @@ export function CalendarMonthGrid({
                 const isCurrentMonth = date.startsWith(month);
                 const fullDate = dateFormatter.format(new Date(`${date}T00:00:00.000Z`));
                 const countLabel = t("entryCount", { count: entries.length });
+                const categorySummary =
+                  categoryCounts.length > 0
+                    ? t("categorySummary", {
+                        categories: categoryCounts
+                          .map(({ category, count }) =>
+                            t("categoryCount", {
+                              category: t(`categories.${category}`),
+                              count,
+                            }),
+                          )
+                          .join(", "),
+                      })
+                    : null;
 
                 return (
                   <div
@@ -178,8 +207,10 @@ export function CalendarMonthGrid({
                       type="button"
                       tabIndex={isSelected ? 0 : -1}
                       aria-current={isToday ? "date" : undefined}
-                      aria-label={`${fullDate}, ${countLabel}`}
-                      onClick={() => selectAndFocus(date)}
+                      aria-label={[fullDate, countLabel, categorySummary]
+                        .filter(Boolean)
+                        .join(", ")}
+                      onClick={() => selectAndFocus(date, "pointer")}
                       onKeyDown={(event) => handleKeyDown(event, date, index)}
                       className={cn(
                         "flex min-h-16 w-full flex-col items-center gap-1 px-1.5 py-2 text-center outline-none motion-fast sm:min-h-20 sm:items-start sm:text-left",

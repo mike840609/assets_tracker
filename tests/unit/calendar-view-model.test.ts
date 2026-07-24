@@ -4,6 +4,7 @@ import {
   groupCalendarEntriesByDate,
   isCalendarFocusDestinationReady,
   sortCalendarDayEntries,
+  summarizeCalendarEntryCategories,
 } from "@/components/calendar/calendar-view-model";
 
 const base = {
@@ -81,6 +82,48 @@ describe("calendar view model", () => {
   it("localizes wall-clock display without shifting the stored time", () => {
     expect(formatCalendarWallClock(510, "en-US")).toBe("8:30 AM");
     expect(formatCalendarWallClock(510, "en-GB")).toBe("08:30");
+  });
+
+  it("summarizes categories in the stable product order", () => {
+    const entries = [
+      {
+        ...base,
+        id: "other",
+        title: "Other",
+        startTimeMinutes: null,
+        createdAt: "2026-07-01T00:00:00.000Z",
+      },
+      {
+        ...base,
+        id: "indicator-a",
+        title: "Indicator A",
+        category: "ECONOMIC_INDICATOR" as const,
+        startTimeMinutes: null,
+        createdAt: "2026-07-02T00:00:00.000Z",
+      },
+      {
+        ...base,
+        id: "earnings",
+        title: "Earnings",
+        category: "EARNINGS" as const,
+        startTimeMinutes: null,
+        createdAt: "2026-07-03T00:00:00.000Z",
+      },
+      {
+        ...base,
+        id: "indicator-b",
+        title: "Indicator B",
+        category: "ECONOMIC_INDICATOR" as const,
+        startTimeMinutes: null,
+        createdAt: "2026-07-04T00:00:00.000Z",
+      },
+    ];
+
+    expect(summarizeCalendarEntryCategories(entries)).toEqual([
+      { category: "EARNINGS", count: 1 },
+      { category: "ECONOMIC_INDICATOR", count: 2 },
+      { category: "OTHER", count: 1 },
+    ]);
   });
 });
 

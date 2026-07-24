@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useMemo, useState } from "react";
+import { startTransition, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
@@ -36,6 +36,7 @@ export function CalendarView({
   const router = useRouter();
   const pathname = usePathname();
   const entriesByDate = useMemo(() => groupCalendarEntriesByDate(initialEntries), [initialEntries]);
+  const agendaRef = useRef<HTMLDivElement>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<SerializedCalendarEntry | null>(null);
 
@@ -49,6 +50,18 @@ export function CalendarView({
       }),
       { scroll: false },
     );
+  }
+
+  function selectDate(date: string, source: "pointer" | "keyboard") {
+    navigate(date);
+    if (source !== "pointer" || !window.matchMedia("(max-width: 767px)").matches) return;
+
+    requestAnimationFrame(() => {
+      agendaRef.current?.scrollIntoView({
+        block: "start",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      });
+    });
   }
 
   function addEntry() {
@@ -118,9 +131,9 @@ export function CalendarView({
           today={today}
           entriesByDate={entriesByDate}
           locale={locale}
-          onSelectDate={navigate}
+          onSelectDate={selectDate}
         />
-        <div className="mt-4 md:mt-0">
+        <div ref={agendaRef} className="mt-4 scroll-mt-4 md:sticky md:top-4 md:mt-0">
           <CalendarDayAgenda
             date={selectedDate}
             entries={entriesByDate.get(selectedDate) ?? []}

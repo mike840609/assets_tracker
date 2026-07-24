@@ -1,3 +1,23 @@
+import type { CalendarEntryCategoryValue } from "@/lib/types";
+
+export type CalendarEntryFormValues = {
+  title: string;
+  eventDate: string;
+  time: string;
+  category: CalendarEntryCategoryValue;
+  description: string;
+  sourceUrl: string;
+};
+
+export function isCalendarEntryFormDirty(
+  initial: CalendarEntryFormValues,
+  current: CalendarEntryFormValues,
+): boolean {
+  return (Object.keys(initial) as Array<keyof CalendarEntryFormValues>).some(
+    (field) => initial[field] !== current[field],
+  );
+}
+
 export function minutesToTimeInput(minutes: number | null): string {
   if (minutes === null) return "";
 

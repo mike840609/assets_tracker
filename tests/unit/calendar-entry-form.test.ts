@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  isCalendarEntryFormDirty,
   minutesToTimeInput,
   resolveEntryTimeZone,
   timeInputToMinutes,
@@ -22,5 +23,20 @@ describe("calendar entry form helpers", () => {
     expect(resolveEntryTimeZone(null, "Asia/Taipei")).toBe("Asia/Taipei");
     expect(resolveEntryTimeZone(null, "Mars/Olympus")).toBe("UTC");
     expect(resolveEntryTimeZone(null, "")).toBe("UTC");
+  });
+
+  it("detects meaningful changes while treating an untouched form as clean", () => {
+    const initial = {
+      title: "US CPI",
+      eventDate: "2026-08-12",
+      time: "08:30",
+      category: "ECONOMIC_INDICATOR" as const,
+      description: "Consensus",
+      sourceUrl: "https://example.com/cpi",
+    };
+
+    expect(isCalendarEntryFormDirty(initial, { ...initial })).toBe(false);
+    expect(isCalendarEntryFormDirty(initial, { ...initial, title: "US CPI revised" })).toBe(true);
+    expect(isCalendarEntryFormDirty(initial, { ...initial, description: "" })).toBe(true);
   });
 });

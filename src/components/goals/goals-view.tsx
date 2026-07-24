@@ -1,6 +1,13 @@
 "use client";
 
-import { startTransition, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
+import {
+  startTransition,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent,
+} from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Reorder, useDragControls } from "framer-motion";
@@ -182,6 +189,16 @@ export function GoalsView({
           : "watchlist";
   const activeTab: MobilePlanTab = override ?? hashTab;
 
+  useEffect(() => {
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+
+    tabRefs.current[activeTab]?.scrollIntoView({
+      block: "nearest",
+      inline: "center",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  }, [activeTab]);
+
   const handleTabChange = (tab: MobilePlanTab) => {
     setOverride(tab);
     const base = window.location.pathname + window.location.search;
@@ -201,7 +218,11 @@ export function GoalsView({
   return (
     <div className="space-y-4">
       {/* Mobile-only tab switcher */}
-      <div role="tablist" className="md:hidden flex border-b">
+      <div
+        role="tablist"
+        aria-orientation="horizontal"
+        className="md:hidden flex overflow-x-auto border-b"
+      >
         {MOBILE_PLAN_TABS.map((tab) => (
           <button
             key={tab}
@@ -217,7 +238,7 @@ export function GoalsView({
             aria-controls={getMobilePlanPanelId(tab)}
             tabIndex={activeTab === tab ? 0 : -1}
             className={cn(
-              "-mb-px min-h-11 min-w-0 flex-1 truncate whitespace-nowrap border-b-2 px-1 text-xs font-medium capitalize transition-colors min-[360px]:px-2 min-[360px]:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "-mb-px min-h-11 shrink-0 whitespace-nowrap border-b-2 px-3 text-sm font-medium capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               activeTab === tab
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground",

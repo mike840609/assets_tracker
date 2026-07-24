@@ -5,10 +5,12 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import {
+  isCalendarEntryFormDirty,
   minutesToTimeInput,
   resolveEntryTimeZone,
   timeInputToMinutes,
 } from "@/components/calendar/calendar-entry-form-utils";
+import { DiscardConfirmDialog } from "@/components/discard-confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
@@ -22,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useDiscardGuard } from "@/hooks/use-discard-guard";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { parseDateOnly } from "@/lib/calendar-date";
 import {
@@ -75,13 +78,27 @@ function CalendarEntryFormController({
   const [sourceUrl, setSourceUrl] = useState(entry?.sourceUrl ?? "");
   const [errors, setErrors] = useState<FormErrors>({});
 
+  const initialValues = {
+    title: entry?.title ?? "",
+    eventDate: entry?.eventDate ?? selectedDate,
+    time: minutesToTimeInput(entry?.startTimeMinutes ?? null),
+    category: entry?.category ?? ("OTHER" as const),
+    description: entry?.description ?? "",
+    sourceUrl: entry?.sourceUrl ?? "",
+  };
+  const currentValues = { title, eventDate, time, category, description, sourceUrl };
+  const isDirty = isCalendarEntryFormDirty(initialValues, currentValues);
+  const discardGuard = useDiscardGuard(isDirty, () => onOpenChange(false));
+
   const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
   const displayedTimeZone = time
     ? resolveEntryTimeZone(entry?.timeZone ?? null, browserTimeZone)
     : null;
 
   function requestOpenChange(nextOpen: boolean) {
-    if (!saving) onOpenChange(nextOpen);
+    if (saving) return;
+    if (nextOpen) onOpenChange(true);
+    else discardGuard.requestClose();
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -348,29 +365,45 @@ function CalendarEntryFormController({
   );
 
   const titleText = t(entry ? "form.editTitle" : "form.createTitle");
+  const discardDialog = (
+    <DiscardConfirmDialog
+      open={discardGuard.confirmOpen}
+      onOpenChange={discardGuard.setConfirmOpen}
+      onDiscard={discardGuard.confirmDiscard}
+    />
+  );
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={requestOpenChange}>
-        <DrawerContent showCloseButton={false}>
-          <DrawerHeader>
-            <DrawerTitle>{titleText}</DrawerTitle>
-          </DrawerHeader>
-          <div className="px-4 pb-4">{form}</div>
-        </DrawerContent>
-      </Drawer>
+      <>
+        <Drawer open={open} onOpenChange={requestOpenChange}>
+          <DrawerContent showCloseButton={false}>
+            <DrawerHeader>
+              <DrawerTitle>{titleText}</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-4">{form}</div>
+          </DrawerContent>
+        </Drawer>
+        {discardDialog}
+      </>
     );
   }
 
   return (
-    <Dialog open={open} onOpenChange={requestOpenChange}>
-      <DialogContent showCloseButton={false} className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{titleText}</DialogTitle>
-        </DialogHeader>
-        {form}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open} onOpenChange={requestOpenChange}>
+        <DialogContent
+          showCloseButton={false}
+          className="max-h-[90dvh] overflow-y-auto sm:max-w-lg"
+        >
+          <DialogHeader>
+            <DialogTitle>{titleText}</DialogTitle>
+          </DialogHeader>
+          {form}
+        </DialogContent>
+      </Dialog>
+      {discardDialog}
+    </>
   );
 }
 
