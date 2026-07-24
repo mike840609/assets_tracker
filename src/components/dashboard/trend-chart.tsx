@@ -13,6 +13,7 @@ import {
   Customized,
   useActiveTooltipCoordinate,
   useActiveTooltipDataPoints,
+  useXAxisScale,
   useYAxisScale,
   usePlotArea,
 } from "recharts";
@@ -26,6 +27,8 @@ import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-to
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
+import { useActiveDate } from "@/components/history/active-day-context";
+import { findChartPoint } from "@/components/dashboard/trend-chart-utils";
 
 type SnapshotData = {
   date: string;
@@ -219,6 +222,46 @@ export function TrendChart({
     }));
   }, [filtered, isPercentMode]);
 
+  // ponytail: inline so it closes over chartData — recharts 3.8 has no hook to
+  // read the chart's data array inside a Customized child. Only this component
+  // subscribes to the active day, so a hover repaints just the marker.
+  const LinkedMarker = () => {
+    const activeDate = useActiveDate();
+    const xScale = useXAxisScale() as
+      | (((value: string) => number | undefined) & { bandwidth?: () => number })
+      | undefined;
+    const yScale = useYAxisScale();
+    const plotArea = usePlotArea();
+
+    const point = findChartPoint(chartData, activeDate);
+    if (!point || !xScale || !yScale || !plotArea) return null;
+
+    const rawX = xScale(point.date);
+    if (rawX == null) return null;
+    const band = typeof xScale.bandwidth === "function" ? xScale.bandwidth() / 2 : 0;
+    const x = rawX + band;
+
+    const yValue = point.netWorthPct ?? point.netWorth;
+    const y = yScale(yValue);
+    if (y == null) return null;
+
+    return (
+      <g pointerEvents="none">
+        <line
+          x1={x}
+          y1={plotArea.y}
+          x2={x}
+          y2={plotArea.y + plotArea.height}
+          stroke="var(--primary)"
+          strokeWidth={1}
+          strokeDasharray="4 3"
+          strokeOpacity={0.6}
+        />
+        <circle cx={x} cy={y} r={4} fill="var(--primary)" stroke="var(--card)" strokeWidth={2} />
+      </g>
+    );
+  };
+
   const periodChange = useMemo(() => {
     if (filtered.length < 2) return null;
     const first = filtered[0].netWorth;
@@ -364,6 +407,7 @@ export function TrendChart({
                     }
                   />
                   <Customized component={CrosshairLines} />
+                  <Customized component={LinkedMarker} />
                   <Area
                     type="monotone"
                     dataKey={isPercentMode ? "netWorthPct" : "netWorth"}

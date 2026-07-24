@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useFormatter, useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useActiveDayStore } from "@/components/history/active-day-context";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { SnapshotLabelDialog } from "@/components/history/snapshot-label-dialog";
 import { formatCurrency } from "@/lib/currencies";
@@ -90,6 +91,16 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const tooltipLabels = labels ?? { netWorth: t("netWorth"), change: t("change") };
   const activePointerType = useRef<string | null>(null);
+  const activeDayStore = useActiveDayStore();
+
+  // Drive the trend chart's linked marker from whichever day is "active":
+  // the desktop hover/focus target (tooltip) or the mobile tap selection.
+  // store.set dedupes, so repeated tooltip position updates for the same day
+  // are no-ops, and this component never subscribes to the value, so it does
+  // not re-render when the marker moves.
+  useEffect(() => {
+    activeDayStore.set(tooltip?.day.dateString ?? selectedDate ?? null);
+  }, [tooltip, selectedDate, activeDayStore]);
 
   const {
     gridDays,
