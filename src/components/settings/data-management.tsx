@@ -41,6 +41,7 @@ type ImportPreview = {
   transactions: number;
   snapshots: number;
   goals: number;
+  calendarEntries: number;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -116,6 +117,7 @@ function buildImportPreview(data: unknown, file: File): ImportPreview | null {
     transactions,
     snapshots: countArray(data.snapshots),
     goals: countArray(data.goals),
+    calendarEntries: countArray(data.calendarEntries),
   };
 }
 
@@ -321,6 +323,10 @@ export function DataManagement() {
                   <div>
                     <dt className="text-xs text-muted-foreground">{t("goalsCount")}</dt>
                     <dd className="font-medium tabular-nums">{importPreview.goals}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">{t("calendarEntriesCount")}</dt>
+                    <dd className="font-medium tabular-nums">{importPreview.calendarEntries}</dd>
                   </div>
                 </dl>
               </div>

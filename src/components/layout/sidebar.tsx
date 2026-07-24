@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   BarChart3,
+  CalendarDays,
   ChartCandlestick,
   ChevronLeft,
   ChevronRight,
@@ -124,6 +125,7 @@ export function Sidebar({
     { label: t("nav.stocks"), href: "/stocks", icon: ChartCandlestick },
     { label: t("nav.analysis"), href: "/analysis", icon: BarChart3 },
     { label: t("nav.projections"), href: "/projections", icon: TrendingUp },
+    { label: t("nav.calendar"), href: "/calendar", icon: CalendarDays },
     { label: t("nav.history"), href: "/history", icon: History },
     { label: t("nav.settings"), href: "/settings", icon: Settings },
   ];

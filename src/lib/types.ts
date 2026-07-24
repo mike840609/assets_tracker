@@ -1,5 +1,6 @@
 import type {
   Account,
+  CalendarEntry,
   Goal,
   Holding,
   HoldingTransaction,
@@ -81,6 +82,31 @@ export type SerializedTransaction = Serialized<
   occurrenceDate?: string | null;
 };
 
+export const CALENDAR_ENTRY_CATEGORIES = [
+  "EARNINGS",
+  "ECONOMIC_INDICATOR",
+  "DIVIDEND",
+  "FILING",
+  "REMINDER",
+  "OTHER",
+] as const;
+
+export type CalendarEntryCategoryValue = (typeof CALENDAR_ENTRY_CATEGORIES)[number];
+
+export type SerializedCalendarEntry = {
+  id: string;
+  userId: string;
+  title: string;
+  eventDate: string;
+  startTimeMinutes: number | null;
+  timeZone: string | null;
+  category: CalendarEntryCategoryValue;
+  description: string | null;
+  sourceUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 // ---------------------------------------------------------------------------
 // Calculation types
 // ---------------------------------------------------------------------------
@@ -142,6 +168,22 @@ export function serializeAccountWithHoldings(
   return {
     ...serializeAccount(account),
     holdings: account.holdings.map(serializeHolding),
+  };
+}
+
+export function serializeCalendarEntry(entry: CalendarEntry): SerializedCalendarEntry {
+  return {
+    id: entry.id,
+    userId: entry.userId,
+    title: entry.title,
+    eventDate: entry.eventDate.toISOString().slice(0, 10),
+    startTimeMinutes: entry.startTimeMinutes ?? null,
+    timeZone: entry.timeZone ?? null,
+    category: entry.category,
+    description: entry.description ?? null,
+    sourceUrl: entry.sourceUrl ?? null,
+    createdAt: entry.createdAt.toISOString(),
+    updatedAt: entry.updatedAt.toISOString(),
   };
 }
 

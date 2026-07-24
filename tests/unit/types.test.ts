@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
+import type { CalendarEntry } from "@/generated/prisma/client";
 import {
   serializeAccount,
   serializeHolding,
   serializeAccountWithHoldings,
   serializeGoal,
+  serializeCalendarEntry,
 } from "@/lib/types";
 
 // Minimal Decimal stand-in: Prisma's Decimal coerces via Number(), so any
@@ -142,5 +144,35 @@ describe("serializeGoal", () => {
       updatedAt: updated,
     } as unknown as GoalInput);
     expect(result.targetDate).toBe("2027-01-01T00:00:00.000Z");
+  });
+});
+
+it("serializes a CalendarEntry date without timezone drift and normalizes nullable fields", () => {
+  const entry = {
+    id: "cal_1",
+    userId: "user_1",
+    title: "US CPI",
+    eventDate: new Date("2026-08-12T00:00:00.000Z"),
+    startTimeMinutes: 510,
+    timeZone: "Asia/Taipei",
+    category: "ECONOMIC_INDICATOR",
+    description: null,
+    sourceUrl: null,
+    createdAt: new Date("2026-07-24T01:02:03.000Z"),
+    updatedAt: new Date("2026-07-24T04:05:06.000Z"),
+  } satisfies CalendarEntry;
+
+  expect(serializeCalendarEntry(entry)).toEqual({
+    id: "cal_1",
+    userId: "user_1",
+    title: "US CPI",
+    eventDate: "2026-08-12",
+    startTimeMinutes: 510,
+    timeZone: "Asia/Taipei",
+    category: "ECONOMIC_INDICATOR",
+    description: null,
+    sourceUrl: null,
+    createdAt: "2026-07-24T01:02:03.000Z",
+    updatedAt: "2026-07-24T04:05:06.000Z",
   });
 });

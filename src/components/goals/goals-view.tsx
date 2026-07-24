@@ -1,6 +1,13 @@
 "use client";
 
-import { startTransition, useState, useSyncExternalStore } from "react";
+import {
+  startTransition,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent,
+} from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Reorder, useDragControls } from "framer-motion";
@@ -8,16 +15,22 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ArrowUpDown, CheckCircle2, GripVertical, Plus, Save, Target, X } from "lucide-react";
-import type { GoalWithProgress, SerializedAccount } from "@/lib/types";
+import type { GoalWithProgress, SerializedAccount, SerializedCalendarEntry } from "@/lib/types";
 import type { ProjectionData } from "@/lib/services/projection-service";
 import type { SerializedTrackedStock } from "@/lib/services/stock-watch-service";
 import { ProjectionView } from "@/components/projections/projection-view";
 import { StockTrackerView } from "@/components/stocks/stock-tracker-view";
+import { CalendarView } from "@/components/calendar/calendar-view";
 import { GoalCard } from "./goal-card";
 import { GoalFormDialog } from "./goal-form-dialog";
 import { GoalsOnboarding } from "./goals-onboarding";
-
-type MobilePlanTab = "watchlist" | "goals" | "projections";
+import {
+  MOBILE_PLAN_TABS,
+  getMobilePlanPanelId,
+  getMobilePlanTabId,
+  handleMobilePlanTabKey,
+  type MobilePlanTab,
+} from "./mobile-plan-tabs";
 
 interface GoalsViewProps {
   goalsWithProgress: GoalWithProgress[];
@@ -25,6 +38,11 @@ interface GoalsViewProps {
   accounts: SerializedAccount[];
   projectionData: ProjectionData;
   stocks: SerializedTrackedStock[];
+  calendarEntries: SerializedCalendarEntry[];
+  calendarMonth: string;
+  calendarSelectedDate: string;
+  calendarToday: string;
+  locale: string;
 }
 
 function ReorderGoalItem({ data }: { data: GoalWithProgress }) {
@@ -101,6 +119,11 @@ export function GoalsView({
   accounts,
   projectionData,
   stocks,
+  calendarEntries,
+  calendarMonth,
+  calendarSelectedDate,
+  calendarToday,
+  locale,
 }: GoalsViewProps) {
   const t = useTranslations("goals");
   const tNav = useTranslations("nav");
@@ -110,6 +133,7 @@ export function GoalsView({
   const [manageMode, setManageMode] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
   const [draft, setDraft] = useState<GoalWithProgress[]>([]);
+  const tabRefs = useRef<Partial<Record<MobilePlanTab, HTMLButtonElement | null>>>({});
 
   function enterManageMode() {
     setDraft([...goalsWithProgress]);
@@ -141,9 +165,8 @@ export function GoalsView({
       setSavingOrder(false);
     }
   }
-  // Deep link: the dashboard's "View projections" link points at /goals#projections
-  // and "View all goals" at /goals#goals, so a tapped sub-view opens directly. The
-  // bare "Plan" tab (no hash) lands on Watchlist, the leftmost sub-tab.
+  // Deep links for goals, projections, and Calendar open their matching sub-view.
+  // The bare "Plan" tab (no hash) lands on Watchlist, the leftmost sub-tab.
   // useSyncExternalStore reads the hash with a server snapshot of "" so SSR and
   // hydration agree; a manual switch sets `override`, which wins and rewrites the
   // hash for shareable, Back-friendly URLs.
@@ -157,8 +180,24 @@ export function GoalsView({
   );
   const [override, setOverride] = useState<MobilePlanTab | null>(null);
   const hashTab: MobilePlanTab =
-    hash === "#goals" ? "goals" : hash === "#projections" ? "projections" : "watchlist";
+    hash === "#goals"
+      ? "goals"
+      : hash === "#projections"
+        ? "projections"
+        : hash === "#calendar"
+          ? "calendar"
+          : "watchlist";
   const activeTab: MobilePlanTab = override ?? hashTab;
+
+  useEffect(() => {
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+
+    tabRefs.current[activeTab]?.scrollIntoView({
+      block: "nearest",
+      inline: "center",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  }, [activeTab]);
 
   const handleTabChange = (tab: MobilePlanTab) => {
     setOverride(tab);
@@ -166,20 +205,40 @@ export function GoalsView({
     window.history.replaceState(null, "", tab === "watchlist" ? base : `${base}#${tab}`);
   };
 
+  const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, tab: MobilePlanTab) => {
+    const handled = handleMobilePlanTabKey({
+      currentTab: tab,
+      key: event.key,
+      activate: handleTabChange,
+      focus: (nextTab) => tabRefs.current[nextTab]?.focus(),
+    });
+    if (handled) event.preventDefault();
+  };
+
   return (
     <div className="space-y-4">
       {/* Mobile-only tab switcher */}
-      <div role="tablist" className="md:hidden flex border-b">
-        {(["watchlist", "goals", "projections"] as const).map((tab) => (
+      <div
+        role="tablist"
+        aria-orientation="horizontal"
+        className="md:hidden flex overflow-x-auto border-b"
+      >
+        {MOBILE_PLAN_TABS.map((tab) => (
           <button
             key={tab}
+            ref={(node) => {
+              tabRefs.current[tab] = node;
+            }}
+            id={getMobilePlanTabId(tab)}
             role="tab"
             type="button"
             onClick={() => handleTabChange(tab)}
+            onKeyDown={(event) => handleTabKeyDown(event, tab)}
             aria-selected={activeTab === tab}
+            aria-controls={getMobilePlanPanelId(tab)}
             tabIndex={activeTab === tab ? 0 : -1}
             className={cn(
-              "pb-2 px-4 text-sm font-medium border-b-2 -mb-px transition-colors capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "-mb-px min-h-11 shrink-0 whitespace-nowrap border-b-2 px-3 text-sm font-medium capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               activeTab === tab
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground",
@@ -191,14 +250,23 @@ export function GoalsView({
       </div>
 
       {/* Watchlist tab — mobile only */}
-      {activeTab === "watchlist" && (
-        <div role="tabpanel" className="md:hidden">
-          <StockTrackerView stocks={stocks} />
-        </div>
-      )}
+      <div
+        id={getMobilePlanPanelId("watchlist")}
+        role="tabpanel"
+        aria-labelledby={getMobilePlanTabId("watchlist")}
+        hidden={activeTab !== "watchlist"}
+        className="md:hidden"
+      >
+        <StockTrackerView stocks={stocks} />
+      </div>
 
       {/* Goals tab — always visible on desktop, conditional on mobile */}
-      <div role="tabpanel" className={activeTab === "goals" ? "block" : "hidden md:block"}>
+      <div
+        id={getMobilePlanPanelId("goals")}
+        role="tabpanel"
+        aria-labelledby={getMobilePlanTabId("goals")}
+        className={activeTab === "goals" ? "block" : "hidden md:block"}
+      >
         <div className="space-y-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
@@ -269,11 +337,33 @@ export function GoalsView({
       </div>
 
       {/* Projections tab — mobile only */}
-      {activeTab === "projections" && (
-        <div role="tabpanel" className="md:hidden">
-          <ProjectionView projectionData={projectionData} baseCurrency={baseCurrency} />
-        </div>
-      )}
+      <div
+        id={getMobilePlanPanelId("projections")}
+        role="tabpanel"
+        aria-labelledby={getMobilePlanTabId("projections")}
+        hidden={activeTab !== "projections"}
+        className="md:hidden"
+      >
+        <ProjectionView projectionData={projectionData} baseCurrency={baseCurrency} />
+      </div>
+
+      {/* Calendar tab — mobile only */}
+      <div
+        id={getMobilePlanPanelId("calendar")}
+        role="tabpanel"
+        aria-labelledby={getMobilePlanTabId("calendar")}
+        hidden={activeTab !== "calendar"}
+        className="md:hidden"
+      >
+        <CalendarView
+          initialEntries={calendarEntries}
+          month={calendarMonth}
+          selectedDate={calendarSelectedDate}
+          today={calendarToday}
+          locale={locale}
+          showHeader={false}
+        />
+      </div>
     </div>
   );
 }

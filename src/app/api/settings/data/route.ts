@@ -8,6 +8,7 @@ import { refreshExchangeRates, resolveRate } from "@/lib/services/exchange-rate-
 import { refreshPricesForUser } from "@/lib/services/price-service";
 import { isBetterDuplicate, type DedupeCandidate } from "@/lib/services/history-service";
 import { dataImportSchema } from "@/lib/validators";
+import { serializeCalendarEntry } from "@/lib/types";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 import { log } from "@/lib/logger";
@@ -225,6 +226,8 @@ function invalidateImportCaches(userId: string) {
   revalidateTag(`accounts:${userId}`, { expire: 0 });
   revalidateTag("goals", { expire: 0 });
   revalidateTag(`goals:${userId}`, { expire: 0 });
+  revalidateTag("calendar-entries", { expire: 0 });
+  revalidateTag(`calendar-entries:${userId}`, { expire: 0 });
   revalidateTag("settings", { expire: 0 });
   revalidateTag(`settings:${userId}`, { expire: 0 });
   revalidateTag("snapshots", { expire: 0 });
@@ -257,19 +260,21 @@ export const GET = withAuth(async (request, _ctx, userId) => {
         snapshots: true,
         goals: true,
         stockWatchItems: true,
+        calendarEntries: true,
       },
     });
 
     if (!data) return failure("User not found", 404);
 
     const exportData = {
-      version: "1.3",
+      version: "1.4",
       exportedAt: new Date().toISOString(),
       settings: data.appSettings,
       accounts: data.appAccounts,
       snapshots: data.snapshots,
       goals: data.goals,
       stockWatchItems: data.stockWatchItems,
+      calendarEntries: data.calendarEntries.map(serializeCalendarEntry),
     };
 
     // Return as a raw JSON file download — NOT wrapped in ok() so the blob
@@ -325,6 +330,7 @@ export const POST = withAuth(async (request, _ctx, userId) => {
         await tx.netWorthSnapshot.deleteMany({ where: { userId } });
         await tx.goal.deleteMany({ where: { userId } });
         await tx.stockWatchItem.deleteMany({ where: { userId } });
+        await tx.calendarEntry.deleteMany({ where: { userId } });
 
         // 2. Import settings if present
         if (importData.settings) {
@@ -549,6 +555,25 @@ export const POST = withAuth(async (request, _ctx, userId) => {
               sortOrder: item.sortOrder,
               createdAt: item.createdAt,
               updatedAt: item.updatedAt,
+            })),
+          });
+        }
+
+        // 7. Import Calendar entries (user-scoped, with date-only values
+        // restored at UTC midnight to preserve the backup contract).
+        if (Array.isArray(importData.calendarEntries) && importData.calendarEntries.length > 0) {
+          await tx.calendarEntry.createMany({
+            data: importData.calendarEntries.map((entry) => ({
+              userId,
+              title: entry.title,
+              eventDate: new Date(`${entry.eventDate}T00:00:00.000Z`),
+              startTimeMinutes: entry.startTimeMinutes,
+              timeZone: entry.timeZone,
+              category: entry.category,
+              description: entry.description ?? null,
+              sourceUrl: entry.sourceUrl ?? null,
+              ...(entry.createdAt && { createdAt: new Date(entry.createdAt) }),
+              ...(entry.updatedAt && { updatedAt: new Date(entry.updatedAt) }),
             })),
           });
         }

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   BarChart3,
+  CalendarDays,
   ChartCandlestick,
   Copy,
   History,
@@ -63,8 +64,9 @@ export function DesktopCommandPaletteDialog({
       { href: "/stocks", label: t("nav.stocks"), icon: ChartCandlestick, kbd: "4" },
       { href: "/analysis", label: t("nav.analysis"), icon: BarChart3, kbd: "5" },
       { href: "/projections", label: t("nav.projections"), icon: TrendingUp, kbd: "6" },
-      { href: "/history", label: t("nav.history"), icon: History, kbd: "7" },
-      { href: "/settings", label: t("nav.settings"), icon: Settings, kbd: "8" },
+      { href: "/calendar", label: t("nav.calendar"), icon: CalendarDays, kbd: "7" },
+      { href: "/history", label: t("nav.history"), icon: History, kbd: "8" },
+      { href: "/settings", label: t("nav.settings"), icon: Settings, kbd: "9" },
     ],
     [t],
   );
@@ -89,9 +91,9 @@ export function DesktopCommandPaletteDialog({
             {t("commandPalette.openPalette")}
             <CommandShortcut>?</CommandShortcut>
           </CommandItem>
-          <CommandItem value={`shortcut 1 2 3 4 5 6 7 8 navigation`}>
+          <CommandItem value={`shortcut 1 2 3 4 5 6 7 8 9 navigation`}>
             {t("commandPalette.navigateTabs")}
-            <CommandShortcut>1-8</CommandShortcut>
+            <CommandShortcut>1-9</CommandShortcut>
           </CommandItem>
           <CommandItem value={`shortcut ${goShortcut} go to`}>
             {t("commandPalette.goToShortcut")}

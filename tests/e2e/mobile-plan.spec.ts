@@ -18,6 +18,12 @@ test.describe("mobile Plan hub", () => {
     await expect(page.getByRole("heading", { name: "Plan" })).toBeVisible();
 
     const tablist = page.getByRole("tablist");
+    await expect(tablist.getByRole("tab")).toHaveText([
+      "Watchlist",
+      "Goals",
+      "Projections",
+      "Calendar",
+    ]);
     await expect(tablist.getByRole("tab", { name: "Watchlist" })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -53,6 +59,26 @@ test.describe("mobile Plan hub", () => {
       "aria-selected",
       "true",
     );
+  });
+
+  test("Calendar is the fourth Plan tab and calendar deep links preserve state", async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "Mobile Chrome", "Mobile-only calendar flow");
+
+    await page.goto("/goals?month=2026-08&date=2026-08-12#calendar");
+    const tablist = page.getByRole("tablist");
+    const calendarTab = tablist.getByRole("tab", { name: "Calendar" });
+    await expect(calendarTab).toHaveAttribute("aria-selected", "true");
+    await expect(page).toHaveURL(/\/goals\?month=2026-08&date=2026-08-12#calendar$/);
+    await expect(page.getByRole("grid")).toBeVisible();
+
+    await page.getByRole("button", { name: "Next month" }).click();
+    await expect(page).toHaveURL(/\/goals\?month=2026-09&date=2026-09-12#calendar$/);
+
+    await page.goto("/calendar?month=2026-08&date=2026-08-12");
+    await expect(page).toHaveURL(/\/goals\?month=2026-08&date=2026-08-12#calendar$/);
+    await expect(calendarTab).toHaveAttribute("aria-selected", "true");
   });
 });
 

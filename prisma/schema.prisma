@@ -295,6 +295,32 @@ model Goal {
   @@index([userId, sortOrder, createdAt(sort: Desc)])
 }
 
+enum CalendarEntryCategory {
+  EARNINGS
+  ECONOMIC_INDICATOR
+  DIVIDEND
+  FILING
+  REMINDER
+  OTHER
+}
+
+model CalendarEntry {
+  id               String                @id @default(cuid())
+  userId           String
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String                @db.VarChar(120)
+  eventDate        DateTime              @db.Date
+  startTimeMinutes Int?
+  timeZone         String?               @db.VarChar(64)
+  category         CalendarEntryCategory
+  description      String?               @db.Text
+  sourceUrl        String?               @db.Text
+  createdAt        DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime              @updatedAt @db.Timestamptz(3)
+
+  @@index([userId, eventDate, startTimeMinutes])
+}
+
 model User {
   id            String        @id @default(cuid())
   name          String?
@@ -309,6 +335,7 @@ model User {
   snapshots       NetWorthSnapshot[]
   goals           Goal[]
   stockWatchItems StockWatchItem[]
+  calendarEntries CalendarEntry[]
 }
 
 model AuthAccount {

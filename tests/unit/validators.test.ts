@@ -15,6 +15,8 @@ import {
   dataImportSchema,
   deleteAccountsSchema,
   snapshotsQuerySchema,
+  calendarEntriesRangeSchema,
+  createCalendarEntrySchema,
 } from "@/lib/validators";
 
 // Locks in the E6 validator hardening (positive quantities, immutable
@@ -809,5 +811,140 @@ describe("dataImportSchema", () => {
     });
 
     expect(result.success).toBe(true);
+  });
+
+  it("accepts a v1.3 backup without calendarEntries", () => {
+    const result = dataImportSchema.safeParse({ version: "1.3", accounts: [] });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.calendarEntries).toBeUndefined();
+  });
+
+  it("round-trips valid v1.4 calendar entries", () => {
+    const result = dataImportSchema.safeParse({
+      version: "1.4",
+      accounts: [],
+      calendarEntries: [
+        {
+          title: "US CPI",
+          eventDate: "2026-08-12",
+          startTimeMinutes: 510,
+          timeZone: "Asia/Taipei",
+          category: "ECONOMIC_INDICATOR",
+          description: "Consensus 2.8%",
+          sourceUrl: "https://example.gov/cpi",
+          createdAt: "2026-07-24T01:00:00.000Z",
+          updatedAt: "2026-07-24T02:00:00.000Z",
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.calendarEntries).toEqual([
+        {
+          title: "US CPI",
+          eventDate: "2026-08-12",
+          startTimeMinutes: 510,
+          timeZone: "Asia/Taipei",
+          category: "ECONOMIC_INDICATOR",
+          description: "Consensus 2.8%",
+          sourceUrl: "https://example.gov/cpi",
+          createdAt: "2026-07-24T01:00:00.000Z",
+          updatedAt: "2026-07-24T02:00:00.000Z",
+        },
+      ]);
+    }
+  });
+
+  it("rejects invalid calendar time pairs and non-http source URLs in backups", () => {
+    const base = {
+      version: "1.4",
+      accounts: [],
+      calendarEntries: [
+        {
+          title: "US CPI",
+          eventDate: "2026-08-12",
+          startTimeMinutes: 510,
+          timeZone: null,
+          category: "ECONOMIC_INDICATOR",
+        },
+      ],
+    };
+    expect(dataImportSchema.safeParse(base).success).toBe(false);
+    expect(
+      dataImportSchema.safeParse({
+        ...base,
+        calendarEntries: [
+          {
+            ...base.calendarEntries[0],
+            startTimeMinutes: null,
+            sourceUrl: "javascript:alert(1)",
+          },
+        ],
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("calendar entry schemas", () => {
+  const valid = {
+    title: "US CPI",
+    eventDate: "2026-08-12",
+    startTimeMinutes: 510,
+    timeZone: "Asia/Taipei",
+    category: "ECONOMIC_INDICATOR",
+    description: "Consensus 2.8%",
+    sourceUrl: "https://example.gov/cpi",
+  };
+
+  it("accepts all-day and paired timed entries", () => {
+    expect(createCalendarEntrySchema.safeParse(valid).success).toBe(true);
+    expect(
+      createCalendarEntrySchema.safeParse({
+        ...valid,
+        startTimeMinutes: null,
+        timeZone: null,
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects half-paired time fields, invalid minutes, and invalid IANA zones", () => {
+    expect(createCalendarEntrySchema.safeParse({ ...valid, timeZone: null }).success).toBe(false);
+    expect(createCalendarEntrySchema.safeParse({ ...valid, startTimeMinutes: 1440 }).success).toBe(
+      false,
+    );
+    expect(
+      createCalendarEntrySchema.safeParse({ ...valid, timeZone: "Mars/Olympus" }).success,
+    ).toBe(false);
+  });
+
+  it("trims text and accepts only http/https source URLs", () => {
+    const parsed = createCalendarEntrySchema.safeParse({
+      ...valid,
+      title: "  CPI  ",
+      description: "   ",
+      sourceUrl: "ftp://example.gov/report",
+    });
+    expect(parsed.success).toBe(false);
+    const good = createCalendarEntrySchema.parse({
+      ...valid,
+      title: "  CPI  ",
+      description: "   ",
+      sourceUrl: "  https://example.gov/report  ",
+    });
+    expect(good.title).toBe("CPI");
+    expect(good.description).toBeNull();
+    expect(good.sourceUrl).toBe("https://example.gov/report");
+  });
+
+  it("accepts 42 inclusive dates and rejects reversed or 43-day ranges", () => {
+    expect(
+      calendarEntriesRangeSchema.safeParse({ from: "2026-07-01", to: "2026-08-11" }).success,
+    ).toBe(true);
+    expect(
+      calendarEntriesRangeSchema.safeParse({ from: "2026-08-11", to: "2026-07-01" }).success,
+    ).toBe(false);
+    expect(
+      calendarEntriesRangeSchema.safeParse({ from: "2026-07-01", to: "2026-08-12" }).success,
+    ).toBe(false);
   });
 });
