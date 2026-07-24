@@ -114,23 +114,29 @@ test.describe("calendar semantic text contrast", () => {
       const adjacentDate = page
         .getByRole("gridcell")
         .getByRole("button", { name: /Monday, July 31, 2034/ });
+      const currentMonthDate = page
+        .getByRole("gridcell")
+        .getByRole("button", { name: /Tuesday, August 1, 2034/ });
       const otherBadge = page
         .getByRole("region", { name: /on Tuesday, August 15, 2034/ })
         .getByText("Other", { exact: true });
 
       await expect(adjacentDate).toBeVisible();
+      await expect(currentMonthDate).toBeVisible();
       await expect(otherBadge).toBeVisible();
 
       for (const schema of COLOR_SCHEMAS) {
         for (const dark of [false, true]) {
           await setColorMode(page, schema, dark);
+          const adjacentContrast = await computedTextContrast(adjacentDate);
+          const currentMonthContrast = await computedTextContrast(currentMonthDate);
 
           expect
-            .soft(
-              await computedTextContrast(adjacentDate),
-              `${schema} ${dark ? "dark" : "light"} adjacent date`,
-            )
+            .soft(adjacentContrast, `${schema} ${dark ? "dark" : "light"} adjacent date`)
             .toBeGreaterThanOrEqual(SMALL_TEXT_AA_CONTRAST);
+          expect
+            .soft(adjacentContrast, `${schema} ${dark ? "dark" : "light"} adjacent date hierarchy`)
+            .toBeLessThan(currentMonthContrast);
           expect
             .soft(
               await computedTextContrast(otherBadge),
