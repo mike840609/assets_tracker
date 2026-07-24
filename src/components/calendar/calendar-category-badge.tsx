@@ -11,7 +11,7 @@ const CATEGORY_TONES: Record<CalendarEntryCategoryValue, string> = {
   DIVIDEND: "bg-chart-3/15 text-foreground",
   FILING: "bg-chart-4/15 text-foreground",
   REMINDER: "bg-chart-7/15 text-foreground",
-  OTHER: "bg-muted text-muted-foreground",
+  OTHER: "bg-muted text-foreground",
 };
 
 const CATEGORY_DOTS: Record<CalendarEntryCategoryValue, string> = {

@@ -184,7 +184,7 @@ export function CalendarMonthGrid({
                       className={cn(
                         "flex min-h-16 w-full flex-col items-center gap-1 px-1.5 py-2 text-center outline-none motion-fast sm:min-h-20 sm:items-start sm:text-left",
                         "hover:bg-muted/60 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-                        !isCurrentMonth && "text-muted-foreground/70",
+                        !isCurrentMonth && "text-secondary-foreground",
                         isSelected && "relative z-10 bg-primary/8 ring-2 ring-inset ring-primary",
                       )}
                     >

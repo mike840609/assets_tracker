@@ -166,8 +166,11 @@ export function CalendarDayAgenda({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletingId !== null}>{common("cancel")}</AlertDialogCancel>
+            <AlertDialogCancel className="min-h-11 md:min-h-0" disabled={deletingId !== null}>
+              {common("cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
+              className="min-h-11 md:min-h-0"
               variant="destructive"
               disabled={deletingId !== null}
               onClick={(event) => {

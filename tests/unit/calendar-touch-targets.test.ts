@@ -27,6 +27,20 @@ describe("calendar mobile touch targets", () => {
     expect(mobileTouchCount).toBe(actionCount);
   });
 
+  it.each(["AlertDialogCancel", "AlertDialogAction"])(
+    "keeps the delete-confirmation %s touch-safe on mobile and compact on desktop",
+    (componentName) => {
+      const source = readFileSync(
+        join(process.cwd(), "src/components/calendar/calendar-day-agenda.tsx"),
+        "utf8",
+      );
+      const props = source.match(new RegExp(`<${componentName}\\b([\\s\\S]*?)>`))?.[1];
+
+      expect(props).toContain("min-h-11");
+      expect(props).toContain("md:min-h-0");
+    },
+  );
+
   it("keeps calendar form category options touch-safe on mobile and compact on desktop", () => {
     const source = readFileSync(
       join(process.cwd(), "src/components/calendar/calendar-entry-form.tsx"),
