@@ -7,7 +7,7 @@
 minimumReleaseAge: 0
 
 overrides:
-  fast-uri: 3.1.2
+  fast-uri: 3.1.4
   hono: 4.12.30
 
 # Dependencies allowed to run install/build lifecycle scripts (pnpm blocks these
