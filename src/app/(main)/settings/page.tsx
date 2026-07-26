@@ -3,6 +3,8 @@ import { DataManagement } from "@/components/settings/data-management";
 import { InstallAppCard } from "@/components/settings/install-app-card";
 import { PrivacySecurity } from "@/components/settings/privacy-security";
 import { VersionCard } from "@/components/settings/version-card";
+import { GitHubMark } from "@/components/settings/github-mark";
+import { REPO_URL } from "@/lib/repo";
 import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
@@ -43,7 +45,21 @@ async function SettingsContent() {
   return (
     <NextIntlClientProvider messages={pickMessages(allMessages, CLIENT_NAMESPACES)}>
       <div className="space-y-8 max-w-2xl lg:max-w-6xl pb-16 animate-in fade-in duration-200">
-        <LargeTitleHeading>{t("title")}</LargeTitleHeading>
+        {/* The About card carries the full license statement, but it sits in the
+            third grid row — below the fold on landing. This badge puts the
+            open-source signal in the header, where it is seen without scrolling. */}
+        <div className="space-y-3">
+          <LargeTitleHeading>{t("title")}</LargeTitleHeading>
+          <a
+            href={REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-foreground/80 transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            <GitHubMark className="h-3.5 w-3.5" />
+            {t("openSourceBadge")}
+          </a>
+        </div>
 
         {/* Single column on mobile. On desktop a 2x3 section grid: each section
             is placed explicitly so its title sits on a shared row line across

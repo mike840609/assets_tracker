@@ -226,6 +226,7 @@
     "signOut": "Sign Out",
     "signOutDesc": "Securely log out of your account on this device.",
     "dangerZone": "Danger Zone",
+    "openSourceBadge": "Open source · MIT",
     "versionTitle": "About",
     "versionCurrent": "Current version",
     "versionReleased": "Released {date}",

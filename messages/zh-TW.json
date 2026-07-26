@@ -226,6 +226,7 @@
     "signOut": "登出",
     "signOutDesc": "安全地登出此裝置上的帳戶。",
     "dangerZone": "危險區域",
+    "openSourceBadge": "開源專案 · MIT",
     "versionTitle": "關於",
     "versionCurrent": "目前版本",
     "versionReleased": "發布於 {date}",
