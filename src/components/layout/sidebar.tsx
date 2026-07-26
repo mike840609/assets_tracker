@@ -34,6 +34,8 @@ import {
   useTransition,
 } from "react";
 import { AppIcon } from "./app-icon";
+import { GitHubMark } from "./github-mark";
+import { REPO_URL } from "@/lib/repo";
 
 const SIDEBAR_STORAGE_KEY = "asset-tracker:sidebar-collapsed";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // one year
@@ -269,6 +271,16 @@ export function Sidebar({
                   {privacyMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
                 <ThemeToggle />
+                <a
+                  href={REPO_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={t("nav.sourceCode")}
+                  aria-label={t("nav.sourceCode")}
+                  className="inline-flex items-center justify-center rounded-md p-1.5 text-sm text-muted-foreground hover:text-foreground transition-all motion-fast"
+                >
+                  <GitHubMark className="h-4 w-4" />
+                </a>
               </>
             )}
           </div>

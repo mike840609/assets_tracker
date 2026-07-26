@@ -15,7 +15,8 @@
     "projections": "Projections",
     "calendar": "Calendar",
     "settings": "Settings",
-    "changelog": "What's New"
+    "changelog": "What's New",
+    "sourceCode": "View source on GitHub"
   },
   "calendar": {
     "title": "Calendar",
@@ -226,11 +227,15 @@
     "signOut": "Sign Out",
     "signOutDesc": "Securely log out of your account on this device.",
     "dangerZone": "Danger Zone",
-    "versionTitle": "Version",
+    "openSourceBadge": "Open source · MIT",
+    "versionTitle": "About",
     "versionCurrent": "Current version",
     "versionReleased": "Released {date}",
     "versionWhatsNew": "What's new in {version}",
-    "versionViewChangelog": "View changelog"
+    "versionViewChangelog": "View changelog",
+    "versionSourceCode": "Source code",
+    "versionOpenSourceTitle": "Open source",
+    "versionOpenSource": "Assets Tracker is free, open-source software released under the <license>MIT License</license>. Anyone can read the code, self-host their own copy, or contribute."
   },
   "languages": {
     "en-US": "English",

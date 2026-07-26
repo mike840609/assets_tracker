@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowRightIcon } from "lucide-react";
+import { ArrowRightIcon, ArrowUpRightIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { APP_VERSION, CHANGELOG, resolveChangeText } from "@/lib/changelog";
+import { LICENSE_URL, REPO_URL } from "@/lib/repo";
+import { GitHubMark } from "@/components/layout/github-mark";
 import type { Locale } from "@/i18n/config";
 
 export async function VersionCard() {
@@ -51,14 +53,49 @@ export async function VersionCard() {
             </ul>
           </div>
 
-          <Link
-            href="/changelog"
-            prefetch={false}
-            className="inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
-          >
-            {t("versionViewChangelog")}
-            <ArrowRightIcon className="h-3.5 w-3.5" />
-          </Link>
+          {/* The license claim is the point of this block, so it reads as a
+              sentence rather than a bare link, and "MIT License" resolves to the
+              license text itself so the claim is verifiable. */}
+          <div className="flex gap-3 rounded-md border border-primary/20 bg-primary/5 p-4">
+            <GitHubMark className="mt-0.5 h-4 w-4 text-foreground/70" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">{t("versionOpenSourceTitle")}</p>
+              <p className="text-sm text-muted-foreground text-pretty">
+                {t.rich("versionOpenSource", {
+                  license: (chunks) => (
+                    <a
+                      href={LICENSE_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-primary underline underline-offset-2 transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
+                    >
+                      {chunks}
+                    </a>
+                  ),
+                })}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Link
+              href="/changelog"
+              prefetch={false}
+              className="inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
+            >
+              {t("versionViewChangelog")}
+              <ArrowRightIcon className="h-3.5 w-3.5" />
+            </Link>
+            <a
+              href={REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
+            >
+              {t("versionSourceCode")}
+              <ArrowUpRightIcon className="h-3.5 w-3.5" />
+            </a>
+          </div>
         </CardContent>
       </Card>
     </section>

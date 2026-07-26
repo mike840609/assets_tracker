@@ -38,6 +38,70 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.1.0",
+    date: "2026-07-26",
+    summary: {
+      "en-US": "A financial calendar, linked history charts, and leaner self-host images.",
+      "zh-TW": "新增財經行事曆、連動的歷史圖表，以及更精簡的自架映像檔。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Calendar: a new page for earnings, economic releases, dividends, filings, and reminders, with a month grid and a day agenda. It has its own desktop tab and lives in the mobile Plan hub, and entries are included in backup export and restore.",
+          "zh-TW":
+            "行事曆：新增頁面，可記錄財報、經濟數據、配息、申報與提醒，並提供月曆與當日行程檢視。桌面版有獨立分頁，行動版收錄於「計畫」頁，行事曆項目也會納入備份匯出與還原。",
+        },
+      },
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Activity heatmap and net-worth trend are now linked on both History and the Dashboard: hovering or selecting a day in the heatmap marks that same day on the trend chart.",
+          "zh-TW":
+            "歷史頁與儀表板的活動熱力圖現在與淨值趨勢圖連動：在熱力圖上懸停或選取某一天，趨勢圖會同步標記該日。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Self-hosting: container images are slimmer and hardened, built natively per architecture, and published to GitHub Container Registry.",
+          "zh-TW":
+            "自行部署：容器映像檔更精簡且更安全，改為各架構原生建置，並發布至 GitHub Container Registry。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Clearer disclosures for figures that can't be recomputed: unresolved exchange rates now raise an app-wide banner, history rows converted from another base currency are labeled, and backdated transactions state that they don't rewrite past snapshots.",
+          "zh-TW":
+            "對無法重新計算的數字提供更明確的說明：匯率無法取得時會顯示全站橫幅、歷史紀錄中由其他基準貨幣換算的列會加註標示，補登交易也會說明不會回頭改寫既有快照。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "The dashboard net-worth trend chart now matches the History tab, unrealized gain is computed only over holdings with a cost basis, and cost basis values its market leg in the price-cache currency like net worth does.",
+          "zh-TW":
+            "儀表板的淨值趨勢圖現在與歷史頁一致；未實現損益僅計算具成本基礎的持倉；成本基礎的市值部分改以價格快取的幣別計價，與淨值一致。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Recurring rules now materialize due occurrences when created or edited and roll over on the Taiwan business day, editing a start date re-anchors the schedule without replaying history, renaming a holding fetches a price for the new symbol, and imported symbols get their prices warmed right away.",
+          "zh-TW":
+            "定期規則在建立或編輯時會立即產生到期的交易，並依台灣營業日換日；調整起始日期會重新錨定排程而不會回放歷史；重新命名持倉會取得新代號的報價；匯入的代號也會立即預熱價格快取。",
+        },
+      },
+    ],
+  },
+  {
     version: "1.0.1",
     date: "2026-07-15",
     summary: {

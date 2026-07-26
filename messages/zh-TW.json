@@ -14,6 +14,7 @@
     "history": "歷史紀錄",
     "projections": "財務預測",
     "calendar": "行事曆",
+    "sourceCode": "在 GitHub 上查看原始碼",
     "settings": "設定",
     "changelog": "更新內容"
   },
@@ -226,11 +227,15 @@
     "signOut": "登出",
     "signOutDesc": "安全地登出此裝置上的帳戶。",
     "dangerZone": "危險區域",
-    "versionTitle": "版本",
+    "openSourceBadge": "開源專案 · MIT",
+    "versionTitle": "關於",
     "versionCurrent": "目前版本",
     "versionReleased": "發布於 {date}",
     "versionWhatsNew": "{version} 的更新內容",
-    "versionViewChangelog": "查看更新紀錄"
+    "versionViewChangelog": "查看更新紀錄",
+    "versionSourceCode": "原始碼",
+    "versionOpenSourceTitle": "開源專案",
+    "versionOpenSource": "資產追蹤器是免費的開源軟體，以 <license>MIT 授權</license> 發布。任何人都可以閱讀原始碼、自行部署專屬版本，或參與貢獻。"
   },
   "languages": {
     "en-US": "English",
