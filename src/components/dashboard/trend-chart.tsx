@@ -28,7 +28,11 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
 import { useActiveDate } from "@/components/history/active-day-context";
-import { findChartPoint } from "@/components/dashboard/trend-chart-utils";
+import {
+  DEFAULT_TREND_RANGE,
+  TREND_RANGES,
+  findChartPoint,
+} from "@/components/dashboard/trend-chart-utils";
 
 type SnapshotData = {
   date: string;
@@ -149,15 +153,6 @@ function CrosshairLines() {
   );
 }
 
-const ranges: { label: string; days: number; ytd?: true }[] = [
-  { label: "1M", days: 30 },
-  { label: "3M", days: 90 },
-  { label: "6M", days: 180 },
-  { label: "YTD", days: 0, ytd: true },
-  { label: "1Y", days: 365 },
-  { label: "All", days: Infinity },
-];
-
 export function TrendChart({
   snapshots,
   baseCurrency = "USD",
@@ -171,7 +166,7 @@ export function TrendChart({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { width: containerWidth, height: containerHeight } = useContainerSize(containerRef);
-  const [range, setRange] = usePersistedRange<string>("trend-chart", "All");
+  const [range, setRange] = usePersistedRange<string>("trend-chart", DEFAULT_TREND_RANGE);
   const [pctMode, setPctMode] = usePersistedRange<string>("trend-pct-mode", "off");
   const t = useTranslations("trendChart");
   const { privacyMode } = usePrivacyMode();
@@ -182,7 +177,7 @@ export function TrendChart({
     ? { duration: 0 }
     : { duration: 0.18, ease: [0.16, 1, 0.3, 1] as const };
 
-  const selectedRange = ranges.find((r) => r.label === range)!;
+  const selectedRange = TREND_RANGES.find((r) => r.label === range)!;
   const isPercentMode = pctMode === "on";
   const currencySymbol = getCurrencySymbol(baseCurrency);
 
@@ -333,7 +328,7 @@ export function TrendChart({
             <SegmentedControl
               variant="pill"
               size="xs"
-              options={ranges.map((r) => ({ value: r.label, label: r.label }))}
+              options={TREND_RANGES.map((r) => ({ value: r.label, label: r.label }))}
               value={range}
               onValueChange={setRange}
               aria-label={t("title")}

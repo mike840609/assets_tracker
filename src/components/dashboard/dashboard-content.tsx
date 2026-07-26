@@ -12,10 +12,7 @@ import {
 } from "@/lib/services/net-worth-service";
 import { getAllExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
-import {
-  getCurrentYearNormalizedHistory,
-  getNormalizedHistory,
-} from "@/lib/services/history-service";
+import { getFullNormalizedHistory } from "@/lib/services/history-service";
 import { HistoryHeatmap } from "@/components/history/history-heatmap";
 import { ActiveDayBoundary } from "@/components/history/active-day-context";
 import { computeGoalsWithProgress } from "@/lib/services/goal-service";
@@ -314,14 +311,17 @@ async function GoalsMilestoneSection({
 
 /**
  * Trend chart + history heatmap — streams behind its Suspense boundary so the
- * dashboard shell never waits on snapshot history. getNormalizedHistory is
- * "use cache" with cacheLife("hours"), so the chart stays on the fast 90-day
- * window while the heatmap gets a year-to-date calendar window.
+ * dashboard shell never waits on snapshot history. Uses the same full-history
+ * fetcher as the History tab: both render the same TrendChart behind one shared
+ * range key, so a capped window here silently truncated 6M/YTD/1Y/All on the
+ * dashboard only. `getFullNormalizedHistory` is "use cache" with
+ * cacheLife("hours") and never selects the heavy `breakdown` column, and the
+ * heatmap clips to the current year itself — so one fetch feeds both children
+ * and the RSC payload carries the series once instead of twice.
  */
 async function TrendSection({ userId, baseCurrency }: { userId: string; baseCurrency: string }) {
-  const [trendSnapshots, heatmapSnapshots, t] = await Promise.all([
-    getNormalizedHistory(userId, baseCurrency),
-    getCurrentYearNormalizedHistory(userId, baseCurrency),
+  const [snapshots, t] = await Promise.all([
+    getFullNormalizedHistory(userId, baseCurrency),
     getTranslations("dashboard"),
   ]);
 
@@ -329,10 +329,10 @@ async function TrendSection({ userId, baseCurrency }: { userId: string; baseCurr
     <ActiveDayBoundary>
       <TrendChartSection
         baseCurrency={baseCurrency}
-        snapshots={trendSnapshots}
+        snapshots={snapshots}
         footer={
           <>
-            <HistoryHeatmap snapshots={heatmapSnapshots} baseCurrency={baseCurrency} />
+            <HistoryHeatmap snapshots={snapshots} baseCurrency={baseCurrency} />
             {/* Mobile-only entry point — the trend chart is the preview; this
               names the History destination inline. Desktop uses the sidebar route. */}
             <Link

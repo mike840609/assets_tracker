@@ -150,50 +150,6 @@ export async function getNormalizedHistory(
 }
 
 /**
- * Current-year history for the activity heatmap. Includes the latest snapshot
- * before Jan 1, when present, so the first visible day can compute its delta
- * the same way full-history views do.
- */
-export async function getCurrentYearNormalizedHistory(
-  userId: string,
-  targetBaseCurrency: string,
-): Promise<NormalizedSnapshot[]> {
-  "use cache";
-  cacheTag("snapshots");
-  cacheTag("net-worth");
-  cacheTag(`history:${userId}`);
-  cacheTag("exchange-rates");
-  cacheLife("hours");
-
-  const now = new Date();
-  const yearStart = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
-
-  const [currentYearRows, previousDateRow, allRatesMap] = await Promise.all([
-    prisma.netWorthSnapshot.findMany({
-      where: { userId, date: { gte: yearStart } },
-      select: SNAPSHOT_SELECT,
-      orderBy: { date: "asc" },
-    }),
-    prisma.netWorthSnapshot.findFirst({
-      where: { userId, date: { lt: yearStart } },
-      select: { date: true },
-      orderBy: { date: "desc" },
-    }),
-    getAllExchangeRates(),
-  ]);
-
-  const previousRows = previousDateRow
-    ? await prisma.netWorthSnapshot.findMany({
-        where: { userId, date: previousDateRow.date },
-        select: SNAPSHOT_SELECT,
-        orderBy: { createdAt: "asc" },
-      })
-    : [];
-
-  return normalizeSnapshots([...previousRows, ...currentYearRows], allRatesMap, targetBaseCurrency);
-}
-
-/**
  * Full history fetch for pages that need the complete history.
  * Uses `"use cache"` only when no custom range is supplied; a custom
  * range short-circuits to a raw DB call so the cache key isn't

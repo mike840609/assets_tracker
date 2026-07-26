@@ -22,9 +22,6 @@ interface CashTransactionFixture {
 }
 const h = vi.hoisted(() => ({
   rows: [] as SnapshotRowFixture[],
-  currentYearRows: [] as SnapshotRowFixture[],
-  previousRows: [] as SnapshotRowFixture[],
-  previousDateRow: null as { date: Date } | null,
   latestSnapshot: null as SnapshotRowFixture | null,
   foreignCurrencySnapshot: null as { id: string } | null,
   accounts: [] as unknown[],
@@ -46,19 +43,11 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     account: { findMany: vi.fn(async () => h.accounts) },
     netWorthSnapshot: {
-      findMany: vi.fn(async (args?: { where?: { date?: Date | { gte?: Date } } }) => {
-        const dateWhere = args?.where?.date;
-        if (dateWhere instanceof Date) return h.previousRows;
-        if (dateWhere && "gte" in dateWhere) return h.currentYearRows;
-        return h.rows;
+      findMany: vi.fn(async () => h.rows),
+      findFirst: vi.fn(async (args?: { where?: { baseCurrency?: { not?: string } } }) => {
+        if (args?.where?.baseCurrency?.not) return h.foreignCurrencySnapshot;
+        return h.latestSnapshot;
       }),
-      findFirst: vi.fn(
-        async (args?: { where?: { date?: { lt?: Date }; baseCurrency?: { not?: string } } }) => {
-          if (args?.where?.baseCurrency?.not) return h.foreignCurrencySnapshot;
-          if (args?.where?.date?.lt) return h.previousDateRow;
-          return h.latestSnapshot;
-        },
-      ),
     },
     cashTransaction: {
       findMany: vi.fn(async (args?: { where?: { OR?: Array<Record<string, unknown>> } }) => {
@@ -99,7 +88,6 @@ vi.mock("@/lib/services/exchange-rate-service", async (importActual) => {
 const {
   getAccountMonthlyCashFlow,
   getMonthlyCashFlow,
-  getCurrentYearNormalizedHistory,
   getFullNormalizedHistory,
   getSnapshotReconciliationWarning,
   hasForeignCurrencySnapshots,
@@ -148,9 +136,6 @@ function account(over: Record<string, unknown> = {}) {
 beforeEach(() => {
   vi.useRealTimers();
   h.rows = [];
-  h.currentYearRows = [];
-  h.previousRows = [];
-  h.previousDateRow = null;
   h.latestSnapshot = null;
   h.foreignCurrencySnapshot = null;
   h.accounts = [];
@@ -252,38 +237,6 @@ describe("getFullNormalizedHistory (normalize + dedupe — locks E2)", () => {
       label: "Bonus paid",
       note: "Annual bonus landed in brokerage cash.",
     });
-  });
-});
-
-describe("getCurrentYearNormalizedHistory", () => {
-  it("returns current-year snapshots plus the latest prior day for delta context", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-06-14T12:00:00.000Z"));
-
-    const priorDate = new Date("2025-12-31T00:00:00.000Z");
-    h.previousDateRow = { date: priorDate };
-    h.previousRows = [row({ id: "prior", date: priorDate, netWorth: 90 })];
-    h.currentYearRows = [
-      row({ id: "jan", date: new Date("2026-01-01T00:00:00.000Z"), netWorth: 100 }),
-      row({ id: "today", date: new Date("2026-06-14T00:00:00.000Z"), netWorth: 120 }),
-    ];
-
-    const result = await getCurrentYearNormalizedHistory("u1", "USD");
-
-    expect(result.map((s) => s.date)).toEqual(["2025-12-31", "2026-01-01", "2026-06-14"]);
-  });
-
-  it("returns only current-year snapshots when there is no prior history", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-06-14T12:00:00.000Z"));
-
-    h.currentYearRows = [
-      row({ id: "jan", date: new Date("2026-01-01T00:00:00.000Z"), netWorth: 100 }),
-    ];
-
-    const result = await getCurrentYearNormalizedHistory("u1", "USD");
-
-    expect(result.map((s) => s.date)).toEqual(["2026-01-01"]);
   });
 });
 
