@@ -230,7 +230,9 @@
     "versionCurrent": "目前版本",
     "versionReleased": "發布於 {date}",
     "versionWhatsNew": "{version} 的更新內容",
-    "versionViewChangelog": "查看更新紀錄"
+    "versionViewChangelog": "查看更新紀錄",
+    "versionSourceCode": "原始碼",
+    "versionOpenSource": "資產追蹤器以 MIT 授權開源。歡迎給予星星、回報問題，或自行部署一份專屬版本。"
   },
   "languages": {
     "en-US": "English",

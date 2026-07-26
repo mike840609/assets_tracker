@@ -230,7 +230,9 @@
     "versionCurrent": "Current version",
     "versionReleased": "Released {date}",
     "versionWhatsNew": "What's new in {version}",
-    "versionViewChangelog": "View changelog"
+    "versionViewChangelog": "View changelog",
+    "versionSourceCode": "Source code",
+    "versionOpenSource": "Assets Tracker is open source under the MIT License. Star the repo, report an issue, or self-host your own copy."
   },
   "languages": {
     "en-US": "English",
