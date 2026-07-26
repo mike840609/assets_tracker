@@ -226,13 +226,14 @@
     "signOut": "Sign Out",
     "signOutDesc": "Securely log out of your account on this device.",
     "dangerZone": "Danger Zone",
-    "versionTitle": "Version",
+    "versionTitle": "About",
     "versionCurrent": "Current version",
     "versionReleased": "Released {date}",
     "versionWhatsNew": "What's new in {version}",
     "versionViewChangelog": "View changelog",
     "versionSourceCode": "Source code",
-    "versionOpenSource": "Assets Tracker is open source under the MIT License. Star the repo, report an issue, or self-host your own copy."
+    "versionOpenSourceTitle": "Open source",
+    "versionOpenSource": "Assets Tracker is free, open-source software released under the <license>MIT License</license>. Anyone can read the code, self-host their own copy, or contribute."
   },
   "languages": {
     "en-US": "English",

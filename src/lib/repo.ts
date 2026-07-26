@@ -4,3 +4,6 @@
  * source, releases, and issue tracker from inside the app.
  */
 export const REPO_URL = "https://github.com/mike840609/assets_tracker";
+
+/** The MIT license text itself, so the license claim in Settings is verifiable. */
+export const LICENSE_URL = `${REPO_URL}/blob/master/LICENSE`;
