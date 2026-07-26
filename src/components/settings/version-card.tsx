@@ -4,7 +4,7 @@ import { ArrowRightIcon, ArrowUpRightIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { APP_VERSION, CHANGELOG, resolveChangeText } from "@/lib/changelog";
 import { LICENSE_URL, REPO_URL } from "@/lib/repo";
-import { GitHubMark } from "./github-mark";
+import { GitHubMark } from "@/components/layout/github-mark";
 import type { Locale } from "@/i18n/config";
 
 export async function VersionCard() {

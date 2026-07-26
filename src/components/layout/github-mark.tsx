@@ -1,6 +1,7 @@
 /**
  * GitHub mark. Ships inline because lucide-react v1 no longer bundles brand
- * icons, and it is shared by the Settings header badge and the About card.
+ * icons. Shared by the sidebar footer, the Settings header badge, and the
+ * About card.
  */
 export function GitHubMark({ className = "h-4 w-4" }: { className?: string }) {
   return (

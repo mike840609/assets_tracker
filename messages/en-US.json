@@ -15,7 +15,8 @@
     "projections": "Projections",
     "calendar": "Calendar",
     "settings": "Settings",
-    "changelog": "What's New"
+    "changelog": "What's New",
+    "sourceCode": "View source on GitHub"
   },
   "calendar": {
     "title": "Calendar",

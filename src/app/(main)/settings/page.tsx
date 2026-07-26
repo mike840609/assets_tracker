@@ -3,7 +3,7 @@ import { DataManagement } from "@/components/settings/data-management";
 import { InstallAppCard } from "@/components/settings/install-app-card";
 import { PrivacySecurity } from "@/components/settings/privacy-security";
 import { VersionCard } from "@/components/settings/version-card";
-import { GitHubMark } from "@/components/settings/github-mark";
+import { GitHubMark } from "@/components/layout/github-mark";
 import { REPO_URL } from "@/lib/repo";
 import { signOut } from "@/auth";
 import { getSession } from "@/lib/auth-session";
