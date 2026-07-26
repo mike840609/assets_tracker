@@ -25,3 +25,6 @@ docs
 *.tsbuildinfo
 Dockerfile*
 README*.md
+
+# README media — rendered by GitHub from the repo, never served by the app
+public/readme-*
