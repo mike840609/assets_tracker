@@ -11,9 +11,13 @@ WORKDIR /app
 
 FROM base AS deps
 
-# Cache mounts are scoped per target platform so a cross-platform build never
-# reuses another architecture's cached artifacts.
+# Cache mounts are scoped per base image and target platform. The base belongs
+# in the key because pnpm caches the *output* of install scripts: a store shared
+# with a glibc build hands this stage a glibc Prisma engine that cannot run on
+# musl, and Prisma then silently downloads a replacement at container start.
 ARG TARGETPLATFORM
+ARG CACHE_SCOPE="alpine"
+
 
 ENV DATABASE_URL="postgresql://postgres:postgres@db:5432/asset_app?sslmode=disable"
 ENV PNPM_CONFIG_PACKAGE_IMPORT_METHOD="copy"
@@ -22,7 +26,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY prisma.config.ts ./
 COPY prisma ./prisma
 
-RUN --mount=type=cache,id=pnpm-store-$TARGETPLATFORM,target=/pnpm/store \
+RUN --mount=type=cache,id=pnpm-store-$CACHE_SCOPE-$TARGETPLATFORM,target=/pnpm/store \
   HUSKY=0 pnpm install --frozen-lockfile
 
 # The migration runner only needs the Prisma CLI, the schema, and the migration
@@ -31,6 +35,7 @@ RUN --mount=type=cache,id=pnpm-store-$TARGETPLATFORM,target=/pnpm/store \
 FROM base AS migrate
 
 ARG TARGETPLATFORM
+ARG CACHE_SCOPE="alpine"
 
 ENV PNPM_CONFIG_PACKAGE_IMPORT_METHOD="copy"
 
@@ -38,9 +43,9 @@ RUN addgroup -S -g 1001 nodejs \
   && adduser -S -u 1001 -G nodejs prisma
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-RUN --mount=type=cache,id=pnpm-store-$TARGETPLATFORM,target=/pnpm/store \
+RUN --mount=type=cache,id=pnpm-store-$CACHE_SCOPE-$TARGETPLATFORM,target=/pnpm/store \
   PRISMA_VERSION="$(awk '/^      prisma:/{getline; getline; sub(/^ *version: /,""); sub(/\(.*/,""); print; exit}' pnpm-lock.yaml)" \
-  && test -n "$PRISMA_VERSION" \
+  && case "$PRISMA_VERSION" in [0-9]*.[0-9]*.[0-9]*) ;; *) echo "Could not parse the prisma version out of pnpm-lock.yaml (got '$PRISMA_VERSION')" >&2; exit 1 ;; esac \
   && rm pnpm-lock.yaml \
   && printf '{"name":"assets-tracker-migrate","private":true}\n' > package.json \
   && pnpm add "prisma@$PRISMA_VERSION" \
@@ -49,8 +54,9 @@ RUN --mount=type=cache,id=pnpm-store-$TARGETPLATFORM,target=/pnpm/store \
     /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
     /usr/local/lib/node_modules/corepack /usr/local/bin/corepack /usr/local/bin/pnpm /usr/local/bin/pnpx \
     /opt/yarn-* /usr/local/bin/yarn /usr/local/bin/yarnpkg \
-  # The Prisma CLI verifies it can write to its engines directory before it will
-  # run. Done inside this layer, so it costs no additional image size.
+  # Fail the build rather than ship an engine for the wrong libc, which Prisma
+  # would paper over by downloading a replacement on every container start.
+  && ls node_modules/.pnpm/@prisma+engines@*/node_modules/@prisma/engines/ | grep -q '^schema-engine-linux-musl-' \
   && chown -R prisma:nodejs /app
 
 COPY --chown=prisma:nodejs prisma.config.ts ./
@@ -65,6 +71,7 @@ CMD ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]
 FROM base AS builder
 
 ARG TARGETPLATFORM
+ARG CACHE_SCOPE="alpine"
 ARG NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ARG NEXT_PUBLIC_SENTRY_DSN=""
 
@@ -79,7 +86,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 COPY --from=deps /app/src/generated ./src/generated
 
-RUN --mount=type=cache,id=next-build-cache-$TARGETPLATFORM,target=/app/.next/cache,sharing=locked \
+RUN --mount=type=cache,id=next-build-cache-$CACHE_SCOPE-$TARGETPLATFORM,target=/app/.next/cache,sharing=locked \
   if [ -z "$NEXT_PUBLIC_SENTRY_DSN" ]; then unset NEXT_PUBLIC_SENTRY_DSN; fi; pnpm build
 
 FROM base AS runner
