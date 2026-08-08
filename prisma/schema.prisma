@@ -342,6 +342,25 @@ model User {
   goals           Goal[]
   stockWatchItems StockWatchItem[]
   calendarEntries CalendarEntry[]
+  demoWorkspace   DemoWorkspace?
+}
+
+model DemoWorkspace {
+  userId                  String    @id
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  visitorHash             String    @unique
+  creatorHash             String
+  expiresAt               DateTime  @db.Timestamptz(3)
+  mutationCount           Int       @default(0)
+  mutationWindowStartedAt DateTime? @db.Timestamptz(3)
+  mutationWindowCount     Int       @default(0)
+  resetCount              Int       @default(0)
+  refreshWindowStartedAt  DateTime? @db.Timestamptz(3)
+  refreshCount            Int       @default(0)
+  createdAt               DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([expiresAt])
+  @@index([creatorHash, expiresAt])
 }
 
 model AuthAccount {

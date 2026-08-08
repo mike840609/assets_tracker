@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
@@ -133,7 +134,30 @@ function buildImportPreview(data: unknown, file: File): ImportPreview | null {
   };
 }
 
-export function DataManagement() {
+export function DataManagement({ isDemo = false }: { isDemo?: boolean }) {
+  return isDemo ? <DemoDataManagement /> : <FormalDataManagement />;
+}
+
+function DemoDataManagement() {
+  const t = useTranslations("dataManagement");
+
+  return (
+    <section className="space-y-3 w-full">
+      <h3 className="text-lg font-semibold">{t("title")}</h3>
+      <Card>
+        <CardContent className="space-y-2 p-4">
+          <p className="text-sm font-medium">{t("demoTitle")}</p>
+          <p className="text-sm text-muted-foreground">{t("demoDescription")}</p>
+          <Button render={<Link href="/login?from=demo" />} className="h-11 md:h-8">
+            {t("demoAction")}
+          </Button>
+        </CardContent>
+      </Card>
+    </section>
+  );
+}
+
+function FormalDataManagement() {
   const t = useTranslations("dataManagement");
   const locale = useLocale();
   const [isImporting, setIsImporting] = useState(false);

@@ -10,6 +10,7 @@ const db = vi.hoisted(() => ({
   snapshotCurrencies: [] as { baseCurrency: string }[],
   priceCurrencies: [] as { currency: string }[],
   exchangeRates: [] as { fromCurrency: string; toCurrency: string; rate: number }[],
+  cacheTags: [] as string[],
 }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -17,17 +18,31 @@ vi.mock("@/lib/prisma", () => ({
     goal: { findMany: vi.fn(async () => db.goals) },
     netWorthSnapshot: { findMany: vi.fn(async () => db.snapshotCurrencies) },
     priceCache: { findMany: vi.fn(async () => db.priceCurrencies) },
-    exchangeRate: { findMany: vi.fn(async () => db.exchangeRates) },
+    exchangeRate: {
+      findMany: vi.fn(async () => db.exchangeRates),
+      aggregate: vi.fn(async () => ({ _max: { updatedAt: null } })),
+    },
+    $executeRawUnsafe: vi.fn(async () => 1),
   },
 }));
-vi.mock("next/cache", () => ({ cacheTag: () => {}, cacheLife: () => {} }));
+vi.mock("next/cache", () => ({
+  cacheTag: (tag: string) => db.cacheTags.push(tag),
+  cacheLife: () => {},
+}));
 const logSpies = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
 vi.mock("@/lib/logger", () => ({
   log: logSpies,
-  withTiming: <T>(_name: string, fn: () => T) => fn(),
+  withTiming: async <T>(name: string, fn: () => Promise<T>, meta?: Record<string, unknown>) => {
+    try {
+      return await fn();
+    } catch (error) {
+      logSpies.error(name, { ...meta, error: String(error) });
+      throw error;
+    }
+  },
 }));
 
-const { resolveRate, fetchExchangeRates, getUnresolvedRatePairs } =
+const { resolveRate, fetchExchangeRates, getUnresolvedRatePairs, refreshExchangeRates } =
   await import("@/lib/services/exchange-rate-service");
 
 describe("resolveRate", () => {
@@ -88,6 +103,7 @@ describe("getUnresolvedRatePairs", () => {
     db.snapshotCurrencies = [];
     db.priceCurrencies = [];
     db.exchangeRates = [];
+    db.cacheTags = [];
   });
 
   it("reports currencies that cannot resolve to base", async () => {
@@ -122,6 +138,7 @@ describe("getUnresolvedRatePairs", () => {
     db.snapshotCurrencies = [{ baseCurrency: "AUD" }];
 
     await expect(getUnresolvedRatePairs("user-1", "USD")).resolves.toEqual(["AUD→USD", "GBP→USD"]);
+    expect(db.cacheTags).toEqual(expect.arrayContaining(["goals:user-1", "history:user-1"]));
   });
 });
 
@@ -207,5 +224,55 @@ describe("fetchExchangeRates", () => {
       "rates.fetch.failed",
       expect.objectContaining({ base: "USD" }),
     );
+  });
+
+  it("redacts the base and raw Frankfurter fallback error for Demo market work", async () => {
+    globalThis.fetch = vi.fn(async (input: string | URL | Request) => {
+      if (String(input).includes("frankfurter")) {
+        throw new Error("private USD SENTINEL_FX");
+      }
+      return new Response(JSON.stringify({ result: "success", rates: { EUR: 0.9, USD: 1 } }), {
+        status: 200,
+      });
+    }) as typeof fetch;
+
+    await fetchExchangeRates("USD", { redactIdentifiers: true });
+
+    const logged = JSON.stringify([
+      ...logSpies.info.mock.calls,
+      ...logSpies.warn.mock.calls,
+      ...logSpies.error.mock.calls,
+    ]);
+    expect(logged).not.toContain("USD");
+    expect(logged).not.toContain("SENTINEL_FX");
+    expect(logged).not.toContain("private");
+  });
+
+  it("redacts raw total-provider failures including timing logs", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockRejectedValue(new Error("private USD SENTINEL_FX_TOTAL")) as typeof fetch;
+
+    await expect(fetchExchangeRates("USD", { redactIdentifiers: true })).resolves.toEqual({});
+
+    const logged = JSON.stringify(logSpies.error.mock.calls);
+    expect(logged).not.toContain("USD");
+    expect(logged).not.toContain("SENTINEL_FX_TOTAL");
+    expect(logged).not.toContain("private");
+  });
+
+  it("redacts the currency from successful provider and skipped-fresh logs", async () => {
+    globalThis.fetch = vi.fn(
+      async () => new Response(JSON.stringify({ rates: { EUR: 0.9 } }), { status: 200 }),
+    ) as typeof fetch;
+
+    await fetchExchangeRates("USD", { redactIdentifiers: true });
+    await refreshExchangeRates("USD", { force: true });
+    logSpies.info.mockClear();
+    await refreshExchangeRates("USD", { redactIdentifiers: true });
+
+    const logged = JSON.stringify(logSpies.info.mock.calls);
+    expect(logged).not.toContain("USD");
+    expect(logged).toContain("operation");
   });
 });

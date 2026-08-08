@@ -144,4 +144,5 @@ export const GET = withAuth(
 
     return ok({ transactions, nextCursor, hasMore });
   },
+  { demo: "allow" },
 );

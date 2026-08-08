@@ -9,6 +9,8 @@ const h = vi.hoisted(() => ({
       create: vi.fn(async () => ({ id: "setting1" })),
     },
   },
+  demoWorkspaceFindUnique: vi.fn(),
+  authAccountCreate: vi.fn(),
 }));
 
 vi.mock("@auth/prisma-adapter", () => ({
@@ -25,9 +27,12 @@ vi.mock("@/lib/prisma", () => ({
       create: vi.fn(async () => ({ id: "outside-setting" })),
     },
     authAccount: {
-      create: vi.fn(),
+      create: h.authAccountCreate,
       delete: vi.fn(),
       findUnique: vi.fn(),
+    },
+    demoWorkspace: {
+      findUnique: h.demoWorkspaceFindUnique,
     },
   },
 }));
@@ -51,5 +56,52 @@ describe("customPrismaAdapter.createUser", () => {
     expect(prisma.user.create).not.toHaveBeenCalled();
     expect(prisma.setting.create).not.toHaveBeenCalled();
     expect(user).toEqual({ id: "user1", email: "u@example.com" });
+  });
+});
+
+describe("customPrismaAdapter.linkAccount", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("never persists an OAuth account with a Demo user ID", async () => {
+    h.demoWorkspaceFindUnique.mockResolvedValue({ userId: "demo-user" });
+
+    await expect(
+      customPrismaAdapter.linkAccount?.({
+        userId: "demo-user",
+        type: "oidc",
+        provider: "google",
+        providerAccountId: "google-account",
+        access_token: "opaque-access-token",
+        token_type: "bearer",
+      }),
+    ).rejects.toThrow("auth: refusing to link an account to a Demo user");
+
+    expect(h.authAccountCreate).not.toHaveBeenCalled();
+  });
+
+  it("continues to persist OAuth accounts for formal users", async () => {
+    h.demoWorkspaceFindUnique.mockResolvedValue(null);
+    h.authAccountCreate.mockResolvedValue({
+      userId: "formal-user",
+      type: "oidc",
+      provider: "google",
+      providerAccountId: "google-account",
+    });
+    const account = {
+      userId: "formal-user",
+      type: "oidc",
+      provider: "google",
+      providerAccountId: "google-account",
+      access_token: "opaque-access-token",
+      token_type: "bearer",
+    };
+
+    await expect(customPrismaAdapter.linkAccount?.(account)).resolves.toMatchObject({
+      userId: "formal-user",
+      provider: "google",
+    });
+    expect(h.authAccountCreate).toHaveBeenCalledWith({ data: account });
   });
 });

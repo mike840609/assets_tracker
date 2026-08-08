@@ -1,6 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 import {
   beforeSend,
+  beforeSendSpan,
+  beforeSendTransaction,
   getSentryDist,
   getSentryEnvironment,
   getSentryRelease,
@@ -27,6 +29,9 @@ export async function register() {
         dist: getSentryDist(),
         initialScope: { tags: getSentryTags("nodejs") },
         beforeSend,
+        beforeSendTransaction,
+        beforeSendSpan,
+        traceLifecycle: "stream",
         enabled: true,
       });
     }
@@ -41,6 +46,9 @@ export async function register() {
       dist: getSentryDist(),
       initialScope: { tags: getSentryTags("edge") },
       beforeSend,
+      beforeSendTransaction,
+      beforeSendSpan,
+      traceLifecycle: "stream",
       enabled: true,
     });
   }

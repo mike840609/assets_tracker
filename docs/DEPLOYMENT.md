@@ -87,6 +87,24 @@ A migration failure stops publication. `SKIP_PRISMA_MIGRATE_DEPLOY=1` is an emer
 
 Preview authentication requires `PREVIEW_AUTH_PASSWORD` when `VERCEL_ENV=preview`. `AUTH_REDIRECT_PROXY_URL` may be used for providers that require a stable callback URL.
 
+## Public Demo rollout and rollback
+
+The anonymous public Demo is disabled by default and must be enabled separately in each environment with `PUBLIC_DEMO_ENABLED=true`. Apply the `DemoWorkspace` migration before enabling it. Start in an isolated Preview database; do not enable the flag in Production until the Preview checklist below is complete. Internal Test Login remains governed only by the existing Preview authentication settings.
+
+Each workspace is isolated under its own temporary `User` and expires after 24 hours. Capacity is limited to 250 active workspaces globally and five per pseudonymous source. A workspace permits 30 mutations per minute, 250 lifetime mutations, three resets, and three market refreshes per ten minutes. Expired users are deleted in batches of 25, up to 250 users and a five-second cleanup budget per cron invocation. Size the database for the active cap plus up to 24 hours of deletion lag.
+
+Operational logs and dashboards may contain only low-cardinality lifecycle event names and aggregate durations/counts. Never log visitor cookies, source hashes, user or row IDs, symbols, tokens, or financial values. The source hash is purpose-separated and used only for abuse/capacity control; raw IP addresses are not stored by the Demo feature.
+
+Rollout checklist:
+
+- In Preview, run ten concurrent distinct visitor creates after one warm-up and confirm p95 is under five seconds.
+- Confirm create and reset make zero external calls and fixture persistence uses at most 15 statement groups.
+- Record database CPU utilization and application compute CPU utilization for representative formal cron runs over a 24-hour pre-enable baseline window, compare the same metrics over an equivalent post-enable window, and immediately set `PUBLIC_DEMO_ENABLED=false` and redeploy/restart if either exceeds the baseline by more than 10%.
+- Watch only low-cardinality created, resumed, reset, expired, deleted, limited, and failure counts.
+- Exercise the kill switch and verify formal authentication and Preview Internal Test Login still work.
+
+To roll back, set `PUBLIC_DEMO_ENABLED=false` first and redeploy/restart. This immediately hides the entry point, blocks active Demo sessions and APIs, and leaves formal authentication available. Keep the migration and cleanup job in place until all expired temporary users have been removed. Do not drop `DemoWorkspace` while temporary users remain: the relation is the authoritative cleanup boundary. Re-enable the flag to resume an unexpired visitor's existing workspace and original expiry.
+
 ## Scheduled snapshots
 
 Vercel reads `vercel.json` and calls `/api/cron/snapshot` daily at 21:30 UTC. The endpoint requires:

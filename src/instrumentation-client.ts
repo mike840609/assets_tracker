@@ -1,6 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 import {
   beforeSend,
+  beforeSendSpan,
+  beforeSendTransaction,
   getSentryDist,
   getSentryEnvironment,
   getSentryRelease,
@@ -23,6 +25,10 @@ if (dsn) {
     dist: getSentryDist(),
     initialScope: { tags: getSentryTags("browser") },
     beforeSend,
+    beforeSendTransaction,
+    beforeSendSpan,
+    traceLifecycle: "stream",
+    integrations: [Sentry.spanStreamingIntegration()],
     enabled: true,
   });
 }

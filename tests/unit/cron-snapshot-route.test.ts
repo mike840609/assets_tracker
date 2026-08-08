@@ -2,9 +2,19 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 const h = vi.hoisted(() => ({
   events: [] as string[],
-  expiredOptions: [] as Array<{ id: string; quantity: number; expiration?: Date }>,
+  expiredOptions: [] as Array<{
+    id: string;
+    quantity: number;
+    expiration?: Date;
+    isDemo?: boolean;
+  }>,
   optionSweepGuardFails: false,
-  users: [{ id: "user1", appSettings: { baseCurrency: "USD" } }],
+  users: [{ id: "user1", appSettings: { baseCurrency: "USD" } }] as Array<{
+    id: string;
+    appSettings: { baseCurrency: string };
+    isDemo?: boolean;
+  }>,
+  cleanupFailure: null as Error | null,
   snapshotFailures: new Set<string>(),
   /** #641 — how many times the global FX map was loaded across the whole run. */
   rateMapLoads: 0,
@@ -70,6 +80,14 @@ vi.mock("@/lib/services/recurring-investment-service", () => ({
   materializeDueInvestments: vi.fn(async () => ({ created: 0, rulesProcessed: 0 })),
 }));
 
+vi.mock("@/lib/demo/demo-service", () => ({
+  cleanupExpiredDemoUsers: vi.fn(async () => {
+    h.events.push("cleanup:started");
+    if (h.cleanupFailure) throw h.cleanupFailure;
+    return { deleted: 2, budgetExhausted: false };
+  }),
+}));
+
 vi.mock("@/lib/services/snapshot-service", () => ({
   createSnapshot: vi.fn(async (userId: string, _baseCurrency: string, opts?: unknown) => {
     h.events.push(`snapshot:${userId}`);
@@ -95,6 +113,7 @@ vi.mock("@/lib/prisma", () => {
             assetType?: string;
             expiration?: { lt: Date };
             quantity?: { gt: number };
+            account?: { user?: { demoWorkspace?: null } };
           };
         }) => {
           if (args?.where?.assetType !== "OPTION") return h.expiredOptions;
@@ -102,6 +121,7 @@ vi.mock("@/lib/prisma", () => {
           const cutoff = args.where.expiration?.lt;
           return h.expiredOptions.filter(
             (holding) =>
+              (args.where?.account?.user?.demoWorkspace !== null || !holding.isDemo) &&
               holding.quantity > (args.where?.quantity?.gt ?? 0) &&
               (!holding.expiration || !cutoff || holding.expiration < cutoff),
           );
@@ -128,13 +148,22 @@ vi.mock("@/lib/prisma", () => {
       findMany: vi.fn(async () => []),
     },
     user: {
-      findMany: vi.fn(async (args?: { take?: number; cursor?: { id: string }; skip?: number }) => {
-        const cursorIndex = args?.cursor
-          ? h.users.findIndex((user) => user.id === args.cursor?.id)
-          : -1;
-        const start = cursorIndex < 0 ? 0 : cursorIndex + (args?.skip ?? 0);
-        return h.users.slice(start, args?.take ? start + args.take : undefined);
-      }),
+      findMany: vi.fn(
+        async (args?: {
+          where?: { demoWorkspace?: null };
+          take?: number;
+          cursor?: { id: string };
+          skip?: number;
+        }) => {
+          const users =
+            args?.where?.demoWorkspace === null ? h.users.filter((user) => !user.isDemo) : h.users;
+          const cursorIndex = args?.cursor
+            ? users.findIndex((user) => user.id === args.cursor?.id)
+            : -1;
+          const start = cursorIndex < 0 ? 0 : cursorIndex + (args?.skip ?? 0);
+          return users.slice(start, args?.take ? start + args.take : undefined);
+        },
+      ),
     },
     $transaction: vi.fn(async (work: unknown) => {
       if (Array.isArray(work)) return Promise.all(work);
@@ -151,6 +180,7 @@ describe("snapshot cron route", () => {
     h.expiredOptions = [];
     h.optionSweepGuardFails = false;
     h.users = [{ id: "user1", appSettings: { baseCurrency: "USD" } }];
+    h.cleanupFailure = null;
     h.snapshotFailures = new Set();
     h.rateMapLoads = 0;
     h.inputLoads = [];
@@ -160,6 +190,82 @@ describe("snapshot cron route", () => {
     h.priceRefreshResult = { updated: 0, changed: 0, outcome: "success", errors: [] };
     h.snapshotTimeJumpUser = null;
     h.snapshotTimeJumpMs = 0;
+  });
+
+  it("keeps Demo rows out of every global discovery query and cleans up first", async () => {
+    h.users = [
+      { id: "formal-user", appSettings: { baseCurrency: "USD" } },
+      { id: "demo-user", appSettings: { baseCurrency: "TWD" }, isDemo: true },
+    ];
+    h.expiredOptions = [
+      { id: "formal-option", quantity: 1, isDemo: false },
+      { id: "demo-option", quantity: 1, isDemo: true },
+    ];
+    const { GET } = await import("@/app/api/cron/snapshot/route");
+    const { prisma } = await import("@/lib/prisma");
+    const { cleanupExpiredDemoUsers } = await import("@/lib/demo/demo-service");
+
+    const response = await GET(
+      new Request("http://unit.test/api/cron/snapshot", {
+        headers: { authorization: "Bearer test-secret" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(cleanupExpiredDemoUsers).toHaveBeenCalledWith({
+      now: expect.any(Date),
+      batchSize: 25,
+      maxUsers: 250,
+      budgetMs: 5_000,
+    });
+    expect(h.events.indexOf("cleanup:started")).toBeLessThan(h.events.indexOf("options:queried"));
+    expect(vi.mocked(prisma.holding.findMany)).toHaveBeenCalledWith({
+      where: {
+        assetType: "OPTION",
+        expiration: { lt: expect.any(Date) },
+        quantity: { gt: 0 },
+        account: { user: { demoWorkspace: null } },
+      },
+    });
+    expect(vi.mocked(prisma.account.findMany)).toHaveBeenCalledWith({
+      where: { user: { demoWorkspace: null } },
+      select: { currency: true },
+      distinct: ["currency"],
+    });
+    expect(vi.mocked(prisma.holding.findMany)).toHaveBeenCalledWith({
+      where: { account: { user: { demoWorkspace: null } } },
+      select: { currency: true },
+      distinct: ["currency"],
+    });
+    expect(vi.mocked(prisma.setting.findMany)).toHaveBeenCalledWith({
+      where: { user: { demoWorkspace: null } },
+      select: { baseCurrency: true },
+      distinct: ["baseCurrency"],
+    });
+    expect(vi.mocked(prisma.user.findMany)).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { demoWorkspace: null } }),
+    );
+    expect(h.events).toContain("snapshot:formal-user");
+    expect(h.events).not.toContain("snapshot:demo-user");
+    expect(h.events).not.toContain("option:demo-option:zeroed");
+  });
+
+  it("continues formal snapshots when bounded Demo cleanup fails with private metadata", async () => {
+    h.cleanupFailure = new TypeError("visitor abc workspace demo-user");
+    const { GET } = await import("@/app/api/cron/snapshot/route");
+    const { log } = await import("@/lib/logger");
+
+    const response = await GET(
+      new Request("http://unit.test/api/cron/snapshot", {
+        headers: { authorization: "Bearer test-secret" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(h.events).toContain("snapshot:user1");
+    expect(log.warn).toHaveBeenCalledWith("cron.public_demo.cleanup_failed", {
+      errorType: "TypeError",
+    });
   });
 
   it("invalidates net worth before snapshot creation when options expire", async () => {
@@ -587,6 +693,7 @@ describe("snapshot cron route", () => {
           assetType: "OPTION",
           expiration: { lt: businessDay },
           quantity: { gt: 0 },
+          account: { user: { demoWorkspace: null } },
         },
       });
       expect(vi.mocked(prisma.holding.updateMany)).toHaveBeenCalledTimes(1);
@@ -641,6 +748,7 @@ describe("snapshot cron route", () => {
           assetType: "OPTION",
           expiration: { lt: businessDay },
           quantity: { gt: 0 },
+          account: { user: { demoWorkspace: null } },
         },
       });
       expect(vi.mocked(materializeDueRecurringTransactions)).toHaveBeenCalledWith(businessDay);

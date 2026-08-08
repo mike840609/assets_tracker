@@ -4,7 +4,7 @@ async function ensureSignedIn(page: Page) {
   await page.goto("/stocks");
   if (!page.url().includes("/login")) return;
 
-  const previewLoginButton = page.getByRole("button", { name: "Preview Login" });
+  const previewLoginButton = page.getByRole("button", { name: "Internal Test Login" });
   await previewLoginButton.waitFor({ timeout: 30_000 });
   const passwordInput = page.locator('input[name="password"]');
   if (await passwordInput.count()) {
@@ -91,7 +91,16 @@ test.describe("stock tracker", () => {
     await page.getByRole("option", { name: /AAPL/i }).click();
     await page.getByLabel("Record date").fill("2026-06-01");
     await page.getByLabel("Note").fill("E2E stock tracker note");
-    await page.getByRole("button", { name: "Save stock" }).click();
+    const [createResponse] = await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === "/api/stocks" &&
+          response.request().method() === "POST",
+      ),
+      page.getByRole("button", { name: "Save stock" }).click(),
+    ]);
+    expect(createResponse.ok()).toBe(true);
+    await expect(page.getByRole("dialog")).not.toBeVisible();
 
     await expect(async () => {
       await page.reload();

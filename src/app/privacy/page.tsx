@@ -31,6 +31,7 @@ async function PrivacyContent() {
       body: t("section8Body"),
       link: { href: "mailto:support@astt.app", label: "support@astt.app" },
     },
+    { title: t("section9Title"), body: t("section9Body") },
   ];
 
   return (
@@ -95,7 +96,7 @@ export default function PrivacyPage() {
               <div className="h-8 w-48 rounded bg-muted" />
               <div className="h-4 w-56 rounded bg-muted" />
             </div>
-            {[...Array(8)].map((_, i) => (
+            {[...Array(9)].map((_, i) => (
               <div key={i} className="space-y-2">
                 <div className="h-4 w-32 rounded bg-muted" />
                 <div className="h-12 w-full rounded bg-muted" />

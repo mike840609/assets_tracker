@@ -13,6 +13,16 @@ Assets Tracker is a Next.js App Router application backed by PostgreSQL through 
 
 Authentication uses NextAuth.js with JWT sessions. Non-Vercel deployments may use a built-in single-owner password, Google OAuth, or both; Vercel production remains Google-only. `src/auth.config.ts` stays runtime-safe while `src/auth.ts` contains server-only adapter and credentials-provider configuration.
 
+## Public Demo boundary
+
+An anonymous public Demo workspace is a normal data-owning `User` with exactly one `DemoWorkspace` relation. The relation stores purpose-separated visitor/source hashes, the authoritative expiry, and quota counters. Cascading deletion of the temporary user removes every owned row; formal users have no `DemoWorkspace` relation, and formal sign-in replaces the Demo session without moving any data.
+
+The signed JWT carries enough Demo state for the proxy to reject disabled or visibly expired sessions quickly. That claim is only a fast-path hint: every server render, action, and API authorization resolves the user against PostgreSQL and checks the authoritative `DemoWorkspace.expiresAt`. Missing, expired, foreign, or formal rows cannot be recovered by a client-supplied ID.
+
+Creation and reset instantiate the checked-in offline sample into fresh IDs, then persist each model with bulk inserts in one transaction. Fallback prices and exchange rates are part of that fixture path, so creation/reset do not call external market providers. Demo cache invalidation is always scoped by user tag; global tags remain reserved for formal shared data.
+
+Every formal cron phase anti-joins `User.demoWorkspace` (including price, exchange-rate, recurring, snapshot, goal, calendar, and watchlist work). The cron may delete expired Demo users in bounded batches, but it must never materialize rules or refresh market data for an active Demo.
+
 ## Database adapters
 
 `src/lib/prisma.ts` selects the adapter from `DATABASE_URL`:

@@ -1,5 +1,5 @@
 import { ok } from "@/lib/api-responses";
-import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
+import { rateLimitCheckWithPrune, rateLimitKeyForClientIp } from "@/lib/rate-limit";
 import { getYahooClient } from "@/lib/services/yahoo-client";
 import { log } from "@/lib/logger";
 
@@ -32,7 +32,11 @@ const slim = (arr: any[] | undefined): ChainContract[] =>
   }));
 
 export async function GET(request: Request) {
-  const limited = rateLimitCheckWithPrune(request, { limit: 60, prefix: "options-chain" });
+  const limited = rateLimitCheckWithPrune(request, {
+    limit: 60,
+    prefix: "options-chain",
+    key: rateLimitKeyForClientIp(request, "options-chain"),
+  });
   if (limited) return limited;
 
   const { searchParams } = new URL(request.url);
@@ -42,6 +46,7 @@ export async function GET(request: Request) {
 
   // Optional: fetch chain for a specific expiration (lazy-loading from the UI)
   const dateParam = searchParams.get("date"); // YYYY-MM-DD
+  const startedAt = Date.now();
 
   try {
     const yf = await getYahooClient();
@@ -68,7 +73,12 @@ export async function GET(request: Request) {
             chains[dateParam] = { calls: slim(block.calls), puts: slim(block.puts) };
           }
         } catch (err) {
-          log.error("options.chain.date.failed", { symbol, date: dateParam, error: String(err) });
+          log.error("options.chain.date.failed", {
+            operation: "option-chain-expiration",
+            errorType: err instanceof Error ? err.name : "unknown",
+            expirationCount: expirations.length,
+            durationMs: Date.now() - startedAt,
+          });
         }
       }
     } else {
@@ -91,7 +101,11 @@ export async function GET(request: Request) {
       },
     );
   } catch (error) {
-    log.error("options.chain.failed", { symbol, error: String(error) });
+    log.error("options.chain.failed", {
+      operation: "option-chain",
+      errorType: error instanceof Error ? error.name : "unknown",
+      durationMs: Date.now() - startedAt,
+    });
     return ok({ ...EMPTY, underlying: symbol });
   }
 }

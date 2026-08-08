@@ -193,4 +193,21 @@ describe("account pages use the cached quote currency", () => {
     expect(html).toContain("$123");
     expect(html).not.toContain("$50,000");
   });
+
+  it("shows the paused Demo explanation while keeping recurring rule actions available", async () => {
+    const { AccountDetail } = await import("@/components/accounts/account-detail");
+
+    const html = renderToStaticMarkup(
+      React.createElement(AccountDetail, {
+        account,
+        priceMap: quotedInEuros,
+        ratesMap: euroToUsd,
+        isDemo: true,
+      }),
+    );
+
+    expect(html).toContain("demoPausedTitle");
+    expect(html).toContain("demoPausedDescription");
+    expect(html.match(/>add</g)).toHaveLength(2);
+  });
 });

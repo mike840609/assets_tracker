@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { ok, failure } from "@/lib/api-responses";
-import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
+import { rateLimitCheckWithPrune, rateLimitKeyForClientIp } from "@/lib/rate-limit";
 import { getYahooClient, getYahooErrorStatus } from "@/lib/services/yahoo-client";
 import { log } from "@/lib/logger";
 
@@ -121,7 +121,11 @@ const cachedYahooSearch = unstable_cache(
 );
 
 export async function GET(request: Request) {
-  const limited = rateLimitCheckWithPrune(request, { limit: 60, prefix: "search" });
+  const limited = rateLimitCheckWithPrune(request, {
+    limit: 60,
+    prefix: "search",
+    key: rateLimitKeyForClientIp(request, "search"),
+  });
   if (limited) return limited;
 
   const { searchParams } = new URL(request.url);
@@ -134,6 +138,7 @@ export async function GET(request: Request) {
     return ok([] as SearchResult[]);
   }
 
+  const startedAt = Date.now();
   try {
     const results = await cachedYahooSearch(query);
     return ok(results, {
@@ -149,13 +154,22 @@ export async function GET(request: Request) {
       // or a transient upstream rate-limit (429). Keep it out of Sentry —
       // log.warn is breadcrumb-only — and return empty results so the UI shows
       // "no matches" rather than an error. Not cached: a 429 is transient.
-      log.warn("search.yahoo_4xx", { query, status, error: String(error) });
+      log.warn("search.yahoo_4xx", {
+        operation: "search",
+        status,
+        errorType: error instanceof Error ? error.name : "unknown",
+        durationMs: Date.now() - startedAt,
+      });
       return ok([] as SearchResult[]);
     }
     // Genuine upstream failure (5xx / network / timeout): distinct from an
     // empty 200 so the client can show "search unavailable" instead of a
     // misleading "no results". Captured so real outages stay visible.
-    log.error("search.failed", { query, error: String(error) });
+    log.error("search.failed", {
+      operation: "search",
+      errorType: error instanceof Error ? error.name : "unknown",
+      durationMs: Date.now() - startedAt,
+    });
     return failure("Search is temporarily unavailable. Please try again.", 502);
   }
 }

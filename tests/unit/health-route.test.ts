@@ -10,7 +10,10 @@ const h = vi.hoisted(() => ({
   assetExistenceError: false,
 }));
 
-vi.mock("@/lib/rate-limit", () => ({ rateLimitCheckWithPrune: vi.fn(() => null) }));
+vi.mock("@/lib/rate-limit", () => ({
+  rateLimitCheckWithPrune: vi.fn(() => null),
+  rateLimitKeyForClientIp: vi.fn(() => "hmac:health"),
+}));
 vi.mock("@/lib/logger", () => ({
   log: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));

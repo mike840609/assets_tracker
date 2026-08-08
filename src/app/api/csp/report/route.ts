@@ -1,11 +1,15 @@
 import { log } from "@/lib/logger";
-import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
+import { rateLimitCheckWithPrune, rateLimitKeyForClientIp } from "@/lib/rate-limit";
 
 const MAX_CSP_REPORT_BYTES = 64 * 1024;
 
 export async function POST(request: Request) {
   try {
-    const limited = rateLimitCheckWithPrune(request, { limit: 30, prefix: "csp-report" });
+    const limited = rateLimitCheckWithPrune(request, {
+      limit: 30,
+      prefix: "csp-report",
+      key: rateLimitKeyForClientIp(request, "csp-report"),
+    });
     if (limited) return limited;
 
     const declaredBytes = Number(request.headers.get("content-length") ?? 0);

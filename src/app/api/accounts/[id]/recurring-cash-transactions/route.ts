@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withAuth } from "@/lib/api-handler";
 import { ok, failure, validationError } from "@/lib/api-responses";
@@ -28,10 +29,11 @@ export const GET = withAuth(
     const rules = await listRecurringForAccount(id);
     return ok({ rules: rules.map(serializeRecurringCashTransaction) });
   },
+  { demo: "allow" },
 );
 
 export const POST = withAuth(
-  async (request, { params }: { params: Promise<{ id: string }> }, userId) => {
+  async (request, { params }: { params: Promise<{ id: string }> }, userId, principal) => {
     const { id } = await params;
     const body = await request.json();
     const parsed = createRecurringCashTransactionSchema.safeParse(body);
@@ -58,29 +60,35 @@ export const POST = withAuth(
       },
     });
 
-    // A rule starting today (or backdated) posts immediately instead of
-    // sitting inert until the nightly cron. Idempotent: the
+    // For formal users, a rule starting today (or backdated) schedules a post
+    // instead of sitting inert until the nightly cron. Idempotent: the
     // (recurringId, occurrenceDate) unique index makes a cron double-run safe.
     // Failure falls back to the cron — rule creation never fails for this.
-    let created = rule;
-    if (rule.nextRunDate.getTime() <= taiwanCalendarDay(new Date()).getTime()) {
-      try {
-        const { created: posted } = await materializeDueRecurringTransactions(new Date(), rule.id);
-        if (posted > 0) {
-          revalidateTag(`accounts:${userId}`, { expire: 0 });
-          revalidateTag(`net-worth:${userId}`, { expire: 0 });
-          revalidateTag(`history:${userId}`, { expire: 0 });
+    if (
+      principal.kind === "formal" &&
+      rule.nextRunDate.getTime() <= taiwanCalendarDay(new Date()).getTime()
+    ) {
+      after(async () => {
+        try {
+          const { created: posted } = await materializeDueRecurringTransactions(
+            new Date(),
+            rule.id,
+          );
+          if (posted > 0) {
+            revalidateTag(`accounts:${userId}`, { expire: 0 });
+            revalidateTag(`net-worth:${userId}`, { expire: 0 });
+            revalidateTag(`history:${userId}`, { expire: 0 });
+          }
+        } catch (error) {
+          log.error("recurring.materialize_on_create_failed", {
+            ruleId: rule.id,
+            error: String(error),
+          });
         }
-        created =
-          (await prisma.recurringCashTransaction.findUnique({ where: { id: rule.id } })) ?? rule;
-      } catch (error) {
-        log.error("recurring.materialize_on_create_failed", {
-          ruleId: rule.id,
-          error: String(error),
-        });
-      }
+      });
     }
 
-    return ok(serializeRecurringCashTransaction(created), { status: 201 });
+    return ok(serializeRecurringCashTransaction(rule), { status: 201 });
   },
+  { demo: "allow" },
 );

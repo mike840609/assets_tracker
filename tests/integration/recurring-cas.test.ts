@@ -9,9 +9,9 @@ if (!DATABASE_URL) throw new Error("DATABASE_URL is required for recurring CAS i
 const parsedDatabaseUrl = new URL(DATABASE_URL);
 if (
   !["localhost", "127.0.0.1"].includes(parsedDatabaseUrl.hostname) ||
-  !parsedDatabaseUrl.pathname.endsWith("_issue660_test")
+  !parsedDatabaseUrl.pathname.endsWith("_asset_tracker_test")
 ) {
-  throw new Error("Recurring CAS integration tests require a local *_issue660_test database");
+  throw new Error("Integration tests require a local *_asset_tracker_test database");
 }
 
 type AfterRead = () => Promise<void>;
@@ -53,10 +53,20 @@ const NEW_UPDATED_AT = new Date("2026-06-01T02:00:00.000Z");
 const DUE_DATE = new Date("2026-06-10T00:00:00.000Z");
 const RUN_DATE = new Date("2026-06-14T00:00:00.000Z");
 
-async function createAccount() {
+async function createAccount(options: { demo?: boolean } = {}) {
   const user = await concurrentPrisma.user.create({
     data: { email: `issue660-${crypto.randomUUID()}@unit.test` },
   });
+  if (options.demo) {
+    await concurrentPrisma.demoWorkspace.create({
+      data: {
+        userId: user.id,
+        visitorHash: `visitor-${crypto.randomUUID()}`,
+        creatorHash: `creator-${crypto.randomUUID()}`,
+        expiresAt: new Date("2026-08-01T00:00:00.000Z"),
+      },
+    });
+  }
   return concurrentPrisma.account.create({
     data: {
       userId: user.id,
@@ -246,6 +256,44 @@ describe("recurring materializer CAS races", () => {
     expect(transactions).toHaveLength(0);
     expect(Number(persistedAccount.cashBalance)).toBe(10_000);
     expect(Number(persistedRule.amount)).toBe(2500);
+    expect(persistedRule.nextRunDate).toEqual(DUE_DATE);
+  });
+});
+
+describe("recurring materializer Demo isolation", () => {
+  it("cash: excludes an explicitly requested Demo rule at the database boundary", async () => {
+    const account = await createAccount({ demo: true });
+    const rule = await createCashRule(account.id);
+
+    const result = await materializeDueRecurringTransactions(RUN_DATE, rule.id);
+
+    const [persistedRule, persistedAccount, transactions] = await Promise.all([
+      concurrentPrisma.recurringCashTransaction.findUniqueOrThrow({ where: { id: rule.id } }),
+      concurrentPrisma.account.findUniqueOrThrow({ where: { id: account.id } }),
+      concurrentPrisma.cashTransaction.findMany({ where: { recurringId: rule.id } }),
+    ]);
+    expect(result).toEqual({ created: 0, rulesProcessed: 0 });
+    expect(transactions).toHaveLength(0);
+    expect(Number(persistedAccount.cashBalance)).toBe(10_000);
+    expect(persistedRule.nextRunDate).toEqual(DUE_DATE);
+  });
+
+  it("DCA: excludes an explicitly requested Demo rule at the database boundary", async () => {
+    const account = await createAccount({ demo: true });
+    const rule = await createInvestmentRule(account.id);
+
+    const result = await materializeDueInvestments(RUN_DATE, rule.id);
+
+    const [persistedRule, persistedAccount, holdings, transactions] = await Promise.all([
+      concurrentPrisma.recurringInvestment.findUniqueOrThrow({ where: { id: rule.id } }),
+      concurrentPrisma.account.findUniqueOrThrow({ where: { id: account.id } }),
+      concurrentPrisma.holding.findMany({ where: { accountId: account.id } }),
+      concurrentPrisma.holdingTransaction.findMany({ where: { recurringId: rule.id } }),
+    ]);
+    expect(result).toEqual({ created: 0, rulesProcessed: 0 });
+    expect(holdings).toHaveLength(0);
+    expect(transactions).toHaveLength(0);
+    expect(Number(persistedAccount.cashBalance)).toBe(10_000);
     expect(persistedRule.nextRunDate).toEqual(DUE_DATE);
   });
 });

@@ -18,6 +18,10 @@ const h = vi.hoisted(() => ({
     rulesProcessed: 1,
   })),
   revalidatedTags: [] as string[],
+  afterTasks: [] as Array<() => void | Promise<void>>,
+  principal: { kind: "formal" as const, userId: "user1" } as
+    | { kind: "formal"; userId: string }
+    | { kind: "demo"; userId: string; expiresAt: Date },
 }));
 
 vi.mock("next/cache", () => ({
@@ -41,9 +45,21 @@ vi.mock("@/lib/services/recurring-investment-service", async (importActual) => {
 
 vi.mock("@/lib/api-handler", () => ({
   withAuth:
-    (handler: (req: Request, ctx: unknown, userId: string) => Promise<Response>) =>
+    (
+      handler: (
+        req: Request,
+        ctx: unknown,
+        userId: string,
+        principal: typeof h.principal,
+      ) => Promise<Response>,
+    ) =>
     (req: Request, ctx: unknown) =>
-      handler(req, ctx, "user1"),
+      handler(req, ctx, "user1", h.principal),
+}));
+
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  after: vi.fn((task: () => void | Promise<void>) => h.afterTasks.push(task)),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -150,6 +166,8 @@ describe("recurring rule PATCH routes", () => {
     h.investmentUpdateManyAndReturnCalls = [];
     h.investmentUpdateManyAndReturnCount = 1;
     h.investmentFindUniqueOrThrowCalls = [];
+    h.afterTasks = [];
+    h.principal = { kind: "formal", userId: "user1" };
   });
 
   it("rejects a cash-rule end date before its persisted start date", async () => {
@@ -299,6 +317,8 @@ describe("recurring rule POST/PATCH materialization", () => {
     h.materializeInvestment.mockClear();
     h.materializeInvestment.mockResolvedValue({ created: 1, rulesProcessed: 1 });
     h.revalidatedTags = [];
+    h.afterTasks = [];
+    h.principal = { kind: "formal", userId: "user1" };
   });
 
   const postRequest = (body: Record<string, unknown>) =>
@@ -309,7 +329,7 @@ describe("recurring rule POST/PATCH materialization", () => {
     });
   const postParams = { params: Promise.resolve({ id: "acc1" }) };
 
-  it("POST materializes a due cash rule immediately", async () => {
+  it("POST schedules due cash materialization for formal users", async () => {
     const { POST } = await import("@/app/api/accounts/[id]/recurring-cash-transactions/route");
 
     const response = await POST(
@@ -318,6 +338,9 @@ describe("recurring rule POST/PATCH materialization", () => {
     );
 
     expect(response.status).toBe(201);
+    expect(h.materializeCash).not.toHaveBeenCalled();
+    expect(h.afterTasks).toHaveLength(1);
+    await h.afterTasks[0]();
     expect(h.materializeCash).toHaveBeenCalledTimes(1);
     expect(h.materializeCash.mock.calls[0][1]).toBe("cash-new");
     expect(h.revalidatedTags).toEqual(
@@ -335,6 +358,7 @@ describe("recurring rule POST/PATCH materialization", () => {
 
     expect(response.status).toBe(201);
     expect(h.materializeCash).not.toHaveBeenCalled();
+    expect(h.afterTasks).toHaveLength(0);
   });
 
   it("POST still succeeds when materialization throws", async () => {
@@ -349,7 +373,7 @@ describe("recurring rule POST/PATCH materialization", () => {
     expect(response.status).toBe(201);
   });
 
-  it("POST materializes a due investment rule and revalidates prices", async () => {
+  it("POST schedules due investment materialization for formal users", async () => {
     const { POST } = await import("@/app/api/accounts/[id]/recurring-investments/route");
 
     const response = await POST(
@@ -366,12 +390,15 @@ describe("recurring rule POST/PATCH materialization", () => {
     );
 
     expect(response.status).toBe(201);
+    expect(h.materializeInvestment).not.toHaveBeenCalled();
+    expect(h.afterTasks).toHaveLength(1);
+    await h.afterTasks[0]();
     expect(h.materializeInvestment).toHaveBeenCalledTimes(1);
     expect(h.materializeInvestment.mock.calls[0][1]).toBe("investment-new");
     expect(h.revalidatedTags).toEqual(expect.arrayContaining(["prices"]));
   });
 
-  it("PATCH materializes a cash rule that became due (reactivation)", async () => {
+  it("PATCH schedules a cash rule that became due for formal users", async () => {
     h.cashRule = recurringCashRule({
       isActive: false,
       startDate: date("2026-07-01"),
@@ -384,7 +411,94 @@ describe("recurring rule POST/PATCH materialization", () => {
     const response = await PATCH(jsonRequest({ isActive: true }), params("cash-rule-1"));
 
     expect(response.status).toBe(200);
+    expect(h.materializeCash).not.toHaveBeenCalled();
+    expect(h.afterTasks).toHaveLength(1);
+    await h.afterTasks[0]();
     expect(h.materializeCash).toHaveBeenCalledTimes(1);
     expect(h.materializeCash.mock.calls[0][1]).toBe("cash-rule-1");
+  });
+
+  it("PATCH schedules an investment rule that became due for formal users", async () => {
+    h.investmentRule = recurringInvestmentRule({
+      isActive: false,
+      startDate: date("2026-07-01"),
+      nextRunDate: date("2026-07-01"),
+      endDate: null,
+    });
+    const { PATCH } =
+      await import("@/app/api/accounts/[id]/recurring-investments/[recurringId]/route");
+
+    const response = await PATCH(jsonRequest({ isActive: true }), params("investment-rule-1"));
+
+    expect(response.status).toBe(200);
+    expect(h.materializeInvestment).not.toHaveBeenCalled();
+    expect(h.afterTasks).toHaveLength(1);
+    await h.afterTasks[0]();
+    expect(h.materializeInvestment).toHaveBeenCalledTimes(1);
+    expect(h.materializeInvestment.mock.calls[0][1]).toBe("investment-rule-1");
+  });
+
+  it("does not schedule due cash materialization after Demo create or update", async () => {
+    h.principal = {
+      kind: "demo",
+      userId: "user1",
+      expiresAt: new Date("2026-08-02T00:00:00.000Z"),
+    };
+    const { POST } = await import("@/app/api/accounts/[id]/recurring-cash-transactions/route");
+    const { PATCH } =
+      await import("@/app/api/accounts/[id]/recurring-cash-transactions/[recurringId]/route");
+
+    const created = await POST(
+      postRequest({ type: "DEPOSIT", amount: 100, frequency: "MONTHLY", startDate: "2026-07-01" }),
+      postParams,
+    );
+    h.cashRule = recurringCashRule({
+      isActive: false,
+      startDate: date("2026-07-01"),
+      nextRunDate: date("2026-07-01"),
+      endDate: null,
+    });
+    const updated = await PATCH(jsonRequest({ isActive: true }), params("cash-rule-1"));
+
+    expect(created.status).toBe(201);
+    expect(updated.status).toBe(200);
+    expect(h.afterTasks).toHaveLength(0);
+    expect(h.materializeCash).not.toHaveBeenCalled();
+  });
+
+  it("does not schedule due investment materialization after Demo create or update", async () => {
+    h.principal = {
+      kind: "demo",
+      userId: "user1",
+      expiresAt: new Date("2026-08-02T00:00:00.000Z"),
+    };
+    const { POST } = await import("@/app/api/accounts/[id]/recurring-investments/route");
+    const { PATCH } =
+      await import("@/app/api/accounts/[id]/recurring-investments/[recurringId]/route");
+
+    const created = await POST(
+      postRequest({
+        symbol: "VTI",
+        name: "Vanguard Total Stock Market ETF",
+        assetType: "ETF",
+        holdingCurrency: "USD",
+        amount: 100,
+        frequency: "MONTHLY",
+        startDate: "2026-07-01",
+      }),
+      postParams,
+    );
+    h.investmentRule = recurringInvestmentRule({
+      isActive: false,
+      startDate: date("2026-07-01"),
+      nextRunDate: date("2026-07-01"),
+      endDate: null,
+    });
+    const updated = await PATCH(jsonRequest({ isActive: true }), params("investment-rule-1"));
+
+    expect(created.status).toBe(201);
+    expect(updated.status).toBe(200);
+    expect(h.afterTasks).toHaveLength(0);
+    expect(h.materializeInvestment).not.toHaveBeenCalled();
   });
 });

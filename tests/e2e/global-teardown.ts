@@ -1,10 +1,35 @@
 import { chromium } from "@playwright/test";
 import path from "path";
 import fs from "fs";
+import pg from "pg";
 
 const authFile = path.join(__dirname, ".auth/user.json");
 
+async function cleanupPublicDemoUsers() {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) return;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(connectionString);
+  } catch {
+    return;
+  }
+  if (!["localhost", "127.0.0.1"].includes(parsed.hostname)) return;
+
+  const pool = new pg.Pool({ connectionString, max: 1 });
+  try {
+    await pool.query(`
+      DELETE FROM "User"
+      WHERE id IN (SELECT "userId" FROM "DemoWorkspace")
+    `);
+  } finally {
+    await pool.end();
+  }
+}
+
 async function globalTeardown() {
+  await cleanupPublicDemoUsers();
   if (!fs.existsSync(authFile)) return;
 
   const baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://localhost:3000";

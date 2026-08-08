@@ -1,13 +1,19 @@
 import NextAuth from "next-auth";
 import authConfig from "./auth.config";
 import { SESSION_COOKIE_NAMES } from "@/lib/auth-cookies";
-import { getClientIp } from "@/lib/rate-limit";
+import {
+  DEMO_LIFETIME_MS,
+  DEMO_VISITOR_COOKIE,
+  isValidDemoVisitorToken,
+} from "@/lib/demo/demo-policy";
+import { AUTH_SECRET, isPublicDemoEnabled } from "@/lib/env";
+import { getClientIp } from "@/lib/client-ip";
 import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
-const PUBLIC_ROUTES = ["/login", "/privacy", "/terms"];
+const PUBLIC_ROUTES = ["/login", "/privacy", "/terms", "/demo/expired"];
 
 function hasSessionCookie(req: NextRequest): boolean {
   return SESSION_COOKIE_NAMES.some((name) => req.cookies.has(name));
@@ -16,7 +22,35 @@ function hasSessionCookie(req: NextRequest): boolean {
 function nextResponse(req: NextRequest): NextResponse {
   const response = NextResponse.next();
   setLocaleCookie(req, response);
+  if (
+    isPublicDemoEnabled &&
+    (req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/demo/expired") &&
+    !isValidDemoVisitorToken(req.cookies.get(DEMO_VISITOR_COOKIE)?.value)
+  ) {
+    response.cookies.set(DEMO_VISITOR_COOKIE, randomVisitorToken(), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: DEMO_LIFETIME_MS / 1000,
+    });
+  }
   return response;
+}
+
+function randomVisitorToken(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
+}
+
+function signedDemoIsUnavailable(
+  user: { isDemo?: boolean; demoExpiresAt?: string | null } | undefined,
+): boolean {
+  if (user?.isDemo !== true) return false;
+  const expiresAt = user.demoExpiresAt;
+  const expiryMs = expiresAt ? Date.parse(expiresAt) : Number.NaN;
+  return !isPublicDemoEnabled || !Number.isFinite(expiryMs) || Date.now() >= expiryMs;
 }
 
 // Bot/scanner probes observed in production logs and in the wild. These used to
@@ -79,16 +113,34 @@ function _authRLMaybePrune(now: number): void {
   }
 }
 
-function _authRateLimit(request: Request): Response | null {
-  const ip = getClientIp(request);
+async function _authRateLimitKey(request: Request): Promise<string> {
+  const signingKey = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(AUTH_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    signingKey,
+    new TextEncoder().encode(`asset-tracker/auth-rate-limit/v1\u0000${getClientIp(request)}`),
+  );
+  return Array.from(new Uint8Array(signature), (value) => value.toString(16).padStart(2, "0")).join(
+    "",
+  );
+}
+
+async function _authRateLimit(request: Request): Promise<Response | null> {
+  const key = await _authRateLimitKey(request);
   const now = Date.now();
   _authRLMaybePrune(now);
   const windowMs = 60_000;
   const limit = 20;
-  const entry = _authRLStore.get(ip);
+  const entry = _authRLStore.get(key);
 
   if (!entry || now >= entry.resetAt) {
-    _authRLStore.set(ip, { count: 1, resetAt: now + windowMs });
+    _authRLStore.set(key, { count: 1, resetAt: now + windowMs });
     return null;
   }
   entry.count += 1;
@@ -124,15 +176,32 @@ function setLocaleCookie(req: NextRequest, response: NextResponse): void {
 const authMiddleware = auth((req) => {
   const isLoggedIn = !!req.auth;
   const isPublicRoute = PUBLIC_ROUTES.includes(req.nextUrl.pathname);
+  const isStaleSessionRecovery = req.nextUrl.searchParams.has("stale-session");
+  const fromValues = req.nextUrl.searchParams.getAll("from");
+  const isDemoFormalLoginHandoff =
+    req.auth?.user?.isDemo === true && fromValues.length === 1 && fromValues[0] === "demo";
+  const isDemoUnavailable = signedDemoIsUnavailable(req.auth?.user);
+
+  if (
+    isDemoUnavailable &&
+    req.nextUrl.pathname !== "/demo/expired" &&
+    !(req.nextUrl.pathname === "/login" && (isDemoFormalLoginHandoff || isStaleSessionRecovery))
+  ) {
+    return Response.redirect(new URL("/demo/expired", req.nextUrl.origin));
+  }
 
   if (!isLoggedIn && !isPublicRoute) {
     const newUrl = new URL("/login", req.nextUrl.origin);
     return Response.redirect(newUrl);
   }
 
-  const isStaleSessionRecovery = req.nextUrl.searchParams.has("stale-session");
-
-  if (isLoggedIn && req.nextUrl.pathname === "/login" && !isStaleSessionRecovery) {
+  if (
+    isLoggedIn &&
+    req.nextUrl.pathname === "/login" &&
+    !isDemoUnavailable &&
+    !isDemoFormalLoginHandoff &&
+    !isStaleSessionRecovery
+  ) {
     const newUrl = new URL("/", req.nextUrl.origin);
     return Response.redirect(newUrl);
   }
@@ -148,9 +217,7 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 
   // Rate-limit auth callbacks before any NextAuth processing.
   if (req.nextUrl.pathname.startsWith("/api/auth")) {
-    const limited = _authRateLimit(req);
-    if (limited) return limited;
-    return;
+    return _authRateLimit(req).then((limited) => limited ?? undefined);
   }
 
   // Bot probes get routing's own 404 rather than a /login redirect, and never
@@ -187,12 +254,12 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 //   - PWA assets sw.js + manifest.webmanifest: the browser fetches these without
 //     credentials, so they must resolve to 200 (not a /login redirect) or Chrome's
 //     installability check fails and the install prompt never appears.
-//   - Public login/legal pages, so they can render without NextAuth cookie work.
-//     The signed-in /login redirect lives in the login page itself.
+//   - Public legal pages, so they can render without NextAuth cookie work.
+//     Login and Demo expiry stay matched to pre-seed the visitor cookie.
 // Bot/scanner probes are NOT excluded here — they are filtered by `isBotProbe`
 // inside `middleware()` above, so every app path reaches the middleware (#639).
 export const config = {
   matcher: [
-    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|manifest\\.webmanifest|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|login|privacy|terms).*)",
+    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|manifest\\.webmanifest|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms).*)",
   ],
 };

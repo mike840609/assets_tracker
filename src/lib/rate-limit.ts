@@ -7,9 +7,15 @@
  * acceptable trade-off until Upstash / Vercel KV is wired in.
  *
  * Usage:
- *   const limited = rateLimitCheckWithPrune(request, { limit: 60, windowMs: 60_000 });
+ *   const key = rateLimitKeyForClientIp(request, "search");
+ *   const limited = rateLimitCheckWithPrune(request, { limit: 60, windowMs: 60_000, key });
  *   if (limited) return limited;          // 429 response
  */
+
+import { createHmac } from "node:crypto";
+import { getClientIp } from "@/lib/client-ip";
+
+export { getClientIp, getClientIpFromHeaders } from "@/lib/client-ip";
 
 interface RateLimitOptions {
   /** Maximum requests allowed within the window. */
@@ -19,10 +25,10 @@ interface RateLimitOptions {
   /** Identifier prefix to namespace the key in the shared store. */
   prefix?: string;
   /**
-   * Explicit identity to limit on (e.g. userId for authenticated routes).
-   * Falls back to the client IP when omitted.
+   * Opaque identity to limit on. Callers must use one of the HMAC helpers
+   * below; the module-level store must never retain raw IPs or user IDs.
    */
-  key?: string;
+  key: string;
 }
 
 interface WindowEntry {
@@ -33,24 +39,31 @@ interface WindowEntry {
 // Module-level store — shared across warm invocations on the same instance.
 const store = new Map<string, WindowEntry>();
 
-/** Extract the best available IP from the request headers. */
-export function getClientIp(request: Request): string {
-  const xff = request.headers.get("x-forwarded-for");
-  if (xff) {
-    const ip = xff
-      .split(",")
-      .map((part) => part.trim())
-      .findLast(Boolean);
-    if (ip) return ip;
-  }
+const RATE_LIMIT_TEST_SECRET = "asset-tracker-rate-limit-test-secret";
 
-  const cfIp = request.headers.get("cf-connecting-ip")?.trim();
-  if (cfIp) return cfIp;
+function getRateLimitSecret(): string {
+  if (process.env.AUTH_SECRET) return process.env.AUTH_SECRET;
+  if (process.env.NODE_ENV === "test") return RATE_LIMIT_TEST_SECRET;
+  throw new Error("AUTH_SECRET is required to create rate-limit identity keys");
+}
 
-  const realIp = request.headers.get("x-real-ip")?.trim();
-  if (realIp) return realIp;
+/**
+ * Derive a non-reversible key for module-memory rate limiting. The purpose is
+ * included in the HMAC input so a subject cannot be correlated across route
+ * families by inspecting warm-instance Map keys.
+ */
+export function rateLimitKeyForIdentity(identity: string, purpose: string): string {
+  return createHmac("sha256", getRateLimitSecret())
+    .update(`asset-tracker/rate-limit/${purpose}/v1\u0000${identity}`)
+    .digest("base64url");
+}
 
-  return "unknown";
+export function rateLimitKeyForClientIp(request: Request, purpose: string): string {
+  return rateLimitKeyForIdentity(getClientIp(request), `ip/${purpose}`);
+}
+
+export function rateLimitKeyForSubject(subject: string, purpose: string): string {
+  return rateLimitKeyForIdentity(subject, `subject/${purpose}`);
 }
 
 /**
@@ -60,8 +73,8 @@ export function getClientIp(request: Request): string {
  */
 function rateLimitCheck(request: Request, options: RateLimitOptions): Response | null {
   const { limit, windowMs = 60_000, prefix = "rl" } = options;
-  const id = options.key ?? getClientIp(request);
-  const key = `${prefix}:${id}`;
+  if (!options.key) throw new Error("Rate limiter requires an explicit key");
+  const key = `${prefix}:${options.key}`;
   const now = Date.now();
 
   const entry = store.get(key);
@@ -112,4 +125,9 @@ export function rateLimitCheckWithPrune(
 ): Response | null {
   maybePrune();
   return rateLimitCheck(request, options);
+}
+
+/** Test-only inspection that proves raw request identity values never enter the store. */
+export function __getRateLimitStoreKeysForTest(): string[] {
+  return [...store.keys()];
 }

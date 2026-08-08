@@ -30,6 +30,8 @@ jobs:
       PREVIEW_AUTH_ENABLED: "true"
       PREVIEW_AUTH_PASSWORD: e2e-smoke-test
       E2E_PASSWORD: e2e-smoke-test
+      PUBLIC_DEMO_ENABLED: "true"
+      E2E_PUBLIC_DEMO: "1"
       PLAYWRIGHT_TEST_BASE_URL: http://127.0.0.1:3000
       # Deterministic offline Yahoo stub (see src/lib/services/yahoo-client.ts):
       # Yahoo 429s GitHub runner IPs unpredictably, which made server-side quote
@@ -106,8 +108,19 @@ jobs:
           cat /tmp/e2e-server.log
           exit 1
 
-      - name: Run E2E tests
-        run: pnpm test:e2e
+      - name: Run authenticated E2E tests
+        run: >-
+          pnpm playwright test
+          --project=chromium
+          --project="Mobile Chrome"
+
+      - name: Run public Demo E2E tests without retained artifacts
+        env:
+          E2E_PUBLIC_DEMO_NO_ARTIFACTS: "1"
+        run: >-
+          pnpm playwright test
+          --project="Public Demo Desktop"
+          --project="Public Demo Mobile zh-TW"
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4

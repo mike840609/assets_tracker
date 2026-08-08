@@ -224,6 +224,13 @@
       "yourData": "Your data",
       "yourDataDescription": "Assets Tracker does not connect to your bank or brokerage accounts. Financial records are the entries you add here."
     },
+    "demo": {
+      "temporarySessionTitle": "This Demo is temporary",
+      "temporarySessionDescription": "Demo data is temporary and will expire automatically. Sign in to keep your own data.",
+      "exit": "Exit Demo",
+      "signIn": "Sign in",
+      "backupRequiresAccount": "Backups are available after you sign in to an account."
+    },
     "signOut": "Sign Out",
     "signOutDesc": "Securely log out of your account on this device.",
     "dangerZone": "Danger Zone",
@@ -1142,6 +1149,9 @@
   },
   "dataManagement": {
     "title": "Restore from backup",
+    "demoTitle": "Backups are unavailable in the Demo",
+    "demoDescription": "Demo data is temporary. Sign in to import, export, or restore your own data.",
+    "demoAction": "Sign in to manage data",
     "export": "Export Data",
     "exportDescription": "Download all your accounts, holdings, and transaction history as a JSON file.",
     "import": "Import backup",
@@ -1204,12 +1214,70 @@
     "googleButton": "Continue with Google",
     "selfHostPasswordPlaceholder": "Self-host password",
     "selfHostButton": "Sign in",
+    "internalTestDivider": "Internal Test Login",
+    "internalTestButton": "Internal Test Login",
+    "internalTestPasswordPlaceholder": "Internal test password",
     "or": "or",
     "trust1": "Authentication stays under your deployment's control",
     "trust2": "Your data is private & never sold",
     "trust3": "Only you can see your portfolio",
     "footerBefore": "Your data stays private. Read our",
     "footerLink": "Privacy Policy"
+  },
+  "demo": {
+    "login": {
+      "button": "Try the Demo without signing in",
+      "restartButton": "Start a new Demo",
+      "description": "Create an isolated sample workspace that lasts 24 hours. No personal information required.",
+      "preparing": "Preparing sample data…",
+      "errors": {
+        "DEMO_RESTRICTED": "That action is not available in the Demo.",
+        "DEMO_QUOTA_EXHAUSTED": "This Demo has reached its activity limit.",
+        "DEMO_EXPIRED": "This Demo has expired. Start a new one to continue.",
+        "DEMO_RATE_LIMITED": "Too many Demo requests. Please wait and try again.",
+        "DEMO_SOURCE_LIMIT": "Too many active Demos were started from this network. Please try again later.",
+        "DEMO_AT_CAPACITY": "The Demo is currently at capacity. Please try again later.",
+        "DEMO_DISABLED": "The Demo is temporarily unavailable.",
+        "DEMO_INITIALIZATION_FAILED": "The Demo could not be prepared. Please try again.",
+        "DEMO_RESET_FAILED": "The Demo could not be reset. Please try again."
+      }
+    },
+    "banner": {
+      "title": "Demo mode",
+      "loading": "Loading Demo time…",
+      "expiry": "Expires {expiry}",
+      "remaining": "{duration} remaining",
+      "actions": {
+        "reset": "Reset data",
+        "signIn": "Sign in",
+        "exit": "Exit Demo"
+      },
+      "announcements": {
+        "oneHour": "One hour remains in this Demo.",
+        "tenMinutes": "Ten minutes remain in this Demo.",
+        "expired": "This Demo has expired."
+      }
+    },
+    "reset": {
+      "title": "Reset Demo data?",
+      "description": "This replaces the sample data in this Demo. Your approved Demo expiry time will not change.",
+      "cancel": "Keep current data",
+      "confirm": "Reset Demo",
+      "resetting": "Resetting…",
+      "success": "Demo data has been reset."
+    },
+    "expired": {
+      "title": "Your temporary Demo data has expired",
+      "description": "Demo workspaces are private, temporary sample data and automatically expire.",
+      "disabled": "The public Demo is temporarily unavailable.",
+      "signIn": "Sign in to your account",
+      "privacy": "Privacy Policy"
+    },
+    "apiErrors": {
+      "DEMO_RATE_LIMITED": "Too many Demo requests. Please wait and try again.",
+      "DEMO_QUOTA_EXHAUSTED": "This Demo has reached its activity limit.",
+      "DEMO_RESTRICTED": "That action is not available in the Demo."
+    }
   },
   "privacy": {
     "title": "Privacy Policy",
@@ -1231,7 +1299,9 @@
     "section7Body": "We use Vercel Analytics and Speed Insights to understand basic usage and page performance. These tools do not include your manually entered account names, holdings, balances, or transaction notes.",
     "section8Title": "Contact",
     "section8Body": "For privacy or data requests, email us at",
-    "lastUpdated": "Last updated: April 2026"
+    "section9Title": "Public Demo data",
+    "section9Body": "The public Demo uses the essential HttpOnly asset-tracker-demo-visitor cookie to resume your temporary workspace. A purpose-separated pseudonymous source hash is used only for abuse and capacity control; this feature does not store raw IP addresses. Demo access expires after 24 hours, and its synthetic data is targeted for physical deletion within the following 24 hours. Outages may delay physical deletion, but access remains blocked after expiry. Changes made in the Demo never transfer to a formal account.",
+    "lastUpdated": "Last updated: August 2026"
   },
   "terms": {
     "title": "Terms of Service",
@@ -1387,7 +1457,9 @@
   },
   "recurring": {
     "title": "Recurring",
-    "subtitle": "Scheduled buys and cash, posted automatically on each date"
+    "subtitle": "Scheduled buys and cash, posted automatically on each date",
+    "demoPausedTitle": "Automatic recurring execution is paused in the Demo",
+    "demoPausedDescription": "You can still add, edit, and explore recurring rules, but the Demo will not post them automatically."
   },
   "recurringCash": {
     "title": "Recurring",

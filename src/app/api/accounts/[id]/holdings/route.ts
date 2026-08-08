@@ -58,200 +58,220 @@ async function maybeWarmExchangeRate(currency: string) {
   }
 }
 
-export const GET = withAuth<IdCtx>(async (_request, { params }, userId) => {
-  const { id } = await params;
-  const account = await prisma.account.findUnique({ where: { id, userId } });
-  if (!account) return failure("Not found", 404);
+export const GET = withAuth<IdCtx>(
+  async (_request, { params }, userId) => {
+    const { id } = await params;
+    const account = await prisma.account.findUnique({ where: { id, userId } });
+    if (!account) return failure("Not found", 404);
 
-  const holdings = await prisma.holding.findMany({
-    where: { accountId: id, quantity: { gt: 0 } },
-    orderBy: { symbol: "asc" },
-  });
-  return ok(holdings);
-});
-
-export const POST = withAuth<IdCtx>(async (request, { params }, userId) => {
-  const { id } = await params;
-
-  const account = await prisma.account.findUnique({
-    where: { id, userId },
-    select: { id: true },
-  });
-  if (!account) return failure("Not found", 404);
-
-  const body = await request.json();
-  const parsed = createHoldingSchema.safeParse(body);
-  if (!parsed.success) return validationError(parsed.error);
-
-  // For OPTION holdings, derive metadata from the OCC symbol on the server
-  // — never trust client-supplied option fields.
-  let optionMetadata: {
-    underlyingSymbol: string;
-    optionType: "CALL" | "PUT";
-    strike: number;
-    expiration: Date;
-    contractMultiplier: 100;
-    currency: "USD";
-    name: string;
-  } | null = null;
-
-  if (parsed.data.assetType === "OPTION") {
-    try {
-      const p = parseOccSymbol(parsed.data.symbol);
-      optionMetadata = {
-        underlyingSymbol: p.underlying,
-        optionType: p.optionType,
-        strike: p.strike,
-        expiration: p.expiration,
-        contractMultiplier: p.contractMultiplier,
-        currency: "USD",
-        name: parsed.data.name?.trim() || formatOptionLabel(p),
-      };
-    } catch (err) {
-      const message = err instanceof OptionError ? err.message : "Invalid OCC option symbol";
-      return failure(message, 400);
-    }
-  }
-
-  // Atomic upsert: increment on the existing row avoids the read-modify-write
-  // race when two adds for the same symbol land concurrently, and the BUY log
-  // commits with the holding so the audit trail can't diverge.
-  const holding = await prisma.$transaction(async (tx) => {
-    const { unitPrice: _unitPrice, ...holdingData } = parsed.data;
-    const upserted = await tx.holding.upsert({
-      where: { accountId_symbol: { accountId: id, symbol: parsed.data.symbol } },
-      update: { quantity: { increment: parsed.data.quantity } },
-      create: optionMetadata
-        ? {
-            accountId: id,
-            symbol: parsed.data.symbol,
-            name: optionMetadata.name,
-            quantity: parsed.data.quantity,
-            currency: optionMetadata.currency,
-            assetType: "OPTION",
-            underlyingSymbol: optionMetadata.underlyingSymbol,
-            optionType: optionMetadata.optionType,
-            strike: optionMetadata.strike,
-            expiration: optionMetadata.expiration,
-            contractMultiplier: optionMetadata.contractMultiplier,
-          }
-        : { accountId: id, ...holdingData },
+    const holdings = await prisma.holding.findMany({
+      where: { accountId: id, quantity: { gt: 0 } },
+      orderBy: { symbol: "asc" },
     });
+    return ok(holdings);
+  },
+  { demo: "allow" },
+);
 
-    await tx.holdingTransaction.create({
-      data: {
-        holdingId: upserted.id,
-        type: "BUY",
-        quantity: parsed.data.quantity,
-        ...(parsed.data.unitPrice !== undefined && { unitPrice: parsed.data.unitPrice }),
-      },
+export const POST = withAuth<IdCtx>(
+  async (request, { params }, userId, principal) => {
+    const { id } = await params;
+
+    const account = await prisma.account.findUnique({
+      where: { id, userId },
+      select: { id: true },
     });
+    if (!account) return failure("Not found", 404);
 
-    return upserted;
-  });
+    const body = await request.json();
+    const parsed = createHoldingSchema.safeParse(body);
+    if (!parsed.success) return validationError(parsed.error);
 
-  after(() => warmPriceCacheFor(holding.symbol, holding.assetType));
+    // For OPTION holdings, derive metadata from the OCC symbol on the server
+    // — never trust client-supplied option fields.
+    let optionMetadata: {
+      underlyingSymbol: string;
+      optionType: "CALL" | "PUT";
+      strike: number;
+      expiration: Date;
+      contractMultiplier: 100;
+      currency: "USD";
+      name: string;
+    } | null = null;
 
-  invalidateUserCaches(userId);
-  if (holding.currency) after(() => maybeWarmExchangeRate(holding.currency));
-  return ok(holding, { status: 201 });
-});
-
-export const PATCH = withAuth<IdCtx>(async (request, _ctx, userId) => {
-  const body = await request.json();
-  const parsed = updateHoldingSchema.safeParse(body);
-  if (!parsed.success) return validationError(parsed.error);
-
-  const { id, ...data } = parsed.data;
-
-  const existing = await prisma.holding.findFirst({
-    where: { id, account: { userId } },
-  });
-  if (!existing) return failure("Not found", 404);
-
-  // The schema already bars assetType: "OPTION"; also bar converting an
-  // existing OPTION away — that would orphan the OCC fields and misprice the
-  // row (no contract multiplier applied). The UI never offers this.
-  if (data.assetType !== undefined && existing.assetType === "OPTION") {
-    return failure("Cannot change the asset type of an option holding", 400);
-  }
-
-  // Quantity 0 is only meaningful for options ("close the position" keeps the
-  // transaction history; DELETE would cascade it away). Non-option holdings
-  // must go through DELETE instead of leaving zombie zero-quantity rows.
-  if (data.quantity === 0 && existing.assetType !== "OPTION") {
-    return failure("Quantity must be positive", 400);
-  }
-
-  // A manual quantity edit logs the difference as an EDIT holding transaction.
-  // The diff must be measured against the quantity we actually write over, so
-  // the write is guarded on that prior quantity: if a concurrent mutation moved
-  // it between our read and the commit, we reject with 409 rather than letting
-  // the EDIT row desync from the stored quantity. Update and EDIT audit log
-  // commit together — a failed update must not leave a phantom EDIT behind.
-  const quantityChanging =
-    data.quantity !== undefined && !new Decimal(data.quantity).equals(existing.quantity);
-
-  let holding;
-  try {
-    holding = await prisma.$transaction(async (tx) => {
-      if (!quantityChanging) {
-        return tx.holding.update({ where: { id }, data });
+    if (parsed.data.assetType === "OPTION") {
+      try {
+        const p = parseOccSymbol(parsed.data.symbol);
+        optionMetadata = {
+          underlyingSymbol: p.underlying,
+          optionType: p.optionType,
+          strike: p.strike,
+          expiration: p.expiration,
+          contractMultiplier: p.contractMultiplier,
+          currency: "USD",
+          name: parsed.data.name?.trim() || formatOptionLabel(p),
+        };
+      } catch (err) {
+        const message = err instanceof OptionError ? err.message : "Invalid OCC option symbol";
+        return failure(message, 400);
       }
+    }
 
-      const diff = new Decimal(data.quantity!).minus(existing.quantity);
+    // Atomic upsert: increment on the existing row avoids the read-modify-write
+    // race when two adds for the same symbol land concurrently, and the BUY log
+    // commits with the holding so the audit trail can't diverge.
+    const holding = await prisma.$transaction(async (tx) => {
+      const { unitPrice: _unitPrice, ...holdingData } = parsed.data;
+      const upserted = await tx.holding.upsert({
+        where: { accountId_symbol: { accountId: id, symbol: parsed.data.symbol } },
+        update: { quantity: { increment: parsed.data.quantity } },
+        create: optionMetadata
+          ? {
+              accountId: id,
+              symbol: parsed.data.symbol,
+              name: optionMetadata.name,
+              quantity: parsed.data.quantity,
+              currency: optionMetadata.currency,
+              assetType: "OPTION",
+              underlyingSymbol: optionMetadata.underlyingSymbol,
+              optionType: optionMetadata.optionType,
+              strike: optionMetadata.strike,
+              expiration: optionMetadata.expiration,
+              contractMultiplier: optionMetadata.contractMultiplier,
+            }
+          : { accountId: id, ...holdingData },
+      });
+
       await tx.holdingTransaction.create({
         data: {
-          holdingId: id,
-          type: "EDIT",
-          quantity: diff,
-          note: `Quantity changed from ${existing.quantity} to ${data.quantity}`,
+          holdingId: upserted.id,
+          type: "BUY",
+          quantity: parsed.data.quantity,
+          ...(parsed.data.unitPrice !== undefined && { unitPrice: parsed.data.unitPrice }),
         },
       });
 
-      const result = await tx.holding.updateMany({
-        where: { id, quantity: existing.quantity },
-        data,
-      });
-      if (result.count !== 1) {
-        throw new StaleHoldingError();
-      }
-
-      return tx.holding.findUniqueOrThrow({ where: { id } });
+      return upserted;
     });
-  } catch (error) {
-    if (error instanceof StaleHoldingError) {
-      return failure("Holding changed while updating; please retry", 409);
+
+    if (principal.kind === "formal") {
+      after(() => warmPriceCacheFor(holding.symbol, holding.assetType));
     }
-    // Renaming the symbol onto one that already exists in the account violates
-    // the accountId_symbol unique index (P2002). Same 409 mapping as stocks POST.
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return failure("A holding with this symbol already exists in this account", 409);
+
+    invalidateUserCaches(userId);
+    if (holding.currency && principal.kind === "formal") {
+      after(() => maybeWarmExchangeRate(holding.currency));
     }
-    throw error;
-  }
+    return ok(holding, { status: 201 });
+  },
+  { demo: "allow" },
+);
 
-  invalidateUserCaches(userId);
-  // A renamed symbol may have no PriceCache row yet — warm it like POST does,
-  // or the holding renders unpriced until the next refresh/cron.
-  if (data.symbol !== undefined && data.symbol !== existing.symbol) {
-    after(() => warmPriceCacheFor(holding.symbol, holding.assetType));
-  }
-  return ok(holding);
-});
+export const PATCH = withAuth<IdCtx>(
+  async (request, _ctx, userId, principal) => {
+    const body = await request.json();
+    const parsed = updateHoldingSchema.safeParse(body);
+    if (!parsed.success) return validationError(parsed.error);
 
-export const DELETE = withAuth<IdCtx>(async (request, _ctx, userId) => {
-  const body = await request.json();
-  const parsed = deleteHoldingSchema.safeParse(body);
-  if (!parsed.success) return validationError(parsed.error);
+    const { id, ...data } = parsed.data;
 
-  // Ownership is folded into the write itself (deleteMany can filter on the
-  // account relation, delete cannot) — no check-then-write TOCTOU window.
-  const { count } = await prisma.holding.deleteMany({
-    where: { id: parsed.data.id, account: { userId } },
-  });
-  if (count === 0) return failure("Not found", 404);
+    const existing = await prisma.holding.findFirst({
+      where: { id, account: { userId } },
+    });
+    if (!existing) return failure("Not found", 404);
 
-  invalidateUserCaches(userId);
-  return ok({ ok: true });
-});
+    // The schema already bars assetType: "OPTION"; also bar converting an
+    // existing OPTION away — that would orphan the OCC fields and misprice the
+    // row (no contract multiplier applied). The UI never offers this.
+    if (data.assetType !== undefined && existing.assetType === "OPTION") {
+      return failure("Cannot change the asset type of an option holding", 400);
+    }
+
+    // Quantity 0 is only meaningful for options ("close the position" keeps the
+    // transaction history; DELETE would cascade it away). Non-option holdings
+    // must go through DELETE instead of leaving zombie zero-quantity rows.
+    if (data.quantity === 0 && existing.assetType !== "OPTION") {
+      return failure("Quantity must be positive", 400);
+    }
+
+    // A manual quantity edit logs the difference as an EDIT holding transaction.
+    // The diff must be measured against the quantity we actually write over, so
+    // the write is guarded on that prior quantity: if a concurrent mutation moved
+    // it between our read and the commit, we reject with 409 rather than letting
+    // the EDIT row desync from the stored quantity. Update and EDIT audit log
+    // commit together — a failed update must not leave a phantom EDIT behind.
+    const quantityChanging =
+      data.quantity !== undefined && !new Decimal(data.quantity).equals(existing.quantity);
+
+    let holding;
+    try {
+      holding = await prisma.$transaction(async (tx) => {
+        if (!quantityChanging) {
+          return tx.holding.update({ where: { id }, data });
+        }
+
+        const diff = new Decimal(data.quantity!).minus(existing.quantity);
+        await tx.holdingTransaction.create({
+          data: {
+            holdingId: id,
+            type: "EDIT",
+            quantity: diff,
+            note: `Quantity changed from ${existing.quantity} to ${data.quantity}`,
+          },
+        });
+
+        const result = await tx.holding.updateMany({
+          where: { id, quantity: existing.quantity },
+          data,
+        });
+        if (result.count !== 1) {
+          throw new StaleHoldingError();
+        }
+
+        return tx.holding.findUniqueOrThrow({ where: { id } });
+      });
+    } catch (error) {
+      if (error instanceof StaleHoldingError) {
+        return failure("Holding changed while updating; please retry", 409);
+      }
+      // Renaming the symbol onto one that already exists in the account violates
+      // the accountId_symbol unique index (P2002). Same 409 mapping as stocks POST.
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        return failure("A holding with this symbol already exists in this account", 409);
+      }
+      throw error;
+    }
+
+    invalidateUserCaches(userId);
+    // A renamed symbol may have no PriceCache row yet — warm it like POST does,
+    // or the holding renders unpriced until the next refresh/cron.
+    if (
+      principal.kind === "formal" &&
+      data.symbol !== undefined &&
+      data.symbol !== existing.symbol
+    ) {
+      after(() => warmPriceCacheFor(holding.symbol, holding.assetType));
+    }
+    return ok(holding);
+  },
+  { demo: "allow" },
+);
+
+export const DELETE = withAuth<IdCtx>(
+  async (request, _ctx, userId) => {
+    const body = await request.json();
+    const parsed = deleteHoldingSchema.safeParse(body);
+    if (!parsed.success) return validationError(parsed.error);
+
+    // Ownership is folded into the write itself (deleteMany can filter on the
+    // account relation, delete cannot) — no check-then-write TOCTOU window.
+    const { count } = await prisma.holding.deleteMany({
+      where: { id: parsed.data.id, account: { userId } },
+    });
+    if (count === 0) return failure("Not found", 404);
+
+    invalidateUserCaches(userId);
+    return ok({ ok: true });
+  },
+  { demo: "allow" },
+);

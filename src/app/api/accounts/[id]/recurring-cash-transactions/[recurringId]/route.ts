@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withAuth } from "@/lib/api-handler";
 import { ok, failure, validationError } from "@/lib/api-responses";
@@ -17,7 +18,12 @@ function toUtcDate(dateOnly: string): Date {
 }
 
 export const PATCH = withAuth(
-  async (request, { params }: { params: Promise<{ id: string; recurringId: string }> }, userId) => {
+  async (
+    request,
+    { params }: { params: Promise<{ id: string; recurringId: string }> },
+    userId,
+    principal,
+  ) => {
     const { id, recurringId } = await params;
     const body = await request.json();
     const parsed = updateRecurringCashTransactionSchema.safeParse(body);
@@ -73,29 +79,36 @@ export const PATCH = withAuth(
     }
 
     // An update can make the rule due right now (reactivation, startDate set
-    // to today) — post immediately rather than waiting for the nightly cron.
-    // Same idempotency/failure story as the POST route.
-    let updated = rule;
-    if (rule.isActive && rule.nextRunDate.getTime() <= taiwanCalendarDay(new Date()).getTime()) {
-      try {
-        const { created: posted } = await materializeDueRecurringTransactions(new Date(), rule.id);
-        if (posted > 0) {
-          revalidateTag(`accounts:${userId}`, { expire: 0 });
-          revalidateTag(`net-worth:${userId}`, { expire: 0 });
-          revalidateTag(`history:${userId}`, { expire: 0 });
+    // to today). Formal users schedule that post rather than waiting for the
+    // nightly cron; Demo leaves it to the later formal-only materializer.
+    if (
+      principal.kind === "formal" &&
+      rule.isActive &&
+      rule.nextRunDate.getTime() <= taiwanCalendarDay(new Date()).getTime()
+    ) {
+      after(async () => {
+        try {
+          const { created: posted } = await materializeDueRecurringTransactions(
+            new Date(),
+            rule.id,
+          );
+          if (posted > 0) {
+            revalidateTag(`accounts:${userId}`, { expire: 0 });
+            revalidateTag(`net-worth:${userId}`, { expire: 0 });
+            revalidateTag(`history:${userId}`, { expire: 0 });
+          }
+        } catch (error) {
+          log.error("recurring.materialize_on_update_failed", {
+            ruleId: rule.id,
+            error: String(error),
+          });
         }
-        updated =
-          (await prisma.recurringCashTransaction.findUnique({ where: { id: rule.id } })) ?? rule;
-      } catch (error) {
-        log.error("recurring.materialize_on_update_failed", {
-          ruleId: rule.id,
-          error: String(error),
-        });
-      }
+      });
     }
 
-    return ok(serializeRecurringCashTransaction(updated));
+    return ok(serializeRecurringCashTransaction(rule));
   },
+  { demo: "allow" },
 );
 
 export const DELETE = withAuth(
@@ -114,4 +127,5 @@ export const DELETE = withAuth(
 
     return ok({ success: true });
   },
+  { demo: "allow" },
 );

@@ -224,6 +224,13 @@
       "yourData": "您的資料",
       "yourDataDescription": "資產追蹤器不會連接您的銀行或券商帳戶。財務紀錄是您在此新增的資料。"
     },
+    "demo": {
+      "temporarySessionTitle": "此 Demo 為暫存體驗",
+      "temporarySessionDescription": "Demo 資料為暫存資料，將自動到期。登入後即可保存您自己的資料。",
+      "exit": "離開 Demo",
+      "signIn": "登入",
+      "backupRequiresAccount": "登入帳戶後才能使用備份功能。"
+    },
     "signOut": "登出",
     "signOutDesc": "安全地登出此裝置上的帳戶。",
     "dangerZone": "危險區域",
@@ -1142,6 +1149,9 @@
   },
   "dataManagement": {
     "title": "從備份還原",
+    "demoTitle": "Demo 無法使用備份功能",
+    "demoDescription": "Demo 資料為暫存資料。請登入以匯入、匯出或還原您自己的資料。",
+    "demoAction": "登入以管理資料",
     "export": "匯出資料",
     "exportDescription": "將您的所有帳戶、持倉和交易紀錄下載為 JSON 檔案。",
     "import": "匯入備份",
@@ -1204,12 +1214,70 @@
     "googleButton": "使用 Google 帳號繼續",
     "selfHostPasswordPlaceholder": "自行部署密碼",
     "selfHostButton": "登入",
+    "internalTestDivider": "內部測試登入",
+    "internalTestButton": "內部測試登入",
+    "internalTestPasswordPlaceholder": "內部測試密碼",
     "or": "或",
     "trust1": "登入驗證由您的部署環境掌控",
     "trust2": "您的資料私密保存，絕不出售",
     "trust3": "只有您能查看自己的投資組合",
     "footerBefore": "您的資料受到保護。閱讀我們的",
     "footerLink": "隱私政策"
+  },
+  "demo": {
+    "login": {
+      "button": "免登入體驗 Demo",
+      "restartButton": "開始新的 Demo",
+      "description": "建立你的獨立範例空間，保留 24 小時，不需要提供個人資料。",
+      "preparing": "正在準備範例資料…",
+      "errors": {
+        "DEMO_RESTRICTED": "Demo 不提供這項操作。",
+        "DEMO_QUOTA_EXHAUSTED": "這個 Demo 已達操作次數上限。",
+        "DEMO_EXPIRED": "這個 Demo 已過期，請開始新的 Demo。",
+        "DEMO_RATE_LIMITED": "Demo 請求過於頻繁，請稍候再試。",
+        "DEMO_SOURCE_LIMIT": "此網路已建立過多進行中的 Demo，請稍後再試。",
+        "DEMO_AT_CAPACITY": "Demo 目前已滿載，請稍後再試。",
+        "DEMO_DISABLED": "Demo 暫時無法使用。",
+        "DEMO_INITIALIZATION_FAILED": "無法準備 Demo，請再試一次。",
+        "DEMO_RESET_FAILED": "無法重設 Demo，請再試一次。"
+      }
+    },
+    "banner": {
+      "title": "Demo 模式",
+      "loading": "正在載入 Demo 時間…",
+      "expiry": "到期時間：{expiry}",
+      "remaining": "剩餘 {duration}",
+      "actions": {
+        "reset": "重設資料",
+        "signIn": "登入",
+        "exit": "離開 Demo"
+      },
+      "announcements": {
+        "oneHour": "此 Demo 還剩一小時。",
+        "tenMinutes": "此 Demo 還剩十分鐘。",
+        "expired": "此 Demo 已過期。"
+      }
+    },
+    "reset": {
+      "title": "要重設 Demo 資料嗎？",
+      "description": "這會以新的範例資料取代目前 Demo 的資料，但不會變更已核准的 Demo 到期時間。",
+      "cancel": "保留目前資料",
+      "confirm": "重設 Demo",
+      "resetting": "正在重設…",
+      "success": "Demo 資料已重設。"
+    },
+    "expired": {
+      "title": "您的暫存 Demo 資料已過期",
+      "description": "Demo 工作區使用私密的暫存範例資料，並會自動到期。",
+      "disabled": "公開 Demo 暫時無法使用。",
+      "signIn": "登入您的帳號",
+      "privacy": "隱私政策"
+    },
+    "apiErrors": {
+      "DEMO_RATE_LIMITED": "Demo 請求過於頻繁，請稍候再試。",
+      "DEMO_QUOTA_EXHAUSTED": "這個 Demo 已達操作次數上限。",
+      "DEMO_RESTRICTED": "Demo 不提供這項操作。"
+    }
   },
   "privacy": {
     "title": "隱私政策",
@@ -1231,7 +1299,9 @@
     "section7Body": "我們使用 Vercel Analytics 和 Speed Insights 了解基本使用情況與頁面效能。這些工具不包含您手動輸入的帳戶名稱、持倉、餘額或交易備註。",
     "section8Title": "聯絡方式",
     "section8Body": "如有隱私或資料請求，請寄信至",
-    "lastUpdated": "最後更新：2026 年 4 月"
+    "section9Title": "公開 Demo 資料",
+    "section9Body": "公開 Demo 使用必要的 HttpOnly asset-tracker-demo-visitor Cookie，讓您返回暫時工作區。系統僅為防止濫用及容量控制，另外產生用途分離的假名化來源雜湊；此功能不儲存原始 IP 位址。Demo 存取權會在 24 小時後到期，並以到期後 24 小時內實體刪除合成資料為目標。服務中斷可能延遲實體刪除，但到期後仍會封鎖存取。Demo 中的變更絕不會移轉至正式帳號。",
+    "lastUpdated": "最後更新：2026 年 8 月"
   },
   "terms": {
     "title": "服務條款",
@@ -1387,7 +1457,9 @@
   },
   "recurring": {
     "title": "週期性",
-    "subtitle": "於每個排定日期自動買入與入帳"
+    "subtitle": "於每個排定日期自動買入與入帳",
+    "demoPausedTitle": "Demo 已暫停自動執行週期性規則",
+    "demoPausedDescription": "您仍可以編輯週期性規則來探索功能，但暫存 Demo 期間系統不會自動執行它們。"
   },
   "recurringCash": {
     "title": "週期性交易",

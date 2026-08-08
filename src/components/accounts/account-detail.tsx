@@ -52,10 +52,12 @@ export function AccountDetail({
   account,
   priceMap,
   ratesMap = {},
+  isDemo = false,
 }: {
   account: SerializedAccountWithHoldings;
   priceMap: AccountPriceMap;
   ratesMap?: Record<string, number>;
+  isDemo?: boolean;
 }) {
   const router = useRouter();
   const t = useTranslations();
@@ -552,6 +554,7 @@ export function AccountDetail({
           currency={account.currency}
           isBank={isBank}
           accountType={account.type}
+          isDemo={isDemo}
           refreshTrigger={refreshTrigger}
           onChange={() => setRefreshTrigger((prev) => prev + 1)}
         />

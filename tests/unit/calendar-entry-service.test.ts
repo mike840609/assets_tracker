@@ -100,10 +100,20 @@ describe("calendar entry service", () => {
     );
   });
 
-  it("invalidates global and user-scoped tags immediately", () => {
-    invalidateCalendarEntryCaches("user_1");
+  it("invalidates global and user-scoped tags immediately for formal users", () => {
+    invalidateCalendarEntryCaches("user_1", { kind: "formal", userId: "user_1" });
     expect(h.revalidateTag).toHaveBeenNthCalledWith(1, "calendar-entries", { expire: 0 });
     expect(h.revalidateTag).toHaveBeenNthCalledWith(2, "calendar-entries:user_1", { expire: 0 });
+  });
+
+  it("invalidates only the user-scoped tag for Demo", () => {
+    invalidateCalendarEntryCaches("user_1", {
+      kind: "demo",
+      userId: "user_1",
+      expiresAt: new Date("2026-08-02T00:00:00.000Z"),
+    });
+    expect(h.revalidateTag).toHaveBeenCalledOnce();
+    expect(h.revalidateTag).toHaveBeenCalledWith("calendar-entries:user_1", { expire: 0 });
   });
 
   it("rejects a reversed range or a range longer than 42 inclusive days", async () => {

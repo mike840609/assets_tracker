@@ -64,272 +64,279 @@ async function applyHoldingQuantityDelta(
   }
 }
 
-export const PATCH = withAuth<TxCtx>(async (request, { params }, userId) => {
-  const { id: accountId, transactionId } = await params;
+export const PATCH = withAuth<TxCtx>(
+  async (request, { params }, userId) => {
+    const { id: accountId, transactionId } = await params;
 
-  const account = await prisma.account.findUnique({
-    where: { id: accountId, userId },
-    select: { id: true },
-  });
-  if (!account) return failure("Not found", 404);
-
-  const body = await request.json();
-
-  // Determine if it's a HoldingTransaction or CashTransaction
-  const holdingTx = await prisma.holdingTransaction.findUnique({
-    where: { id: transactionId },
-    include: { holding: true },
-  });
-
-  if (holdingTx) {
-    if (holdingTx.holding.accountId !== accountId) {
-      return failure("Transaction not found", 404);
-    }
-
-    const parsed = updateTransactionSchema.safeParse(body);
-    if (!parsed.success) return validationError(parsed.error);
-
-    const { id: _txId, ...data } = parsed.data;
-
-    const nextType = data.type ?? holdingTx.type;
-    const nextQuantity = normalizeHoldingTransactionQuantity({
-      type: nextType,
-      quantity: data.quantity ?? Number(holdingTx.quantity),
+    const account = await prisma.account.findUnique({
+      where: { id: accountId, userId },
+      select: { id: true },
     });
-    // Re-check on the merged (existing + patch) values — the schema can only
-    // validate per-type rules when both fields are present in the payload.
-    const quantityError = getHoldingTransactionQuantityError({
-      type: nextType,
-      quantity: nextQuantity,
+    if (!account) return failure("Not found", 404);
+
+    const body = await request.json();
+
+    // Determine if it's a HoldingTransaction or CashTransaction
+    const holdingTx = await prisma.holdingTransaction.findUnique({
+      where: { id: transactionId },
+      include: { holding: true },
     });
-    if (quantityError) return failure(quantityError, 400);
-    const holdingDelta = calculateHoldingQuantityDelta(
-      { type: holdingTx.type, quantity: Number(holdingTx.quantity) },
-      { type: nextType, quantity: nextQuantity },
-    );
 
-    let updatedTx;
-    try {
-      updatedTx = await prisma.$transaction(async (tx) => {
-        const result = await tx.holdingTransaction.updateMany({
-          where: {
-            id: transactionId,
-            type: holdingTx.type,
-            quantity: holdingTx.quantity,
-          },
-          data: {
-            ...(data.quantity !== undefined && { quantity: nextQuantity }),
-            ...(data.type !== undefined && { type: data.type }),
-            ...(data.note !== undefined && { note: data.note }),
-            ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
-          },
-        });
-        if (result.count !== 1) {
-          throw new StaleHoldingTransactionError();
-        }
+    if (holdingTx) {
+      if (holdingTx.holding.accountId !== accountId) {
+        return failure("Transaction not found", 404);
+      }
 
-        await applyHoldingQuantityDelta(tx, holdingTx.holding.id, holdingDelta);
+      const parsed = updateTransactionSchema.safeParse(body);
+      if (!parsed.success) return validationError(parsed.error);
 
-        return tx.holdingTransaction.findUniqueOrThrow({
-          where: { id: transactionId },
-        });
+      const { id: _txId, ...data } = parsed.data;
+
+      const nextType = data.type ?? holdingTx.type;
+      const nextQuantity = normalizeHoldingTransactionQuantity({
+        type: nextType,
+        quantity: data.quantity ?? Number(holdingTx.quantity),
       });
-    } catch (error) {
-      if (error instanceof NegativeHoldingQuantityError) {
-        return failure("Holding quantity cannot be negative", 400);
-      }
-      if (error instanceof StaleHoldingTransactionError) {
-        return failure("Transaction changed while updating; please retry", 409);
-      }
-      throw error;
-    }
+      // Re-check on the merged (existing + patch) values — the schema can only
+      // validate per-type rules when both fields are present in the payload.
+      const quantityError = getHoldingTransactionQuantityError({
+        type: nextType,
+        quantity: nextQuantity,
+      });
+      if (quantityError) return failure(quantityError, 400);
+      const holdingDelta = calculateHoldingQuantityDelta(
+        { type: holdingTx.type, quantity: Number(holdingTx.quantity) },
+        { type: nextType, quantity: nextQuantity },
+      );
 
-    invalidateAccountCaches(userId);
-    return ok(updatedTx);
-  }
+      let updatedTx;
+      try {
+        updatedTx = await prisma.$transaction(async (tx) => {
+          const result = await tx.holdingTransaction.updateMany({
+            where: {
+              id: transactionId,
+              type: holdingTx.type,
+              quantity: holdingTx.quantity,
+            },
+            data: {
+              ...(data.quantity !== undefined && { quantity: nextQuantity }),
+              ...(data.type !== undefined && { type: data.type }),
+              ...(data.note !== undefined && { note: data.note }),
+              ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
+            },
+          });
+          if (result.count !== 1) {
+            throw new StaleHoldingTransactionError();
+          }
 
-  const cashTx = await prisma.cashTransaction.findUnique({
-    where: { id: transactionId },
-    include: { account: true },
-  });
+          await applyHoldingQuantityDelta(tx, holdingTx.holding.id, holdingDelta);
 
-  if (cashTx) {
-    if (cashTx.accountId !== accountId) {
-      return failure("Transaction not found", 404);
-    }
-
-    // Since UI might send `quantity` for amount, let's map it if `amount` is missing.
-    if (body.quantity !== undefined && body.amount === undefined) {
-      body.amount = body.quantity;
-    }
-
-    const parsed = updateCashTransactionSchema.safeParse(body);
-    if (!parsed.success) return validationError(parsed.error);
-
-    const { id: _txId, ...data } = parsed.data;
-    const nextCashTx = {
-      type: data.type ?? cashTx.type,
-      amount: data.amount ?? Number(cashTx.amount),
-    };
-    const amountError = getCashTransactionAmountError(nextCashTx);
-    if (amountError) return failure(amountError, 400);
-
-    // Balance adjustment and transaction update commit atomically so a
-    // failure can't leave the cash balance out of sync with the ledger. The
-    // row write is guarded on the values the delta was measured against (the
-    // same optimistic-lock contract as the holding path), so two concurrent
-    // edits can't each apply their own balance delta on top of a row only one
-    // of them actually wrote.
-    let updatedTx;
-    try {
-      updatedTx = await prisma.$transaction(async (tx) => {
-        const result = await tx.cashTransaction.updateMany({
-          where: {
-            id: transactionId,
-            type: cashTx.type,
-            amount: cashTx.amount,
-          },
-          data: {
-            ...(data.amount !== undefined && { amount: data.amount }),
-            ...(data.type !== undefined && { type: data.type }),
-            ...(data.note !== undefined && { note: data.note }),
-            ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
-            // `null` clears the backdate so analysis falls back to createdAt.
-            ...(data.occurrenceDate !== undefined && {
-              occurrenceDate: data.occurrenceDate === null ? null : toUtcDate(data.occurrenceDate),
-            }),
-          },
+          return tx.holdingTransaction.findUniqueOrThrow({
+            where: { id: transactionId },
+          });
         });
-        if (result.count !== 1) {
-          throw new StaleCashTransactionError();
+      } catch (error) {
+        if (error instanceof NegativeHoldingQuantityError) {
+          return failure("Holding quantity cannot be negative", 400);
         }
+        if (error instanceof StaleHoldingTransactionError) {
+          return failure("Transaction changed while updating; please retry", 409);
+        }
+        throw error;
+      }
 
-        // Recompute balance delta whenever amount or type changes.
-        if (data.amount !== undefined || data.type !== undefined) {
-          const oldTx = { type: cashTx.type, amount: Number(cashTx.amount) };
-          const delta = calculateBalanceDelta(oldTx, nextCashTx);
+      invalidateAccountCaches(userId);
+      return ok(updatedTx);
+    }
+
+    const cashTx = await prisma.cashTransaction.findUnique({
+      where: { id: transactionId },
+      include: { account: true },
+    });
+
+    if (cashTx) {
+      if (cashTx.accountId !== accountId) {
+        return failure("Transaction not found", 404);
+      }
+
+      // Since UI might send `quantity` for amount, let's map it if `amount` is missing.
+      if (body.quantity !== undefined && body.amount === undefined) {
+        body.amount = body.quantity;
+      }
+
+      const parsed = updateCashTransactionSchema.safeParse(body);
+      if (!parsed.success) return validationError(parsed.error);
+
+      const { id: _txId, ...data } = parsed.data;
+      const nextCashTx = {
+        type: data.type ?? cashTx.type,
+        amount: data.amount ?? Number(cashTx.amount),
+      };
+      const amountError = getCashTransactionAmountError(nextCashTx);
+      if (amountError) return failure(amountError, 400);
+
+      // Balance adjustment and transaction update commit atomically so a
+      // failure can't leave the cash balance out of sync with the ledger. The
+      // row write is guarded on the values the delta was measured against (the
+      // same optimistic-lock contract as the holding path), so two concurrent
+      // edits can't each apply their own balance delta on top of a row only one
+      // of them actually wrote.
+      let updatedTx;
+      try {
+        updatedTx = await prisma.$transaction(async (tx) => {
+          const result = await tx.cashTransaction.updateMany({
+            where: {
+              id: transactionId,
+              type: cashTx.type,
+              amount: cashTx.amount,
+            },
+            data: {
+              ...(data.amount !== undefined && { amount: data.amount }),
+              ...(data.type !== undefined && { type: data.type }),
+              ...(data.note !== undefined && { note: data.note }),
+              ...(data.createdAt !== undefined && { createdAt: new Date(data.createdAt) }),
+              // `null` clears the backdate so analysis falls back to createdAt.
+              ...(data.occurrenceDate !== undefined && {
+                occurrenceDate:
+                  data.occurrenceDate === null ? null : toUtcDate(data.occurrenceDate),
+              }),
+            },
+          });
+          if (result.count !== 1) {
+            throw new StaleCashTransactionError();
+          }
+
+          // Recompute balance delta whenever amount or type changes.
+          if (data.amount !== undefined || data.type !== undefined) {
+            const oldTx = { type: cashTx.type, amount: Number(cashTx.amount) };
+            const delta = calculateBalanceDelta(oldTx, nextCashTx);
+            if (delta !== 0) {
+              await tx.account.update({
+                where: { id: accountId },
+                data: { cashBalance: { increment: toDbMoneyDelta(delta) } },
+              });
+            }
+          }
+
+          return tx.cashTransaction.findUniqueOrThrow({
+            where: { id: transactionId },
+          });
+        });
+      } catch (error) {
+        if (error instanceof StaleCashTransactionError) {
+          return failure("Transaction changed while updating; please retry", 409);
+        }
+        throw error;
+      }
+
+      invalidateAccountCaches(userId);
+      return ok(updatedTx);
+    }
+
+    return failure("Transaction not found", 404);
+  },
+  { demo: "allow" },
+);
+
+export const DELETE = withAuth<TxCtx>(
+  async (_request, { params }, userId) => {
+    const { id: accountId, transactionId } = await params;
+
+    const account = await prisma.account.findUnique({
+      where: { id: accountId, userId },
+      select: { id: true },
+    });
+    if (!account) return failure("Not found", 404);
+
+    const holdingTx = await prisma.holdingTransaction.findUnique({
+      where: { id: transactionId },
+      include: { holding: true },
+    });
+
+    if (holdingTx) {
+      if (holdingTx.holding.accountId !== accountId) {
+        return failure("Transaction not found", 404);
+      }
+
+      const holdingDelta = calculateHoldingQuantityDelta(
+        { type: holdingTx.type, quantity: Number(holdingTx.quantity) },
+        null,
+      );
+
+      try {
+        await prisma.$transaction(async (tx) => {
+          const result = await tx.holdingTransaction.deleteMany({
+            where: {
+              id: transactionId,
+              type: holdingTx.type,
+              quantity: holdingTx.quantity,
+            },
+          });
+          if (result.count !== 1) {
+            throw new StaleHoldingTransactionError();
+          }
+
+          await applyHoldingQuantityDelta(tx, holdingTx.holding.id, holdingDelta);
+        });
+      } catch (error) {
+        if (error instanceof NegativeHoldingQuantityError) {
+          return failure("Holding quantity cannot be negative", 400);
+        }
+        if (error instanceof StaleHoldingTransactionError) {
+          return failure("Transaction changed while deleting; please retry", 409);
+        }
+        throw error;
+      }
+
+      invalidateAccountCaches(userId);
+      return ok({ ok: true });
+    }
+
+    const cashTx = await prisma.cashTransaction.findUnique({
+      where: { id: transactionId },
+      include: { account: true },
+    });
+
+    if (cashTx) {
+      if (cashTx.accountId !== accountId) {
+        return failure("Transaction not found", 404);
+      }
+
+      // Guard the delete on the values the balance delta was measured against
+      // (same optimistic-lock contract as the cash PATCH / holding paths) so a
+      // DELETE racing an edit can't apply a stale balance delta against a row
+      // another request already changed.
+      try {
+        await prisma.$transaction(async (tx) => {
+          const result = await tx.cashTransaction.deleteMany({
+            where: { id: transactionId, type: cashTx.type, amount: cashTx.amount },
+          });
+          if (result.count !== 1) {
+            throw new StaleCashTransactionError();
+          }
+          const delta = calculateBalanceDelta(
+            { type: cashTx.type, amount: Number(cashTx.amount) },
+            null,
+          );
           if (delta !== 0) {
             await tx.account.update({
               where: { id: accountId },
               data: { cashBalance: { increment: toDbMoneyDelta(delta) } },
             });
           }
-        }
-
-        return tx.cashTransaction.findUniqueOrThrow({
-          where: { id: transactionId },
         });
-      });
-    } catch (error) {
-      if (error instanceof StaleCashTransactionError) {
-        return failure("Transaction changed while updating; please retry", 409);
-      }
-      throw error;
-    }
-
-    invalidateAccountCaches(userId);
-    return ok(updatedTx);
-  }
-
-  return failure("Transaction not found", 404);
-});
-
-export const DELETE = withAuth<TxCtx>(async (_request, { params }, userId) => {
-  const { id: accountId, transactionId } = await params;
-
-  const account = await prisma.account.findUnique({
-    where: { id: accountId, userId },
-    select: { id: true },
-  });
-  if (!account) return failure("Not found", 404);
-
-  const holdingTx = await prisma.holdingTransaction.findUnique({
-    where: { id: transactionId },
-    include: { holding: true },
-  });
-
-  if (holdingTx) {
-    if (holdingTx.holding.accountId !== accountId) {
-      return failure("Transaction not found", 404);
-    }
-
-    const holdingDelta = calculateHoldingQuantityDelta(
-      { type: holdingTx.type, quantity: Number(holdingTx.quantity) },
-      null,
-    );
-
-    try {
-      await prisma.$transaction(async (tx) => {
-        const result = await tx.holdingTransaction.deleteMany({
-          where: {
-            id: transactionId,
-            type: holdingTx.type,
-            quantity: holdingTx.quantity,
-          },
-        });
-        if (result.count !== 1) {
-          throw new StaleHoldingTransactionError();
+      } catch (error) {
+        if (error instanceof StaleCashTransactionError) {
+          return failure("Transaction changed while deleting; please retry", 409);
         }
+        throw error;
+      }
 
-        await applyHoldingQuantityDelta(tx, holdingTx.holding.id, holdingDelta);
-      });
-    } catch (error) {
-      if (error instanceof NegativeHoldingQuantityError) {
-        return failure("Holding quantity cannot be negative", 400);
-      }
-      if (error instanceof StaleHoldingTransactionError) {
-        return failure("Transaction changed while deleting; please retry", 409);
-      }
-      throw error;
+      invalidateAccountCaches(userId);
+      return ok({ ok: true });
     }
 
-    invalidateAccountCaches(userId);
-    return ok({ ok: true });
-  }
-
-  const cashTx = await prisma.cashTransaction.findUnique({
-    where: { id: transactionId },
-    include: { account: true },
-  });
-
-  if (cashTx) {
-    if (cashTx.accountId !== accountId) {
-      return failure("Transaction not found", 404);
-    }
-
-    // Guard the delete on the values the balance delta was measured against
-    // (same optimistic-lock contract as the cash PATCH / holding paths) so a
-    // DELETE racing an edit can't apply a stale balance delta against a row
-    // another request already changed.
-    try {
-      await prisma.$transaction(async (tx) => {
-        const result = await tx.cashTransaction.deleteMany({
-          where: { id: transactionId, type: cashTx.type, amount: cashTx.amount },
-        });
-        if (result.count !== 1) {
-          throw new StaleCashTransactionError();
-        }
-        const delta = calculateBalanceDelta(
-          { type: cashTx.type, amount: Number(cashTx.amount) },
-          null,
-        );
-        if (delta !== 0) {
-          await tx.account.update({
-            where: { id: accountId },
-            data: { cashBalance: { increment: toDbMoneyDelta(delta) } },
-          });
-        }
-      });
-    } catch (error) {
-      if (error instanceof StaleCashTransactionError) {
-        return failure("Transaction changed while deleting; please retry", 409);
-      }
-      throw error;
-    }
-
-    invalidateAccountCaches(userId);
-    return ok({ ok: true });
-  }
-
-  return failure("Transaction not found", 404);
-});
+    return failure("Transaction not found", 404);
+  },
+  { demo: "allow" },
+);

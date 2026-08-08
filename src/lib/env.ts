@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { resolvePublicDemoEnabled } from "@/lib/demo/demo-policy";
 import { resolvePreviewAuthPolicy } from "@/lib/preview-auth-policy";
 
 const optionalString = z.preprocess(
@@ -33,6 +34,7 @@ const envSchema = z
     PREVIEW_AUTH_PASSWORD: optionalString,
     PREVIEW_AUTH_ENABLED: z.string().trim().optional(),
     PREVIEW_AUTH_DISABLED: z.string().trim().optional(),
+    PUBLIC_DEMO_ENABLED: z.string().trim().optional(),
     VERCEL: z.preprocess((value) => (value === "" ? undefined : value), z.literal("1").optional()),
     VERCEL_ENV: z.preprocess(
       (value) => (value === "" ? undefined : value),
@@ -104,6 +106,7 @@ const parsedEnv = envSchema.safeParse({
   PREVIEW_AUTH_PASSWORD: process.env.PREVIEW_AUTH_PASSWORD,
   PREVIEW_AUTH_ENABLED: process.env.PREVIEW_AUTH_ENABLED,
   PREVIEW_AUTH_DISABLED: process.env.PREVIEW_AUTH_DISABLED,
+  PUBLIC_DEMO_ENABLED: process.env.PUBLIC_DEMO_ENABLED,
   VERCEL: process.env.VERCEL,
   VERCEL_ENV: process.env.VERCEL_ENV,
   SENTRY_DSN: process.env.SENTRY_DSN,
@@ -139,6 +142,7 @@ export const {
   PREVIEW_AUTH_PASSWORD,
   PREVIEW_AUTH_ENABLED,
   PREVIEW_AUTH_DISABLED,
+  PUBLIC_DEMO_ENABLED,
   VERCEL,
   VERCEL_ENV,
   SENTRY_DSN,
@@ -163,3 +167,4 @@ export const isPreviewAuthEnabled = previewAuthPolicy.enabled;
 export const previewAuthRequiresPassword = previewAuthPolicy.requiresPassword;
 export const isGoogleAuthEnabled = Boolean(AUTH_GOOGLE_ID && AUTH_GOOGLE_SECRET);
 export const isSelfHostAuthEnabled = VERCEL !== "1" && Boolean(AUTH_SELF_HOST_PASSWORD);
+export const isPublicDemoEnabled = resolvePublicDemoEnabled(PUBLIC_DEMO_ENABLED);

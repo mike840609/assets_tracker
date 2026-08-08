@@ -22,6 +22,48 @@ export type RefreshRatesResult = {
   fetchFailed: boolean;
 };
 
+export type RefreshExchangeRatesOptions = {
+  force?: boolean;
+  redactIdentifiers?: boolean;
+};
+
+function redactedProviderError(
+  error: unknown,
+  metadata: Record<string, string | number>,
+): Record<string, string | number> {
+  const messageStatus =
+    error instanceof Error ? Number(error.message.match(/\b([45]\d\d)\b/)?.[1]) : Number.NaN;
+  return {
+    ...metadata,
+    errorType: error instanceof Error ? error.name : "unknown",
+    ...(Number.isFinite(messageStatus) && { status: messageStatus }),
+  };
+}
+
+async function withProviderTiming<T>(
+  label: string,
+  fn: () => Promise<T>,
+  metadata: Record<string, string | number>,
+  options: { redactIdentifiers?: boolean },
+): Promise<T> {
+  if (!options.redactIdentifiers) return withTiming(label, fn, metadata);
+  const startedAt = Date.now();
+  try {
+    const result = await fn();
+    log.info(label, { ...metadata, durationMs: Date.now() - startedAt });
+    return result;
+  } catch (error) {
+    log.error(
+      label,
+      redactedProviderError(error, {
+        ...metadata,
+        durationMs: Date.now() - startedAt,
+      }),
+    );
+    throw error;
+  }
+}
+
 /** How long to wait (ms) before giving up on external rate APIs */
 const RATE_FETCH_TIMEOUT_MS = 1200;
 
@@ -196,7 +238,10 @@ function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T
  *
  * Exported for unit testing; production callers use `refreshExchangeRates`.
  */
-export async function fetchExchangeRates(base: string): Promise<Record<string, number>> {
+export async function fetchExchangeRates(
+  base: string,
+  options: { redactIdentifiers?: boolean } = {},
+): Promise<Record<string, number>> {
   const doFetch = async (): Promise<Record<string, number>> => {
     // Primary: Frankfurter (ECB data, reliable but limited to the currencies
     // the ECB publishes). Skip it entirely for bases it can't serve (e.g.
@@ -214,22 +259,40 @@ export async function fetchExchangeRates(base: string): Promise<Record<string, n
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!data.rates || Object.keys(data.rates).length === 0) throw new Error("empty rates");
-        log.info("rates.frankfurter.fetch", { base, durationMs: Date.now() - frankfurterStart });
+        log.info(
+          "rates.frankfurter.fetch",
+          options.redactIdentifiers
+            ? {
+                provider: "frankfurter",
+                operation: "fetch",
+                durationMs: Date.now() - frankfurterStart,
+              }
+            : { base, durationMs: Date.now() - frankfurterStart },
+        );
         return data.rates as Record<string, number>;
       } catch (error) {
         // Transient failure for a supported base; fall through to backup.
-        log.warn("rates.frankfurter.fallback", {
-          base,
-          durationMs: Date.now() - frankfurterStart,
-          error: error instanceof Error ? error.message : String(error),
-        });
+        log.warn(
+          "rates.frankfurter.fallback",
+          options.redactIdentifiers
+            ? redactedProviderError(error, {
+                provider: "frankfurter",
+                operation: "fallback",
+                durationMs: Date.now() - frankfurterStart,
+              })
+            : {
+                base,
+                durationMs: Date.now() - frankfurterStart,
+                error: error instanceof Error ? error.message : String(error),
+              },
+        );
       }
     }
 
     // Fallback (and primary for non-ECB bases): open.er-api.com (supports
     // 150+ currencies including TWD)
     try {
-      const rates = await withTiming(
+      const rates = await withProviderTiming(
         "rates.er_api.fetch",
         async () => {
           const res = await fetch(`https://open.er-api.com/v6/latest/${base}`, {
@@ -241,11 +304,17 @@ export async function fetchExchangeRates(base: string): Promise<Record<string, n
             Object.entries(data.rates as Record<string, number>).filter(([key]) => key !== base),
           );
         },
-        { base },
+        options.redactIdentifiers ? { provider: "er-api", operation: "fetch" } : { base },
+        options,
       );
       return rates;
     } catch (error) {
-      log.error("rates.fetch.failed", { base, error: String(error) });
+      log.error(
+        "rates.fetch.failed",
+        options.redactIdentifiers
+          ? redactedProviderError(error, { provider: "er-api", operation: "fetch" })
+          : { base, error: String(error) },
+      );
     }
 
     return {};
@@ -265,11 +334,16 @@ export async function fetchExchangeRates(base: string): Promise<Record<string, n
  */
 export async function refreshExchangeRates(
   baseCurrency: string,
-  opts: { force?: boolean } = {},
+  opts: RefreshExchangeRatesOptions = {},
 ): Promise<RefreshRatesResult> {
   const last = lastRateRefreshAt.get(baseCurrency);
   if (!opts.force && last !== undefined && Date.now() - last < FX_REFRESH_TTL_MS) {
-    log.info("rates.refresh.skipped_fresh", { base: baseCurrency });
+    log.info(
+      "rates.refresh.skipped_fresh",
+      opts.redactIdentifiers
+        ? { operation: "refresh-skip", source: "memory" }
+        : { base: baseCurrency },
+    );
     return {
       updated: 0,
       changed: 0,
@@ -283,7 +357,12 @@ export async function refreshExchangeRates(
     const persistedRefreshAt = await getPersistedFreshRefreshAt(baseCurrency);
     if (persistedRefreshAt) {
       lastRateRefreshAt.set(baseCurrency, persistedRefreshAt.getTime());
-      log.info("rates.refresh.skipped_fresh_db", { base: baseCurrency });
+      log.info(
+        "rates.refresh.skipped_fresh_db",
+        opts.redactIdentifiers
+          ? { operation: "refresh-skip", source: "database" }
+          : { base: baseCurrency },
+      );
       return {
         updated: 0,
         changed: 0,
@@ -294,7 +373,7 @@ export async function refreshExchangeRates(
     }
   }
 
-  const rates = await fetchExchangeRates(baseCurrency);
+  const rates = await fetchExchangeRates(baseCurrency, opts);
   const entries = Object.entries(rates);
 
   if (entries.length === 0) {
@@ -383,7 +462,9 @@ export async function getUnresolvedRatePairs(
   cacheTag("exchange-rates");
   cacheTag(`accounts:${userId}`);
   cacheTag("goals");
+  cacheTag(`goals:${userId}`);
   cacheTag("snapshots");
+  cacheTag(`history:${userId}`);
   cacheLife("minutes");
 
   const [accounts, goals, snapshotCurrencies, allRatesMap] = await Promise.all([

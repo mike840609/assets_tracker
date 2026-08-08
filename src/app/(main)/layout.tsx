@@ -11,15 +11,24 @@ import { PullToRefreshProvider } from "@/components/layout/pull-to-refresh-conte
 import { LargeTitleProvider } from "@/components/layout/large-title-context";
 import { LazyCommandPalette } from "@/components/layout/lazy-command-palette";
 import { FxWarningBanner } from "@/components/layout/fx-warning-banner";
-import { getSession } from "@/lib/auth-session";
+import { DemoModeBanner } from "@/components/demo/demo-mode-banner";
+import { DemoResponseBoundary } from "@/components/demo/demo-response-boundary";
+import { getAuthContext } from "@/lib/auth-session";
 import { APP_VERSION } from "@/lib/changelog";
 
-async function SidebarWithSession({ defaultCollapsed }: { defaultCollapsed: boolean }) {
-  const session = await getSession();
+function SidebarWithSession({
+  defaultCollapsed,
+  userImage,
+  userName,
+}: {
+  defaultCollapsed: boolean;
+  userImage: string | null;
+  userName: string | null;
+}) {
   return (
     <Sidebar
-      userImage={session?.user?.image ?? null}
-      userName={session?.user?.name ?? null}
+      userImage={userImage}
+      userName={userName}
       defaultCollapsed={defaultCollapsed}
       appVersion={APP_VERSION}
     />
@@ -31,8 +40,13 @@ export default async function MainLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getSession();
-  if (!session?.user?.id) redirect("/login?stale-session=1");
+  const context = await getAuthContext();
+  if (context.status === "demo-expired" || context.status === "demo-disabled") {
+    redirect(`/demo/expired?reason=${context.status}`);
+  }
+  if (context.status !== "active") redirect("/login?stale-session=1");
+  const demoExpiry =
+    context.principal.kind === "demo" ? context.principal.expiresAt.toISOString() : null;
 
   // Seed the sidebar's collapsed width from the cookie so SSR matches the saved
   // preference (no expanded→collapsed flash on reload).
@@ -54,11 +68,18 @@ export default async function MainLayout({
                   />
                 }
               >
-                <SidebarWithSession defaultCollapsed={defaultCollapsed} />
+                <SidebarWithSession
+                  defaultCollapsed={defaultCollapsed}
+                  userImage={context.session.user.image ?? null}
+                  userName={context.session.user.name ?? null}
+                />
               </Suspense>
               <PullToRefreshIndicator />
               <MobileMainShell>
-                <MobileHeader />
+                <div className={demoExpiry ? "sticky top-0 z-40 md:contents" : "contents"}>
+                  <MobileHeader disableAutoHide={demoExpiry !== null} />
+                  {demoExpiry ? <DemoModeBanner expiresAt={demoExpiry} /> : null}
+                </div>
                 <div className="mx-auto w-full max-w-7xl 2xl:max-w-[88rem] p-4 md:p-6">
                   <Suspense fallback={null}>
                     <FxWarningBanner />
@@ -66,6 +87,7 @@ export default async function MainLayout({
                   {children}
                 </div>
               </MobileMainShell>
+              {demoExpiry ? <DemoResponseBoundary /> : null}
               <MobileNav />
               <LazyCommandPalette />
             </PullToRefreshProvider>

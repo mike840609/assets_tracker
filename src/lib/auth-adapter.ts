@@ -24,8 +24,17 @@ export const customPrismaAdapter = {
       return user;
     });
   },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  linkAccount: (data: AnyRecord) => prisma.authAccount.create({ data: data as any }) as any,
+  linkAccount: async (data: AnyRecord) => {
+    const demoWorkspace = await prisma.demoWorkspace.findUnique({
+      where: { userId: data.userId },
+      select: { userId: true },
+    });
+    if (demoWorkspace) {
+      throw new Error("auth: refusing to link an account to a Demo user");
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return prisma.authAccount.create({ data: data as any }) as any;
+  },
   unlinkAccount: (provider_providerAccountId: ProviderAccountId) =>
     prisma.authAccount.delete({
       where: { provider_providerAccountId },

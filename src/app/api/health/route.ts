@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
+import { rateLimitCheckWithPrune, rateLimitKeyForClientIp } from "@/lib/rate-limit";
 import { log } from "@/lib/logger";
 
 /**
@@ -44,7 +44,11 @@ const CRON_RUNNING_GRACE_MS = 5 * 60 * 1000;
 const SNAPSHOT_CRON_NAME = "snapshot";
 
 export async function GET(request: Request) {
-  const limited = rateLimitCheckWithPrune(request, { limit: 30, prefix: "health" });
+  const limited = rateLimitCheckWithPrune(request, {
+    limit: 30,
+    prefix: "health",
+    key: rateLimitKeyForClientIp(request, "health"),
+  });
   if (limited) return limited;
 
   const now = Date.now();

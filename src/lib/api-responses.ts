@@ -4,9 +4,17 @@ import type { z } from "zod";
 /** Successful response — wraps data in a `{ data }` envelope. */
 export const ok = <T>(data: T, init?: ResponseInit) => NextResponse.json({ data }, init);
 
+type FailureOptions = {
+  code?: string;
+  headers?: HeadersInit;
+};
+
 /** Error response — wraps message in a `{ error: { message } }` envelope. */
-export const failure = (message: string, status = 400) =>
-  NextResponse.json({ error: { message } }, { status });
+export const failure = (message: string, status = 400, options: FailureOptions = {}) =>
+  NextResponse.json(
+    { error: { message, ...(options.code ? { code: options.code } : {}) } },
+    { status, headers: options.headers },
+  );
 
 /** Zod validation failure — includes flattened issues for field-level display. */
 export const validationError = (zodError: z.ZodError) =>

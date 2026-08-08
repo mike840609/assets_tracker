@@ -21,12 +21,14 @@ const CLIENT_NAMESPACES = [
   "dataManagement",
   "freshness",
   "common",
+  "demo",
 ];
 
 async function SettingsContent() {
   const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
+  const isDemo = session.user.isDemo;
   // Run all independent queries in parallel
   const [t, allMessages, settings, latestPrice, latestExchangeRate] = await Promise.all([
     getTranslations("settings"),
@@ -76,6 +78,7 @@ async function SettingsContent() {
           />
           <div className="lg:col-start-2 lg:row-start-1">
             <PrivacySecurity
+              isDemo={isDemo}
               userEmail={session.user.email}
               signOutAction={async () => {
                 "use server";
@@ -84,7 +87,7 @@ async function SettingsContent() {
             />
           </div>
           <div className="lg:col-start-2 lg:row-start-2">
-            <DataManagement />
+            <DataManagement isDemo={isDemo} />
           </div>
           <div className="lg:col-start-1 lg:row-start-3">
             <VersionCard />

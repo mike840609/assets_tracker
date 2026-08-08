@@ -13,11 +13,13 @@ pnpm dev
 
 The application runs at `http://localhost:3000`. `pnpm db:up` starts only PostgreSQL; the application runs directly on the host for faster hot reload.
 
-Local development includes a one-click **Preview Login** for the dedicated test user. It does not require `PREVIEW_AUTH_PASSWORD`; hosted Vercel previews remain password-protected by default.
+Local development includes a one-click **Internal Test Login** for the dedicated test user. It does not require `PREVIEW_AUTH_PASSWORD`; hosted Vercel previews remain password-protected by default. This deterministic account is for development and E2E only and is separate from the anonymous public Demo.
 
 Docker and other non-Vercel production deployments use `AUTH_SELF_HOST_PASSWORD` for the single-owner login by default. The separate preview credentials provider remains disabled. Set `PREVIEW_AUTH_ENABLED=true` only for a non-Vercel production-mode preview; when enabled in production, `PREVIEW_AUTH_PASSWORD` is required unless `PREVIEW_AUTH_DISABLED` is explicitly enabled.
 
 ## Demo data
+
+The public Demo is opt-in. Apply migrations, then set `PUBLIC_DEMO_ENABLED=true` in the local environment to show its anonymous entry point. Leaving the variable absent or false keeps the feature off. Public Demo workspace creation and reset share the same prepared, offline `demo-data.json` fixture path as the internal seed, but each anonymous visitor receives newly generated row IDs in an isolated temporary user.
 
 The preview user starts with zero accounts. Populate it without waiting for the daily cron:
 
@@ -60,6 +62,22 @@ pnpm test:e2e:report
 ```
 
 The E2E global setup creates a dedicated test user so test data does not mix with a normal account.
+
+PostgreSQL integration tests refuse any database that is not local and named with the `_asset_tracker_test` suffix. Create and migrate the dedicated database once, then run the serial suite with the feature flag enabled:
+
+```bash
+docker compose exec db createdb -U postgres asset_app_asset_tracker_test
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/asset_app_asset_tracker_test?sslmode=disable" pnpm exec prisma migrate deploy
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/asset_app_asset_tracker_test?sslmode=disable" PUBLIC_DEMO_ENABLED=true pnpm test:integration
+```
+
+The database is disposable test state; never point these commands at development, Preview, or Production data. To exercise the anonymous desktop and zh-TW mobile journeys against the isolated local server, use the same database:
+
+```bash
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/asset_app_asset_tracker_test?sslmode=disable" PUBLIC_DEMO_ENABLED=true E2E_PUBLIC_DEMO=1 pnpm playwright test tests/e2e/public-demo.spec.ts
+```
+
+Authenticated Playwright projects continue to use the fixed Internal Test Login storage state and ignore the public Demo spec.
 
 ## Database changes
 

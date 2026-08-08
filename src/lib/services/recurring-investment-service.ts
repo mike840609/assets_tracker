@@ -85,7 +85,12 @@ export async function materializeDueInvestments(
   // Taiwan day, not UTC day — same cutoff as the cash sweep (see app-day.ts).
   const today = taiwanCalendarDay(now);
   const dueRules = await prisma.recurringInvestment.findMany({
-    where: { isActive: true, nextRunDate: { lte: today }, ...(ruleId ? { id: ruleId } : {}) },
+    where: {
+      isActive: true,
+      nextRunDate: { lte: today },
+      account: { user: { demoWorkspace: null } },
+      ...(ruleId ? { id: ruleId } : {}),
+    },
     include: { account: { select: { currency: true } } },
   });
   if (dueRules.length === 0) return { created: 0, rulesProcessed: 0 };

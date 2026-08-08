@@ -1,30 +1,40 @@
 // S1: force-static is incompatible with nextConfig.cacheComponents (PPR mode).
 // PPR prerendering the Suspense fallback shell is the correct tier here.
 import { Suspense } from "react";
-import { auth, signIn } from "@/auth";
+import { signIn, signOut } from "@/auth";
+import { DemoLoginButton } from "@/components/demo/demo-login-button";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Lock, ShieldCheck, EyeOff } from "lucide-react";
-import { SESSION_COOKIE_NAMES } from "@/lib/auth-cookies";
 import {
   isGoogleAuthEnabled,
   isPreviewAuthEnabled,
+  isPublicDemoEnabled,
   isSelfHostAuthEnabled,
   previewAuthRequiresPassword,
 } from "@/lib/env";
+import { getAuthContext } from "@/lib/auth-session";
 import { getTranslations } from "next-intl/server";
-import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 type LoginPageProps = {
   searchParams: Promise<{
     "stale-session"?: string | string[];
+    from?: string | string[];
   }>;
 };
 
-async function hasSessionCookie(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return SESSION_COOKIE_NAMES.some((name) => cookieStore.has(name));
+async function exitDemoOriginBeforeFormalSignIn(): Promise<boolean> {
+  const authContext = await getAuthContext();
+  const isDemoOrigin =
+    authContext.status === "demo-expired" ||
+    authContext.status === "demo-disabled" ||
+    (authContext.status === "missing" && authContext.sessionKind === "demo") ||
+    (authContext.status === "active" && authContext.principal.kind === "demo");
+  if (!isDemoOrigin) return false;
+
+  await signOut({ redirectTo: "/login" });
+  return true;
 }
 
 async function LoginContent() {
@@ -63,6 +73,7 @@ async function LoginContent() {
           <form
             action={async () => {
               "use server";
+              if (await exitDemoOriginBeforeFormalSignIn()) return;
               await signIn("google", { redirectTo: "/" });
             }}
             className="pt-4"
@@ -110,6 +121,7 @@ async function LoginContent() {
             <form
               action={async (formData: FormData) => {
                 "use server";
+                if (await exitDemoOriginBeforeFormalSignIn()) return;
                 await signIn("self-host", {
                   password: formData.get("password") as string,
                   redirectTo: "/",
@@ -138,6 +150,8 @@ async function LoginContent() {
           </>
         )}
 
+        {isPublicDemoEnabled ? <DemoLoginButton /> : null}
+
         {/* Trust badges */}
         <div className="flex flex-col gap-2 pt-2">
           <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
@@ -158,13 +172,16 @@ async function LoginContent() {
           <>
             <div className="flex items-center gap-3 pt-2">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground font-medium">Preview Mode</span>
+              <span className="text-xs text-muted-foreground font-medium">
+                {t("internalTestDivider")}
+              </span>
               <div className="flex-1 h-px bg-border" />
             </div>
 
             <form
               action={async (formData: FormData) => {
                 "use server";
+                if (await exitDemoOriginBeforeFormalSignIn()) return;
                 await signIn("credentials", {
                   password: formData.get("password") as string,
                   redirectTo: "/",
@@ -176,7 +193,8 @@ async function LoginContent() {
                   <input
                     name="password"
                     type="password"
-                    placeholder="Preview password"
+                    placeholder={t("internalTestPasswordPlaceholder")}
+                    aria-label={t("internalTestPasswordPlaceholder")}
                     required
                     className="h-12 w-full rounded-xl border border-border bg-input px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
@@ -185,7 +203,7 @@ async function LoginContent() {
                   type="submit"
                   className="w-full h-12 text-sm font-medium tracking-wide bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 rounded-xl"
                 >
-                  Preview Login
+                  {t("internalTestButton")}
                 </Button>
               </div>
             </form>
@@ -206,11 +224,10 @@ async function LoginContent() {
 
 async function LoginGate({ searchParams }: LoginPageProps) {
   const params = await searchParams;
-  const isStaleSessionRecovery = params["stale-session"] !== undefined;
+  const authContext = await getAuthContext();
 
-  if (!isStaleSessionRecovery && (await hasSessionCookie())) {
-    const session = await auth();
-    if (session?.user?.id) redirect("/");
+  if (authContext.status === "active") {
+    if (authContext.principal.kind === "formal" || params.from !== "demo") redirect("/");
   }
 
   return <LoginContent />;

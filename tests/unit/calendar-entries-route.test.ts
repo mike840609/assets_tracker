@@ -8,13 +8,23 @@ const h = vi.hoisted(() => ({
   updateMany: vi.fn(),
   deleteMany: vi.fn(),
   error: vi.fn(),
+  principal: { kind: "formal" as const, userId: "user_1" } as
+    | { kind: "formal"; userId: string }
+    | { kind: "demo"; userId: string; expiresAt: Date },
 }));
 
 vi.mock("@/lib/api-handler", () => ({
   withAuth:
-    (handler: (request: Request, context: unknown, userId: string) => Promise<Response>) =>
+    (
+      handler: (
+        request: Request,
+        context: unknown,
+        userId: string,
+        principal: typeof h.principal,
+      ) => Promise<Response>,
+    ) =>
     (request: Request, context: unknown) =>
-      handler(request, context, "user_1"),
+      handler(request, context, "user_1", h.principal),
 }));
 
 vi.mock("@/lib/services/calendar-entry-service", () => ({
@@ -88,6 +98,7 @@ describe("calendar entry routes", () => {
     h.findFirst.mockResolvedValue(existingTimedEntry);
     h.updateMany.mockResolvedValue({ count: 1 });
     h.deleteMany.mockResolvedValue({ count: 1 });
+    h.principal = { kind: "formal", userId: "user_1" };
   });
 
   it("returns a bounded authenticated range", async () => {
@@ -130,7 +141,7 @@ describe("calendar entry routes", () => {
         timeZone: "Asia/Taipei",
       }),
     });
-    expect(h.invalidateCalendarEntryCaches).toHaveBeenCalledWith("user_1");
+    expect(h.invalidateCalendarEntryCaches).toHaveBeenCalledWith("user_1", h.principal);
   });
 
   it("creates an all-day entry and invalidates the user cache", async () => {
@@ -153,7 +164,7 @@ describe("calendar entry routes", () => {
     expect(await response.json()).toMatchObject({
       data: { id: "cal_2", title: "Dividend date", startTimeMinutes: null, timeZone: null },
     });
-    expect(h.invalidateCalendarEntryCaches).toHaveBeenCalledWith("user_1");
+    expect(h.invalidateCalendarEntryCaches).toHaveBeenCalledWith("user_1", h.principal);
   });
 
   it("returns a generic error and logs a failed create", async () => {
@@ -165,10 +176,9 @@ describe("calendar entry routes", () => {
     await expect(response.json()).resolves.toEqual({
       error: { message: "Failed to create calendar entry" },
     });
-    expect(h.error).toHaveBeenCalledWith(
-      "calendar_entries.create_failed",
-      expect.objectContaining({ userId: "user_1", error: "Error: database password leaked" }),
-    );
+    expect(h.error).toHaveBeenCalledWith("calendar_entries.create_failed", {
+      error: "Error: database password leaked",
+    });
   });
 
   it("validates the merged final state on partial update", async () => {
@@ -195,7 +205,7 @@ describe("calendar entry routes", () => {
       }),
     });
     expect(await response.json()).toMatchObject({ data: { id: "cal_1", title: "Changed" } });
-    expect(h.invalidateCalendarEntryCaches).toHaveBeenCalledWith("user_1");
+    expect(h.invalidateCalendarEntryCaches).toHaveBeenCalledWith("user_1", h.principal);
   });
 
   it("rejects a PATCH with no fields before looking up the entry", async () => {
@@ -234,7 +244,7 @@ describe("calendar entry routes", () => {
     expect(prisma.calendarEntry.deleteMany).toHaveBeenCalledWith({
       where: { id: "cal_1", userId: "user_1" },
     });
-    expect(h.invalidateCalendarEntryCaches).toHaveBeenCalledWith("user_1");
+    expect(h.invalidateCalendarEntryCaches).toHaveBeenCalledWith("user_1", h.principal);
   });
 
   it("returns generic errors and logs failed update and delete operations", async () => {
@@ -244,10 +254,9 @@ describe("calendar entry routes", () => {
     await expect(update.json()).resolves.toEqual({
       error: { message: "Failed to update calendar entry" },
     });
-    expect(h.error).toHaveBeenCalledWith(
-      "calendar_entries.update_failed",
-      expect.objectContaining({ userId: "user_1", error: "Error: update database details" }),
-    );
+    expect(h.error).toHaveBeenCalledWith("calendar_entries.update_failed", {
+      error: "Error: update database details",
+    });
 
     h.findFirst.mockResolvedValueOnce(existingTimedEntry);
     h.deleteMany.mockRejectedValueOnce(new Error("delete database details"));
@@ -259,9 +268,38 @@ describe("calendar entry routes", () => {
     await expect(deletion.json()).resolves.toEqual({
       error: { message: "Failed to delete calendar entry" },
     });
-    expect(h.error).toHaveBeenCalledWith(
-      "calendar_entries.delete_failed",
-      expect.objectContaining({ userId: "user_1", error: "Error: delete database details" }),
-    );
+    expect(h.error).toHaveBeenCalledWith("calendar_entries.delete_failed", {
+      error: "Error: delete database details",
+    });
+  });
+
+  it("passes the Demo principal to scoped cache invalidation", async () => {
+    h.principal = {
+      kind: "demo",
+      userId: "user_1",
+      expiresAt: new Date("2026-08-02T00:00:00.000Z"),
+    };
+
+    const response = await POST(jsonRequest(validTimedEntry), undefined);
+
+    expect(response.status).toBe(201);
+    expect(h.invalidateCalendarEntryCaches).toHaveBeenCalledWith("user_1", h.principal);
+  });
+
+  it("redacts Demo calendar failures without logging user or financial data", async () => {
+    h.principal = {
+      kind: "demo",
+      userId: "user_1",
+      expiresAt: new Date("2026-08-02T00:00:00.000Z"),
+    };
+    h.create.mockRejectedValueOnce(new Error("user_1 balance SENTINEL_FINANCIAL"));
+
+    const response = await POST(jsonRequest(validTimedEntry), undefined);
+
+    expect(response.status).toBe(500);
+    const logged = JSON.stringify(h.error.mock.calls);
+    expect(logged).not.toContain("user_1");
+    expect(logged).not.toContain("SENTINEL_FINANCIAL");
+    expect(logged).toContain("errorType");
   });
 });

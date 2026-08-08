@@ -24,7 +24,7 @@ function getPageTitle(pathname: string, nav: (k: string) => string): string {
   return "";
 }
 
-export function MobileHeader() {
+export function MobileHeader({ disableAutoHide = false }: { disableAutoHide?: boolean }) {
   const t = useTranslations();
   const { privacyMode, togglePrivacyMode } = usePrivacyMode();
   const hidden = useHideOnScroll();
@@ -50,7 +50,7 @@ export function MobileHeader() {
         "px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))]",
         "flex items-center justify-between",
         "border-b transition-[border-color,transform] motion-normal",
-        hidden ? "-translate-y-full" : "translate-y-0",
+        !disableAutoHide && hidden ? "-translate-y-full" : "translate-y-0",
         // Separator only appears once the large title is behind the bar (iOS behaviour)
         isVisible ? "border-transparent" : "border-border/50",
       )}

@@ -1,6 +1,8 @@
 import "server-only";
-import { cacheLife, cacheTag, revalidateTag } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
+import type { AuthPrincipal } from "@/lib/auth-principal";
 import { formatDateOnly, getCalendarRangeLength, parseDateOnly } from "@/lib/calendar-date";
+import { invalidateScopedTag } from "@/lib/demo/demo-cache";
 import { prisma } from "@/lib/prisma";
 import { serializeCalendarEntry, type SerializedCalendarEntry } from "@/lib/types";
 
@@ -34,7 +36,10 @@ export async function getCalendarEntriesInRange(
   return entries.map(serializeCalendarEntry);
 }
 
-export function invalidateCalendarEntryCaches(userId: string) {
-  revalidateTag("calendar-entries", { expire: 0 });
-  revalidateTag(`calendar-entries:${userId}`, { expire: 0 });
+export function invalidateCalendarEntryCaches(userId: string, principal: AuthPrincipal) {
+  invalidateScopedTag({
+    globalTag: "calendar-entries",
+    userTag: `calendar-entries:${userId}`,
+    principal,
+  });
 }

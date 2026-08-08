@@ -3,6 +3,9 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 const h = vi.hoisted(() => ({
   cashTransactionCreates: [] as Array<Record<string, unknown>>,
   afterTasks: [] as Array<() => void | Promise<void>>,
+  principal: { kind: "formal" as const, userId: "user1" } as
+    | { kind: "formal"; userId: string }
+    | { kind: "demo"; userId: string; expiresAt: Date },
 }));
 
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
@@ -19,9 +22,16 @@ vi.mock("next/server", async (importOriginal) => {
 
 vi.mock("@/lib/api-handler", () => ({
   withAuth:
-    (handler: (req: Request, ctx: unknown, userId: string) => Promise<Response>) =>
+    (
+      handler: (
+        req: Request,
+        ctx: unknown,
+        userId: string,
+        principal: typeof h.principal,
+      ) => Promise<Response>,
+    ) =>
     (req: Request, ctx: unknown) =>
-      handler(req, ctx, "user1"),
+      handler(req, ctx, "user1", h.principal),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -52,6 +62,12 @@ vi.mock("@/lib/prisma", () => {
     exchangeRate: {
       findFirst: vi.fn(async () => ({ fromCurrency: "USD" })),
     },
+    setting: {
+      upsert: vi.fn(async (args: { create: Record<string, unknown> }) => ({
+        id: "setting1",
+        ...args.create,
+      })),
+    },
     $transaction: vi.fn(async (work: unknown) =>
       (work as (tx: typeof prisma) => Promise<unknown>)(prisma),
     ),
@@ -71,6 +87,7 @@ describe("accounts POST", () => {
     vi.clearAllMocks();
     h.cashTransactionCreates = [];
     h.afterTasks = [];
+    h.principal = { kind: "formal", userId: "user1" };
   });
 
   it("logs an opening-balance EDIT transaction for a nonzero starting balance", async () => {
@@ -108,5 +125,77 @@ describe("accounts POST", () => {
 
     expect(response.status).toBe(201);
     expect(h.cashTransactionCreates).toEqual([]);
+  });
+
+  it("does not schedule automatic FX warming for a Demo account write", async () => {
+    h.principal = {
+      kind: "demo",
+      userId: "user1",
+      expiresAt: new Date("2026-08-02T00:00:00.000Z"),
+    };
+    const { POST } = await import("@/app/api/accounts/route");
+
+    const response = await POST(
+      postRequest({ name: "Bank", type: "ASSET", category: "BANK", currency: "USD" }),
+      {},
+    );
+
+    expect(response.status).toBe(201);
+    expect(h.afterTasks).toHaveLength(0);
+  });
+
+  it("preserves automatic FX warming for a formal account write", async () => {
+    const { POST } = await import("@/app/api/accounts/route");
+
+    const response = await POST(
+      postRequest({ name: "Bank", type: "ASSET", category: "BANK", currency: "USD" }),
+      {},
+    );
+
+    expect(response.status).toBe(201);
+    expect(h.afterTasks).toHaveLength(1);
+  });
+});
+
+describe("settings PATCH", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    h.afterTasks = [];
+    h.principal = { kind: "formal", userId: "user1" };
+  });
+
+  it("does not schedule automatic FX warming for a Demo base-currency write", async () => {
+    h.principal = {
+      kind: "demo",
+      userId: "user1",
+      expiresAt: new Date("2026-08-02T00:00:00.000Z"),
+    };
+    const { PATCH } = await import("@/app/api/settings/route");
+    const response = await PATCH(
+      new Request("http://unit.test/api/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ baseCurrency: "TWD" }),
+        headers: { "content-type": "application/json" },
+      }),
+      {},
+    );
+
+    expect(response.status).toBe(200);
+    expect(h.afterTasks).toHaveLength(0);
+  });
+
+  it("preserves automatic FX warming for a formal base-currency write", async () => {
+    const { PATCH } = await import("@/app/api/settings/route");
+    const response = await PATCH(
+      new Request("http://unit.test/api/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ baseCurrency: "TWD" }),
+        headers: { "content-type": "application/json" },
+      }),
+      {},
+    );
+
+    expect(response.status).toBe(200);
+    expect(h.afterTasks).toHaveLength(1);
   });
 });

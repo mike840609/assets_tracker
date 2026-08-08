@@ -311,10 +311,15 @@ describe("materializeDueInvestments — cutoff & filtering", () => {
     const { prisma } = await import("@/lib/prisma");
     await materializeDueInvestments(d("2026-06-14"), "rule-7");
 
-    const where = vi.mocked(prisma.recurringInvestment.findMany).mock.lastCall?.[0]
-      ?.where as Record<string, unknown>;
-    expect(where.id).toBe("rule-7");
-    expect(where.isActive).toBe(true);
+    expect(vi.mocked(prisma.recurringInvestment.findMany)).toHaveBeenCalledWith({
+      where: {
+        isActive: true,
+        nextRunDate: { lte: d("2026-06-14") },
+        account: { user: { demoWorkspace: null } },
+        id: "rule-7",
+      },
+      include: { account: { select: { currency: true } } },
+    });
   });
 
   it("uses the Taiwan calendar day as the due cutoff", async () => {

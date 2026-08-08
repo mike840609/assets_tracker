@@ -13,6 +13,12 @@ import { ok, failure } from "@/lib/api-responses";
 import { CRON_SECRET } from "@/lib/env";
 import { log } from "@/lib/logger";
 import { finishSnapshotCronCheckIn, startSnapshotCronCheckIn } from "@/lib/sentry-cron";
+import { cleanupExpiredDemoUsers } from "@/lib/demo/demo-service";
+import {
+  DEMO_CLEANUP_BATCH_SIZE,
+  DEMO_CLEANUP_BUDGET_MS,
+  DEMO_CLEANUP_MAX_USERS,
+} from "@/lib/demo/demo-policy";
 
 function hasValidCronSecret(authHeader: string | null): boolean {
   const expected = Buffer.from(`Bearer ${CRON_SECRET}`);
@@ -57,6 +63,23 @@ export async function GET(request: Request) {
       select: { id: true },
     });
 
+    try {
+      const cleanup = await cleanupExpiredDemoUsers({
+        now: startedAt,
+        batchSize: DEMO_CLEANUP_BATCH_SIZE,
+        maxUsers: DEMO_CLEANUP_MAX_USERS,
+        budgetMs: DEMO_CLEANUP_BUDGET_MS,
+      });
+      log.info("cron.public_demo.cleanup", {
+        deleted: cleanup.deleted,
+        budgetExhausted: cleanup.budgetExhausted,
+      });
+    } catch (error) {
+      log.warn("cron.public_demo.cleanup_failed", {
+        errorType: error instanceof Error ? error.name : "unknown",
+      });
+    }
+
     // 0. Sweep contracts that expired before this run's Taiwan business day so
     // the snapshot does not carry yesterday's options into today's valuation.
     // A contract expiring on businessDay remains active through that day.
@@ -66,6 +89,7 @@ export async function GET(request: Request) {
         assetType: "OPTION",
         expiration: { lt: businessDay },
         quantity: { gt: 0 },
+        account: { user: { demoWorkspace: null } },
       },
     });
     if (expiredOptions.length > 0) {
@@ -101,9 +125,21 @@ export async function GET(request: Request) {
     // external APIs (FX providers vs Yahoo/CoinGecko) and neither reads the
     // other's output, so overlapping them buys headroom under maxDuration.
     const [accountCurrencies, holdingCurrencies, settings] = await Promise.all([
-      prisma.account.findMany({ select: { currency: true }, distinct: ["currency"] }),
-      prisma.holding.findMany({ select: { currency: true }, distinct: ["currency"] }),
-      prisma.setting.findMany({ select: { baseCurrency: true }, distinct: ["baseCurrency"] }),
+      prisma.account.findMany({
+        where: { user: { demoWorkspace: null } },
+        select: { currency: true },
+        distinct: ["currency"],
+      }),
+      prisma.holding.findMany({
+        where: { account: { user: { demoWorkspace: null } } },
+        select: { currency: true },
+        distinct: ["currency"],
+      }),
+      prisma.setting.findMany({
+        where: { user: { demoWorkspace: null } },
+        select: { baseCurrency: true },
+        distinct: ["baseCurrency"],
+      }),
     ]);
     const sourceCurrencies = new Set<string>(["USD"]);
     for (const row of accountCurrencies) sourceCurrencies.add(row.currency);
@@ -210,6 +246,7 @@ export async function GET(request: Request) {
         break;
       }
       const page = await prisma.user.findMany({
+        where: { demoWorkspace: null },
         select: { id: true, appSettings: { select: { baseCurrency: true } } },
         orderBy: { id: "asc" },
         take: USER_PAGE_SIZE,

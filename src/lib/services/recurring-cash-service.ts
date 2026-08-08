@@ -148,7 +148,12 @@ export async function materializeDueRecurringTransactions(
   // and snapshot bucketing (app-day.ts) already lives on that calendar.
   const today = taiwanCalendarDay(now);
   const dueRules = await prisma.recurringCashTransaction.findMany({
-    where: { isActive: true, nextRunDate: { lte: today }, ...(ruleId ? { id: ruleId } : {}) },
+    where: {
+      isActive: true,
+      nextRunDate: { lte: today },
+      account: { user: { demoWorkspace: null } },
+      ...(ruleId ? { id: ruleId } : {}),
+    },
   });
 
   let created = 0;

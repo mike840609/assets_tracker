@@ -18,6 +18,7 @@ export function RecurringSection({
   currency,
   isBank,
   accountType,
+  isDemo = false,
   refreshTrigger,
   onChange,
 }: {
@@ -25,6 +26,7 @@ export function RecurringSection({
   currency: string;
   isBank: boolean;
   accountType: "ASSET" | "LIABILITY";
+  isDemo?: boolean;
   refreshTrigger?: number;
   onChange?: () => void;
 }) {
@@ -44,6 +46,12 @@ export function RecurringSection({
         <CardDescription>{t("subtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {isDemo ? (
+          <div className="rounded-lg border border-amber-300/60 bg-amber-50/80 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+            <p className="font-medium">{t("demoPausedTitle")}</p>
+            <p className="mt-1 text-xs opacity-80">{t("demoPausedDescription")}</p>
+          </div>
+        ) : null}
         {showInvestments && (
           <>
             <RecurringInvestments

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
@@ -20,6 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 
 type PrivacySecurityProps = {
+  isDemo: boolean;
   userEmail?: string | null;
   signOutAction: () => Promise<void>;
 };
@@ -32,7 +34,7 @@ function RowIcon({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function PrivacySecurity({ userEmail, signOutAction }: PrivacySecurityProps) {
+export function PrivacySecurity({ isDemo, userEmail, signOutAction }: PrivacySecurityProps) {
   const t = useTranslations("settings");
   const { privacyMode, togglePrivacyMode } = usePrivacyMode();
   const [isExporting, setIsExporting] = useState(false);
@@ -124,60 +126,38 @@ export function PrivacySecurity({ userEmail, signOutAction }: PrivacySecurityPro
             </Button>
           </div>
 
-          <div className="flex flex-col gap-4 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex gap-3">
-              <RowIcon>
-                <KeyRoundIcon className="size-4" aria-hidden="true" />
-              </RowIcon>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">{t("privacy.signedInSecurely")}</p>
-                <p className="max-w-[55ch] text-sm text-muted-foreground">
-                  {userEmail
-                    ? t("privacy.sessionDescriptionWithEmail", { email: userEmail })
-                    : t("privacy.sessionDescription")}
-                </p>
+          {isDemo ? (
+            <>
+              <div className="flex flex-col gap-4 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">{t("demo.temporarySessionTitle")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("demo.temporarySessionDescription")}
+                  </p>
+                </div>
+                <div className="flex w-full gap-2 sm:w-auto">
+                  <form action={signOutAction} className="flex-1">
+                    <Button type="submit" variant="outline" className="h-11 w-full md:h-8">
+                      {t("demo.exit")}
+                    </Button>
+                  </form>
+                  <Button render={<Link href="/login?from=demo" />} className="h-11 flex-1 md:h-8">
+                    {t("demo.signIn")}
+                  </Button>
+                </div>
               </div>
-            </div>
-            <form action={signOutAction} className="w-full sm:w-auto">
-              <Button
-                type="submit"
-                variant="outline"
-                className="h-11 md:h-8 w-full sm:min-w-[150px]"
-              >
-                <LogOutIcon className="mr-2 size-4" aria-hidden="true" />
-                {t("signOut")}
-              </Button>
-            </form>
-          </div>
-
-          <div className="flex flex-col gap-4 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex gap-3">
-              <RowIcon>
-                <DatabaseBackupIcon className="size-4" aria-hidden="true" />
-              </RowIcon>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">{t("privacy.exportBackup")}</p>
-                <p className="max-w-[55ch] text-sm text-muted-foreground">
-                  {t("privacy.exportBackupDescription")}
-                </p>
+              <div className="p-4 text-sm text-muted-foreground">
+                {t("demo.backupRequiresAccount")}
               </div>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleExport}
-              disabled={isExporting}
-              aria-busy={isExporting}
-              className="h-11 md:h-8 w-full sm:w-auto sm:min-w-[150px]"
-            >
-              {isExporting ? (
-                <Loader2Icon className="mr-2 size-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <DownloadIcon className="mr-2 size-4" aria-hidden="true" />
-              )}
-              {isExporting ? t("privacy.preparingBackup") : t("privacy.exportBackupAction")}
-            </Button>
-          </div>
+            </>
+          ) : (
+            <FormalSessionAndBackupRows
+              userEmail={userEmail}
+              signOutAction={signOutAction}
+              onExport={handleExport}
+              isExporting={isExporting}
+            />
+          )}
 
           <div className="flex gap-3 p-4">
             <RowIcon>
@@ -193,5 +173,74 @@ export function PrivacySecurity({ userEmail, signOutAction }: PrivacySecurityPro
         </CardContent>
       </Card>
     </section>
+  );
+}
+
+function FormalSessionAndBackupRows({
+  userEmail,
+  signOutAction,
+  onExport,
+  isExporting,
+}: {
+  userEmail?: string | null;
+  signOutAction: () => Promise<void>;
+  onExport: () => Promise<void>;
+  isExporting: boolean;
+}) {
+  const t = useTranslations("settings");
+
+  return (
+    <>
+      <div className="flex flex-col gap-4 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-3">
+          <RowIcon>
+            <KeyRoundIcon className="size-4" aria-hidden="true" />
+          </RowIcon>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">{t("privacy.signedInSecurely")}</p>
+            <p className="max-w-[55ch] text-sm text-muted-foreground">
+              {userEmail
+                ? t("privacy.sessionDescriptionWithEmail", { email: userEmail })
+                : t("privacy.sessionDescription")}
+            </p>
+          </div>
+        </div>
+        <form action={signOutAction} className="w-full sm:w-auto">
+          <Button type="submit" variant="outline" className="h-11 md:h-8 w-full sm:min-w-[150px]">
+            <LogOutIcon className="mr-2 size-4" aria-hidden="true" />
+            {t("signOut")}
+          </Button>
+        </form>
+      </div>
+
+      <div className="flex flex-col gap-4 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-3">
+          <RowIcon>
+            <DatabaseBackupIcon className="size-4" aria-hidden="true" />
+          </RowIcon>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">{t("privacy.exportBackup")}</p>
+            <p className="max-w-[55ch] text-sm text-muted-foreground">
+              {t("privacy.exportBackupDescription")}
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onExport}
+          disabled={isExporting}
+          aria-busy={isExporting}
+          className="h-11 md:h-8 w-full sm:w-auto sm:min-w-[150px]"
+        >
+          {isExporting ? (
+            <Loader2Icon className="mr-2 size-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <DownloadIcon className="mr-2 size-4" aria-hidden="true" />
+          )}
+          {isExporting ? t("privacy.preparingBackup") : t("privacy.exportBackupAction")}
+        </Button>
+      </div>
+    </>
   );
 }

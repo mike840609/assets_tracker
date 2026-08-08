@@ -6,6 +6,9 @@ const h = vi.hoisted(() => ({
   calls: [] as Array<{ op: string; args?: Record<string, unknown> }>,
   existingHolding: null as Record<string, unknown> | null,
   updateError: null as Error | null,
+  principal: { kind: "formal" as const, userId: "user1" } as
+    | { kind: "formal"; userId: string }
+    | { kind: "demo"; userId: string; expiresAt: Date },
 }));
 
 vi.mock("next/cache", () => ({
@@ -24,9 +27,16 @@ vi.mock("next/server", async (importOriginal) => {
 
 vi.mock("@/lib/api-handler", () => ({
   withAuth:
-    (handler: (req: Request, ctx: unknown, userId: string) => Promise<Response>) =>
+    (
+      handler: (
+        req: Request,
+        ctx: unknown,
+        userId: string,
+        principal: typeof h.principal,
+      ) => Promise<Response>,
+    ) =>
     (req: Request, ctx: unknown) =>
-      handler(req, ctx, "user1"),
+      handler(req, ctx, "user1", h.principal),
 }));
 
 vi.mock("@/lib/services/price-service", () => ({
@@ -97,6 +107,7 @@ describe("holdings route", () => {
     h.calls = [];
     h.existingHolding = null;
     h.updateError = null;
+    h.principal = { kind: "formal", userId: "user1" };
     vi.clearAllMocks();
   });
 
@@ -221,6 +232,57 @@ describe("holdings route", () => {
     expect(vi.mocked(prisma.priceCache.upsert)).toHaveBeenCalledWith(
       expect.objectContaining({ where: { symbol: "NEW" } }),
     );
+  });
+
+  it("does not schedule price or FX warming for a Demo holding create", async () => {
+    h.principal = {
+      kind: "demo",
+      userId: "user1",
+      expiresAt: new Date("2026-08-02T00:00:00.000Z"),
+    };
+    const { POST } = await import("@/app/api/accounts/[id]/holdings/route");
+
+    const response = await POST(
+      jsonRequest({
+        symbol: "AAPL",
+        name: "Apple",
+        quantity: 10,
+        assetType: "STOCK",
+        currency: "USD",
+      }),
+      params,
+    );
+
+    expect(response.status).toBe(201);
+    expect(h.afterTasks).toHaveLength(0);
+  });
+
+  it("does not schedule price warming for a Demo symbol rename", async () => {
+    h.principal = {
+      kind: "demo",
+      userId: "user1",
+      expiresAt: new Date("2026-08-02T00:00:00.000Z"),
+    };
+    h.existingHolding = {
+      id: "h1",
+      symbol: "OLD",
+      quantity: 5,
+      currency: "USD",
+      assetType: "STOCK",
+    };
+    const { PATCH } = await import("@/app/api/accounts/[id]/holdings/route");
+
+    const response = await PATCH(
+      new Request("http://unit.test", {
+        method: "PATCH",
+        body: JSON.stringify({ id: "h1", symbol: "NEW" }),
+        headers: { "content-type": "application/json" },
+      }),
+      params,
+    );
+
+    expect(response.status).toBe(200);
+    expect(h.afterTasks).toHaveLength(0);
   });
 
   it("maps a P2002 symbol conflict on PATCH to a 409", async () => {

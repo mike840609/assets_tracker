@@ -409,9 +409,13 @@ describe("materializeDueRecurringTransactions — cutoff & filtering", () => {
     const { prisma } = await import("@/lib/prisma");
     await materializeDueRecurringTransactions(d("2026-06-14"), "rule-1");
 
-    const where = vi.mocked(prisma.recurringCashTransaction.findMany).mock.lastCall?.[0]
-      ?.where as Record<string, unknown>;
-    expect(where.id).toBe("rule-1");
-    expect(where.isActive).toBe(true);
+    expect(vi.mocked(prisma.recurringCashTransaction.findMany)).toHaveBeenCalledWith({
+      where: {
+        isActive: true,
+        nextRunDate: { lte: d("2026-06-14") },
+        account: { user: { demoWorkspace: null } },
+        id: "rule-1",
+      },
+    });
   });
 });

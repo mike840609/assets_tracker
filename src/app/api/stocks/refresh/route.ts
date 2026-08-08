@@ -1,18 +1,23 @@
 import { withAuth } from "@/lib/api-handler";
 import { ok } from "@/lib/api-responses";
-import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
+import { rateLimitCheckWithPrune, rateLimitKeyForSubject } from "@/lib/rate-limit";
 import { refreshTrackedStockPrices } from "@/lib/services/stock-watch-service";
 
-export const POST = withAuth(async (request, _ctx, userId) => {
-  // Tighter than the quote endpoint: each call fans out to Yahoo for every
-  // tracked symbol. Keyed per-user so a shared IP can't exhaust the budget.
-  const limited = rateLimitCheckWithPrune(request, {
-    limit: 10,
-    prefix: "stocks-refresh",
-    key: userId,
-  });
-  if (limited) return limited;
+export const POST = withAuth(
+  async (request, _ctx, userId, principal) => {
+    // Tighter than the quote endpoint: each call fans out to Yahoo for every
+    // tracked symbol. Keyed per-user so a shared IP can't exhaust the budget.
+    const limited = rateLimitCheckWithPrune(request, {
+      limit: 10,
+      prefix: "stocks-refresh",
+      key: rateLimitKeyForSubject(userId, "stocks-refresh"),
+    });
+    if (limited) return limited;
 
-  const result = await refreshTrackedStockPrices(userId);
-  return ok(result);
-});
+    const result = await refreshTrackedStockPrices(userId, {
+      redactIdentifiers: principal.kind === "demo",
+    });
+    return ok(result);
+  },
+  { demo: "market-refresh" },
+);

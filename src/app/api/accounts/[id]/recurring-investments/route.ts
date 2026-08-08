@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withAuth } from "@/lib/api-handler";
 import { ok, failure, validationError } from "@/lib/api-responses";
@@ -28,10 +29,11 @@ export const GET = withAuth(
     const rules = await listInvestmentsForAccount(id);
     return ok({ rules: rules.map(serializeRecurringInvestment) });
   },
+  { demo: "allow" },
 );
 
 export const POST = withAuth(
-  async (request, { params }: { params: Promise<{ id: string }> }, userId) => {
+  async (request, { params }: { params: Promise<{ id: string }> }, userId, principal) => {
     const { id } = await params;
     const body = await request.json();
     const parsed = createRecurringInvestmentSchema.safeParse(body);
@@ -71,28 +73,32 @@ export const POST = withAuth(
       },
     });
 
-    // A rule starting today (or backdated) buys immediately instead of sitting
-    // inert until the nightly cron. Best-effort: no resolvable price → the
-    // service skips and the cron retries; failure falls back to the cron too.
-    let created = rule;
-    if (rule.nextRunDate.getTime() <= taiwanCalendarDay(new Date()).getTime()) {
-      try {
-        const { created: posted } = await materializeDueInvestments(new Date(), rule.id);
-        if (posted > 0) {
-          revalidateTag(`accounts:${userId}`, { expire: 0 });
-          revalidateTag(`net-worth:${userId}`, { expire: 0 });
-          revalidateTag(`history:${userId}`, { expire: 0 });
-          revalidateTag("prices", { expire: 0 });
+    // For formal users, a rule starting today (or backdated) schedules a buy
+    // instead of sitting inert until the nightly cron. Best-effort: no
+    // resolvable price means the service skips and the cron retries.
+    if (
+      principal.kind === "formal" &&
+      rule.nextRunDate.getTime() <= taiwanCalendarDay(new Date()).getTime()
+    ) {
+      after(async () => {
+        try {
+          const { created: posted } = await materializeDueInvestments(new Date(), rule.id);
+          if (posted > 0) {
+            revalidateTag(`accounts:${userId}`, { expire: 0 });
+            revalidateTag(`net-worth:${userId}`, { expire: 0 });
+            revalidateTag(`history:${userId}`, { expire: 0 });
+            revalidateTag("prices", { expire: 0 });
+          }
+        } catch (error) {
+          log.error("recurring.investment_materialize_on_create_failed", {
+            ruleId: rule.id,
+            error: String(error),
+          });
         }
-        created = (await prisma.recurringInvestment.findUnique({ where: { id: rule.id } })) ?? rule;
-      } catch (error) {
-        log.error("recurring.investment_materialize_on_create_failed", {
-          ruleId: rule.id,
-          error: String(error),
-        });
-      }
+      });
     }
 
-    return ok(serializeRecurringInvestment(created), { status: 201 });
+    return ok(serializeRecurringInvestment(rule), { status: 201 });
   },
+  { demo: "allow" },
 );

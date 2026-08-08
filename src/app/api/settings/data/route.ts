@@ -14,7 +14,7 @@ import { serializeCalendarEntry } from "@/lib/types";
 import { ok, failure, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 import { log } from "@/lib/logger";
-import { rateLimitCheckWithPrune } from "@/lib/rate-limit";
+import { rateLimitCheckWithPrune, rateLimitKeyForSubject } from "@/lib/rate-limit";
 
 const MISSING_ACCOUNT_GOAL_MESSAGE =
   "Import backup contains an account-scoped goal that references a missing account.";
@@ -266,412 +266,421 @@ function invalidateImportCaches(userId: string) {
   revalidateTag(`history:${userId}`, { expire: 0 });
 }
 
-export const GET = withAuth(async (request, _ctx, userId) => {
-  try {
-    const limited = rateLimitCheckWithPrune(request, {
-      limit: 5,
-      prefix: "settings-export",
-      key: userId,
-    });
-    if (limited) return limited;
+export const GET = withAuth(
+  async (request, _ctx, userId) => {
+    try {
+      const limited = rateLimitCheckWithPrune(request, {
+        limit: 5,
+        prefix: "settings-export",
+        key: rateLimitKeyForSubject(userId, "settings-export"),
+      });
+      if (limited) return limited;
 
-    const data = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        appSettings: true,
-        appAccounts: {
-          include: {
-            holdings: { include: { transactions: true } },
-            cashTransactions: true,
-            recurringCashTransactions: true,
-            recurringInvestments: true,
+      const data = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          appSettings: true,
+          appAccounts: {
+            include: {
+              holdings: { include: { transactions: true } },
+              cashTransactions: true,
+              recurringCashTransactions: true,
+              recurringInvestments: true,
+            },
           },
+          snapshots: true,
+          goals: true,
+          stockWatchItems: true,
+          calendarEntries: true,
         },
-        snapshots: true,
-        goals: true,
-        stockWatchItems: true,
-        calendarEntries: true,
-      },
-    });
+      });
 
-    if (!data) return failure("User not found", 404);
+      if (!data) return failure("User not found", 404);
 
-    const exportData = {
-      version: "1.4",
-      exportedAt: new Date().toISOString(),
-      settings: data.appSettings,
-      accounts: data.appAccounts,
-      snapshots: data.snapshots,
-      goals: data.goals,
-      stockWatchItems: data.stockWatchItems,
-      calendarEntries: data.calendarEntries.map(serializeCalendarEntry),
-    };
+      const exportData = {
+        version: "1.4",
+        exportedAt: new Date().toISOString(),
+        settings: data.appSettings,
+        accounts: data.appAccounts,
+        snapshots: data.snapshots,
+        goals: data.goals,
+        stockWatchItems: data.stockWatchItems,
+        calendarEntries: data.calendarEntries.map(serializeCalendarEntry),
+      };
 
-    const json = JSON.stringify(exportData);
-    if (Buffer.byteLength(json) > MAX_UNCOMPRESSED_BACKUP_BYTES) {
-      return failure("Export backup is too large", 413);
+      const json = JSON.stringify(exportData);
+      if (Buffer.byteLength(json) > MAX_UNCOMPRESSED_BACKUP_BYTES) {
+        return failure("Export backup is too large", 413);
+      }
+
+      const compressed = await gzipAsync(json);
+      if (compressed.byteLength > MAX_COMPRESSED_BACKUP_BYTES) {
+        return failure("Export backup is too large", 413);
+      }
+
+      // The download remains a JSON file after the browser decodes this standard
+      // content encoding. Its wire representation stays below Vercel's function
+      // limit, and the settings UI uploads it with the same gzip transport.
+      return new NextResponse(compressed, {
+        headers: {
+          "Content-Encoding": "gzip",
+          "Content-Type": "application/json",
+          "Content-Disposition": `attachment; filename="assets-tracker-backup-${new Date().toISOString().split("T")[0]}.json"`,
+        },
+      });
+    } catch (error) {
+      log.error("export.failed", { error: String(error) });
+      return failure("Failed to export data", 500);
     }
+  },
+  { demo: "deny" },
+);
 
-    const compressed = await gzipAsync(json);
-    if (compressed.byteLength > MAX_COMPRESSED_BACKUP_BYTES) {
-      return failure("Export backup is too large", 413);
-    }
+export const POST = withAuth(
+  async (request, _ctx, userId) => {
+    try {
+      const limited = rateLimitCheckWithPrune(request, {
+        limit: 5,
+        prefix: "settings-import",
+        key: rateLimitKeyForSubject(userId, "settings-import"),
+      });
+      if (limited) return limited;
 
-    // The download remains a JSON file after the browser decodes this standard
-    // content encoding. Its wire representation stays below Vercel's function
-    // limit, and the settings UI uploads it with the same gzip transport.
-    return new NextResponse(compressed, {
-      headers: {
-        "Content-Encoding": "gzip",
-        "Content-Type": "application/json",
-        "Content-Disposition": `attachment; filename="assets-tracker-backup-${new Date().toISOString().split("T")[0]}.json"`,
-      },
-    });
-  } catch (error) {
-    log.error("export.failed", { error: String(error) });
-    return failure("Failed to export data", 500);
-  }
-});
+      const json = await readImportJson(request);
+      if (!json.ok) return json.response;
 
-export const POST = withAuth(async (request, _ctx, userId) => {
-  try {
-    const limited = rateLimitCheckWithPrune(request, {
-      limit: 5,
-      prefix: "settings-import",
-      key: userId,
-    });
-    if (limited) return limited;
+      const parsed = dataImportSchema.safeParse(json.body);
 
-    const json = await readImportJson(request);
-    if (!json.ok) return json.response;
+      if (!parsed.success) {
+        log.error("import.validation", { issues: parsed.error.format() });
+        return validationError(parsed.error);
+      }
 
-    const parsed = dataImportSchema.safeParse(json.body);
+      const importData = parsed.data;
+      if (!validateAccountGoalReferences(importData)) {
+        return failure(MISSING_ACCOUNT_GOAL_MESSAGE, 400);
+      }
 
-    if (!parsed.success) {
-      log.error("import.validation", { issues: parsed.error.format() });
-      return validationError(parsed.error);
-    }
+      const targetBaseCurrency = importData.settings?.baseCurrency ?? "USD";
+      const rateMap = await getImportRateMap(importData, targetBaseCurrency);
+      if (!rateMap) {
+        return failure(MISSING_EXCHANGE_RATE_MESSAGE, 400);
+      }
 
-    const importData = parsed.data;
-    if (!validateAccountGoalReferences(importData)) {
-      return failure(MISSING_ACCOUNT_GOAL_MESSAGE, 400);
-    }
+      await prisma.$transaction(
+        async (tx) => {
+          const accountIdMap = new Map<string, string>();
 
-    const targetBaseCurrency = importData.settings?.baseCurrency ?? "USD";
-    const rateMap = await getImportRateMap(importData, targetBaseCurrency);
-    if (!rateMap) {
-      return failure(MISSING_EXCHANGE_RATE_MESSAGE, 400);
-    }
+          // 1. Delete existing data for the user (Cascades should handle holdings,
+          // transactions, and recurring rules via Account's onDelete: Cascade)
+          await tx.account.deleteMany({ where: { userId } });
+          await tx.netWorthSnapshot.deleteMany({ where: { userId } });
+          await tx.goal.deleteMany({ where: { userId } });
+          await tx.stockWatchItem.deleteMany({ where: { userId } });
+          await tx.calendarEntry.deleteMany({ where: { userId } });
 
-    await prisma.$transaction(
-      async (tx) => {
-        const accountIdMap = new Map<string, string>();
+          // 2. Import settings if present
+          if (importData.settings) {
+            await tx.setting.upsert({
+              where: { userId },
+              update: {
+                baseCurrency: importData.settings.baseCurrency,
+                locale: importData.settings.locale,
+              },
+              create: {
+                userId,
+                baseCurrency: importData.settings.baseCurrency,
+                locale: importData.settings.locale,
+              },
+            });
+          }
 
-        // 1. Delete existing data for the user (Cascades should handle holdings,
-        // transactions, and recurring rules via Account's onDelete: Cascade)
-        await tx.account.deleteMany({ where: { userId } });
-        await tx.netWorthSnapshot.deleteMany({ where: { userId } });
-        await tx.goal.deleteMany({ where: { userId } });
-        await tx.stockWatchItem.deleteMany({ where: { userId } });
-        await tx.calendarEntry.deleteMany({ where: { userId } });
+          // 3. Import accounts & their relations
+          for (const acc of importData.accounts) {
+            const newAccount = await tx.account.create({
+              data: {
+                userId,
+                name: acc.name,
+                type: acc.type,
+                category: acc.category,
+                currency: acc.currency,
+                cashBalance: acc.cashBalance,
+                isActive: acc.isActive,
+                isPinned: acc.isPinned,
+                sortOrder: acc.sortOrder,
+                createdAt: acc.createdAt,
+                updatedAt: acc.updatedAt,
+              },
+            });
 
-        // 2. Import settings if present
-        if (importData.settings) {
-          await tx.setting.upsert({
-            where: { userId },
-            update: {
-              baseCurrency: importData.settings.baseCurrency,
-              locale: importData.settings.locale,
-            },
-            create: {
-              userId,
-              baseCurrency: importData.settings.baseCurrency,
-              locale: importData.settings.locale,
-            },
-          });
-        }
+            if (acc.id) accountIdMap.set(acc.id, newAccount.id);
 
-        // 3. Import accounts & their relations
-        for (const acc of importData.accounts) {
-          const newAccount = await tx.account.create({
-            data: {
-              userId,
-              name: acc.name,
-              type: acc.type,
-              category: acc.category,
-              currency: acc.currency,
-              cashBalance: acc.cashBalance,
-              isActive: acc.isActive,
-              isPinned: acc.isPinned,
-              sortOrder: acc.sortOrder,
-              createdAt: acc.createdAt,
-              updatedAt: acc.updatedAt,
-            },
-          });
-
-          if (acc.id) accountIdMap.set(acc.id, newAccount.id);
-
-          // Recurring rules — created before holdings/cashTransactions so their
-          // new ids are available to remap HoldingTransaction/CashTransaction.recurringId.
-          const recurringCashIdMap = new Map<string, string>();
-          const recurringCashCreatedAtMap = new Map<string, string>();
-          if (Array.isArray(acc.recurringCashTransactions)) {
-            for (const rule of acc.recurringCashTransactions) {
-              const created = await tx.recurringCashTransaction.create({
-                data: {
-                  accountId: newAccount.id,
-                  type: rule.type,
-                  amount: rule.amount,
-                  frequency: rule.frequency,
-                  note: rule.note,
-                  startDate: new Date(rule.startDate ?? rule.nextRunDate ?? new Date()),
-                  endDate: rule.endDate ? new Date(rule.endDate) : null,
-                  nextRunDate: new Date(rule.nextRunDate ?? rule.startDate ?? new Date()),
-                  isActive: rule.isActive,
-                  createdAt: rule.createdAt,
-                  updatedAt: rule.updatedAt,
-                },
-              });
-              if (rule.id) {
-                recurringCashIdMap.set(rule.id, created.id);
-                if (rule.createdAt) recurringCashCreatedAtMap.set(rule.id, rule.createdAt);
+            // Recurring rules — created before holdings/cashTransactions so their
+            // new ids are available to remap HoldingTransaction/CashTransaction.recurringId.
+            const recurringCashIdMap = new Map<string, string>();
+            const recurringCashCreatedAtMap = new Map<string, string>();
+            if (Array.isArray(acc.recurringCashTransactions)) {
+              for (const rule of acc.recurringCashTransactions) {
+                const created = await tx.recurringCashTransaction.create({
+                  data: {
+                    accountId: newAccount.id,
+                    type: rule.type,
+                    amount: rule.amount,
+                    frequency: rule.frequency,
+                    note: rule.note,
+                    startDate: new Date(rule.startDate ?? rule.nextRunDate ?? new Date()),
+                    endDate: rule.endDate ? new Date(rule.endDate) : null,
+                    nextRunDate: new Date(rule.nextRunDate ?? rule.startDate ?? new Date()),
+                    isActive: rule.isActive,
+                    createdAt: rule.createdAt,
+                    updatedAt: rule.updatedAt,
+                  },
+                });
+                if (rule.id) {
+                  recurringCashIdMap.set(rule.id, created.id);
+                  if (rule.createdAt) recurringCashCreatedAtMap.set(rule.id, rule.createdAt);
+                }
               }
             }
-          }
 
-          const recurringInvestmentIdMap = new Map<string, string>();
-          if (Array.isArray(acc.recurringInvestments)) {
-            for (const rule of acc.recurringInvestments) {
-              const created = await tx.recurringInvestment.create({
-                data: {
-                  accountId: newAccount.id,
-                  symbol: rule.symbol,
-                  name: rule.name,
-                  assetType: rule.assetType,
-                  holdingCurrency: rule.holdingCurrency,
-                  amount: rule.amount,
-                  frequency: rule.frequency,
-                  note: rule.note,
-                  startDate: new Date(rule.startDate ?? rule.nextRunDate ?? new Date()),
-                  endDate: rule.endDate ? new Date(rule.endDate) : null,
-                  nextRunDate: new Date(rule.nextRunDate ?? rule.startDate ?? new Date()),
-                  isActive: rule.isActive,
-                  createdAt: rule.createdAt,
-                  updatedAt: rule.updatedAt,
-                },
-              });
-              if (rule.id) recurringInvestmentIdMap.set(rule.id, created.id);
+            const recurringInvestmentIdMap = new Map<string, string>();
+            if (Array.isArray(acc.recurringInvestments)) {
+              for (const rule of acc.recurringInvestments) {
+                const created = await tx.recurringInvestment.create({
+                  data: {
+                    accountId: newAccount.id,
+                    symbol: rule.symbol,
+                    name: rule.name,
+                    assetType: rule.assetType,
+                    holdingCurrency: rule.holdingCurrency,
+                    amount: rule.amount,
+                    frequency: rule.frequency,
+                    note: rule.note,
+                    startDate: new Date(rule.startDate ?? rule.nextRunDate ?? new Date()),
+                    endDate: rule.endDate ? new Date(rule.endDate) : null,
+                    nextRunDate: new Date(rule.nextRunDate ?? rule.startDate ?? new Date()),
+                    isActive: rule.isActive,
+                    createdAt: rule.createdAt,
+                    updatedAt: rule.updatedAt,
+                  },
+                });
+                if (rule.id) recurringInvestmentIdMap.set(rule.id, created.id);
+              }
             }
-          }
 
-          // Holdings
-          if (Array.isArray(acc.holdings)) {
-            for (const h of acc.holdings) {
-              const newHolding = await tx.holding.create({
-                data: {
-                  accountId: newAccount.id,
-                  symbol: h.symbol,
-                  name: h.name,
-                  quantity: h.quantity,
-                  currency: h.currency,
-                  assetType: h.assetType,
-                  createdAt: h.createdAt,
-                  updatedAt: h.updatedAt,
-                  underlyingSymbol: h.underlyingSymbol ?? null,
-                  optionType: h.optionType ?? null,
-                  strike: h.strike ?? null,
-                  expiration: h.expiration ? new Date(h.expiration) : null,
-                  contractMultiplier: h.contractMultiplier ?? null,
-                },
-              });
+            // Holdings
+            if (Array.isArray(acc.holdings)) {
+              for (const h of acc.holdings) {
+                const newHolding = await tx.holding.create({
+                  data: {
+                    accountId: newAccount.id,
+                    symbol: h.symbol,
+                    name: h.name,
+                    quantity: h.quantity,
+                    currency: h.currency,
+                    assetType: h.assetType,
+                    createdAt: h.createdAt,
+                    updatedAt: h.updatedAt,
+                    underlyingSymbol: h.underlyingSymbol ?? null,
+                    optionType: h.optionType ?? null,
+                    strike: h.strike ?? null,
+                    expiration: h.expiration ? new Date(h.expiration) : null,
+                    contractMultiplier: h.contractMultiplier ?? null,
+                  },
+                });
 
-              if (Array.isArray(h.transactions) && h.transactions.length > 0) {
-                await tx.holdingTransaction.createMany({
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  data: h.transactions.map((t: any) => ({
-                    holdingId: newHolding.id,
+                if (Array.isArray(h.transactions) && h.transactions.length > 0) {
+                  await tx.holdingTransaction.createMany({
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    data: h.transactions.map((t: any) => ({
+                      holdingId: newHolding.id,
+                      type: t.type,
+                      quantity: t.quantity,
+                      ...(t.unitPrice !== undefined && { unitPrice: t.unitPrice }),
+                      note: t.note,
+                      createdAt: t.createdAt,
+                      // Preserve null as null — analysis bucketing falls back to
+                      // createdAt only when occurrenceDate is null.
+                      occurrenceDate: t.occurrenceDate ?? null,
+                      recurringId: t.recurringId
+                        ? (recurringInvestmentIdMap.get(t.recurringId) ?? null)
+                        : null,
+                    })),
+                  });
+                }
+              }
+            }
+
+            // Cash Transactions
+            if (Array.isArray(acc.cashTransactions) && acc.cashTransactions.length > 0) {
+              await tx.cashTransaction.createMany({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                data: acc.cashTransactions.map((t: any) => {
+                  const estimatedMaterializedAt = t.recurringId
+                    ? latestImportTimestamp(
+                        t.createdAt,
+                        recurringCashCreatedAtMap.get(t.recurringId),
+                      )
+                    : null;
+
+                  return {
+                    accountId: newAccount.id,
                     type: t.type,
-                    quantity: t.quantity,
-                    ...(t.unitPrice !== undefined && { unitPrice: t.unitPrice }),
+                    amount: t.amount,
                     note: t.note,
                     createdAt: t.createdAt,
                     // Preserve null as null — analysis bucketing falls back to
                     // createdAt only when occurrenceDate is null.
                     occurrenceDate: t.occurrenceDate ?? null,
                     recurringId: t.recurringId
-                      ? (recurringInvestmentIdMap.get(t.recurringId) ?? null)
+                      ? (recurringCashIdMap.get(t.recurringId) ?? null)
                       : null,
-                  })),
-                });
-              }
+                    // v1.4+ backups preserve durable provenance directly. For an
+                    // older backup, the best recoverable posting bound is the
+                    // later of the transaction and linked rule creation times.
+                    materializedAt: t.materializedAt ?? estimatedMaterializedAt,
+                    materializedAtEstimated:
+                      t.materializedAt != null
+                        ? t.materializedAtEstimated
+                        : estimatedMaterializedAt != null,
+                  };
+                }),
+              });
             }
           }
 
-          // Cash Transactions
-          if (Array.isArray(acc.cashTransactions) && acc.cashTransactions.length > 0) {
-            await tx.cashTransaction.createMany({
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              data: acc.cashTransactions.map((t: any) => {
-                const estimatedMaterializedAt = t.recurringId
-                  ? latestImportTimestamp(t.createdAt, recurringCashCreatedAtMap.get(t.recurringId))
-                  : null;
-
+          // 4. Import snapshots
+          const snapshots = dedupeSnapshots(importData.snapshots, targetBaseCurrency);
+          if (snapshots.length > 0) {
+            await tx.netWorthSnapshot.createMany({
+              data: snapshots.map((s) => {
                 return {
-                  accountId: newAccount.id,
-                  type: t.type,
-                  amount: t.amount,
-                  note: t.note,
-                  createdAt: t.createdAt,
-                  // Preserve null as null — analysis bucketing falls back to
-                  // createdAt only when occurrenceDate is null.
-                  occurrenceDate: t.occurrenceDate ?? null,
-                  recurringId: t.recurringId
-                    ? (recurringCashIdMap.get(t.recurringId) ?? null)
-                    : null,
-                  // v1.4+ backups preserve durable provenance directly. For an
-                  // older backup, the best recoverable posting bound is the
-                  // later of the transaction and linked rule creation times.
-                  materializedAt: t.materializedAt ?? estimatedMaterializedAt,
-                  materializedAtEstimated:
-                    t.materializedAt != null
-                      ? t.materializedAtEstimated
-                      : estimatedMaterializedAt != null,
+                  userId,
+                  date: new Date(s.date),
+                  totalAssets: normalizeSnapshotAmount(
+                    s.totalAssets,
+                    s.baseCurrency,
+                    targetBaseCurrency,
+                    rateMap,
+                  ),
+                  totalLiabilities: normalizeSnapshotAmount(
+                    s.totalLiabilities,
+                    s.baseCurrency,
+                    targetBaseCurrency,
+                    rateMap,
+                  ),
+                  netWorth: normalizeSnapshotAmount(
+                    s.netWorth,
+                    s.baseCurrency,
+                    targetBaseCurrency,
+                    rateMap,
+                  ),
+                  baseCurrency: targetBaseCurrency,
+                  breakdown: normalizeSnapshotBreakdown(
+                    remapSnapshotBreakdown(s.breakdown, accountIdMap),
+                  ),
+                  label: s.label?.trim() || null,
+                  note: s.note?.trim() || null,
+                  createdAt: s.createdAt,
                 };
               }),
             });
           }
-        }
 
-        // 4. Import snapshots
-        const snapshots = dedupeSnapshots(importData.snapshots, targetBaseCurrency);
-        if (snapshots.length > 0) {
-          await tx.netWorthSnapshot.createMany({
-            data: snapshots.map((s) => {
-              return {
+          // 5. Import goals
+          if (Array.isArray(importData.goals) && importData.goals.length > 0) {
+            await tx.goal.createMany({
+              data: importData.goals.map((g) => ({
                 userId,
-                date: new Date(s.date),
-                totalAssets: normalizeSnapshotAmount(
-                  s.totalAssets,
-                  s.baseCurrency,
-                  targetBaseCurrency,
-                  rateMap,
-                ),
-                totalLiabilities: normalizeSnapshotAmount(
-                  s.totalLiabilities,
-                  s.baseCurrency,
-                  targetBaseCurrency,
-                  rateMap,
-                ),
-                netWorth: normalizeSnapshotAmount(
-                  s.netWorth,
-                  s.baseCurrency,
-                  targetBaseCurrency,
-                  rateMap,
-                ),
-                baseCurrency: targetBaseCurrency,
-                breakdown: normalizeSnapshotBreakdown(
-                  remapSnapshotBreakdown(s.breakdown, accountIdMap),
-                ),
-                label: s.label?.trim() || null,
-                note: s.note?.trim() || null,
-                createdAt: s.createdAt,
-              };
-            }),
-          });
-        }
-
-        // 5. Import goals
-        if (Array.isArray(importData.goals) && importData.goals.length > 0) {
-          await tx.goal.createMany({
-            data: importData.goals.map((g) => ({
-              userId,
-              name: g.name,
-              targetAmount: g.targetAmount,
-              targetCurrency: g.targetCurrency,
-              targetDate: g.targetDate ? new Date(g.targetDate) : null,
-              scope: g.scope,
-              scopeRefId: remapGoalScopeRefId(g, accountIdMap),
-              sortOrder: g.sortOrder,
-              ...(g.createdAt && { createdAt: new Date(g.createdAt) }),
-              ...(g.updatedAt && { updatedAt: new Date(g.updatedAt) }),
-            })),
-          });
-        }
-
-        // 6. Import stock watchlist (user-scoped, not account-scoped — no id
-        // remapping needed since nothing else references it by id)
-        if (Array.isArray(importData.stockWatchItems) && importData.stockWatchItems.length > 0) {
-          await tx.stockWatchItem.createMany({
-            data: importData.stockWatchItems.map((item) => ({
-              userId,
-              symbol: item.symbol,
-              name: item.name,
-              exchange: item.exchange,
-              currency: item.currency,
-              recordPrice: item.recordPrice,
-              recordDate: new Date(item.recordDate ?? new Date()),
-              note: item.note,
-              sortOrder: item.sortOrder,
-              createdAt: item.createdAt,
-              updatedAt: item.updatedAt,
-            })),
-          });
-        }
-
-        // 7. Import Calendar entries (user-scoped, with date-only values
-        // restored at UTC midnight to preserve the backup contract).
-        if (Array.isArray(importData.calendarEntries) && importData.calendarEntries.length > 0) {
-          await tx.calendarEntry.createMany({
-            data: importData.calendarEntries.map((entry) => ({
-              userId,
-              title: entry.title,
-              eventDate: new Date(`${entry.eventDate}T00:00:00.000Z`),
-              startTimeMinutes: entry.startTimeMinutes,
-              timeZone: entry.timeZone,
-              category: entry.category,
-              description: entry.description ?? null,
-              sourceUrl: entry.sourceUrl ?? null,
-              ...(entry.createdAt && { createdAt: new Date(entry.createdAt) }),
-              ...(entry.updatedAt && { updatedAt: new Date(entry.updatedAt) }),
-            })),
-          });
-        }
-      },
-      { timeout: 30000 },
-    );
-
-    invalidateImportCaches(userId);
-
-    // Imported holdings may reference symbols with no PriceCache row yet —
-    // without this they render unpriced until the next manual refresh / cron.
-    after(() =>
-      refreshPricesForUser(userId)
-        .then((result) => {
-          if (result?.outcome === "total_failure") {
-            log.error("import.price_warm_failed", {
-              outcome: result.outcome,
-              errors: result.errors,
+                name: g.name,
+                targetAmount: g.targetAmount,
+                targetCurrency: g.targetCurrency,
+                targetDate: g.targetDate ? new Date(g.targetDate) : null,
+                scope: g.scope,
+                scopeRefId: remapGoalScopeRefId(g, accountIdMap),
+                sortOrder: g.sortOrder,
+                ...(g.createdAt && { createdAt: new Date(g.createdAt) }),
+                ...(g.updatedAt && { updatedAt: new Date(g.updatedAt) }),
+              })),
             });
           }
-        })
-        .catch((error) => log.error("import.price_warm_failed", { error: String(error) })),
-    );
 
-    const response = ok({ ok: true });
-    if (importData.settings?.locale) {
-      response.cookies.set("NEXT_LOCALE", importData.settings.locale, {
-        path: "/",
-        maxAge: 60 * 60 * 24 * 365,
-        sameSite: "lax",
-      });
-    }
+          // 6. Import stock watchlist (user-scoped, not account-scoped — no id
+          // remapping needed since nothing else references it by id)
+          if (Array.isArray(importData.stockWatchItems) && importData.stockWatchItems.length > 0) {
+            await tx.stockWatchItem.createMany({
+              data: importData.stockWatchItems.map((item) => ({
+                userId,
+                symbol: item.symbol,
+                name: item.name,
+                exchange: item.exchange,
+                currency: item.currency,
+                recordPrice: item.recordPrice,
+                recordDate: new Date(item.recordDate ?? new Date()),
+                note: item.note,
+                sortOrder: item.sortOrder,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt,
+              })),
+            });
+          }
 
-    return response;
-  } catch (error) {
-    log.error("import.failed", { error: String(error) });
-    if (error instanceof GoalRemapError) {
-      return failure(error.message, 400);
+          // 7. Import Calendar entries (user-scoped, with date-only values
+          // restored at UTC midnight to preserve the backup contract).
+          if (Array.isArray(importData.calendarEntries) && importData.calendarEntries.length > 0) {
+            await tx.calendarEntry.createMany({
+              data: importData.calendarEntries.map((entry) => ({
+                userId,
+                title: entry.title,
+                eventDate: new Date(`${entry.eventDate}T00:00:00.000Z`),
+                startTimeMinutes: entry.startTimeMinutes,
+                timeZone: entry.timeZone,
+                category: entry.category,
+                description: entry.description ?? null,
+                sourceUrl: entry.sourceUrl ?? null,
+                ...(entry.createdAt && { createdAt: new Date(entry.createdAt) }),
+                ...(entry.updatedAt && { updatedAt: new Date(entry.updatedAt) }),
+              })),
+            });
+          }
+        },
+        { timeout: 30000 },
+      );
+
+      invalidateImportCaches(userId);
+
+      // Imported holdings may reference symbols with no PriceCache row yet —
+      // without this they render unpriced until the next manual refresh / cron.
+      after(() =>
+        refreshPricesForUser(userId)
+          .then((result) => {
+            if (result?.outcome === "total_failure") {
+              log.error("import.price_warm_failed", {
+                outcome: result.outcome,
+                errors: result.errors,
+              });
+            }
+          })
+          .catch((error) => log.error("import.price_warm_failed", { error: String(error) })),
+      );
+
+      const response = ok({ ok: true });
+      if (importData.settings?.locale) {
+        response.cookies.set("NEXT_LOCALE", importData.settings.locale, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 365,
+          sameSite: "lax",
+        });
+      }
+
+      return response;
+    } catch (error) {
+      log.error("import.failed", { error: String(error) });
+      if (error instanceof GoalRemapError) {
+        return failure(error.message, 400);
+      }
+      return failure("Failed to import data", 500);
     }
-    return failure("Failed to import data", 500);
-  }
-});
+  },
+  { demo: "deny" },
+);

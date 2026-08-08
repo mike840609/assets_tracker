@@ -84,7 +84,12 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
       <div className="md:flex md:gap-6 md:items-start">
         <AccountsNavPanel accounts={allAccounts} currentId={id} />
         <div className="flex-1 min-w-0 space-y-6">
-          <AccountDetail account={serialized} priceMap={priceMap} ratesMap={ratesMap} />
+          <AccountDetail
+            account={serialized}
+            priceMap={priceMap}
+            ratesMap={ratesMap}
+            isDemo={session.user.isDemo}
+          />
         </div>
       </div>
     </NextIntlClientProvider>

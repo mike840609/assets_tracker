@@ -53,6 +53,7 @@ vi.mock("@/lib/logger", () => ({
 
 vi.mock("@/lib/rate-limit", () => ({
   rateLimitCheckWithPrune: vi.fn(() => null),
+  rateLimitKeyForSubject: vi.fn(() => "hmac:settings-data"),
 }));
 
 vi.mock("@/lib/services/exchange-rate-service", () => ({

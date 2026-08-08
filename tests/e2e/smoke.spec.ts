@@ -34,7 +34,7 @@ test("1. unauthenticated visitor is redirected to /login and can sign in", async
 
   // Sign in via preview-credentials (the OAuth stub for CI).
   // Works for both password-gated and button-only preview mode.
-  const previewLoginButton = page.getByRole("button", { name: "Preview Login" });
+  const previewLoginButton = page.getByRole("button", { name: "Internal Test Login" });
   await previewLoginButton.waitFor({ timeout: 60_000 });
   const passwordInput = page.locator('input[name="password"]');
   if (await passwordInput.count()) {

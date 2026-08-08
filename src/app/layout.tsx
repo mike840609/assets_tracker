@@ -78,7 +78,14 @@ async function LocaleProviders({ children }: { children: React.ReactNode }) {
   const messages = await getMessages();
   return (
     <NextIntlClientProvider
-      messages={pickMessages(messages, ["app", "nav", "commandPalette", "common", "errors"])}
+      messages={pickMessages(messages, [
+        "app",
+        "nav",
+        "commandPalette",
+        "common",
+        "errors",
+        "demo",
+      ])}
     >
       <HtmlLangSync />
       {children}

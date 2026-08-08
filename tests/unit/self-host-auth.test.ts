@@ -7,12 +7,16 @@ type CredentialsProvider = {
 };
 
 const h = vi.hoisted(() => ({
-  authConfig: null as { providers: CredentialsProvider[] } | null,
+  authConfig: null as {
+    providers: CredentialsProvider[];
+    callbacks?: Record<string, unknown>;
+  } | null,
+  sessionCallback: vi.fn(),
   userUpsert: vi.fn(),
 }));
 
 vi.mock("next-auth", () => ({
-  default: (config: { providers: CredentialsProvider[] }) => {
+  default: (config: { providers: CredentialsProvider[]; callbacks?: Record<string, unknown> }) => {
     h.authConfig = config;
     return { handlers: {}, auth: vi.fn(), signIn: vi.fn(), signOut: vi.fn() };
   },
@@ -23,7 +27,7 @@ vi.mock("next-auth/providers/credentials", () => ({
 }));
 
 vi.mock("@/auth.config", () => ({
-  default: { providers: [] },
+  default: { providers: [], callbacks: { session: h.sessionCallback } },
 }));
 
 vi.mock("@/lib/auth-adapter", () => ({
@@ -40,6 +44,11 @@ vi.mock("@/lib/env", () => ({
   isPreviewAuthEnabled: false,
   previewAuthRequiresPassword: false,
   PREVIEW_AUTH_PASSWORD: undefined,
+  isPublicDemoEnabled: false,
+}));
+
+vi.mock("@/lib/demo/demo-service", () => ({
+  authenticateDemoTicket: vi.fn(),
 }));
 
 await import("@/auth");
@@ -53,6 +62,10 @@ describe("self-host credentials provider", () => {
     const provider = h.authConfig?.providers.find(({ id }) => id === "self-host");
 
     expect(provider).toBeDefined();
+  });
+
+  it("retains the proxy-safe callbacks from the shared auth config", () => {
+    expect(h.authConfig?.callbacks).toEqual({ session: h.sessionCallback });
   });
 
   it("authenticates the stable owner account with the configured password", async () => {

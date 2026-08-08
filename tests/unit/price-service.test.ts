@@ -4,17 +4,27 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // Stub them all so the unit suite needs no DB or network.
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    priceCache: { findMany: vi.fn() },
+    priceCache: { findMany: vi.fn(), findUnique: vi.fn(), upsert: vi.fn() },
     holding: { findMany: vi.fn() },
     stockWatchItem: { findMany: vi.fn() },
     $queryRawUnsafe: vi.fn(),
     $executeRawUnsafe: vi.fn(),
   },
 }));
-vi.mock("@/lib/logger", () => ({
-  log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
-  withTiming: <T>(_: string, fn: () => Promise<T>) => fn(),
-}));
+vi.mock("@/lib/logger", () => {
+  const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
+  return {
+    log,
+    withTiming: async <T>(label: string, fn: () => Promise<T>, meta?: Record<string, unknown>) => {
+      try {
+        return await fn();
+      } catch (error) {
+        log.error(label, { ...meta, error: String(error) });
+        throw error;
+      }
+    },
+  };
+});
 // Partial mock: only the client factory is stubbed. `getYahooErrorStatus` must
 // stay real because price-service reads the upstream HTTP status through it to
 // classify 429s, and a blanket auto-mock would make every status `undefined`.
@@ -30,11 +40,18 @@ vi.mock("next/cache", () => ({
 const { prisma } = await import("@/lib/prisma");
 const { getYahooClient } = await import("@/lib/services/yahoo-client");
 const {
+  fetchStockPrices,
   fetchCryptoPrices,
   refreshPricesForStockSymbols,
   refreshAllPrices,
   normalizeMinorCurrencyQuote,
 } = await import("@/lib/services/price-service");
+const {
+  fetchEquityQuote,
+  invalidateStockWatchCaches,
+  refreshTrackedStockPrices,
+  tryWarmStockPrice,
+} = await import("@/lib/services/stock-watch-service");
 const { PRICE_REFRESH_TTL_MS } = await import("@/lib/refresh-policy");
 
 describe("normalizeMinorCurrencyQuote — minor-unit (pence/cents) normalization", () => {
@@ -65,6 +82,142 @@ describe("normalizeMinorCurrencyQuote — minor-unit (pence/cents) normalization
       price: 123.45,
       currency: "USD",
     });
+  });
+});
+
+describe("stock-watch cache invalidation", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("invalidates only the owned stock tag for Demo and never churns prices", async () => {
+    const { revalidateTag } = await import("next/cache");
+    invalidateStockWatchCaches("demo-user", {
+      kind: "demo",
+      userId: "demo-user",
+      expiresAt: new Date("2026-08-02T00:00:00.000Z"),
+    });
+
+    expect(revalidateTag).toHaveBeenCalledOnce();
+    expect(revalidateTag).toHaveBeenCalledWith("stocks:demo-user", { expire: 0 });
+  });
+
+  it("preserves broad and owned stock invalidation for formal users without churning prices", async () => {
+    const { revalidateTag } = await import("next/cache");
+    invalidateStockWatchCaches("formal-user", { kind: "formal", userId: "formal-user" });
+
+    expect(vi.mocked(revalidateTag).mock.calls).toEqual([
+      ["stocks", { expire: 0 }],
+      ["stocks:formal-user", { expire: 0 }],
+    ]);
+  });
+
+  it("does not revalidate stock caches after a price-only tracked-stock refresh", async () => {
+    const { revalidateTag } = await import("next/cache");
+    vi.mocked(prisma.stockWatchItem.findMany).mockResolvedValue([{ symbol: "AAPL" }] as never);
+    vi.mocked(prisma.priceCache.findMany).mockResolvedValue([
+      { symbol: "AAPL", updatedAt: new Date() },
+    ] as never);
+
+    const result = await refreshTrackedStockPrices("formal-user");
+
+    expect(result.outcome).toBe("no_due_symbols");
+    expect(revalidateTag).not.toHaveBeenCalled();
+  });
+});
+
+describe("Demo market log redaction", () => {
+  const realFetch = globalThis.fetch;
+
+  beforeEach(() => vi.clearAllMocks());
+
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  it("redacts Yahoo batch and fallback identifiers and raw provider errors", async () => {
+    const { log } = await import("@/lib/logger");
+    vi.mocked(getYahooClient).mockResolvedValue({
+      quote: vi.fn().mockRejectedValue(new Error("private provider SENTINEL_RAW")),
+    } as never);
+
+    await fetchStockPrices(["SENTINEL_A", "SENTINEL_B"], [], { redactIdentifiers: true });
+
+    const logged = JSON.stringify(vi.mocked(log.error).mock.calls);
+    expect(logged).not.toContain("SENTINEL_A");
+    expect(logged).not.toContain("SENTINEL_B");
+    expect(logged).not.toContain("SENTINEL_RAW");
+  });
+
+  it("redacts CoinGecko transport errors", async () => {
+    const { log } = await import("@/lib/logger");
+    vi.mocked(getYahooClient).mockResolvedValue({ quote: vi.fn().mockResolvedValue([]) } as never);
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error("private transport SENTINEL_RAW"));
+
+    await fetchCryptoPrices(["SENTINEL-USD"], [], { redactIdentifiers: true });
+
+    const logged = JSON.stringify(vi.mocked(log.error).mock.calls);
+    expect(logged).not.toContain("SENTINEL");
+    expect(logged).not.toContain("SENTINEL_RAW");
+  });
+
+  it("rethrows quote failures without provider causes and redacts warm failures", async () => {
+    const { log } = await import("@/lib/logger");
+    vi.mocked(prisma.priceCache.findUnique).mockResolvedValue(null);
+    vi.mocked(getYahooClient).mockRejectedValue(
+      new Error("private quote SENTINEL_SYMBOL SENTINEL_RAW"),
+    );
+
+    await expect(fetchEquityQuote("SENTINEL_SYMBOL", { redactIdentifiers: true })).rejects.toThrow(
+      "Market quote lookup failed",
+    );
+    await expect(
+      tryWarmStockPrice("SENTINEL_SYMBOL", { redactIdentifiers: true }),
+    ).resolves.toBeNull();
+
+    const logged = JSON.stringify(vi.mocked(log.warn).mock.calls);
+    expect(logged).not.toContain("SENTINEL_SYMBOL");
+    expect(logged).not.toContain("SENTINEL_RAW");
+  });
+
+  it("redacts claim-cleanup failures", async () => {
+    const { log } = await import("@/lib/logger");
+    const staleDate = new Date(Date.now() - PRICE_REFRESH_TTL_MS - 5_000);
+    vi.mocked(prisma.priceCache.findMany).mockResolvedValueOnce([
+      { symbol: "AAPL", updatedAt: staleDate },
+    ] as never);
+    vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce([{ symbol: "AAPL" }]);
+    vi.mocked(getYahooClient).mockRejectedValueOnce(new Error("provider unavailable"));
+    vi.mocked(prisma.$executeRawUnsafe).mockRejectedValueOnce(
+      new Error("private database SENTINEL_DB"),
+    );
+
+    await refreshPricesForStockSymbols(["AAPL"], { redactIdentifiers: true });
+
+    const logged = JSON.stringify(vi.mocked(log.error).mock.calls);
+    expect(logged).not.toContain("SENTINEL_DB");
+    expect(logged).not.toContain("private database");
+  });
+
+  it("redacts cache-revalidation failures", async () => {
+    const { log } = await import("@/lib/logger");
+    const { revalidateTag } = await import("next/cache");
+    vi.mocked(prisma.priceCache.findMany)
+      .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce([] as never);
+    vi.mocked(getYahooClient).mockResolvedValue({
+      quote: vi
+        .fn()
+        .mockResolvedValue([{ symbol: "AAPL", regularMarketPrice: 100, currency: "USD" }]),
+    } as never);
+    vi.mocked(prisma.$executeRawUnsafe).mockResolvedValueOnce(1 as never);
+    vi.mocked(revalidateTag).mockImplementationOnce(() => {
+      throw new Error("private cache SENTINEL_CACHE");
+    });
+
+    await refreshPricesForStockSymbols(["AAPL"], { redactIdentifiers: true });
+
+    const logged = JSON.stringify(vi.mocked(log.error).mock.calls);
+    expect(logged).not.toContain("SENTINEL_CACHE");
+    expect(logged).not.toContain("private cache");
   });
 });
 
@@ -129,6 +282,24 @@ describe("refreshAllPrices — cron-wide symbol collection", () => {
     const fetched = quote.mock.calls.flatMap(([symbols]) => symbols as string[]);
     expect(fetched).toContain("TSLA");
     expect(fetched.filter((symbol) => symbol === "AAPL")).toHaveLength(1);
+  });
+
+  it("discovers symbols only through formal-user relations", async () => {
+    vi.mocked(prisma.holding.findMany).mockResolvedValueOnce([] as never);
+    vi.mocked(prisma.stockWatchItem.findMany).mockResolvedValueOnce([] as never);
+
+    await refreshAllPrices();
+
+    expect(prisma.holding.findMany).toHaveBeenCalledWith({
+      where: { account: { user: { demoWorkspace: null } } },
+      select: { symbol: true, assetType: true },
+      distinct: ["symbol"],
+    });
+    expect(prisma.stockWatchItem.findMany).toHaveBeenCalledWith({
+      where: { user: { demoWorkspace: null } },
+      select: { symbol: true },
+      distinct: ["symbol"],
+    });
   });
 
   it("treats unpriceable holdings as no due symbols", async () => {

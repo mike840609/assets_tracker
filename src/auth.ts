@@ -4,10 +4,12 @@ import NextAuth, { type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import authConfig from "./auth.config";
 import { customPrismaAdapter } from "@/lib/auth-adapter";
+import { authenticateDemoTicket } from "@/lib/demo/demo-service";
 import { prisma } from "@/lib/prisma";
 import {
   AUTH_SELF_HOST_PASSWORD,
   isPreviewAuthEnabled,
+  isPublicDemoEnabled,
   isSelfHostAuthEnabled,
   previewAuthRequiresPassword,
   PREVIEW_AUTH_PASSWORD,
@@ -88,17 +90,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }),
         ]
       : []),
+    ...(isPublicDemoEnabled
+      ? [
+          Credentials({
+            id: "public-demo",
+            name: "Public Demo",
+            credentials: {
+              ticket: { label: "Ticket", type: "text" },
+              visitorToken: { label: "Visitor token", type: "password" },
+            },
+            authorize: async (credentials) => {
+              if (typeof credentials?.ticket !== "string") return null;
+              if (typeof credentials?.visitorToken !== "string") return null;
+              return authenticateDemoTicket({
+                ticket: credentials.ticket,
+                visitorToken: credentials.visitorToken,
+                now: new Date(),
+              });
+            },
+          }),
+        ]
+      : []),
   ],
   session: { strategy: "jwt" },
-  callbacks: {
-    session({ session, token }) {
-      if (session.user) {
-        if (!token.sub) {
-          throw new Error("auth: JWT token missing 'sub' claim — cannot establish session user id");
-        }
-        session.user.id = token.sub;
-      }
-      return session;
-    },
-  },
 });

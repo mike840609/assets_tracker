@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withAuth } from "@/lib/api-handler";
 import { ok, failure, validationError } from "@/lib/api-responses";
@@ -15,7 +16,12 @@ function toUtcDate(dateOnly: string): Date {
 }
 
 export const PATCH = withAuth(
-  async (request, { params }: { params: Promise<{ id: string; recurringId: string }> }, userId) => {
+  async (
+    request,
+    { params }: { params: Promise<{ id: string; recurringId: string }> },
+    userId,
+    principal,
+  ) => {
     const { id, recurringId } = await params;
     const body = await request.json();
     const parsed = updateRecurringInvestmentSchema.safeParse(body);
@@ -69,29 +75,34 @@ export const PATCH = withAuth(
     }
 
     // An update can make the rule due right now (reactivation, startDate set
-    // to today) — buy immediately rather than waiting for the nightly cron.
-    // Best-effort like the POST route: no price / failure → cron picks it up.
-    let updated = rule;
-    if (rule.isActive && rule.nextRunDate.getTime() <= taiwanCalendarDay(new Date()).getTime()) {
-      try {
-        const { created: posted } = await materializeDueInvestments(new Date(), rule.id);
-        if (posted > 0) {
-          revalidateTag(`accounts:${userId}`, { expire: 0 });
-          revalidateTag(`net-worth:${userId}`, { expire: 0 });
-          revalidateTag(`history:${userId}`, { expire: 0 });
-          revalidateTag("prices", { expire: 0 });
+    // to today). Formal users schedule that buy rather than waiting for the
+    // nightly cron; Demo leaves it to the later formal-only materializer.
+    if (
+      principal.kind === "formal" &&
+      rule.isActive &&
+      rule.nextRunDate.getTime() <= taiwanCalendarDay(new Date()).getTime()
+    ) {
+      after(async () => {
+        try {
+          const { created: posted } = await materializeDueInvestments(new Date(), rule.id);
+          if (posted > 0) {
+            revalidateTag(`accounts:${userId}`, { expire: 0 });
+            revalidateTag(`net-worth:${userId}`, { expire: 0 });
+            revalidateTag(`history:${userId}`, { expire: 0 });
+            revalidateTag("prices", { expire: 0 });
+          }
+        } catch (error) {
+          log.error("recurring.investment_materialize_on_update_failed", {
+            ruleId: rule.id,
+            error: String(error),
+          });
         }
-        updated = (await prisma.recurringInvestment.findUnique({ where: { id: rule.id } })) ?? rule;
-      } catch (error) {
-        log.error("recurring.investment_materialize_on_update_failed", {
-          ruleId: rule.id,
-          error: String(error),
-        });
-      }
+      });
     }
 
-    return ok(serializeRecurringInvestment(updated));
+    return ok(serializeRecurringInvestment(rule));
   },
+  { demo: "allow" },
 );
 
 export const DELETE = withAuth(
@@ -109,4 +120,5 @@ export const DELETE = withAuth(
 
     return ok({ success: true });
   },
+  { demo: "allow" },
 );

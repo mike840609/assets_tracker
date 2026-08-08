@@ -55,4 +55,5 @@ export const POST = withAuth(
 
     return ok(transaction, { status: 201 });
   },
+  { demo: "allow" },
 );

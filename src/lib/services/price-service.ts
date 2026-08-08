@@ -52,7 +52,48 @@ export type RefreshPricesResult = {
 export type RefreshPricesOptions = {
   /** Bypass the freshness gate (cron path — snapshots need current prices). */
   force?: boolean;
+  /** Omit user-controlled identifiers and raw provider errors from logs. */
+  redactIdentifiers?: boolean;
 };
+
+function redactedErrorMetadata(
+  error: unknown,
+  metadata: Record<string, string | number> = {},
+): Record<string, string | number> {
+  const yahooStatus = getYahooErrorStatus(error);
+  const messageStatus =
+    error instanceof Error ? Number(error.message.match(/\b([45]\d\d)\b/)?.[1]) : Number.NaN;
+  const status = yahooStatus ?? (Number.isFinite(messageStatus) ? messageStatus : undefined);
+  return {
+    ...metadata,
+    errorType: error instanceof Error ? error.name : "unknown",
+    ...(status !== undefined && { status }),
+  };
+}
+
+async function withProviderTiming<T>(
+  label: string,
+  fn: () => Promise<T>,
+  metadata: Record<string, string | number>,
+  options: { redactIdentifiers?: boolean },
+): Promise<T> {
+  if (!options.redactIdentifiers) return withTiming(label, fn, metadata);
+  const startedAt = Date.now();
+  try {
+    const result = await fn();
+    log.info(label, { ...metadata, durationMs: Date.now() - startedAt });
+    return result;
+  } catch (error) {
+    log.error(
+      label,
+      redactedErrorMetadata(error, {
+        ...metadata,
+        durationMs: Date.now() - startedAt,
+      }),
+    );
+    throw error;
+  }
+}
 
 function decimalChangedAtDbScale(current: unknown, next: number): boolean {
   const currentNumber = Number(current);
@@ -219,6 +260,7 @@ export function normalizeMinorCurrencyQuote(
 async function fetchYahooQuotes(
   symbols: string[],
   providerErrors?: string[],
+  options: { redactIdentifiers?: boolean } = {},
 ): Promise<Map<string, { price: number; currency: string }>> {
   const results = new Map<string, { price: number; currency: string }>();
   if (symbols.length === 0) return results;
@@ -253,7 +295,7 @@ async function fetchYahooQuotes(
 
   const groups = chunk(symbols, YAHOO_CHUNK_SIZE);
 
-  await withTiming(
+  await withProviderTiming(
     "price.yahoo.fetch",
     () =>
       runPool(
@@ -264,10 +306,15 @@ async function fetchYahooQuotes(
             await fetchSymbols(group);
           } catch (batchErr) {
             providerErrors?.push(`Yahoo Finance batch failed: ${String(batchErr)}`);
-            log.error("price.yahoo.batch_failed", {
-              error: String(batchErr),
-              symbolCount: group.length,
-            });
+            log.error(
+              "price.yahoo.batch_failed",
+              options.redactIdentifiers
+                ? redactedErrorMetadata(batchErr, {
+                    operation: "yahoo-batch",
+                    symbolCount: group.length,
+                  })
+                : { error: String(batchErr), symbolCount: group.length },
+            );
             // A rate-limited batch must not fan out into one request per symbol:
             // that would amplify the exact upstream signal telling us to stop.
             if (isRateLimited(batchErr)) return;
@@ -286,7 +333,15 @@ async function fetchYahooQuotes(
                   await fetchSymbols([symbol]);
                 } catch (err) {
                   providerErrors?.push(`Yahoo Finance fallback failed: ${String(err)}`);
-                  log.error("price.yahoo.symbol_failed", { symbol, error: String(err) });
+                  log.error(
+                    "price.yahoo.symbol_failed",
+                    options.redactIdentifiers
+                      ? redactedErrorMetadata(err, {
+                          operation: "yahoo-symbol-fallback",
+                          symbolCount: 1,
+                        })
+                      : { symbol, error: String(err) },
+                  );
                 }
               },
               outOfBudget,
@@ -296,6 +351,7 @@ async function fetchYahooQuotes(
         outOfBudget,
       ),
     { symbolCount: symbols.length, chunkCount: groups.length },
+    options,
   );
 
   return results;
@@ -304,8 +360,9 @@ async function fetchYahooQuotes(
 export async function fetchStockPrices(
   symbols: string[],
   providerErrors?: string[],
+  options: { redactIdentifiers?: boolean } = {},
 ): Promise<Map<string, { price: number; currency: string }>> {
-  return fetchYahooQuotes(symbols, providerErrors);
+  return fetchYahooQuotes(symbols, providerErrors, options);
 }
 
 // Strip currency suffix from crypto symbol (e.g. "BTC-USD" -> "BTC")
@@ -323,11 +380,12 @@ function extractQuoteCurrency(symbol: string): string {
 export async function fetchCryptoPrices(
   symbols: string[],
   providerErrors?: string[],
+  options: { redactIdentifiers?: boolean } = {},
 ): Promise<Map<string, { price: number; currency: string }>> {
   if (symbols.length === 0) return new Map();
 
   // Primary: Yahoo Finance (handles crypto pairs like BTC-USD)
-  const results = await fetchYahooQuotes(symbols, providerErrors);
+  const results = await fetchYahooQuotes(symbols, providerErrors, options);
 
   // Fallback: CoinGecko for any symbols not found via Yahoo Finance
   const missing = symbols.filter((s) => !results.has(s));
@@ -367,7 +425,7 @@ export async function fetchCryptoPrices(
           url.searchParams.set("ids", idGroup.join(","));
           url.searchParams.set("vs_currencies", currencyGroup.join(","));
           try {
-            const part = await withTiming(
+            const part = await withProviderTiming(
               "price.coingecko.fetch",
               () =>
                 withRetry(async () => {
@@ -385,13 +443,22 @@ export async function fetchCryptoPrices(
                   }
                 }, outOfBudget),
               { idCount: idGroup.length, currencyCount: currencyGroup.length },
+              options,
             );
             for (const [id, prices] of Object.entries(part)) {
               data[id] = { ...data[id], ...prices };
             }
           } catch (error) {
             providerErrors?.push(`CoinGecko fetch failed: ${String(error)}`);
-            log.error("price.coingecko.failed", { error: String(error) });
+            log.error(
+              "price.coingecko.failed",
+              options.redactIdentifiers
+                ? redactedErrorMetadata(error, {
+                    operation: "coingecko-batch",
+                    symbolCount: idGroup.length,
+                  })
+                : { error: String(error) },
+            );
           }
         },
         outOfBudget,
@@ -423,10 +490,12 @@ export async function fetchCryptoPrices(
 export async function refreshAllPrices(): Promise<RefreshPricesResult> {
   const [holdings, trackedStocks] = await Promise.all([
     prisma.holding.findMany({
+      where: { account: { user: { demoWorkspace: null } } },
       select: { symbol: true, assetType: true },
       distinct: ["symbol"],
     }),
     prisma.stockWatchItem.findMany({
+      where: { user: { demoWorkspace: null } },
       select: { symbol: true },
       distinct: ["symbol"],
     }),
@@ -487,7 +556,7 @@ export async function refreshPricesForStockSymbols(
   );
 }
 
-async function releaseClaims(symbols: string[]): Promise<void> {
+async function releaseClaims(symbols: string[], options: RefreshPricesOptions = {}): Promise<void> {
   if (symbols.length === 0) return;
   const placeholders = symbols.map((_, i) => `$${i + 1}`).join(", ");
   await prisma
@@ -496,7 +565,15 @@ async function releaseClaims(symbols: string[]): Promise<void> {
       ...symbols,
     )
     .catch((err) => {
-      log.error("price.refresh.claim_cleanup_failed", { error: String(err) });
+      log.error(
+        "price.refresh.claim_cleanup_failed",
+        options.redactIdentifiers
+          ? redactedErrorMetadata(err, {
+              operation: "claim-cleanup",
+              symbolCount: symbols.length,
+            })
+          : { error: String(err) },
+      );
     });
 }
 
@@ -623,7 +700,7 @@ async function refreshPricesForHoldings(
   // failed refresh target; release any stale-row claim and preserve the normal
   // no-work success semantics.
   if (supportedDueSymbols.size === 0) {
-    await releaseClaims(claimedSymbols);
+    await releaseClaims(claimedSymbols, opts);
     return {
       outcome: "no_due_symbols",
       updated: 0,
@@ -640,8 +717,8 @@ async function refreshPricesForHoldings(
   let changed = 0;
 
   const [stockResult, cryptoResult] = await Promise.allSettled([
-    fetchStockPrices(stockSymbols, errors),
-    fetchCryptoPrices(cryptoSymbols, errors),
+    fetchStockPrices(stockSymbols, errors, opts),
+    fetchCryptoPrices(cryptoSymbols, errors, opts),
   ]);
   const stockPrices =
     stockResult.status === "fulfilled"
@@ -664,7 +741,7 @@ async function refreshPricesForHoldings(
   if (entries.length === 0) {
     // No prices came back (all fetches failed). Release claims so the next
     // request can retry rather than waiting for the 30s dead-instance TTL.
-    await releaseClaims(claimedSymbols);
+    await releaseClaims(claimedSymbols, opts);
     if (errors.length === 0) {
       errors.push(`No usable prices returned for ${supportedDueSymbols.size} due symbols`);
     }
@@ -717,7 +794,7 @@ async function refreshPricesForHoldings(
     bulkUpsertFailed = true;
     errors.push(`Bulk upsert failed: ${String(error)}`);
     // Release claims so the next request can retry immediately.
-    await releaseClaims(claimedSymbols);
+    await releaseClaims(claimedSymbols, opts);
   }
 
   if (!bulkUpsertFailed) {
@@ -727,7 +804,12 @@ async function refreshPricesForHoldings(
       try {
         revalidateTag("prices", "max");
       } catch (error) {
-        log.error("price.refresh.revalidate_failed", { error: String(error) });
+        log.error(
+          "price.refresh.revalidate_failed",
+          opts.redactIdentifiers
+            ? redactedErrorMetadata(error, { operation: "cache-revalidation" })
+            : { error: String(error) },
+        );
       }
     }
 
@@ -735,7 +817,10 @@ async function refreshPricesForHoldings(
     // ticker) keep their refreshingAt set by the upsert (it only clears rows it
     // touched). Release them so a retry isn't blocked for the full 30s TTL.
     const fetchedSet = new Set(entries.map(([symbol]) => symbol));
-    await releaseClaims(claimedSymbols.filter((symbol) => !fetchedSet.has(symbol)));
+    await releaseClaims(
+      claimedSymbols.filter((symbol) => !fetchedSet.has(symbol)),
+      opts,
+    );
   }
 
   return {
