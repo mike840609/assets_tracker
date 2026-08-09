@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Assets Tracker",
-    short_name: "Assets",
-    description: "Track your net worth, assets, and investments",
+    name: "astt",
+    short_name: "astt",
+    description: "Open-source, self-hosted net worth & portfolio tracker.",
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
