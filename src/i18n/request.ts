@@ -19,7 +19,9 @@ function detectLocaleFromAcceptLanguage(acceptLanguage: string): Locale {
  */
 function applyAsttBranding<T>(value: T): T {
   if (typeof value === "string") {
-    return value.replaceAll("Assets Tracker", "astt").replaceAll("資產追蹤器", "astt") as T;
+    return value
+      .replaceAll("Assets Tracker", "astt")
+      .replaceAll("資產追蹤器", "astt") as T;
   }
 
   if (Array.isArray(value)) {
