@@ -10,6 +10,31 @@ function detectLocaleFromAcceptLanguage(acceptLanguage: string): Locale {
   return "en-US";
 }
 
+/**
+ * Phase-1 branding normalization.
+ *
+ * Keep the locale catalogs structurally untouched while the public product name
+ * moves from Assets Tracker / 資產追蹤器 to astt. This changes display copy only;
+ * technical identifiers, storage keys, and backup formats remain compatible.
+ */
+function applyAsttBranding<T>(value: T): T {
+  if (typeof value === "string") {
+    return value.replaceAll("Assets Tracker", "astt").replaceAll("資產追蹤器", "astt") as T;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => applyAsttBranding(item)) as T;
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, applyAsttBranding(item)]),
+    ) as T;
+  }
+
+  return value;
+}
+
 export default getRequestConfig(async () => {
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get("NEXT_LOCALE")?.value;
@@ -23,8 +48,10 @@ export default getRequestConfig(async () => {
     locale = detectLocaleFromAcceptLanguage(acceptLanguage);
   }
 
+  const messages = (await import(`../../messages/${locale}.json`)).default;
+
   return {
     locale,
-    messages: (await import(`../../messages/${locale}.json`)).default,
+    messages: applyAsttBranding(messages),
   };
 });
