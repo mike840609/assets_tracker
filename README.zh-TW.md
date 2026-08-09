@@ -1,4 +1,4 @@
-# 💰 資產追蹤器
+# astt
 
 [![CI](https://github.com/mike840609/assets_tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/mike840609/assets_tracker/actions/workflows/ci.yml)
 [![E2E](https://github.com/mike840609/assets_tracker/actions/workflows/e2e.yml/badge.svg?branch=master&event=push)](https://github.com/mike840609/assets_tracker/actions/workflows/e2e.yml?query=branch%3Amaster+event%3Apush)
@@ -10,13 +10,15 @@
 
 [English](./README.md) | [繁體中文](./README.zh-TW.md)
 
+**Open-source, self-hosted net worth & portfolio tracker.**
+
 可自行部署、支援多幣別的淨資產與投資追蹤工具，讓你在保有資料控制權的同時，集中掌握完整財務狀況。
 
 [線上展示](https://astt.app) · [快速開始](#快速開始) · [部署指南](./docs/DEPLOYMENT.md) · [安全政策](./SECURITY.md) · [參與貢獻](./CONTRIBUTING.md)
 
-![資產追蹤器桌面與行動版儀表板](./public/readme-hero.jpg)
+![astt 桌面與行動版儀表板](./public/readme-hero.jpg)
 
-## 為什麼選擇資產追蹤器？
+## 為什麼選擇 astt？
 
 - **資料由你掌握** — 可透過 Docker 與 PostgreSQL 自行部署，或使用 Vercel 與 Neon。
 - **統一財務視圖** — 整合銀行、券商、加密錢包、不動產、負債與選擇權部位。
@@ -27,7 +29,7 @@
 
 使用 Next.js 16、React 19、Prisma 7、PostgreSQL、Tailwind CSS 4 與 NextAuth.js 5 建置。
 
-> Assets Tracker v1 已可穩定供個人自行部署。若要提供其他使用者使用，請先閱讀[資料責任](#資料責任)說明。
+> astt v1 已可穩定供個人自行部署。若要提供其他使用者使用，請先閱讀[資料責任](#資料責任)說明。
 
 ## 操作展示
 
@@ -37,16 +39,16 @@
     <th width="30%">行動版</th>
   </tr>
   <tr>
-    <td><img src="./public/readme-demo-desktop.gif" alt="資產追蹤器桌面版儀表板操作展示"></td>
-    <td><img src="./public/readme-demo-mobile.png" alt="資產追蹤器行動版儀表板"></td>
+    <td><img src="./public/readme-demo-desktop.gif" alt="astt 桌面版儀表板操作展示"></td>
+    <td><img src="./public/readme-demo-mobile.png" alt="astt 行動版儀表板"></td>
   </tr>
 </table>
 
 ## 工具比較
 
-Assets Tracker 專注於淨值與投資追蹤。若你主要需要複式記帳或信封預算，[Firefly III](https://github.com/firefly-iii/firefly-iii) 與 [Actual Budget](https://github.com/actualbudget/actual) 是很好的選擇——以下是各工具的定位：
+astt 專注於淨值與投資追蹤。若你主要需要複式記帳或信封預算，[Firefly III](https://github.com/firefly-iii/firefly-iii) 與 [Actual Budget](https://github.com/actualbudget/actual) 是很好的選擇——以下是各工具的定位：
 
-|                                     | Assets Tracker    | [Ghostfolio](https://github.com/ghostfolio/ghostfolio) | [Firefly III](https://github.com/firefly-iii/firefly-iii) | [Actual Budget](https://github.com/actualbudget/actual) |
+|                                     | astt              | [Ghostfolio](https://github.com/ghostfolio/ghostfolio) | [Firefly III](https://github.com/firefly-iii/firefly-iii) | [Actual Budget](https://github.com/actualbudget/actual) |
 | ----------------------------------- | ----------------- | ------------------------------------------------------ | --------------------------------------------------------- | ------------------------------------------------------- |
 | 主要定位                            | 淨值＋投資        | 投資組合                                               | 記帳與預算                                                | 信封預算                                                |
 | 即時市場資料（股票、ETF、加密貨幣） | ✅                | ✅                                                     | —                                                         | —                                                       |
@@ -171,7 +173,7 @@ pnpm test:unit
 
 ## 資料責任
 
-每位部署者自行管理 OAuth 憑證、PostgreSQL 資料庫、備份、cron secret 與選用的監控整合。Assets Tracker 是個人財務追蹤軟體，不構成財務、稅務或投資建議。自行部署者需負責資料安全、隱私揭露、法規遵循、備份與存取控制。
+每位部署者自行管理 OAuth 憑證、PostgreSQL 資料庫、備份、cron secret 與選用的監控整合。astt 是個人財務追蹤軟體，不構成財務、稅務或投資建議。自行部署者需負責資料安全、隱私揭露、法規遵循、備份與存取控制。
 
 ## 授權
 
