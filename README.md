@@ -1,4 +1,4 @@
-# 💰 Assets Tracker
+# astt
 
 [![CI](https://github.com/mike840609/assets_tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/mike840609/assets_tracker/actions/workflows/ci.yml)
 [![E2E](https://github.com/mike840609/assets_tracker/actions/workflows/e2e.yml/badge.svg?branch=master&event=push)](https://github.com/mike840609/assets_tracker/actions/workflows/e2e.yml?query=branch%3Amaster+event%3Apush)
@@ -10,13 +10,17 @@
 
 [English](./README.md) | [繁體中文](./README.zh-TW.md)
 
-A self-hosted, multi-currency net worth and investment tracker for people who want a private, unified view of their finances.
+**Open-source, self-hosted net worth & portfolio tracker.**
+
+A private, multi-currency home for tracking your net worth, investments, cash, property, liabilities, and long-term financial goals.
+
+> Formerly Assets Tracker. Same project, now branded as **astt**.
 
 [Live Demo](https://astt.app) · [Quick Start](#quick-start) · [Deployment](./docs/DEPLOYMENT.md) · [Security](./SECURITY.md) · [Contributing](./CONTRIBUTING.md)
 
-![Assets Tracker dashboard on desktop and mobile](./public/readme-hero.jpg)
+![astt dashboard on desktop and mobile](./public/readme-hero.jpg)
 
-## Why Assets Tracker?
+## Why astt?
 
 - **Own your data** — run your own instance with PostgreSQL using Docker or deploy to Vercel and Neon.
 - **One financial view** — combine bank accounts, brokerages, crypto wallets, property, liabilities, and options.
@@ -27,7 +31,7 @@ A self-hosted, multi-currency net worth and investment tracker for people who wa
 
 Built with Next.js 16, React 19, Prisma 7, PostgreSQL, Tailwind CSS 4, and NextAuth.js 5.
 
-> Assets Tracker v1 is stable for personal self-hosting. Review the [data responsibility](#data-responsibility) notice before serving other users.
+> astt v1 is stable for personal self-hosting. Review the [data responsibility](#data-responsibility) notice before serving other users.
 
 ## Demo
 
@@ -37,16 +41,16 @@ Built with Next.js 16, React 19, Prisma 7, PostgreSQL, Tailwind CSS 4, and NextA
     <th width="30%">Mobile</th>
   </tr>
   <tr>
-    <td><img src="./public/readme-demo-desktop.gif" alt="Assets Tracker desktop dashboard demo"></td>
-    <td><img src="./public/readme-demo-mobile.png" alt="Assets Tracker mobile dashboard"></td>
+    <td><img src="./public/readme-demo-desktop.gif" alt="astt desktop dashboard demo"></td>
+    <td><img src="./public/readme-demo-mobile.png" alt="astt mobile dashboard"></td>
   </tr>
 </table>
 
 ## How It Compares
 
-Assets Tracker focuses on net worth and investments. If you mainly want double-entry bookkeeping or envelope budgeting, [Firefly III](https://github.com/firefly-iii/firefly-iii) and [Actual Budget](https://github.com/actualbudget/actual) are excellent at that — here is where each tool fits:
+astt focuses on net worth and investments. If you mainly want double-entry bookkeeping or envelope budgeting, [Firefly III](https://github.com/firefly-iii/firefly-iii) and [Actual Budget](https://github.com/actualbudget/actual) are excellent at that — here is where each tool fits:
 
-|                                         | Assets Tracker          | [Ghostfolio](https://github.com/ghostfolio/ghostfolio) | [Firefly III](https://github.com/firefly-iii/firefly-iii) | [Actual Budget](https://github.com/actualbudget/actual) |
+|                                         | astt                    | [Ghostfolio](https://github.com/ghostfolio/ghostfolio) | [Firefly III](https://github.com/firefly-iii/firefly-iii) | [Actual Budget](https://github.com/actualbudget/actual) |
 | --------------------------------------- | ----------------------- | ------------------------------------------------------ | --------------------------------------------------------- | ------------------------------------------------------- |
 | Primary focus                           | Net worth + investments | Investment portfolio                                   | Bookkeeping & budgets                                     | Envelope budgeting                                      |
 | Live market data (stocks, ETFs, crypto) | ✅                      | ✅                                                     | —                                                         | —                                                       |
@@ -171,7 +175,7 @@ Use [GitHub Issues](https://github.com/mike840609/assets_tracker/issues) for rep
 
 ## Data Responsibility
 
-Each deployment owner controls its OAuth credentials, PostgreSQL database, backups, cron secret, and optional monitoring integrations. Assets Tracker is personal-tracking software, not financial, tax, or investment advice. Self-hosters are responsible for data security, privacy disclosures, regulatory compliance, backups, and access controls.
+Each deployment owner controls its OAuth credentials, PostgreSQL database, backups, cron secret, and optional monitoring integrations. astt is personal-tracking software, not financial, tax, or investment advice. Self-hosters are responsible for data security, privacy disclosures, regulatory compliance, backups, and access controls.
 
 ## License
 
