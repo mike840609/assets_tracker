@@ -31,29 +31,30 @@ const geistMono = localFont({
 });
 
 const appUrl = getAppUrl();
+const appDescription = "Open-source, self-hosted net worth & portfolio tracker.";
 
 export const metadata: Metadata = {
   metadataBase: appUrl,
-  applicationName: "Assets Tracker",
-  title: "Assets Tracker",
-  description: "Track your net worth, assets, and investments",
+  applicationName: "astt",
+  title: "astt — Self-hosted Net Worth & Portfolio Tracker",
+  description: appDescription,
   appleWebApp: {
     capable: true,
-    title: "Assets Tracker",
+    title: "astt",
     statusBarStyle: "black-translucent",
   },
   openGraph: {
-    title: "Assets Tracker",
-    description: "Track your net worth, assets, and investments",
+    title: "astt — Self-hosted Net Worth & Portfolio Tracker",
+    description: appDescription,
     url: appUrl,
-    siteName: "Assets Tracker",
-    images: [{ url: "/opengraph-image.png", width: 1024, height: 682, alt: "Assets Tracker" }],
+    siteName: "astt",
+    images: [{ url: "/opengraph-image.png", width: 1024, height: 682, alt: "astt dashboard" }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Assets Tracker",
-    description: "Track your net worth, assets, and investments",
+    title: "astt — Self-hosted Net Worth & Portfolio Tracker",
+    description: appDescription,
     images: ["/twitter-image.png"],
   },
 };
