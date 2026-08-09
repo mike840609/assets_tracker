@@ -19,7 +19,6 @@ docs
 .claude
 .codex
 .impeccable
-.superpowers
 
 *.log
 *.tsbuildinfo

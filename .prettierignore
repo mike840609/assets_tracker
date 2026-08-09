@@ -14,8 +14,6 @@ prisma/migrations
 *.lock
 pnpm-lock.yaml
 pnpm-workspace.yaml
-.superpowers
-docs/superpowers
 AGENTS.md
 CLAUDE.md
 Dockerfile

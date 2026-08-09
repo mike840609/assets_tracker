@@ -53,13 +53,11 @@ next-env.d.ts
 /.claude/
 /.codex/
 /.impeccable/
-/.superpowers/
 /.github/skills/
 /AGENTS.md
 /CLAUDE.md
 /.worktreeinclude
 /.worktrees/
-/docs/superpowers/
 
 # Local agent artifacts
 /repomix-output.xml

@@ -22,7 +22,6 @@ public/readme-*
 .claude/
 .codex/
 .impeccable/
-.superpowers/
 .worktreeinclude
 Dockerfile
 .dockerignore
