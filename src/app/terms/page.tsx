@@ -7,8 +7,8 @@ import type { Metadata } from "next";
 import { FileText } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Assets Tracker",
-  description: "Terms governing your use of Assets Tracker.",
+  title: "Terms of Service | astt",
+  description: "Terms governing your use of astt.",
 };
 
 async function TermsContent() {
