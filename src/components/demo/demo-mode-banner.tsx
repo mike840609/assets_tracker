@@ -119,29 +119,18 @@ export function DemoModeBanner({ expiresAt }: { expiresAt: string }) {
     <>
       <AlertDialogTrigger
         render={
-          <Button
-            type="button"
-            variant="outline"
-            className="h-9 w-full bg-background/70 text-amber-950"
-          >
+          <Button type="button" variant="outline" className="h-11 w-full md:h-9">
             <RefreshCcw aria-hidden="true" />
             {t("banner.actions.reset")}
           </Button>
         }
       />
-      <Link
-        href="/login?from=demo"
-        className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-amber-800/25 bg-background/70 px-2 text-sm font-medium text-amber-950 transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-amber-600/50 dark:text-amber-100"
-      >
-        <UserRound aria-hidden="true" className="size-4" />
+      <Button render={<Link href="/login?from=demo" />} className="h-11 w-full md:h-9">
+        <UserRound aria-hidden="true" />
         {t("banner.actions.signIn")}
-      </Link>
+      </Button>
       <form action={exitPublicDemoAction} className="w-full">
-        <Button
-          type="submit"
-          variant="outline"
-          className="h-9 w-full bg-background/70 text-amber-950"
-        >
+        <Button type="submit" variant="outline" className="h-11 w-full md:h-9">
           <LogOut aria-hidden="true" />
           {t("banner.actions.exit")}
         </Button>
@@ -151,7 +140,7 @@ export function DemoModeBanner({ expiresAt }: { expiresAt: string }) {
 
   return (
     <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-      <section className="bg-amber-200 text-amber-950 shadow-sm dark:bg-amber-950 dark:text-amber-100 md:sticky md:top-0 md:z-40">
+      <section className="border-b border-warning/35 bg-warning/12 text-foreground shadow-sm md:sticky md:top-0 md:z-40">
         <form id="demo-reset-form" action={resetAction} />
         <p className="sr-only" aria-live="polite">
           {announcement}
@@ -163,10 +152,10 @@ export function DemoModeBanner({ expiresAt }: { expiresAt: string }) {
           <div className="grid min-w-[24rem] grid-cols-3 gap-2">{actions()}</div>
         </div>
         <div className="md:hidden">
-          <p className="px-3 py-2 text-center text-xs font-semibold">
+          <p className="px-3 py-2 text-center text-sm font-medium">
             {t("banner.title")} · {timeDetails}
           </p>
-          <div className="grid grid-cols-3 gap-2 border-t border-amber-900/15 px-3 py-2">
+          <div className="grid grid-cols-3 gap-2 border-t border-warning/25 px-3 py-2">
             {actions()}
           </div>
         </div>
