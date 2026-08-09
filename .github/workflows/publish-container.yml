@@ -4,7 +4,10 @@ on:
   push:
     branches: [master]
     tags:
+      # Release tags in this repo are bare semver ("1.2.0"); "v*" is kept for
+      # anything tagged the other way.
       - "v*"
+      - "[0-9]+.[0-9]+.[0-9]+"
     paths-ignore:
       - "**/*.md"
       - "docs/**"

@@ -38,6 +38,69 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.2.0",
+    date: "2026-08-09",
+    summary: {
+      "en-US": "Try the app without an account, plus a sturdier cron and price pipeline.",
+      "zh-TW": "免註冊即可試用，並強化排程與報價流程的穩定度。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Public demo: the login page now offers a one-click demo that needs no account. It creates an isolated workspace with sample data that expires after 24 hours, with a banner showing the remaining time and controls to reset the data or leave at any point.",
+          "zh-TW":
+            "公開 Demo：登入頁新增免註冊的一鍵體驗，會建立獨立的範例資料工作區，24 小時後自動到期；頁面上方橫幅會顯示剩餘時間，並可隨時重設資料或離開。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "The nightly cron and price refresh now scale with the number of users: users are paged through under a snapshot budget, snapshot inputs are bulk-loaded, price reads are scoped to accounts instead of scanning the whole cache, and Yahoo/CoinGecko requests are chunked so one bad batch can't fan out.",
+          "zh-TW":
+            "每日排程與報價更新改為隨使用者數量水平擴充：以快照預算分頁處理使用者、批次載入快照輸入、報價查詢限縮於實際帳戶而非掃描整份快取，Yahoo/CoinGecko 請求也改為分批，避免單一批次失敗擴散。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Identity is no longer derived from request headers, so a crafted request can't act as another user.",
+          "zh-TW": "身分不再從請求標頭推導，偽造的請求無法冒用其他使用者。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Analysis ranges are computed in your own timezone rather than UTC, liabilities move cash flow in the right direction, the first day of a recurring rule starts from the correct baseline, expired options are swept on a business day, and holdings are valued in the currency their quote was cached in.",
+          "zh-TW":
+            "分析區間改以你所在時區計算而非 UTC；負債的現金流方向修正；定期規則第一天以正確基準起算；到期選擇權改於營業日結算；持倉也改以報價快取的幣別計價。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Data you move in and out keeps its shape: mixed-currency history normalizes without losing precision, imports preserve each snapshot's breakdown currencies, backup export and import round-trip, and editing a recurring rule can no longer race its own materialization.",
+          "zh-TW":
+            "資料進出不再變形：混合幣別的歷史正規化不會損失精度、匯入會保留各快照的幣別組成、備份匯出與還原可完整往返，編輯定期規則也不會再與自身的產生流程競爭。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Failures now surface instead of passing silently: snapshots are taken from a fresh net-worth read rather than a stale cached one, and partially failed snapshot runs and total price-refresh failures are both reported.",
+          "zh-TW":
+            "失敗不再無聲通過：快照改由即時的淨值讀取產生而非過期快取，部分失敗的快照排程與全面失敗的報價更新都會回報。",
+        },
+      },
+    ],
+  },
+  {
     version: "1.1.0",
     date: "2026-07-26",
     summary: {
