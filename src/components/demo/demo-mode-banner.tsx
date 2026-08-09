@@ -140,7 +140,10 @@ export function DemoModeBanner({ expiresAt }: { expiresAt: string }) {
 
   return (
     <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-      <section className="border-b border-warning/35 bg-warning/12 text-foreground shadow-sm md:sticky md:top-0 md:z-40">
+      <section
+        data-testid="demo-banner"
+        className="border-b border-warning/35 bg-warning/12 text-foreground shadow-sm md:sticky md:top-0 md:z-40"
+      >
         <form id="demo-reset-form" action={resetAction} />
         <p className="sr-only" aria-live="polite">
           {announcement}

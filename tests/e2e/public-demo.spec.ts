@@ -83,7 +83,7 @@ test("public Demo journey", async ({ browser, page }, testInfo) => {
   test.setTimeout(180_000);
   if (testInfo.project.name === "Public Demo Mobile zh-TW") {
     await startDemo(page);
-    const banner = page.locator("section.bg-amber-200");
+    const banner = page.getByTestId("demo-banner");
     await expect(banner).toBeVisible();
     await expect(page.getByText("Demo 模式").filter({ visible: true }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "重設資料" })).toBeVisible();
@@ -151,7 +151,7 @@ test("public Demo journey", async ({ browser, page }, testInfo) => {
   await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Exit Demo" })).toBeVisible();
 
-  const desktopActions = page.locator("section.bg-amber-200 div.hidden.md\\:flex > div");
+  const desktopActions = page.getByTestId("demo-banner").locator("div.hidden.md\\:flex > div");
   const desktopActionsBox = await desktopActions.boundingBox();
   expect(desktopActionsBox).not.toBeNull();
   const desktopActionBoxes = await Promise.all(
