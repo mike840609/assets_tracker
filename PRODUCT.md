@@ -6,7 +6,7 @@ product
 
 ## Users
 
-Assets Tracker serves individual investors and financially engaged power users who want one trustworthy place to monitor net worth, holdings, currencies, goals, FIRE projections, and historical performance. They use it in two modes: quick mobile check-ins that should feel native, calm, and private, and denser desktop sessions for analysis, account maintenance, portfolio review, and reconciliation.
+astt serves individual investors and financially engaged power users who want one trustworthy place to monitor net worth, holdings, currencies, goals, FIRE projections, and historical performance. They use it in two modes: quick mobile check-ins that should feel native, calm, and private, and denser desktop sessions for analysis, account maintenance, portfolio review, and reconciliation.
 
 ## Product Purpose
 
