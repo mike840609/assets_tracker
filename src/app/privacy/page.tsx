@@ -7,8 +7,8 @@ import type { Metadata } from "next";
 import { ShieldCheck } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Assets Tracker",
-  description: "How Assets Tracker collects, uses, and protects your data.",
+  title: "Privacy Policy | astt",
+  description: "How astt collects, uses, and protects your data.",
 };
 
 async function PrivacyContent() {
