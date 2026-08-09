@@ -13,13 +13,11 @@ export function DemoLoginButton({ variant = "start" }: { variant?: "start" | "re
   const [state, action, pending] = useActionState(startPublicDemoAction, INITIAL_DEMO_ACTION_STATE);
   return (
     <form action={action} className="space-y-2">
-      {/* ponytail: border carries the visibility, not the fill — the neutral fill steps
-          are ~1.1:1 against the glass card in both themes, the border clears 3:1 */}
+      {/* ponytail: same class list as the Google button in login/page.tsx, minus the logo */}
       <Button
         type="submit"
-        variant="secondary"
         disabled={pending}
-        className="h-12 w-full rounded-xl border border-muted-foreground/90"
+        className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-border bg-background text-sm font-medium tracking-wide text-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-secondary hover:shadow-md"
       >
         {pending ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
         {pending ? t("preparing") : t(variant === "restart" ? "restartButton" : "button")}
