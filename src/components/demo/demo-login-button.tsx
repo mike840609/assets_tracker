@@ -13,7 +13,14 @@ export function DemoLoginButton({ variant = "start" }: { variant?: "start" | "re
   const [state, action, pending] = useActionState(startPublicDemoAction, INITIAL_DEMO_ACTION_STATE);
   return (
     <form action={action} className="space-y-2">
-      <Button type="submit" variant="outline" disabled={pending} className="h-12 w-full rounded-xl">
+      {/* ponytail: border carries the visibility, not the fill — the neutral fill steps
+          are ~1.1:1 against the glass card in both themes, the border clears 3:1 */}
+      <Button
+        type="submit"
+        variant="secondary"
+        disabled={pending}
+        className="h-12 w-full rounded-xl border border-muted-foreground/90"
+      >
         {pending ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
         {pending ? t("preparing") : t(variant === "restart" ? "restartButton" : "button")}
       </Button>
