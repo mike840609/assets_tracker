@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  isStandalonePwa,
-  shouldOfferPwaInstall,
-} from "@/lib/pwa-install-status";
+import { isStandalonePwa, shouldOfferPwaInstall } from "@/lib/pwa-install-status";
 
 describe("isStandalonePwa", () => {
   it("detects display-mode standalone", () => {
