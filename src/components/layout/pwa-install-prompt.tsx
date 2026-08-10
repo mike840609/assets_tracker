@@ -70,12 +70,9 @@ export function PwaInstallPrompt() {
   useEffect(() => {
     const copy = locale === "zh-TW" ? COPY["zh-TW"] : COPY["en-US"];
 
-    const dismissSuggestion = () => {
+    const markSuggestionDismissed = () => {
       persistDismissedFlag();
-      if (toastIdRef.current !== null) {
-        toast.dismiss(toastIdRef.current);
-        toastIdRef.current = null;
-      }
+      toastIdRef.current = null;
     };
 
     const handleBeforeInstallPrompt = (rawEvent: Event) => {
@@ -117,10 +114,10 @@ export function PwaInstallPrompt() {
           },
         },
         onDismiss: () => {
-          if (!installPromptStarted) dismissSuggestion();
+          if (!installPromptStarted) markSuggestionDismissed();
         },
         onAutoClose: () => {
-          if (!installPromptStarted) dismissSuggestion();
+          if (!installPromptStarted) markSuggestionDismissed();
         },
       });
     };
