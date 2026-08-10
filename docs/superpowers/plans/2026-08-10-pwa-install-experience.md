@@ -23,10 +23,12 @@
 ### Task 1: Add pure install status and eligibility logic
 
 **Files:**
+
 - Create: `src/lib/pwa-install-status.ts`
 - Create: `tests/unit/pwa-install-status.test.ts`
 
 **Interfaces:**
+
 - Produces `isStandalonePwa(input: StandaloneEnvironment): boolean`.
 - Produces `shouldOfferPwaInstall(input: PwaInstallEligibility): boolean`.
 
@@ -55,10 +57,12 @@ Expected: PASS.
 ### Task 2: Add browser install prompt lifecycle
 
 **Files:**
+
 - Create: `src/components/layout/pwa-install-prompt.tsx`
 - Modify: `src/app/layout.tsx`
 
 **Interfaces:**
+
 - Consumes `isStandalonePwa` and `shouldOfferPwaInstall`.
 - Handles a local `BeforeInstallPromptEvent` shape with `prompt()` and `userChoice`.
 
@@ -92,6 +96,7 @@ Expected: PASS.
 ### Task 3: Add launcher icon assets
 
 **Files:**
+
 - Create: `public/icons/icon-192.png`
 - Create: `public/icons/icon-512.png`
 - Create: `public/icons/icon-maskable-192.png`
@@ -113,6 +118,7 @@ Verify exact pixel dimensions are 192, 512, 192, 512, and 180 respectively.
 ### Task 4: Update manifest and launch metadata
 
 **Files:**
+
 - Modify: `src/app/manifest.ts`
 - Modify: `src/app/layout.tsx`
 - Create: `tests/unit/manifest.test.ts`
