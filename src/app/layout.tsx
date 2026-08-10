@@ -33,6 +33,7 @@ const appUrl = getAppUrl();
 
 export const metadata: Metadata = {
   metadataBase: appUrl,
+  applicationName: "Assets Tracker",
   title: "Assets Tracker",
   description: "Track your net worth, assets, and investments",
   appleWebApp: {
