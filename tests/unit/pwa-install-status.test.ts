@@ -1,22 +1,34 @@
 import { describe, expect, it } from "vitest";
-import { isStandalonePwa, shouldOfferPwaInstall } from "@/lib/pwa-install-status";
+import {
+  isStandalonePwa,
+  shouldOfferPwaInstall,
+} from "@/lib/pwa-install-status";
 
 describe("isStandalonePwa", () => {
   it("detects display-mode standalone", () => {
     expect(
-      isStandalonePwa({ displayModeStandalone: true, navigatorStandalone: false }),
+      isStandalonePwa({
+        displayModeStandalone: true,
+        navigatorStandalone: false,
+      }),
     ).toBe(true);
   });
 
   it("detects legacy iOS standalone", () => {
     expect(
-      isStandalonePwa({ displayModeStandalone: false, navigatorStandalone: true }),
+      isStandalonePwa({
+        displayModeStandalone: false,
+        navigatorStandalone: true,
+      }),
     ).toBe(true);
   });
 
   it("returns false for a normal browser tab", () => {
     expect(
-      isStandalonePwa({ displayModeStandalone: false, navigatorStandalone: false }),
+      isStandalonePwa({
+        displayModeStandalone: false,
+        navigatorStandalone: false,
+      }),
     ).toBe(false);
   });
 });
