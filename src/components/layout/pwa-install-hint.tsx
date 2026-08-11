@@ -3,10 +3,12 @@
 import { useEffect } from "react";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
-import { copyPageUrl, shouldShowSafariPwaHint } from "@/lib/pwa-install-hint";
+import { copyPageUrl, publishUntilRendered, shouldShowSafariPwaHint } from "@/lib/pwa-install-hint";
 
 const STORAGE_KEY = "assets-tracker:pwa-safari-hint-shown";
 const TOAST_ID = "pwa-safari-install-hint";
+// Also the CSS hook for the full-height Copy link button in globals.css.
+const TOAST_CLASS = "pwa-install-hint";
 const COPY_SUCCESS_DURATION_MS = 2_000;
 
 const COPY = {
@@ -66,18 +68,28 @@ export function PwaInstallHint() {
       copiedResetTimer = undefined;
     };
 
+    const markShown = () => {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, "1");
+      } catch {
+        // The hint is optional; storage failures must not affect app rendering.
+      }
+    };
+
     const showToast = (actionLabel: string) => {
       toast.info(copy.title, {
         id: TOAST_ID,
         description: copy.description,
         duration: Number.POSITIVE_INFINITY,
         closeButton: true,
+        className: TOAST_CLASS,
         style: { paddingTop: 8, paddingBottom: 8 },
         onDismiss: () => {
           dismissed = true;
           clearCopiedResetTimer();
+          // Dismissing counts as shown, even if it beat the render check.
+          markShown();
         },
-        actionButtonStyle: { height: 48 },
         action: {
           label: actionLabel,
           onClick: (event) => {
@@ -103,13 +115,12 @@ export function PwaInstallHint() {
       });
     };
 
-    showToast(copy.copyLink);
-
-    try {
-      window.localStorage.setItem(STORAGE_KEY, "1");
-    } catch {
-      // The hint is optional; storage failures must not affect app rendering.
-    }
+    publishUntilRendered({
+      publish: () => showToast(copy.copyLink),
+      hasRendered: () => document.querySelector(`[data-sonner-toast].${TOAST_CLASS}`) !== null,
+      onRendered: markShown,
+      isCancelled: () => dismissed,
+    });
 
     return () => {
       dismissed = true;

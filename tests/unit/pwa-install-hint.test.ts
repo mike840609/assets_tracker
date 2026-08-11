@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
-import { copyPageUrl, shouldShowSafariPwaHint } from "@/lib/pwa-install-hint";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { copyPageUrl, publishUntilRendered, shouldShowSafariPwaHint } from "@/lib/pwa-install-hint";
 
 const iphoneSafari =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1";
@@ -118,6 +118,81 @@ describe("copyPageUrl", () => {
   });
 });
 
+describe("publishUntilRendered", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  const run = (
+    rendersAfterAttempt: number,
+    overrides: Partial<Parameters<typeof publishUntilRendered>[0]> = {},
+  ) => {
+    const publish = vi.fn();
+    const onRendered = vi.fn();
+    publishUntilRendered({
+      publish,
+      hasRendered: () => publish.mock.calls.length >= rendersAfterAttempt,
+      onRendered,
+      isCancelled: () => false,
+      ...overrides,
+    });
+    return { publish, onRendered };
+  };
+
+  it("publishes immediately, without waiting for a timer", () => {
+    const { publish } = run(1);
+
+    expect(publish).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops and reports once the toast is in the DOM", () => {
+    const { publish, onRendered } = run(1);
+    vi.advanceTimersByTime(1_000);
+
+    expect(publish).toHaveBeenCalledTimes(1);
+    expect(onRendered).toHaveBeenCalledTimes(1);
+  });
+
+  it("republishes until a late-mounting Toaster picks the toast up", () => {
+    const { publish, onRendered } = run(3);
+    vi.advanceTimersByTime(1_000);
+
+    expect(publish).toHaveBeenCalledTimes(3);
+    expect(onRendered).toHaveBeenCalledTimes(1);
+  });
+
+  it("gives up after maxAttempts without reporting it as shown", () => {
+    const { publish, onRendered } = run(Number.POSITIVE_INFINITY, { maxAttempts: 4 });
+    vi.advanceTimersByTime(10_000);
+
+    expect(publish).toHaveBeenCalledTimes(5); // first attempt + 4 retries
+    expect(onRendered).not.toHaveBeenCalled();
+  });
+
+  it("never publishes when cancelled before it starts", () => {
+    const { publish, onRendered } = run(1, { isCancelled: () => true });
+    vi.advanceTimersByTime(1_000);
+
+    expect(publish).not.toHaveBeenCalled();
+    expect(onRendered).not.toHaveBeenCalled();
+  });
+
+  it("stops republishing once the user dismisses mid-retry", () => {
+    let dismissed = false;
+    const { publish, onRendered } = run(Number.POSITIVE_INFINITY, {
+      isCancelled: () => dismissed,
+    });
+
+    vi.advanceTimersByTime(250);
+    const publishedBeforeDismiss = publish.mock.calls.length;
+    dismissed = true;
+    vi.advanceTimersByTime(5_000);
+
+    expect(publishedBeforeDismiss).toBeGreaterThan(1);
+    expect(publish).toHaveBeenCalledTimes(publishedBeforeDismiss);
+    expect(onRendered).not.toHaveBeenCalled();
+  });
+});
+
 describe("PwaInstallHint toast behavior", () => {
   it("stays visible until the user closes it", () => {
     const source = readFileSync("src/components/layout/pwa-install-hint.tsx", "utf8");
@@ -144,12 +219,35 @@ describe("PwaInstallHint toast behavior", () => {
     expect(source).not.toContain("toast.dismiss");
   });
 
-  it("uses a large 48px action button with only 8px toast padding", () => {
+  it("only records the hint as shown once the toast actually rendered", () => {
     const source = readFileSync("src/components/layout/pwa-install-hint.tsx", "utf8");
-    const sharedToaster = readFileSync("src/components/ui/sonner.tsx", "utf8");
+
+    expect(source).toContain("publishUntilRendered({");
+    expect(source).toContain("onRendered: markShown");
+    expect(source).toContain("isCancelled: () => dismissed");
+    // The flag must not be set unconditionally right after publishing.
+    expect(source).not.toMatch(/showToast\(copy\.copyLink\);\s*\n\s*try \{/);
+  });
+
+  it("scopes its action-button styling with a class, since globals.css wins on !important", () => {
+    const source = readFileSync("src/components/layout/pwa-install-hint.tsx", "utf8");
+    const css = readFileSync("src/app/globals.css", "utf8");
 
     expect(source).toContain("style: { paddingTop: 8, paddingBottom: 8 }");
-    expect(source).toContain("actionButtonStyle: { height: 48 }");
-    expect(sharedToaster).not.toContain("actionButtonStyle");
+    // The class is both the toast's CSS hook and how the render check finds it.
+    expect(source).toContain('const TOAST_CLASS = "pwa-install-hint"');
+    expect(source).toContain("className: TOAST_CLASS");
+    expect(source).toContain("`[data-sonner-toast].${TOAST_CLASS}`");
+    // Inline actionButtonStyle can never beat the !important shared rule.
+    expect(source).not.toContain("actionButtonStyle");
+
+    const scoped = css.slice(
+      css.indexOf('[data-sonner-toast][data-styled="true"].pwa-install-hint [data-action] {'),
+    );
+    expect(scoped).toContain("align-self: stretch !important");
+    expect(scoped).toContain("height: auto !important");
+    expect(scoped).toContain("min-height: 44px !important");
+    expect(scoped).toContain("background: var(--primary) !important");
+    expect(scoped).toContain("color: var(--primary-foreground) !important");
   });
 });
