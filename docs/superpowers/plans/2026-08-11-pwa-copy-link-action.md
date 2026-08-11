@@ -30,17 +30,17 @@
 - Produces: `copyPageUrl(writeText: ((text: string) => Promise<void>) | undefined, href: string): Promise<boolean>`
 - Returns `true` only when the clipboard write resolves; returns `false` when the API is missing or rejects.
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Add tests that verify the helper passes the exact supplied URL to the clipboard writer, returns `true` on success, returns `false` when no writer is available, and returns `false` when the writer rejects.
 
-- [ ] **Step 2: Run tests to verify RED**
+- [x] **Step 2: Run tests to verify RED**
 
 Run: `pnpm vitest run tests/unit/pwa-install-hint.test.ts`
 
-Expected: FAIL because `copyPageUrl` does not exist yet.
+Observed: FAIL because `copyPageUrl` did not exist yet.
 
-- [ ] **Step 3: Implement the minimal helper**
+- [x] **Step 3: Implement the minimal helper**
 
 ```ts
 export async function copyPageUrl(
@@ -58,11 +58,11 @@ export async function copyPageUrl(
 }
 ```
 
-- [ ] **Step 4: Run focused tests to verify GREEN**
+- [x] **Step 4: Run focused tests to verify GREEN**
 
 Run: `pnpm vitest run tests/unit/pwa-install-hint.test.ts`
 
-Expected: PASS.
+Observed: Clipboard helper cases PASS after implementation.
 
 ### Task 2: Localized persistent Copy link action
 
@@ -74,51 +74,36 @@ Expected: PASS.
 **Interfaces:**
 
 - Consumes: `copyPageUrl(...)`
-- Uses a stable toast id such as `pwa-safari-install-hint` so success updates the same toast.
+- Uses a stable toast id `pwa-safari-install-hint` so success updates the same toast.
 
-- [ ] **Step 1: Write failing toast-contract tests**
+- [x] **Step 1: Write failing toast-contract tests**
 
-Assert the component source includes localized `Copy link` / `複製連結` and `Copied` / `已複製` copy, an `action` object, `window.location.href`, the stable toast id, and does not call `toast.dismiss` from the copy path.
+Assert the component source includes localized `Copy link` / `複製連結` and `Copied` / `已複製` copy, an `action` object, `window.location.href`, the stable toast id, synchronous `event.preventDefault()` to suppress Sonner's default action dismissal, and no `toast.dismiss` call from the copy path.
 
-- [ ] **Step 2: Run focused tests to verify RED**
-
-Run: `pnpm vitest run tests/unit/pwa-install-hint.test.ts`
-
-Expected: FAIL because the action is not implemented yet.
-
-- [ ] **Step 3: Implement the minimal action**
-
-Add `copyLink` and `copied` strings to both locales. Render the toast through a small local `showToast(actionLabel)` function with the existing infinite duration and close button plus:
-
-```ts
-action: {
-  label: actionLabel,
-  onClick: async () => {
-    const copied = await copyPageUrl(
-      navigator.clipboard?.writeText.bind(navigator.clipboard),
-      window.location.href,
-    );
-    if (copied) showToast(copy.copied);
-  },
-},
-```
-
-Use the same `id` on every `toast.info` call so the success label updates the existing toast rather than creating a new one.
-
-- [ ] **Step 4: Run focused tests to verify GREEN**
+- [x] **Step 2: Run focused tests to verify RED**
 
 Run: `pnpm vitest run tests/unit/pwa-install-hint.test.ts`
 
-Expected: PASS.
+Observed: FAIL only on the missing Copy link toast action after the clipboard helper tests were green.
+
+- [x] **Step 3: Implement the minimal action**
+
+Add `copyLink` and `copied` strings to both locales. Render the toast through a local `showToast(actionLabel)` function with the existing infinite duration and close button. The action synchronously calls `event.preventDefault()`, copies the current `window.location.href`, updates the same toast to `Copied` / `已複製` on success, and resets the label after two seconds without dismissing the toast.
+
+- [x] **Step 4: Run focused tests to verify GREEN**
+
+Run: `pnpm vitest run tests/unit/pwa-install-hint.test.ts`
+
+Observed: PASS as part of the full unit suite on the final implementation head.
 
 ### Task 3: Repository verification
 
 **Files:** No new files.
 
-- [ ] **Step 1: Run repository checks**
+- [x] **Step 1: Run repository checks**
 
-Run the PR CI-equivalent checks: format, lint, typecheck, unit tests, PostgreSQL integration tests, production build / bundle-size, and Playwright smoke tests.
+The PR CI-equivalent checks completed successfully on implementation head `9030907bea723931f3f203510ed9ce01d40ceebd`: format, lint, typecheck, unit tests, PostgreSQL integration tests, production build / bundle-size, and Playwright authenticated/public Demo smoke tests.
 
-- [ ] **Step 2: Verify PR status**
+- [x] **Step 2: Verify PR status**
 
-Confirm PR #680 remains open and mergeable on the final head SHA with all required workflows successful.
+PR #680 remained open and mergeable on implementation head `9030907bea723931f3f203510ed9ce01d40ceebd` with both CI and E2E workflows successful.
