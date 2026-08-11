@@ -21,10 +21,12 @@
 ### Task 1: Clipboard helper and regression tests
 
 **Files:**
+
 - Modify: `src/lib/pwa-install-hint.ts`
 - Modify: `tests/unit/pwa-install-hint.test.ts`
 
 **Interfaces:**
+
 - Produces: `copyPageUrl(writeText: ((text: string) => Promise<void>) | undefined, href: string): Promise<boolean>`
 - Returns `true` only when the clipboard write resolves; returns `false` when the API is missing or rejects.
 
@@ -65,10 +67,12 @@ Expected: PASS.
 ### Task 2: Localized persistent Copy link action
 
 **Files:**
+
 - Modify: `src/components/layout/pwa-install-hint.tsx`
 - Modify: `tests/unit/pwa-install-hint.test.ts`
 
 **Interfaces:**
+
 - Consumes: `copyPageUrl(...)`
 - Uses a stable toast id such as `pwa-safari-install-hint` so success updates the same toast.
 
@@ -109,7 +113,7 @@ Expected: PASS.
 
 ### Task 3: Repository verification
 
-**Files:** no new files.
+**Files:** No new files.
 
 - [ ] **Step 1: Run repository checks**
 
