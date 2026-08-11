@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { shouldShowSafariPwaHint } from "@/lib/pwa-install-hint";
+import { copyPageUrl, shouldShowSafariPwaHint } from "@/lib/pwa-install-hint";
 
 const iphoneSafari =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1";
@@ -89,6 +89,32 @@ describe("shouldShowSafariPwaHint", () => {
 
   it("does not show after the hint has already been shown", () => {
     expect(shouldShowSafariPwaHint({ ...base, hasBeenShown: true })).toBe(false);
+  });
+});
+
+describe("copyPageUrl", () => {
+  it("copies the exact current page URL", async () => {
+    const href = "https://astt.app/accounts/abc?tab=holdings#latest";
+    let written = "";
+
+    const copied = await copyPageUrl(async (text) => {
+      written = text;
+    }, href);
+
+    expect(copied).toBe(true);
+    expect(written).toBe(href);
+  });
+
+  it("returns false when the Clipboard API is unavailable", async () => {
+    await expect(copyPageUrl(undefined, "https://astt.app/")).resolves.toBe(false);
+  });
+
+  it("returns false when the clipboard write rejects", async () => {
+    const copied = await copyPageUrl(async () => {
+      throw new Error("clipboard denied");
+    }, "https://astt.app/");
+
+    expect(copied).toBe(false);
   });
 });
 
