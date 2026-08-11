@@ -58,6 +58,12 @@ Add a Sonner action button to the toast. When the user clicks it:
 
 The close button remains the only explicit control that dismisses the toast.
 
+### Action Button Sizing
+
+The Copy link / Copied action must be **36px high** so it uses more of the toast's available vertical space than Sonner's 24px default action button. Keep the existing button width behavior, horizontal padding, color, border radius, and toast dimensions unchanged.
+
+Apply the 36px height only to this PWA hint toast action. Do not change the shared Sonner component or the default action-button height used by other toasts.
+
 ## Architecture
 
 Keep the focused client component at `src/components/layout/pwa-install-hint.tsx`, responsible for:
@@ -66,9 +72,10 @@ Keep the focused client component at `src/components/layout/pwa-install-hint.tsx
 - checking/writing the local persistence flag,
 - triggering the existing Sonner toast,
 - copying the current URL when the action is clicked,
-- maintaining the transient `Copied` action-label state.
+- maintaining the transient `Copied` action-label state,
+- applying PWA-toast-specific action-button sizing.
 
-Keep browser classification in the pure helper `src/lib/pwa-install-hint.ts` so it remains independently testable. Do not place browser-detection or clipboard behavior inside the shared `src/components/ui/sonner.tsx` component.
+Keep browser classification in the pure helper `src/lib/pwa-install-hint.ts` so it remains independently testable. Do not place browser-detection, clipboard behavior, or PWA-specific button sizing inside the shared `src/components/ui/sonner.tsx` component.
 
 ## Browser Detection
 
@@ -110,6 +117,8 @@ Cover at least:
 - Copy link uses the current `window.location.href`
 - successful copy does not dismiss the toast
 - clipboard failure leaves the toast usable
+- PWA hint action button height is exactly 36px
+- shared Sonner defaults are not changed to achieve the PWA-specific button height
 
 ## Non-Goals
 
@@ -118,3 +127,4 @@ Cover at least:
 - No Android install prompt changes.
 - No changes to service-worker registration or web-app manifest behavior.
 - No fixed homepage URL for the copy action; always copy the current page URL.
+- No global action-button height change for other Sonner toasts.
