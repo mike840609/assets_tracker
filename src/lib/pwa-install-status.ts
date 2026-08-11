@@ -25,8 +25,6 @@ export function shouldOfferPwaInstall({
 }: PwaInstallEligibility): boolean {
   if (!hasInstallPrompt || isStandalone || wasDismissed) return false;
 
-  const isAndroid = /Android/i.test(userAgent);
-  const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
-
-  return isAndroid && !isIOS;
+  // Desktop and iOS are covered elsewhere; only Android gets the install toast.
+  return /Android/i.test(userAgent);
 }

@@ -15,7 +15,8 @@
 - Use `beforeinstallprompt` only when the browser provides it; do not synthesize or force an install dialog.
 - Browser/storage failures must fail silently.
 - Preserve the current green gradient + white growth-line icon artwork.
-- Add `any` and `maskable` PNG icons at 192x192 and 512x512 plus a 180x180 Apple touch icon.
+- Add `any` and `maskable` PNG icons at 192x192 and 512x512. The 180x180 Apple touch icon already
+  exists as `src/app/apple-icon.tsx`.
 - Do not change service-worker behavior or the shared Sonner component.
 
 ---
@@ -101,7 +102,6 @@ Expected: PASS.
 - Create: `public/icons/icon-512.png`
 - Create: `public/icons/icon-maskable-192.png`
 - Create: `public/icons/icon-maskable-512.png`
-- Create: `src/app/apple-icon.png`
 
 - [ ] **Step 1: Generate raster icon variants from current SVG artwork**
 
@@ -109,7 +109,7 @@ Reproduce the current visual mark: dark-to-emerald diagonal gradient rounded-squ
 
 - [ ] **Step 2: Inspect dimensions**
 
-Verify exact pixel dimensions are 192, 512, 192, 512, and 180 respectively.
+Verify exact pixel dimensions are 192, 512, 192, and 512 respectively.
 
 - [ ] **Step 3: Commit**
 

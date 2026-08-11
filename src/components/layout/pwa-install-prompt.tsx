@@ -3,9 +3,13 @@
 import { useEffect, useRef } from "react";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
+import { publishUntilRendered } from "@/lib/pwa-install-hint";
 import { isStandalonePwa, shouldOfferPwaInstall } from "@/lib/pwa-install-status";
 
 const STORAGE_KEY = "assets-tracker:pwa-install-prompt-dismissed";
+const TOAST_ID = "pwa-install-prompt";
+// DOM hook so publishUntilRendered can confirm the toast really mounted.
+const TOAST_CLASS = "pwa-install-prompt";
 
 const COPY = {
   "en-US": {
@@ -65,72 +69,86 @@ function getStandaloneStatus(): boolean {
 
 export function PwaInstallPrompt() {
   const locale = useLocale();
-  const toastIdRef = useRef<string | number | null>(null);
+  const offeredRef = useRef(false);
 
   useEffect(() => {
     const copy = locale === "zh-TW" ? COPY["zh-TW"] : COPY["en-US"];
-
-    const markSuggestionDismissed = () => {
-      persistDismissedFlag();
-      toastIdRef.current = null;
-    };
+    let settled = false;
 
     const handleBeforeInstallPrompt = (rawEvent: Event) => {
       const event = rawEvent as BeforeInstallPromptEvent;
       event.preventDefault();
 
       if (
+        offeredRef.current ||
         !shouldOfferPwaInstall({
           userAgent: navigator.userAgent,
           isStandalone: getStandaloneStatus(),
           wasDismissed: readDismissedFlag(),
           hasInstallPrompt: true,
-        }) ||
-        toastIdRef.current !== null
+        })
       ) {
         return;
       }
 
+      offeredRef.current = true;
       let installPromptStarted = false;
 
-      toastIdRef.current = toast.info(copy.title, {
-        description: copy.description,
-        duration: 10_000,
-        action: {
-          label: copy.action,
-          onClick: () => {
-            installPromptStarted = true;
-            void (async () => {
-              try {
-                await event.prompt();
-                const choice = await event.userChoice;
-                if (choice.outcome === "dismissed") persistDismissedFlag();
-              } catch {
-                // Browsers can invalidate a deferred prompt; leave the app unaffected.
-              } finally {
-                toastIdRef.current = null;
-              }
-            })();
+      const markSuggestionDismissed = () => {
+        if (installPromptStarted) return;
+        settled = true;
+        persistDismissedFlag();
+      };
+
+      const showToast = () => {
+        toast.info(copy.title, {
+          id: TOAST_ID,
+          className: TOAST_CLASS,
+          description: copy.description,
+          duration: 10_000,
+          action: {
+            label: copy.action,
+            onClick: () => {
+              installPromptStarted = true;
+              settled = true;
+              void (async () => {
+                try {
+                  await event.prompt();
+                  const choice = await event.userChoice;
+                  if (choice.outcome === "dismissed") persistDismissedFlag();
+                } catch {
+                  // Browsers can invalidate a deferred prompt; leave the app unaffected.
+                } finally {
+                  toast.dismiss(TOAST_ID);
+                }
+              })();
+            },
           },
-        },
-        onDismiss: () => {
-          if (!installPromptStarted) markSuggestionDismissed();
-        },
-        onAutoClose: () => {
-          if (!installPromptStarted) markSuggestionDismissed();
-        },
+          onDismiss: markSuggestionDismissed,
+          onAutoClose: markSuggestionDismissed,
+        });
+      };
+
+      // The <Toaster> is a dynamic() import that can subscribe after
+      // beforeinstallprompt fires, and Sonner never replays a dropped toast.
+      publishUntilRendered({
+        publish: showToast,
+        hasRendered: () => document.querySelector(`[data-sonner-toast].${TOAST_CLASS}`) !== null,
+        onRendered: () => {},
+        isCancelled: () => settled,
       });
     };
 
     const handleAppInstalled = () => {
-      if (toastIdRef.current !== null) toast.dismiss(toastIdRef.current);
-      toastIdRef.current = null;
+      settled = true;
+      toast.dismiss(TOAST_ID);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
+      settled = true;
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
     };

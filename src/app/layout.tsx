@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/layout/theme-provider";
 import { ColorSchemaProvider } from "@/components/layout/color-schema-context";
 import { LazyToaster } from "@/components/layout/lazy-toaster";
 import { PwaInstallPrompt } from "@/components/layout/pwa-install-prompt";
+import { PwaInstallHint } from "@/components/layout/pwa-install-hint";
 import { CustomSpeedInsights } from "@/components/layout/speed-insights";
 import { HtmlLangSync } from "@/components/layout/html-lang-sync";
 import { Analytics } from "@vercel/analytics/next";
@@ -90,7 +91,9 @@ async function LocaleProviders({ children }: { children: React.ReactNode }) {
       ])}
     >
       <HtmlLangSync />
+      {/* Disjoint audiences: Prompt = Android/Chromium beforeinstallprompt, Hint = iOS non-Safari. */}
       <PwaInstallPrompt />
+      <PwaInstallHint />
       {children}
     </NextIntlClientProvider>
   );

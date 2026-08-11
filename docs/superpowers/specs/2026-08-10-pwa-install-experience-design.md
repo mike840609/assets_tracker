@@ -71,7 +71,8 @@ Add raster launcher variants based on the same artwork:
 - `public/icons/icon-512.png`
 - `public/icons/icon-maskable-192.png`
 - `public/icons/icon-maskable-512.png`
-- `src/app/apple-icon.png` at 180x180 for Next.js Apple metadata discovery.
+- Apple touch icon: none added. `src/app/apple-icon.tsx` already emits 180x180; a second static
+  file would make Next.js render two competing `apple-touch-icon` tags.
 
 Maskable variants must keep the white growth mark comfortably within the central safe zone so Android launchers can crop the outer background without clipping the mark.
 
