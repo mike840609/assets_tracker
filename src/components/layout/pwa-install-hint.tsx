@@ -51,7 +51,11 @@ export function PwaInstallHint() {
     if (!shouldShow) return;
 
     const copy = locale === "zh-TW" ? COPY["zh-TW"] : COPY["en-US"];
-    toast.info(copy.title, { description: copy.description });
+    toast.info(copy.title, {
+      description: copy.description,
+      duration: Number.POSITIVE_INFINITY,
+      closeButton: true,
+    });
 
     try {
       window.localStorage.setItem(STORAGE_KEY, "1");
