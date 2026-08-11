@@ -23,10 +23,12 @@
 ### Task 1: Add and test pure PWA hint eligibility logic
 
 **Files:**
+
 - Create: `src/lib/pwa-install-hint.ts`
 - Create: `tests/unit/pwa-install-hint.test.ts`
 
 **Interfaces:**
+
 - Produces: `shouldShowSafariPwaHint(input: SafariPwaHintEnvironment): boolean`
 - `SafariPwaHintEnvironment` contains `userAgent: string`, `platform: string`, `maxTouchPoints: number`, `isStandalone: boolean`, and `hasBeenShown: boolean`.
 
@@ -145,12 +147,14 @@ git commit -m "feat: add Safari PWA hint eligibility logic"
 ### Task 2: Add localized client toast and mount it in the root layout
 
 **Files:**
+
 - Create: `src/components/layout/pwa-install-hint.tsx`
 - Modify: `src/app/layout.tsx`
 - Modify: `messages/en-US.json`
 - Modify: `messages/zh-TW.json`
 
 **Interfaces:**
+
 - Consumes: `shouldShowSafariPwaHint(...)` from Task 1.
 - Produces: `PwaInstallHint` client component with no props.
 
