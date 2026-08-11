@@ -136,8 +136,11 @@ describe("PwaInstallHint toast behavior", () => {
     expect(source).toContain('const TOAST_ID = "pwa-safari-install-hint"');
     expect(source).toContain("action: {");
     expect(source).toContain("label: actionLabel");
+    expect(source).toContain("event.preventDefault()");
     expect(source).toContain("window.location.href");
-    expect(source).toContain("if (copied) showToast(copy.copied)");
+    expect(source).toContain("showToast(copy.copied)");
+    expect(source).toContain("window.setTimeout");
+    expect(source).toContain("showToast(copy.copyLink)");
     expect(source).not.toContain("toast.dismiss");
   });
 });
