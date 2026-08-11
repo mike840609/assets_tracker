@@ -6,7 +6,7 @@ export type SafariPwaHintEnvironment = {
   hasBeenShown: boolean;
 };
 
-const IOS_BROWSER_TOKENS = ["CriOS", "FxiOS", "EdgiOS", "OPiOS"] as const;
+const IOS_BROWSER_TOKENS = ["CriOS", "FxiOS", "EdgiOS", "OPiOS", "Brave"] as const;
 
 export function shouldShowSafariPwaHint({
   userAgent,
