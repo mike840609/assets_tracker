@@ -8,6 +8,20 @@ export type SafariPwaHintEnvironment = {
 
 const IOS_BROWSER_TOKENS = ["CriOS", "FxiOS", "EdgiOS", "OPiOS", "Brave"] as const;
 
+export async function copyPageUrl(
+  writeText: ((text: string) => Promise<void>) | undefined,
+  href: string,
+): Promise<boolean> {
+  if (!writeText) return false;
+
+  try {
+    await writeText(href);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function shouldShowSafariPwaHint({
   userAgent,
   platform,
