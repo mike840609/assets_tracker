@@ -143,4 +143,12 @@ describe("PwaInstallHint toast behavior", () => {
     expect(source).toContain("showToast(copy.copyLink)");
     expect(source).not.toContain("toast.dismiss");
   });
+
+  it("uses a 36px action button without changing the shared toaster", () => {
+    const source = readFileSync("src/components/layout/pwa-install-hint.tsx", "utf8");
+    const sharedToaster = readFileSync("src/components/ui/sonner.tsx", "utf8");
+
+    expect(source).toContain("actionButtonStyle: { height: 36 }");
+    expect(sharedToaster).not.toContain("actionButtonStyle");
+  });
 });
