@@ -72,11 +72,12 @@ export function PwaInstallHint() {
         description: copy.description,
         duration: Number.POSITIVE_INFINITY,
         closeButton: true,
+        style: { paddingTop: 8, paddingBottom: 8 },
         onDismiss: () => {
           dismissed = true;
           clearCopiedResetTimer();
         },
-        actionButtonStyle: { height: 36 },
+        actionButtonStyle: { alignSelf: "stretch", height: "auto" },
         action: {
           label: actionLabel,
           onClick: (event) => {
