@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { shouldShowSafariPwaHint } from "@/lib/pwa-install-hint";
 
@@ -88,5 +89,14 @@ describe("shouldShowSafariPwaHint", () => {
 
   it("does not show after the hint has already been shown", () => {
     expect(shouldShowSafariPwaHint({ ...base, hasBeenShown: true })).toBe(false);
+  });
+});
+
+describe("PwaInstallHint toast behavior", () => {
+  it("stays visible until the user closes it", () => {
+    const source = readFileSync("src/components/layout/pwa-install-hint.tsx", "utf8");
+
+    expect(source).toContain("duration: Number.POSITIVE_INFINITY");
+    expect(source).toContain("closeButton: true");
   });
 });
