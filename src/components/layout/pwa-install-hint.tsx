@@ -76,6 +76,7 @@ export function PwaInstallHint() {
           dismissed = true;
           clearCopiedResetTimer();
         },
+        actionButtonStyle: { height: 36 },
         action: {
           label: actionLabel,
           onClick: (event) => {
