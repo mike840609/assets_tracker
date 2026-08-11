@@ -149,9 +149,7 @@ describe("PwaInstallHint toast behavior", () => {
     const sharedToaster = readFileSync("src/components/ui/sonner.tsx", "utf8");
 
     expect(source).toContain("style: { paddingTop: 8, paddingBottom: 8 }");
-    expect(source).toContain(
-      'actionButtonStyle: { alignSelf: "stretch", height: "auto" }',
-    );
+    expect(source).toContain('actionButtonStyle: { alignSelf: "stretch", height: "auto" }');
     expect(sharedToaster).not.toContain("actionButtonStyle");
   });
 });
