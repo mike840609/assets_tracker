@@ -125,4 +125,19 @@ describe("PwaInstallHint toast behavior", () => {
     expect(source).toContain("duration: Number.POSITIVE_INFINITY");
     expect(source).toContain("closeButton: true");
   });
+
+  it("offers a localized Copy link action without dismissing the toast", () => {
+    const source = readFileSync("src/components/layout/pwa-install-hint.tsx", "utf8");
+
+    expect(source).toContain('copyLink: "Copy link"');
+    expect(source).toContain('copyLink: "複製連結"');
+    expect(source).toContain('copied: "Copied"');
+    expect(source).toContain('copied: "已複製"');
+    expect(source).toContain('const TOAST_ID = "pwa-safari-install-hint"');
+    expect(source).toContain("action: {");
+    expect(source).toContain("label: actionLabel");
+    expect(source).toContain("window.location.href");
+    expect(source).toContain("if (copied) showToast(copy.copied)");
+    expect(source).not.toContain("toast.dismiss");
+  });
 });
