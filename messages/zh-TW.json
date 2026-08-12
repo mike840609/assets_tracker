@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "資產追蹤器",
+    "name": "astt",
     "subtitle": "淨資產儀表板",
     "subtitleMobile": "淨資產"
   },
@@ -147,8 +147,8 @@
   },
   "settings": {
     "title": "設定",
-    "appPhilosophy": "關於資產追蹤器",
-    "appDescription": "資產追蹤器幫助您視覺化整體的財富增長旅程。透過定期快照追蹤資產成長，讓您專注於大局，而非每日的交易波動。",
+    "appPhilosophy": "關於 astt",
+    "appDescription": "astt 幫助您視覺化整體的財富增長旅程。透過定期快照追蹤資產成長，讓您專注於大局，而非每日的交易波動。",
     "preferencesTitle": "偏好設定",
     "synchronizationTitle": "同步與更新",
     "syncPricesTitle": "資產價格",
@@ -222,7 +222,7 @@
       "backupStarted": "已開始匯出備份",
       "backupFailed": "匯出備份失敗",
       "yourData": "您的資料",
-      "yourDataDescription": "資產追蹤器不會連接您的銀行或券商帳戶。財務紀錄是您在此新增的資料。"
+      "yourDataDescription": "astt 不會連接您的銀行或券商帳戶。財務紀錄是您在此新增的資料。"
     },
     "demo": {
       "temporarySessionTitle": "此 Demo 為暫存體驗",
@@ -242,7 +242,7 @@
     "versionViewChangelog": "查看更新紀錄",
     "versionSourceCode": "原始碼",
     "versionOpenSourceTitle": "開源專案",
-    "versionOpenSource": "資產追蹤器是免費的開源軟體，以 <license>MIT 授權</license> 發布。任何人都可以閱讀原始碼、自行部署專屬版本，或參與貢獻。"
+    "versionOpenSource": "astt 是免費的開源軟體，以 <license>MIT 授權</license> 發布。任何人都可以閱讀原始碼、自行部署專屬版本，或參與貢獻。"
   },
   "languages": {
     "en-US": "English",
@@ -269,7 +269,7 @@
   },
   "dashboard": {
     "title": "儀表板",
-    "emptyTitle": "歡迎使用資產追蹤器",
+    "emptyTitle": "歡迎使用 astt",
     "emptyDescription": "從新增第一個帳戶開始——銀行帳戶、券商、加密貨幣錢包，或任何您想追蹤的項目。",
     "emptyAction": "新增您的第一個帳戶",
     "emptyHint": "系統每日擷取快照，隨著歷史累積，圖表會逐漸顯示。",
@@ -905,7 +905,7 @@
     "onboarding": {
       "eyebrow": "從一個帳戶開始",
       "title": "建立支撐所有圖表的帳戶台帳。",
-      "description": "新增銀行、券商、不動產、錢包或負債帳戶，讓資產追蹤器能用真實餘額計算總額。",
+      "description": "新增銀行、券商、不動產、錢包或負債帳戶，讓 astt 能用真實餘額計算總額。",
       "primaryAction": "新增帳戶",
       "preview": {
         "ledgerTitle": "帳戶台帳",
@@ -1155,7 +1155,7 @@
     "export": "匯出資料",
     "exportDescription": "將您的所有帳戶、持倉和交易紀錄下載為 JSON 檔案。",
     "import": "匯入備份",
-    "importDescription": "選擇資產追蹤器備份檔。您會先檢查檔案內容，再替換目前資料。",
+    "importDescription": "選擇 astt 備份檔。您會先檢查檔案內容，再替換目前資料。",
     "importButton": "選擇備份檔",
     "importing": "匯入中...",
     "importSuccess": "資料匯入成功",
@@ -1186,7 +1186,7 @@
     "replaceAllData": "替換所有資料",
     "replacingData": "正在替換資料...",
     "invalidFile": "檔案格式錯誤。請上傳從本應用程式匯出的 JSON 檔案。",
-    "invalidBackupDescription": "此檔案看起來不是資產追蹤器備份。請選擇從本應用程式匯出的 JSON 檔案。",
+    "invalidBackupDescription": "此檔案看起來不是 astt 備份。請選擇從本應用程式匯出的 JSON 檔案。",
     "cancel": "取消",
     "importErrorTitle": "匯入失敗",
     "close": "關閉",
@@ -1200,7 +1200,7 @@
   },
   "installApp": {
     "title": "加入主畫面",
-    "description": "將資產追蹤器加入主畫面，像原生 App 一樣快速啟動。",
+    "description": "將 astt 加入主畫面，像原生 App 一樣快速啟動。",
     "platform": "適用於 iPhone 和 iPad 的 Safari 瀏覽器",
     "step1": "在 iPhone 或 iPad 上用 Safari 開啟本頁",
     "step2Before": "點選",
@@ -1305,18 +1305,18 @@
   },
   "terms": {
     "title": "服務條款",
-    "subtitle": "使用資產追蹤器的規則與指南",
+    "subtitle": "使用 astt 的規則與指南",
     "backToLogin": "← 返回登入",
     "section1Title": "接受條款",
-    "section1Body": "透過存取和使用資產追蹤器，您接受並同意受本協議條款的約束。如果您不同意遵守這些條款，請勿使用本服務。",
+    "section1Body": "透過存取和使用 astt，您接受並同意受本協議條款的約束。如果您不同意遵守這些條款，請勿使用本服務。",
     "section2Title": "服務使用",
-    "section2Body": "資產追蹤器「依原樣」提供，僅供個人財務追蹤使用。您同意僅出於合法目的使用本服務，並且不會侵犯他人權利、限制或禁止他人使用和享受本服務。",
+    "section2Body": "astt「依原樣」提供，僅供個人財務追蹤使用。您同意僅出於合法目的使用本服務，並且不會侵犯他人權利、限制或禁止他人使用和享受本服務。",
     "section3Title": "使用者帳戶",
     "section3Body": "您有責任維護您帳戶的機密性，並對您帳戶下發生的所有活動負責。我們保留全權決定拒絕服務、終止帳戶或移除/編輯內容的權利。",
     "section4Title": "財務數據",
-    "section4Body": "資產追蹤器提供的資訊僅供參考，不構成財務建議。我們不保證所提供任何市場數據的準確性、完整性或實用性。",
+    "section4Body": "astt 提供的資訊僅供參考，不構成財務建議。我們不保證所提供任何市場數據的準確性、完整性或實用性。",
     "section5Title": "責任限制",
-    "section5Body": "對於因您使用本服務或依賴所提供的資訊而導致的任何直接、間接、附帶、特殊、後果性或懲罰性損害，資產追蹤器概不負責。",
+    "section5Body": "對於因您使用本服務或依賴所提供的資訊而導致的任何直接、間接、附帶、特殊、後果性或懲罰性損害，astt 概不負責。",
     "section6Title": "條款變更",
     "section6Body": "我們保留全權決定隨時修改這些條款的權利。在這些條款變更發布後，您繼續使用本服務即表示您接受這些變更。",
     "lastUpdated": "最後更新：2026 年 4 月"
@@ -1532,7 +1532,7 @@
   },
   "changelog": {
     "title": "更新內容",
-    "subtitle": "Assets Tracker 的每個版本，由新到舊。",
+    "subtitle": "astt 的每個版本，由新到舊。",
     "currentVersion": "目前版本 {version}",
     "latest": "最新",
     "empty": "尚無版本。",

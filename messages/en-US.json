@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Assets Tracker",
+    "name": "astt",
     "subtitle": "Net Worth Dashboard",
     "subtitleMobile": "Net Worth"
   },
@@ -147,8 +147,8 @@
   },
   "settings": {
     "title": "Settings",
-    "appPhilosophy": "About Assets Tracker",
-    "appDescription": "Assets Tracker is designed to help you visualize your high-level wealth journey. By tracking asset growth through periodic snapshots, you can focus on the big picture instead of daily trading noise.",
+    "appPhilosophy": "About astt",
+    "appDescription": "astt is designed to help you visualize your high-level wealth journey. By tracking asset growth through periodic snapshots, you can focus on the big picture instead of daily trading noise.",
     "preferencesTitle": "Preferences",
     "synchronizationTitle": "Synchronization",
     "syncPricesTitle": "Asset Prices",
@@ -222,7 +222,7 @@
       "backupStarted": "Backup export started",
       "backupFailed": "Failed to export backup",
       "yourData": "Your data",
-      "yourDataDescription": "Assets Tracker does not connect to your bank or brokerage accounts. Financial records are the entries you add here."
+      "yourDataDescription": "astt does not connect to your bank or brokerage accounts. Financial records are the entries you add here."
     },
     "demo": {
       "temporarySessionTitle": "This Demo is temporary",
@@ -242,7 +242,7 @@
     "versionViewChangelog": "View changelog",
     "versionSourceCode": "Source code",
     "versionOpenSourceTitle": "Open source",
-    "versionOpenSource": "Assets Tracker is free, open-source software released under the <license>MIT License</license>. Anyone can read the code, self-host their own copy, or contribute."
+    "versionOpenSource": "astt is free, open-source software released under the <license>MIT License</license>. Anyone can read the code, self-host their own copy, or contribute."
   },
   "languages": {
     "en-US": "English",
@@ -269,7 +269,7 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "emptyTitle": "Welcome to Assets Tracker",
+    "emptyTitle": "Welcome to astt",
     "emptyDescription": "Start by adding your first account — a bank account, brokerage, crypto wallet, or anything else you want to track.",
     "emptyAction": "Add your first account",
     "emptyHint": "Snapshots are captured daily, so charts fill in as your history grows.",
@@ -905,7 +905,7 @@
     "onboarding": {
       "eyebrow": "Start with one account",
       "title": "Build the ledger that powers every chart.",
-      "description": "Add a bank, brokerage, property, wallet, or liability so Assets Tracker can calculate totals from real balances.",
+      "description": "Add a bank, brokerage, property, wallet, or liability so astt can calculate totals from real balances.",
       "primaryAction": "Add account",
       "preview": {
         "ledgerTitle": "Account ledger",
@@ -1155,7 +1155,7 @@
     "export": "Export Data",
     "exportDescription": "Download all your accounts, holdings, and transaction history as a JSON file.",
     "import": "Import backup",
-    "importDescription": "Select an Assets Tracker backup file. You will review it before replacing current data.",
+    "importDescription": "Select an astt backup file. You will review it before replacing current data.",
     "importButton": "Select backup file",
     "importing": "Importing...",
     "importSuccess": "Data imported successfully",
@@ -1186,7 +1186,7 @@
     "replaceAllData": "Replace all data",
     "replacingData": "Replacing data...",
     "invalidFile": "Invalid file format. Please upload a JSON file exported from this app.",
-    "invalidBackupDescription": "This file does not look like an Assets Tracker backup. Please choose a JSON file exported from this app.",
+    "invalidBackupDescription": "This file does not look like an astt backup. Please choose a JSON file exported from this app.",
     "cancel": "Cancel",
     "importErrorTitle": "Import Failed",
     "close": "Close",
@@ -1200,7 +1200,7 @@
   },
   "installApp": {
     "title": "Add to Home Screen",
-    "description": "Access Assets Tracker like a native app directly from your home screen.",
+    "description": "Access astt like a native app directly from your home screen.",
     "platform": "Works in Safari on iPhone and iPad",
     "step1": "Open this page in Safari on your iPhone or iPad",
     "step2Before": "Tap the Share button",
@@ -1209,7 +1209,7 @@
     "step4": "Tap \"Add\" — the app icon will appear on your home screen"
   },
   "login": {
-    "title": "Assets Tracker",
+    "title": "astt",
     "subtitle": "Securely access your financial portfolio",
     "googleButton": "Continue with Google",
     "selfHostPasswordPlaceholder": "Self-host password",
@@ -1281,7 +1281,7 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "subtitle": "How Assets Tracker handles your data",
+    "subtitle": "How astt handles your data",
     "backToLogin": "← Back to Login",
     "section1Title": "What we collect",
     "section1Body": "Depending on your deployment, you can sign in with Google or a self-host password. Google sign-in provides your name, email address, and profile picture. Any financial data (accounts, holdings, balances) is entered by you manually and stored in your private database.",
@@ -1305,18 +1305,18 @@
   },
   "terms": {
     "title": "Terms of Service",
-    "subtitle": "Rules and guidelines for using Assets Tracker",
+    "subtitle": "Rules and guidelines for using astt",
     "backToLogin": "← Back to Login",
     "section1Title": "Acceptance of Terms",
-    "section1Body": "By accessing and using Assets Tracker, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by these terms, please do not use this service.",
+    "section1Body": "By accessing and using astt, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by these terms, please do not use this service.",
     "section2Title": "Use of Service",
-    "section2Body": "Assets Tracker is provided 'as is' for personal financial tracking. You agree to use the service only for lawful purposes and in a way that does not infringe the rights of, restrict or inhibit anyone else's use and enjoyment of the service.",
+    "section2Body": "astt is provided 'as is' for personal financial tracking. You agree to use the service only for lawful purposes and in a way that does not infringe the rights of, restrict or inhibit anyone else's use and enjoyment of the service.",
     "section3Title": "User Accounts",
     "section3Body": "You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account. We reserve the right to refuse service, terminate accounts, or remove or edit content in our sole discretion.",
     "section4Title": "Financial Data",
-    "section4Body": "The information provided by Assets Tracker is for informational purposes only and does not constitute financial advice. We do not guarantee the accuracy, completeness, or usefulness of any market data provided.",
+    "section4Body": "The information provided by astt is for informational purposes only and does not constitute financial advice. We do not guarantee the accuracy, completeness, or usefulness of any market data provided.",
     "section5Title": "Limitation of Liability",
-    "section5Body": "Assets Tracker shall not be liable for any direct, indirect, incidental, special, consequential or exemplary damages resulting from your use of the service or any reliance on the information provided.",
+    "section5Body": "astt shall not be liable for any direct, indirect, incidental, special, consequential or exemplary damages resulting from your use of the service or any reliance on the information provided.",
     "section6Title": "Changes to Terms",
     "section6Body": "We reserve the right to modify these terms from time to time at our sole discretion. Your continued use of the service following the posting of changes to these terms will mean you accept those changes.",
     "lastUpdated": "Last updated: April 2026"
@@ -1532,7 +1532,7 @@
   },
   "changelog": {
     "title": "What's New",
-    "subtitle": "Every release of Assets Tracker, newest first.",
+    "subtitle": "Every release of astt, newest first.",
     "currentVersion": "You're on {version}",
     "latest": "Latest",
     "empty": "No releases yet.",
