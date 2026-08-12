@@ -10,9 +10,11 @@
 
 [English](./README.md) | [繁體中文](./README.zh-TW.md)
 
-**Open-source, self-hosted net worth & portfolio tracker.**
+**開源、可自行部署的淨資產與投資組合追蹤工具。**
 
 可自行部署、支援多幣別的淨資產與投資追蹤工具，讓你在保有資料控制權的同時，集中掌握完整財務狀況。
+
+> 原名 Assets Tracker，同一個專案，現以 **astt** 為品牌名。
 
 [線上展示](https://astt.app) · [快速開始](#快速開始) · [部署指南](./docs/DEPLOYMENT.md) · [安全政策](./SECURITY.md) · [參與貢獻](./CONTRIBUTING.md)
 

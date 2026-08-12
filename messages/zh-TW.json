@@ -1209,7 +1209,7 @@
     "step4": "點選「新增」— App 圖示即會出現在主畫面上"
   },
   "login": {
-    "title": "資產追蹤",
+    "title": "astt",
     "subtitle": "安全地訪問您的財務投資組合",
     "googleButton": "使用 Google 帳號繼續",
     "selfHostPasswordPlaceholder": "自行部署密碼",
@@ -1281,7 +1281,7 @@
   },
   "privacy": {
     "title": "隱私政策",
-    "subtitle": "資產追蹤如何處理您的資料",
+    "subtitle": "astt 如何處理您的資料",
     "backToLogin": "← 返回登入",
     "section1Title": "我們收集的資料",
     "section1Body": "依部署設定，您可以使用 Google 或自行部署密碼登入。使用 Google 登入時，我們會取得您的姓名、電子郵件地址和個人頭像。任何財務資料（帳戶、持倉、餘額）均由您手動輸入並儲存在您的私人資料庫中。",

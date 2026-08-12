@@ -1,6 +1,6 @@
 # Continuous Integration
 
-Assets Tracker uses a light-versus-heavy CI split to keep pull-request feedback fast and control GitHub Actions usage.
+astt uses a light-versus-heavy CI split to keep pull-request feedback fast and control GitHub Actions usage.
 
 ## Pull requests
 

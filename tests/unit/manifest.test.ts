@@ -10,6 +10,17 @@ describe("PWA manifest", () => {
     expect(value.theme_color).toBe("#0d1f1e");
   });
 
+  // Identity is derived from start_url while id/scope are absent. Changing any
+  // of the three orphans the icon already on a user's home screen, so a rename
+  // must not drift into them.
+  it("keeps installed-app identity stable", () => {
+    const value = manifest();
+
+    expect(value.start_url).toBe("/");
+    expect(value.id).toBeUndefined();
+    expect(value.scope).toBeUndefined();
+  });
+
   it("declares any and maskable 192/512 launcher icons", () => {
     const icons = manifest().icons ?? [];
 

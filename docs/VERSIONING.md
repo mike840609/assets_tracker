@@ -1,6 +1,6 @@
 # Versioning
 
-Assets Tracker follows [Semantic Versioning](https://semver.org): `MAJOR.MINOR.PATCH`.
+astt follows [Semantic Versioning](https://semver.org): `MAJOR.MINOR.PATCH`.
 
 `src/lib/changelog.ts` is the single source of truth. `APP_VERSION = CHANGELOG[0].version`
 drives the version shown in the sidebar, the Settings "Version" card, and the `/changelog`

@@ -1,6 +1,6 @@
 # Database and Migrations
 
-Assets Tracker uses PostgreSQL through Prisma. Standard PostgreSQL connections use `@prisma/adapter-pg`; Neon connections automatically use `@prisma/adapter-neon`.
+astt uses PostgreSQL through Prisma. Standard PostgreSQL connections use `@prisma/adapter-pg`; Neon connections automatically use `@prisma/adapter-neon`.
 
 ## Connection variables
 

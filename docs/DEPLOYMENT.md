@@ -1,6 +1,6 @@
 # Deployment and Self-Hosting
 
-Assets Tracker can run as a single Docker container backed by PostgreSQL or as a Vercel project backed by Neon. The application must use HTTPS in production because authentication credentials and financial data should never travel over plaintext connections.
+astt can run as a single Docker container backed by PostgreSQL or as a Vercel project backed by Neon. The application must use HTTPS in production because authentication credentials and financial data should never travel over plaintext connections.
 
 ## Required environment variables
 

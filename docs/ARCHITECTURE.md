@@ -1,6 +1,6 @@
 # Architecture
 
-Assets Tracker is a Next.js App Router application backed by PostgreSQL through Prisma. Server Components read through service modules, Route Handlers and Server Actions perform mutations, and cache tags invalidate affected views.
+astt is a Next.js App Router application backed by PostgreSQL through Prisma. Server Components read through service modules, Route Handlers and Server Actions perform mutations, and cache tags invalidate affected views.
 
 ## Major boundaries
 
