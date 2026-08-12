@@ -241,9 +241,10 @@ describe("PwaInstallHint toast behavior", () => {
     // Inline actionButtonStyle can never beat the !important shared rule.
     expect(source).not.toContain("actionButtonStyle");
 
-    const scoped = css.slice(
-      css.indexOf('[data-sonner-toast][data-styled="true"].pwa-install-hint [data-action] {'),
-    );
+    // The selector may be grouped with the sibling install-prompt toast, so
+    // match the class alone and bound the slice to that one rule block.
+    const start = css.indexOf(".pwa-install-hint [data-action]");
+    const scoped = css.slice(start, css.indexOf("}", start));
     expect(scoped).toContain("align-self: stretch !important");
     expect(scoped).toContain("height: auto !important");
     expect(scoped).toContain("min-height: 44px !important");

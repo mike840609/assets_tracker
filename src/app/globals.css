@@ -935,10 +935,12 @@ html[data-vt-theme]::view-transition-new(root) {
   color: var(--accent-foreground) !important;
 }
 
-/* PWA install hint — Copy link is the toast's primary CTA, so it fills the full
-   toast height (no dead space beside the 3-line description) and uses --primary.
+/* PWA install toasts — the action is each toast's primary CTA, so it fills the
+   full toast height (no dead space beside the description) and uses --primary.
+   Both toasts are mobile-only, so 44px keeps the tap target thumb-sized.
    Scoped: every other toast keeps the muted 30px outline style above. */
-[data-sonner-toast][data-styled="true"].pwa-install-hint [data-action] {
+[data-sonner-toast][data-styled="true"].pwa-install-hint [data-action],
+[data-sonner-toast][data-styled="true"].pwa-install-prompt [data-action] {
   align-self: stretch !important;
   height: auto !important;
   min-height: 44px !important;
@@ -948,7 +950,8 @@ html[data-vt-theme]::view-transition-new(root) {
   font-weight: 600 !important;
 }
 
-[data-sonner-toast][data-styled="true"].pwa-install-hint [data-action]:hover {
+[data-sonner-toast][data-styled="true"].pwa-install-hint [data-action]:hover,
+[data-sonner-toast][data-styled="true"].pwa-install-prompt [data-action]:hover {
   background: color-mix(in oklch, var(--primary) 88%, black) !important;
   color: var(--primary-foreground) !important;
 }
