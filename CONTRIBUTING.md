@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for improving Assets Tracker. Use GitHub Issues for reproducible bugs and focused feature proposals. Security vulnerabilities must follow [SECURITY.md](./SECURITY.md) instead of a public issue.
+Thank you for improving astt. Use GitHub Issues for reproducible bugs and focused feature proposals. Security vulnerabilities must follow [SECURITY.md](./SECURITY.md) instead of a public issue.
 
 ## Development setup
 

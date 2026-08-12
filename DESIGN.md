@@ -1,5 +1,5 @@
 ---
-name: Assets Tracker
+name: astt
 description: A native-feeling personal finance cockpit for net worth, holdings, history, goals, projections, and portfolio analysis.
 colors:
   background: "oklch(0.99 0.003 260)"
@@ -112,13 +112,13 @@ components:
     typography: "{typography.label}"
 ---
 
-# Design System: Assets Tracker
+# Design System: astt
 
 ## 1. Overview
 
 **Creative North Star: "The Native Ledger"**
 
-Assets Tracker should feel like a private financial instrument that happens to live in the browser: native in motion, calm in color, and exacting with numbers. The system borrows heavily from iOS for mobile behavior, then becomes denser and more keyboard-friendly on desktop.
+astt should feel like a private financial instrument that happens to live in the browser: native in motion, calm in color, and exacting with numbers. The system borrows heavily from iOS for mobile behavior, then becomes denser and more keyboard-friendly on desktop.
 
 The visual atmosphere is restrained and breathable. The active color schema supplies the brand accent, chart family, gain/loss semantics, app icon gradient, and net-worth hero wash. Data can carry richer color, but the chrome should stay quiet so financial information remains the center of gravity.
 

@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose an improvement for self-hosted Assets Tracker instances.
+description: Propose an improvement for self-hosted astt instances.
 labels: [enhancement]
 body:
   - type: markdown
