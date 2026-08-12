@@ -13,12 +13,12 @@ const TOAST_CLASS = "pwa-install-prompt";
 
 const COPY = {
   "en-US": {
-    title: "Install Assets Tracker",
+    title: "Install astt",
     description: "Add it to your home screen for a faster, app-like experience.",
     action: "Install",
   },
   "zh-TW": {
-    title: "安裝 Assets Tracker",
+    title: "安裝 astt",
     description: "加入主畫面，享受更快速、更接近原生 App 的使用體驗。",
     action: "安裝",
   },

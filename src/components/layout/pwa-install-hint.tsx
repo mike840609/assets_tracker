@@ -13,14 +13,14 @@ const COPY_SUCCESS_DURATION_MS = 2_000;
 
 const COPY = {
   "en-US": {
-    title: "Use Assets Tracker like an app",
+    title: "Use astt like an app",
     description:
       "Open this site in Safari, then tap Share → Add to Home Screen for a more app-like experience.",
     copyLink: "Copy link",
     copied: "Copied",
   },
   "zh-TW": {
-    title: "像 App 一樣使用 Assets Tracker",
+    title: "像 App 一樣使用 astt",
     description: "使用 Safari 開啟後，點選分享 → 加入主畫面，即可獲得更接近原生 App 的體驗。",
     copyLink: "複製連結",
     copied: "已複製",
