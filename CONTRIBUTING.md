@@ -23,6 +23,13 @@ See [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) for tests, builds, database cha
 - Create Prisma migrations for persistent schema changes; do not use `db push` as an upgrade mechanism.
 - Avoid committing generated files, environment files, reports, exports, or credentials.
 
+## Writing the product name
+
+- The product is **astt**, always lowercase — including at the start of a sentence. Never `ASTT` or `Astt`.
+- Lowercase is what the domain, the npm package, and the container image path already are, the last two by specification rather than by choice. One spelling everywhere means no per-string judgement calls.
+- If a sentence-initial lowercase reads badly, rewrite the sentence rather than capitalize; capitalizing once makes every later string an argument.
+- The former name survives on purpose in identifiers users never read: the demo cookie, the integration test database, the repository slug, and the container image path. Renaming those breaks live sessions and existing deployments, so leave them as they are — a rename is not "unfinished" because they still say `asset_tracker`.
+
 ## Before opening a pull request
 
 ```bash
