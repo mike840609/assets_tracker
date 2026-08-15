@@ -38,6 +38,43 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.3.0",
+    date: "2026-08-15",
+    summary: {
+      "en-US": "A new name — astt — and a proper install-to-home-screen flow on mobile.",
+      "zh-TW": "換上新名字 astt，並補齊手機安裝成 App 的流程。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Install astt to your home screen: Android and desktop browsers now offer a one-tap install prompt, and the app ships launcher icons sized for each platform so the installed shortcut looks right. Dismiss it once and it stays dismissed.",
+          "zh-TW":
+            "可將 astt 安裝到主畫面：Android 與桌面瀏覽器會顯示一鍵安裝提示，並附上各平台適用尺寸的啟動圖示，安裝後的捷徑不會變形。關閉提示後就不會再出現。",
+        },
+      },
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "On iPhone and iPad, opening astt in a browser other than Safari now explains how to install it — switch to Safari and use Add to Home Screen — with a button that copies the link so you don't have to retype it.",
+          "zh-TW":
+            "在 iPhone、iPad 以非 Safari 的瀏覽器開啟 astt 時，會說明如何安裝：改用 Safari 並選擇「加入主畫面」，並提供複製連結的按鈕，不必手動重打網址。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Assets Tracker is now astt, at astt.app. Only the name changed — same project, same data, nothing to migrate. Self-hosted deployments keep their existing container images and settings.",
+          "zh-TW":
+            "Assets Tracker 更名為 astt，網址為 astt.app。只有名稱改變：同一個專案、同一份資料，不需要任何遷移；自架部署的容器映像與設定也維持不變。",
+        },
+      },
+    ],
+  },
+  {
     version: "1.2.0",
     date: "2026-08-09",
     summary: {
