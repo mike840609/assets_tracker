@@ -26,6 +26,14 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  # Image names are spelled out rather than derived from ${{ github.repository }}:
+  # the published image name is a contract with every self-hoster's compose file,
+  # while the repo slug is an internal identifier that can change. Deriving one
+  # from the other means renaming the repo silently starts publishing to a new
+  # package while existing `docker compose pull` keeps succeeding against the old
+  # one — frozen forever with no error. GitHub Actions cannot expand `env` inside
+  # a `strategy` block, so the literal is repeated instead of shared.
+  #
   # Each architecture builds natively on its own runner and pushes an untagged
   # image by digest; the merge job assembles the tagged manifest lists. Building
   # linux/arm64 under QEMU on an x86 runner took ~18 minutes for the app image.
@@ -40,10 +48,10 @@ jobs:
         include:
           - name: app
             target: runner
-            image: ghcr.io/${{ github.repository }}
+            image: ghcr.io/mike840609/assets_tracker
           - name: migrations
             target: migrate
-            image: ghcr.io/${{ github.repository }}-migrate
+            image: ghcr.io/mike840609/assets_tracker-migrate
           - arch: amd64
             runner: ubuntu-latest
             platform: linux/amd64
@@ -116,9 +124,9 @@ jobs:
       matrix:
         include:
           - name: app
-            image: ghcr.io/${{ github.repository }}
+            image: ghcr.io/mike840609/assets_tracker
           - name: migrations
-            image: ghcr.io/${{ github.repository }}-migrate
+            image: ghcr.io/mike840609/assets_tracker-migrate
 
     steps:
       - name: Download digests
