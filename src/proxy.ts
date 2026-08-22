@@ -8,6 +8,7 @@ import {
 } from "@/lib/demo/demo-policy";
 import { AUTH_SECRET, isPublicDemoEnabled } from "@/lib/env";
 import { getClientIp } from "@/lib/client-ip";
+import { getMobileHubRedirectUrl } from "@/lib/mobile-hub-route";
 import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 
@@ -204,6 +205,15 @@ const authMiddleware = auth((req) => {
   ) {
     const newUrl = new URL("/", req.nextUrl.origin);
     return Response.redirect(newUrl);
+  }
+
+  const mobileHubUrl = getMobileHubRedirectUrl({
+    pathname: req.nextUrl.pathname,
+    search: req.nextUrl.search,
+    userAgent: req.headers.get("user-agent"),
+  });
+  if (isLoggedIn && mobileHubUrl) {
+    return Response.redirect(new URL(mobileHubUrl, req.nextUrl.origin));
   }
 
   return nextResponse(req);

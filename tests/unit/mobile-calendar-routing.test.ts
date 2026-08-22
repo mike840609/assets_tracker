@@ -10,7 +10,8 @@ describe("mobile calendar routing", () => {
       "utf8",
     );
     expect(source).toContain('search = ""');
-    expect(source).toContain("`/goals${search}${hash}`");
+    expect(source).toContain("currentSearch: window.location.search");
+    expect(source).toContain("fallbackSearch: search");
   });
 
   it("registers Calendar as the fourth Plan tab", () => {

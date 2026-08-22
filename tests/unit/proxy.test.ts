@@ -43,9 +43,16 @@ function executeAnonymousRequest(pathname: string): Response {
   return response;
 }
 
-function executeAuthenticatedRequest(pathname: string, isDemo: boolean): Response {
+function executeAuthenticatedRequest(
+  pathname: string,
+  isDemo: boolean,
+  userAgent?: string,
+): Response {
   const request = new NextRequest(`https://astt.app${pathname}`, {
-    headers: { cookie: "authjs.session-token=signed-session" },
+    headers: {
+      cookie: "authjs.session-token=signed-session",
+      ...(userAgent ? { "user-agent": userAgent } : {}),
+    },
   });
   Object.defineProperty(request, "auth", {
     value: {
@@ -87,6 +94,35 @@ describe("Sentry tunnel proxy bypass", () => {
 
     expect(response.headers.get("x-middleware-next")).toBeNull();
     expect(response.headers.get("location")).toBe("https://astt.app/login");
+  });
+});
+
+describe("mobile desktop-only route redirects", () => {
+  const iphoneUserAgent =
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile";
+
+  it.each([
+    ["/stocks", "https://astt.app/goals#watchlist"],
+    ["/projections", "https://astt.app/goals#projections"],
+    [
+      "/calendar?month=2026-08&date=2026-08-12",
+      "https://astt.app/goals?month=2026-08&date=2026-08-12#calendar",
+    ],
+  ])("redirects authenticated mobile %s into the Plan hub", (pathname, expectedLocation) => {
+    const response = executeAuthenticatedRequest(pathname, false, iphoneUserAgent);
+
+    expect(response.headers.get("location")).toBe(expectedLocation);
+  });
+
+  it("keeps authenticated desktop requests on standalone routes", () => {
+    const response = executeAuthenticatedRequest(
+      "/stocks",
+      false,
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+    );
+
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.get("location")).toBeNull();
   });
 });
 

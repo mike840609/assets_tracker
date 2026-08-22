@@ -6,6 +6,9 @@ import {
   getMobilePlanPanelId,
   getMobilePlanTabId,
   handleMobilePlanTabKey,
+  renderActiveMobilePlanPanel,
+  shouldRenderMobilePlanContent,
+  shouldRenderGoalsPanel,
   type MobilePlanTab,
 } from "@/components/goals/mobile-plan-tabs";
 
@@ -80,6 +83,98 @@ describe("mobile Plan tabs", () => {
       },
     ]);
   });
+
+  it.each(["watchlist", "projections", "calendar"] as const)(
+    "renders only the active mobile panel: %s",
+    (activeTab) => {
+      const rendered: MobilePlanTab[] = [];
+      const result = renderActiveMobilePlanPanel(true, activeTab, {
+        watchlist: () => {
+          rendered.push("watchlist");
+          return "watchlist";
+        },
+        projections: () => {
+          rendered.push("projections");
+          return "projections";
+        },
+        calendar: () => {
+          rendered.push("calendar");
+          return "calendar";
+        },
+      });
+
+      expect(rendered).toEqual([activeTab]);
+      expect(result).toBe(activeTab);
+    },
+  );
+
+  it("does not render a mobile-only panel while the desktop Goals tab is active", () => {
+    const rendered: MobilePlanTab[] = [];
+    const result = renderActiveMobilePlanPanel(true, "goals", {
+      watchlist: () => {
+        rendered.push("watchlist");
+        return "watchlist";
+      },
+      projections: () => {
+        rendered.push("projections");
+        return "projections";
+      },
+      calendar: () => {
+        rendered.push("calendar");
+        return "calendar";
+      },
+    });
+
+    expect(rendered).toEqual([]);
+    expect(result).toBeNull();
+  });
+
+  it("does not render mobile-only panels on desktop", () => {
+    const rendered: MobilePlanTab[] = [];
+    const result = renderActiveMobilePlanPanel(false, "watchlist", {
+      watchlist: () => {
+        rendered.push("watchlist");
+        return "watchlist";
+      },
+      projections: () => {
+        rendered.push("projections");
+        return "projections";
+      },
+      calendar: () => {
+        rendered.push("calendar");
+        return "calendar";
+      },
+    });
+
+    expect(rendered).toEqual([]);
+    expect(result).toBeNull();
+  });
+
+  it.each([
+    [false, false, false],
+    [false, true, false],
+    [true, false, false],
+    [true, true, true],
+  ] as const)(
+    "mounts mobile-only content only after the viewport is ready",
+    (isViewportReady, isMobile, expected) => {
+      expect(shouldRenderMobilePlanContent(isViewportReady, isMobile)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [false, false, "watchlist", false],
+    [false, false, "goals", false],
+    [true, false, "watchlist", true],
+    [true, false, "goals", true],
+    [true, true, "watchlist", false],
+    [true, true, "goals", true],
+  ] as const)(
+    "mounts the Goals panel only on desktop or when active",
+    (isViewportReady, isMobile, activeTab, expected) => {
+      expect(shouldRenderGoalsPanel(isViewportReady, isMobile, activeTab)).toBe(expected);
+    },
+  );
 
   it("connects every rendered tab and panel to the keyboard model", () => {
     const source = readFileSync("src/components/goals/goals-view.tsx", "utf8");

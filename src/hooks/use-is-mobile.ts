@@ -2,6 +2,30 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 
+function subscribeToViewportReady() {
+  return () => {};
+}
+
+function getViewportReadySnapshot() {
+  return true;
+}
+
+function getServerViewportReadySnapshot() {
+  return false;
+}
+
+/**
+ * Returns false for the server render and the initial hydrated render, then true
+ * once a client viewport is available for responsive mount decisions.
+ */
+export function useIsViewportReady() {
+  return useSyncExternalStore(
+    subscribeToViewportReady,
+    getViewportReadySnapshot,
+    getServerViewportReadySnapshot,
+  );
+}
+
 /**
  * Hydration-safe viewport media-query hook.
  *

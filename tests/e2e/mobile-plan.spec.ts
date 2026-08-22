@@ -61,6 +61,28 @@ test.describe("mobile Plan hub", () => {
     );
   });
 
+  test("inactive mobile panels stay unmounted until their tab is selected", async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "Mobile Chrome", "Mobile-only panel mounting check");
+
+    await page.goto("/goals");
+
+    const panelContent = (tab: string) => page.locator(`#mobile-plan-panel-${tab} > *`);
+
+    await expect(panelContent("goals")).toHaveCount(0);
+    await expect(panelContent("projections")).toHaveCount(0);
+    await expect(panelContent("calendar")).toHaveCount(0);
+
+    await page.getByRole("tab", { name: "Goals" }).click();
+    await expect(panelContent("goals")).toHaveCount(1);
+
+    await page.getByRole("tab", { name: "Projections" }).click();
+    await expect(panelContent("goals")).toHaveCount(0);
+    await expect(panelContent("projections")).toHaveCount(1);
+    await expect(panelContent("calendar")).toHaveCount(0);
+  });
+
   test("Calendar is the fourth Plan tab and calendar deep links preserve state", async ({
     page,
   }, testInfo) => {
