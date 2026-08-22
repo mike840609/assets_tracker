@@ -38,6 +38,44 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.4.0",
+    date: "2026-08-22",
+    summary: {
+      "en-US":
+        "A US earnings overlay for your calendar, with resilient data and safer deployment recovery.",
+      "zh-TW": "行事曆新增美股財報覆蓋層，並強化資料取得與部署復原能力。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Calendar and the mobile Goals calendar now show upcoming US earnings for stocks you follow. Add tracked or manual symbols, see before-market and after-market calls on the Taiwan calendar day, and manage the list from the calendar.",
+          "zh-TW":
+            "行事曆與行動版目標行事曆現在會顯示追蹤美股的即將公布財報。可加入已追蹤或手動輸入的代號，在台灣日曆日期查看盤前與盤後財報，並直接於行事曆管理清單。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Earnings data handles unavailable Yahoo Finance responses without blocking the calendar, while watch management validates US listings and applies request limits.",
+          "zh-TW":
+            "Yahoo Finance 暫時無法取得資料時不會阻塞行事曆；追蹤清單管理也會驗證美股上市地並套用請求限制。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Database migrations can now recover safely when a deployment previously applied only part of the calendar-earnings schema.",
+          "zh-TW":
+            "先前若部署只套用了部分財報行事曆資料庫 schema，migration 現在可以安全地復原並重試。",
+        },
+      },
+    ],
+  },
+  {
     version: "1.3.0",
     date: "2026-08-15",
     summary: {
