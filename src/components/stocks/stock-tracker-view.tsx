@@ -384,6 +384,7 @@ function StockRow({
   const t = useTranslations("stocks");
   const common = useTranslations("common");
   const format = useFormatters();
+  const isMobile = useIsMobile();
   const currency = stock.latestPriceCurrency ?? stock.currency;
   const isGain = (stock.change ?? 0) >= 0;
   const hasDirection = stock.changePercent !== null;
@@ -490,103 +491,64 @@ function StockRow({
       )}
     >
       <CardContent className="space-y-3 md:px-3">
-        <div className="hidden items-center gap-5 md:grid md:grid-cols-[minmax(180px,1.5fr)_minmax(280px,1.3fr)_minmax(116px,auto)_1.75rem]">
-          {renderIdentity(true)}
+        {isMobile ? null : (
+          <div className="hidden items-center gap-5 md:grid md:grid-cols-[minmax(180px,1.5fr)_minmax(280px,1.3fr)_minmax(116px,auto)_1.75rem]">
+            {renderIdentity(true)}
 
-          {/* Price journey: the recorded reference price, then the live quote it's measured against. */}
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium text-muted-foreground">
-              {t("recorded")}
-              <ArrowRight className="mx-1.5 inline h-3 w-3 -translate-y-px text-muted-foreground/40" />
-              {t("latestPrice")}
-            </p>
-            {/* flex-wrap (not truncate): a long price must never be clipped mid-number. */}
-            <p className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono tabular-nums">
-              <span className="text-sm font-medium text-muted-foreground">{recordPrice}</span>
-              <ArrowRight
-                className={cn(
-                  "h-3.5 w-3.5 shrink-0 translate-y-0.5",
-                  directionInk ?? "text-muted-foreground/40",
-                )}
-              />
-              <span className="text-base font-semibold text-foreground">
-                {latestPrice ?? t("unavailable")}
-              </span>
-            </p>
-            <p className="mt-1 truncate text-[11px] leading-4 text-muted-foreground/80">
-              {format.date(stock.recordDate)}
-              {recordPeriodLabel && ` · ${recordPeriodLabel}`}
-            </p>
-            {!stock.latestPriceUpdatedAt && (
-              <p className="mt-0.5 truncate text-[11px] leading-4 text-muted-foreground">
-                {t("noLatestPrice")}
+            {/* Price journey: the recorded reference price, then the live quote it's measured against. */}
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium text-muted-foreground">
+                {t("recorded")}
+                <ArrowRight className="mx-1.5 inline h-3 w-3 -translate-y-px text-muted-foreground/40" />
+                {t("latestPrice")}
               </p>
-            )}
-          </div>
-
-          {/* Change: the payoff, anchored to the row's right edge so pills line up down the list. */}
-          <div className="flex flex-col items-end gap-1 justify-self-end">
-            {stock.changePercent !== null ? (
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-sm font-semibold tabular-nums leading-none ring-1 ring-inset",
-                  isGain
-                    ? "bg-[var(--gain)]/15 text-[var(--gain-ink)] ring-[var(--gain)]/25"
-                    : "bg-[var(--loss)]/15 text-[var(--loss-ink)] ring-[var(--loss)]/25",
-                )}
-              >
-                <DirectionIcon className="h-3.5 w-3.5 shrink-0" />
-                {percent}
-              </span>
-            ) : (
-              <p className="font-mono text-sm font-semibold tabular-nums text-muted-foreground">
-                {t("unavailable")}
+              {/* flex-wrap (not truncate): a long price must never be clipped mid-number. */}
+              <p className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono tabular-nums">
+                <span className="text-sm font-medium text-muted-foreground">{recordPrice}</span>
+                <ArrowRight
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 translate-y-0.5",
+                    directionInk ?? "text-muted-foreground/40",
+                  )}
+                />
+                <span className="text-base font-semibold text-foreground">
+                  {latestPrice ?? t("unavailable")}
+                </span>
               </p>
-            )}
-            {stock.change !== null && (
-              <p
-                className={cn(
-                  "font-mono text-[11px] font-medium tabular-nums",
-                  directionInk ?? "text-muted-foreground",
-                )}
-              >
-                {change}
+              <p className="mt-1 truncate text-[11px] leading-4 text-muted-foreground/80">
+                {format.date(stock.recordDate)}
+                {recordPeriodLabel && ` · ${recordPeriodLabel}`}
               </p>
-            )}
-          </div>
+              {!stock.latestPriceUpdatedAt && (
+                <p className="mt-0.5 truncate text-[11px] leading-4 text-muted-foreground">
+                  {t("noLatestPrice")}
+                </p>
+              )}
+            </div>
 
-          <div className="justify-self-end">{renderActions()}</div>
-        </div>
-
-        <div className="flex flex-col gap-3.5 md:hidden">
-          <div className="flex items-start justify-between gap-4">
-            {renderIdentity()}
-
-            <div className="flex min-w-0 shrink-0 flex-col items-end">
+            {/* Change: the payoff, anchored to the row's right edge so pills line up down the list. */}
+            <div className="flex flex-col items-end gap-1 justify-self-end">
               {stock.changePercent !== null ? (
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-3 py-1.5 font-mono text-base font-bold tabular-nums leading-none ring-1 ring-inset",
+                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-sm font-semibold tabular-nums leading-none ring-1 ring-inset",
                     isGain
                       ? "bg-[var(--gain)]/15 text-[var(--gain-ink)] ring-[var(--gain)]/25"
                       : "bg-[var(--loss)]/15 text-[var(--loss-ink)] ring-[var(--loss)]/25",
                   )}
                 >
-                  <DirectionIcon className="h-4 w-4 shrink-0" />
+                  <DirectionIcon className="h-3.5 w-3.5 shrink-0" />
                   {percent}
                 </span>
               ) : (
-                <p className="font-mono text-base font-bold tabular-nums text-muted-foreground">
+                <p className="font-mono text-sm font-semibold tabular-nums text-muted-foreground">
                   {t("unavailable")}
                 </p>
               )}
-              <p className="mt-2 font-mono text-base font-semibold tabular-nums text-foreground">
-                {latestPrice ?? t("unavailable")}
-              </p>
-              {change && (
+              {stock.change !== null && (
                 <p
                   className={cn(
-                    "mt-0.5 font-mono text-[11px] font-medium tabular-nums",
+                    "font-mono text-[11px] font-medium tabular-nums",
                     directionInk ?? "text-muted-foreground",
                   )}
                 >
@@ -594,26 +556,69 @@ function StockRow({
                 </p>
               )}
             </div>
-          </div>
 
-          <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/30 px-3 py-2.5">
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground/80">{t("recorded")}:</span>{" "}
-                <span className="font-mono font-medium text-foreground/90">{recordPrice}</span>
-              </p>
-              <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">
-                {format.date(stock.recordDate)}
-                {recordPeriodLabel && ` • ${recordPeriodLabel}`}
-              </p>
+            <div className="justify-self-end">{renderActions()}</div>
+          </div>
+        )}
+
+        {isMobile ? (
+          <div className="flex flex-col gap-3.5">
+            <div className="flex items-start justify-between gap-4">
+              {renderIdentity()}
+
+              <div className="flex min-w-0 shrink-0 flex-col items-end">
+                {stock.changePercent !== null ? (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-3 py-1.5 font-mono text-base font-bold tabular-nums leading-none ring-1 ring-inset",
+                      isGain
+                        ? "bg-[var(--gain)]/15 text-[var(--gain-ink)] ring-[var(--gain)]/25"
+                        : "bg-[var(--loss)]/15 text-[var(--loss-ink)] ring-[var(--loss)]/25",
+                    )}
+                  >
+                    <DirectionIcon className="h-4 w-4 shrink-0" />
+                    {percent}
+                  </span>
+                ) : (
+                  <p className="font-mono text-base font-bold tabular-nums text-muted-foreground">
+                    {t("unavailable")}
+                  </p>
+                )}
+                <p className="mt-2 font-mono text-base font-semibold tabular-nums text-foreground">
+                  {latestPrice ?? t("unavailable")}
+                </p>
+                {change && (
+                  <p
+                    className={cn(
+                      "mt-0.5 font-mono text-[11px] font-medium tabular-nums",
+                      directionInk ?? "text-muted-foreground",
+                    )}
+                  >
+                    {change}
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="shrink-0">{renderActions()}</div>
-          </div>
 
-          {!stock.latestPriceUpdatedAt && (
-            <p className="text-[11px] text-muted-foreground">{t("noLatestPrice")}</p>
-          )}
-        </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/30 px-3 py-2.5">
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground/80">{t("recorded")}:</span>{" "}
+                  <span className="font-mono font-medium text-foreground/90">{recordPrice}</span>
+                </p>
+                <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">
+                  {format.date(stock.recordDate)}
+                  {recordPeriodLabel && ` • ${recordPeriodLabel}`}
+                </p>
+              </div>
+              <div className="shrink-0">{renderActions()}</div>
+            </div>
+
+            {!stock.latestPriceUpdatedAt && (
+              <p className="text-[11px] text-muted-foreground">{t("noLatestPrice")}</p>
+            )}
+          </div>
+        ) : null}
 
         {noteText && (
           <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-2.5">

@@ -1,6 +1,10 @@
+import type { ReactNode } from "react";
+
 export const MOBILE_PLAN_TABS = ["watchlist", "goals", "projections", "calendar"] as const;
 
 export type MobilePlanTab = (typeof MOBILE_PLAN_TABS)[number];
+export type MobileOnlyPlanTab = Exclude<MobilePlanTab, "goals">;
+export type MobilePlanPanelRenderers = Record<MobileOnlyPlanTab, () => ReactNode>;
 
 export function getMobilePlanTabId(tab: MobilePlanTab): string {
   return `mobile-plan-tab-${tab}`;
@@ -8,6 +12,30 @@ export function getMobilePlanTabId(tab: MobilePlanTab): string {
 
 export function getMobilePlanPanelId(tab: MobilePlanTab): string {
   return `mobile-plan-panel-${tab}`;
+}
+
+export function renderActiveMobilePlanPanel(
+  isMobile: boolean,
+  activeTab: MobilePlanTab,
+  renderers: MobilePlanPanelRenderers,
+): ReactNode {
+  if (!isMobile || activeTab === "goals") return null;
+  return renderers[activeTab]();
+}
+
+export function shouldRenderMobilePlanContent(
+  isViewportReady: boolean,
+  isMobile: boolean,
+): boolean {
+  return isViewportReady && isMobile;
+}
+
+export function shouldRenderGoalsPanel(
+  isViewportReady: boolean,
+  isMobile: boolean,
+  activeTab: MobilePlanTab,
+): boolean {
+  return isViewportReady && (!isMobile || activeTab === "goals");
 }
 
 type MobilePlanTabKeyHandlerOptions = {
