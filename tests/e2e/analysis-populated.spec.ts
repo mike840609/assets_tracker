@@ -26,13 +26,20 @@ test("analysis renders populated desktop charts without layout overflow", async 
       timeout: 20_000,
     });
     await expect(page.getByText("Latest snapshot vs. Jan 1")).toBeVisible();
+    await page.mouse.wheel(0, 1200);
     // Section headings carry the active range as a suffix (e.g. "Composition YTD"),
     // so anchor at the start to avoid matching "Cash Flow Decomposition".
     await expect(page.getByRole("heading", { name: /^Movement/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: /^Composition/ })).toBeVisible();
     await expect(page.getByText("Performance Attribution")).toBeVisible();
 
+    const allRangeResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/analysis/series?range=All") && response.status() === 200,
+    );
     await page.getByRole("button", { name: "All", exact: true }).click();
+    await allRangeResponse;
+    await page.mouse.wheel(0, 1200);
     await expect(page.getByText("Showing top 5 of 7 categories by latest value.")).toBeVisible();
     await page.getByRole("button", { name: "YTD", exact: true }).click();
     await expect(page.getByRole("button", { name: "YTD", exact: true })).toHaveAttribute(
@@ -135,7 +142,13 @@ test("renders both locales' month labels from one cached payload", async ({ page
     );
 
     await setAnalysisFixtureLocale(page.context(), "en-US");
+    const englishRangeResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/analysis/series?range=All") && response.status() === 200,
+    );
     await page.goto("/analysis");
+    await englishRangeResponse;
+    await page.mouse.wheel(0, 1200);
     const englishCard = page
       .locator('[data-slot="card"]')
       .filter({
@@ -152,7 +165,13 @@ test("renders both locales' month labels from one cached payload", async ({ page
     ).toBeVisible();
 
     await setAnalysisFixtureLocale(page.context(), "zh-TW");
+    const chineseRangeResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/analysis/series?range=All") && response.status() === 200,
+    );
     await page.reload();
+    await chineseRangeResponse;
+    await page.mouse.wheel(0, 1200);
     const chineseCard = page
       .locator('[data-slot="card"]')
       .filter({ has: page.getByRole("heading", { name: "現金流分解", exact: true }) })

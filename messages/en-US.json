@@ -453,6 +453,8 @@
     "ytdGrowth": "Year to date",
     "analysisSummary": "Analysis summary",
     "analysisSummarySubtitle": "Year-to-date is always shown; other metrics follow {range}.",
+    "rangeLoadFailed": "Could not load this range. Your current data is still safe.",
+    "retry": "Try again",
     "ytdFixedSection": "Year to date",
     "ytdFixedHint": "Latest snapshot vs. Jan 1",
     "selectedRangeMetrics": "Selected range: {range}",

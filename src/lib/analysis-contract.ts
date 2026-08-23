@@ -28,7 +28,7 @@ export interface AnalysisPayloadMeta {
 }
 
 export interface AnalysisPayload {
-  seriesByRange: Record<RangeLabel, AnalysisRangeSeries>;
+  seriesByRange: Partial<Record<RangeLabel, AnalysisRangeSeries>>;
   investmentCostBasis: InvestmentCostBasisSummary;
   /** Full normalized history — used by the mobile #history tab (HistoryView). */
   snapshots: NormalizedSnapshot[];

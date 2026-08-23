@@ -5,7 +5,7 @@ import { CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDensity } from "@/components/layout/density-context";
 
-function ChartSkeleton({ height = 200 }: { height?: number }) {
+export function ChartSkeleton({ height = 200 }: { height?: number }) {
   const { density } = useDensity();
   const skeletonHeight = density === "compact" ? Math.max(140, height - 20) : height;
 

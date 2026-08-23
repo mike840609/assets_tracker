@@ -453,6 +453,8 @@
     "ytdGrowth": "年初至今",
     "analysisSummary": "分析摘要",
     "analysisSummarySubtitle": "年初至今績效固定顯示；其他指標依 {range} 計算。",
+    "rangeLoadFailed": "無法載入這個區間。你目前的資料仍然安全。",
+    "retry": "再試一次",
     "ytdFixedSection": "年初至今",
     "ytdFixedHint": "最新快照 vs. 1月1日",
     "selectedRangeMetrics": "所選期間：{range}",

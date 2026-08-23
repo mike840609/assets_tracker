@@ -25,7 +25,10 @@ vi.mock("@/lib/services/investment-cost-basis-service", () => ({
   })),
 }));
 
-import { getCachedAnalysisPayload } from "@/lib/services/analysis-payload-service";
+import {
+  getCachedAnalysisPayload,
+  getCachedAnalysisRangeSeries,
+} from "@/lib/services/analysis-payload-service";
 
 beforeEach(() => {
   mockUnstableCache.mockReset();
@@ -38,10 +41,24 @@ describe("getCachedAnalysisPayload", () => {
 
     expect(mockUnstableCache).toHaveBeenCalledTimes(1);
     const keyParts = mockUnstableCache.mock.calls[0]?.[1];
-    expect(keyParts).toEqual(["analysis-payload", "user-1", "USD"]);
+    expect(keyParts).toEqual(["analysis-inputs", "user-1", "USD"]);
 
     expect(payload.meta).toEqual({ defaultRange: "YTD" });
     expect(payload.meta).not.toHaveProperty("hasSnapshots");
     expect(payload.meta).not.toHaveProperty("latestSnapshotAt");
+    expect(Object.keys(payload.seriesByRange)).toEqual([payload.meta.defaultRange]);
+  });
+
+  it("keys a requested range series by inputs, user, base currency, and range", async () => {
+    await getCachedAnalysisRangeSeries("user-1", "USD", "All");
+
+    expect(mockUnstableCache).toHaveBeenCalledTimes(2);
+    expect(mockUnstableCache.mock.calls[0]?.[1]).toContain("analysis-inputs");
+    expect(mockUnstableCache.mock.calls[1]?.[1]).toEqual([
+      "analysis-range-series",
+      "user-1",
+      "USD",
+      "All",
+    ]);
   });
 });

@@ -30,6 +30,7 @@ import {
   LazyAttributionChart,
   LazyReturnTrendChart,
   LazyDrawdownChart,
+  ChartSkeleton,
 } from "./lazy-analysis-charts";
 import { KpiTiles } from "./kpi-tiles";
 import { AnalysisEmptyState } from "./analysis-empty-state";
@@ -37,8 +38,8 @@ import { AnalysisEmptyState } from "./analysis-empty-state";
 interface Props {
   /** Full normalized history — used by the mobile #history tab (HistoryView). */
   snapshots: NormalizedSnapshot[];
-  /** All five ranges precomputed on the server (see analysis-series-service). */
-  seriesByRange: Record<RangeLabel, AnalysisRangeSeries>;
+  /** The server sends the default range; other ranges load on demand. */
+  seriesByRange: Partial<Record<RangeLabel, AnalysisRangeSeries>>;
   investmentCostBasis: InvestmentCostBasisSummary;
   meta: AnalysisPayloadMeta;
   baseCurrency: string;
@@ -49,6 +50,16 @@ interface Props {
 function MountedAnalysis({ show, children }: { show: boolean; children: ReactNode }) {
   return show ? <div>{children}</div> : null;
 }
+
+function ChartSkeletonCard({ className, height }: { className?: string; height?: number }) {
+  return (
+    <Card size="sm" className={cn("h-full", className)}>
+      <ChartSkeleton height={height} />
+    </Card>
+  );
+}
+
+type AnalysisSeriesResponse = { data?: AnalysisRangeSeries };
 
 export function AnalysisView({
   snapshots,
@@ -73,6 +84,11 @@ export function AnalysisView({
     meta.defaultRange,
     ANALYSIS_RANGE_LABELS,
   );
+  const [seriesCache, setSeriesCache] = useState(seriesByRange);
+  const [failedRange, setFailedRange] = useState<RangeLabel | null>(null);
+  const [retryToken, setRetryToken] = useState(0);
+  const deferredSentinelRef = useRef<HTMLDivElement>(null);
+  const [showDeferredCharts, setShowDeferredCharts] = useState(false);
   const shouldReduceMotion = useReducedMotion();
   const rangeFadeTransition = shouldReduceMotion
     ? { duration: 0 }
@@ -84,18 +100,17 @@ export function AnalysisView({
   }));
   const activeRangeLabel = t(getMessageKeyForRange(range));
 
-  // All series are precomputed on the server per range; switching ranges is an
-  // O(1) lookup into the payload (the fade below animates the swap). A stale
-  // sessionStorage label can never land here — usePersistedRange rejects
-  // anything outside ANALYSIS_RANGE_LABELS.
-  const series = seriesByRange[range];
+  // A stale sessionStorage label can never land here — usePersistedRange rejects
+  // anything outside ANALYSIS_RANGE_LABELS. Missing non-default ranges are read
+  // through the authenticated range endpoint below.
+  const series = seriesCache[range];
 
   // Not precomputed per range: this is one scan over `snapshots`, which is
   // shipped in full for HistoryView anyway. Five server-side copies would cost
   // more payload than the scan costs here.
   const drawdownSeries = useMemo(
-    () => computeDrawdownSeries(snapshots, series.rangeStartIso),
-    [snapshots, series.rangeStartIso],
+    () => (series ? computeDrawdownSeries(snapshots, series.rangeStartIso) : []),
+    [snapshots, series],
   );
 
   const hasData = snapshots.length > 0;
@@ -130,6 +145,57 @@ export function AnalysisView({
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!hasData || series || range === meta.defaultRange) return;
+
+    const controller = new AbortController();
+
+    fetch(`/api/analysis/series?range=${encodeURIComponent(range)}`, {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const body = (await response.json()) as AnalysisSeriesResponse;
+        if (!response.ok || !body?.data) throw new Error("analysis range request failed");
+        setFailedRange(null);
+        setSeriesCache((current) => ({ ...current, [range]: body.data }));
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setFailedRange(range);
+      });
+
+    return () => controller.abort();
+  }, [hasData, meta.defaultRange, range, retryToken, series]);
+
+  useEffect(() => {
+    if (showDeferredCharts) return;
+    if (typeof IntersectionObserver === "undefined") {
+      const frame = requestAnimationFrame(() => setShowDeferredCharts(true));
+      return () => cancelAnimationFrame(frame);
+    }
+
+    const sentinel = deferredSentinelRef.current;
+    if (!sentinel) return;
+    if (sentinel.getBoundingClientRect().top <= window.innerHeight + 800) {
+      const frame = requestAnimationFrame(() => setShowDeferredCharts(true));
+      return () => cancelAnimationFrame(frame);
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShowDeferredCharts(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "800px 0px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [showDeferredCharts]);
+
+  const rangeLoadFailed = failedRange === range && !series;
+  const rangeIsLoading = !series && !rangeLoadFailed && range !== meta.defaultRange;
 
   return (
     <div className="space-y-4">
@@ -170,105 +236,158 @@ export function AnalysisView({
             transition={rangeFadeTransition}
             className={stackGapClass}
           >
-            {/* Balance-sheet trend leads the analysis; KPI context stays as the info rail. */}
-            <section aria-label={t("assetsVsLiabilities")} className="min-w-0">
-              <Card size="sm" className="h-full !py-0">
-                <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-stretch 2xl:grid-cols-[minmax(0,1fr)_22rem]">
-                  <div className="min-w-0 py-4 group-data-[size=sm]/card:py-3">
-                    <LazyAssetsLiabilitiesChart
-                      buckets={series.buckets}
-                      baseCurrency={baseCurrency}
-                      locale={locale}
-                    />
+            {!series ? (
+              <div className={stackGapClass} aria-busy={rangeIsLoading}>
+                <ChartSkeletonCard height={180} />
+                {rangeLoadFailed && (
+                  <div role="alert" className="rounded-md border border-destructive/40 p-3 text-sm">
+                    <p className="text-destructive">{t("rangeLoadFailed")}</p>
+                    <button
+                      type="button"
+                      className="mt-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
+                      onClick={() => setRetryToken((value) => value + 1)}
+                    >
+                      {t("retry")}
+                    </button>
                   </div>
-                  <div className="min-w-0 border-t border-border/60 bg-muted/20 px-4 py-4 xl:border-t-0 xl:border-l xl:bg-muted/25 group-data-[size=sm]/card:px-3 group-data-[size=sm]/card:py-3">
-                    <KpiTiles
-                      kpis={series.kpis}
-                      baseCurrency={baseCurrency}
-                      locale={locale}
-                      rangeLabel={activeRangeLabel}
-                      investmentReturnPct={series.investmentReturnPct}
-                    />
-                  </div>
-                </div>
-              </Card>
-            </section>
-
-            {/* Secondary analysis is grouped by question: movement first, then composition.
-                On mobile the sections separate more than the charts within them (gridGapClass),
-                so each question reads as its own group; desktop keeps them tighter. */}
-            <div className={isCompact ? "space-y-3" : "space-y-6 xl:space-y-4"}>
-              <section
-                aria-label={`${t("cashFlow")} / ${t("cumulativeGrowth")} / ${t("investmentCostBasis")} / ${t("returnTrend")}`}
-                className={isCompact ? "space-y-2" : "space-y-3"}
-              >
-                <div className="flex flex-wrap items-end justify-between gap-2">
-                  <div>
-                    <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                      {t("movementSectionTitle")}
-                    </h2>
-                    <p className="text-xs text-muted-foreground">{t("movementSectionSubtitle")}</p>
-                  </div>
-                </div>
+                )}
+                <div ref={deferredSentinelRef} className="h-px" aria-hidden />
                 <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>
-                  <Card size="sm" className="h-full">
-                    <LazyCashFlowChart
-                      buckets={series.cashFlowBuckets}
-                      baseCurrency={baseCurrency}
-                    />
-                  </Card>
-                  <Card size="sm" className="h-full">
-                    <LazyCumulativeGrowthChart
-                      points={series.cumulativeGrowth}
-                      baseCurrency={baseCurrency}
-                    />
-                  </Card>
-                  <Card size="sm" className="h-full">
-                    <LazyInvestmentCostBasisChart
-                      summary={investmentCostBasis}
-                      baseCurrency={baseCurrency}
-                    />
-                  </Card>
-                  <Card size="sm" className="h-full">
-                    <LazyReturnTrendChart points={series.returnTrend} />
-                  </Card>
-                  <Card size="sm" className="h-full xl:col-span-2">
-                    <LazyDrawdownChart points={drawdownSeries} />
-                  </Card>
+                  <ChartSkeletonCard />
+                  <ChartSkeletonCard />
+                  <ChartSkeletonCard />
+                  <ChartSkeletonCard />
+                  <ChartSkeletonCard className="xl:col-span-2" />
                 </div>
-              </section>
+              </div>
+            ) : (
+              <>
+                {/* Balance-sheet trend leads the analysis; KPI context stays as the info rail. */}
+                <section aria-label={t("assetsVsLiabilities")} className="min-w-0">
+                  <Card size="sm" className="h-full !py-0">
+                    <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-stretch 2xl:grid-cols-[minmax(0,1fr)_22rem]">
+                      <div className="min-w-0 py-4 group-data-[size=sm]/card:py-3">
+                        <LazyAssetsLiabilitiesChart
+                          buckets={series.buckets}
+                          baseCurrency={baseCurrency}
+                          locale={locale}
+                        />
+                      </div>
+                      <div className="min-w-0 border-t border-border/60 bg-muted/20 px-4 py-4 xl:border-t-0 xl:border-l xl:bg-muted/25 group-data-[size=sm]/card:px-3 group-data-[size=sm]/card:py-3">
+                        <KpiTiles
+                          kpis={series.kpis}
+                          baseCurrency={baseCurrency}
+                          locale={locale}
+                          rangeLabel={activeRangeLabel}
+                          investmentReturnPct={series.investmentReturnPct}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                </section>
 
-              <section
-                aria-label={`${t("categoryTrend")} / ${t("attribution")}`}
-                className={isCompact ? "space-y-2" : "space-y-3"}
-              >
-                <div className="flex flex-wrap items-end justify-between gap-2">
-                  <div>
-                    <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                      {t("compositionSectionTitle")}
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      {t("compositionSectionSubtitle")}
-                    </p>
-                  </div>
+                <div ref={deferredSentinelRef} className="h-px" aria-hidden />
+
+                {/* Secondary analysis is grouped by question: movement first, then composition.
+                    On mobile the sections separate more than the charts within them (gridGapClass),
+                    so each question reads as its own group; desktop keeps them tighter. */}
+                <div className={isCompact ? "space-y-3" : "space-y-6 xl:space-y-4"}>
+                  <section
+                    aria-label={`${t("cashFlow")} / ${t("cumulativeGrowth")} / ${t("investmentCostBasis")} / ${t("returnTrend")}`}
+                    className={isCompact ? "space-y-2" : "space-y-3"}
+                  >
+                    <div className="flex flex-wrap items-end justify-between gap-2">
+                      <div>
+                        <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                          {t("movementSectionTitle")}
+                        </h2>
+                        <p className="text-xs text-muted-foreground">
+                          {t("movementSectionSubtitle")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>
+                      {showDeferredCharts ? (
+                        <>
+                          <Card size="sm" className="h-full">
+                            <LazyCashFlowChart
+                              buckets={series.cashFlowBuckets}
+                              baseCurrency={baseCurrency}
+                            />
+                          </Card>
+                          <Card size="sm" className="h-full">
+                            <LazyCumulativeGrowthChart
+                              points={series.cumulativeGrowth}
+                              baseCurrency={baseCurrency}
+                            />
+                          </Card>
+                          <Card size="sm" className="h-full">
+                            <LazyInvestmentCostBasisChart
+                              summary={investmentCostBasis}
+                              baseCurrency={baseCurrency}
+                            />
+                          </Card>
+                          <Card size="sm" className="h-full">
+                            <LazyReturnTrendChart points={series.returnTrend} />
+                          </Card>
+                          <Card size="sm" className="h-full xl:col-span-2">
+                            <LazyDrawdownChart points={drawdownSeries} />
+                          </Card>
+                        </>
+                      ) : (
+                        <>
+                          <ChartSkeletonCard />
+                          <ChartSkeletonCard />
+                          <ChartSkeletonCard />
+                          <ChartSkeletonCard />
+                          <ChartSkeletonCard className="xl:col-span-2" />
+                        </>
+                      )}
+                    </div>
+                  </section>
+
+                  <section
+                    aria-label={`${t("categoryTrend")} / ${t("attribution")}`}
+                    className={isCompact ? "space-y-2" : "space-y-3"}
+                  >
+                    <div className="flex flex-wrap items-end justify-between gap-2">
+                      <div>
+                        <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                          {t("compositionSectionTitle")}
+                        </h2>
+                        <p className="text-xs text-muted-foreground">
+                          {t("compositionSectionSubtitle")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>
+                      {showDeferredCharts ? (
+                        <>
+                          <Card size="sm" className="h-full">
+                            <LazyCategoryTrendChart
+                              data={series.categoryHistory}
+                              baseCurrency={baseCurrency}
+                              locale={locale}
+                            />
+                          </Card>
+                          <Card size="sm" className="h-full">
+                            <LazyAttributionChart
+                              items={series.attributionItems}
+                              baseCurrency={baseCurrency}
+                            />
+                          </Card>
+                        </>
+                      ) : (
+                        <>
+                          <ChartSkeletonCard />
+                          <ChartSkeletonCard />
+                        </>
+                      )}
+                    </div>
+                  </section>
                 </div>
-                <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>
-                  <Card size="sm" className="h-full">
-                    <LazyCategoryTrendChart
-                      data={series.categoryHistory}
-                      baseCurrency={baseCurrency}
-                      locale={locale}
-                    />
-                  </Card>
-                  <Card size="sm" className="h-full">
-                    <LazyAttributionChart
-                      items={series.attributionItems}
-                      baseCurrency={baseCurrency}
-                    />
-                  </Card>
-                </div>
-              </section>
-            </div>
+              </>
+            )}
           </motion.div>
         )}
       </MountedAnalysis>
