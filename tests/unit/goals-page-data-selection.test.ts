@@ -76,9 +76,11 @@ function setDefaultMocks() {
   h.headers.mockResolvedValue(new Headers({ "user-agent": mobileUserAgent }));
 }
 
-async function load(tab: string, userAgent = mobileUserAgent) {
+async function load(tab?: string, userAgent = mobileUserAgent) {
   h.headers.mockResolvedValue(new Headers({ "user-agent": userAgent }));
-  await GoalsContent({ searchParams: Promise.resolve({ tab }) });
+  await GoalsContent({
+    searchParams: Promise.resolve(tab === undefined ? {} : { tab }),
+  });
 }
 
 describe("Goals mobile panel data selection", () => {
@@ -113,8 +115,19 @@ describe("Goals mobile panel data selection", () => {
     }
   });
 
-  it("ignores the mobile tab query for a desktop user agent", async () => {
+  it("uses an explicit tab query while also loading desktop Goals data", async () => {
     await load("projections", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)");
+
+    expect(h.computeGoalsWithProgress).toHaveBeenCalledOnce();
+    expect(h.fetchUserAccountsWithHoldings).toHaveBeenCalledOnce();
+    expect(h.getProjectionData).toHaveBeenCalledOnce();
+    expect(h.getCachedTrackedStocks).not.toHaveBeenCalled();
+    expect(h.getCalendarEntriesInRange).not.toHaveBeenCalled();
+    expect(h.getCalendarEarnings).not.toHaveBeenCalled();
+  });
+
+  it("loads only Goals for a desktop request without a tab query", async () => {
+    await load(undefined, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)");
 
     expect(h.computeGoalsWithProgress).toHaveBeenCalledOnce();
     expect(h.fetchUserAccountsWithHoldings).toHaveBeenCalledOnce();
