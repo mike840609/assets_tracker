@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { HANG_OFFSET, usePullToRefreshContext } from "./pull-to-refresh-context";
+import {
+  HANG_OFFSET,
+  indicatorTranslate,
+  INDICATOR_HIDDEN_Y,
+  usePullToRefreshContext,
+} from "./pull-to-refresh-context";
 import { hapticTick } from "@/lib/haptics";
 
 const THRESHOLD = 70;
@@ -64,12 +69,13 @@ export function PullToRefresh({ onRefresh, children }: Props) {
     let currentPull = 0;
     let rafId: number | null = null;
 
-    const resetPullTransform = () => {
-      const mainElement = getMain();
-      const indicatorElement = getIndicator();
-      if (mainElement && indicatorElement) {
-        applyPullTransform(mainElement, indicatorElement, 0, false);
-      }
+    const resetPullStyles = () => {
+      const main = getMain();
+      const indicator = getIndicator();
+
+      main?.style.removeProperty("transform");
+      indicator?.style.setProperty("transform", indicatorTranslate(INDICATOR_HIDDEN_Y));
+      indicator?.style.setProperty("opacity", "0");
     };
 
     const onTouchStart = (event: TouchEvent) => {
@@ -117,7 +123,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
           setRefreshing(false);
         }
       }
-      resetPullTransform();
+      resetPullStyles();
       currentPull = 0;
     };
 

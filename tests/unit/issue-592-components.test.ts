@@ -41,7 +41,10 @@ describe("history issue #592 regressions", () => {
     const source = readFileSync("src/components/layout/pull-to-refresh.tsx", "utf8");
     expect(source).toContain("const resetPullStyles = () =>");
     expect(source).toContain('main?.style.removeProperty("transform")');
-    expect(source).toContain('indicator?.style.removeProperty("transform")');
+    expect(source).toContain(
+      'indicator?.style.setProperty("transform", indicatorTranslate(INDICATOR_HIDDEN_Y))',
+    );
+    expect(source).toContain('indicator?.style.setProperty("opacity", "0")');
     expect(source).toMatch(
       /else \{\s+setTransitionMode\(false\);\s+resetPullStyles\(\);\s+setPull\(0\);/,
     );
