@@ -133,7 +133,7 @@ describe("service worker fetch boundary", () => {
     const { fetchListener, networkFetch } = loadFetchListener();
     const event = dispatchFetch(fetchListener, {
       method: "GET",
-      url: "https://astt.app/dashboard",
+      url: "https://astt.app/icon",
       destination: "document",
       mode: "navigate",
     });

@@ -30,6 +30,7 @@ function isStaticAsset(pathname) {
 
 function isCacheableRequest(request) {
   if (request.method !== "GET") return false;
+  if (request.destination === "document" || request.mode === "navigate") return false;
   const url = new URL(request.url);
   return url.origin === self.location.origin && isStaticAsset(url.pathname);
 }
