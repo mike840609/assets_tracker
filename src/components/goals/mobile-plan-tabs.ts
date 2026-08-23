@@ -6,6 +6,10 @@ export type MobilePlanTab = (typeof MOBILE_PLAN_TABS)[number];
 export type MobileOnlyPlanTab = Exclude<MobilePlanTab, "goals">;
 export type MobilePlanPanelRenderers = Record<MobileOnlyPlanTab, () => ReactNode>;
 
+export function parseMobilePlanTab(value: string | undefined): MobilePlanTab {
+  return MOBILE_PLAN_TABS.find((tab) => tab === value) ?? "watchlist";
+}
+
 export function getMobilePlanTabId(tab: MobilePlanTab): string {
   return `mobile-plan-tab-${tab}`;
 }

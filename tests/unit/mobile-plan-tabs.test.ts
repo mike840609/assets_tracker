@@ -6,6 +6,7 @@ import {
   getMobilePlanPanelId,
   getMobilePlanTabId,
   handleMobilePlanTabKey,
+  parseMobilePlanTab,
   renderActiveMobilePlanPanel,
   shouldRenderMobilePlanContent,
   shouldRenderGoalsPanel,
@@ -30,6 +31,17 @@ function pressNavigationKey(currentTab: MobilePlanTab, key: string) {
 }
 
 describe("mobile Plan tabs", () => {
+  it.each([
+    ["watchlist", "watchlist"],
+    ["goals", "goals"],
+    ["projections", "projections"],
+    ["calendar", "calendar"],
+    [undefined, "watchlist"],
+    ["not-a-tab", "watchlist"],
+  ] as const)("parses %s as %s", (value, expected) => {
+    expect(parseMobilePlanTab(value)).toBe(expected);
+  });
+
   it.each([
     ["watchlist", "ArrowRight", "goals"],
     ["calendar", "ArrowRight", "watchlist"],

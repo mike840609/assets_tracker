@@ -49,13 +49,14 @@ const CalendarView = dynamic(
 );
 
 interface GoalsViewProps {
-  goalsWithProgress: GoalWithProgress[];
+  loadedTab: MobilePlanTab;
+  goalsWithProgress?: GoalWithProgress[];
   baseCurrency: string;
-  accounts: SerializedAccount[];
-  projectionData: ProjectionData;
-  stocks: SerializedTrackedStock[];
-  calendarEntries: SerializedCalendarEntry[];
-  earningsByDate: ReadonlyMap<string, CalendarEarningsItem[]>;
+  accounts?: SerializedAccount[];
+  projectionData?: ProjectionData;
+  stocks?: SerializedTrackedStock[];
+  calendarEntries?: SerializedCalendarEntry[];
+  earningsByDate?: ReadonlyMap<string, CalendarEarningsItem[]>;
   calendarMonth: string;
   calendarSelectedDate: string;
   calendarToday: string;
@@ -131,6 +132,7 @@ function ManageGoalsList({
 }
 
 export function GoalsView({
+  loadedTab,
   goalsWithProgress,
   baseCurrency,
   accounts,
@@ -154,9 +156,13 @@ export function GoalsView({
   const [savingOrder, setSavingOrder] = useState(false);
   const [draft, setDraft] = useState<GoalWithProgress[]>([]);
   const tabRefs = useRef<Partial<Record<MobilePlanTab, HTMLButtonElement | null>>>({});
+  const migratedLegacyHash = useRef<string | null>(null);
+  const pendingLegacyHash = useRef<string | null>(null);
+  const loadedGoals = goalsWithProgress ?? [];
+  const loadedAccounts = accounts ?? [];
 
   function enterManageMode() {
-    setDraft([...goalsWithProgress]);
+    setDraft([...loadedGoals]);
     setManageMode(true);
   }
 
@@ -208,6 +214,7 @@ export function GoalsView({
           ? "calendar"
           : "watchlist";
   const activeTab: MobilePlanTab = override ?? hashTab;
+  const hasLoadedActivePanel = activeTab === loadedTab;
 
   // Keep the structural tabpanels in the DOM so every tab retains its
   // aria-controls target, but only create the heavy mobile child for the active
@@ -215,21 +222,28 @@ export function GoalsView({
   // child out of the desktop render.
   const mobileContentEnabled = shouldRenderMobilePlanContent(isViewportReady, isMobile);
   const activeMobilePanelContent = renderActiveMobilePlanPanel(mobileContentEnabled, activeTab, {
-    watchlist: () => <StockTrackerView stocks={stocks} />,
-    projections: () => (
-      <ProjectionView projectionData={projectionData} baseCurrency={baseCurrency} />
-    ),
-    calendar: () => (
-      <CalendarView
-        initialEntries={calendarEntries}
-        month={calendarMonth}
-        selectedDate={calendarSelectedDate}
-        today={calendarToday}
-        locale={locale}
-        showHeader={false}
-        earningsByDate={earningsByDate}
-      />
-    ),
+    watchlist: () =>
+      hasLoadedActivePanel && stocks ? <StockTrackerView stocks={stocks} /> : <MobilePlanLoading />,
+    projections: () =>
+      hasLoadedActivePanel && projectionData ? (
+        <ProjectionView projectionData={projectionData} baseCurrency={baseCurrency} />
+      ) : (
+        <MobilePlanLoading />
+      ),
+    calendar: () =>
+      hasLoadedActivePanel && calendarEntries && earningsByDate ? (
+        <CalendarView
+          initialEntries={calendarEntries}
+          month={calendarMonth}
+          selectedDate={calendarSelectedDate}
+          today={calendarToday}
+          locale={locale}
+          showHeader={false}
+          earningsByDate={earningsByDate}
+        />
+      ) : (
+        <MobilePlanLoading />
+      ),
   });
   const renderGoalsContent = shouldRenderGoalsPanel(isViewportReady, isMobile, activeTab);
 
@@ -243,10 +257,42 @@ export function GoalsView({
     });
   }, [activeTab, isMobile]);
 
+  useEffect(() => {
+    if (
+      !isMobile ||
+      !hash ||
+      migratedLegacyHash.current === hash ||
+      new URLSearchParams(window.location.search).has("tab")
+    ) {
+      return;
+    }
+
+    migratedLegacyHash.current = hash;
+    pendingLegacyHash.current = hash;
+    setOverride(activeTab);
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", activeTab);
+    const href = `${window.location.pathname}?${params.toString()}`;
+    router.replace(href);
+  }, [activeTab, hash, isMobile, router]);
+
+  useEffect(() => {
+    const legacyHash = pendingLegacyHash.current;
+    if (!legacyHash || loadedTab !== activeTab) return;
+
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${window.location.search}${legacyHash}`,
+    );
+    pendingLegacyHash.current = null;
+  }, [activeTab, loadedTab]);
+
   const handleTabChange = (tab: MobilePlanTab) => {
     setOverride(tab);
-    const base = window.location.pathname + window.location.search;
-    window.history.replaceState(null, "", tab === "watchlist" ? base : `${base}#${tab}`);
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", tab);
+    router.replace(`${window.location.pathname}?${params.toString()}#${tab}`);
   };
 
   const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, tab: MobilePlanTab) => {
@@ -311,7 +357,7 @@ export function GoalsView({
         aria-labelledby={getMobilePlanTabId("goals")}
         className={activeTab === "goals" ? "block" : "hidden md:block"}
       >
-        {renderGoalsContent ? (
+        {renderGoalsContent && hasLoadedActivePanel && goalsWithProgress && accounts ? (
           <div className="space-y-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
@@ -333,7 +379,7 @@ export function GoalsView({
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2 sm:flex-nowrap">
-                  {goalsWithProgress.length > 1 && (
+                  {loadedGoals.length > 1 && (
                     <Button
                       variant="outline"
                       onClick={enterManageMode}
@@ -354,18 +400,18 @@ export function GoalsView({
               )}
             </div>
 
-            {goalsWithProgress.length === 0 ? (
+            {loadedGoals.length === 0 ? (
               <GoalsOnboarding onAdd={() => setCreateOpen(true)} />
             ) : manageMode ? (
               <ManageGoalsList draft={draft} onReorder={setDraft} />
             ) : (
               <div className="grid gap-4">
-                {goalsWithProgress.map((data) => (
+                {loadedGoals.map((data) => (
                   <GoalCard
                     key={data.goal.id}
                     data={data}
                     baseCurrency={baseCurrency}
-                    accounts={accounts}
+                    accounts={loadedAccounts}
                     defaultCurrency={baseCurrency}
                   />
                 ))}
@@ -375,10 +421,12 @@ export function GoalsView({
             <GoalFormDialog
               open={createOpen}
               onOpenChange={setCreateOpen}
-              accounts={accounts}
+              accounts={loadedAccounts}
               defaultCurrency={baseCurrency}
             />
           </div>
+        ) : renderGoalsContent ? (
+          <MobilePlanLoading />
         ) : null}
       </div>
 
@@ -405,4 +453,8 @@ export function GoalsView({
       </div>
     </div>
   );
+}
+
+function MobilePlanLoading() {
+  return <div aria-label="Loading" className="h-48 animate-pulse rounded-lg bg-muted" />;
 }
