@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -46,10 +47,27 @@ describe("Sentry telemetry privacy hooks", () => {
     vi.unstubAllEnvs();
   });
 
+  it("does not initialize browser Sentry without a DSN", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", "");
+
+    const { onRouterTransitionStart } = await import("@/instrumentation-client");
+
+    expect(onRouterTransitionStart).toEqual(expect.any(Function));
+    expect(mocks.init).not.toHaveBeenCalled();
+  });
+
+  it("keeps the always-present entry free of a runtime Sentry import", () => {
+    const source = readFileSync("src/instrumentation-client.ts", "utf8");
+
+    expect(source).not.toContain('import * as Sentry from "@sentry/nextjs"');
+  });
+
   it("registers transaction and span scrubbers for browser telemetry", async () => {
     vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", "https://public@example.ingest.sentry.io/1");
 
     await import("@/instrumentation-client");
+
+    await vi.waitFor(() => expect(mocks.init).toHaveBeenCalled());
 
     expect(latestSentryOptions()).toMatchObject({
       beforeSendSpan: expect.any(Function),
