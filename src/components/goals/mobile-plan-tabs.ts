@@ -10,6 +10,16 @@ export function parseMobilePlanTab(value: string | undefined): MobilePlanTab {
   return MOBILE_PLAN_TABS.find((tab) => tab === value) ?? "watchlist";
 }
 
+export function getMobilePlanTabFromUrl(
+  isMobile: boolean,
+  queryTab: string | undefined,
+  hash: string,
+): MobilePlanTab {
+  if (!isMobile) return "goals";
+  if (queryTab !== undefined) return parseMobilePlanTab(queryTab);
+  return parseMobilePlanTab(hash.startsWith("#") ? hash.slice(1) : undefined);
+}
+
 export function getMobilePlanTabId(tab: MobilePlanTab): string {
   return `mobile-plan-tab-${tab}`;
 }

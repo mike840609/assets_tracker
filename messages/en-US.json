@@ -125,6 +125,7 @@
     "delete": "Delete",
     "cancel": "Cancel",
     "save": "Save",
+    "loading": "Loading...",
     "saving": "Saving...",
     "deleting": "Deleting...",
     "asset": "Asset",

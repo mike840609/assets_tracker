@@ -102,11 +102,11 @@ describe("mobile desktop-only route redirects", () => {
     "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile";
 
   it.each([
-    ["/stocks", "https://astt.app/goals#watchlist"],
-    ["/projections", "https://astt.app/goals#projections"],
+    ["/stocks", "https://astt.app/goals?tab=watchlist#watchlist"],
+    ["/projections", "https://astt.app/goals?tab=projections#projections"],
     [
       "/calendar?month=2026-08&date=2026-08-12",
-      "https://astt.app/goals?month=2026-08&date=2026-08-12#calendar",
+      "https://astt.app/goals?month=2026-08&date=2026-08-12&tab=calendar#calendar",
     ],
   ])("redirects authenticated mobile %s into the Plan hub", (pathname, expectedLocation) => {
     const response = executeAuthenticatedRequest(pathname, false, iphoneUserAgent);

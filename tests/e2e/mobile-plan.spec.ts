@@ -81,6 +81,12 @@ test.describe("mobile Plan hub", () => {
     await page.getByRole("tab", { name: "Projections" }).click();
     await expect(panelContent("goals")).toHaveCount(0);
     await expect(panelContent("projections")).toHaveCount(1);
+    await expect(panelContent("projections").getByRole("status")).toHaveCount(0);
+    await expect(
+      panelContent("projections").getByText(
+        /Projection Assumptions|Projections are waiting on history|Give the projection engine a portfolio/,
+      ),
+    ).toBeVisible();
     await expect(panelContent("calendar")).toHaveCount(0);
   });
 

@@ -28,6 +28,7 @@ import {
   MOBILE_PLAN_TABS,
   getMobilePlanPanelId,
   getMobilePlanTabId,
+  getMobilePlanTabFromUrl,
   handleMobilePlanTabKey,
   renderActiveMobilePlanPanel,
   shouldRenderMobilePlanContent,
@@ -50,6 +51,7 @@ const CalendarView = dynamic(
 
 interface GoalsViewProps {
   loadedTab: MobilePlanTab;
+  requestedTab?: MobilePlanTab;
   goalsWithProgress?: GoalWithProgress[];
   baseCurrency: string;
   accounts?: SerializedAccount[];
@@ -133,6 +135,7 @@ function ManageGoalsList({
 
 export function GoalsView({
   loadedTab,
+  requestedTab,
   goalsWithProgress,
   baseCurrency,
   accounts,
@@ -156,8 +159,9 @@ export function GoalsView({
   const [savingOrder, setSavingOrder] = useState(false);
   const [draft, setDraft] = useState<GoalWithProgress[]>([]);
   const tabRefs = useRef<Partial<Record<MobilePlanTab, HTMLButtonElement | null>>>({});
-  const migratedLegacyHash = useRef<string | null>(null);
-  const pendingLegacyHash = useRef<string | null>(null);
+  const [pendingTab, setPendingTab] = useState<MobilePlanTab | null>(null);
+  const reconciledTab = useRef<MobilePlanTab | null>(null);
+  const pendingHash = useRef<string | null>(null);
   const loadedGoals = goalsWithProgress ?? [];
   const loadedAccounts = accounts ?? [];
 
@@ -194,8 +198,8 @@ export function GoalsView({
   // Deep links for goals, projections, and Calendar open their matching sub-view.
   // The bare "Plan" tab (no hash) lands on Watchlist, the leftmost sub-tab.
   // useSyncExternalStore reads the hash with a server snapshot of "" so SSR and
-  // hydration agree; a manual switch sets `override`, which wins and rewrites the
-  // hash for shareable, Back-friendly URLs.
+  // hydration agree; a pending switch wins until the server returns the selected
+  // branch and rewrites the query/hash for shareable, Back-friendly URLs.
   const hash = useSyncExternalStore(
     (onChange) => {
       window.addEventListener("hashchange", onChange);
@@ -204,16 +208,11 @@ export function GoalsView({
     () => window.location.hash,
     () => "",
   );
-  const [override, setOverride] = useState<MobilePlanTab | null>(null);
-  const hashTab: MobilePlanTab =
-    hash === "#goals"
-      ? "goals"
-      : hash === "#projections"
-        ? "projections"
-        : hash === "#calendar"
-          ? "calendar"
-          : "watchlist";
-  const activeTab: MobilePlanTab = override ?? hashTab;
+  const desiredTab = getMobilePlanTabFromUrl(isMobile, requestedTab, hash);
+  const activeTab: MobilePlanTab =
+    pendingTab && (requestedTab !== pendingTab || loadedTab !== pendingTab)
+      ? pendingTab
+      : desiredTab;
   const hasLoadedActivePanel = activeTab === loadedTab;
 
   // Keep the structural tabpanels in the DOM so every tab retains its
@@ -258,41 +257,40 @@ export function GoalsView({
   }, [activeTab, isMobile]);
 
   useEffect(() => {
-    if (
-      !isMobile ||
-      !hash ||
-      migratedLegacyHash.current === hash ||
-      new URLSearchParams(window.location.search).has("tab")
-    ) {
+    if (!isViewportReady || loadedTab === desiredTab || reconciledTab.current === desiredTab) {
+      if (loadedTab === desiredTab && reconciledTab.current === desiredTab) {
+        reconciledTab.current = null;
+      }
       return;
     }
 
-    migratedLegacyHash.current = hash;
-    pendingLegacyHash.current = hash;
-    setOverride(activeTab);
+    reconciledTab.current = desiredTab;
+    setPendingTab(desiredTab);
+    pendingHash.current = window.location.hash || null;
     const params = new URLSearchParams(window.location.search);
-    params.set("tab", activeTab);
+    params.set("tab", desiredTab);
     const href = `${window.location.pathname}?${params.toString()}`;
     router.replace(href);
-  }, [activeTab, hash, isMobile, router]);
+  }, [desiredTab, isViewportReady, loadedTab, router]);
 
   useEffect(() => {
-    const legacyHash = pendingLegacyHash.current;
-    if (!legacyHash || loadedTab !== activeTab) return;
+    const hashToRestore = pendingHash.current;
+    if (!hashToRestore || loadedTab !== desiredTab) return;
 
     window.history.replaceState(
       null,
       "",
-      `${window.location.pathname}${window.location.search}${legacyHash}`,
+      `${window.location.pathname}${window.location.search}${hashToRestore}`,
     );
-    pendingLegacyHash.current = null;
-  }, [activeTab, loadedTab]);
+    pendingHash.current = null;
+  }, [desiredTab, loadedTab]);
 
   const handleTabChange = (tab: MobilePlanTab) => {
-    setOverride(tab);
+    setPendingTab(tab);
+    pendingHash.current = `#${tab}`;
     const params = new URLSearchParams(window.location.search);
     params.set("tab", tab);
-    router.replace(`${window.location.pathname}?${params.toString()}#${tab}`);
+    router.replace(`${window.location.pathname}?${params.toString()}`);
   };
 
   const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, tab: MobilePlanTab) => {
@@ -357,7 +355,10 @@ export function GoalsView({
         aria-labelledby={getMobilePlanTabId("goals")}
         className={activeTab === "goals" ? "block" : "hidden md:block"}
       >
-        {renderGoalsContent && hasLoadedActivePanel && goalsWithProgress && accounts ? (
+        {renderGoalsContent &&
+        (!isMobile || hasLoadedActivePanel) &&
+        goalsWithProgress &&
+        accounts ? (
           <div className="space-y-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
@@ -456,5 +457,12 @@ export function GoalsView({
 }
 
 function MobilePlanLoading() {
-  return <div aria-label="Loading" className="h-48 animate-pulse rounded-lg bg-muted" />;
+  const common = useTranslations("common");
+  return (
+    <div
+      role="status"
+      aria-label={common("loading")}
+      className="h-48 animate-pulse rounded-lg bg-muted"
+    />
+  );
 }
