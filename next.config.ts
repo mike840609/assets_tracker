@@ -69,7 +69,7 @@ const nextConfig: NextConfig = {
   experimental: {
     viewTransition: true,
     optimizePackageImports: [
-      "@/components/charts/recharts-barrel",
+      "recharts",
       "lucide-react",
       "next-intl",
       "@prisma/client",
