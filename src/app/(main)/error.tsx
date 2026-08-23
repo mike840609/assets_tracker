@@ -2,10 +2,13 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import * as Sentry from "@sentry/nextjs";
 import { useTranslations } from "next-intl";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const sentryClient = process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? import("../../instrumentation-client-sentry")
+  : undefined;
 
 export default function MainError({
   error,
@@ -17,10 +20,12 @@ export default function MainError({
   const t = useTranslations("errors");
 
   useEffect(() => {
-    Sentry.captureException(error, {
-      tags: { boundary: "main" },
-      extra: { digest: error.digest },
-    });
+    void sentryClient?.then(({ captureException }) =>
+      captureException(error, {
+        tags: { boundary: "main" },
+        extra: { digest: error.digest },
+      }),
+    );
     // eslint-disable-next-line no-console
     console.error(error);
   }, [error]);

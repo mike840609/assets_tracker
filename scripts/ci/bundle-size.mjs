@@ -93,7 +93,12 @@ function assertNoSentry() {
     process.exit(1);
   }
 
-  const markers = ["captureRouterTransitionStart", "spanStreamingIntegration", "@sentry/nextjs"];
+  const markers = [
+    "__SENTRY__",
+    "captureRouterTransitionStart",
+    "spanStreamingIntegration",
+    "@sentry/nextjs",
+  ];
   const offenders = walk(STATIC_DIR)
     .filter((file) => extname(file) === ".js")
     .filter((file) => markers.some((marker) => readFileSync(file, "utf8").includes(marker)))

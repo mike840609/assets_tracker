@@ -29,3 +29,4 @@ if (dsn) {
 }
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+export const captureException = Sentry.captureException;
