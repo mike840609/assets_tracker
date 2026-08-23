@@ -76,7 +76,8 @@ function setDefaultMocks() {
   h.headers.mockResolvedValue(new Headers({ "user-agent": mobileUserAgent }));
 }
 
-async function load(tab: string) {
+async function load(tab: string, userAgent = mobileUserAgent) {
+  h.headers.mockResolvedValue(new Headers({ "user-agent": userAgent }));
   await GoalsContent({ searchParams: Promise.resolve({ tab }) });
 }
 
@@ -110,6 +111,17 @@ describe("Goals mobile panel data selection", () => {
           : 0;
       expect(h[reader]).toHaveBeenCalledTimes(expectedCalls);
     }
+  });
+
+  it("ignores the mobile tab query for a desktop user agent", async () => {
+    await load("projections", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)");
+
+    expect(h.computeGoalsWithProgress).toHaveBeenCalledOnce();
+    expect(h.fetchUserAccountsWithHoldings).toHaveBeenCalledOnce();
+    expect(h.getProjectionData).not.toHaveBeenCalled();
+    expect(h.getCachedTrackedStocks).not.toHaveBeenCalled();
+    expect(h.getCalendarEntriesInRange).not.toHaveBeenCalled();
+    expect(h.getCalendarEarnings).not.toHaveBeenCalled();
   });
 
   it("starts the selected reader while translations are still pending", async () => {
