@@ -87,7 +87,7 @@ export function AnalysisView({
   const [seriesCache, setSeriesCache] = useState(seriesByRange);
   const [failedRange, setFailedRange] = useState<RangeLabel | null>(null);
   const [retryToken, setRetryToken] = useState(0);
-  const deferredSentinelRef = useRef<HTMLDivElement>(null);
+  const [deferredSentinelNode, setDeferredSentinelNode] = useState<HTMLDivElement | null>(null);
   const [showDeferredCharts, setShowDeferredCharts] = useState(false);
   const shouldReduceMotion = useReducedMotion();
   const rangeFadeTransition = shouldReduceMotion
@@ -175,7 +175,7 @@ export function AnalysisView({
       return () => cancelAnimationFrame(frame);
     }
 
-    const sentinel = deferredSentinelRef.current;
+    const sentinel = deferredSentinelNode;
     if (!sentinel) return;
     if (sentinel.getBoundingClientRect().top <= window.innerHeight + 800) {
       const frame = requestAnimationFrame(() => setShowDeferredCharts(true));
@@ -192,7 +192,7 @@ export function AnalysisView({
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [showDeferredCharts]);
+  }, [deferredSentinelNode, showDeferredCharts]);
 
   const rangeLoadFailed = failedRange === range && !series;
   const rangeIsLoading = !series && !rangeLoadFailed && range !== meta.defaultRange;
@@ -251,7 +251,7 @@ export function AnalysisView({
                     </button>
                   </div>
                 )}
-                <div ref={deferredSentinelRef} className="h-px" aria-hidden />
+                <div ref={setDeferredSentinelNode} className="h-px" aria-hidden />
                 <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>
                   <ChartSkeletonCard />
                   <ChartSkeletonCard />
@@ -286,7 +286,7 @@ export function AnalysisView({
                   </Card>
                 </section>
 
-                <div ref={deferredSentinelRef} className="h-px" aria-hidden />
+                <div ref={setDeferredSentinelNode} className="h-px" aria-hidden />
 
                 {/* Secondary analysis is grouped by question: movement first, then composition.
                     On mobile the sections separate more than the charts within them (gridGapClass),

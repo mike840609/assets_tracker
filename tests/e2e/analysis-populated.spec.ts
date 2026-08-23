@@ -124,6 +124,40 @@ test("analysis falls back to the server default range for an unknown persisted r
   }
 });
 
+test("loads deferred charts after selecting a missing range before scrolling", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "Populated Analysis QA is desktop-only.");
+  test.skip(!hasAnalysisFixtureDatabase(), "Populated Analysis QA requires DATABASE_URL.");
+
+  const fixture = await seedAnalysisFixture();
+
+  try {
+    await authenticateAnalysisFixture(page.context(), fixture);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/analysis");
+
+    await expect(page.getByText("Assets vs. Liabilities by Month")).toBeVisible({
+      timeout: 20_000,
+    });
+
+    const allRangeResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/analysis/series?range=All") && response.status() === 200,
+    );
+    await page.getByRole("button", { name: "All", exact: true }).click();
+    await allRangeResponse;
+
+    const movementSection = page.getByRole("heading", { name: /^Movement/ });
+    await movementSection.scrollIntoViewIfNeeded();
+
+    await expect(page.getByText("Cash Flow Decomposition")).toBeVisible();
+    await expect(page.getByText("Performance Attribution")).toBeVisible();
+  } finally {
+    await cleanupAnalysisFixture(fixture);
+  }
+});
+
 test("renders both locales' month labels from one cached payload", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "Populated Analysis QA is desktop-only.");
   test.skip(!hasAnalysisFixtureDatabase(), "Populated Analysis QA requires DATABASE_URL.");
