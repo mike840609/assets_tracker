@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePullToRefreshContext } from "./pull-to-refresh-context";
+import { HANG_OFFSET, usePullToRefreshContext } from "./pull-to-refresh-context";
 import { hapticTick } from "@/lib/haptics";
 
 const THRESHOLD = 70;
@@ -12,9 +12,37 @@ interface Props {
   children: React.ReactNode;
 }
 
+export function dampedPull(deltaY: number): number {
+  if (deltaY <= 0) return 0;
+  return Math.min(deltaY * 0.5, MAX_PULL);
+}
+
+export function applyPullTransform(
+  mainElement: HTMLElement,
+  indicatorElement: HTMLElement,
+  offset: number,
+  isRefreshing: boolean,
+): void {
+  if (offset <= 0 && !isRefreshing) {
+    mainElement.style.transform = "";
+    indicatorElement.style.opacity = "0";
+    indicatorElement.style.transform = "translate(-50%, 0px)";
+    return;
+  }
+
+  const clampedOffset = Math.min(offset, HANG_OFFSET);
+  mainElement.style.transform = clampedOffset > 0 ? `translateY(${clampedOffset}px)` : "";
+  indicatorElement.style.opacity = String(Math.min(offset / THRESHOLD, 1));
+  // Vertical centre of the gap opened above the page (h-9 = 36px indicator)
+  const indicatorRestY = (HANG_OFFSET - 36) / 2;
+  indicatorElement.style.transform = `translate(-50%, ${
+    isRefreshing ? indicatorRestY : offset - 44
+  }px)`;
+}
+
 export function PullToRefresh({ onRefresh, children }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const { pull: _pull, refreshing, setPull, setRefreshing } = usePullToRefreshContext();
+  const { refreshing, setRefreshing, getMain, getIndicator } = usePullToRefreshContext();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -26,36 +54,50 @@ export function PullToRefresh({ onRefresh, children }: Props) {
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
 
-    const main = document.querySelector("main");
     let startY = 0;
     let active = false;
     let currentPull = 0;
+    let rafId: number | null = null;
 
-    const onTouchStart = (e: TouchEvent) => {
+    const resetPullTransform = () => {
+      const mainElement = getMain();
+      const indicatorElement = getIndicator();
+      if (mainElement && indicatorElement) {
+        applyPullTransform(mainElement, indicatorElement, 0, false);
+      }
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
       if (refreshing) return;
-      const scrollTop = main?.scrollTop ?? window.scrollY;
+      const scrollTop = getMain()?.scrollTop ?? window.scrollY;
       if (scrollTop > 0) {
         active = false;
         return;
       }
-      startY = e.touches[0].clientY;
+      startY = event.touches[0].clientY;
       active = true;
     };
 
-    const onTouchMove = (e: TouchEvent) => {
-      if (!active || refreshing) return;
-      const delta = e.touches[0].clientY - startY;
-      if (delta <= 0) {
-        currentPull = 0;
-        setPull(0);
-        return;
+    const onTouchMove = (event: TouchEvent) => {
+      if (!active || refreshing || reduceMotion) return;
+      currentPull = dampedPull(event.touches[0].clientY - startY);
+      if (!rafId) {
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          const mainElement = getMain();
+          const indicatorElement = getIndicator();
+          if (mainElement && indicatorElement) {
+            applyPullTransform(mainElement, indicatorElement, currentPull, refreshing);
+          }
+        });
       }
-      const damped = Math.min(delta * 0.5, MAX_PULL);
-      currentPull = damped;
-      if (!reduceMotion) setPull(damped);
     };
 
     const onTouchEnd = async () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
       if (!active || refreshing) {
         active = false;
         return;
@@ -64,18 +106,14 @@ export function PullToRefresh({ onRefresh, children }: Props) {
       if (currentPull >= THRESHOLD) {
         hapticTick();
         setRefreshing(true);
-        setPull(THRESHOLD);
         try {
           await onRefresh();
         } finally {
           setRefreshing(false);
-          setPull(0);
-          currentPull = 0;
         }
-      } else {
-        setPull(0);
-        currentPull = 0;
       }
+      resetPullTransform();
+      currentPull = 0;
     };
 
     wrapper.addEventListener("touchstart", onTouchStart, { passive: true });
@@ -88,8 +126,9 @@ export function PullToRefresh({ onRefresh, children }: Props) {
       wrapper.removeEventListener("touchmove", onTouchMove);
       wrapper.removeEventListener("touchend", onTouchEnd);
       wrapper.removeEventListener("touchcancel", onTouchEnd);
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
-  }, [onRefresh, refreshing, setPull, setRefreshing]);
+  }, [getIndicator, getMain, onRefresh, refreshing, setRefreshing]);
 
   return <div ref={wrapperRef}>{children}</div>;
 }
