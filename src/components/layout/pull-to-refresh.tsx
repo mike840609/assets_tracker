@@ -31,8 +31,7 @@ export function applyPullTransform(
   }
 
   const clampedOffset = Math.min(offset, HANG_OFFSET);
-  mainElement.style.transform =
-    clampedOffset > 0 ? `translateY(${clampedOffset}px)` : "";
+  mainElement.style.transform = clampedOffset > 0 ? `translateY(${clampedOffset}px)` : "";
   indicatorElement.style.opacity = String(Math.min(offset / THRESHOLD, 1));
   // Vertical centre of the gap opened above the page (h-9 = 36px indicator)
   const indicatorRestY = (HANG_OFFSET - 36) / 2;
@@ -43,8 +42,7 @@ export function applyPullTransform(
 
 export function PullToRefresh({ onRefresh, children }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const { refreshing, setRefreshing, getMain, getIndicator } =
-    usePullToRefreshContext();
+  const { refreshing, setRefreshing, getMain, getIndicator } = usePullToRefreshContext();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -52,9 +50,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
     const isMobile = window.matchMedia("(max-width: 767px)").matches;
     if (!isMobile) return;
 
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
 
@@ -91,12 +87,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
           const mainElement = getMain();
           const indicatorElement = getIndicator();
           if (mainElement && indicatorElement) {
-            applyPullTransform(
-              mainElement,
-              indicatorElement,
-              currentPull,
-              refreshing,
-            );
+            applyPullTransform(mainElement, indicatorElement, currentPull, refreshing);
           }
         });
       }
