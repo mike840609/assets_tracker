@@ -26,28 +26,83 @@ export function getCurrencySymbol(code: string): string {
   return currency?.symbol ?? code;
 }
 
+export interface FormatCurrencyOptions {
+  compact?: boolean;
+  decimals?: number;
+  minDecimals?: number;
+  maxDecimals?: number;
+  locale?: string;
+}
+
 const currencyFormatterCache = new Map<string, Intl.NumberFormat>();
 const numberFormatterCache = new Map<string, Intl.NumberFormat>();
 
-export function formatCurrency(amount: number, currencyCode: string, compact = false): string {
+export function formatCurrency(
+  amount: number,
+  currencyCode: string,
+  compactOrOptions: boolean | FormatCurrencyOptions = false,
+): string {
+  const options: FormatCurrencyOptions =
+    typeof compactOrOptions === "boolean" ? { compact: compactOrOptions } : compactOrOptions;
+
+  const locale = options.locale || "en-US";
+  const notation = options.compact && Math.abs(amount) >= 10000 ? "compact" : "standard";
+  const minDecimals =
+    options.minDecimals ?? (options.decimals !== undefined ? options.decimals : 0);
+  const maxDecimals =
+    options.maxDecimals ?? (options.decimals !== undefined ? options.decimals : 0);
+
+  const cacheKey = `${locale}:${currencyCode}:${notation}:${minDecimals}:${maxDecimals}`;
+
   try {
-    const notation = compact && Math.abs(amount) >= 10000 ? "compact" : "standard";
-    const key = `${currencyCode}:${notation}`;
-    let formatter = currencyFormatterCache.get(key);
+    let formatter = currencyFormatterCache.get(cacheKey);
     if (!formatter) {
-      formatter = new Intl.NumberFormat("en-US", {
+      formatter = new Intl.NumberFormat(locale, {
         style: "currency",
         currency: currencyCode,
         notation,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+        minimumFractionDigits: minDecimals,
+        maximumFractionDigits: maxDecimals,
       });
-      currencyFormatterCache.set(key, formatter);
+      currencyFormatterCache.set(cacheKey, formatter);
     }
     return formatter.format(amount);
   } catch {
-    return `${currencyCode} ${Math.round(amount)}`;
+    return `${currencyCode} ${minDecimals > 0 ? amount.toFixed(minDecimals) : Math.round(amount)}`;
   }
+}
+
+export function formatPrice(
+  price: number | null | undefined,
+  currencyCode: string,
+  options?: { locale?: string; maxDecimals?: number },
+): string {
+  if (price === null || price === undefined) return "—";
+  if (isNaN(price)) return "—";
+
+  const absPrice = Math.abs(price);
+  let minDecimals = 2;
+  let maxDecimals = 2;
+
+  if (absPrice === 0) {
+    minDecimals = 2;
+    maxDecimals = 2;
+  } else if (absPrice < 1) {
+    minDecimals = 2;
+    maxDecimals = options?.maxDecimals ?? 6;
+  } else if (absPrice < 100) {
+    minDecimals = 2;
+    maxDecimals = options?.maxDecimals ?? 4;
+  } else {
+    minDecimals = 2;
+    maxDecimals = options?.maxDecimals ?? 2;
+  }
+
+  return formatCurrency(price, currencyCode, {
+    locale: options?.locale,
+    minDecimals,
+    maxDecimals,
+  });
 }
 
 export function formatNumber(amount: number, decimals = 2): string {

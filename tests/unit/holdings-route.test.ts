@@ -71,6 +71,10 @@ vi.mock("@/lib/prisma", () => {
           assetType: "STOCK",
         };
       }),
+      deleteMany: vi.fn(async (args: Record<string, unknown>) => {
+        h.calls.push({ op: "holding.deleteMany", args });
+        return { count: 1 };
+      }),
     },
     holdingTransaction: {
       create: vi.fn(async (args: Record<string, unknown>) => {
@@ -305,5 +309,45 @@ describe("holdings route", () => {
     );
 
     expect(response.status).toBe(409);
+  });
+
+  it("scopes PATCH findFirst query to the route's accountId", async () => {
+    const { PATCH } = await import("@/app/api/accounts/[id]/holdings/route");
+    const { prisma } = await import("@/lib/prisma");
+
+    h.existingHolding = { id: "holding1", quantity: 10, assetType: "STOCK", symbol: "AAPL" };
+
+    const response = await PATCH(
+      new Request("http://unit.test/api/accounts/acc1/holdings", {
+        method: "PATCH",
+        body: JSON.stringify({ id: "holding1", name: "Apple Updated" }),
+        headers: { "content-type": "application/json" },
+      }),
+      params,
+    );
+
+    expect(response.status).toBe(200);
+    expect(vi.mocked(prisma.holding.findFirst)).toHaveBeenCalledWith({
+      where: { id: "holding1", accountId: "acc1", account: { userId: "user1" } },
+    });
+  });
+
+  it("scopes DELETE deleteMany query to the route's accountId", async () => {
+    const { DELETE } = await import("@/app/api/accounts/[id]/holdings/route");
+    const { prisma } = await import("@/lib/prisma");
+
+    const response = await DELETE(
+      new Request("http://unit.test/api/accounts/acc1/holdings", {
+        method: "DELETE",
+        body: JSON.stringify({ id: "holding1" }),
+        headers: { "content-type": "application/json" },
+      }),
+      params,
+    );
+
+    expect(response.status).toBe(200);
+    expect(vi.mocked(prisma.holding.deleteMany)).toHaveBeenCalledWith({
+      where: { id: "holding1", accountId: "acc1", account: { userId: "user1" } },
+    });
   });
 });

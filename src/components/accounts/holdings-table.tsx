@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal } from "lucide-react";
-import { formatCurrency, formatQuantity } from "@/lib/currencies";
+import { formatCurrency, formatPrice, formatQuantity } from "@/lib/currencies";
 import { getOptionDisplay } from "@/lib/options";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -149,10 +149,7 @@ export function HoldingsTable({
                   {privacyMode
                     ? HIDDEN
                     : h.currentPrice !== null
-                      ? formatCurrency(
-                          h.currentPrice,
-                          h.currentPriceCurrency || h.currency || "USD",
-                        )
+                      ? formatPrice(h.currentPrice, h.currentPriceCurrency || h.currency || "USD")
                       : "—"}
                 </td>
                 <td className={`px-3 ${tdPy} text-right tabular-nums font-medium`}>

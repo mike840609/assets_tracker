@@ -169,7 +169,13 @@ function NumberInput({
   max?: number;
   prefix?: string;
 }) {
+  const [prevValue, setPrevValue] = useState(value);
   const [display, setDisplay] = useState(() => (value === 0 ? "" : formatAmountInput(value, 6)));
+
+  if (prevValue !== value) {
+    setPrevValue(value);
+    setDisplay(value === 0 ? "" : formatAmountInput(value, 6));
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const next = maskAmountInput(e.target.value);
@@ -230,9 +236,16 @@ function MilestoneTimeline({
   t: ReturnType<typeof useTranslations<"projections">>;
 }) {
   const n = milestones.length;
+  if (n === 0) return null;
+
   const inset = 100 / (2 * n);
   const lastReached = milestones.reduce((acc, m, i) => (m.reached ? i : acc), -1);
-  const fillRight = lastReached >= 0 ? inset + (lastReached / (n - 1)) * (100 - 2 * inset) : inset;
+  const fillRight =
+    lastReached >= 0
+      ? n > 1
+        ? inset + (lastReached / (n - 1)) * (100 - 2 * inset)
+        : 100 - inset
+      : inset;
 
   function detail(m: MilestoneSpec) {
     if (m.reached) return t("milestoneReached");
