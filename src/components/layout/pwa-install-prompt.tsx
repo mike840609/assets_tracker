@@ -5,8 +5,9 @@ import { useLocale } from "next-intl";
 import { toast } from "sonner";
 import { publishUntilRendered } from "@/lib/pwa-install-hint";
 import { isStandalonePwa, shouldOfferPwaInstall } from "@/lib/pwa-install-status";
+import { CLIENT_STORAGE_KEYS, readClientStorage, writeClientStorage } from "@/lib/client-storage";
 
-const STORAGE_KEY = "assets-tracker:pwa-install-prompt-dismissed";
+const STORAGE_KEY = CLIENT_STORAGE_KEYS.pwaInstallPromptDismissed;
 const TOAST_ID = "pwa-install-prompt";
 // DOM hook so publishUntilRendered can confirm the toast really mounted.
 const TOAST_CLASS = "pwa-install-prompt";
@@ -39,19 +40,11 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 function readDismissedFlag(): boolean {
-  try {
-    return window.localStorage.getItem(STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
+  return readClientStorage(window.localStorage, STORAGE_KEY, ["1"]) === "1";
 }
 
 function persistDismissedFlag(): void {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, "1");
-  } catch {
-    // Install onboarding is optional; storage failures must not affect rendering.
-  }
+  writeClientStorage(window.localStorage, STORAGE_KEY, "1");
 }
 
 function getStandaloneStatus(): boolean {

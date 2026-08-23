@@ -9,6 +9,7 @@ import {
   useState,
   startTransition,
 } from "react";
+import { CLIENT_STORAGE_KEYS, readClientStorage, writeClientStorage } from "@/lib/client-storage";
 
 export type Density = "comfortable" | "compact";
 
@@ -24,14 +25,15 @@ const DensityContext = createContext<DensityContextType>({
   setDensity: () => {},
 });
 
-const STORAGE_KEY = "asset-tracker:density";
+const STORAGE_KEY = CLIENT_STORAGE_KEYS.density;
+const DENSITIES: Density[] = ["comfortable", "compact"];
 
 export function DensityProvider({ children }: { children: React.ReactNode }) {
   const [density, setDensityState] = useState<Density>("comfortable");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = readClientStorage(localStorage, STORAGE_KEY, DENSITIES);
     startTransition(() => {
       setMounted(true);
       if (stored === "compact") setDensityState("compact");
@@ -39,7 +41,7 @@ export function DensityProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setDensity = useCallback((next: Density) => {
-    localStorage.setItem(STORAGE_KEY, next);
+    writeClientStorage(localStorage, STORAGE_KEY, next);
     startTransition(() => setDensityState(next));
   }, []);
 

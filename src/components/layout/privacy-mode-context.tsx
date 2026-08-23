@@ -2,8 +2,10 @@
 
 import { useCallback, startTransition, useSyncExternalStore } from "react";
 import { hapticTick } from "@/lib/haptics";
+import { CLIENT_STORAGE_KEYS, readClientStorage, writeClientStorage } from "@/lib/client-storage";
 
-const PRIVACY_KEY = "privacy-mode";
+const PRIVACY_KEY = CLIENT_STORAGE_KEYS.privacyMode;
+const PRIVACY_VALUES = ["true", "false"] as const;
 
 type PrivacyListener = () => void;
 
@@ -14,7 +16,7 @@ function notifyPrivacyListeners() {
 }
 
 function handlePrivacyStorage(event: StorageEvent) {
-  if (event.key === PRIVACY_KEY) notifyPrivacyListeners();
+  if (event.key === PRIVACY_KEY.current) notifyPrivacyListeners();
 }
 
 function handlePrivacyModeChange() {
@@ -44,7 +46,7 @@ export function subscribeToPrivacyMode(callback: PrivacyListener) {
 
 export function getPrivacyModeSnapshot() {
   if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(PRIVACY_KEY) === "true";
+  return readClientStorage(window.localStorage, PRIVACY_KEY, PRIVACY_VALUES) === "true";
 }
 
 export function getPrivacyModeServerSnapshot() {
@@ -65,8 +67,8 @@ export function usePrivacyMode() {
 
   const togglePrivacyMode = useCallback(() => {
     hapticTick();
-    const next = window.localStorage.getItem(PRIVACY_KEY) !== "true";
-    window.localStorage.setItem(PRIVACY_KEY, String(next));
+    const next = readClientStorage(window.localStorage, PRIVACY_KEY, PRIVACY_VALUES) !== "true";
+    writeClientStorage(window.localStorage, PRIVACY_KEY, String(next));
 
     // Flip the visible state in a transition so the dozens of currency cells
     // across the tree re-render without blocking the click -> paint cycle.

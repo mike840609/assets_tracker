@@ -10,6 +10,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { formatCurrency, formatNumber, getCurrencySymbol } from "@/lib/currencies";
 import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { CLIENT_STORAGE_KEYS, readClientStorage, writeClientStorage } from "@/lib/client-storage";
 import { useDensity } from "@/components/layout/density-context";
 import { useCountUp } from "@/hooks/use-count-up";
 import type { ProjectionData } from "@/lib/services/projection-service";
@@ -17,7 +18,8 @@ import type { ChartPoint } from "./projection-chart";
 import { LazyProjectionChart } from "./lazy-projection-chart";
 import { ProjectionOnboarding } from "./projection-onboarding";
 
-const GUIDE_STORAGE_KEY = "asset-tracker:projections-guide-open";
+const GUIDE_STORAGE_KEY = CLIENT_STORAGE_KEYS.projectionsGuideOpen;
+const GUIDE_VALUES = ["1", "0"] as const;
 const MAX_YEARS = 60;
 const DEFAULT_HORIZON = 30;
 
@@ -327,14 +329,18 @@ export function ProjectionView({ projectionData, baseCurrency, hasAccounts }: Pr
 
   useEffect(
     () =>
-      startTransition(() => setGuideOpen(window.localStorage.getItem(GUIDE_STORAGE_KEY) === "1")),
+      startTransition(() =>
+        setGuideOpen(
+          readClientStorage(window.localStorage, GUIDE_STORAGE_KEY, GUIDE_VALUES) === "1",
+        ),
+      ),
     [],
   );
 
   const toggleGuide = () => {
     const next = !guideOpen;
     setGuideOpen(next);
-    window.localStorage.setItem(GUIDE_STORAGE_KEY, next ? "1" : "0");
+    writeClientStorage(window.localStorage, GUIDE_STORAGE_KEY, next ? "1" : "0");
   };
 
   const projection = useMemo(

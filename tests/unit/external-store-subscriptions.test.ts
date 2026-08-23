@@ -50,6 +50,7 @@ function createWindowStub() {
       localStorage: {
         getItem: (key: string) => values.get(key) ?? null,
         setItem: (key: string, value: string) => values.set(key, value),
+        removeItem: (key: string) => values.delete(key),
       },
       matchMedia,
     },
@@ -57,6 +58,7 @@ function createWindowStub() {
     removeEventListener,
     matchMedia,
     mediaQueries,
+    values,
   };
 }
 
@@ -93,7 +95,7 @@ describe("privacy mode external store", () => {
     expect(first).not.toHaveBeenCalled();
     expect(second).not.toHaveBeenCalled();
 
-    harness.window.dispatchEvent(storageEvent("privacy-mode"));
+    harness.window.dispatchEvent(storageEvent("asset-tracker:v1:privacy-mode"));
     harness.window.dispatchEvent(new Event("privacy-mode-change"));
     expect(first).toHaveBeenCalledTimes(2);
     expect(second).toHaveBeenCalledTimes(2);
@@ -120,6 +122,17 @@ describe("privacy mode external store", () => {
 
     const stop = subscribeToPrivacyMode(vi.fn());
     stop();
+  });
+
+  it("migrates recognized legacy state and defaults invalid current state", () => {
+    harness.values.set("privacy-mode", "true");
+
+    expect(getPrivacyModeSnapshot()).toBe(true);
+    expect(harness.values.get("asset-tracker:v1:privacy-mode")).toBe("true");
+    expect(harness.values.has("privacy-mode")).toBe(false);
+
+    harness.values.set("asset-tracker:v1:privacy-mode", "invalid");
+    expect(getPrivacyModeSnapshot()).toBe(false);
   });
 });
 
