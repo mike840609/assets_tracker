@@ -31,4 +31,9 @@ describe("history issue #592 regressions", () => {
     expect(source).toContain("startTransition(() =>");
     expect(source).toContain("router.refresh()");
   });
+
+  it("cancels any scheduled pull-to-refresh animation frame during cleanup", () => {
+    const source = readFileSync("src/components/layout/pull-to-refresh.tsx", "utf8");
+    expect(source).toContain("cancelAnimationFrame");
+  });
 });
