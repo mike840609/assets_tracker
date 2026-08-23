@@ -36,4 +36,14 @@ describe("history issue #592 regressions", () => {
     const source = readFileSync("src/components/layout/pull-to-refresh.tsx", "utf8");
     expect(source).toContain("cancelAnimationFrame");
   });
+
+  it("resets inline pull-to-refresh styles when a release stays below threshold", () => {
+    const source = readFileSync("src/components/layout/pull-to-refresh.tsx", "utf8");
+    expect(source).toContain("const resetPullStyles = () =>");
+    expect(source).toContain('main?.style.removeProperty("transform")');
+    expect(source).toContain('indicator?.style.removeProperty("transform")');
+    expect(source).toMatch(
+      /else \{\s+setTransitionMode\(false\);\s+resetPullStyles\(\);\s+setPull\(0\);/,
+    );
+  });
 });

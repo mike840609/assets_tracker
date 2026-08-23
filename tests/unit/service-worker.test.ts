@@ -35,19 +35,31 @@ function makeResponse(body: string): ResponseStub {
   };
 }
 
-function createCache(): CacheStub & { get: (request: RequestStub) => ResponseStub | undefined } {
+function createCache(): CacheStub & {
+  get: (request: RequestStub) => ResponseStub | undefined;
+  failNextPut: (error?: Error) => void;
+} {
   const entries = new Map<string, ResponseStub>();
   const keyFor = (request: RequestStub) => request.url;
+  let putError: Error | undefined;
 
   return {
     async match(request) {
       return entries.get(keyFor(request));
     },
     async put(request, response) {
+      if (putError) {
+        const error = putError;
+        putError = undefined;
+        throw error;
+      }
       entries.set(keyFor(request), response);
     },
     get(request) {
       return entries.get(keyFor(request));
+    },
+    failNextPut(error = new Error("cache put failed")) {
+      putError = error;
     },
   };
 }
@@ -127,6 +139,22 @@ describe("service worker fetch boundary", () => {
     expect(event.respondWith).toHaveBeenCalledOnce();
     expect(await event.body()).toBe("icon");
     expect(cache.get(request)?.body).toBe("icon");
+  });
+
+  it("serves a network response even when cache storage write fails on a miss", async () => {
+    const { fetchListener, networkFetch, cache } = loadFetchListener();
+    const request = { method: "GET", url: "https://astt.app/icon.svg" };
+    cache.failNextPut();
+    networkFetch.mockResolvedValueOnce(makeResponse("fresh"));
+
+    const event = dispatchFetch(fetchListener, request);
+
+    expect(event.respondWith).toHaveBeenCalledOnce();
+    await expect(event.body()).resolves.toBe("fresh");
+
+    await flushMicrotasks();
+
+    expect(cache.get(request)).toBeUndefined();
   });
 
   it("does not intercept document requests", () => {

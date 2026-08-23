@@ -43,6 +43,11 @@ export function applyPullTransform(
 export function PullToRefresh({ onRefresh, children }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { refreshing, setRefreshing, getMain, getIndicator } = usePullToRefreshContext();
+  const refreshingRef = useRef(false);
+
+  useEffect(() => {
+    refreshingRef.current = refreshing;
+  }, [refreshing]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -68,7 +73,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
     };
 
     const onTouchStart = (event: TouchEvent) => {
-      if (refreshing) return;
+      if (refreshingRef.current) return;
       const scrollTop = getMain()?.scrollTop ?? window.scrollY;
       if (scrollTop > 0) {
         active = false;
@@ -79,7 +84,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
     };
 
     const onTouchMove = (event: TouchEvent) => {
-      if (!active || refreshing || reduceMotion) return;
+      if (!active || refreshingRef.current || reduceMotion) return;
       currentPull = dampedPull(event.touches[0].clientY - startY);
       if (!rafId) {
         rafId = requestAnimationFrame(() => {
@@ -87,7 +92,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
           const mainElement = getMain();
           const indicatorElement = getIndicator();
           if (mainElement && indicatorElement) {
-            applyPullTransform(mainElement, indicatorElement, currentPull, refreshing);
+            applyPullTransform(mainElement, indicatorElement, currentPull, refreshingRef.current);
           }
         });
       }
@@ -98,7 +103,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
         cancelAnimationFrame(rafId);
         rafId = null;
       }
-      if (!active || refreshing) {
+      if (!active || refreshingRef.current) {
         active = false;
         return;
       }
@@ -128,7 +133,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
       wrapper.removeEventListener("touchcancel", onTouchEnd);
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
-  }, [getIndicator, getMain, onRefresh, refreshing, setRefreshing]);
+  }, [getIndicator, getMain, onRefresh, setRefreshing]);
 
   return <div ref={wrapperRef}>{children}</div>;
 }
