@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ArrowDownRight, ArrowUpRight, CalendarDays, ChevronDown, Info } from "lucide-react";
 import { formatCurrency } from "@/lib/currencies";
 import { useCountUp } from "@/hooks/use-count-up";
@@ -9,12 +9,11 @@ import { useDensity } from "@/components/layout/density-context";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { cn } from "@/lib/utils";
 import type { AnalysisKpis } from "@/lib/services/analysis-service";
-import { formatMonthLabel } from "@/lib/services/analysis-service";
+import { formatMonthLabel } from "@/lib/chart-formatters";
 
 interface Props {
   kpis: AnalysisKpis;
   baseCurrency: string;
-  locale: string;
   rangeLabel: string;
   /** Range's investment return as a fraction (0.072 = +7.2%); null = not computable. */
   investmentReturnPct: number | null;
@@ -223,8 +222,9 @@ function MetricRow({
   );
 }
 
-export function KpiTiles({ kpis, baseCurrency, locale, rangeLabel, investmentReturnPct }: Props) {
+export function KpiTiles({ kpis, baseCurrency, rangeLabel, investmentReturnPct }: Props) {
   const t = useTranslations("analysis");
+  const locale = useLocale();
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
   const isCompact = density === "compact";

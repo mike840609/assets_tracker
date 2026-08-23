@@ -2,24 +2,22 @@
 
 import { memo, useEffect, useMemo, useState, startTransition } from "react";
 import { Area, AreaChart, CartesianGrid, Line, ReferenceLine, XAxis, YAxis } from "recharts";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartEmptyState } from "./chart-empty-state";
 import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/currencies";
-import { formatChartTick, getMonthTickInterval } from "@/lib/chart-formatters";
+import { formatChartTick, formatMonthLabel, getMonthTickInterval } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import type { MonthlyBucket } from "@/lib/services/analysis-service";
-import { formatMonthLabel } from "@/lib/services/analysis-service";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
 
 interface Props {
   buckets: MonthlyBucket[];
   baseCurrency: string;
-  locale: string;
 }
 
 const assetsLiabilitiesConfig = {} satisfies ChartConfig;
@@ -82,9 +80,9 @@ function AssetsTooltip({
 export const AssetsLiabilitiesChart = memo(function AssetsLiabilitiesChart({
   buckets,
   baseCurrency,
-  locale,
 }: Props) {
   const t = useTranslations("analysis");
+  const locale = useLocale();
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
   const chartHeight = density === "compact" ? 160 : 180;
