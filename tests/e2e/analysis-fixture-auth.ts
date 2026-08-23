@@ -9,7 +9,12 @@ export function resolveAnalysisFixtureBaseUrl(baseUrl: string, trustedOrigin?: s
   }
 
   const normalizedTarget = target.origin;
-  const isLoopback = target.hostname === "localhost" || target.hostname === "127.0.0.1";
+  const isLoopback =
+    target.hostname === "localhost" ||
+    target.hostname === "127.0.0.1" ||
+    target.hostname === "0.0.0.0" ||
+    target.hostname === "::1" ||
+    target.hostname === "[::1]";
   if (!isLoopback && target.protocol !== "https:") {
     throw new Error("Remote Analysis fixture targets must use HTTPS.");
   }

@@ -24,6 +24,13 @@ describe("resolveAnalysisFixtureBaseUrl", () => {
     expect(resolvedUrl).toBe("http://127.0.0.1:3000");
   });
 
+  it("accepts [::1] and 0.0.0.0 HTTP and returns normalized origins", () => {
+    expect(resolveAnalysisFixtureBaseUrl("http://[::1]:3000/analysis")).toBe("http://[::1]:3000");
+    expect(resolveAnalysisFixtureBaseUrl("http://0.0.0.0:3000/analysis")).toBe(
+      "http://0.0.0.0:3000",
+    );
+  });
+
   it("accepts matching remote HTTPS and returns its normalized origin", () => {
     // Given a remote HTTPS target and the matching configured application origin
     const targetUrl = "https://preview.example.com/analysis?fixture=1";

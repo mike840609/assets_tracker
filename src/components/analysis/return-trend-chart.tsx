@@ -15,8 +15,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartEmptyState } from "./chart-empty-state";
 import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
-import { getMonthTickInterval } from "@/lib/chart-formatters";
-import { formatMonthLabel } from "@/lib/services/analysis-service";
+import { attachMonthLabels, getMonthTickInterval } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
@@ -97,10 +96,7 @@ export const ReturnTrendChart = memo(function ReturnTrendChart({ points }: Props
   const xAxisInterval = getMonthTickInterval(points.length, density === "compact" ? 5 : 6);
 
   const hasData = points.some((p) => p.monthlyReturn !== null);
-  const chartData = useMemo(
-    () => points.map((p) => ({ ...p, label: formatMonthLabel(p.monthKey, locale) })),
-    [points, locale],
-  );
+  const chartData = useMemo(() => attachMonthLabels(points, locale), [points, locale]);
 
   return (
     <>

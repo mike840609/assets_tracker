@@ -178,7 +178,7 @@ export function GoalCard({ data, baseCurrency, accounts, defaultCurrency }: Goal
               </Badge>
             )}
             {goal.targetDate && targetDateDays !== null && (
-              <span>
+              <span suppressHydrationWarning>
                 {targetDateDays >= 0
                   ? t("dueIn", {
                       days: targetDateDays,

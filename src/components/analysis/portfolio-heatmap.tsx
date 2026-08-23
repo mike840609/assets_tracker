@@ -518,8 +518,8 @@ export function PortfolioHeatmap({
                           compactLabels={isPhone}
                         />
                       )}
-                      isAnimationActive={shouldReduceMotion ? false : "auto"}
-                      isUpdateAnimationActive={shouldReduceMotion ? false : "auto"}
+                      isAnimationActive={!shouldReduceMotion}
+                      isUpdateAnimationActive={!shouldReduceMotion}
                       animationDuration={shouldReduceMotion ? 0 : 220}
                       animationEasing="ease-out"
                       onMouseEnter={(node) => setActiveNode(node as RenderNode)}
