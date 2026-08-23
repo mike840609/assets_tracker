@@ -102,7 +102,7 @@ export function PullToRefresh({ onRefresh, children }: Props) {
       }
     };
 
-    const onTouchEnd = () => {
+    const onTouchEnd = async () => {
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
         rafId = null;
@@ -115,6 +115,11 @@ export function PullToRefresh({ onRefresh, children }: Props) {
       if (currentPull >= THRESHOLD) {
         hapticTick();
         setRefreshing(true);
+        try {
+          await onRefresh();
+        } finally {
+          setRefreshing(false);
+        }
       }
       resetPullTransform();
       currentPull = 0;
