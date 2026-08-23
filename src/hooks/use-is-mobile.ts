@@ -26,6 +26,63 @@ export function useIsViewportReady() {
   );
 }
 
+type ViewportListener = () => void;
+
+type ViewportStore = {
+  mediaQuery: MediaQueryList;
+  listeners: Set<ViewportListener>;
+  handleChange: () => void;
+};
+
+const viewportStores = new Map<string, ViewportStore>();
+
+function getViewportStore(query: string) {
+  const existing = viewportStores.get(query);
+  if (existing) return existing;
+
+  const listeners = new Set<ViewportListener>();
+  const mediaQuery = window.matchMedia(query);
+  const store: ViewportStore = {
+    mediaQuery,
+    listeners,
+    handleChange: () => {
+      for (const listener of listeners) listener();
+    },
+  };
+  viewportStores.set(query, store);
+  return store;
+}
+
+export function subscribeToViewport(query: string, callback: ViewportListener) {
+  if (typeof window === "undefined") return () => {};
+
+  const store = getViewportStore(query);
+  store.listeners.add(callback);
+  if (store.listeners.size === 1) {
+    store.mediaQuery.addEventListener("change", store.handleChange);
+  }
+
+  let active = true;
+  return () => {
+    if (!active) return;
+    active = false;
+    store.listeners.delete(callback);
+    if (store.listeners.size === 0) {
+      store.mediaQuery.removeEventListener("change", store.handleChange);
+      viewportStores.delete(query);
+    }
+  };
+}
+
+export function getViewportSnapshot(query: string) {
+  if (typeof window === "undefined") return false;
+  return getViewportStore(query).mediaQuery.matches;
+}
+
+export function getViewportServerSnapshot() {
+  return false;
+}
+
 /**
  * Hydration-safe viewport media-query hook.
  *
@@ -40,15 +97,10 @@ export function useIsMobile(breakpoint = 768) {
   const query = `(max-width: ${breakpoint - 1}px)`;
 
   const subscribe = useCallback(
-    (onChange: () => void) => {
-      const mq = window.matchMedia(query);
-      mq.addEventListener("change", onChange);
-      return () => mq.removeEventListener("change", onChange);
-    },
+    (onChange: () => void) => subscribeToViewport(query, onChange),
     [query],
   );
+  const getSnapshot = useCallback(() => getViewportSnapshot(query), [query]);
 
-  const getSnapshot = useCallback(() => window.matchMedia(query).matches, [query]);
-
-  return useSyncExternalStore(subscribe, getSnapshot, () => false);
+  return useSyncExternalStore(subscribe, getSnapshot, getViewportServerSnapshot);
 }

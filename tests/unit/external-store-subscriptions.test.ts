@@ -4,6 +4,11 @@ import {
   getPrivacyModeSnapshot,
   subscribeToPrivacyMode,
 } from "@/components/layout/privacy-mode-context";
+import {
+  getViewportServerSnapshot,
+  getViewportSnapshot,
+  subscribeToViewport,
+} from "@/hooks/use-is-mobile";
 
 type FakeMediaQueryList = {
   matches: boolean;
@@ -114,6 +119,69 @@ describe("privacy mode external store", () => {
     expect(getPrivacyModeServerSnapshot()).toBe(false);
 
     const stop = subscribeToPrivacyMode(vi.fn());
+    stop();
+  });
+});
+
+describe("viewport external store", () => {
+  it("shares one MediaQueryList listener per query and keeps different queries independent", () => {
+    const phoneQuery = "(max-width: 767px)";
+    const smallPhoneQuery = "(max-width: 639px)";
+    const first = vi.fn();
+    const second = vi.fn();
+    const third = vi.fn();
+
+    const stopFirst = subscribeToViewport(phoneQuery, first);
+    const stopSecond = subscribeToViewport(phoneQuery, second);
+    const stopThird = subscribeToViewport(smallPhoneQuery, third);
+    const phone = harness.mediaQueries.get(phoneQuery)!;
+    const smallPhone = harness.mediaQueries.get(smallPhoneQuery)!;
+
+    expect(harness.matchMedia).toHaveBeenCalledTimes(2);
+    expect(phone.addEventListener).toHaveBeenCalledTimes(1);
+    expect(smallPhone.addEventListener).toHaveBeenCalledTimes(1);
+
+    phone.emitChange();
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(1);
+    expect(third).not.toHaveBeenCalled();
+
+    smallPhone.emitChange();
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(1);
+    expect(third).toHaveBeenCalledTimes(1);
+
+    stopFirst();
+    expect(phone.removeEventListener).not.toHaveBeenCalled();
+
+    stopSecond();
+    expect(phone.removeEventListener).toHaveBeenCalledTimes(1);
+
+    stopThird();
+    expect(smallPhone.removeEventListener).toHaveBeenCalledTimes(1);
+
+    phone.emitChange();
+    smallPhone.emitChange();
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(1);
+    expect(third).toHaveBeenCalledTimes(1);
+  });
+
+  it("reads the cached query state and stays browser-safe on the server", () => {
+    const query = "(max-width: 767px)";
+
+    expect(getViewportSnapshot(query)).toBe(false);
+    expect(harness.matchMedia).toHaveBeenCalledTimes(1);
+
+    const cached = harness.mediaQueries.get(query)!;
+    cached.matches = true;
+    expect(getViewportSnapshot(query)).toBe(true);
+    expect(harness.matchMedia).toHaveBeenCalledTimes(1);
+
+    vi.unstubAllGlobals();
+    expect(getViewportSnapshot(query)).toBe(false);
+    expect(getViewportServerSnapshot()).toBe(false);
+    const stop = subscribeToViewport(query, vi.fn());
     stop();
   });
 });
