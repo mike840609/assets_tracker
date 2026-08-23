@@ -245,7 +245,10 @@ export function AnalysisView({
                     <button
                       type="button"
                       className="mt-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
-                      onClick={() => setRetryToken((value) => value + 1)}
+                      onClick={() => {
+                        setFailedRange(null);
+                        setRetryToken((value) => value + 1);
+                      }}
                     >
                       {t("retry")}
                     </button>

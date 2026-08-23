@@ -12,4 +12,12 @@ describe("analysis deferred observer wiring", () => {
     expect(source).toContain('{ rootMargin: "800px 0px" }');
     expect(source).toContain("}, [deferredSentinelNode, showDeferredCharts]);");
   });
+
+  it("clears the failed range before retrying so the loading state is visible", () => {
+    const source = readFileSync("src/components/analysis/analysis-view.tsx", "utf8");
+
+    expect(source).toMatch(
+      /onClick=\{\(\) => \{\s*setFailedRange\(null\);\s*setRetryToken\(\(value\) => value \+ 1\);\s*\}\}/,
+    );
+  });
 });
