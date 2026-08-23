@@ -1,32 +1,74 @@
 "use client";
 
-import { createContext, useContext, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 
 // Space opened above the header for the refresh indicator (8px margin + h-9 indicator + 8px margin)
 export const HANG_OFFSET = 52;
 
 interface PullToRefreshContextValue {
-  pull: number;
   refreshing: boolean;
-  setPull: Dispatch<SetStateAction<number>>;
   setRefreshing: Dispatch<SetStateAction<boolean>>;
+  registerMainRef: (element: HTMLElement | null) => void;
+  registerIndicatorRef: (element: HTMLElement | null) => void;
+  getMain: () => HTMLElement | null;
+  getIndicator: () => HTMLElement | null;
 }
 
 const PullToRefreshContext = createContext<PullToRefreshContextValue>({
-  pull: 0,
   refreshing: false,
-  setPull: () => {},
   setRefreshing: () => {},
+  registerMainRef: () => {},
+  registerIndicatorRef: () => {},
+  getMain: () => null,
+  getIndicator: () => null,
 });
 
 export const usePullToRefreshContext = () => useContext(PullToRefreshContext);
 
 export function PullToRefreshProvider({ children }: { children: React.ReactNode }) {
-  const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const mainElementRef = useRef<HTMLElement | null>(null);
+  const indicatorElementRef = useRef<HTMLElement | null>(null);
+
+  const registerMainRef = useCallback((element: HTMLElement | null) => {
+    mainElementRef.current = element;
+  }, []);
+  const registerIndicatorRef = useCallback((element: HTMLElement | null) => {
+    indicatorElementRef.current = element;
+  }, []);
+  const getMain = useCallback(() => mainElementRef.current, []);
+  const getIndicator = useCallback(() => indicatorElementRef.current, []);
+
+  const contextValue = useMemo(
+    () => ({
+      refreshing,
+      setRefreshing,
+      registerMainRef,
+      registerIndicatorRef,
+      getMain,
+      getIndicator,
+    }),
+    [
+      refreshing,
+      setRefreshing,
+      registerMainRef,
+      registerIndicatorRef,
+      getMain,
+      getIndicator,
+    ],
+  );
 
   return (
-    <PullToRefreshContext.Provider value={{ pull, refreshing, setPull, setRefreshing }}>
+    <PullToRefreshContext.Provider value={contextValue}>
       {children}
     </PullToRefreshContext.Provider>
   );
