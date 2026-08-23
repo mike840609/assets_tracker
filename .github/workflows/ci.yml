@@ -177,9 +177,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: bundle-baseline.json
-          key: bundle-baseline-pr-${{ github.sha }}
-          restore-keys: |
-            bundle-baseline-
+          key: bundle-baseline-${{ github.event.pull_request.base.sha }}
 
       - name: Compare against baseline
         run: node scripts/ci/bundle-size.mjs --compare bundle-baseline.json --against bundle-head.json --max-growth 0.05

@@ -11,12 +11,11 @@ import {
   YAxis,
   Legend,
 } from "recharts";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartEmptyState } from "./chart-empty-state";
 import { formatCurrency } from "@/lib/currencies";
-import { formatChartTick, getMonthTickInterval } from "@/lib/chart-formatters";
-import { formatMonthLabel } from "@/lib/services/analysis-service";
+import { formatChartTick, formatMonthLabel, getMonthTickInterval } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
@@ -40,7 +39,6 @@ const MAX_VISIBLE_CATEGORIES = 5;
 interface Props {
   data: CategoryDataPoint[];
   baseCurrency: string;
-  locale: string;
 }
 
 interface TooltipPayload {
@@ -92,13 +90,10 @@ function CategoryTooltip({
   );
 }
 
-export const CategoryTrendChart = memo(function CategoryTrendChart({
-  data,
-  baseCurrency,
-  locale,
-}: Props) {
+export const CategoryTrendChart = memo(function CategoryTrendChart({ data, baseCurrency }: Props) {
   const t = useTranslations("analysis");
   const tCat = useTranslations("categories");
+  const locale = useLocale();
   const { privacyMode } = usePrivacyMode();
   const { density } = useDensity();
   const chartHeight = density === "compact" ? 180 : 200;

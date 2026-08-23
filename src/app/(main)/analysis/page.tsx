@@ -1,4 +1,4 @@
-import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
@@ -19,20 +19,17 @@ async function AnalysisContent() {
   // per-range aggregation), so it starts as soon as its settings/base-currency
   // input resolves rather than after every other await.
   const settingsP = getOrCreateSettings(userId);
-  const localeP = getLocale();
   const payloadP = settingsP.then((s) => getCachedAnalysisPayload(userId, s.baseCurrency));
 
   const [
     t,
     messages,
-    locale,
     settings,
     accountCount,
     { seriesByRange, investmentCostBasis, snapshots, meta },
   ] = await Promise.all([
     getTranslations("analysis"),
     getMessages(),
-    localeP,
     settingsP,
     countActiveAccounts(userId),
     payloadP,
@@ -49,7 +46,6 @@ async function AnalysisContent() {
           snapshots={snapshots}
           meta={meta}
           baseCurrency={settings.baseCurrency}
-          locale={locale}
           hasAccounts={accountCount > 0}
         />
       </div>

@@ -42,7 +42,6 @@ interface Props {
   investmentCostBasis: InvestmentCostBasisSummary;
   meta: AnalysisPayloadMeta;
   baseCurrency: string;
-  locale: string;
   hasAccounts: boolean;
 }
 
@@ -56,7 +55,6 @@ export function AnalysisView({
   investmentCostBasis,
   meta,
   baseCurrency,
-  locale,
   hasAccounts,
 }: Props) {
   const t = useTranslations("analysis");
@@ -178,14 +176,12 @@ export function AnalysisView({
                     <LazyAssetsLiabilitiesChart
                       buckets={series.buckets}
                       baseCurrency={baseCurrency}
-                      locale={locale}
                     />
                   </div>
                   <div className="min-w-0 border-t border-border/60 bg-muted/20 px-4 py-4 xl:border-t-0 xl:border-l xl:bg-muted/25 group-data-[size=sm]/card:px-3 group-data-[size=sm]/card:py-3">
                     <KpiTiles
                       kpis={series.kpis}
                       baseCurrency={baseCurrency}
-                      locale={locale}
                       rangeLabel={activeRangeLabel}
                       investmentReturnPct={series.investmentReturnPct}
                     />
@@ -257,7 +253,6 @@ export function AnalysisView({
                     <LazyCategoryTrendChart
                       data={series.categoryHistory}
                       baseCurrency={baseCurrency}
-                      locale={locale}
                     />
                   </Card>
                   <Card size="sm" className="h-full">
