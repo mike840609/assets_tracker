@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import * as RechartsPrimitive from "recharts";
-import type { TooltipValueType } from "recharts";
+import * as RechartsPrimitive from "@/components/charts/recharts-barrel";
+import type { TooltipValueType } from "@/components/charts/recharts-barrel";
 
 import { cn } from "@/lib/utils";
 

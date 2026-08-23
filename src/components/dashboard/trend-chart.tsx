@@ -16,7 +16,7 @@ import {
   useXAxisScale,
   useYAxisScale,
   usePlotArea,
-} from "recharts";
+} from "@/components/charts/recharts-barrel";
 import { useContainerSize } from "@/hooks/use-container-size";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";

@@ -4,7 +4,7 @@ import { useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ChevronLeft, TriangleAlert } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
 import { useTranslations } from "next-intl";
-import { Treemap, type TreemapNode } from "recharts";
+import { Treemap, type TreemapNode } from "@/components/charts/recharts-barrel";
 import { useDensity } from "@/components/layout/density-context";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

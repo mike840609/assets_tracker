@@ -12,7 +12,7 @@ import {
   ReferenceLine,
   ReferenceDot,
   ResponsiveContainer,
-} from "recharts";
+} from "@/components/charts/recharts-barrel";
 import { useTranslations } from "next-intl";
 import { formatCurrency } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";

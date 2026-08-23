@@ -10,7 +10,7 @@ import {
   ReferenceLine,
   XAxis,
   YAxis,
-} from "recharts";
+} from "@/components/charts/recharts-barrel";
 import { useLocale, useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartEmptyState } from "./chart-empty-state";
