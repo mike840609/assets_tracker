@@ -57,19 +57,10 @@ export function PullToRefreshProvider({ children }: { children: React.ReactNode 
       getMain,
       getIndicator,
     }),
-    [
-      refreshing,
-      setRefreshing,
-      registerMainRef,
-      registerIndicatorRef,
-      getMain,
-      getIndicator,
-    ],
+    [refreshing, setRefreshing, registerMainRef, registerIndicatorRef, getMain, getIndicator],
   );
 
   return (
-    <PullToRefreshContext.Provider value={contextValue}>
-      {children}
-    </PullToRefreshContext.Provider>
+    <PullToRefreshContext.Provider value={contextValue}>{children}</PullToRefreshContext.Provider>
   );
 }

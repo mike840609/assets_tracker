@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  applyPullTransform,
-  dampedPull,
-} from "@/components/layout/pull-to-refresh";
+import { applyPullTransform, dampedPull } from "@/components/layout/pull-to-refresh";
 
 function createElement() {
   return { style: {} } as unknown as HTMLElement;

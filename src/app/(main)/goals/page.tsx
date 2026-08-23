@@ -118,15 +118,7 @@ async function GoalsContent({ searchParams }: GoalsPageProps) {
   const { month, date } = normalizeCalendarUrlState(await searchParams);
 
   const settingsP = getOrCreateSettings(userId);
-  const [
-    t,
-    navT,
-    messages,
-    locale,
-    goalsWithProgress,
-    rawAccounts,
-    settings,
-  ] = await Promise.all([
+  const [t, navT, messages, locale, goalsWithProgress, rawAccounts, settings] = await Promise.all([
     getTranslations("goals"),
     getTranslations("nav"),
     getMessages(),

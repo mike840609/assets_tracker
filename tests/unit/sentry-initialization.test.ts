@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   captureRequestError: vi.fn(),
   captureRouterTransitionStart: vi.fn(),
+  initializeSentryClient: vi.fn(),
   init: vi.fn(),
   logInfo: vi.fn(),
 }));
@@ -20,6 +21,10 @@ vi.mock("@sentry/nextjs", () => ({
 
 vi.mock("@/lib/logger", () => ({
   log: { info: mocks.logInfo },
+}));
+
+vi.mock("@/lib/sentry-client-init", () => ({
+  initializeSentryClient: mocks.initializeSentryClient,
 }));
 
 type SentryOptions = {
@@ -46,17 +51,30 @@ describe("Sentry telemetry privacy hooks", () => {
     vi.unstubAllEnvs();
   });
 
-  it("registers transaction and span scrubbers for browser telemetry", async () => {
+  it("defers browser telemetry init to the gated client initializer", async () => {
     vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", "https://public@example.ingest.sentry.io/1");
 
     await import("@/instrumentation-client");
 
-    expect(latestSentryOptions()).toMatchObject({
-      beforeSendSpan: expect.any(Function),
-      beforeSendTransaction: expect.any(Function),
-      integrations: [{ name: "SpanStreaming" }],
-      traceLifecycle: "stream",
+    await vi.waitFor(() => {
+      expect(mocks.initializeSentryClient).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dsn: "https://public@example.ingest.sentry.io/1",
+          tracesSampleRate: 0,
+          spanStreamingIntegration: expect.any(Function),
+        }),
+      );
     });
+    expect(mocks.init).not.toHaveBeenCalled();
+  });
+
+  it("does not import the Sentry SDK when no DSN is configured", async () => {
+    await import("@/instrumentation-client");
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mocks.initializeSentryClient).not.toHaveBeenCalled();
+    expect(mocks.init).not.toHaveBeenCalled();
   });
 
   it("registers transaction and span scrubbers for Node telemetry", async () => {
