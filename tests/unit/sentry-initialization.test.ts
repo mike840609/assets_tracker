@@ -75,7 +75,7 @@ describe("Sentry telemetry privacy hooks", () => {
 
   it("keeps always-present browser entries free of runtime Sentry imports", () => {
     const importPattern =
-      /(?:import\s+(?:[^;]*?\s+from\s+)?|require\(\s*)["']@sentry\/nextjs["']/;
+      /(?:import\s+(?:[^;]*?\s+from\s+)?|import\s*\(\s*|require\s*\(\s*)["']@sentry\/nextjs["']/;
 
     for (const path of [
       "src/instrumentation-client.ts",

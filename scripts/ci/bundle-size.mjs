@@ -101,7 +101,10 @@ function assertNoSentry() {
   ];
   const offenders = walk(STATIC_DIR)
     .filter((file) => extname(file) === ".js")
-    .filter((file) => markers.some((marker) => readFileSync(file, "utf8").includes(marker)))
+    .filter((file) => {
+      const source = readFileSync(file, "utf8");
+      return markers.some((marker) => source.includes(marker));
+    })
     .map((file) => file.slice(STATIC_DIR.length + 1));
 
   if (offenders.length) {

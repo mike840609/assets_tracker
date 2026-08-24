@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-
-const sentryClient = process.env.NEXT_PUBLIC_SENTRY_DSN
-  ? import("../instrumentation-client-sentry")
-  : undefined;
+import { captureException } from "../instrumentation-client";
 
 // Renders when the root layout itself throws. It replaces the entire document,
 // so it must supply its own <html>/<body> and cannot rely on global styles,
@@ -17,12 +14,10 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    void sentryClient?.then(({ captureException }) =>
-      captureException(error, {
-        tags: { boundary: "global" },
-        extra: { digest: error.digest },
-      }),
-    );
+    captureException(error, {
+      tags: { boundary: "global" },
+      extra: { digest: error.digest },
+    });
     // eslint-disable-next-line no-console
     console.error(error);
   }, [error]);
