@@ -34,6 +34,10 @@ if (turbopackRoot) {
   console.log(`[next.config] Widened turbopack.root to ${turbopackRoot} (symlinked node_modules).`);
 }
 
+const sentryClientModule = process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? "./src/instrumentation-client-sentry.ts"
+  : "./src/instrumentation-client-noop.ts";
+
 const isDev = process.env.NODE_ENV !== "production";
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -60,7 +64,10 @@ const nextConfig: NextConfig = {
   output: "standalone",
   cacheComponents: true,
   poweredByHeader: false,
-  ...(turbopackRoot ? { turbopack: { root: turbopackRoot } } : {}),
+  turbopack: {
+    ...(turbopackRoot ? { root: turbopackRoot } : {}),
+    resolveAlias: { "@/instrumentation-client-sentry": sentryClientModule },
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,

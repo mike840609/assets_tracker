@@ -2,7 +2,12 @@
 
 import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { usePullToRefreshContext } from "./pull-to-refresh-context";
+import {
+  indicatorTranslate,
+  INDICATOR_HIDDEN_Y,
+  INDICATOR_REST_Y,
+  usePullToRefreshContext,
+} from "./pull-to-refresh-context";
 
 export function PullToRefreshIndicator() {
   const { refreshing, registerIndicatorRef } = usePullToRefreshContext();
@@ -14,7 +19,13 @@ export function PullToRefreshIndicator() {
         "h-9 w-9 rounded-full bg-background/90 border border-border/50 shadow-md backdrop-blur-md",
         "opacity-0",
       )}
-      style={{ top: "env(safe-area-inset-top)" }}
+      style={{
+        top: "env(safe-area-inset-top)",
+        transform: refreshing
+          ? indicatorTranslate(INDICATOR_REST_Y)
+          : indicatorTranslate(INDICATOR_HIDDEN_Y),
+        opacity: refreshing ? 1 : 0,
+      }}
       ref={registerIndicatorRef}
       aria-hidden
     >

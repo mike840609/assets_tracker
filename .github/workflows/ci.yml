@@ -170,6 +170,9 @@ jobs:
 
       - run: pnpm build
 
+      - name: Assert no browser Sentry bundle
+        run: node scripts/ci/bundle-size.mjs --assert-no-sentry
+
       - name: Measure head bundle
         run: node scripts/ci/bundle-size.mjs --write bundle-head.json
 

@@ -9,6 +9,7 @@
  * Usage:
  *   node scripts/ci/bundle-size.mjs --write <out.json>
  *   node scripts/ci/bundle-size.mjs --compare <baseline.json> --against <head.json> [--max-growth 0.05]
+ *   node scripts/ci/bundle-size.mjs --assert-no-sentry
  *
  * Handling deliberate bundle growth:
  *   The gate only blocks the PR that introduces the growth. If the growth is
@@ -86,8 +87,41 @@ function readArg(name) {
   return idx !== -1 ? process.argv[idx + 1] : undefined;
 }
 
+function assertNoSentry() {
+  if (!existsSync(STATIC_DIR)) {
+    console.error(`::error::${STATIC_DIR} not found — run \`pnpm build\` first`);
+    process.exit(1);
+  }
+
+  const markers = [
+    "__SENTRY__",
+    "captureRouterTransitionStart",
+    "spanStreamingIntegration",
+    "@sentry/nextjs",
+  ];
+  const offenders = walk(STATIC_DIR)
+    .filter((file) => extname(file) === ".js")
+    .filter((file) => {
+      const source = readFileSync(file, "utf8");
+      return markers.some((marker) => source.includes(marker));
+    })
+    .map((file) => file.slice(STATIC_DIR.length + 1));
+
+  if (offenders.length) {
+    console.error(`::error::Sentry browser markers found in:\n${offenders.join("\n")}`);
+    process.exit(1);
+  }
+
+  console.log("No Sentry browser markers found in .next/static JavaScript.");
+}
+
 const writeOut = readArg("--write");
 const baselinePath = readArg("--compare");
+
+if (process.argv.includes("--assert-no-sentry")) {
+  assertNoSentry();
+  process.exit(0);
+}
 
 if (writeOut) {
   const result = measure();
@@ -153,6 +187,6 @@ if (baselinePath) {
 }
 
 console.error(
-  "::error::Usage: bundle-size.mjs --write <out.json> | --compare <baseline.json> --against <head.json> [--max-growth 0.05]",
+  "::error::Usage: bundle-size.mjs --write <out.json> | --compare <baseline.json> --against <head.json> [--max-growth 0.05] | --assert-no-sentry",
 );
 process.exit(1);
