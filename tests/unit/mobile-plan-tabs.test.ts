@@ -5,7 +5,9 @@ import {
   MOBILE_PLAN_TABS,
   getMobilePlanPanelId,
   getMobilePlanTabId,
+  getMobilePlanTabFromUrl,
   handleMobilePlanTabKey,
+  parseMobilePlanTab,
   renderActiveMobilePlanPanel,
   shouldRenderMobilePlanContent,
   shouldRenderGoalsPanel,
@@ -30,6 +32,31 @@ function pressNavigationKey(currentTab: MobilePlanTab, key: string) {
 }
 
 describe("mobile Plan tabs", () => {
+  it.each([
+    ["watchlist", "watchlist"],
+    ["goals", "goals"],
+    ["projections", "projections"],
+    ["calendar", "calendar"],
+    [undefined, "watchlist"],
+    ["not-a-tab", "watchlist"],
+  ] as const)("parses %s as %s", (value, expected) => {
+    expect(parseMobilePlanTab(value)).toBe(expected);
+  });
+
+  it.each([
+    [true, "calendar", "", "calendar"],
+    [true, "goals", "#projections", "goals"],
+    [true, "not-a-tab", "#calendar", "watchlist"],
+    [true, undefined, "#projections", "projections"],
+    [true, undefined, "", "watchlist"],
+    [false, "calendar", "#projections", "goals"],
+  ] as const)(
+    "resolves the client tab from mobile=%s query=%s hash=%s as %s",
+    (isMobile, queryTab, hash, expected) => {
+      expect(getMobilePlanTabFromUrl(isMobile, queryTab, hash)).toBe(expected);
+    },
+  );
+
   it.each([
     ["watchlist", "ArrowRight", "goals"],
     ["calendar", "ArrowRight", "watchlist"],

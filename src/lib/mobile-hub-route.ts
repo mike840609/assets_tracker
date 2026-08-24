@@ -19,7 +19,7 @@ export function getMobileHubClientRedirectUrl({
   fallbackSearch?: string;
   hash: `#${string}`;
 }): string {
-  return `/goals${currentSearch || fallbackSearch}${hash}`;
+  return getMobileHubUrl(currentSearch || fallbackSearch, hash);
 }
 
 export function getMobileHubRedirectUrl({
@@ -34,5 +34,14 @@ export function getMobileHubRedirectUrl({
   if (!isMobileUserAgent(userAgent)) return null;
 
   const hash = MOBILE_HUB_HASHES[pathname];
-  return hash ? `/goals${search}${hash}` : null;
+  return hash ? getMobileHubUrl(search, hash) : null;
+}
+
+function getMobileHubUrl(search: string, hash: `#${string}`): string {
+  const params = new URLSearchParams(search);
+  const tab = hash.slice(1);
+  if (tab === "watchlist") params.delete("tab");
+  else params.set("tab", tab);
+  const query = params.toString();
+  return `/goals${query ? `?${query}` : ""}`;
 }

@@ -13,6 +13,10 @@ import {
 
 // Space opened above the header for the refresh indicator (8px margin + h-9 indicator + 8px margin)
 export const HANG_OFFSET = 52;
+export const INDICATOR_HIDDEN_Y = -44;
+export const INDICATOR_REST_Y = (HANG_OFFSET - 36) / 2;
+
+export const indicatorTranslate = (y: number) => `translate(-50%, ${y}px)`;
 
 interface PullToRefreshContextValue {
   refreshing: boolean;

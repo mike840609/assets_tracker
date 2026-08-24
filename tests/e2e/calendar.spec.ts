@@ -298,7 +298,7 @@ test.describe("calendar entry workflows", () => {
         .getByRole("gridcell")
         .getByRole("button", { name: /November 1, 2033/ })
         .tap();
-      await expect(page).toHaveURL(/\/goals\?month=2033-11&date=2033-11-01#calendar$/);
+      await expect(page).toHaveURL(/\/goals\?month=2033-11&date=2033-11-01&tab=calendar$/);
       const adjacentAgenda = page.getByRole("region", {
         name: /on Tuesday, November 1, 2033/,
       });

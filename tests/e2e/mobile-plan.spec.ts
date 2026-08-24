@@ -44,7 +44,7 @@ test.describe("mobile Plan hub", () => {
       "aria-selected",
       "true",
     );
-    await expect(page).toHaveURL(/\/goals#goals$/);
+    await expect(page).toHaveURL(/\/goals\?tab=goals$/);
     await expect(page.getByRole("button", { name: "New Goal" }).first()).toBeVisible();
 
     await tablist.getByRole("tab", { name: "Projections" }).click();
@@ -52,9 +52,10 @@ test.describe("mobile Plan hub", () => {
       "aria-selected",
       "true",
     );
-    await expect(page).toHaveURL(/\/goals#projections$/);
+    await expect(page).toHaveURL(/\/goals\?tab=projections$/);
 
     await page.goto("/goals#projections");
+    await expect(page).toHaveURL(/\/goals\?tab=projections$/);
     await expect(tablist.getByRole("tab", { name: "Projections" })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -80,6 +81,12 @@ test.describe("mobile Plan hub", () => {
     await page.getByRole("tab", { name: "Projections" }).click();
     await expect(panelContent("goals")).toHaveCount(0);
     await expect(panelContent("projections")).toHaveCount(1);
+    await expect(panelContent("projections").getByRole("status")).toHaveCount(0);
+    await expect(
+      panelContent("projections").getByText(
+        /Projection Assumptions|Projections are waiting on history|Give the projection engine a portfolio/,
+      ),
+    ).toBeVisible();
     await expect(panelContent("calendar")).toHaveCount(0);
   });
 
@@ -92,14 +99,14 @@ test.describe("mobile Plan hub", () => {
     const tablist = page.getByRole("tablist");
     const calendarTab = tablist.getByRole("tab", { name: "Calendar" });
     await expect(calendarTab).toHaveAttribute("aria-selected", "true");
-    await expect(page).toHaveURL(/\/goals\?month=2026-08&date=2026-08-12#calendar$/);
+    await expect(page).toHaveURL(/\/goals\?month=2026-08&date=2026-08-12&tab=calendar$/);
     await expect(page.getByRole("grid")).toBeVisible();
 
     await page.getByRole("button", { name: "Next month" }).click();
-    await expect(page).toHaveURL(/\/goals\?month=2026-09&date=2026-09-12#calendar$/);
+    await expect(page).toHaveURL(/\/goals\?month=2026-09&date=2026-09-12&tab=calendar$/);
 
     await page.goto("/calendar?month=2026-08&date=2026-08-12");
-    await expect(page).toHaveURL(/\/goals\?month=2026-08&date=2026-08-12#calendar$/);
+    await expect(page).toHaveURL(/\/goals\?month=2026-08&date=2026-08-12&tab=calendar$/);
     await expect(calendarTab).toHaveAttribute("aria-selected", "true");
   });
 });
