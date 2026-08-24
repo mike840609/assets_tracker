@@ -193,22 +193,7 @@ export function computeKpis(
   return { best, worst, avgMonthlyDelta, ytdDelta, ytdPct };
 }
 
-/**
- * Format a "YYYY-MM" key into a short localized month label (e.g. "Apr 2026").
- * Falls back to the raw key if the locale/formatter is unavailable.
- */
-export function formatMonthLabel(monthKey: string, locale = "en-US"): string {
-  const [yearStr, monthStr] = monthKey.split("-");
-  const year = Number(yearStr);
-  const monthIndex = Number(monthStr) - 1;
-  if (Number.isNaN(year) || Number.isNaN(monthIndex)) return monthKey;
-  try {
-    const d = new Date(Date.UTC(year, monthIndex, 1));
-    return new Intl.DateTimeFormat(locale, { month: "short", year: "numeric" }).format(d);
-  } catch {
-    return monthKey;
-  }
-}
+export { formatMonthLabel } from "@/lib/chart-formatters";
 
 // ---------------------------------------------------------------------------
 // Phase 2 types

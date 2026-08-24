@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { formatCurrency, formatQuantity } from "@/lib/currencies";
+import { formatCurrency, formatPrice, formatQuantity } from "@/lib/currencies";
 import { getOptionDisplay } from "@/lib/options";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
@@ -88,7 +88,7 @@ export function HoldingRow({
           {isOption && <span className="ml-1">contracts</span>}
           {!privacyMode && h.currentPrice !== null && (
             <span className="ml-2">
-              @ {formatCurrency(h.currentPrice, h.currentPriceCurrency || h.currency || "USD")}
+              @ {formatPrice(h.currentPrice, h.currentPriceCurrency || h.currency || "USD")}
               {isOption && <span>/share</span>}
             </span>
           )}

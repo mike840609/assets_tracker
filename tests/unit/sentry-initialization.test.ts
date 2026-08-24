@@ -49,26 +49,7 @@ describe("Sentry telemetry privacy hooks", () => {
     vi.unstubAllEnvs();
   });
 
-  it("does not initialize browser Sentry without a DSN", async () => {
-    vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", "");
-
-    const { onRouterTransitionStart } = await import("@/instrumentation-client");
-
-    expect(onRouterTransitionStart).toEqual(expect.any(Function));
-    expect(mocks.init).not.toHaveBeenCalled();
-  });
-
-  it("keeps always-present browser entries free of runtime Sentry imports", () => {
-    for (const path of [
-      "src/instrumentation-client.ts",
-      "src/app/global-error.tsx",
-      "src/app/(main)/error.tsx",
-    ]) {
-      expect(readFileSync(path, "utf8")).not.toContain('import * as Sentry from "@sentry/nextjs"');
-    }
-  });
-
-  it("registers transaction and span scrubbers for browser telemetry", async () => {
+  it("initializes browser telemetry through the Sentry client when a DSN is configured", async () => {
     vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", "https://public@example.ingest.sentry.io/1");
 
     const { onRouterTransitionStart } = await import("@/instrumentation-client");
@@ -76,9 +57,7 @@ describe("Sentry telemetry privacy hooks", () => {
     await vi.waitFor(() => expect(mocks.init).toHaveBeenCalled());
 
     onRouterTransitionStart("/accounts", "push");
-    await vi.waitFor(() =>
-      expect(mocks.captureRouterTransitionStart).toHaveBeenCalledWith("/accounts", "push"),
-    );
+    expect(mocks.captureRouterTransitionStart).toHaveBeenCalledWith("/accounts", "push");
 
     expect(latestSentryOptions()).toMatchObject({
       beforeSendSpan: expect.any(Function),
@@ -86,6 +65,26 @@ describe("Sentry telemetry privacy hooks", () => {
       integrations: [{ name: "SpanStreaming" }],
       traceLifecycle: "stream",
     });
+  });
+
+  it("does not initialize browser telemetry when no DSN is configured", async () => {
+    await import("@/instrumentation-client");
+
+    expect(mocks.init).not.toHaveBeenCalled();
+  });
+
+  it("keeps always-present browser entries free of runtime Sentry imports", () => {
+    const importPattern =
+      /(?:import\s+(?:[^;]*?\s+from\s+)?|require\(\s*)["']@sentry\/nextjs["']/;
+
+    for (const path of [
+      "src/instrumentation-client.ts",
+      "src/app/global-error.tsx",
+      "src/app/(main)/error.tsx",
+    ]) {
+      const source = readFileSync(path, "utf8");
+      expect(source, path).not.toMatch(importPattern);
+    }
   });
 
   it("registers transaction and span scrubbers for Node telemetry", async () => {

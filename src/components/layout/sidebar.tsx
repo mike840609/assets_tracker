@@ -36,8 +36,11 @@ import {
 import { AppIcon } from "./app-icon";
 import { GitHubMark } from "./github-mark";
 import { REPO_URL } from "@/lib/repo";
+import { CLIENT_STORAGE_KEYS, readClientStorage, writeClientStorage } from "@/lib/client-storage";
 
-const SIDEBAR_STORAGE_KEY = "asset-tracker:sidebar-collapsed";
+const SIDEBAR_STORAGE_KEY = CLIENT_STORAGE_KEYS.sidebarCollapsed;
+const SIDEBAR_COOKIE_KEY = "asset-tracker:sidebar-collapsed";
+const SIDEBAR_VALUES = ["1", "0"] as const;
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // one year
 const SIDEBAR_SHORTCUT_HINT = "Ctrl+\\ (⌘\\ on Mac)";
 
@@ -47,8 +50,8 @@ const SIDEBAR_SHORTCUT_HINT = "Ctrl+\\ (⌘\\ on Mac)";
 // in-session reads and cross-tab `storage` events.
 function persistCollapsed(value: boolean) {
   const raw = value ? "1" : "0";
-  window.localStorage.setItem(SIDEBAR_STORAGE_KEY, raw);
-  document.cookie = `${SIDEBAR_STORAGE_KEY}=${raw}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}; samesite=lax`;
+  writeClientStorage(window.localStorage, SIDEBAR_STORAGE_KEY, raw);
+  document.cookie = `${SIDEBAR_COOKIE_KEY}=${raw}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}; samesite=lax`;
 }
 
 export function Sidebar({
@@ -83,7 +86,7 @@ export function Sidebar({
         window.removeEventListener("sidebar-collapsed-change", handleChange);
       };
     },
-    () => window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1",
+    () => readClientStorage(window.localStorage, SIDEBAR_STORAGE_KEY, SIDEBAR_VALUES) === "1",
     // Server + hydration snapshot: the cookie value the server already rendered
     // with. Matching it here means no post-hydration width swap (no flash).
     () => defaultCollapsed,
@@ -93,10 +96,9 @@ export function Sidebar({
   // the preference before the cookie existed (otherwise their first reload after
   // this change would still flash once).
   useEffect(() => {
-    const stored = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
-    if (stored === "1" || stored === "0") {
-      document.cookie = `${SIDEBAR_STORAGE_KEY}=${stored}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}; samesite=lax`;
-    }
+    const stored = readClientStorage(window.localStorage, SIDEBAR_STORAGE_KEY, SIDEBAR_VALUES);
+    if (stored)
+      document.cookie = `${SIDEBAR_COOKIE_KEY}=${stored}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}; samesite=lax`;
   }, []);
 
   const toggleCollapsed = useCallback(() => {

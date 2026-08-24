@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, startTransition } from "react";
+import { CLIENT_STORAGE_KEYS, readClientStorage, writeClientStorage } from "@/lib/client-storage";
 
 /**
  * sessionStorage survives a deploy, so a stored value can name an option that
@@ -27,7 +28,7 @@ export function usePersistedRange<T extends string>(
   useEffect(() => {
     startTransition(() => {
       setMounted(true);
-      const stored = sessionStorage.getItem(`asset-tracker:range:${key}`);
+      const stored = readClientStorage(sessionStorage, CLIENT_STORAGE_KEYS.range(key), allowed);
       setRange(resolvePersistedRange(stored, allowed, initialValue));
     });
     // `allowed`/`initialValue` are read once on mount; re-running on a new
@@ -37,11 +38,7 @@ export function usePersistedRange<T extends string>(
 
   const setPersistedRange = (newRange: T) => {
     setRange(newRange);
-    try {
-      sessionStorage.setItem(`asset-tracker:range:${key}`, newRange);
-    } catch (_e) {
-      // Ignore sessionStorage errors (e.g. quota exceeded, private mode)
-    }
+    writeClientStorage(sessionStorage, CLIENT_STORAGE_KEYS.range(key), newRange);
   };
 
   return [mounted ? range : initialValue, setPersistedRange] as const;

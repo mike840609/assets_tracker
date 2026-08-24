@@ -78,10 +78,10 @@ export function getMonthsForRange(label: RangeLabel): number {
   return ANALYSIS_RANGES.find((r) => r.label === label)!.months;
 }
 
-export function getMessageKeyForRange(label: RangeLabel): string {
-  return (
-    ANALYSIS_RANGES.find((r) => r.label === label)?.messageKey ?? ANALYSIS_RANGES[0].messageKey
-  );
+export function getMessageKeyForRange(
+  label: RangeLabel,
+): (typeof ANALYSIS_RANGES)[number]["messageKey"] {
+  return ANALYSIS_RANGES.find((r) => r.label === label)!.messageKey;
 }
 
 /**

@@ -4,8 +4,9 @@ import { useEffect } from "react";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
 import { copyPageUrl, publishUntilRendered, shouldShowSafariPwaHint } from "@/lib/pwa-install-hint";
+import { CLIENT_STORAGE_KEYS, readClientStorage, writeClientStorage } from "@/lib/client-storage";
 
-const STORAGE_KEY = "assets-tracker:pwa-safari-hint-shown";
+const STORAGE_KEY = CLIENT_STORAGE_KEYS.pwaSafariHintShown;
 const TOAST_ID = "pwa-safari-install-hint";
 // Also the CSS hook for the full-height Copy link button in globals.css.
 const TOAST_CLASS = "pwa-install-hint";
@@ -35,13 +36,7 @@ export function PwaInstallHint() {
   const locale = useLocale();
 
   useEffect(() => {
-    let hasBeenShown: boolean;
-
-    try {
-      hasBeenShown = window.localStorage.getItem(STORAGE_KEY) === "1";
-    } catch {
-      return;
-    }
+    const hasBeenShown = readClientStorage(window.localStorage, STORAGE_KEY, ["1"]) === "1";
 
     const navigatorWithStandalone = navigator as NavigatorWithStandalone;
     const isStandalone =
@@ -69,11 +64,7 @@ export function PwaInstallHint() {
     };
 
     const markShown = () => {
-      try {
-        window.localStorage.setItem(STORAGE_KEY, "1");
-      } catch {
-        // The hint is optional; storage failures must not affect app rendering.
-      }
+      writeClientStorage(window.localStorage, STORAGE_KEY, "1");
     };
 
     const showToast = (actionLabel: string) => {

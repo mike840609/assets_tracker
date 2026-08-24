@@ -7,8 +7,7 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartEmptyState } from "./chart-empty-state";
 import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
 import { formatCurrency } from "@/lib/currencies";
-import { formatChartTick, getMonthTickInterval } from "@/lib/chart-formatters";
-import { formatMonthLabel } from "@/lib/services/analysis-service";
+import { attachMonthLabels, formatChartTick, getMonthTickInterval } from "@/lib/chart-formatters";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useDensity } from "@/components/layout/density-context";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
@@ -105,10 +104,7 @@ export const CumulativeGrowthChart = memo(function CumulativeGrowthChart({
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => startTransition(() => setMounted(true)), []);
   const xAxisInterval = getMonthTickInterval(points.length, density === "compact" ? 5 : 6);
-  const chartData = useMemo(
-    () => points.map((p) => ({ ...p, label: formatMonthLabel(p.monthKey, locale) })),
-    [points, locale],
-  );
+  const chartData = useMemo(() => attachMonthLabels(points, locale), [points, locale]);
 
   return (
     <>

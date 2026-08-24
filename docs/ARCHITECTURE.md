@@ -13,6 +13,20 @@ The current application stack is Next.js 16, React 19, Prisma 7, PostgreSQL, Tai
 - `prisma/schema.prisma` — persistent data model
 - `prisma/migrations/` — ordered production schema history
 
+## Client persistence
+
+App-owned `localStorage` and `sessionStorage` keys use
+`asset-tracker:v<version>:<name>`. The current version is `v1`, and
+`src/lib/client-storage.ts` is the registry for every key and its legacy alias.
+
+Readers accept only values recognized by the current consumer. When no current key exists, a
+recognized legacy value is copied to the `v1` key and the legacy key is removed. Invalid current or
+legacy values and keys from unknown versions are ignored so the consumer's normal default applies.
+Storage access and migration failures are non-fatal; a failed copy leaves the legacy value intact.
+
+The sidebar cookie remains `asset-tracker:sidebar-collapsed` because it seeds server rendering and is
+not Web Storage. The `theme` key is owned by `next-themes` and is outside the app-owned convention.
+
 Authentication uses NextAuth.js with JWT sessions. Non-Vercel deployments may use a built-in single-owner password, Google OAuth, or both; Vercel production remains Google-only. `src/auth.config.ts` stays runtime-safe while `src/auth.ts` contains server-only adapter and credentials-provider configuration.
 
 ## Public Demo boundary

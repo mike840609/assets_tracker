@@ -66,8 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             },
             authorize: async (credentials) => {
               if (previewAuthRequiresPassword) {
-                const expected = PREVIEW_AUTH_PASSWORD;
-                if (!expected || credentials?.password !== expected) return null;
+                if (!passwordsMatch(credentials?.password, PREVIEW_AUTH_PASSWORD)) return null;
               }
               const E2E_TEST_EMAIL = "e2e-test@preview.local";
               const user = await prisma.user.upsert({

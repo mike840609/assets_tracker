@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Camera, Clock, RefreshCw, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FX_RATES_STALE_MS, SNAPSHOT_STALE_MS } from "@/lib/refresh-policy";
 import { formatRelativeTime, formatRelativeTimeShort } from "@/lib/format-relative-time";
+import {
+  getFreshnessClockServerSnapshot,
+  getFreshnessClockSnapshot,
+  refreshFreshnessClock,
+  subscribeToFreshnessClock,
+} from "@/lib/timer-lifecycles";
 
 type FreshnessKind = "price" | "rates" | "snapshot";
 
@@ -31,21 +37,19 @@ export function FreshnessBadge({
 }: FreshnessBadgeProps) {
   const t = useTranslations("freshness");
   const locale = useLocale();
-  const [now, setNow] = useState<number | null>(null);
+  const hasTimestamp = Boolean(timestamp);
+  const subscribe = useCallback(
+    (listener: () => void) => (hasTimestamp ? subscribeToFreshnessClock(listener) : () => {}),
+    [hasTimestamp],
+  );
+  const now = useSyncExternalStore(
+    subscribe,
+    getFreshnessClockSnapshot,
+    getFreshnessClockServerSnapshot,
+  );
 
   useEffect(() => {
-    const updateNow = () => setNow(Date.now());
-    const initialTimer = window.setTimeout(updateNow, 0);
-    const intervalTimer = window.setInterval(updateNow, 30_000);
-    return () => {
-      window.clearTimeout(initialTimer);
-      window.clearInterval(intervalTimer);
-    };
-  }, []);
-
-  useEffect(() => {
-    const id = window.setTimeout(() => setNow(Date.now()), 0);
-    return () => window.clearTimeout(id);
+    refreshFreshnessClock();
   }, [timestamp]);
 
   if (!timestamp) return null;
