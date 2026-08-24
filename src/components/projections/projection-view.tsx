@@ -10,6 +10,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { formatCurrency, formatNumber, getCurrencySymbol } from "@/lib/currencies";
 import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
+import { CLIENT_STORAGE_KEYS, readClientStorage, writeClientStorage } from "@/lib/client-storage";
 import { useDensity } from "@/components/layout/density-context";
 import { useCountUp } from "@/hooks/use-count-up";
 import type { ProjectionData } from "@/lib/services/projection-service";
@@ -17,7 +18,8 @@ import type { ChartPoint } from "./projection-chart";
 import { LazyProjectionChart } from "./lazy-projection-chart";
 import { ProjectionOnboarding } from "./projection-onboarding";
 
-const GUIDE_STORAGE_KEY = "asset-tracker:projections-guide-open";
+const GUIDE_STORAGE_KEY = CLIENT_STORAGE_KEYS.projectionsGuideOpen;
+const GUIDE_VALUES = ["1", "0"] as const;
 const MAX_YEARS = 60;
 const DEFAULT_HORIZON = 30;
 
@@ -169,7 +171,13 @@ function NumberInput({
   max?: number;
   prefix?: string;
 }) {
+  const [prevValue, setPrevValue] = useState(value);
   const [display, setDisplay] = useState(() => (value === 0 ? "" : formatAmountInput(value, 6)));
+
+  if (prevValue !== value) {
+    setPrevValue(value);
+    setDisplay(value === 0 ? "" : formatAmountInput(value, 6));
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const next = maskAmountInput(e.target.value);
@@ -230,9 +238,16 @@ function MilestoneTimeline({
   t: ReturnType<typeof useTranslations<"projections">>;
 }) {
   const n = milestones.length;
+  if (n === 0) return null;
+
   const inset = 100 / (2 * n);
   const lastReached = milestones.reduce((acc, m, i) => (m.reached ? i : acc), -1);
-  const fillRight = lastReached >= 0 ? inset + (lastReached / (n - 1)) * (100 - 2 * inset) : inset;
+  const fillRight =
+    lastReached >= 0
+      ? n > 1
+        ? inset + (lastReached / (n - 1)) * (100 - 2 * inset)
+        : 100 - inset
+      : inset;
 
   function detail(m: MilestoneSpec) {
     if (m.reached) return t("milestoneReached");
@@ -314,14 +329,18 @@ export function ProjectionView({ projectionData, baseCurrency, hasAccounts }: Pr
 
   useEffect(
     () =>
-      startTransition(() => setGuideOpen(window.localStorage.getItem(GUIDE_STORAGE_KEY) === "1")),
+      startTransition(() =>
+        setGuideOpen(
+          readClientStorage(window.localStorage, GUIDE_STORAGE_KEY, GUIDE_VALUES) === "1",
+        ),
+      ),
     [],
   );
 
   const toggleGuide = () => {
     const next = !guideOpen;
     setGuideOpen(next);
-    window.localStorage.setItem(GUIDE_STORAGE_KEY, next ? "1" : "0");
+    writeClientStorage(window.localStorage, GUIDE_STORAGE_KEY, next ? "1" : "0");
   };
 
   const projection = useMemo(

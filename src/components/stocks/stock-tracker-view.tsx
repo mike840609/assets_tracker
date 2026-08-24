@@ -57,6 +57,7 @@ import { CLIENT_REFRESH_COOLDOWN_MS } from "@/lib/refresh-policy";
 import { stockManualRefreshFeedback, type PriceRefreshPayload } from "@/lib/price-refresh-contract";
 import { cn, daysBetweenDates, localToday } from "@/lib/utils";
 import type { SerializedTrackedStock } from "@/lib/services/stock-watch-service";
+import { startCooldownTicker } from "@/lib/timer-lifecycles";
 
 type QuoteResponse = {
   symbol: string;
@@ -741,10 +742,8 @@ export function StockTrackerView({ stocks }: { stocks: SerializedTrackedStock[] 
 
   // 1s tick while a cooldown is active so the button re-enables on time.
   useEffect(() => {
-    if (cooldownUntil <= now) return;
-    const interval = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(interval);
-  }, [cooldownUntil, now]);
+    return startCooldownTicker(cooldownUntil, setNow);
+  }, [cooldownUntil]);
 
   const coolingDown = cooldownUntil > now;
 

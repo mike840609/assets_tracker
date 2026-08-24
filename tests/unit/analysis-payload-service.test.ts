@@ -1,9 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockUnstableCache = vi.hoisted(() => vi.fn());
+const mockComputeAnalysisRangeSeries = vi.hoisted(() =>
+  vi.fn((..._args: unknown[]) => ({
+    buckets: [],
+    kpis: {},
+    cashFlowBuckets: [],
+    cumulativeGrowth: [],
+    categoryHistory: [],
+    attributionItems: [],
+    investmentReturnPct: null,
+    returnTrend: [],
+    rangeStartIso: "2026-01-01",
+  })),
+);
+const mockCache = vi.hoisted(() => new Map<string, unknown>());
 
 vi.mock("next/cache", () => ({
   unstable_cache: mockUnstableCache,
+}));
+
+vi.mock("@/lib/services/analysis-series-service", () => ({
+  computeAnalysisRangeSeries: mockComputeAnalysisRangeSeries,
 }));
 
 vi.mock("@/lib/services/history-service", () => ({
@@ -32,7 +50,17 @@ import {
 
 beforeEach(() => {
   mockUnstableCache.mockReset();
-  mockUnstableCache.mockImplementation((fn: () => Promise<unknown>) => () => fn());
+  mockCache.clear();
+  mockComputeAnalysisRangeSeries.mockClear();
+  mockUnstableCache.mockImplementation(
+    (fn: () => Promise<unknown>, keyParts: readonly unknown[]) => {
+      const key = JSON.stringify(keyParts);
+      return async () => {
+        if (!mockCache.has(key)) mockCache.set(key, await fn());
+        return mockCache.get(key);
+      };
+    },
+  );
 });
 
 describe("getCachedAnalysisPayload", () => {
@@ -49,7 +77,10 @@ describe("getCachedAnalysisPayload", () => {
     expect(Object.keys(payload.seriesByRange)).toEqual([payload.meta.defaultRange]);
   });
 
-  it("keys a requested range series by inputs, user, base currency, and range", async () => {
+  it("keys a requested range series by cached input fill, user, base currency, and range", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-24T03:00:00.000Z"));
+
     await getCachedAnalysisRangeSeries("user-1", "USD", "All");
 
     expect(mockUnstableCache).toHaveBeenCalledTimes(2);
@@ -58,7 +89,29 @@ describe("getCachedAnalysisPayload", () => {
       "analysis-range-series",
       "user-1",
       "USD",
+      "2026-08-24T03:00:00.000Z",
       "All",
     ]);
+
+    vi.useRealTimers();
+  });
+
+  it("uses the cached input fill timestamp for default and on-demand ranges", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-24T03:00:00.000Z"));
+
+    await getCachedAnalysisPayload("user-1", "USD");
+    vi.advanceTimersByTime(60_000);
+    await getCachedAnalysisRangeSeries("user-1", "USD", "All");
+
+    expect(mockComputeAnalysisRangeSeries.mock.calls).toHaveLength(2);
+    expect(mockComputeAnalysisRangeSeries.mock.calls[0]?.[5]).toEqual(
+      new Date("2026-08-24T03:00:00.000Z"),
+    );
+    expect(mockComputeAnalysisRangeSeries.mock.calls[1]?.[5]).toEqual(
+      new Date("2026-08-24T03:00:00.000Z"),
+    );
+
+    vi.useRealTimers();
   });
 });

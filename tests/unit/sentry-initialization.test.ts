@@ -46,7 +46,7 @@ describe("Sentry telemetry privacy hooks", () => {
     vi.unstubAllEnvs();
   });
 
-  it("registers transaction and span scrubbers for browser telemetry", async () => {
+  it("initializes browser telemetry through the Sentry client when a DSN is configured", async () => {
     vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", "https://public@example.ingest.sentry.io/1");
 
     await import("@/instrumentation-client");
@@ -57,6 +57,12 @@ describe("Sentry telemetry privacy hooks", () => {
       integrations: [{ name: "SpanStreaming" }],
       traceLifecycle: "stream",
     });
+  });
+
+  it("does not initialize browser telemetry when no DSN is configured", async () => {
+    await import("@/instrumentation-client");
+
+    expect(mocks.init).not.toHaveBeenCalled();
   });
 
   it("registers transaction and span scrubbers for Node telemetry", async () => {

@@ -116,9 +116,10 @@ test("analysis falls back to the server default range for an unknown persisted r
     await expect(page.getByRole("heading", { name: /^Movement/ })).toBeVisible({
       timeout: 20_000,
     });
-    await expect(page.getByRole("button", { pressed: true })).toHaveCount(1);
-    const pressedName = await page.getByRole("button", { pressed: true }).innerText();
-    expect(pressedName).toBe(fixture.expectedDefaultRange);
+    const rangeControl = page.locator('[aria-label="Analysis"]');
+    const activeRangeButton = rangeControl.getByRole("button", { pressed: true });
+    await expect(activeRangeButton).toHaveCount(1);
+    expect(await activeRangeButton.innerText()).toBe(fixture.expectedDefaultRange);
   } finally {
     await cleanupAnalysisFixture(fixture);
   }

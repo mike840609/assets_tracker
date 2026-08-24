@@ -6,9 +6,9 @@ import type {
   CategoryDataPoint,
   AttributionItem,
   ReturnTrendPoint,
+  InvestmentCostBasisSummary,
 } from "@/lib/services/analysis-service";
 import type { NormalizedSnapshot } from "@/lib/services/history-service";
-import type { InvestmentCostBasisSummary } from "@/lib/services/analysis-service";
 import type { RangeLabel } from "@/lib/analysis-range";
 
 export interface AnalysisRangeSeries {

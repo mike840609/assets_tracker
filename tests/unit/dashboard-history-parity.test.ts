@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
  * feed it from different fetchers — the dashboard from `getNormalizedHistory`
  * (hard-capped at DEFAULT_HISTORY_DAYS = 90) and History from
  * `getFullNormalizedHistory` (everything). Because both charts share one
- * sessionStorage range key (`asset-tracker:range:trend-chart`, see
+ * sessionStorage range key (`asset-tracker:v1:range:trend-chart`, see
  * use-persisted-range.ts), picking 6M/YTD/1Y/All showed the full series on
  * History and a silently truncated one on the dashboard, along with a
  * mismatched period-change badge and Y-axis domain.

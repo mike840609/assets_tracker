@@ -132,7 +132,9 @@ export function AccountsSummary({ summary }: { summary: NetWorthSummary }) {
                 {!privacyMode && (
                   <div
                     className={`absolute inset-y-0 left-0 ${isAsset ? "bg-[var(--gain)]/5" : "bg-[var(--loss)]/5"} transition-[width] duration-500 ease-out`}
-                    style={{ width: `${reduceMotion || barsGrown ? getPercentage(account) : 0}%` }}
+                    style={{
+                      width: `${reduceMotion || barsGrown ? Math.max(0, Math.min(100, getPercentage(account))) : 0}%`,
+                    }}
                   />
                 )}
                 <Link

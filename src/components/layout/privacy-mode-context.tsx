@@ -2,31 +2,54 @@
 
 import { useCallback, startTransition, useSyncExternalStore } from "react";
 import { hapticTick } from "@/lib/haptics";
+import { CLIENT_STORAGE_KEYS, readClientStorage, writeClientStorage } from "@/lib/client-storage";
 
-const PRIVACY_KEY = "privacy-mode";
+const PRIVACY_KEY = CLIENT_STORAGE_KEYS.privacyMode;
+const PRIVACY_VALUES = ["true", "false"] as const;
 
-function subscribe(callback: () => void) {
+type PrivacyListener = () => void;
+
+const privacyListeners = new Set<PrivacyListener>();
+
+function notifyPrivacyListeners() {
+  for (const listener of privacyListeners) listener();
+}
+
+function handlePrivacyStorage(event: StorageEvent) {
+  if (event.key === PRIVACY_KEY.current) notifyPrivacyListeners();
+}
+
+function handlePrivacyModeChange() {
+  notifyPrivacyListeners();
+}
+
+export function subscribeToPrivacyMode(callback: PrivacyListener) {
   if (typeof window === "undefined") return () => {};
 
-  const handleStorage = (e: StorageEvent) => {
-    if (e.key === PRIVACY_KEY) callback();
-  };
+  privacyListeners.add(callback);
+  if (privacyListeners.size === 1) {
+    window.addEventListener("storage", handlePrivacyStorage);
+    window.addEventListener("privacy-mode-change", handlePrivacyModeChange);
+  }
 
-  window.addEventListener("storage", handleStorage);
-  window.addEventListener("privacy-mode-change", callback);
-
+  let active = true;
   return () => {
-    window.removeEventListener("storage", handleStorage);
-    window.removeEventListener("privacy-mode-change", callback);
+    if (!active) return;
+    active = false;
+    privacyListeners.delete(callback);
+    if (privacyListeners.size === 0) {
+      window.removeEventListener("storage", handlePrivacyStorage);
+      window.removeEventListener("privacy-mode-change", handlePrivacyModeChange);
+    }
   };
 }
 
-function getSnapshot() {
+export function getPrivacyModeSnapshot() {
   if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(PRIVACY_KEY) === "true";
+  return readClientStorage(window.localStorage, PRIVACY_KEY, PRIVACY_VALUES) === "true";
 }
 
-function getServerSnapshot() {
+export function getPrivacyModeServerSnapshot() {
   return false;
 }
 
@@ -36,12 +59,16 @@ export function PrivacyModeProvider({ children }: { children: React.ReactNode })
 }
 
 export function usePrivacyMode() {
-  const privacyMode = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const privacyMode = useSyncExternalStore(
+    subscribeToPrivacyMode,
+    getPrivacyModeSnapshot,
+    getPrivacyModeServerSnapshot,
+  );
 
   const togglePrivacyMode = useCallback(() => {
     hapticTick();
-    const next = window.localStorage.getItem(PRIVACY_KEY) !== "true";
-    window.localStorage.setItem(PRIVACY_KEY, String(next));
+    const next = readClientStorage(window.localStorage, PRIVACY_KEY, PRIVACY_VALUES) !== "true";
+    writeClientStorage(window.localStorage, PRIVACY_KEY, String(next));
 
     // Flip the visible state in a transition so the dozens of currency cells
     // across the tree re-render without blocking the click -> paint cycle.

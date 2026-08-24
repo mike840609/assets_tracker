@@ -15,6 +15,7 @@ import {
   APP_ICON_FAVICON_RADIUS,
   createAppIconSvg,
 } from "./app-icon";
+import { CLIENT_STORAGE_KEYS, readClientStorage, writeClientStorage } from "@/lib/client-storage";
 
 export type ColorSchema = "emerald" | "anthropic" | "ocean" | "violet" | "amber" | "rose";
 
@@ -32,7 +33,7 @@ const ColorSchemaContext = createContext<ColorSchemaContextType>({
   setColorSchema: () => {},
 });
 
-const STORAGE_KEY = "asset-tracker:color-schema";
+const STORAGE_KEY = CLIENT_STORAGE_KEYS.colorSchema;
 
 function getAppIconPalette() {
   const styles = getComputedStyle(document.documentElement);
@@ -85,8 +86,7 @@ export function ColorSchemaProvider({ children }: { children: React.ReactNode })
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as ColorSchema | null;
-    const schema = stored && VALID_SCHEMAS.includes(stored) ? stored : "emerald";
+    const schema = readClientStorage(localStorage, STORAGE_KEY, VALID_SCHEMAS) ?? "emerald";
     applySchema(schema);
     startTransition(() => {
       setMounted(true);
@@ -95,7 +95,7 @@ export function ColorSchemaProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const setColorSchema = useCallback((next: ColorSchema) => {
-    localStorage.setItem(STORAGE_KEY, next);
+    writeClientStorage(localStorage, STORAGE_KEY, next);
     applySchema(next);
     startTransition(() => setColorSchemaState(next));
   }, []);

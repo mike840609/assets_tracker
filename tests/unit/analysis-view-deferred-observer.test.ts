@@ -10,7 +10,14 @@ describe("analysis deferred observer wiring", () => {
     );
     expect(source.match(/ref=\{setDeferredSentinelNode\}/g)).toHaveLength(2);
     expect(source).toContain('{ rootMargin: "800px 0px" }');
-    expect(source).toContain("}, [deferredSentinelNode, showDeferredCharts]);");
+    expect(source).toContain("}, [deferredSentinelNode, hasData, series, showDeferredCharts]);");
+  });
+
+  it("waits for the selected range before observing deferred charts", () => {
+    const source = readFileSync("src/components/analysis/analysis-view.tsx", "utf8");
+
+    expect(source).toContain("if (showDeferredCharts || !hasData || !series) return;");
+    expect(source).toContain("}, [deferredSentinelNode, hasData, series, showDeferredCharts]);");
   });
 
   it("clears the failed range before retrying so the loading state is visible", () => {

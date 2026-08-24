@@ -168,7 +168,8 @@ export const POST = withAuth<IdCtx>(
 );
 
 export const PATCH = withAuth<IdCtx>(
-  async (request, _ctx, userId, principal) => {
+  async (request, ctx, userId, principal) => {
+    const { id: accountId } = await ctx.params;
     const body = await request.json();
     const parsed = updateHoldingSchema.safeParse(body);
     if (!parsed.success) return validationError(parsed.error);
@@ -176,7 +177,7 @@ export const PATCH = withAuth<IdCtx>(
     const { id, ...data } = parsed.data;
 
     const existing = await prisma.holding.findFirst({
-      where: { id, account: { userId } },
+      where: { id, accountId, account: { userId } },
     });
     if (!existing) return failure("Not found", 404);
 
@@ -258,7 +259,8 @@ export const PATCH = withAuth<IdCtx>(
 );
 
 export const DELETE = withAuth<IdCtx>(
-  async (request, _ctx, userId) => {
+  async (request, ctx, userId) => {
+    const { id: accountId } = await ctx.params;
     const body = await request.json();
     const parsed = deleteHoldingSchema.safeParse(body);
     if (!parsed.success) return validationError(parsed.error);
@@ -266,7 +268,7 @@ export const DELETE = withAuth<IdCtx>(
     // Ownership is folded into the write itself (deleteMany can filter on the
     // account relation, delete cannot) — no check-then-write TOCTOU window.
     const { count } = await prisma.holding.deleteMany({
-      where: { id: parsed.data.id, account: { userId } },
+      where: { id: parsed.data.id, accountId, account: { userId } },
     });
     if (count === 0) return failure("Not found", 404);
 

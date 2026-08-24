@@ -1,7 +1,7 @@
 import { loadEnvConfig } from "@next/env";
 import pg from "pg";
 import { randomUUID } from "node:crypto";
-import { taiwanCalendarDay } from "@/lib/app-day";
+import { pickDefaultRange } from "@/lib/analysis-range";
 export {
   authenticateAnalysisFixture,
   resolveAnalysisFixtureBaseUrl,
@@ -62,7 +62,7 @@ function expectedDefaultRange(snapshotDates: readonly string[]): "6M" | "YTD" {
   if (snapshotDates.length <= 6) {
     throw new Error("Analysis fixture must contain more than six monthly snapshots.");
   }
-  return taiwanCalendarDay(new Date()).getUTCMonth() < 3 ? "6M" : "YTD";
+  return pickDefaultRange(snapshotDates.map((date) => ({ date }))) as "6M" | "YTD";
 }
 
 async function getOrCreateE2eUser(pool: pg.Pool, email: string) {
@@ -98,10 +98,17 @@ async function removeFixtureData(pool: pg.Pool, userId: string, snapshotDates: r
     userId,
     `${FIXTURE_PREFIX}%`,
   ]);
-  await pool.query(
-    `DELETE FROM "NetWorthSnapshot" WHERE "userId" = $1 AND "baseCurrency" = $2 AND "date" = ANY($3::date[])`,
-    [userId, BASE_CURRENCY, snapshotDates],
-  );
+  if (snapshotDates.length === 0) {
+    await pool.query(`DELETE FROM "NetWorthSnapshot" WHERE "userId" = $1 AND "baseCurrency" = $2`, [
+      userId,
+      BASE_CURRENCY,
+    ]);
+  } else {
+    await pool.query(
+      `DELETE FROM "NetWorthSnapshot" WHERE "userId" = $1 AND "baseCurrency" = $2 AND "date" = ANY($3::date[])`,
+      [userId, BASE_CURRENCY, snapshotDates],
+    );
+  }
 }
 
 async function deleteFixtureUser(pool: pg.Pool, fixture: AnalysisFixture): Promise<void> {
