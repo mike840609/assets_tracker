@@ -78,7 +78,7 @@ function setDefaultMocks() {
 
 async function load(tab?: string, userAgent = mobileUserAgent) {
   h.headers.mockResolvedValue(new Headers({ "user-agent": userAgent }));
-  await GoalsContent({
+  return GoalsContent({
     searchParams: Promise.resolve(tab === undefined ? {} : { tab }),
   });
 }
@@ -94,8 +94,10 @@ describe("Goals mobile panel data selection", () => {
     ["goals", "computeGoalsWithProgress"],
     ["projections", "getProjectionData"],
     ["calendar", "getCalendarEntriesInRange"],
-  ] as const)("reads only the %s panel services", async (tab, activeReader) => {
+  ] as const)("reads only the %s panel services on mobile", async (tab, activeReader) => {
     await load(tab);
+
+    await vi.waitFor(() => expect(h[activeReader]).toHaveBeenCalledOnce());
 
     for (const reader of [
       "getCachedTrackedStocks",
@@ -115,26 +117,30 @@ describe("Goals mobile panel data selection", () => {
     }
   });
 
-  it("uses an explicit tab query while also loading desktop Goals data", async () => {
+  it("keeps #706's deferred non-default readers on desktop", async () => {
     await load("projections", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)");
+
+    await vi.waitFor(() => expect(h.getCalendarEarnings).toHaveBeenCalledOnce());
 
     expect(h.computeGoalsWithProgress).toHaveBeenCalledOnce();
     expect(h.fetchUserAccountsWithHoldings).toHaveBeenCalledOnce();
     expect(h.getProjectionData).toHaveBeenCalledOnce();
-    expect(h.getCachedTrackedStocks).not.toHaveBeenCalled();
-    expect(h.getCalendarEntriesInRange).not.toHaveBeenCalled();
-    expect(h.getCalendarEarnings).not.toHaveBeenCalled();
+    expect(h.getCachedTrackedStocks).toHaveBeenCalledOnce();
+    expect(h.getCalendarEntriesInRange).toHaveBeenCalledOnce();
+    expect(h.getCalendarEarnings).toHaveBeenCalledOnce();
   });
 
-  it("loads only Goals for a desktop request without a tab query", async () => {
-    await load(undefined, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)");
+  it("ignores an invalid tab query when selecting desktop Goals data", async () => {
+    await load("not-a-tab", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)");
+
+    await vi.waitFor(() => expect(h.getCalendarEarnings).toHaveBeenCalledOnce());
 
     expect(h.computeGoalsWithProgress).toHaveBeenCalledOnce();
     expect(h.fetchUserAccountsWithHoldings).toHaveBeenCalledOnce();
-    expect(h.getProjectionData).not.toHaveBeenCalled();
-    expect(h.getCachedTrackedStocks).not.toHaveBeenCalled();
-    expect(h.getCalendarEntriesInRange).not.toHaveBeenCalled();
-    expect(h.getCalendarEarnings).not.toHaveBeenCalled();
+    expect(h.getProjectionData).toHaveBeenCalledOnce();
+    expect(h.getCachedTrackedStocks).toHaveBeenCalledOnce();
+    expect(h.getCalendarEntriesInRange).toHaveBeenCalledOnce();
+    expect(h.getCalendarEarnings).toHaveBeenCalledOnce();
   });
 
   it("starts the selected reader while translations are still pending", async () => {

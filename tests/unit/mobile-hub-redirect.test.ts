@@ -26,12 +26,12 @@ describe("mobile hub redirects", () => {
   });
 
   it.each([
-    ["/stocks", "", "/goals?tab=watchlist#watchlist"],
-    ["/projections", "", "/goals?tab=projections#projections"],
+    ["/stocks", "", "/goals"],
+    ["/projections", "", "/goals?tab=projections"],
     [
       "/calendar",
       "?month=2026-08&date=2026-08-12",
-      "/goals?month=2026-08&date=2026-08-12&tab=calendar#calendar",
+      "/goals?month=2026-08&date=2026-08-12&tab=calendar",
     ],
   ] as const)("builds the mobile hub redirect for %s", (pathname, search, expected) => {
     expect(
@@ -54,17 +54,12 @@ describe("mobile hub redirects", () => {
   });
 
   it.each([
-    [
-      "?symbol=AAPL&view=compact",
-      "",
-      "#watchlist",
-      "/goals?symbol=AAPL&view=compact&tab=watchlist#watchlist",
-    ],
+    ["?symbol=AAPL&view=compact", "", "#watchlist", "/goals?symbol=AAPL&view=compact"],
     [
       "",
       "?month=2026-08&date=2026-08-12",
       "#calendar",
-      "/goals?month=2026-08&date=2026-08-12&tab=calendar#calendar",
+      "/goals?month=2026-08&date=2026-08-12&tab=calendar",
     ],
   ] as const)(
     "preserves the complete client query string when redirecting",

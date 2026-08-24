@@ -7,6 +7,7 @@ import { getProjectionData } from "@/lib/services/projection-service";
 import { getCachedTrackedStocks } from "@/lib/services/stock-watch-service";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
+import { headers } from "next/headers";
 import { pickMessages } from "@/lib/i18n-utils";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { GoalsView } from "@/components/goals/goals-view";
@@ -24,9 +25,13 @@ import {
   type CalendarEarningsItem,
 } from "@/lib/services/calendar-earnings-data";
 import { rateLimitSubjectCheckWithPrune } from "@/lib/rate-limit";
+import { isMobileUserAgent } from "@/lib/mobile-hub-route";
+import { parseMobilePlanTab, type MobilePlanTab } from "@/components/goals/mobile-plan-tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { GoalWithProgress, SerializedAccount } from "@/lib/types";
+import type { GoalWithProgress, SerializedAccount, SerializedCalendarEntry } from "@/lib/types";
+import type { ProjectionData } from "@/lib/services/projection-service";
+import type { SerializedTrackedStock } from "@/lib/services/stock-watch-service";
 
 const CLIENT_NAMESPACES = [
   "goals",
@@ -42,7 +47,7 @@ const CLIENT_NAMESPACES = [
 ];
 
 type GoalsPageProps = {
-  searchParams: Promise<{ month?: string; date?: string }>;
+  searchParams: Promise<{ month?: string; date?: string; tab?: string }>;
 };
 
 function PanelSkeleton() {
@@ -61,40 +66,94 @@ function PanelSkeleton() {
 }
 
 type GoalsViewEagerProps = {
-  goalsWithProgress: GoalWithProgress[];
+  goalsWithProgress?: GoalWithProgress[];
   baseCurrency: string;
-  accounts: SerializedAccount[];
+  accounts?: SerializedAccount[];
   calendarMonth: string;
   calendarSelectedDate: string;
   calendarToday: string;
   locale: string;
 };
 
-async function GoalsDeferredData({
+type GoalsPanelData = {
+  projectionData?: ProjectionData;
+  stocks?: SerializedTrackedStock[];
+  calendarEntries?: SerializedCalendarEntry[];
+  calendarEarnings?: CalendarEarningsItem[];
+};
+
+function getGoalsPanelData({
   userId,
-  eagerProps,
+  isMobile,
+  activeTab,
+  baseCurrency,
+  calendarMonth,
 }: {
   userId: string;
-  eagerProps: GoalsViewEagerProps;
-}) {
-  const { baseCurrency, calendarMonth } = eagerProps;
+  isMobile: boolean;
+  activeTab: MobilePlanTab;
+  baseCurrency: string;
+  calendarMonth: string;
+}): Promise<GoalsPanelData> {
+  if (isMobile && activeTab === "goals") return Promise.resolve({});
+  if (isMobile && activeTab === "watchlist") {
+    return getCachedTrackedStocks(userId).then((stocks) => ({ stocks }));
+  }
+  if (isMobile && activeTab === "projections") {
+    return getProjectionData(userId, baseCurrency).then((projectionData) => ({ projectionData }));
+  }
+
   const { from, to } = getVisibleCalendarRange(calendarMonth);
+  const fromDate = parseDateOnly(from);
+  const toDate = parseDateOnly(to);
+  if (!fromDate || !toDate) {
+    throw new Error(`Invalid visible calendar range: ${from}..${to}`);
+  }
+
   const earningsLimited = rateLimitSubjectCheckWithPrune(
     userId,
     "yahoo",
     CALENDAR_EARNINGS_RATE_LIMIT,
   );
-  const [projectionData, stocks, calendarEntries, calendarEarnings] = await Promise.all([
+  if (isMobile) {
+    return Promise.all([
+      getCalendarEntriesInRange(userId, fromDate, toDate),
+      earningsLimited
+        ? Promise.resolve<CalendarEarningsItem[]>([])
+        : getCalendarEarnings(userId, from, to),
+    ]).then(([calendarEntries, calendarEarnings]) => ({ calendarEntries, calendarEarnings }));
+  }
+
+  return Promise.all([
     getProjectionData(userId, baseCurrency),
     getCachedTrackedStocks(userId),
-    getCalendarEntriesInRange(userId, parseDateOnly(from)!, parseDateOnly(to)!),
+    getCalendarEntriesInRange(userId, fromDate, toDate),
     earningsLimited
       ? Promise.resolve<CalendarEarningsItem[]>([])
       : getCalendarEarnings(userId, from, to),
-  ]);
+  ]).then(([projectionData, stocks, calendarEntries, calendarEarnings]) => ({
+    projectionData,
+    stocks,
+    calendarEntries,
+    calendarEarnings,
+  }));
+}
+
+async function GoalsDeferredData({
+  activeTab,
+  requestedTab,
+  eagerProps,
+  panelDataP,
+}: {
+  activeTab: MobilePlanTab;
+  requestedTab?: MobilePlanTab;
+  eagerProps: GoalsViewEagerProps;
+  panelDataP: Promise<GoalsPanelData>;
+}) {
+  const panelData = await panelDataP;
 
   const earningsByDate = new Map<string, CalendarEarningsItem[]>();
-  for (const item of calendarEarnings) {
+  for (const item of panelData.calendarEarnings ?? []) {
     const day = earningsByDate.get(item.date) ?? [];
     day.push(item);
     earningsByDate.set(item.date, day);
@@ -103,32 +162,59 @@ async function GoalsDeferredData({
   return (
     <GoalsView
       {...eagerProps}
-      projectionData={projectionData}
-      stocks={stocks}
-      calendarEntries={calendarEntries}
+      loadedTab={activeTab}
+      requestedTab={requestedTab}
+      projectionData={panelData.projectionData}
+      stocks={panelData.stocks}
+      calendarEntries={panelData.calendarEntries}
       earningsByDate={earningsByDate}
     />
   );
 }
 
-async function GoalsContent({ searchParams }: GoalsPageProps) {
+export async function GoalsContent({ searchParams }: GoalsPageProps) {
   const session = await getSession();
   if (!session?.user?.id) return null;
   const userId = session.user.id;
-  const { month, date } = normalizeCalendarUrlState(await searchParams);
+  const [{ tab, ...calendarSearchParams }, requestHeaders] = await Promise.all([
+    searchParams,
+    headers(),
+  ]);
+  const { month, date } = normalizeCalendarUrlState(calendarSearchParams);
+  const isMobile = isMobileUserAgent(requestHeaders.get("user-agent"));
+  const requestedTab = isMobile && tab !== undefined ? parseMobilePlanTab(tab) : undefined;
+  const activeTab = requestedTab ?? (isMobile ? "watchlist" : "goals");
 
   const settingsP = getOrCreateSettings(userId);
-  const [t, navT, messages, locale, goalsWithProgress, rawAccounts, settings] = await Promise.all([
+  const goalsDataP =
+    !isMobile || activeTab === "goals"
+      ? settingsP.then(async (settings) => {
+          const [goalsWithProgress, rawAccounts] = await Promise.all([
+            computeGoalsWithProgress(userId, settings.baseCurrency),
+            fetchUserAccountsWithHoldings(userId),
+          ]);
+          return { goalsWithProgress, rawAccounts };
+        })
+      : Promise.resolve(undefined);
+  const panelDataP = settingsP.then((settings) =>
+    getGoalsPanelData({
+      userId,
+      isMobile,
+      activeTab,
+      baseCurrency: settings.baseCurrency,
+      calendarMonth: month,
+    }),
+  );
+  const [t, navT, messages, locale, settings, goalsData] = await Promise.all([
     getTranslations("goals"),
     getTranslations("nav"),
     getMessages(),
     getLocale(),
-    settingsP.then((s) => computeGoalsWithProgress(userId, s.baseCurrency)),
-    fetchUserAccountsWithHoldings(userId),
     settingsP,
+    goalsDataP,
   ]);
 
-  const accounts: SerializedAccount[] = rawAccounts.map(({ holdings: _h, ...rest }) => rest);
+  const accounts = goalsData?.rawAccounts.map(({ holdings: _h, ...rest }) => rest);
   const calendarToday = formatDateOnly(taiwanCalendarDay(new Date()));
 
   return (
@@ -140,9 +226,10 @@ async function GoalsContent({ searchParams }: GoalsPageProps) {
         </LargeTitleHeading>
         <Suspense fallback={<PanelSkeleton />}>
           <GoalsDeferredData
-            userId={userId}
+            activeTab={activeTab}
+            requestedTab={requestedTab}
             eagerProps={{
-              goalsWithProgress,
+              goalsWithProgress: goalsData?.goalsWithProgress,
               baseCurrency: settings.baseCurrency,
               accounts,
               calendarMonth: month,
@@ -150,6 +237,7 @@ async function GoalsContent({ searchParams }: GoalsPageProps) {
               calendarToday,
               locale,
             }}
+            panelDataP={panelDataP}
           />
         </Suspense>
       </div>

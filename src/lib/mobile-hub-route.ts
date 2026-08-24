@@ -39,7 +39,9 @@ export function getMobileHubRedirectUrl({
 
 function getMobileHubUrl(search: string, hash: `#${string}`): string {
   const params = new URLSearchParams(search);
-  params.set("tab", hash.slice(1));
+  const tab = hash.slice(1);
+  if (tab === "watchlist") params.delete("tab");
+  else params.set("tab", tab);
   const query = params.toString();
-  return `/goals${query ? `?${query}` : ""}${hash}`;
+  return `/goals${query ? `?${query}` : ""}`;
 }

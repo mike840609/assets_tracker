@@ -160,8 +160,6 @@ export function GoalsView({
   const [draft, setDraft] = useState<GoalWithProgress[]>([]);
   const tabRefs = useRef<Partial<Record<MobilePlanTab, HTMLButtonElement | null>>>({});
   const [pendingTab, setPendingTab] = useState<MobilePlanTab | null>(null);
-  const reconciledTab = useRef<MobilePlanTab | null>(null);
-  const pendingHash = useRef<string | null>(null);
   const loadedGoals = goalsWithProgress ?? [];
   const loadedAccounts = accounts ?? [];
 
@@ -196,10 +194,8 @@ export function GoalsView({
     }
   }
   // Deep links for goals, projections, and Calendar open their matching sub-view.
-  // The bare "Plan" tab (no hash) lands on Watchlist, the leftmost sub-tab.
-  // useSyncExternalStore reads the hash with a server snapshot of "" so SSR and
-  // hydration agree; a pending switch wins until the server returns the selected
-  // branch and rewrites the query/hash for shareable, Back-friendly URLs.
+  // The query is the canonical server selector; hashes remain supported for
+  // existing links and are removed after the first client render.
   const hash = useSyncExternalStore(
     (onChange) => {
       window.addEventListener("hashchange", onChange);
@@ -209,10 +205,7 @@ export function GoalsView({
     () => "",
   );
   const desiredTab = getMobilePlanTabFromUrl(isMobile, requestedTab, hash);
-  const activeTab: MobilePlanTab =
-    pendingTab && (requestedTab !== pendingTab || loadedTab !== pendingTab)
-      ? pendingTab
-      : desiredTab;
+  const activeTab: MobilePlanTab = pendingTab && pendingTab !== loadedTab ? pendingTab : desiredTab;
   const hasLoadedActivePanel = activeTab === loadedTab;
 
   // Keep the structural tabpanels in the DOM so every tab retains its
@@ -257,40 +250,32 @@ export function GoalsView({
   }, [activeTab, isMobile]);
 
   useEffect(() => {
-    if (!isViewportReady || loadedTab === desiredTab || reconciledTab.current === desiredTab) {
-      if (loadedTab === desiredTab && reconciledTab.current === desiredTab) {
-        reconciledTab.current = null;
-      }
+    if (!isViewportReady || !isMobile) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const canonicalTab = desiredTab === "watchlist" ? null : desiredTab;
+    const needsTabUpdate = canonicalTab ? params.get("tab") !== canonicalTab : params.has("tab");
+    if (loadedTab === desiredTab && !needsTabUpdate && !hash) return;
+
+    if (canonicalTab) params.set("tab", canonicalTab);
+    else params.delete("tab");
+    const query = params.toString();
+    const href = `${window.location.pathname}${query ? `?${query}` : ""}`;
+    if (loadedTab === desiredTab) {
+      window.history.replaceState(null, "", href);
       return;
     }
 
-    reconciledTab.current = desiredTab;
-    setPendingTab(desiredTab);
-    pendingHash.current = window.location.hash || null;
-    const params = new URLSearchParams(window.location.search);
-    params.set("tab", desiredTab);
-    const href = `${window.location.pathname}?${params.toString()}`;
     router.replace(href);
-  }, [desiredTab, isViewportReady, loadedTab, router]);
-
-  useEffect(() => {
-    const hashToRestore = pendingHash.current;
-    if (!hashToRestore || loadedTab !== desiredTab) return;
-
-    window.history.replaceState(
-      null,
-      "",
-      `${window.location.pathname}${window.location.search}${hashToRestore}`,
-    );
-    pendingHash.current = null;
-  }, [desiredTab, loadedTab]);
+  }, [desiredTab, hash, isMobile, isViewportReady, loadedTab, router]);
 
   const handleTabChange = (tab: MobilePlanTab) => {
     setPendingTab(tab);
-    pendingHash.current = `#${tab}`;
     const params = new URLSearchParams(window.location.search);
-    params.set("tab", tab);
-    router.replace(`${window.location.pathname}?${params.toString()}`);
+    if (tab === "watchlist") params.delete("tab");
+    else params.set("tab", tab);
+    const query = params.toString();
+    router.replace(`${window.location.pathname}${query ? `?${query}` : ""}`);
   };
 
   const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, tab: MobilePlanTab) => {
