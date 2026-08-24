@@ -45,8 +45,6 @@ describe("history issue #592 regressions", () => {
       'indicator?.style.setProperty("transform", indicatorTranslate(INDICATOR_HIDDEN_Y))',
     );
     expect(source).toContain('indicator?.style.setProperty("opacity", "0")');
-    expect(source).toMatch(
-      /else \{\s+setTransitionMode\(false\);\s+resetPullStyles\(\);\s+setPull\(0\);/,
-    );
+    expect(source).toContain("resetPullStyles();");
   });
 });

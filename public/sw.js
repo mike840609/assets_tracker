@@ -38,9 +38,10 @@ function isCacheableRequest(request) {
 async function refreshStaticAsset(request) {
   const response = await fetch(request);
   if (response.ok) {
+    const cacheResponse = response.clone();
     caches
       .open(STATIC_CACHE)
-      .then((cache) => cache.put(request, response.clone()))
+      .then((cache) => cache.put(request, cacheResponse))
       .catch(() => {});
   }
   return response;

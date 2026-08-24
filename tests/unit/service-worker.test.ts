@@ -27,11 +27,14 @@ interface CacheStub {
 
 type FetchListener = (event: FetchEventStub) => void;
 
-function makeResponse(body: string): ResponseStub {
+function makeResponse(body: string, onClone?: () => void): ResponseStub {
   return {
     body,
     ok: true,
-    clone: () => makeResponse(body),
+    clone: () => {
+      onClone?.();
+      return makeResponse(body, onClone);
+    },
   };
 }
 
@@ -67,6 +70,8 @@ function createCache(): CacheStub & {
 function loadFetchListener() {
   let fetchListener: FetchListener | undefined;
   const cache = createCache();
+  const cacheEvents: string[] = [];
+  let cacheOpenCount = 0;
   const networkFetch = vi.fn<(request: RequestStub) => Promise<ResponseStub>>();
   const serviceWorker = {
     location: { origin: "https://astt.app" },
@@ -77,7 +82,10 @@ function loadFetchListener() {
     },
   };
   const caches = {
-    open: vi.fn(async () => cache),
+    open: vi.fn(async () => {
+      cacheEvents.push(`open-${++cacheOpenCount}`);
+      return cache;
+    }),
     keys: vi.fn(async () => []),
     delete: vi.fn(async () => true),
   };
@@ -86,7 +94,7 @@ function loadFetchListener() {
   runInNewContext(source, { self: serviceWorker, fetch: networkFetch, caches, URL });
 
   if (!fetchListener) throw new Error("public/sw.js did not register a fetch listener");
-  return { fetchListener, networkFetch, cache };
+  return { fetchListener, networkFetch, cache, cacheEvents };
 }
 
 function dispatchFetch(fetchListener: FetchListener, request: RequestStub) {
@@ -139,6 +147,17 @@ describe("service worker fetch boundary", () => {
     expect(event.respondWith).toHaveBeenCalledOnce();
     expect(await event.body()).toBe("icon");
     expect(cache.get(request)?.body).toBe("icon");
+  });
+
+  it("clones a network response before opening the cache for its write", async () => {
+    const { fetchListener, networkFetch, cacheEvents } = loadFetchListener();
+    const request = { method: "GET", url: "https://astt.app/icon.svg" };
+    networkFetch.mockResolvedValueOnce(makeResponse("fresh", () => cacheEvents.push("clone")));
+
+    const event = dispatchFetch(fetchListener, request);
+
+    await expect(event.body()).resolves.toBe("fresh");
+    expect(cacheEvents.slice(0, 3)).toEqual(["open-1", "clone", "open-2"]);
   });
 
   it("serves a network response even when cache storage write fails on a miss", async () => {
