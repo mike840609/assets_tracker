@@ -44,7 +44,7 @@ export function MobileHeader({ disableAutoHide = false }: { disableAutoHide?: bo
   return (
     <header
       className={cn(
-        "md:hidden sticky top-0 left-0 right-0 z-50 backdrop-blur-md",
+        "md:hidden sticky top-0 left-0 right-0 z-50 backdrop-blur-sm",
         "bg-background/80 dark:bg-card/80",
         "shadow-sm dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)]",
         "px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))]",
