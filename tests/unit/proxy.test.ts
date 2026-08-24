@@ -146,6 +146,7 @@ describe("middleware matcher covers dynamic routes (#639)", () => {
   it.each([
     "/sw.js",
     "/manifest.webmanifest",
+    "/hero.jpg",
     "/robots.txt",
     "/sitemap.xml",
     "/favicon.ico",

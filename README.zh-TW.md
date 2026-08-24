@@ -18,7 +18,7 @@
 
 [線上展示](https://astt.app) · [快速開始](#快速開始) · [用 AI 安裝](#用-ai-安裝) · [文件](#文件) · [安全政策](./SECURITY.md) · [參與貢獻](./CONTRIBUTING.md)
 
-![astt 桌面與行動版儀表板](./public/readme-hero.jpg)
+![astt 桌面與行動版儀表板](./public/hero.jpg)
 
 ## 為什麼選擇 astt？
 

@@ -1247,7 +1247,14 @@
     "trust2": "您的資料私密保存，絕不出售",
     "trust3": "只有您能查看自己的投資組合",
     "footerBefore": "您的資料受到保護。閱讀我們的",
-    "footerLink": "隱私政策"
+    "footerLink": "隱私政策",
+    "heroTitle": "把整份淨值，放在自己的伺服器上",
+    "heroSubtitle": "開源的資產追蹤工具，涵蓋銀行帳戶、券商、加密貨幣、不動產與負債——支援多幣別，並提供每日歷史、目標與 FIRE 預測。",
+    "heroPoint1": "資料由自己掌握——用 Docker 自行部署，或部署到 Vercel 與 Neon",
+    "heroPoint2": "所有帳戶、資產類型與幣別，都在同一個畫面",
+    "heroPoint3": "每日淨值快照、目標追蹤與長期預測",
+    "heroQuickStartLabel": "用 Docker 自行部署",
+    "heroImageAlt": "astt 桌面版與行動版儀表板"
   },
   "demo": {
     "login": {

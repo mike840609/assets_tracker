@@ -1247,7 +1247,14 @@
     "trust2": "Your data is private & never sold",
     "trust3": "Only you can see your portfolio",
     "footerBefore": "Your data stays private. Read our",
-    "footerLink": "Privacy Policy"
+    "footerLink": "Privacy Policy",
+    "heroTitle": "Your entire net worth, on your own server",
+    "heroSubtitle": "An open-source tracker for bank accounts, brokerages, crypto, property, and liabilities — multi-currency, with daily history, goals, and FIRE projections.",
+    "heroPoint1": "Own your data — self-host with Docker, or deploy to Vercel and Neon",
+    "heroPoint2": "One view across every account, asset type, and currency",
+    "heroPoint3": "Daily net worth snapshots, goals, and long-term projections",
+    "heroQuickStartLabel": "Self-host with Docker",
+    "heroImageAlt": "astt dashboard on desktop and mobile"
   },
   "demo": {
     "login": {
