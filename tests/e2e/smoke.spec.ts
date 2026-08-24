@@ -17,16 +17,21 @@
 import { test, expect } from "@playwright/test";
 
 // ---------------------------------------------------------------------------
-// Path 1 — Auth: unauthenticated redirect → login → sign-in → dashboard
+// Path 1 — Auth: landing page → login → sign-in → dashboard
 // ---------------------------------------------------------------------------
 
-test("1. unauthenticated visitor is redirected to /login and can sign in", async ({ browser }) => {
+test("1. unauthenticated visitor sees the landing page and can sign in", async ({ browser }) => {
   // Fresh context with no cookies — must not inherit the project storageState
   const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const page = await ctx.newPage();
 
-  // Visiting the root without auth should redirect to /login
+  // Visiting the root without auth serves the public landing page at "/"
   await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 15_000 });
+  await expect(page).toHaveURL(/\/$/);
+
+  // Its sign-in call to action is what leads to the login form
+  await page.getByRole("link", { name: "Sign in" }).first().click();
   await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
 
   // Login page must show the Google OAuth button (translation: "Continue with Google")

@@ -14,7 +14,8 @@ import type { NextFetchEvent, NextRequest } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
-const PUBLIC_ROUTES = ["/login", "/privacy", "/terms", "/demo/expired"];
+const LANDING_PATH = "/landing";
+const PUBLIC_ROUTES = ["/login", "/privacy", "/terms", "/demo/expired", LANDING_PATH];
 
 function hasSessionCookie(req: NextRequest): boolean {
   return SESSION_COOKIE_NAMES.some((name) => req.cookies.has(name));
@@ -36,6 +37,18 @@ function nextResponse(req: NextRequest): NextResponse {
       maxAge: DEMO_LIFETIME_MS / 1000,
     });
   }
+  return response;
+}
+
+/**
+ * Anonymous "/" serves the public landing page. This is a rewrite, not a
+ * redirect, so the shareable URL stays https://astt.app — directory listings
+ * and search engines index the pitch instead of a sign-in form, and the
+ * authenticated dashboard keeps the same path.
+ */
+function rewriteToLanding(req: NextRequest): NextResponse {
+  const response = NextResponse.rewrite(new URL(LANDING_PATH, req.nextUrl.origin));
+  setLocaleCookie(req, response);
   return response;
 }
 
@@ -241,6 +254,9 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
   // redirect vs. pass-through from the cookie header alone, without invoking
   // NextAuth's JWT decode.
   if (!hasSessionCookie(req)) {
+    if (req.nextUrl.pathname === "/") {
+      return rewriteToLanding(req);
+    }
     if (!PUBLIC_ROUTES.includes(req.nextUrl.pathname)) {
       return Response.redirect(new URL("/login", req.nextUrl.origin));
     }

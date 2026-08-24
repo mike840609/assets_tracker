@@ -97,6 +97,35 @@ describe("Sentry tunnel proxy bypass", () => {
   });
 });
 
+describe("public landing page", () => {
+  it("rewrites an anonymous root request to the landing page instead of redirecting", () => {
+    const response = executeAnonymousRequest("/");
+
+    expect(response.headers.get("location")).toBeNull();
+    expect(response.headers.get("x-middleware-rewrite")).toBe("https://astt.app/landing");
+  });
+
+  it("serves the landing page directly to anonymous visitors", () => {
+    const response = executeAnonymousRequest("/landing");
+
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("still redirects other anonymous protected routes to login", () => {
+    const response = executeAnonymousRequest("/accounts");
+
+    expect(response.headers.get("location")).toBe("https://astt.app/login");
+  });
+
+  it("keeps the authenticated dashboard on the root path", () => {
+    const response = executeAuthenticatedRequest("/", false);
+
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+  });
+});
+
 describe("mobile desktop-only route redirects", () => {
   const iphoneUserAgent =
     "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile";

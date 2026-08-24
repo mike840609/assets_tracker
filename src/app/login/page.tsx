@@ -98,7 +98,7 @@ async function LoginContent() {
   const tNav = await getTranslations("nav");
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center relative overflow-hidden bg-background">
+    <div className="relative flex h-dvh w-full items-center justify-center overflow-x-hidden overflow-y-auto bg-background">
       {/* Dynamic Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-3xl pointer-events-none -z-10 animate-pulse-slow" />
       <div
@@ -106,7 +106,7 @@ async function LoginContent() {
         style={{ animationDelay: "2s" }}
       />
 
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-4 py-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16 lg:px-8">
+      <div className="relative z-10 mx-auto my-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-4 py-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16 lg:px-8">
         <LandingPitch />
 
         {/* Glassmorphism Card */}
@@ -307,8 +307,8 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen w-full items-center justify-center bg-background">
-          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-4 py-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16 lg:px-8">
+        <div className="flex h-dvh w-full items-center justify-center overflow-y-auto bg-background">
+          <div className="mx-auto my-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-4 py-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16 lg:px-8">
             <div className="order-2 hidden animate-pulse space-y-4 lg:order-1 lg:block">
               <div className="h-8 w-3/4 rounded bg-muted" />
               <div className="h-4 w-full rounded bg-muted" />

@@ -1233,6 +1233,87 @@
     "step3": "往下捲動並點選「加入主畫面」",
     "step4": "點選「新增」— App 圖示即會出現在主畫面上"
   },
+  "landing": {
+    "navSource": "GitHub",
+    "navSignIn": "登入",
+    "heroTitle": "把整份淨值，放在自己的伺服器上",
+    "heroSubtitle": "astt 是開源的資產追蹤工具，涵蓋銀行帳戶、券商、加密貨幣、不動產、負債與選擇權。原生支援多幣別，並提供每日歷史、目標與 FIRE 預測——跑在你自己掌控的資料庫上。",
+    "heroPrimaryCta": "登入",
+    "heroSecondaryCta": "自行部署指南",
+    "heroNote": "MIT 授權。沒有追蹤、不販售資料、不需訂閱。",
+    "demoTitle": "用示範資料試用",
+    "demoBody": "臨時工作區，已預先填入擬真的帳戶、持倉與 180 天歷史。不用安裝，也不用註冊。",
+    "featuresTitle": "一個財務全貌需要的功能",
+    "featuresSubtitle": "為資產分散在多個地方、多種幣別的人而做。",
+    "feature": {
+      "currency": {
+        "title": "原生多幣別",
+        "body": "餘額保留原始幣別，所有畫面依你選定的基準幣別換算——歷史紀錄也一樣。"
+      },
+      "accounts": {
+        "title": "所有資產一個畫面",
+        "body": "銀行帳戶、券商、加密貨幣錢包、不動產、負債與選擇權部位，收斂成一個淨值數字。"
+      },
+      "market": {
+        "title": "即時市場資料",
+        "body": "股票、ETF、加密貨幣、選擇權與匯率透過 Yahoo Finance 與 CoinGecko 更新。"
+      },
+      "history": {
+        "title": "無損的每日歷史",
+        "body": "每日快照保存各帳戶的原始餘額，換基準幣別也不會改寫過去的資料。"
+      },
+      "goals": {
+        "title": "目標與預測",
+        "body": "淨值目標與里程碑，並依你自己的投入速度計算 FIRE 與退休預測。"
+      },
+      "recurring": {
+        "title": "週期性現金流與定期投資",
+        "body": "薪資、房租、訂閱與定期投入，會在你設定的日期自動記錄。"
+      },
+      "analysis": {
+        "title": "能回答「為什麼」的分析",
+        "body": "配置偏移、集中度、幣別曝險、回撤、成本基礎，以及各帳戶的績效歸因。"
+      },
+      "devices": {
+        "title": "桌面與行動裝置",
+        "body": "桌面版資訊密度高，手機上是接近原生的可安裝 PWA，支援深淺色與英文／繁體中文。"
+      }
+    },
+    "shotsTitle": "實際長這樣",
+    "shotsSubtitle": "你最常停留的幾個畫面。",
+    "shot": {
+      "dashboard": {
+        "caption": "儀表板——淨值、資產配置與趨勢一眼看完"
+      },
+      "analysis": {
+        "caption": "分析——偏移、曝險、回撤與績效歸因"
+      },
+      "plan": {
+        "caption": "規劃——目標、預測與財務行事曆"
+      },
+      "mobile": {
+        "caption": "行動版——同一份資料，可安裝成 App"
+      }
+    },
+    "deployTitle": "兩種部署方式",
+    "deploySubtitle": "應用程式完全相同，差別只在資料庫由誰維運。",
+    "dockerTitle": "用 Docker 自行部署",
+    "dockerBody": "Compose 會一起啟動應用程式與 PostgreSQL，資料不會離開你執行的那台機器。",
+    "dockerLink": "部署指南",
+    "cloudTitle": "Vercel 與 Neon",
+    "cloudBody": "把同一份程式碼部署到 Vercel，搭配 Neon 的無伺服器 PostgreSQL 分支。",
+    "cloudPoint1": "每日快照排程與市場資料更新都已內建",
+    "cloudPoint2": "單一家庭使用，免費方案就夠",
+    "cloudLink": "部署指南",
+    "openTitle": "開源，而且會一直是",
+    "openBody": "astt 採用 MIT 授權。沒有藏功能的付費版本、不對你的投資組合做分析追蹤，也不會有第三方拿到你的餘額。如果它對你有用，給一顆星能讓更多人找到它。",
+    "openCta": "查看原始碼",
+    "footerLicense": "astt · MIT 授權",
+    "footerDocs": "文件",
+    "footerLicenseLink": "授權條款",
+    "footerPrivacy": "隱私權",
+    "footerTerms": "使用條款"
+  },
   "login": {
     "title": "astt",
     "subtitle": "安全地訪問您的財務投資組合",

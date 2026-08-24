@@ -1233,6 +1233,87 @@
     "step3": "Scroll down and tap \"Add to Home Screen\"",
     "step4": "Tap \"Add\" — the app icon will appear on your home screen"
   },
+  "landing": {
+    "navSource": "GitHub",
+    "navSignIn": "Sign in",
+    "heroTitle": "Your entire net worth, on your own server",
+    "heroSubtitle": "astt is an open-source tracker for bank accounts, brokerages, crypto, property, liabilities, and options. Multi-currency by design, with daily history, goals, and FIRE projections — running on a database you control.",
+    "heroPrimaryCta": "Sign in",
+    "heroSecondaryCta": "Self-hosting guide",
+    "heroNote": "MIT licensed. No telemetry, no data sold, no subscription.",
+    "demoTitle": "Try it with sample data",
+    "demoBody": "A temporary workspace seeded with realistic accounts, holdings, and 180 days of history. Nothing to install, nothing to sign up for.",
+    "featuresTitle": "Everything one financial view needs",
+    "featuresSubtitle": "Built for people who keep money in more than one place, in more than one currency.",
+    "feature": {
+      "currency": {
+        "title": "Multi-currency by design",
+        "body": "Balances keep their original currency, and every view converts into the base currency you pick — history included."
+      },
+      "accounts": {
+        "title": "One view across everything",
+        "body": "Bank accounts, brokerages, crypto wallets, property, liabilities, and option positions in a single net worth number."
+      },
+      "market": {
+        "title": "Current market data",
+        "body": "Stocks, ETFs, crypto, options, and exchange rates refresh through Yahoo Finance and CoinGecko."
+      },
+      "history": {
+        "title": "Lossless daily history",
+        "body": "A daily snapshot stores each account's original balance, so changing your base currency never rewrites the past."
+      },
+      "goals": {
+        "title": "Goals and projections",
+        "body": "Net worth goals with milestones, plus FIRE and retirement projections built from your own contribution rate."
+      },
+      "recurring": {
+        "title": "Recurring cash and investing",
+        "body": "Salary, rent, subscriptions, and scheduled contributions post themselves on the days you set."
+      },
+      "analysis": {
+        "title": "Analysis that answers why",
+        "body": "Allocation drift, concentration, currency exposure, drawdown, cost basis, and per-account attribution."
+      },
+      "devices": {
+        "title": "Desktop and mobile",
+        "body": "A dense desktop layout, a native-feeling installable PWA on the phone, light and dark themes, English and Traditional Chinese."
+      }
+    },
+    "shotsTitle": "What it looks like",
+    "shotsSubtitle": "The screens you will spend your time in.",
+    "shot": {
+      "dashboard": {
+        "caption": "Dashboard — net worth, allocation, and trend at a glance"
+      },
+      "analysis": {
+        "caption": "Analysis — drift, exposure, drawdown, and attribution"
+      },
+      "plan": {
+        "caption": "Plan — goals, projections, and the financial calendar"
+      },
+      "mobile": {
+        "caption": "Mobile — the same data as an installable app"
+      }
+    },
+    "deployTitle": "Two ways to run it",
+    "deploySubtitle": "Same application either way. The difference is who operates the database.",
+    "dockerTitle": "Self-host with Docker",
+    "dockerBody": "Compose brings up the app and PostgreSQL together. Your data never leaves the machine you run it on.",
+    "dockerLink": "Deployment guide",
+    "cloudTitle": "Vercel and Neon",
+    "cloudBody": "Deploy the same repository to Vercel with a serverless PostgreSQL branch on Neon.",
+    "cloudPoint1": "Daily snapshot cron and market-data refresh included",
+    "cloudPoint2": "Free tiers are enough for a single household",
+    "cloudLink": "Deployment guide",
+    "openTitle": "Open source, and staying that way",
+    "openBody": "astt is MIT licensed. There is no hosted paid tier holding features back, no analytics on your portfolio, and no third party receiving your balances. If it is useful to you, a star helps other people find it.",
+    "openCta": "View the source",
+    "footerLicense": "astt · MIT licensed",
+    "footerDocs": "Docs",
+    "footerLicenseLink": "License",
+    "footerPrivacy": "Privacy",
+    "footerTerms": "Terms"
+  },
   "login": {
     "title": "astt",
     "subtitle": "Securely access your financial portfolio",
