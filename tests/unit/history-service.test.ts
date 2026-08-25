@@ -28,7 +28,7 @@ const h = vi.hoisted(() => ({
   rows: [] as SnapshotRowFixture[],
   latestSnapshot: null as SnapshotRowFixture | null,
   currencyMatchedSnapshot: null as SnapshotRowFixture | null,
-  foreignCurrencySnapshot: null as { id: string } | null,
+  snapshotCurrencies: [] as string[],
   accounts: [] as unknown[],
   cashTransactions: [] as CashTransactionFixture[],
   prices: [] as { symbol: string; price: number; currency: string }[],
@@ -49,11 +49,18 @@ vi.mock("@/lib/prisma", () => ({
     account: { findMany: vi.fn(async () => h.accounts) },
     netWorthSnapshot: {
       findMany: vi.fn(async () => h.rows),
-      findFirst: vi.fn(async (args?: { where?: { baseCurrency?: string | { not?: string } } }) => {
-        const baseCurrency = args?.where?.baseCurrency;
-        if (typeof baseCurrency === "object" && baseCurrency.not) return h.foreignCurrencySnapshot;
+      findFirst: vi.fn(async (args?: { where?: { baseCurrency?: string }; orderBy?: unknown }) => {
+        // A baseCurrency-ordered findFirst is the min/max currency seek; mirror
+        // the DB by sorting the user's currencies and taking the requested end.
+        const direction = (args?.orderBy as { baseCurrency?: "asc" | "desc" } | undefined)
+          ?.baseCurrency;
+        if (direction) {
+          const sorted = [...h.snapshotCurrencies].sort();
+          const baseCurrency = direction === "asc" ? sorted[0] : sorted[sorted.length - 1];
+          return baseCurrency === undefined ? null : { baseCurrency };
+        }
         // Same-date row already stored in the target currency (reconciliation tie-break).
-        if (typeof baseCurrency === "string") return h.currencyMatchedSnapshot;
+        if (typeof args?.where?.baseCurrency === "string") return h.currencyMatchedSnapshot;
         return h.latestSnapshot;
       }),
     },
@@ -174,7 +181,7 @@ beforeEach(() => {
   h.rows = [];
   h.latestSnapshot = null;
   h.currencyMatchedSnapshot = null;
-  h.foreignCurrencySnapshot = null;
+  h.snapshotCurrencies = [];
   h.accounts = [];
   h.cashTransactions = [];
   h.prices = [];
@@ -761,18 +768,38 @@ describe("isBetterDuplicate (exported for import dedupe)", () => {
 });
 
 describe("hasForeignCurrencySnapshots", () => {
-  it("true when any snapshot was stored in another base currency", async () => {
-    h.foreignCurrencySnapshot = { id: "snap-1" };
+  it.each([
+    ["no snapshots at all", [], false],
+    ["every snapshot already in the target currency", ["USD", "USD", "USD"], false],
+    ["a foreign currency sorting below the target", ["EUR", "USD"], true],
+    ["a foreign currency sorting above the target", ["USD", "ZAR"], true],
+    ["only foreign currencies", ["EUR", "JPY"], true],
+  ] as const)("%s", async (_label, currencies, expected) => {
+    h.snapshotCurrencies = [...currencies];
 
-    await expect(hasForeignCurrencySnapshots("user-1", "USD")).resolves.toBe(true);
-
-    const args = vi.mocked(prisma.netWorthSnapshot.findFirst).mock.lastCall?.[0] as {
-      where?: Record<string, unknown>;
-    };
-    expect(args.where).toEqual({ userId: "user-1", baseCurrency: { not: "USD" } });
+    await expect(hasForeignCurrencySnapshots("user-1", "USD")).resolves.toBe(expected);
   });
 
-  it("false when all snapshots match the target", async () => {
-    await expect(hasForeignCurrencySnapshots("user-1", "USD")).resolves.toBe(false);
+  it("asks only for the min and max baseCurrency so the index prefix is seekable", async () => {
+    h.snapshotCurrencies = ["USD"];
+    vi.mocked(prisma.netWorthSnapshot.findFirst).mockClear();
+
+    await hasForeignCurrencySnapshots("user-1", "USD");
+
+    const calls = vi
+      .mocked(prisma.netWorthSnapshot.findFirst)
+      .mock.calls.map(([args]) => args as Record<string, unknown>);
+    expect(calls).toEqual([
+      {
+        where: { userId: "user-1" },
+        select: { baseCurrency: true },
+        orderBy: { baseCurrency: "asc" },
+      },
+      {
+        where: { userId: "user-1" },
+        select: { baseCurrency: true },
+        orderBy: { baseCurrency: "desc" },
+      },
+    ]);
   });
 });
