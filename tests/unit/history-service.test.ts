@@ -27,6 +27,7 @@ interface CashTransactionFixture {
 const h = vi.hoisted(() => ({
   rows: [] as SnapshotRowFixture[],
   latestSnapshot: null as SnapshotRowFixture | null,
+  currencyMatchedSnapshot: null as SnapshotRowFixture | null,
   foreignCurrencySnapshot: null as { id: string } | null,
   accounts: [] as unknown[],
   cashTransactions: [] as CashTransactionFixture[],
@@ -48,8 +49,11 @@ vi.mock("@/lib/prisma", () => ({
     account: { findMany: vi.fn(async () => h.accounts) },
     netWorthSnapshot: {
       findMany: vi.fn(async () => h.rows),
-      findFirst: vi.fn(async (args?: { where?: { baseCurrency?: { not?: string } } }) => {
-        if (args?.where?.baseCurrency?.not) return h.foreignCurrencySnapshot;
+      findFirst: vi.fn(async (args?: { where?: { baseCurrency?: string | { not?: string } } }) => {
+        const baseCurrency = args?.where?.baseCurrency;
+        if (typeof baseCurrency === "object" && baseCurrency.not) return h.foreignCurrencySnapshot;
+        // Same-date row already stored in the target currency (reconciliation tie-break).
+        if (typeof baseCurrency === "string") return h.currencyMatchedSnapshot;
         return h.latestSnapshot;
       }),
     },
@@ -120,6 +124,7 @@ const {
   getFullNormalizedHistory,
   getNormalizedHistory,
   getSnapshotReconciliationWarning,
+  getSnapshotReconciliationWarningFromHistory,
   hasForeignCurrencySnapshots,
   isBetterDuplicate,
 } = await import("@/lib/services/history-service");
@@ -168,6 +173,7 @@ beforeEach(() => {
   vi.useRealTimers();
   h.rows = [];
   h.latestSnapshot = null;
+  h.currencyMatchedSnapshot = null;
   h.foreignCurrencySnapshot = null;
   h.accounts = [];
   h.cashTransactions = [];
@@ -687,6 +693,50 @@ describe("getSnapshotReconciliationWarning", () => {
     h.accounts = [account({ cashBalance: 1030 })];
 
     await expect(getSnapshotReconciliationWarning("u1", "USD")).resolves.toBeNull();
+  });
+
+  it("resolves the same-day tie-break the same way as the history fill", async () => {
+    const usdRow = row({
+      id: "usd",
+      date: new Date("2026-01-01T00:00:00.000Z"),
+      createdAt: new Date("2026-01-01T02:00:00.000Z"),
+      netWorth: 900,
+      totalAssets: 900,
+    });
+    const eurRow = row({
+      id: "eur",
+      date: new Date("2026-01-01T00:00:00.000Z"),
+      // Newer, but stored in another currency: the currency match still wins.
+      createdAt: new Date("2026-01-01T06:00:00.000Z"),
+      netWorth: 500,
+      totalAssets: 500,
+      baseCurrency: "EUR",
+    });
+    h.rows = [usdRow, eurRow];
+    h.latestSnapshot = eurRow;
+    h.currencyMatchedSnapshot = usdRow;
+    h.accounts = [account({ cashBalance: 1100 })];
+    h.rates = new Map([["USD_EUR", 0.5]]);
+
+    const fromHistory = await getSnapshotReconciliationWarningFromHistory(
+      "u1",
+      "USD",
+      await getFullNormalizedHistory("u1", "USD"),
+    );
+    const fromDb = await getSnapshotReconciliationWarning("u1", "USD");
+
+    // 1100 current - 900 from the USD row (the EUR row would revalue to 1000).
+    expect(fromHistory?.difference).toBeCloseTo(200);
+    expect(fromDb).toEqual(fromHistory);
+  });
+
+  it("returns null for an empty history without hitting the database", async () => {
+    h.accounts = [account()];
+    const findFirst = vi.mocked(prisma.netWorthSnapshot.findFirst);
+    findFirst.mockClear();
+
+    await expect(getSnapshotReconciliationWarningFromHistory("u1", "USD", [])).resolves.toBeNull();
+    expect(findFirst).not.toHaveBeenCalled();
   });
 });
 
