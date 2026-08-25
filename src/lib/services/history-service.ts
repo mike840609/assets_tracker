@@ -303,6 +303,8 @@ async function fetchFullHistoryRange(
 export async function getSnapshotReconciliationWarning(
   userId: string,
   targetBaseCurrency: string,
+  /** Pre-computed history so this doesn't re-scan snapshots/accounts/rates. */
+  normalizedSnapshots?: NormalizedSnapshot[],
 ): Promise<SnapshotReconciliationWarning | null> {
   "use cache";
   cacheTag("snapshots");
@@ -314,28 +316,36 @@ export async function getSnapshotReconciliationWarning(
   cacheTag("exchange-rates");
   cacheLife("minutes");
 
-  const [latestSnapshot, currentSummary, accountsRaw, allRatesMap] = await Promise.all([
-    prisma.netWorthSnapshot.findFirst({
-      where: { userId },
-      select: SNAPSHOT_SELECT,
-      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-    }),
-    getCachedNetWorthSummary(userId, targetBaseCurrency),
-    prisma.account.findMany({
-      where: { userId },
-      select: { id: true, type: true },
-    }),
-    getAllExchangeRates(),
-  ]);
+  let snapshotNetWorth: number;
 
-  if (!latestSnapshot) return null;
+  if (normalizedSnapshots && normalizedSnapshots.length > 0) {
+    // Input is sorted ascending by date (see normalizeSnapshots), so the last
+    // entry is the latest.
+    snapshotNetWorth = normalizedSnapshots[normalizedSnapshots.length - 1].netWorth;
+  } else {
+    const [latestSnapshotRow, accountsRaw, allRatesMap] = await Promise.all([
+      prisma.netWorthSnapshot.findFirst({
+        where: { userId },
+        select: SNAPSHOT_SELECT,
+        orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+      }),
+      prisma.account.findMany({
+        where: { userId },
+        select: { id: true, type: true },
+      }),
+      getAllExchangeRates(),
+    ]);
+    if (!latestSnapshotRow) return null;
+    snapshotNetWorth = normalizeSnapshots(
+      [latestSnapshotRow],
+      allRatesMap,
+      targetBaseCurrency,
+      accountsRaw,
+    )[0].netWorth;
+  }
 
-  const snapshotNetWorth = normalizeSnapshots(
-    [latestSnapshot],
-    allRatesMap,
-    targetBaseCurrency,
-    accountsRaw,
-  )[0].netWorth;
+  const currentSummary = await getCachedNetWorthSummary(userId, targetBaseCurrency);
+  if (!snapshotNetWorth && !currentSummary) return null;
   const currentNetWorth = currentSummary.netWorth;
   const difference = currentNetWorth - snapshotNetWorth;
   const denominator = Math.max(Math.abs(snapshotNetWorth), 1);

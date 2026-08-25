@@ -19,14 +19,23 @@ async function HistoryContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
   const settingsP = getOrCreateSettings(userId);
+  const baseCurrencyP = settingsP.then((s) => s.baseCurrency);
+  const snapshotsP = Promise.all([baseCurrencyP, settingsP]).then(([currency]) =>
+    getFullNormalizedHistory(userId, currency),
+  );
+  const reconciliationP: ReturnType<typeof getSnapshotReconciliationWarning> = Promise.all([
+    snapshotsP,
+    baseCurrencyP,
+  ]).then(([snapshots, currency]) => getSnapshotReconciliationWarning(userId, currency, snapshots));
+
   const [allMessages, snapshots, settings, accountCount, reconciliationWarning, converted] =
     await Promise.all([
       getMessages(),
-      settingsP.then((s) => getFullNormalizedHistory(userId, s.baseCurrency)),
+      snapshotsP,
       settingsP,
       countActiveAccounts(userId),
-      settingsP.then((s) => getSnapshotReconciliationWarning(userId, s.baseCurrency)),
-      settingsP.then((s) => hasForeignCurrencySnapshots(userId, s.baseCurrency)),
+      reconciliationP,
+      baseCurrencyP.then((c) => hasForeignCurrencySnapshots(userId, c)),
     ]);
 
   return (
