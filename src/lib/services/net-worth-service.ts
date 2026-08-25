@@ -220,12 +220,22 @@ export async function computeNetWorthSummary(
   // Render-time helper: read-only against ExchangeRate. Missing pairs fall
   // back to 1 (rates are warmed by the daily cron and on-write hooks).
   const warnedPairs = new Set<string>();
+  // Memoize repeated pair lookups: the second pass resolves the same
+  // (holding→base) and (holding→account) pairs once per currency combination,
+  // not once per holding.
+  const rateMemo = new Map<string, number>();
   function getRate(from: string, to: string): number {
+    if (from === to) return 1;
+    const memoKey = `${from}_${to}`;
+    const memoized = rateMemo.get(memoKey);
+    if (memoized !== undefined) return memoized;
     const resolved = resolveRate(allRatesMap, from, to);
-    if (resolved !== undefined) return resolved;
-    const key = `${from}_${to}`;
-    if (!warnedPairs.has(key)) {
-      warnedPairs.add(key);
+    if (resolved !== undefined) {
+      rateMemo.set(memoKey, resolved);
+      return resolved;
+    }
+    if (!warnedPairs.has(memoKey)) {
+      warnedPairs.add(memoKey);
       log.warn("rates.unresolved", { from, to, userId, baseCurrency });
     }
     return 1;
