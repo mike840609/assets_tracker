@@ -73,10 +73,10 @@ export async function LandingContent() {
               href={REPO_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-11 items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:text-foreground md:h-9"
+              className="flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:text-foreground md:h-9 md:min-w-0"
             >
               <GitHubMark className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("navSource")}</span>
+              <span className="sr-only sm:not-sr-only">{t("navSource")}</span>
             </a>
             <Link
               href="/login"
@@ -203,26 +203,33 @@ export async function LandingContent() {
             </h2>
             <p className="mt-2 max-w-prose text-sm text-muted-foreground">{t("deploySubtitle")}</p>
             <div className="mt-8 grid gap-6 lg:grid-cols-2">
-              <div className="space-y-4 rounded-2xl border border-border/50 bg-card p-5 sm:p-6">
+              <div className="min-w-0 space-y-4 rounded-2xl border border-border/50 bg-card p-5 sm:p-6">
                 <div className="space-y-1">
                   <h3 className="text-base font-semibold text-foreground">{t("dockerTitle")}</h3>
                   <p className="text-sm text-muted-foreground">{t("dockerBody")}</p>
                 </div>
-                <code className="block overflow-x-auto whitespace-pre rounded-xl bg-muted/50 p-3 font-mono text-xs leading-relaxed text-foreground">
-                  {"cp .env.example .env\ndocker compose --profile full up -d"}
-                </code>
+                <div
+                  tabIndex={0}
+                  role="group"
+                  aria-label={t("dockerTitle")}
+                  className="overflow-x-auto rounded-xl bg-muted/50 p-3 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                >
+                  <code className="block whitespace-pre font-mono text-xs leading-relaxed text-foreground">
+                    {"cp .env.example .env\ndocker compose --profile full up -d"}
+                  </code>
+                </div>
                 <a
                   href={DOCS_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary hover:underline md:min-h-0"
                 >
                   {t("dockerLink")}
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </a>
               </div>
 
-              <div className="space-y-4 rounded-2xl border border-border/50 bg-card p-5 sm:p-6">
+              <div className="min-w-0 space-y-4 rounded-2xl border border-border/50 bg-card p-5 sm:p-6">
                 <div className="space-y-1">
                   <h3 className="text-base font-semibold text-foreground">{t("cloudTitle")}</h3>
                   <p className="text-sm text-muted-foreground">{t("cloudBody")}</p>
@@ -244,7 +251,7 @@ export async function LandingContent() {
                   href={DOCS_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary hover:underline md:min-h-0"
                 >
                   {t("cloudLink")}
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -282,7 +289,7 @@ export async function LandingContent() {
               href={DOCS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:underline"
+              className="inline-flex min-h-11 items-center hover:underline md:min-h-0"
             >
               {t("footerDocs")}
             </a>
@@ -290,14 +297,20 @@ export async function LandingContent() {
               href={LICENSE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:underline"
+              className="inline-flex min-h-11 items-center hover:underline md:min-h-0"
             >
               {t("footerLicenseLink")}
             </a>
-            <Link href="/privacy" className="hover:underline">
+            <Link
+              href="/privacy"
+              className="inline-flex min-h-11 items-center hover:underline md:min-h-0"
+            >
               {t("footerPrivacy")}
             </Link>
-            <Link href="/terms" className="hover:underline">
+            <Link
+              href="/terms"
+              className="inline-flex min-h-11 items-center hover:underline md:min-h-0"
+            >
               {t("footerTerms")}
             </Link>
           </nav>
