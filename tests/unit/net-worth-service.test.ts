@@ -201,6 +201,44 @@ describe("getCachedNetWorthSummary (two-pass valuation)", () => {
     expect(h.warnings.some((w) => w.msg === "rates.unresolved")).toBe(true);
   });
 
+  it("resolves an unresolvable pair once per call, not once per holding", async () => {
+    // A miss is the most expensive lookup: resolveRate walks direct, inverse
+    // and the USD cross before giving up. Memoizing only hits would make every
+    // holding in an unpriced currency repeat that whole walk.
+    async function run(holdingCount: number) {
+      h.warnings = [];
+      h.rates = new Map([["USD_TWD", 30]]); // no XXX path
+      const reads = vi.spyOn(h.rates, "get");
+      const symbols = Array.from({ length: holdingCount }, (_, i) => `XXX${i}`);
+      h.prices = symbols.map((symbol) => ({ symbol, price: 10, currency: "XXX" }));
+      h.accounts = [
+        account({
+          id: "A",
+          type: "ASSET",
+          currency: "USD",
+          holdings: symbols.map((symbol, i) =>
+            holding({ id: `h${i}`, symbol, quantity: 1, currency: "XXX" }),
+          ),
+        }),
+      ];
+
+      await getCachedNetWorthSummary("u1", "USD");
+
+      return {
+        reads: reads.mock.calls.length,
+        unresolved: h.warnings.filter((w) => w.msg === "rates.unresolved").length,
+      };
+    }
+
+    const one = await run(1);
+    const many = await run(5);
+
+    // Five holdings cost the same rate lookups as one: XXX→USD resolves once.
+    expect(one.reads).toBeGreaterThan(0);
+    expect(many.reads).toBe(one.reads);
+    expect(many.unresolved).toBe(1);
+  });
+
   it("leaves holdings unpriced (null market value) when no cached price exists", async () => {
     h.warnings = [];
     h.rates = new Map();
