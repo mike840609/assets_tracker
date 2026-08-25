@@ -643,9 +643,25 @@ export async function hasForeignCurrencySnapshots(
   cacheTag(`history:${userId}`);
   cacheLife("minutes");
 
-  const row = await prisma.netWorthSnapshot.findFirst({
-    where: { userId, baseCurrency: { not: targetBaseCurrency } },
-    select: { id: true },
-  });
-  return row !== null;
+  // `baseCurrency != ?` is not seekable: a btree on (userId, baseCurrency) can
+  // only seek the userId prefix, so Postgres would walk every snapshot the user
+  // owns to prove the common negative. Since entries are sorted by baseCurrency
+  // within a userId, the same answer falls out of two O(1) index seeks — if the
+  // smallest and the largest baseCurrency both equal the target, everything
+  // between them does too. Keep this shape; the obvious `not:` filter is slower.
+  const [lowest, highest] = await Promise.all([
+    prisma.netWorthSnapshot.findFirst({
+      where: { userId },
+      select: { baseCurrency: true },
+      orderBy: { baseCurrency: "asc" },
+    }),
+    prisma.netWorthSnapshot.findFirst({
+      where: { userId },
+      select: { baseCurrency: true },
+      orderBy: { baseCurrency: "desc" },
+    }),
+  ]);
+
+  if (!lowest || !highest) return false;
+  return lowest.baseCurrency !== targetBaseCurrency || highest.baseCurrency !== targetBaseCurrency;
 }
