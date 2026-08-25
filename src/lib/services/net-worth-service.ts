@@ -225,6 +225,8 @@ export async function computeNetWorthSummary(
   // not once per holding.
   const rateMemo = new Map<string, number>();
   function getRate(from: string, to: string): number {
+    // Deliberate fast path: resolveRate opens with the same identity check, so
+    // this only saves the call — keep the two in step if either changes.
     if (from === to) return 1;
     const memoKey = `${from}_${to}`;
     const memoized = rateMemo.get(memoKey);
@@ -238,6 +240,12 @@ export async function computeNetWorthSummary(
       warnedPairs.add(memoKey);
       log.warn("rates.unresolved", { from, to, userId, baseCurrency });
     }
+    // Memoize the fallback too: a miss is the most expensive path (resolveRate
+    // exhausted direct, inverse and the USD cross before giving up), and
+    // allRatesMap is fixed for this call, so the answer cannot change. The
+    // warning is already deduped by warnedPairs and fires on the first miss,
+    // above, so short-circuiting here suppresses nothing.
+    rateMemo.set(memoKey, 1);
     return 1;
   }
 
