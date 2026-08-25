@@ -280,14 +280,16 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 //   - PWA assets sw.js + manifest.webmanifest: the browser fetches these without
 //     credentials, so they must resolve to 200 (not a /login redirect) or Chrome's
 //     installability check fails and the install prompt never appears.
-//   - hero.jpg: the product screenshot on /login, which anonymous visitors must
-//     be able to load or the public landing surface renders a broken image.
+//   - landing/: screenshots served to the public landing page. The page itself
+//     ("/landing", no trailing slash) stays matched so it still gets a locale
+//     cookie; only its static assets skip the middleware, because an anonymous
+//     request for one would otherwise be redirected to /login and render broken.
 //   - Public legal pages, so they can render without NextAuth cookie work.
 //     Login and Demo expiry stay matched to pre-seed the visitor cookie.
 // Bot/scanner probes are NOT excluded here — they are filtered by `isBotProbe`
 // inside `middleware()` above, so every app path reaches the middleware (#639).
 export const config = {
   matcher: [
-    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|manifest\\.webmanifest|hero\\.jpg|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms).*)",
+    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|manifest\\.webmanifest|landing/|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms).*)",
   ],
 };

@@ -18,7 +18,7 @@ A private, multi-currency home for tracking your net worth, investments, cash, p
 
 [Live Demo](https://astt.app) · [Quick Start](#quick-start) · [Install with AI](#install-with-ai) · [Documentation](#documentation) · [Security](./SECURITY.md) · [Contributing](./CONTRIBUTING.md)
 
-![astt dashboard on desktop and mobile](./public/hero.jpg)
+![astt dashboard on desktop and mobile](./public/readme-hero.jpg)
 
 ## Why astt?
 

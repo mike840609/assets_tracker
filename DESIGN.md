@@ -194,7 +194,7 @@ The default palette is a cool financial neutral field with emerald as the active
 
 **The Native Scale Rule.** Do not add display fonts or fluid marketing typography inside product surfaces. Use the system sans stack and fixed product sizes.
 
-**The Public Surface Exception.** `/login` is where every unauthenticated visit lands, so it also serves as the product's public landing page. It may carry pitch copy, a product screenshot, and a quick-start snippet alongside the sign-in card. It still uses the system sans stack, fixed product sizes, and system tokens — the exception covers page purpose, not new typography or color.
+**The Public Surface Exception.** The landing page served at `/` for anonymous visitors is a public surface, not a product surface. It may carry pitch copy, product screenshots, deployment snippets, and marketing section rhythm. It still uses the system sans stack, fixed product sizes, and system tokens — the exception covers page purpose, not new typography or color. Everything behind sign-in, `/login` included, stays under the Native Scale Rule.
 
 ## 4. Elevation
 
