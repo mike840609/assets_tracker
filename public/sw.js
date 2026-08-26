@@ -89,7 +89,7 @@ function fetchWithTimeout(request, ms) {
 async function handleNavigation(event) {
   const preload = await event.preloadResponse;
   if (preload) {
-    if (preload.ok && preload.type === "basic") {
+    if (preload.ok && preload.type === "basic" && preload.status === 200) {
       const cache = await caches.open(NAV_CACHE);
       cache.put(event.request, preload.clone()).catch(() => {});
     }
