@@ -1555,6 +1555,12 @@
     "deleteFailed": "刪除定期投資失敗",
     "deleteConfirm": "要停止此定期投資嗎？已買入的股數會保留。"
   },
+  "offline": {
+    "title": "你目前處於離線狀態",
+    "description": "astt 需要連線才能載入最新資料，恢復連線後再試一次。",
+    "retry": "重試",
+    "goHome": "回首頁"
+  },
   "changelog": {
     "title": "更新內容",
     "subtitle": "astt 的每個版本，由新到舊。",

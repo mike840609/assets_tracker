@@ -14,7 +14,7 @@ import type { NextFetchEvent, NextRequest } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
-const PUBLIC_ROUTES = ["/login", "/privacy", "/terms", "/demo/expired"];
+const PUBLIC_ROUTES = ["/login", "/privacy", "/terms", "/demo/expired", "/offline"];
 
 function hasSessionCookie(req: NextRequest): boolean {
   return SESSION_COOKIE_NAMES.some((name) => req.cookies.has(name));

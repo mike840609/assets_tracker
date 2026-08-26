@@ -1555,6 +1555,12 @@
     "deleteFailed": "Failed to delete recurring investment",
     "deleteConfirm": "Stop this recurring investment? Already-purchased shares are kept."
   },
+  "offline": {
+    "title": "You are offline",
+    "description": "astt needs a connection to load fresh data. You can retry when you are back online.",
+    "retry": "Retry",
+    "goHome": "Go home"
+  },
   "changelog": {
     "title": "What's New",
     "subtitle": "Every release of astt, newest first.",
