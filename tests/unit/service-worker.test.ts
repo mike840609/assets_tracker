@@ -12,28 +12,40 @@ interface RequestStub {
 interface ResponseStub {
   body: string;
   ok: boolean;
+  status: number;
+  type: string;
   clone: () => ResponseStub;
 }
 
 interface FetchEventStub {
   request: RequestStub;
   respondWith: (response: unknown) => void;
+  preloadResponse: Promise<ResponseStub | undefined>;
 }
 
 interface CacheStub {
-  match: (request: RequestStub) => Promise<ResponseStub | undefined>;
+  match: (request: RequestStub | string) => Promise<ResponseStub | undefined>;
   put: (request: RequestStub, response: ResponseStub) => Promise<void>;
 }
 
 type FetchListener = (event: FetchEventStub) => void;
 
-function makeResponse(body: string, onClone?: () => void): ResponseStub {
+function makeResponse(
+  body: string,
+  onClone?: () => void,
+  opts?: { status?: number; type?: string; ok?: boolean },
+): ResponseStub {
+  const status = opts?.status ?? 200;
+  const type = opts?.type ?? "basic";
+  const ok = opts?.ok ?? (status >= 200 && status < 300);
   return {
     body,
-    ok: true,
+    ok,
+    status,
+    type,
     clone: () => {
       onClone?.();
-      return makeResponse(body, onClone);
+      return makeResponse(body, onClone, { status, type, ok });
     },
   };
 }
@@ -43,12 +55,24 @@ function createCache(): CacheStub & {
   failNextPut: (error?: Error) => void;
 } {
   const entries = new Map<string, ResponseStub>();
-  const keyFor = (request: RequestStub) => request.url;
+  const keyFor = (request: RequestStub | string) =>
+    typeof request === "string" ? request : request.url;
   let putError: Error | undefined;
 
   return {
     async match(request) {
-      return entries.get(keyFor(request));
+      if (typeof request === "string") {
+        if (entries.has(request)) return entries.get(request);
+        // support "/offline" resolving to "https://astt.app/offline"
+        for (const [k, v] of entries) {
+          if (k.endsWith(request)) return v;
+        }
+        return undefined;
+      }
+      const direct = entries.get(keyFor(request));
+      if (direct) return direct;
+      // fallback: if request url ends with stored key (for "/offline" stored as full url)
+      return undefined;
     },
     async put(request, response) {
       if (putError) {
@@ -77,6 +101,7 @@ function loadFetchListener() {
     location: { origin: "https://astt.app" },
     skipWaiting: vi.fn(),
     clients: { claim: vi.fn() },
+    registration: { navigationPreload: { enable: vi.fn(async () => {}) } },
     addEventListener(type: string, listener: unknown) {
       if (type === "fetch") fetchListener = listener as FetchListener;
     },
@@ -91,25 +116,40 @@ function loadFetchListener() {
   };
 
   const source = readFileSync(new URL("../../public/sw.js", import.meta.url), "utf8");
-  runInNewContext(source, { self: serviceWorker, fetch: networkFetch, caches, URL });
+  runInNewContext(source, {
+    self: serviceWorker,
+    fetch: networkFetch,
+    caches,
+    URL,
+    AbortController,
+    setTimeout,
+    clearTimeout,
+  });
 
   if (!fetchListener) throw new Error("public/sw.js did not register a fetch listener");
   return { fetchListener, networkFetch, cache, cacheEvents };
 }
 
-function dispatchFetch(fetchListener: FetchListener, request: RequestStub) {
+function dispatchFetch(fetchListener: FetchListener, request: RequestStub, preload?: ResponseStub) {
   let responsePromise: Promise<unknown> | undefined;
   const respondWith = vi.fn((response: unknown) => {
     responsePromise = Promise.resolve(response);
   });
 
-  fetchListener({ request, respondWith });
+  fetchListener({
+    request,
+    respondWith,
+    preloadResponse: Promise.resolve(preload),
+  } as FetchEventStub);
 
   return {
     respondWith,
     async body() {
       const response = (await responsePromise) as ResponseStub;
       return response.body;
+    },
+    async response() {
+      return (await responsePromise) as ResponseStub;
     },
   };
 }
@@ -176,8 +216,9 @@ describe("service worker fetch boundary", () => {
     expect(cache.get(request)).toBeUndefined();
   });
 
-  it("does not intercept document requests", () => {
+  it("intercepts navigation requests for documents via navigation handler", async () => {
     const { fetchListener, networkFetch } = loadFetchListener();
+    networkFetch.mockResolvedValueOnce(makeResponse("<html>icon</html>"));
     const event = dispatchFetch(fetchListener, {
       method: "GET",
       url: "https://astt.app/icon",
@@ -185,8 +226,9 @@ describe("service worker fetch boundary", () => {
       mode: "navigate",
     });
 
-    expect(networkFetch).not.toHaveBeenCalled();
-    expect(event.respondWith).not.toHaveBeenCalled();
+    expect(event.respondWith).toHaveBeenCalledOnce();
+    await expect(event.body()).resolves.toBe("<html>icon</html>");
+    expect(networkFetch).toHaveBeenCalledOnce();
   });
 
   it("does not intercept API requests", () => {
@@ -220,5 +262,104 @@ describe("service worker fetch boundary", () => {
 
     expect(networkFetch).not.toHaveBeenCalled();
     expect(event.respondWith).not.toHaveBeenCalled();
+  });
+
+  it("caches a successful navigation and serves it on offline fallback", async () => {
+    const { fetchListener, networkFetch, cache } = loadFetchListener();
+    const nav = { method: "GET", url: "https://astt.app/", mode: "navigate" } as RequestStub;
+    networkFetch.mockResolvedValueOnce(makeResponse("<html>home</html>"));
+    await cache.put(
+      { method: "GET", url: "https://astt.app/offline" } as RequestStub,
+      makeResponse("<html>offline</html>"),
+    );
+    const ev1 = dispatchFetch(fetchListener, nav);
+    await expect(ev1.body()).resolves.toBe("<html>home</html>");
+    await flushMicrotasks();
+    // second navigation offline should hit cache
+    networkFetch.mockRejectedValueOnce(new Error("offline"));
+    const ev2 = dispatchFetch(fetchListener, nav);
+    await expect(ev2.body()).resolves.toBe("<html>home</html>");
+  });
+
+  it("does not cache 3xx navigation responses", async () => {
+    const { fetchListener, networkFetch, cache } = loadFetchListener();
+    const nav = { method: "GET", url: "https://astt.app/", mode: "navigate" } as RequestStub;
+    networkFetch.mockResolvedValueOnce({
+      body: "",
+      ok: false,
+      clone() {
+        return this;
+      },
+      status: 302,
+      type: "basic",
+    } as unknown as ResponseStub);
+    const ev = dispatchFetch(fetchListener, nav);
+    await ev.body().catch(() => {});
+    expect(cache.get(nav)).toBeUndefined();
+  });
+
+  it("falls back to offline page when navigation has no cache", async () => {
+    const { fetchListener, networkFetch, cache } = loadFetchListener();
+    await cache.put(
+      { method: "GET", url: "https://astt.app/offline" } as RequestStub,
+      makeResponse("offline"),
+    );
+    networkFetch.mockRejectedValueOnce(new Error("offline"));
+    const ev = dispatchFetch(fetchListener, {
+      method: "GET",
+      url: "https://astt.app/unknown",
+      mode: "navigate",
+    } as RequestStub);
+    await expect(ev.body()).resolves.toBe("offline");
+  });
+
+  it("uses navigationPreload response when available", async () => {
+    const { fetchListener, cache } = loadFetchListener();
+    await cache.put(
+      { method: "GET", url: "https://astt.app/offline" } as RequestStub,
+      makeResponse("offline"),
+    );
+    const nav = { method: "GET", url: "https://astt.app/", mode: "navigate" } as RequestStub;
+    const preload = makeResponse("<html>preload</html>");
+    const ev = dispatchFetch(fetchListener, nav, preload);
+    await expect(ev.body()).resolves.toBe("<html>preload</html>");
+    await flushMicrotasks();
+    expect(cache.get(nav)?.body).toBe("<html>preload</html>");
+  });
+
+  it("does not cache opaque navigation responses", async () => {
+    const { fetchListener, networkFetch, cache } = loadFetchListener();
+    const nav = { method: "GET", url: "https://astt.app/", mode: "navigate" } as RequestStub;
+    networkFetch.mockResolvedValueOnce({
+      body: "opaque",
+      ok: true,
+      clone() {
+        return this;
+      },
+      status: 200,
+      type: "opaque",
+    } as unknown as ResponseStub);
+    const ev = dispatchFetch(fetchListener, nav);
+    await ev.body().catch(() => {});
+    await flushMicrotasks();
+    expect(cache.get(nav)).toBeUndefined();
+  });
+
+  it("does not cache failed navigation responses", async () => {
+    const { fetchListener, networkFetch, cache } = loadFetchListener();
+    const nav = { method: "GET", url: "https://astt.app/", mode: "navigate" } as RequestStub;
+    networkFetch.mockResolvedValueOnce({
+      body: "error",
+      ok: false,
+      clone() {
+        return this;
+      },
+      status: 500,
+      type: "basic",
+    } as unknown as ResponseStub);
+    const ev = dispatchFetch(fetchListener, nav);
+    await ev.body().catch(() => {});
+    await flushMicrotasks();
+    expect(cache.get(nav)).toBeUndefined();
   });
 });

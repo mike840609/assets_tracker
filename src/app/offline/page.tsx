@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { WifiOff } from "lucide-react";
-
-export const dynamic = "force-static";
+import { RetryButton } from "./retry-button";
 
 export const metadata: Metadata = {
   title: "Offline — astt",
@@ -24,13 +23,7 @@ export default function OfflinePage() {
           你目前處於離線狀態，恢復連線後再試一次。
         </p>
         <div className="mt-6 flex gap-3 justify-center">
-          <button
-            type="button"
-            onClick={() => location.reload()}
-            className="inline-flex h-11 md:h-8 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-          >
-            Retry / 重試
-          </button>
+          <RetryButton />
           <Link
             href="/"
             className="inline-flex h-11 md:h-8 items-center justify-center rounded-md border px-4 text-sm"

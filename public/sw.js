@@ -13,8 +13,8 @@ self.addEventListener("install", (event) =>
         const cache = await caches.open(NAV_CACHE);
         await cache.add(new Request(OFFLINE_URL, { cache: "reload" }));
       } catch {}
-    })()
-  )
+    })(),
+  ),
 );
 
 self.addEventListener("activate", (event) =>
@@ -23,15 +23,22 @@ self.addEventListener("activate", (event) =>
       const names = await caches.keys();
       await Promise.all(
         names
-          .filter((n) => (n.startsWith(STATIC_CACHE_PREFIX) || n.startsWith(NAV_CACHE_PREFIX)) && n !== STATIC_CACHE && n !== NAV_CACHE)
-          .map((n) => caches.delete(n))
+          .filter(
+            (n) =>
+              (n.startsWith(STATIC_CACHE_PREFIX) || n.startsWith(NAV_CACHE_PREFIX)) &&
+              n !== STATIC_CACHE &&
+              n !== NAV_CACHE,
+          )
+          .map((n) => caches.delete(n)),
       );
       if (self.registration.navigationPreload) {
-        try { await self.registration.navigationPreload.enable(); } catch {}
+        try {
+          await self.registration.navigationPreload.enable();
+        } catch {}
       }
       await self.clients.claim();
-    })()
-  )
+    })(),
+  ),
 );
 
 function isStaticAsset(pathname) {
@@ -47,7 +54,11 @@ function isStaticAsset(pathname) {
 }
 
 function isNavigationRequest(request) {
-  return request.method === "GET" && request.mode === "navigate" && new URL(request.url).origin === self.location.origin;
+  return (
+    request.method === "GET" &&
+    request.mode === "navigate" &&
+    new URL(request.url).origin === self.location.origin
+  );
 }
 
 function isCacheableRequest(request) {
@@ -61,7 +72,10 @@ async function refreshStaticAsset(request) {
   const response = await fetch(request);
   if (response.ok) {
     const cacheResponse = response.clone();
-    caches.open(STATIC_CACHE).then((c) => c.put(request, cacheResponse)).catch(()=>{});
+    caches
+      .open(STATIC_CACHE)
+      .then((c) => c.put(request, cacheResponse))
+      .catch(() => {});
   }
   return response;
 }
@@ -77,7 +91,7 @@ async function handleNavigation(event) {
   if (preload) {
     if (preload.ok && preload.type === "basic") {
       const cache = await caches.open(NAV_CACHE);
-      cache.put(event.request, preload.clone()).catch(()=>{});
+      cache.put(event.request, preload.clone()).catch(() => {});
     }
     return preload;
   }
@@ -85,7 +99,7 @@ async function handleNavigation(event) {
   try {
     const response = await fetchWithTimeout(event.request, NAV_TIMEOUT_MS);
     if (response && response.ok && response.type === "basic" && response.status === 200) {
-      cache.put(event.request, response.clone()).catch(()=>{});
+      cache.put(event.request, response.clone()).catch(() => {});
     }
     return response;
   } catch {
@@ -103,9 +117,12 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         const cache = await caches.open(STATIC_CACHE);
         const cached = await cache.match(event.request);
-        if (cached) { refreshStaticAsset(event.request).catch(()=>{}); return cached; }
+        if (cached) {
+          refreshStaticAsset(event.request).catch(() => {});
+          return cached;
+        }
         return refreshStaticAsset(event.request);
-      })()
+      })(),
     );
     return;
   }
