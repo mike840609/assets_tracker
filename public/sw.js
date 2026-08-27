@@ -184,15 +184,18 @@ async function handleNavigation(event) {
   try {
     // The preload promise rejects on network error; without the catch it would
     // escape this try and take the whole offline fallback with it.
-    const preload = await event.preloadResponse.catch(() => undefined);
-    if (preload) {
-      if (!isLogin) cacheNavigation(event, cache, preload);
-      return preload;
-    }
-    const network = fetch(event.request).then((response) => {
-      if (!isLogin) cacheNavigation(event, cache, response);
-      return response;
-    });
+    const network = event.preloadResponse
+      .catch(() => undefined)
+      .then((preload) => {
+        if (preload) {
+          if (!isLogin) cacheNavigation(event, cache, preload);
+          return preload;
+        }
+        return fetch(event.request).then((response) => {
+          if (!isLogin) cacheNavigation(event, cache, response);
+          return response;
+        });
+      });
     const cached = isLogin ? undefined : await cache.match(event.request);
     // No usable fallback, so the timeout has nothing to offer — waiting beats
     // telling an online user on a slow link that they are offline.

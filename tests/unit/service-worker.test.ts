@@ -162,7 +162,7 @@ function hoursAgo(hours: number): string {
 function dispatchFetch(
   fetchListener: FetchListener,
   request: RequestStub,
-  preload?: ResponseStub,
+  preload?: ResponseStub | Promise<ResponseStub | undefined>,
   opts?: { preloadError?: unknown },
 ) {
   let responsePromise: Promise<unknown> | undefined;
@@ -372,6 +372,36 @@ describe("service worker fetch boundary", () => {
     await expect(ev.body()).resolves.toBe("<html>preload</html>");
     await flushMicrotasks();
     expect(cache.get(nav)?.body).toBe("<html>preload</html>");
+  });
+
+  it("returns cached response at timeout for a slow navigation preload with a fresh cache and warms cache after late preload", async () => {
+    vi.useFakeTimers();
+    try {
+      const { fetchListener, cache } = loadFetchListener();
+      const nav = { method: "GET", url: "https://astt.app/", mode: "navigate" } as RequestStub;
+      await cache.put(nav, makeResponse("<html>cached</html>"));
+      let settlePreload: (response: ResponseStub) => void = () => {};
+      const preload = new Promise<ResponseStub>((resolve) => {
+        settlePreload = resolve;
+      });
+
+      const ev = dispatchFetch(fetchListener, nav, preload);
+      await vi.advanceTimersByTimeAsync(0);
+      const responseAtTimeout = new Promise<ResponseStub | undefined>((resolve) => {
+        setTimeout(() => resolve(undefined), 3001);
+      });
+      const response = Promise.race([ev.response(), responseAtTimeout]);
+      await vi.advanceTimersByTimeAsync(3001);
+      await expect(response).resolves.toMatchObject({
+        body: "<html>cached</html>",
+      });
+
+      settlePreload(makeResponse("<html>preload</html>"));
+      await ev.waitUntilAll();
+      expect(cache.get(nav)?.body).toBe("<html>preload</html>");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("does not cache opaque navigation responses", async () => {
