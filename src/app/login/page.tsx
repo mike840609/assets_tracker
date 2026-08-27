@@ -18,6 +18,7 @@ import { REPO_URL } from "@/lib/repo";
 import { GitHubMark } from "@/components/layout/github-mark";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { PurgeNavCache } from "./purge-nav-cache";
 
 type LoginPageProps = {
   searchParams: Promise<{
@@ -45,6 +46,7 @@ async function LoginContent() {
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center relative overflow-hidden bg-background">
+      <PurgeNavCache />
       {/* Dynamic Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-3xl pointer-events-none -z-10 animate-pulse-slow" />
       <div

@@ -1558,8 +1558,7 @@
   "offline": {
     "title": "You are offline",
     "description": "astt needs a connection to load fresh data. You can retry when you are back online.",
-    "retry": "Retry",
-    "goHome": "Go home"
+    "retry": "Retry"
   },
   "changelog": {
     "title": "What's New",

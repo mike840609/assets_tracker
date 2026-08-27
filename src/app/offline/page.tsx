@@ -1,37 +1,64 @@
+// S3: force-static is incompatible with nextConfig.cacheComponents (PPR mode).
+// PPR prerendering the Suspense fallback shell is the correct tier here.
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { WifiOff } from "lucide-react";
-import { RetryButton } from "./retry-button";
+import { getTranslations } from "next-intl/server";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Offline — astt",
   robots: { index: false },
 };
 
-export default function OfflinePage() {
+function OfflineCard({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-dvh flex items-center justify-center p-6 bg-background text-foreground">
+    <main className="flex min-h-svh w-full items-center justify-center overflow-y-auto p-6">
       <div className="w-full max-w-md rounded-xl border bg-card p-8 text-center shadow-sm">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-          <WifiOff className="h-6 w-6" aria-hidden />
+          <WifiOff className="h-6 w-6" aria-hidden="true" />
         </div>
-        <h1 className="text-lg font-semibold">You are offline</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          astt needs a connection to load fresh data. You can retry when you are back online.
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          你目前處於離線狀態，恢復連線後再試一次。
-        </p>
-        <div className="mt-6 flex gap-3 justify-center">
-          <RetryButton />
-          <Link
-            href="/"
-            className="inline-flex h-11 md:h-8 items-center justify-center rounded-md border px-4 text-sm"
-          >
-            Go home / 回首頁
-          </Link>
-        </div>
+        {children}
       </div>
     </main>
+  );
+}
+
+async function OfflineContent() {
+  const t = await getTranslations("offline");
+
+  // ponytail: a plain link, not a client island. This page is served from the
+  // navigation cache with no guarantee its JS chunks are, so a hydrated onClick
+  // would be dead exactly when the page is shown. Navigating to "/" re-enters
+  // the service worker, which retries the network.
+  return (
+    <>
+      <h1 className="text-lg font-semibold">{t("title")}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
+      <Button className="mt-6 h-11 md:h-8" render={<Link href="/" />}>
+        {t("retry")}
+      </Button>
+    </>
+  );
+}
+
+export default function OfflinePage() {
+  return (
+    <Suspense
+      fallback={
+        <OfflineCard>
+          <div className="animate-pulse space-y-3">
+            <div className="mx-auto h-5 w-40 rounded bg-muted" />
+            <div className="h-4 w-full rounded bg-muted" />
+            <div className="mx-auto mt-6 h-11 w-24 rounded-md bg-muted md:h-8" />
+          </div>
+        </OfflineCard>
+      }
+    >
+      <OfflineCard>
+        <OfflineContent />
+      </OfflineCard>
+    </Suspense>
   );
 }

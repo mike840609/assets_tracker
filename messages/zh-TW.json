@@ -1558,8 +1558,7 @@
   "offline": {
     "title": "你目前處於離線狀態",
     "description": "astt 需要連線才能載入最新資料，恢復連線後再試一次。",
-    "retry": "重試",
-    "goHome": "回首頁"
+    "retry": "重試"
   },
   "changelog": {
     "title": "更新內容",

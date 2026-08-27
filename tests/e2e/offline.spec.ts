@@ -15,26 +15,22 @@ test.describe("offline fallback", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    // Best-effort: wait for SW registration if present (prod build).
-    await page.evaluate(() => navigator.serviceWorker?.ready.catch(() => {})).catch(() => {});
+    // The dev server serves no service worker; skip rather than assert something
+    // else, so this spec can never report green on a broken fetch handler.
+    const controlled = await page
+      .waitForFunction(() => navigator.serviceWorker?.controller != null, null, { timeout: 15000 })
+      .then(
+        () => true,
+        () => false,
+      );
+    test.skip(!controlled, "no service worker controlling the page (dev build)");
 
     await context.setOffline(true);
-    await page.goto("/unknown-route-xyz", { waitUntil: "domcontentloaded" }).catch(() => {});
-    // SW network-first will fallback to NAV_CACHE or /offline when offline.
-    // In environments without real SW/offline support (e.g. dev without SW),
-    // allow fallback to still show offline page directly.
-    const offlineVisible = await page
-      .getByText(/offline|離線/i)
-      .first()
-      .isVisible()
-      .catch(() => false);
-    if (!offlineVisible) {
-      await context.setOffline(false);
-      await page.goto("/offline");
+    try {
+      await page.goto("/unknown-route-xyz", { waitUntil: "domcontentloaded" }).catch(() => {});
       await expect(page.getByText(/offline|離線/i).first()).toBeVisible({ timeout: 5000 });
-      return;
+    } finally {
+      await context.setOffline(false);
     }
-    await expect(page.getByText(/offline|離線/i).first()).toBeVisible({ timeout: 5000 });
-    await context.setOffline(false);
   });
 });
