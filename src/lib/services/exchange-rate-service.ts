@@ -461,7 +461,9 @@ export async function getUnresolvedRatePairs(
   "use cache";
   cacheTag("exchange-rates");
   cacheTag(`accounts:${userId}`);
+  cacheTag("goals");
   cacheTag(`goals:${userId}`);
+  cacheTag("snapshots");
   cacheTag(`history:${userId}`);
   cacheLife("minutes");
 
