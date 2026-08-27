@@ -91,8 +91,10 @@ export async function LandingContent() {
       <main>
         {/* Hero */}
         <section
-          className={`mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 lg:gap-16 lg:py-20 ${
-            isPublicDemoEnabled ? "lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center" : ""
+          className={`mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20 ${
+            isPublicDemoEnabled
+              ? "grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center lg:gap-16"
+              : "lg:max-w-4xl"
           }`}
         >
           <div className="space-y-6">
