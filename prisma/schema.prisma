@@ -274,6 +274,7 @@ model NetWorthSnapshot {
   createdAt        DateTime @default(now()) @db.Timestamptz(3)
 
   @@unique([userId, date, baseCurrency])
+  @@index([userId, baseCurrency])
   @@index([userId, date(sort: Desc)])
 }
 

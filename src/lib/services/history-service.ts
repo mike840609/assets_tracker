@@ -300,6 +300,43 @@ async function fetchFullHistoryRange(
   return normalizeSnapshots(snapshotsRaw, allRatesMap, targetBaseCurrency, accountsRaw);
 }
 
+/**
+ * Compares the latest snapshot in an already-normalized history against the
+ * live net worth. Deliberately *not* cached: `"use cache"` arguments become
+ * part of the cache key, so passing the whole history in would serialize it on
+ * every call and bust the entry whenever any snapshot changes. Callers that
+ * already hold the history (the History page) should use this directly.
+ */
+export async function getSnapshotReconciliationWarningFromHistory(
+  userId: string,
+  targetBaseCurrency: string,
+  normalizedSnapshots: NormalizedSnapshot[],
+): Promise<SnapshotReconciliationWarning | null> {
+  if (normalizedSnapshots.length === 0) return null;
+
+  // Input is sorted ascending by date (see normalizeSnapshots), so the last
+  // entry is the latest.
+  const snapshotNetWorth = normalizedSnapshots[normalizedSnapshots.length - 1].netWorth;
+  const { netWorth: currentNetWorth } = await getCachedNetWorthSummary(userId, targetBaseCurrency);
+
+  const difference = currentNetWorth - snapshotNetWorth;
+  const denominator = Math.max(Math.abs(snapshotNetWorth), 1);
+  const differencePercent = Math.abs(difference) / denominator;
+
+  if (differencePercent <= RECONCILIATION_DRIFT_THRESHOLD) return null;
+
+  return {
+    difference,
+    differencePercent,
+    baseCurrency: targetBaseCurrency,
+  };
+}
+
+/**
+ * Cached entry point for callers without a pre-computed history. Keeps only
+ * low-cardinality arguments (`userId`, `targetBaseCurrency`) so the cache key
+ * stays small; the comparison itself lives in the uncached helper above.
+ */
 export async function getSnapshotReconciliationWarning(
   userId: string,
   targetBaseCurrency: string,
@@ -314,40 +351,52 @@ export async function getSnapshotReconciliationWarning(
   cacheTag("exchange-rates");
   cacheLife("minutes");
 
-  const [latestSnapshot, currentSummary, accountsRaw, allRatesMap] = await Promise.all([
-    prisma.netWorthSnapshot.findFirst({
-      where: { userId },
-      select: SNAPSHOT_SELECT,
-      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-    }),
-    getCachedNetWorthSummary(userId, targetBaseCurrency),
+  const [latestSnapshotRows, accountsRaw, allRatesMap] = await Promise.all([
+    fetchLatestSnapshotCandidates(userId, targetBaseCurrency),
     prisma.account.findMany({
       where: { userId },
       select: { id: true, type: true },
     }),
     getAllExchangeRates(),
   ]);
+  if (latestSnapshotRows.length === 0) return null;
 
-  if (!latestSnapshot) return null;
-
-  const snapshotNetWorth = normalizeSnapshots(
-    [latestSnapshot],
+  // normalizeSnapshots applies the shared same-day tie-break, so this path
+  // picks the same "latest" snapshot as a full history fill would.
+  const normalized = normalizeSnapshots(
+    latestSnapshotRows,
     allRatesMap,
     targetBaseCurrency,
     accountsRaw,
-  )[0].netWorth;
-  const currentNetWorth = currentSummary.netWorth;
-  const difference = currentNetWorth - snapshotNetWorth;
-  const denominator = Math.max(Math.abs(snapshotNetWorth), 1);
-  const differencePercent = Math.abs(difference) / denominator;
+  );
 
-  if (differencePercent <= RECONCILIATION_DRIFT_THRESHOLD) return null;
+  return getSnapshotReconciliationWarningFromHistory(userId, targetBaseCurrency, normalized);
+}
 
-  return {
-    difference,
-    differencePercent,
-    baseCurrency: targetBaseCurrency,
-  };
+/**
+ * Latest-date snapshot rows that can win the `isBetterDuplicate` tie-break:
+ * the newest row overall plus, when that row is stored in another currency,
+ * the newest same-date row already in the target currency (which
+ * normalizeSnapshots prefers because it needs no lossy conversion).
+ */
+async function fetchLatestSnapshotCandidates(
+  userId: string,
+  targetBaseCurrency: string,
+): Promise<SnapshotRow[]> {
+  const newest = await prisma.netWorthSnapshot.findFirst({
+    where: { userId },
+    select: SNAPSHOT_SELECT,
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+  });
+  if (!newest) return [];
+  if (newest.baseCurrency === targetBaseCurrency) return [newest];
+
+  const matching = await prisma.netWorthSnapshot.findFirst({
+    where: { userId, date: newest.date, baseCurrency: targetBaseCurrency },
+    select: SNAPSHOT_SELECT,
+    orderBy: { createdAt: "desc" },
+  });
+  return matching ? [newest, matching] : [newest];
 }
 
 // ---------------------------------------------------------------------------
@@ -643,9 +692,25 @@ export async function hasForeignCurrencySnapshots(
   cacheTag(`history:${userId}`);
   cacheLife("minutes");
 
-  const row = await prisma.netWorthSnapshot.findFirst({
-    where: { userId, baseCurrency: { not: targetBaseCurrency } },
-    select: { id: true },
-  });
-  return row !== null;
+  // `baseCurrency != ?` is not seekable: a btree on (userId, baseCurrency) can
+  // only seek the userId prefix, so Postgres would walk every snapshot the user
+  // owns to prove the common negative. Since entries are sorted by baseCurrency
+  // within a userId, the same answer falls out of two O(1) index seeks — if the
+  // smallest and the largest baseCurrency both equal the target, everything
+  // between them does too. Keep this shape; the obvious `not:` filter is slower.
+  const [lowest, highest] = await Promise.all([
+    prisma.netWorthSnapshot.findFirst({
+      where: { userId },
+      select: { baseCurrency: true },
+      orderBy: { baseCurrency: "asc" },
+    }),
+    prisma.netWorthSnapshot.findFirst({
+      where: { userId },
+      select: { baseCurrency: true },
+      orderBy: { baseCurrency: "desc" },
+    }),
+  ]);
+
+  if (!lowest || !highest) return false;
+  return lowest.baseCurrency !== targetBaseCurrency || highest.baseCurrency !== targetBaseCurrency;
 }

@@ -15,7 +15,7 @@ import type { NextFetchEvent, NextRequest } from "next/server";
 const { auth } = NextAuth(authConfig);
 
 const LANDING_PATH = "/landing";
-const PUBLIC_ROUTES = ["/login", "/privacy", "/terms", "/demo/expired", LANDING_PATH];
+const PUBLIC_ROUTES = ["/login", "/privacy", "/terms", "/demo/expired", LANDING_PATH, "/offline"];
 
 function hasSessionCookie(req: NextRequest): boolean {
   return SESSION_COOKIE_NAMES.some((name) => req.cookies.has(name));
@@ -284,12 +284,14 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 //     ("/landing", no trailing slash) stays matched so it still gets a locale
 //     cookie; only its static assets skip the middleware, because an anonymous
 //     request for one would otherwise be redirected to /login and render broken.
+//   - /offline: the service worker precaches it, so it must resolve to a 200
+//     rather than a middleware redirect that would poison the navigation cache.
 //   - Public legal pages, so they can render without NextAuth cookie work.
 //     Login and Demo expiry stay matched to pre-seed the visitor cookie.
 // Bot/scanner probes are NOT excluded here — they are filtered by `isBotProbe`
 // inside `middleware()` above, so every app path reaches the middleware (#639).
 export const config = {
   matcher: [
-    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|manifest\\.webmanifest|landing/|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms).*)",
+    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|manifest\\.webmanifest|landing/|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms|offline).*)",
   ],
 };

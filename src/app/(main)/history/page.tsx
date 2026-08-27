@@ -7,7 +7,7 @@ import { HistoryPullRefresh } from "@/components/history/history-pull-refresh";
 import { HistoryView } from "@/components/history/history-view";
 import {
   getFullNormalizedHistory,
-  getSnapshotReconciliationWarning,
+  getSnapshotReconciliationWarningFromHistory,
   hasForeignCurrencySnapshots,
 } from "@/lib/services/history-service";
 import { countActiveAccounts } from "@/lib/services/account-service";
@@ -19,14 +19,21 @@ async function HistoryContent() {
   if (!session?.user?.id) return null;
   const userId = session.user.id;
   const settingsP = getOrCreateSettings(userId);
+  const baseCurrencyP = settingsP.then((s) => s.baseCurrency);
+  const snapshotsP = baseCurrencyP.then((currency) => getFullNormalizedHistory(userId, currency));
+  // Reuses the history fill instead of re-reading snapshots/accounts/rates.
+  const reconciliationP = Promise.all([snapshotsP, baseCurrencyP]).then(([snapshots, currency]) =>
+    getSnapshotReconciliationWarningFromHistory(userId, currency, snapshots),
+  );
+
   const [allMessages, snapshots, settings, accountCount, reconciliationWarning, converted] =
     await Promise.all([
       getMessages(),
-      settingsP.then((s) => getFullNormalizedHistory(userId, s.baseCurrency)),
+      snapshotsP,
       settingsP,
       countActiveAccounts(userId),
-      settingsP.then((s) => getSnapshotReconciliationWarning(userId, s.baseCurrency)),
-      settingsP.then((s) => hasForeignCurrencySnapshots(userId, s.baseCurrency)),
+      reconciliationP,
+      baseCurrencyP.then((c) => hasForeignCurrencySnapshots(userId, c)),
     ]);
 
   return (
