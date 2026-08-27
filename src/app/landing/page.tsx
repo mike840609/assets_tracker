@@ -8,6 +8,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { LandingContent } from "@/components/landing/landing-content";
+import { isPublicDemoEnabled } from "@/lib/env";
 
 export const metadata: Metadata = {
   title: "astt — Self-hosted Net Worth & Portfolio Tracker",
@@ -27,7 +28,11 @@ export default function LandingPage() {
               <div className="h-9 w-20 animate-pulse rounded-lg bg-muted" />
             </div>
           </div>
-          <div className="mx-auto max-w-6xl space-y-4 px-4 py-14 sm:px-6 lg:max-w-4xl">
+          <div
+            className={`mx-auto max-w-6xl space-y-4 px-4 py-14 sm:px-6 ${
+              isPublicDemoEnabled ? "" : "lg:max-w-4xl"
+            }`}
+          >
             <div className="h-10 w-3/4 animate-pulse rounded bg-muted" />
             <div className="h-5 w-full max-w-prose animate-pulse rounded bg-muted" />
             <div className="h-5 w-2/3 max-w-prose animate-pulse rounded bg-muted" />
