@@ -34,6 +34,7 @@ interface CacheStub {
 }
 
 type FetchListener = (event: FetchEventStub) => void;
+type LifecycleListener = (event: { waitUntil: (promise: Promise<unknown>) => void }) => void;
 
 function makeResponse(
   body: string,
@@ -108,6 +109,7 @@ function createCache(): CacheStub & {
 
 function loadFetchListener() {
   let fetchListener: FetchListener | undefined;
+  let activateListener: LifecycleListener | undefined;
   const cache = createCache();
   const cacheEvents: string[] = [];
   let cacheOpenCount = 0;
@@ -119,6 +121,7 @@ function loadFetchListener() {
     registration: { navigationPreload: { enable: vi.fn(async () => {}) } },
     addEventListener(type: string, listener: unknown) {
       if (type === "fetch") fetchListener = listener as FetchListener;
+      if (type === "activate") activateListener = listener as LifecycleListener;
     },
   };
   const caches = {
@@ -142,7 +145,18 @@ function loadFetchListener() {
   });
 
   if (!fetchListener) throw new Error("public/sw.js did not register a fetch listener");
-  return { fetchListener, networkFetch, cache, cacheEvents };
+  if (!activateListener) throw new Error("public/sw.js did not register an activate listener");
+  return { fetchListener, activateListener, networkFetch, cache, cacheEvents };
+}
+
+async function dispatchActivate(activateListener: LifecycleListener) {
+  const pending: Promise<unknown>[] = [];
+  activateListener({ waitUntil: (promise) => pending.push(promise.catch(() => {})) });
+  await Promise.all(pending);
+}
+
+function hoursAgo(hours: number): string {
+  return new Date(Date.now() - hours * 60 * 60 * 1000).toUTCString();
 }
 
 function dispatchFetch(
@@ -552,5 +566,25 @@ describe("service worker fetch boundary", () => {
     await ev.waitUntilAll();
 
     expect(cache.get(nav)).toBeUndefined();
+  });
+  it("evicts navigation cache entries older than a day on activate", async () => {
+    const { activateListener, cache } = loadFetchListener();
+    const fresh = { method: "GET", url: "https://astt.app/", mode: "navigate" } as RequestStub;
+    const stale = {
+      method: "GET",
+      url: "https://astt.app/history",
+      mode: "navigate",
+    } as RequestStub;
+    const offline = { method: "GET", url: "https://astt.app/offline" } as RequestStub;
+    await cache.put(fresh, makeResponse("<html>fresh</html>", undefined, { date: hoursAgo(1) }));
+    await cache.put(stale, makeResponse("<html>stale</html>", undefined, { date: hoursAgo(48) }));
+    await cache.put(offline, makeResponse("offline", undefined, { date: hoursAgo(48) }));
+
+    await dispatchActivate(activateListener);
+
+    expect(cache.get(fresh)).toBeDefined();
+    expect(cache.get(stale)).toBeUndefined();
+    // The last-resort fallback is exempt: it is only refreshed on install/activate.
+    expect(cache.get(offline)).toBeDefined();
   });
 });

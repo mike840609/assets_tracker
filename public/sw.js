@@ -43,6 +43,7 @@ self.addEventListener("activate", (event) =>
           )
           .map((name) => caches.delete(name)),
       );
+      await evictStaleNavEntries();
       if (self.registration.navigationPreload) {
         try {
           await self.registration.navigationPreload.enable();
@@ -109,6 +110,21 @@ async function purgeNavCache(cache) {
     requests
       .filter((request) => new URL(request.url).pathname !== OFFLINE_URL)
       .map((request) => cache.delete(request)),
+  );
+}
+
+// Entries past NAV_MAX_AGE_MS can never be served again, so collect them here
+// instead of leaving them to occupy the origin's storage quota. Activate is the
+// natural place: it already runs the cache GC and fires once per worker version.
+async function evictStaleNavEntries() {
+  const cache = await caches.open(NAV_CACHE);
+  const requests = await cache.keys();
+  await Promise.all(
+    requests.map(async (request) => {
+      if (new URL(request.url).pathname === OFFLINE_URL) return;
+      const cached = await cache.match(request);
+      if (cached && !isFresh(cached)) await cache.delete(request);
+    }),
   );
 }
 
