@@ -18,19 +18,36 @@ import { isPublicDemoEnabled } from "@/lib/env";
 import { REPO_URL, LICENSE_URL } from "@/lib/repo";
 
 const DOCS_URL = `${REPO_URL}/blob/master/docs/DEPLOYMENT.md`;
+const FOCUS_RING_CLASS =
+  "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
 
 /**
- * Screenshot slots. Drop a file into `public/landing/` and set `src` to its
- * path — until then the slot renders a labelled placeholder frame, so the
- * section keeps its shape without shipping a broken image.
- * Recommended: 16:10, ~1600×1000, JPEG.
+ * Verified product previews. Keep the intrinsic dimensions here so the browser
+ * can reserve image space before each asset finishes loading.
  */
-const SHOTS: Array<{ key: "dashboard" | "analysis" | "plan" | "mobile"; src: string | null }> = [
-  { key: "dashboard", src: null },
-  { key: "analysis", src: null },
-  { key: "plan", src: null },
-  { key: "mobile", src: null },
-];
+const SHOTS = [
+  {
+    key: "overview",
+    src: "/readme-hero.jpg",
+    width: 1192,
+    height: 795,
+    orientation: "landscape",
+  },
+  {
+    key: "desktop",
+    src: "/readme-demo-desktop.gif",
+    width: 766,
+    height: 540,
+    orientation: "landscape",
+  },
+  {
+    key: "mobile",
+    src: "/readme-demo-mobile.png",
+    width: 860,
+    height: 1864,
+    orientation: "mobile",
+  },
+] as const;
 
 const FEATURES = [
   { key: "currency", group: "overview", Icon: Coins },
@@ -79,14 +96,14 @@ export async function LandingContent() {
               href={REPO_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:text-foreground md:h-9 md:min-w-0"
+              className={`${FOCUS_RING_CLASS} flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:text-foreground md:h-9 md:min-w-0`}
             >
               <GitHubMark className="h-4 w-4" />
               <span className="sr-only sm:not-sr-only">{t("navSource")}</span>
             </a>
             <Link
               href="/login"
-              className="inline-flex h-11 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:h-9"
+              className={`${FOCUS_RING_CLASS} inline-flex h-11 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:h-9`}
             >
               {t("navSignIn")}
             </Link>
@@ -104,7 +121,7 @@ export async function LandingContent() {
           }`}
         >
           <div className="space-y-6">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            <h1 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               {t("heroTitle")}
             </h1>
             <p className="max-w-prose text-base leading-relaxed text-muted-foreground">
@@ -113,7 +130,7 @@ export async function LandingContent() {
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/login"
-                className="inline-flex h-12 items-center rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                className={`${FOCUS_RING_CLASS} inline-flex h-12 items-center rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90`}
               >
                 {t("heroPrimaryCta")}
                 <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
@@ -122,7 +139,7 @@ export async function LandingContent() {
                 href={DOCS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-12 items-center rounded-xl border border-border px-5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+                className={`${FOCUS_RING_CLASS} flex h-12 items-center rounded-xl border border-border px-5 text-sm font-medium text-foreground transition-colors hover:bg-secondary`}
               >
                 {t("heroSecondaryCta")}
               </a>
@@ -142,7 +159,7 @@ export async function LandingContent() {
         {/* Features */}
         <section className="border-t border-border/50 bg-secondary/30">
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            <h2 className="text-balance text-2xl font-bold tracking-tight text-foreground">
               {t("featuresTitle")}
             </h2>
             <p className="mt-2 max-w-prose text-sm text-muted-foreground">
@@ -151,7 +168,7 @@ export async function LandingContent() {
             <div className="mt-10 grid gap-x-12 gap-y-10 lg:grid-cols-2 lg:gap-y-12">
               {FEATURE_GROUPS.map(({ key, featured }) => (
                 <div key={key} className={featured ? "lg:col-span-2" : undefined}>
-                  <h3 className="border-b border-border/60 pb-3 text-sm font-semibold text-foreground">
+                  <h3 className="text-balance border-b border-border/60 pb-3 text-sm font-semibold text-foreground">
                     {t(`featureGroup.${key}`)}
                   </h3>
                   <dl className="mt-5 grid gap-x-10 gap-y-7 sm:grid-cols-2">
@@ -178,31 +195,37 @@ export async function LandingContent() {
         {/* Screenshots */}
         <section className="border-t border-border/50">
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">{t("shotsTitle")}</h2>
+            <h2 className="text-balance text-2xl font-bold tracking-tight text-foreground">
+              {t("shotsTitle")}
+            </h2>
             <p className="mt-2 max-w-prose text-sm text-muted-foreground">{t("shotsSubtitle")}</p>
             <div className="mt-8 grid gap-6 sm:grid-cols-2">
-              {SHOTS.map(({ key, src }) => (
+              {SHOTS.map(({ key, src, width, height, orientation }) => (
                 <figure key={key} className="space-y-2">
-                  {src ? (
-                    /* ponytail: plain <img>; next/image would make self-hosted
-                       standalone builds need sharp for a static screenshot. */
-                    // eslint-disable-next-line @next/next/no-img-element
+                  <div
+                    className={
+                      orientation === "mobile"
+                        ? "mx-auto flex h-[30rem] max-w-full items-start justify-center overflow-hidden rounded-xl border border-border/50 bg-muted/30 sm:h-[36rem]"
+                        : "aspect-[3/2] overflow-hidden rounded-xl border border-border/50 bg-muted/30"
+                    }
+                  >
+                    {/* ponytail: plain <img>; next/image would make self-hosted
+                        standalone builds need sharp for a static screenshot. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={src}
                       alt={t(`shot.${key}.caption`)}
-                      width={1600}
-                      height={1000}
+                      width={width}
+                      height={height}
                       loading="lazy"
                       decoding="async"
-                      className="w-full rounded-xl border border-border/50"
+                      className={
+                        orientation === "mobile"
+                          ? "h-full w-auto max-w-full object-contain object-top"
+                          : "h-full w-full object-cover"
+                      }
                     />
-                  ) : (
-                    <div className="flex aspect-[16/10] w-full items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 p-4">
-                      <span className="text-center font-mono text-xs text-muted-foreground">
-                        public/landing/{key}.jpg
-                      </span>
-                    </div>
-                  )}
+                  </div>
                   <figcaption className="text-sm text-muted-foreground">
                     {t(`shot.${key}.caption`)}
                   </figcaption>
@@ -215,14 +238,16 @@ export async function LandingContent() {
         {/* Deploy */}
         <section className="border-t border-border/50 bg-secondary/30">
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            <h2 className="text-balance text-2xl font-bold tracking-tight text-foreground">
               {t("deployTitle")}
             </h2>
             <p className="mt-2 max-w-prose text-sm text-muted-foreground">{t("deploySubtitle")}</p>
             <div className="mt-8 grid gap-6 lg:grid-cols-2">
               <div className="min-w-0 space-y-4 rounded-2xl border border-border/50 bg-card p-5 sm:p-6">
                 <div className="space-y-1">
-                  <h3 className="text-base font-semibold text-foreground">{t("dockerTitle")}</h3>
+                  <h3 className="text-balance text-base font-semibold text-foreground">
+                    {t("dockerTitle")}
+                  </h3>
                   <p className="text-sm text-muted-foreground">{t("dockerBody")}</p>
                 </div>
                 <div
@@ -239,7 +264,7 @@ export async function LandingContent() {
                   href={DOCS_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary hover:underline md:min-h-0"
+                  className={`${FOCUS_RING_CLASS} inline-flex min-h-11 items-center gap-1.5 rounded-md text-sm font-medium text-primary hover:underline md:min-h-0`}
                 >
                   {t("dockerLink")}
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -248,7 +273,9 @@ export async function LandingContent() {
 
               <div className="min-w-0 space-y-4 rounded-2xl border border-border/50 bg-card p-5 sm:p-6">
                 <div className="space-y-1">
-                  <h3 className="text-base font-semibold text-foreground">{t("cloudTitle")}</h3>
+                  <h3 className="text-balance text-base font-semibold text-foreground">
+                    {t("cloudTitle")}
+                  </h3>
                   <p className="text-sm text-muted-foreground">{t("cloudBody")}</p>
                 </div>
                 <ul className="space-y-2 text-sm text-muted-foreground">
@@ -268,7 +295,7 @@ export async function LandingContent() {
                   href={DOCS_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary hover:underline md:min-h-0"
+                  className={`${FOCUS_RING_CLASS} inline-flex min-h-11 items-center gap-1.5 rounded-md text-sm font-medium text-primary hover:underline md:min-h-0`}
                 >
                   {t("cloudLink")}
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -281,14 +308,16 @@ export async function LandingContent() {
         {/* Open source / privacy */}
         <section className="border-t border-border/50">
           <div className="mx-auto max-w-3xl space-y-4 px-4 py-14 text-center sm:px-6 lg:py-20">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">{t("openTitle")}</h2>
+            <h2 className="text-balance text-2xl font-bold tracking-tight text-foreground">
+              {t("openTitle")}
+            </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">{t("openBody")}</p>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <a
                 href={REPO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-12 items-center gap-2 rounded-xl border border-border px-5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+                className={`${FOCUS_RING_CLASS} flex h-12 items-center gap-2 rounded-xl border border-border px-5 text-sm font-medium text-foreground transition-colors hover:bg-secondary`}
               >
                 <GitHubMark className="h-4 w-4" />
                 {t("openCta")}
@@ -306,7 +335,7 @@ export async function LandingContent() {
               href={DOCS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 min-w-11 items-center justify-center px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0"
+              className={`${FOCUS_RING_CLASS} inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0`}
             >
               {t("footerDocs")}
             </a>
@@ -314,19 +343,19 @@ export async function LandingContent() {
               href={LICENSE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 min-w-11 items-center justify-center px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0"
+              className={`${FOCUS_RING_CLASS} inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0`}
             >
               {t("footerLicenseLink")}
             </a>
             <Link
               href="/privacy"
-              className="inline-flex min-h-11 min-w-11 items-center justify-center px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0"
+              className={`${FOCUS_RING_CLASS} inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0`}
             >
               {t("footerPrivacy")}
             </Link>
             <Link
               href="/terms"
-              className="inline-flex min-h-11 min-w-11 items-center justify-center px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0"
+              className={`${FOCUS_RING_CLASS} inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0`}
             >
               {t("footerTerms")}
             </Link>

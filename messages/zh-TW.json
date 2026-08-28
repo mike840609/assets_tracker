@@ -1237,7 +1237,7 @@
     "navSource": "GitHub",
     "navSignIn": "登入",
     "heroTitle": "把整份淨值，放在自己的伺服器上",
-    "heroSubtitle": "astt 是開源的資產追蹤工具，涵蓋銀行帳戶、券商、加密貨幣、不動產、負債與選擇權。原生支援多幣別，並提供每日歷史、目標與 FIRE 預測——跑在你自己掌控的資料庫上。",
+    "heroSubtitle": "astt 是開源的資產追蹤工具，涵蓋銀行帳戶、券商、加密貨幣、不動產、負債與選擇權。原生支援多幣別，並提供每日歷史、目標與 FIRE 預測，全部跑在你自己掌控的資料庫上。",
     "heroPrimaryCta": "登入 astt",
     "heroSecondaryCta": "自行部署指南",
     "heroNote": "MIT 授權。沒有追蹤、不販售資料、不需訂閱。",
@@ -1253,7 +1253,7 @@
     "feature": {
       "currency": {
         "title": "原生多幣別",
-        "body": "餘額保留原始幣別，所有畫面依你選定的基準幣別換算——歷史紀錄也一樣。"
+        "body": "餘額保留原始幣別，所有畫面依你選定的基準幣別換算，歷史紀錄也一樣。"
       },
       "accounts": {
         "title": "所有資產一個畫面",
@@ -1287,29 +1287,26 @@
     "shotsTitle": "實際長這樣",
     "shotsSubtitle": "你最常停留的幾個畫面。",
     "shot": {
-      "dashboard": {
-        "caption": "儀表板——淨值、資產配置與趨勢一眼看完"
+      "overview": {
+        "caption": "總覽：桌面與行動版的完整財務全貌"
       },
-      "analysis": {
-        "caption": "分析——偏移、曝險、回撤與績效歸因"
-      },
-      "plan": {
-        "caption": "規劃——目標、預測與財務行事曆"
+      "desktop": {
+        "caption": "桌面版：在同一個工作區查看儀表板、帳戶與分析"
       },
       "mobile": {
-        "caption": "行動版——同一份資料，可安裝成 App"
+        "caption": "行動版：同一份資料，可安裝成 App"
       }
     },
     "deployTitle": "兩種部署方式",
     "deploySubtitle": "應用程式完全相同，差別只在資料庫由誰維運。",
     "dockerTitle": "用 Docker 自行部署",
     "dockerBody": "Compose 會一起啟動應用程式與 PostgreSQL，資料不會離開你執行的那台機器。",
-    "dockerLink": "部署指南",
+    "dockerLink": "查看 Docker 部署指南",
     "cloudTitle": "Vercel 與 Neon",
     "cloudBody": "把同一份程式碼部署到 Vercel，搭配 Neon 的無伺服器 PostgreSQL 分支。",
     "cloudPoint1": "每日快照排程與市場資料更新都已內建",
     "cloudPoint2": "單一家庭使用，免費方案就夠",
-    "cloudLink": "部署指南",
+    "cloudLink": "查看 Vercel 與 Neon 部署指南",
     "openTitle": "開源，而且會一直是",
     "openBody": "astt 採用 MIT 授權。沒有藏功能的付費版本、不對你的投資組合做分析追蹤，也不會有第三方拿到你的餘額。如果它對你有用，給一顆星能讓更多人找到它。",
     "openCta": "查看原始碼",

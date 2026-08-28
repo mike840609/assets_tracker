@@ -284,6 +284,7 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 //     ("/landing", no trailing slash) stays matched so it still gets a locale
 //     cookie; only its static assets skip the middleware, because an anonymous
 //     request for one would otherwise be redirected to /login and render broken.
+//   - Existing README product previews are also used by the landing page.
 //   - /offline: the service worker precaches it, so it must resolve to a 200
 //     rather than a middleware redirect that would poison the navigation cache.
 //   - Public legal pages, so they can render without NextAuth cookie work.
@@ -292,6 +293,6 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 // inside `middleware()` above, so every app path reaches the middleware (#639).
 export const config = {
   matcher: [
-    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|manifest\\.webmanifest|landing/|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms|offline).*)",
+    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|manifest\\.webmanifest|landing/|readme-hero\\.jpg|readme-demo-desktop\\.gif|readme-demo-mobile\\.png|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms|offline).*)",
   ],
 };
