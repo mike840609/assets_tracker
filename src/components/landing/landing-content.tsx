@@ -306,7 +306,7 @@ export async function LandingContent() {
               href={DOCS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center hover:underline md:min-h-0"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0"
             >
               {t("footerDocs")}
             </a>
@@ -314,19 +314,19 @@ export async function LandingContent() {
               href={LICENSE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center hover:underline md:min-h-0"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0"
             >
               {t("footerLicenseLink")}
             </a>
             <Link
               href="/privacy"
-              className="inline-flex min-h-11 items-center hover:underline md:min-h-0"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0"
             >
               {t("footerPrivacy")}
             </Link>
             <Link
               href="/terms"
-              className="inline-flex min-h-11 items-center hover:underline md:min-h-0"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0"
             >
               {t("footerTerms")}
             </Link>
