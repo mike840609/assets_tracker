@@ -1238,7 +1238,7 @@
     "navSignIn": "Sign in",
     "heroTitle": "Your entire net worth, on your own server",
     "heroSubtitle": "astt is an open-source tracker for bank accounts, brokerages, crypto, property, liabilities, and options. Multi-currency by design, with daily history, goals, and FIRE projections — running on a database you control.",
-    "heroPrimaryCta": "Sign in",
+    "heroPrimaryCta": "Sign in to astt",
     "heroSecondaryCta": "Self-hosting guide",
     "heroNote": "MIT licensed. No telemetry, no data sold, no subscription.",
     "demoTitle": "Try it with sample data",

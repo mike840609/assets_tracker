@@ -1238,7 +1238,7 @@
     "navSignIn": "登入",
     "heroTitle": "把整份淨值，放在自己的伺服器上",
     "heroSubtitle": "astt 是開源的資產追蹤工具，涵蓋銀行帳戶、券商、加密貨幣、不動產、負債與選擇權。原生支援多幣別，並提供每日歷史、目標與 FIRE 預測——跑在你自己掌控的資料庫上。",
-    "heroPrimaryCta": "登入",
+    "heroPrimaryCta": "登入 astt",
     "heroSecondaryCta": "自行部署指南",
     "heroNote": "MIT 授權。沒有追蹤、不販售資料、不需訂閱。",
     "demoTitle": "用示範資料試用",
