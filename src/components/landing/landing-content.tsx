@@ -62,17 +62,10 @@ const SHOTS = [
     orientation: "mobile",
   },
   {
-    key: "mobileOverview",
-    src: "/landing/mobile-overview.jpg",
-    width: 860,
-    height: 1200,
-    orientation: "mobile",
-  },
-  {
-    key: "mobileTrend",
-    src: "/landing/mobile-trend.jpg",
-    width: 860,
-    height: 1200,
+    key: "mobileCompact",
+    src: "/landing/mobile-compact.jpg",
+    width: 215,
+    height: 465,
     orientation: "mobile",
   },
 ] as const;
@@ -242,17 +235,13 @@ export async function LandingContent() {
                   <h3 className="text-sm font-semibold text-foreground">
                     {t(`shotsGroup.${groupKey}`)}
                   </h3>
-                  <div
-                    className={`mt-4 grid gap-6 ${
-                      groupKey === "mobile" ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2"
-                    }`}
-                  >
+                  <div className="mt-4 grid gap-6 sm:grid-cols-2">
                     {shots.map(({ key, src, width, height, orientation }) => (
                       <figure key={key} className="space-y-2">
                         <div
                           className={
                             orientation === "mobile"
-                              ? "mx-auto flex h-[30rem] max-w-full items-start justify-center overflow-hidden rounded-xl border border-border/50 bg-muted/30 sm:h-[36rem]"
+                              ? "mx-auto flex aspect-[390/844] w-full max-w-[16rem] items-start justify-center overflow-hidden rounded-xl border border-border/50 bg-muted/30 sm:max-w-[17rem]"
                               : "aspect-[3/2] overflow-hidden rounded-xl border border-border/50 bg-muted/30"
                           }
                         >
@@ -268,7 +257,7 @@ export async function LandingContent() {
                             decoding="async"
                             className={
                               orientation === "mobile"
-                                ? "h-full w-auto max-w-full object-contain object-top"
+                                ? "h-full w-full object-cover object-top"
                                 : "h-full w-full object-cover"
                             }
                           />

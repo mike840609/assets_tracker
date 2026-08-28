@@ -1306,11 +1306,8 @@
       "mobile": {
         "caption": "行動版儀表板：同一份資料，可安裝成 App"
       },
-      "mobileOverview": {
-        "caption": "行動版總覽：一眼掌握淨資產與資產卡片"
-      },
-      "mobileTrend": {
-        "caption": "行動版趨勢：歷史圖表與底部導覽列"
+      "mobileCompact": {
+        "caption": "行動版快速總覽：以手機為優先的精簡儀表板"
       }
     },
     "deployTitle": "兩種部署方式",

@@ -128,11 +128,11 @@ function LandingSkeleton() {
               </div>
               <div>
                 <Skeleton className="h-4 w-28" />
-                <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {Array.from({ length: 3 }, (_, index) => (
+                <div className="mt-4 grid gap-6 sm:grid-cols-2">
+                  {Array.from({ length: 2 }, (_, index) => (
                     <div key={index} className="space-y-2">
-                      <div className="flex h-[30rem] max-w-full items-start justify-center overflow-hidden rounded-xl border border-border/50 bg-muted/30 sm:h-[36rem]">
-                        <Skeleton className="h-full w-56 max-w-full rounded-xl" />
+                      <div className="mx-auto flex aspect-[390/844] w-full max-w-[16rem] items-start justify-center overflow-hidden rounded-xl border border-border/50 bg-muted/30 sm:max-w-[17rem]">
+                        <Skeleton className="h-full w-full rounded-xl" />
                       </div>
                       <Skeleton className="h-4 w-3/4 max-w-full" />
                     </div>

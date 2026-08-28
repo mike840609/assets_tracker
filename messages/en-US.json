@@ -1306,11 +1306,8 @@
       "mobile": {
         "caption": "Mobile dashboard: the same data as an installable app"
       },
-      "mobileOverview": {
-        "caption": "Mobile overview: net worth and asset cards at a glance"
-      },
-      "mobileTrend": {
-        "caption": "Mobile trend: history chart with bottom navigation"
+      "mobileCompact": {
+        "caption": "Mobile quick view: a compact phone-first dashboard"
       }
     },
     "deployTitle": "Two ways to run it",
