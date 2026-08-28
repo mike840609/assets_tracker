@@ -33,14 +33,20 @@ const SHOTS: Array<{ key: "dashboard" | "analysis" | "plan" | "mobile"; src: str
 ];
 
 const FEATURES = [
-  { key: "currency", Icon: Coins },
-  { key: "accounts", Icon: Layers },
-  { key: "market", Icon: TrendingUp },
-  { key: "history", Icon: History },
-  { key: "goals", Icon: Target },
-  { key: "recurring", Icon: Repeat },
-  { key: "analysis", Icon: ChartPie },
-  { key: "devices", Icon: Smartphone },
+  { key: "currency", group: "overview", Icon: Coins },
+  { key: "accounts", group: "overview", Icon: Layers },
+  { key: "market", group: "overview", Icon: TrendingUp },
+  { key: "history", group: "overview", Icon: History },
+  { key: "goals", group: "planning", Icon: Target },
+  { key: "recurring", group: "planning", Icon: Repeat },
+  { key: "analysis", group: "insight", Icon: ChartPie },
+  { key: "devices", group: "insight", Icon: Smartphone },
+] as const;
+
+const FEATURE_GROUPS = [
+  { key: "overview", featured: true },
+  { key: "planning", featured: false },
+  { key: "insight", featured: false },
 ] as const;
 
 function AppMark({ className = "h-9 w-9" }: { className?: string }) {
@@ -142,21 +148,30 @@ export async function LandingContent() {
             <p className="mt-2 max-w-prose text-sm text-muted-foreground">
               {t("featuresSubtitle")}
             </p>
-            <dl className="mt-8 grid gap-x-10 gap-y-7 sm:grid-cols-2">
-              {FEATURES.map(({ key, Icon }) => (
-                <div key={key} className="flex gap-3.5">
-                  <Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-                  <div className="space-y-1">
-                    <dt className="text-sm font-semibold text-foreground">
-                      {t(`feature.${key}.title`)}
-                    </dt>
-                    <dd className="text-sm leading-relaxed text-muted-foreground">
-                      {t(`feature.${key}.body`)}
-                    </dd>
-                  </div>
+            <div className="mt-10 grid gap-x-12 gap-y-10 lg:grid-cols-2 lg:gap-y-12">
+              {FEATURE_GROUPS.map(({ key, featured }) => (
+                <div key={key} className={featured ? "lg:col-span-2" : undefined}>
+                  <h3 className="border-b border-border/60 pb-3 text-sm font-semibold text-foreground">
+                    {t(`featureGroup.${key}`)}
+                  </h3>
+                  <dl className="mt-5 grid gap-x-10 gap-y-7 sm:grid-cols-2">
+                    {FEATURES.filter((feature) => feature.group === key).map(({ key, Icon }) => (
+                      <div key={key} className="flex gap-3.5">
+                        <Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                        <div className="space-y-1">
+                          <dt className="text-sm font-semibold text-foreground">
+                            {t(`feature.${key}.title`)}
+                          </dt>
+                          <dd className="text-sm leading-relaxed text-muted-foreground">
+                            {t(`feature.${key}.body`)}
+                          </dd>
+                        </div>
+                      </div>
+                    ))}
+                  </dl>
                 </div>
               ))}
-            </dl>
+            </div>
           </div>
         </section>
 

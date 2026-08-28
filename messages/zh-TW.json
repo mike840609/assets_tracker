@@ -1245,6 +1245,11 @@
     "demoBody": "臨時工作區，已預先填入擬真的帳戶、持倉與 180 天歷史。不用安裝，也不用註冊。",
     "featuresTitle": "一個財務全貌需要的功能",
     "featuresSubtitle": "為資產分散在多個地方、多種幣別的人而做。",
+    "featureGroup": {
+      "overview": "看見完整全貌",
+      "planning": "規劃下一步",
+      "insight": "深入分析，隨時掌握"
+    },
     "feature": {
       "currency": {
         "title": "原生多幣別",

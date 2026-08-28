@@ -1245,6 +1245,11 @@
     "demoBody": "A temporary workspace seeded with realistic accounts, holdings, and 180 days of history. Nothing to install, nothing to sign up for.",
     "featuresTitle": "Everything one financial view needs",
     "featuresSubtitle": "Built for people who keep money in more than one place, in more than one currency.",
+    "featureGroup": {
+      "overview": "See the full picture",
+      "planning": "Plan what comes next",
+      "insight": "Understand more, wherever you are"
+    },
     "feature": {
       "currency": {
         "title": "Multi-currency by design",
