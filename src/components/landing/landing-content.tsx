@@ -34,8 +34,22 @@ const SHOTS = [
     orientation: "landscape",
   },
   {
-    key: "desktop",
-    src: "/readme-demo-desktop.gif",
+    key: "desktopDashboard",
+    src: "/landing/desktop-dashboard.jpg",
+    width: 766,
+    height: 540,
+    orientation: "landscape",
+  },
+  {
+    key: "desktopPortfolio",
+    src: "/landing/desktop-portfolio.jpg",
+    width: 766,
+    height: 540,
+    orientation: "landscape",
+  },
+  {
+    key: "desktopAccounts",
+    src: "/landing/desktop-accounts.jpg",
     width: 766,
     height: 540,
     orientation: "landscape",
@@ -45,6 +59,20 @@ const SHOTS = [
     src: "/readme-demo-mobile.png",
     width: 860,
     height: 1864,
+    orientation: "mobile",
+  },
+  {
+    key: "mobileOverview",
+    src: "/landing/mobile-overview.jpg",
+    width: 860,
+    height: 1200,
+    orientation: "mobile",
+  },
+  {
+    key: "mobileTrend",
+    src: "/landing/mobile-trend.jpg",
+    width: 860,
+    height: 1200,
     orientation: "mobile",
   },
 ] as const;
@@ -199,37 +227,59 @@ export async function LandingContent() {
               {t("shotsTitle")}
             </h2>
             <p className="mt-2 max-w-prose text-sm text-muted-foreground">{t("shotsSubtitle")}</p>
-            <div className="mt-8 grid gap-6 sm:grid-cols-2">
-              {SHOTS.map(({ key, src, width, height, orientation }) => (
-                <figure key={key} className="space-y-2">
+            <div className="mt-8 space-y-10">
+              {[
+                {
+                  key: "desktop",
+                  shots: SHOTS.filter(({ orientation }) => orientation !== "mobile"),
+                },
+                {
+                  key: "mobile",
+                  shots: SHOTS.filter(({ orientation }) => orientation === "mobile"),
+                },
+              ].map(({ key: groupKey, shots }) => (
+                <div key={groupKey}>
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {t(`shotsGroup.${groupKey}`)}
+                  </h3>
                   <div
-                    className={
-                      orientation === "mobile"
-                        ? "mx-auto flex h-[30rem] max-w-full items-start justify-center overflow-hidden rounded-xl border border-border/50 bg-muted/30 sm:h-[36rem]"
-                        : "aspect-[3/2] overflow-hidden rounded-xl border border-border/50 bg-muted/30"
-                    }
+                    className={`mt-4 grid gap-6 ${
+                      groupKey === "mobile" ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2"
+                    }`}
                   >
-                    {/* ponytail: plain <img>; next/image would make self-hosted
-                        standalone builds need sharp for a static screenshot. */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={src}
-                      alt={t(`shot.${key}.caption`)}
-                      width={width}
-                      height={height}
-                      loading="lazy"
-                      decoding="async"
-                      className={
-                        orientation === "mobile"
-                          ? "h-full w-auto max-w-full object-contain object-top"
-                          : "h-full w-full object-cover"
-                      }
-                    />
+                    {shots.map(({ key, src, width, height, orientation }) => (
+                      <figure key={key} className="space-y-2">
+                        <div
+                          className={
+                            orientation === "mobile"
+                              ? "mx-auto flex h-[30rem] max-w-full items-start justify-center overflow-hidden rounded-xl border border-border/50 bg-muted/30 sm:h-[36rem]"
+                              : "aspect-[3/2] overflow-hidden rounded-xl border border-border/50 bg-muted/30"
+                          }
+                        >
+                          {/* ponytail: plain <img>; next/image would make self-hosted
+                              standalone builds need sharp for a static screenshot. */}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={src}
+                            alt={t(`shot.${key}.caption`)}
+                            width={width}
+                            height={height}
+                            loading="lazy"
+                            decoding="async"
+                            className={
+                              orientation === "mobile"
+                                ? "h-full w-auto max-w-full object-contain object-top"
+                                : "h-full w-full object-cover"
+                            }
+                          />
+                        </div>
+                        <figcaption className="text-sm text-muted-foreground">
+                          {t(`shot.${key}.caption`)}
+                        </figcaption>
+                      </figure>
+                    ))}
                   </div>
-                  <figcaption className="text-sm text-muted-foreground">
-                    {t(`shot.${key}.caption`)}
-                  </figcaption>
-                </figure>
+                </div>
               ))}
             </div>
           </div>

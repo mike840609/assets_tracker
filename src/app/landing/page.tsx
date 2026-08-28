@@ -114,18 +114,30 @@ function LandingSkeleton() {
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20">
             <Skeleton className="h-8 w-56 max-w-full" />
             <Skeleton className="mt-3 h-4 w-full max-w-prose" />
-            <div className="mt-8 grid gap-6 sm:grid-cols-2">
-              {Array.from({ length: 2 }, (_, index) => (
-                <div key={index} className="space-y-2">
-                  <Skeleton className="aspect-[3/2] w-full rounded-xl" />
-                  <Skeleton className="h-4 w-3/4 max-w-full" />
+            <div className="mt-8 space-y-10">
+              <div>
+                <Skeleton className="h-4 w-28" />
+                <div className="mt-4 grid gap-6 sm:grid-cols-2">
+                  {Array.from({ length: 4 }, (_, index) => (
+                    <div key={index} className="space-y-2">
+                      <Skeleton className="aspect-[3/2] w-full rounded-xl" />
+                      <Skeleton className="h-4 w-3/4 max-w-full" />
+                    </div>
+                  ))}
                 </div>
-              ))}
-              <div className="space-y-2">
-                <div className="flex h-[30rem] max-w-full items-start justify-center overflow-hidden rounded-xl border border-border/50 bg-muted/30 sm:h-[36rem]">
-                  <Skeleton className="h-full w-56 max-w-full rounded-xl" />
+              </div>
+              <div>
+                <Skeleton className="h-4 w-28" />
+                <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {Array.from({ length: 3 }, (_, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex h-[30rem] max-w-full items-start justify-center overflow-hidden rounded-xl border border-border/50 bg-muted/30 sm:h-[36rem]">
+                        <Skeleton className="h-full w-56 max-w-full rounded-xl" />
+                      </div>
+                      <Skeleton className="h-4 w-3/4 max-w-full" />
+                    </div>
+                  ))}
                 </div>
-                <Skeleton className="h-4 w-3/4 max-w-full" />
               </div>
             </div>
           </div>

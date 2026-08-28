@@ -1285,16 +1285,32 @@
       }
     },
     "shotsTitle": "實際長這樣",
-    "shotsSubtitle": "你最常停留的幾個畫面。",
+    "shotsSubtitle": "近距離看看你最常停留的幾個畫面。",
+    "shotsGroup": {
+      "desktop": "桌面版畫面",
+      "mobile": "行動版畫面"
+    },
     "shot": {
       "overview": {
         "caption": "總覽：桌面與行動版的完整財務全貌"
       },
-      "desktop": {
-        "caption": "桌面版：在同一個工作區查看儀表板、帳戶與分析"
+      "desktopDashboard": {
+        "caption": "桌面版儀表板：淨資產、趨勢、目標與自選清單"
+      },
+      "desktopPortfolio": {
+        "caption": "桌面版投資組合：組成、配置與集中度"
+      },
+      "desktopAccounts": {
+        "caption": "桌面版帳戶：在同一個畫面查看持倉與價值"
       },
       "mobile": {
-        "caption": "行動版：同一份資料，可安裝成 App"
+        "caption": "行動版儀表板：同一份資料，可安裝成 App"
+      },
+      "mobileOverview": {
+        "caption": "行動版總覽：一眼掌握淨資產與資產卡片"
+      },
+      "mobileTrend": {
+        "caption": "行動版趨勢：歷史圖表與底部導覽列"
       }
     },
     "deployTitle": "兩種部署方式",

@@ -1285,16 +1285,32 @@
       }
     },
     "shotsTitle": "What it looks like",
-    "shotsSubtitle": "The screens you will spend your time in.",
+    "shotsSubtitle": "A closer look at the screens you will spend your time in.",
+    "shotsGroup": {
+      "desktop": "Desktop views",
+      "mobile": "Mobile views"
+    },
     "shot": {
       "overview": {
         "caption": "Overview: the full picture across desktop and mobile"
       },
-      "desktop": {
-        "caption": "Desktop: dashboard, accounts, and analysis in one workspace"
+      "desktopDashboard": {
+        "caption": "Desktop dashboard: net worth, trend, goals, and watchlist"
+      },
+      "desktopPortfolio": {
+        "caption": "Desktop portfolio: composition, allocation, and concentration"
+      },
+      "desktopAccounts": {
+        "caption": "Desktop accounts: holdings and values in one view"
       },
       "mobile": {
-        "caption": "Mobile: the same data as an installable app"
+        "caption": "Mobile dashboard: the same data as an installable app"
+      },
+      "mobileOverview": {
+        "caption": "Mobile overview: net worth and asset cards at a glance"
+      },
+      "mobileTrend": {
+        "caption": "Mobile trend: history chart with bottom navigation"
       }
     },
     "deployTitle": "Two ways to run it",
