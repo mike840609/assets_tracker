@@ -37,7 +37,10 @@ function FeatureSkeletonList({ count }: { count: number }) {
 
 function LandingSkeleton() {
   return (
-    <div className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-background" aria-busy="true">
+    <div
+      className="dark h-dvh w-full overflow-x-hidden overflow-y-auto bg-background text-foreground"
+      aria-busy="true"
+    >
       <header className="border-b border-border/50">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2.5">
