@@ -1240,6 +1240,7 @@
     "navScreenshots": "畫面預覽",
     "navDeploy": "部署",
     "navOpenSource": "開源",
+    "skipToContent": "跳至主要內容",
     "navSource": "GitHub",
     "navSignIn": "登入",
     "language": {
@@ -1247,11 +1248,11 @@
       "english": "English",
       "traditionalChinese": "繁體中文"
     },
-    "heroTitle": "把整份淨值，放在自己的伺服器上",
-    "heroSubtitle": "astt 是開源的資產追蹤工具，涵蓋銀行帳戶、券商、加密貨幣、不動產、負債與選擇權。原生支援多幣別，並提供每日歷史、目標與 FIRE 預測，全部跑在你自己掌控的資料庫上。",
+    "heroTitle": "把整份淨值，放在自己掌控之下",
+    "heroSubtitle": "astt 是開源的資產追蹤工具，涵蓋銀行帳戶、券商、加密貨幣、不動產、負債與選擇權。原生支援多幣別，並提供每日歷史、目標與長期財務預測，全部跑在你自己掌控的資料庫上。",
     "heroPrimaryCta": "登入 astt",
     "heroSecondaryCta": "自行部署指南",
-    "heroNote": "MIT 授權。沒有追蹤、不販售資料、不需訂閱。",
+    "heroNote": "MIT 授權。不追蹤財務資料、不販售資料、不需訂閱。",
     "demoTitle": "用示範資料試用",
     "demoBody": "臨時工作區，已預先填入擬真的帳戶、持倉與 180 天歷史。不用安裝，也不用註冊。",
     "featuresTitle": "一個財務全貌需要的功能",
@@ -1264,7 +1265,7 @@
     "feature": {
       "currency": {
         "title": "原生多幣別",
-        "body": "餘額保留原始幣別，所有畫面依你選定的基準幣別換算，歷史紀錄也一樣。"
+        "body": "餘額保留原始幣別，所有畫面依你選定的報表幣別換算，歷史紀錄也一樣。"
       },
       "accounts": {
         "title": "所有資產一個畫面",
@@ -1280,7 +1281,7 @@
       },
       "goals": {
         "title": "目標與預測",
-        "body": "淨值目標與里程碑，並依你自己的投入速度計算 FIRE 與退休預測。"
+        "body": "設定淨值里程碑，並依目前投入速度預估何時達成。"
       },
       "recurring": {
         "title": "週期性現金流與定期投資",
@@ -1288,19 +1289,27 @@
       },
       "analysis": {
         "title": "能回答「為什麼」的分析",
-        "body": "配置偏移、集中度、幣別曝險、回撤、成本基礎，以及各帳戶的績效歸因。"
+        "body": "查看哪些因素影響投資組合：資產配置、集中度、幣別、回撤、成本基礎，以及各帳戶的貢獻。"
       },
       "devices": {
         "title": "桌面與行動裝置",
-        "body": "桌面版資訊密度高，手機上是接近原生的可安裝 PWA，支援深淺色與英文／繁體中文。"
+        "body": "桌面版資訊密度高，手機上是可安裝的 App 形式體驗，支援深淺色與英文／繁體中文。"
       }
     },
     "shotsTitle": "實際長這樣",
     "shotsSubtitle": "近距離看看你最常停留的幾個畫面。",
+    "shotsNavLabel": "跳至畫面分類",
     "shotsGroup": {
       "desktop": "桌面版畫面",
       "mobile": "行動版畫面"
     },
+    "shotOpen": "查看原尺寸",
+    "shotFallback": "目前無法載入此截圖。",
+    "shotFallbackLink": "查看部署詳情",
+    "sectionCtaTitle": "準備好建立自己的財務全貌了嗎？",
+    "sectionCtaBody": "選擇部署方式，或開啟你的 astt 工作區。",
+    "sectionCtaPrimary": "登入 astt",
+    "sectionCtaSecondary": "比較部署方式",
     "shot": {
       "overview": {
         "caption": "總覽：桌面與行動版的完整財務全貌"
@@ -1321,18 +1330,33 @@
         "caption": "行動版快速總覽：以手機為優先的精簡儀表板"
       }
     },
-    "deployTitle": "兩種部署方式",
-    "deploySubtitle": "應用程式完全相同，差別只在資料庫由誰維運。",
+    "deployTitle": "三種部署方式",
+    "deploySubtitle": "應用程式相同，部署路徑可選擇自行維運、託管基礎設施，或由 AI 引導完成設定。",
     "dockerTitle": "用 Docker 自行部署",
-    "dockerBody": "Compose 會一起啟動應用程式與 PostgreSQL，資料不會離開你執行的那台機器。",
+    "dockerBody": "Docker Compose 會一起啟動應用程式與 PostgreSQL 資料庫，資料不會離開你執行的那台機器。",
+    "dockerFit": "適合已有私有伺服器或家用主機的人。",
+    "dockerPrerequisite": "需要 Docker、已設定完成的 .env 檔案，以及一台持續運作的主機。",
     "dockerLink": "查看 Docker 部署指南",
     "cloudTitle": "Vercel 與 Neon",
-    "cloudBody": "把同一份程式碼部署到 Vercel，搭配 Neon 的無伺服器 PostgreSQL 分支。",
-    "cloudPoint1": "每日快照排程與市場資料更新都已內建",
+    "cloudBody": "把同一份程式碼部署到 Vercel，搭配 Neon 託管的 PostgreSQL 資料庫。",
+    "cloudFit": "適合不想自行維護 PostgreSQL 的低維護部署。",
+    "cloudPrerequisite": "需要 Vercel 專案與 Neon 資料庫。",
+    "cloudPoint1": "每日歷史與市場資料更新都已內建",
     "cloudPoint2": "單一家庭使用，免費方案就夠",
     "cloudLink": "查看 Vercel 與 Neon 部署指南",
+    "aiDeploy": "請 AI 協助部署",
+    "aiDeployBody": "複製這段提示詞到你慣用的 AI agent，其中已附上官方安裝指南。",
+    "aiDeployFit": "適合希望有人引導設定，不想獨自處理每個部署步驟的人。",
+    "aiDeployPrerequisite": "需要可開啟安裝指南的 AI agent。",
+    "aiDeployPrompt": "請協助我部署 astt。請閱讀並依照以下安裝指南完成步驟：\n{url}",
+    "copyPrompt": "複製提示詞",
+    "copiedPrompt": "已複製",
+    "copyPromptFailed": "複製失敗，請手動選取提示詞。",
+    "copyCommand": "複製指令",
+    "copiedCommand": "已複製",
+    "copyFailed": "複製失敗，請手動選取指令。",
     "openTitle": "開源，而且會一直是",
-    "openBody": "astt 採用 MIT 授權。沒有藏功能的付費版本、不對你的投資組合做分析追蹤，也不會有第三方拿到你的餘額。如果它對你有用，給一顆星能讓更多人找到它。",
+    "openBody": "astt 採用 MIT 授權。自行部署時，資料留在你掌控的基礎設施；託管部署則由你選擇服務商。astt 不販售資料，也不加入財務資料追蹤。如果它對你有用，給一顆星能讓更多人找到它。",
     "openCta": "查看原始碼",
     "footerLicense": "astt · MIT 授權",
     "footerDocs": "文件",

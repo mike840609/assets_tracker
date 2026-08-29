@@ -1240,6 +1240,7 @@
     "navScreenshots": "Screenshots",
     "navDeploy": "Deploy",
     "navOpenSource": "Open source",
+    "skipToContent": "Skip to content",
     "navSource": "GitHub",
     "navSignIn": "Sign in",
     "language": {
@@ -1247,11 +1248,11 @@
       "english": "English",
       "traditionalChinese": "Traditional Chinese"
     },
-    "heroTitle": "Your entire net worth, on your own server",
-    "heroSubtitle": "astt is an open-source tracker for bank accounts, brokerages, crypto, property, liabilities, and options. Multi-currency by design, with daily history, goals, and FIRE projections, all running on a database you control.",
+    "heroTitle": "Your entire net worth, under your control",
+    "heroSubtitle": "astt is an open-source tracker for bank accounts, brokerages, crypto, property, liabilities, and options. Multi-currency by design, with daily history, goals, and long-term projections, all running on a database you control.",
     "heroPrimaryCta": "Sign in to astt",
     "heroSecondaryCta": "Self-hosting guide",
-    "heroNote": "MIT licensed. No telemetry, no data sold, no subscription.",
+    "heroNote": "MIT licensed. No financial-data tracking, no data sold, no subscription.",
     "demoTitle": "Try it with sample data",
     "demoBody": "A temporary workspace seeded with realistic accounts, holdings, and 180 days of history. Nothing to install, nothing to sign up for.",
     "featuresTitle": "Everything one financial view needs",
@@ -1264,7 +1265,7 @@
     "feature": {
       "currency": {
         "title": "Multi-currency by design",
-        "body": "Balances keep their original currency, and every view converts into the base currency you pick. History is included."
+        "body": "Balances keep their original currency, and every view converts into the reporting currency you choose. History is included."
       },
       "accounts": {
         "title": "One view across everything",
@@ -1280,7 +1281,7 @@
       },
       "goals": {
         "title": "Goals and projections",
-        "body": "Net worth goals with milestones, plus FIRE and retirement projections built from your own contribution rate."
+        "body": "Set net worth milestones and see when your current contribution rate could reach them."
       },
       "recurring": {
         "title": "Recurring cash and investing",
@@ -1288,19 +1289,27 @@
       },
       "analysis": {
         "title": "Analysis that answers why",
-        "body": "Allocation drift, concentration, currency exposure, drawdown, cost basis, and per-account attribution."
+        "body": "See what is driving your portfolio: allocation, concentration, currencies, drawdowns, cost basis, and each account's contribution."
       },
       "devices": {
         "title": "Desktop and mobile",
-        "body": "A dense desktop layout, a native-feeling installable PWA on the phone, light and dark themes, English and Traditional Chinese."
+        "body": "A dense desktop layout and an installable app-like phone experience, with light and dark themes, English, and Traditional Chinese."
       }
     },
     "shotsTitle": "What it looks like",
     "shotsSubtitle": "A closer look at the screens you will spend your time in.",
+    "shotsNavLabel": "Jump to a view",
     "shotsGroup": {
       "desktop": "Desktop views",
       "mobile": "Mobile views"
     },
+    "shotOpen": "Open full size",
+    "shotFallback": "This screenshot is unavailable right now.",
+    "shotFallbackLink": "Read deployment details",
+    "sectionCtaTitle": "Ready to run your own financial view?",
+    "sectionCtaBody": "Choose a deployment path or open your astt workspace.",
+    "sectionCtaPrimary": "Sign in to astt",
+    "sectionCtaSecondary": "Compare deployment options",
     "shot": {
       "overview": {
         "caption": "Overview: the full picture across desktop and mobile"
@@ -1321,18 +1330,33 @@
         "caption": "Mobile quick view: a compact phone-first dashboard"
       }
     },
-    "deployTitle": "Two ways to run it",
-    "deploySubtitle": "Same application either way. The difference is who operates the database.",
+    "deployTitle": "Three ways to get started",
+    "deploySubtitle": "Same application, different setup paths. Choose self-hosting, managed infrastructure, or guided setup with AI.",
     "dockerTitle": "Self-host with Docker",
-    "dockerBody": "Compose brings up the app and PostgreSQL together. Your data never leaves the machine you run it on.",
+    "dockerBody": "Docker Compose brings up the app and its PostgreSQL database together. Your data never leaves the machine you run it on.",
+    "dockerFit": "Best for a private server or home lab you already operate.",
+    "dockerPrerequisite": "Requires Docker, a configured .env file, and a machine that stays online.",
     "dockerLink": "View Docker deployment guide",
     "cloudTitle": "Vercel and Neon",
-    "cloudBody": "Deploy the same repository to Vercel with a serverless PostgreSQL branch on Neon.",
-    "cloudPoint1": "Daily snapshot cron and market-data refresh included",
+    "cloudBody": "Deploy the same repository to Vercel with a managed PostgreSQL database hosted by Neon.",
+    "cloudFit": "Best for a low-maintenance deployment without running PostgreSQL yourself.",
+    "cloudPrerequisite": "Requires a Vercel project and a Neon database.",
+    "cloudPoint1": "Daily history and market-data refresh are built in",
     "cloudPoint2": "Free tiers are enough for a single household",
     "cloudLink": "View Vercel and Neon deployment guide",
+    "aiDeploy": "Ask AI to deploy",
+    "aiDeployBody": "Copy this prompt into your preferred AI agent. It tells the agent to use the official installation guide.",
+    "aiDeployFit": "Best if you want guided setup without handling every step alone.",
+    "aiDeployPrerequisite": "Requires an AI agent that can open the installation guide.",
+    "aiDeployPrompt": "Help me deploy astt. Read and follow the installation steps at:\n{url}",
+    "copyPrompt": "Copy prompt",
+    "copiedPrompt": "Copied",
+    "copyPromptFailed": "Copy failed. Select the prompt manually.",
+    "copyCommand": "Copy command",
+    "copiedCommand": "Copied",
+    "copyFailed": "Copy failed. Select the command manually.",
     "openTitle": "Open source, and staying that way",
-    "openBody": "astt is MIT licensed. There is no hosted paid tier holding features back, no analytics on your portfolio, and no third party receiving your balances. If it is useful to you, a star helps other people find it.",
+    "openBody": "astt is MIT licensed. Self-hosted deployments keep your data on infrastructure you control; managed deployments use the provider you choose. astt does not sell your data or add financial-data tracking. If it is useful to you, a star helps other people find it.",
     "openCta": "View the source",
     "footerLicense": "astt · MIT licensed",
     "footerDocs": "Docs",

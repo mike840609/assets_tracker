@@ -41,13 +41,13 @@ function LandingSkeleton() {
       className="dark landing-theme h-dvh w-full scroll-smooth motion-reduce:scroll-auto overflow-x-hidden overflow-y-auto bg-background text-foreground"
       aria-busy="true"
     >
-      <header className="border-b border-border/50">
+      <header className="sticky top-0 z-10 border-b border-border/50 bg-background">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2.5">
             <Skeleton className="h-8 w-8 rounded-xl" />
             <Skeleton className="h-4 w-9" />
           </div>
-          <div className="order-3 -mx-1 flex w-full min-w-0 items-center gap-1 overflow-hidden pb-1 md:order-none md:mx-0 md:w-auto md:flex-1 md:justify-center md:overflow-visible md:pb-0">
+          <div className="order-3 -mx-1 flex w-full min-w-0 flex-wrap items-center gap-0.5 pb-0 md:order-none md:mx-0 md:w-auto md:flex-1 md:flex-nowrap md:justify-center">
             {Array.from({ length: 4 }, (_, index) => (
               <Skeleton key={index} className="h-11 w-20 shrink-0 rounded-lg md:h-9" />
             ))}
@@ -61,13 +61,7 @@ function LandingSkeleton() {
       </header>
 
       <main>
-        <section
-          className={`mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20 ${
-            isPublicDemoEnabled
-              ? "grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center lg:gap-16"
-              : "lg:max-w-4xl"
-          }`}
-        >
+        <section className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center lg:gap-16 lg:py-20">
           <div className="space-y-6">
             <div className="space-y-3">
               <Skeleton className="h-9 w-full max-w-2xl sm:h-10" />
@@ -95,7 +89,12 @@ function LandingSkeleton() {
               <Skeleton className="mt-4 h-12 w-full rounded-xl" />
               <Skeleton className="mx-auto mt-3 h-3 w-3/4" />
             </div>
-          ) : null}
+          ) : (
+            <div className="hidden lg:block">
+              <Skeleton className="aspect-[3/2] w-full rounded-xl" />
+              <Skeleton className="mt-2 h-4 w-3/4 max-w-full" />
+            </div>
+          )}
         </section>
 
         <section className="border-t border-border/50 bg-secondary/30">
@@ -123,6 +122,11 @@ function LandingSkeleton() {
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20">
             <Skeleton className="h-8 w-56 max-w-full" />
             <Skeleton className="mt-3 h-4 w-full max-w-prose" />
+            <div className="mt-5 flex flex-wrap gap-2">
+              {Array.from({ length: 3 }, (_, index) => (
+                <Skeleton key={index} className="h-11 w-28 rounded-lg md:h-5" />
+              ))}
+            </div>
             <div className="mt-8 space-y-10">
               <div>
                 <Skeleton className="h-4 w-28" />
@@ -149,6 +153,16 @@ function LandingSkeleton() {
                 </div>
               </div>
             </div>
+            <div className="mt-12 flex flex-col gap-3 border-t border-border/50 pt-8 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-56 max-w-full" />
+                <Skeleton className="h-4 w-72 max-w-full" />
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Skeleton className="h-11 w-32 rounded-xl" />
+                <Skeleton className="h-11 w-48 rounded-xl" />
+              </div>
+            </div>
           </div>
         </section>
 
@@ -156,19 +170,27 @@ function LandingSkeleton() {
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20">
             <Skeleton className="h-8 w-48 max-w-full" />
             <Skeleton className="mt-3 h-4 w-full max-w-prose" />
-            <div className="mt-8 grid gap-6 lg:grid-cols-2">
-              {Array.from({ length: 2 }, (_, index) => (
+            <div className="mt-8 grid gap-6 lg:grid-cols-3">
+              {Array.from({ length: 3 }, (_, index) => (
                 <div
                   key={index}
-                  className="space-y-4 rounded-2xl border border-border/50 bg-card p-5 sm:p-6"
+                  className="flex h-full min-w-0 flex-col gap-4 rounded-2xl border border-border/50 bg-card p-5 sm:p-6"
                 >
                   <div className="space-y-2">
                     <Skeleton className="h-5 w-40 max-w-full" />
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-4/5 max-w-full" />
+                    <Skeleton className="h-4 w-4/5 max-w-full" />
+                    <Skeleton className="h-3 w-56 max-w-full" />
                   </div>
-                  <Skeleton className="h-20 w-full rounded-xl" />
-                  <Skeleton className="h-11 w-28 rounded-lg" />
+                  {index === 0 ? <Skeleton className="h-20 w-full rounded-xl" /> : null}
+                  {index === 1 ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-4/5 max-w-full" />
+                    </div>
+                  ) : null}
+                  <Skeleton className="mt-auto h-11 w-40 rounded-lg" />
                 </div>
               ))}
             </div>
