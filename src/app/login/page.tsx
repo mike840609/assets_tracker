@@ -217,7 +217,11 @@ async function LoginContent() {
 
         <div className="text-center text-xs text-muted-foreground pt-2 mb-[-1rem]">
           {t("footerBefore")}{" "}
-          <Link href="/privacy" className="underline hover:text-foreground transition-colors">
+          <Link
+            href="/privacy"
+            prefetch={false}
+            className="underline hover:text-foreground transition-colors"
+          >
             {t("footerLink")}
           </Link>
           .

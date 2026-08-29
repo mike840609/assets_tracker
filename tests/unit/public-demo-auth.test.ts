@@ -96,6 +96,8 @@ async function loadStartAction() {
 type ElementWithProps = ReactElement<{
   action?: () => Promise<unknown>;
   children?: ReactNode;
+  href?: string;
+  prefetch?: boolean;
 }>;
 
 function findElement(
@@ -475,6 +477,24 @@ describe("safe formal sign-in handoff from Demo", () => {
 
   it("accepts only the scalar from=demo handoff for an active Demo", async () => {
     await expect(renderLoginGate({ from: "demo" })).resolves.toBeDefined();
+  });
+});
+
+describe("public Demo login prefetch", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    h.getAuthContext.mockReset().mockResolvedValue({ status: "anonymous" });
+  });
+
+  it("does not prefetch Privacy from the login screen", async () => {
+    const loginContent = await renderLoginGate({});
+    const content = await (loginContent.type as (props: unknown) => Promise<ElementWithProps>)(
+      loginContent.props,
+    );
+
+    const privacyLink = findElement(content, (element) => element.props.href === "/privacy");
+
+    expect(privacyLink?.props.prefetch).toBe(false);
   });
 });
 
