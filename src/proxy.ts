@@ -9,6 +9,7 @@ import {
 import { AUTH_SECRET, isPublicDemoEnabled } from "@/lib/env";
 import { getClientIp } from "@/lib/client-ip";
 import { getMobileHubRedirectUrl } from "@/lib/mobile-hub-route";
+import { detectLocaleFromAcceptLanguage } from "./i18n/config";
 import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 
@@ -178,7 +179,7 @@ function setLocaleCookie(req: NextRequest, response: NextResponse): void {
   if (localeCookie) return;
 
   const acceptLanguage = req.headers.get("accept-language") ?? "";
-  const locale = acceptLanguage.toLowerCase().includes("zh") ? "zh-TW" : "en-US";
+  const locale = detectLocaleFromAcceptLanguage(acceptLanguage);
   response.cookies.set("NEXT_LOCALE", locale, {
     path: "/",
     maxAge: 60 * 60 * 24 * 365,

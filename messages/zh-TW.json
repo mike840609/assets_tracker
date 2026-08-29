@@ -1236,6 +1236,11 @@
   "landing": {
     "navSource": "GitHub",
     "navSignIn": "登入",
+    "language": {
+      "label": "語言",
+      "english": "English",
+      "traditionalChinese": "繁體中文"
+    },
     "heroTitle": "把整份淨值，放在自己的伺服器上",
     "heroSubtitle": "astt 是開源的資產追蹤工具，涵蓋銀行帳戶、券商、加密貨幣、不動產、負債與選擇權。原生支援多幣別，並提供每日歷史、目標與 FIRE 預測，全部跑在你自己掌控的資料庫上。",
     "heroPrimaryCta": "登入 astt",

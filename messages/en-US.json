@@ -1236,6 +1236,11 @@
   "landing": {
     "navSource": "GitHub",
     "navSignIn": "Sign in",
+    "language": {
+      "label": "Language",
+      "english": "English",
+      "traditionalChinese": "Traditional Chinese"
+    },
     "heroTitle": "Your entire net worth, on your own server",
     "heroSubtitle": "astt is an open-source tracker for bank accounts, brokerages, crypto, property, liabilities, and options. Multi-currency by design, with daily history, goals, and FIRE projections, all running on a database you control.",
     "heroPrimaryCta": "Sign in to astt",

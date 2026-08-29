@@ -48,6 +48,7 @@ function LandingSkeleton() {
             <Skeleton className="h-4 w-9" />
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
+            <Skeleton className="h-11 w-24 rounded-lg md:h-9 md:w-20" />
             <Skeleton className="h-11 w-11 rounded-lg md:h-9 md:w-9" />
             <Skeleton className="h-11 w-20 rounded-lg md:h-9 md:w-16" />
           </div>

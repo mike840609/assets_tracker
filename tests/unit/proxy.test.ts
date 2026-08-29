@@ -32,8 +32,8 @@ import { getAuthContext, getSession } from "@/lib/auth-session";
 
 const TUNNEL_PATH = "/a1b2c3d4";
 
-function executeAnonymousRequest(pathname: string): Response {
-  const request = new NextRequest(`https://astt.app${pathname}`);
+function executeAnonymousRequest(pathname: string, headers?: Record<string, string>): Response {
+  const request = new NextRequest(`https://astt.app${pathname}`, { headers });
   const response = proxy(request, {} as NextFetchEvent);
 
   if (!(response instanceof Response)) {
@@ -123,6 +123,18 @@ describe("public landing page", () => {
 
     expect(response.headers.get("x-middleware-next")).toBe("1");
     expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+  });
+
+  it.each([
+    ["en-US,zh-TW;q=0.8", "en-US"],
+    ["zh-TW,zh;q=0.9,en-US;q=0.8", "zh-TW"],
+    ["fr-FR,ja;q=0.9", "en-US"],
+  ])("sets the first supported browser locale for %s", (acceptLanguage, expectedLocale) => {
+    const response = executeAnonymousRequest("/landing", {
+      "accept-language": acceptLanguage,
+    }) as NextResponse;
+
+    expect(response.cookies.get("NEXT_LOCALE")?.value).toBe(expectedLocale);
   });
 });
 

@@ -14,8 +14,11 @@ import {
 } from "lucide-react";
 import { DemoLoginButton } from "@/components/demo/demo-login-button";
 import { GitHubMark } from "@/components/layout/github-mark";
+import { LandingLocaleSwitcher } from "@/components/landing/landing-locale-switcher";
 import { isPublicDemoEnabled } from "@/lib/env";
 import { REPO_URL, LICENSE_URL } from "@/lib/repo";
+import { getLocale } from "next-intl/server";
+import type { Locale } from "@/i18n/config";
 
 const DOCS_URL = `${REPO_URL}/blob/master/docs/DEPLOYMENT.md`;
 const FOCUS_RING_CLASS =
@@ -102,7 +105,8 @@ function AppMark({ className = "h-9 w-9" }: { className?: string }) {
 }
 
 export async function LandingContent() {
-  const t = await getTranslations("landing");
+  const [t, locale] = await Promise.all([getTranslations("landing"), getLocale()]);
+  const activeLocale = locale as Locale;
 
   return (
     <div className="dark landing-theme h-dvh w-full overflow-x-hidden overflow-y-auto bg-background text-foreground">
@@ -113,6 +117,12 @@ export async function LandingContent() {
             <span className="text-base font-semibold tracking-tight text-foreground">astt</span>
           </div>
           <nav className="flex items-center gap-1 sm:gap-2">
+            <LandingLocaleSwitcher
+              locale={activeLocale}
+              label={t("language.label")}
+              englishLabel={t("language.english")}
+              traditionalChineseLabel={t("language.traditionalChinese")}
+            />
             <a
               href={REPO_URL}
               target="_blank"
