@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import {
   ArrowRight,
   CalendarClock,
@@ -17,12 +17,17 @@ import { GitHubMark } from "@/components/layout/github-mark";
 import { LandingLocaleSwitcher } from "@/components/landing/landing-locale-switcher";
 import { isPublicDemoEnabled } from "@/lib/env";
 import { REPO_URL, LICENSE_URL } from "@/lib/repo";
-import { getLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/config";
 
 const DOCS_URL = `${REPO_URL}/blob/master/docs/DEPLOYMENT.md`;
 const FOCUS_RING_CLASS =
   "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
+const LANDING_NAV_ITEMS = [
+  { href: "#features", labelKey: "navFeatures" },
+  { href: "#screenshots", labelKey: "navScreenshots" },
+  { href: "#deploy", labelKey: "navDeploy" },
+  { href: "#open-source", labelKey: "navOpenSource" },
+] as const;
 
 /**
  * Verified product previews. Keep the intrinsic dimensions here so the browser
@@ -109,14 +114,35 @@ export async function LandingContent() {
   const activeLocale = locale as Locale;
 
   return (
-    <div className="dark landing-theme h-dvh w-full overflow-x-hidden overflow-y-auto bg-background text-foreground">
+    <div
+      id="top"
+      className="dark landing-theme h-dvh w-full scroll-smooth motion-reduce:scroll-auto overflow-x-hidden overflow-y-auto bg-background text-foreground"
+    >
       <header className="border-b border-border/50">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2.5">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
+          <a
+            href="#top"
+            className={`${FOCUS_RING_CLASS} flex items-center gap-2.5 rounded-lg`}
+            aria-label={t("navHome")}
+          >
             <AppMark className="h-8 w-8" />
             <span className="text-base font-semibold tracking-tight text-foreground">astt</span>
-          </div>
-          <nav className="flex items-center gap-1 sm:gap-2">
+          </a>
+          <nav
+            aria-label={t("navLabel")}
+            className="order-3 -mx-1 flex w-full min-w-0 items-center gap-1 overflow-x-auto pb-1 scrollbar-none md:order-none md:mx-0 md:w-auto md:flex-1 md:justify-center md:overflow-visible md:pb-0"
+          >
+            {LANDING_NAV_ITEMS.map(({ href, labelKey }) => (
+              <a
+                key={href}
+                href={href}
+                className={`${FOCUS_RING_CLASS} flex h-11 shrink-0 items-center rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:h-9`}
+              >
+                {t(labelKey)}
+              </a>
+            ))}
+          </nav>
+          <div className="flex items-center gap-1 sm:gap-2">
             <LandingLocaleSwitcher
               locale={activeLocale}
               label={t("language.label")}
@@ -138,7 +164,7 @@ export async function LandingContent() {
             >
               {t("navSignIn")}
             </Link>
-          </nav>
+          </div>
         </div>
       </header>
 
@@ -188,7 +214,7 @@ export async function LandingContent() {
         </section>
 
         {/* Features */}
-        <section className="border-t border-border/50 bg-secondary/30">
+        <section id="features" className="border-t border-border/50 bg-secondary/30">
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20">
             <h2 className="text-balance text-2xl font-bold tracking-tight text-foreground">
               {t("featuresTitle")}
@@ -224,7 +250,7 @@ export async function LandingContent() {
         </section>
 
         {/* Screenshots */}
-        <section className="border-t border-border/50">
+        <section id="screenshots" className="border-t border-border/50">
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20">
             <h2 className="text-balance text-2xl font-bold tracking-tight text-foreground">
               {t("shotsTitle")}
@@ -285,7 +311,7 @@ export async function LandingContent() {
         </section>
 
         {/* Deploy */}
-        <section className="border-t border-border/50 bg-secondary/30">
+        <section id="deploy" className="border-t border-border/50 bg-secondary/30">
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20">
             <h2 className="text-balance text-2xl font-bold tracking-tight text-foreground">
               {t("deployTitle")}
@@ -355,7 +381,7 @@ export async function LandingContent() {
         </section>
 
         {/* Open source / privacy */}
-        <section className="border-t border-border/50">
+        <section id="open-source" className="border-t border-border/50">
           <div className="mx-auto max-w-3xl space-y-4 px-4 py-14 text-center sm:px-6 lg:py-20">
             <h2 className="text-balance text-2xl font-bold tracking-tight text-foreground">
               {t("openTitle")}

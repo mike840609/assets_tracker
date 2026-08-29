@@ -38,14 +38,19 @@ function FeatureSkeletonList({ count }: { count: number }) {
 function LandingSkeleton() {
   return (
     <div
-      className="dark landing-theme h-dvh w-full overflow-x-hidden overflow-y-auto bg-background text-foreground"
+      className="dark landing-theme h-dvh w-full scroll-smooth motion-reduce:scroll-auto overflow-x-hidden overflow-y-auto bg-background text-foreground"
       aria-busy="true"
     >
       <header className="border-b border-border/50">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2.5">
             <Skeleton className="h-8 w-8 rounded-xl" />
             <Skeleton className="h-4 w-9" />
+          </div>
+          <div className="order-3 -mx-1 flex w-full min-w-0 items-center gap-1 overflow-hidden pb-1 md:order-none md:mx-0 md:w-auto md:flex-1 md:justify-center md:overflow-visible md:pb-0">
+            {Array.from({ length: 4 }, (_, index) => (
+              <Skeleton key={index} className="h-11 w-20 shrink-0 rounded-lg md:h-9" />
+            ))}
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <Skeleton className="h-11 w-24 rounded-lg md:h-9 md:w-20" />

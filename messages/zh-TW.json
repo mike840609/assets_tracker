@@ -1234,6 +1234,12 @@
     "step4": "點選「新增」— App 圖示即會出現在主畫面上"
   },
   "landing": {
+    "navLabel": "主要導覽",
+    "navHome": "回到頂端",
+    "navFeatures": "功能",
+    "navScreenshots": "畫面預覽",
+    "navDeploy": "部署",
+    "navOpenSource": "開源",
     "navSource": "GitHub",
     "navSignIn": "登入",
     "language": {

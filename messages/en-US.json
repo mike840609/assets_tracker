@@ -1234,6 +1234,12 @@
     "step4": "Tap \"Add\" — the app icon will appear on your home screen"
   },
   "landing": {
+    "navLabel": "Primary navigation",
+    "navHome": "Back to top",
+    "navFeatures": "Features",
+    "navScreenshots": "Screenshots",
+    "navDeploy": "Deploy",
+    "navOpenSource": "Open source",
     "navSource": "GitHub",
     "navSignIn": "Sign in",
     "language": {
