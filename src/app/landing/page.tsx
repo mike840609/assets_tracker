@@ -38,7 +38,7 @@ function FeatureSkeletonList({ count }: { count: number }) {
 function LandingSkeleton() {
   return (
     <div
-      className="dark h-dvh w-full overflow-x-hidden overflow-y-auto bg-background text-foreground"
+      className="dark landing-theme h-dvh w-full overflow-x-hidden overflow-y-auto bg-background text-foreground"
       aria-busy="true"
     >
       <header className="border-b border-border/50">
