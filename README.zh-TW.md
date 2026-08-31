@@ -5,7 +5,7 @@
 [![Release](https://img.shields.io/github/v/release/mike840609/assets_tracker)](https://github.com/mike840609/assets_tracker/releases/latest)
 [![GHCR](https://img.shields.io/badge/GHCR-container-blue?logo=docker)](https://github.com/mike840609/assets_tracker/pkgs/container/assets_tracker)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./.github/CONTRIBUTING.md)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mike840609/assets_tracker)
 
 [English](./README.md) | [繁體中文](./README.zh-TW.md)
@@ -16,7 +16,7 @@
 
 > 原名 Assets Tracker，同一個專案，現以 **astt** 為品牌名。
 
-[線上展示](https://astt.app) · [快速開始](#快速開始) · [用 AI 安裝](#用-ai-安裝) · [文件](#文件) · [安全政策](./SECURITY.md) · [參與貢獻](./CONTRIBUTING.md)
+[線上展示](https://astt.app) · [快速開始](#快速開始) · [用 AI 安裝](#用-ai-安裝) · [文件](#文件) · [安全政策](./.github/SECURITY.md) · [參與貢獻](./.github/CONTRIBUTING.md)
 
 ![astt 桌面與行動版儀表板](./public/readme-hero.jpg)
 
@@ -41,6 +41,8 @@
     <td><img src="./public/readme-demo-mobile.png" alt="astt 行動版儀表板"></td>
   </tr>
 </table>
+
+[線上展示](https://astt.app) 使用 [`src/lib/demo/demo-data.json`](./src/lib/demo/demo-data.json) 這份範例資料。在「設定 → 從備份還原」匯入同一份檔案，就能在自己的站台載入相同的範例投資組合。
 
 ## 快速開始
 
@@ -101,7 +103,7 @@ astt 專注於淨值與投資追蹤。若你主要需要複式記帳或信封預
 
 ## 支援與安全性
 
-可透過 [GitHub Issues](https://github.com/mike840609/assets_tracker/issues) 回報可重現的錯誤或提出功能需求。安全漏洞請依照[安全政策](./SECURITY.md)私下回報。
+可透過 [GitHub Issues](https://github.com/mike840609/assets_tracker/issues) 回報可重現的錯誤或提出功能需求。安全漏洞請依照[安全政策](./.github/SECURITY.md)私下回報。
 
 ## 資料責任
 

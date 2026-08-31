@@ -173,7 +173,7 @@ test("landing provides deployment responsibility and open-source next steps", as
     );
     await expect(page.getByRole("link", { name: "Contribute" })).toHaveAttribute(
       "href",
-      "https://github.com/mike840609/assets_tracker/blob/master/CONTRIBUTING.md",
+      "https://github.com/mike840609/assets_tracker/blob/master/.github/CONTRIBUTING.md",
     );
     await expect(page.getByRole("link", { name: "View releases" })).toHaveAttribute(
       "href",

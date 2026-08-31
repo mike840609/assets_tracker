@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
-import rawFixture from "../../../demo-data.json";
+import rawFixture from "./demo-data.json";
 import { taiwanCalendarDay } from "@/lib/app-day";
 import {
   instantiateDemoFixture,

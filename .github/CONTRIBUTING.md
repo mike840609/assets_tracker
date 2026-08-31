@@ -39,4 +39,4 @@ pnpm typecheck
 pnpm test:unit
 ```
 
-By participating, you agree to follow the [Code of Conduct](./CODE_OF_CONDUCT.md). Contributions are licensed under the repository's [MIT License](./LICENSE).
+By participating, you agree to follow the [Code of Conduct](./CODE_OF_CONDUCT.md). Contributions are licensed under the repository's [MIT License](../LICENSE).

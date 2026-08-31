@@ -5,7 +5,7 @@
 [![Release](https://img.shields.io/github/v/release/mike840609/assets_tracker)](https://github.com/mike840609/assets_tracker/releases/latest)
 [![GHCR](https://img.shields.io/badge/GHCR-container-blue?logo=docker)](https://github.com/mike840609/assets_tracker/pkgs/container/assets_tracker)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./.github/CONTRIBUTING.md)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mike840609/assets_tracker)
 
 [English](./README.md) | [繁體中文](./README.zh-TW.md)
@@ -16,7 +16,7 @@ A private, multi-currency home for tracking your net worth, investments, cash, p
 
 > Formerly Assets Tracker. Same project, now branded as **astt**.
 
-[Live Demo](https://astt.app) · [Quick Start](#quick-start) · [Install with AI](#install-with-ai) · [Documentation](#documentation) · [Security](./SECURITY.md) · [Contributing](./CONTRIBUTING.md)
+[Live Demo](https://astt.app) · [Quick Start](#quick-start) · [Install with AI](#install-with-ai) · [Documentation](#documentation) · [Security](./.github/SECURITY.md) · [Contributing](./.github/CONTRIBUTING.md)
 
 ![astt dashboard on desktop and mobile](./public/readme-hero.jpg)
 
@@ -41,6 +41,8 @@ A private, multi-currency home for tracking your net worth, investments, cash, p
     <td><img src="./public/readme-demo-mobile.png" alt="astt mobile dashboard"></td>
   </tr>
 </table>
+
+The [Live Demo](https://astt.app) is built from [`src/lib/demo/demo-data.json`](./src/lib/demo/demo-data.json). Import that file through Settings → Restore from backup to load the same sample portfolio into your own instance.
 
 ## Quick Start
 
@@ -102,7 +104,7 @@ astt focuses on net worth and investments. If you mainly want double-entry bookk
 
 ## Support and Security
 
-Use [GitHub Issues](https://github.com/mike840609/assets_tracker/issues) for reproducible bugs and feature requests. Report vulnerabilities privately through the [Security Policy](./SECURITY.md).
+Use [GitHub Issues](https://github.com/mike840609/assets_tracker/issues) for reproducible bugs and feature requests. Report vulnerabilities privately through the [Security Policy](./.github/SECURITY.md).
 
 ## Data Responsibility
 

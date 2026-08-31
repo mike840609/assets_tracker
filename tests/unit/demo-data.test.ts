@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { dataImportSchema } from "@/lib/validators";
 
 const demo = JSON.parse(
-  readFileSync(new URL("../../demo-data.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../../src/lib/demo/demo-data.json", import.meta.url), "utf8"),
 ) as import("zod").z.infer<typeof dataImportSchema>;
 
 describe("demo-data.json", () => {

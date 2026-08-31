@@ -27,7 +27,7 @@ import type { Locale } from "@/i18n/config";
 const DOCS_URL = `${REPO_URL}/blob/master/docs/DEPLOYMENT.md`;
 const SECURITY_URL = `${REPO_URL}/security/policy`;
 const ISSUES_URL = `${REPO_URL}/issues`;
-const CONTRIBUTING_URL = `${REPO_URL}/blob/master/CONTRIBUTING.md`;
+const CONTRIBUTING_URL = `${REPO_URL}/blob/master/.github/CONTRIBUTING.md`;
 const RELEASES_URL = `${REPO_URL}/releases`;
 const AI_DEPLOY_URL =
   "https://raw.githubusercontent.com/mike840609/assets_tracker/master/docs/INSTALL_WITH_AI.md";
