@@ -43,10 +43,19 @@ export function LandingNav({ items, label }: LandingNavProps) {
   const [indicator, setIndicator] = useState<IndicatorBox | null>(null);
   const navRef = useRef<HTMLElement>(null);
 
+  /* Restores the fragment's section after a reload — the locale switcher
+     reloads the page, and the browser cannot restore scroll itself because the
+     page scrolls inside #top rather than the document.
+
+     Only when there *is* a fragment. Running this unconditionally on mount
+     scrolled to #top, which yanks a visitor who already started scrolling back
+     to the top the moment hydration lands — the slower the device, the further
+     they lose. Later hashchange/pageshow events still honour an emptied hash,
+     because there the jump to the top is what the visitor asked for. */
   useEffect(() => {
     const syncHash = () => scrollToSection(window.location.hash || "#top");
 
-    syncHash();
+    if (window.location.hash) syncHash();
     window.addEventListener("hashchange", syncHash);
     window.addEventListener("pageshow", syncHash);
     return () => {
