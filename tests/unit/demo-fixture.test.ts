@@ -8,7 +8,7 @@ import { getPreparedDemoFixture } from "@/lib/demo/demo-fixture-source";
 import { dataImportSchema } from "@/lib/validators";
 
 const source = dataImportSchema.parse(
-  JSON.parse(readFileSync(new URL("../../demo-data.json", import.meta.url), "utf8")),
+  JSON.parse(readFileSync(new URL("../../src/lib/demo/demo-data.json", import.meta.url), "utf8")),
 );
 const today = new Date("2026-08-01T00:00:00.000Z");
 

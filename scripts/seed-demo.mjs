@@ -2,7 +2,7 @@
 // history chart, and analysis pages render populated without waiting for the
 // daily cron. Idempotent: wipes and re-inserts the preview user's data.
 //
-// Source of truth is demo-data.json (repo root) — the same file users can
+// Source of truth is src/lib/demo/demo-data.json — the same file users can
 // import via Settings → Data. All dated rows are shifted so the newest
 // snapshot lands on today's Taiwan calendar day, keeping the demo evergreen.
 //
@@ -37,7 +37,9 @@ if (!["localhost", "127.0.0.1"].includes(url.hostname) && !process.argv.includes
   process.exit(1);
 }
 
-const demo = JSON.parse(readFileSync(new URL("../demo-data.json", import.meta.url), "utf8"));
+const demo = JSON.parse(
+  readFileSync(new URL("../src/lib/demo/demo-data.json", import.meta.url), "utf8"),
+);
 
 // Keep the seed's Taiwan-day input local; the shared fixture module owns all
 // date shifting and reference remapping.
