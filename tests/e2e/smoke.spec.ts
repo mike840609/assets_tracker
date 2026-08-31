@@ -6,12 +6,11 @@
  *   2. Create account → add holding via symbol search → holding appears
  *   3. Dashboard loads with net-worth card + trend chart
  *
- * Auth strategy: Google OAuth is stubbed via Next.js's built-in
- * Credentials provider, explicitly enabled with PREVIEW_AUTH_ENABLED=true
- * for the production-mode local E2E build. This avoids needing real Google
- * tokens in CI while still exercising the full NextAuth session-creation
- * path. The global-setup logs in once and saves storage state; tests 2 & 3
- * reuse that state.
+ * Auth strategy: Preview auth uses Next.js's built-in Credentials provider,
+ * explicitly enabled with PREVIEW_AUTH_ENABLED=true for the production-mode
+ * local E2E build. This avoids needing real Google tokens in CI while still
+ * exercising the full NextAuth session-creation path. The global-setup logs
+ * in once and saves storage state; tests 2 & 3 reuse that state.
  */
 
 import { test, expect } from "@playwright/test";
@@ -34,10 +33,11 @@ test("1. unauthenticated visitor sees the landing page and can sign in", async (
   await page.getByRole("link", { name: "Sign in" }).first().click();
   await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
 
-  // Login page must show the Google OAuth button (translation: "Continue with Google")
-  await expect(page.getByRole("button", { name: /continue with google/i })).toBeVisible();
+  // Preview deployments guarantee the credentials login, while Google OAuth
+  // is optional and only renders when both Google env vars are configured.
+  await expect(page.getByRole("button", { name: "Internal Test Login" })).toBeVisible();
 
-  // Sign in via preview-credentials (the OAuth stub for CI).
+  // Sign in via the preview credentials provider.
   // Works for both password-gated and button-only preview mode.
   const previewLoginButton = page.getByRole("button", { name: "Internal Test Login" });
   await previewLoginButton.waitFor({ timeout: 60_000 });
