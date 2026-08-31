@@ -503,7 +503,7 @@ describe("service worker fetch boundary", () => {
     }
   });
 
-  it("waits for a slow network rather than claiming offline when nothing is cached", async () => {
+  it("returns the offline page after the timeout when the navigation has no route cache", async () => {
     vi.useFakeTimers();
     try {
       const { fetchListener, networkFetch, cache } = loadFetchListener();
@@ -523,10 +523,16 @@ describe("service worker fetch boundary", () => {
         url: "https://astt.app/",
         mode: "navigate",
       } as RequestStub);
-      await vi.advanceTimersByTimeAsync(6000);
-      settleNetwork(makeResponse("<html>slow but online</html>"));
+      const response = ev.response();
+      await vi.advanceTimersByTimeAsync(3000);
+      const timedOutResponse = await Promise.race([response, Promise.resolve(undefined)]);
+      expect(timedOutResponse).toMatchObject({ body: "offline" });
 
-      await expect(ev.body()).resolves.toBe("<html>slow but online</html>");
+      settleNetwork(makeResponse("<html>slow but online</html>"));
+      await ev.waitUntilAll();
+      expect(cache.get({ method: "GET", url: "https://astt.app/", mode: "navigate" })?.body).toBe(
+        "<html>slow but online</html>",
+      );
     } finally {
       vi.useRealTimers();
     }
@@ -570,6 +576,34 @@ describe("service worker fetch boundary", () => {
     expect(cache.get(home)).toBeUndefined();
     expect(cache.get(login)).toBeUndefined();
     await expect(cache.match("/offline")).resolves.toBeDefined();
+  });
+
+  it("does not repopulate navigation cache when a slow page resolves after logout", async () => {
+    const { fetchListener, networkFetch, cache } = loadFetchListener();
+    const home = { method: "GET", url: "https://astt.app/", mode: "navigate" } as RequestStub;
+    const login = { method: "GET", url: "https://astt.app/login", mode: "navigate" } as RequestStub;
+    await cache.put(home, makeResponse("<html>old dashboard</html>"));
+
+    let settleHome: (response: ResponseStub) => void = () => {};
+    networkFetch
+      .mockReturnValueOnce(
+        new Promise<ResponseStub>((resolve) => {
+          settleHome = resolve;
+        }),
+      )
+      .mockResolvedValueOnce(makeResponse("<html>login</html>"));
+
+    const homeEvent = dispatchFetch(fetchListener, home);
+    await flushMicrotasks();
+    const loginEvent = dispatchFetch(fetchListener, login);
+    await expect(loginEvent.body()).resolves.toBe("<html>login</html>");
+    await loginEvent.waitUntilAll();
+
+    settleHome(makeResponse("<html>private dashboard</html>"));
+    await expect(homeEvent.body()).resolves.toBe("<html>private dashboard</html>");
+    await homeEvent.waitUntilAll();
+
+    expect(cache.get(home)).toBeUndefined();
   });
 
   it("does not intercept top-level navigations to API routes", () => {

@@ -1233,6 +1233,169 @@
     "step3": "往下捲動並點選「加入主畫面」",
     "step4": "點選「新增」— App 圖示即會出現在主畫面上"
   },
+  "landing": {
+    "navLabel": "主要導覽",
+    "metaTitle": "astt — 自行部署的淨值與投資組合追蹤工具",
+    "metaDescription": "開源、自行部署的淨值與投資組合追蹤工具，支援多幣別的帳戶、投資、不動產、負債與財務目標。",
+    "navHome": "回到頂端",
+    "navFeatures": "功能",
+    "navScreenshots": "畫面預覽",
+    "navDeploy": "部署",
+    "navOpenSource": "開源",
+    "skipToContent": "跳至主要內容",
+    "navSource": "GitHub",
+    "navSignIn": "登入",
+    "language": {
+      "label": "語言",
+      "english": "English",
+      "traditionalChinese": "繁體中文"
+    },
+    "heroEyebrow": "開源 · 自行部署",
+    "heroTitle": "整合所有資產，隨時掌握最新淨值",
+    "heroSubtitle": "用多幣別追蹤所有資產，資料留在你掌控的基礎設施。",
+    "heroPrimaryCta": "選擇部署方式",
+    "heroSecondaryCta": "登入你的 astt",
+    "heroNote": "MIT 授權。不追蹤財務資料、不販售資料、不需訂閱。",
+    "heroScope": "適合追蹤淨值與投資，不是記帳或預算工具。",
+    "demoTitle": "用示範資料試用",
+    "demoBody": "用示範帳戶、持倉與 180 天歷史試用。",
+    "featuresTitle": "所有資產，一個畫面",
+    "featureGroup": {
+      "overview": "總覽",
+      "planning": "規劃",
+      "insight": "分析"
+    },
+    "feature": {
+      "currency": {
+        "title": "多幣別",
+        "body": "保留原始餘額，依基準幣別查看。"
+      },
+      "accounts": {
+        "title": "所有帳戶，一個畫面",
+        "body": "銀行、券商、加密貨幣、不動產、負債與選擇權。"
+      },
+      "market": {
+        "title": "市場資料",
+        "body": "從支援的市場資料來源更新股票、ETF、加密貨幣、選擇權與匯率。"
+      },
+      "watchlist": {
+        "title": "追蹤清單",
+        "body": "集中追蹤代號與即將公布的財報。"
+      },
+      "history": {
+        "title": "每日歷史",
+        "body": "換基準幣別，過去快照仍正確。"
+      },
+      "goals": {
+        "title": "目標與預測",
+        "body": "設定里程碑，預估達成時間。"
+      },
+      "recurring": {
+        "title": "週期性現金流與定期投資",
+        "body": "自動記錄收入、帳單與投入。"
+      },
+      "analysis": {
+        "title": "投資組合分析",
+        "body": "查看配置、集中度、幣別、回撤與成本基礎。"
+      },
+      "devices": {
+        "title": "桌面與行動裝置",
+        "body": "完整桌面視圖與可安裝的手機 App。"
+      }
+    },
+    "shotsTitle": "畫面預覽",
+    "shotsNavLabel": "跳至畫面分類",
+    "shotsScrollHint": "左右滑動查看更多",
+    "shotsGroup": {
+      "desktop": "桌面版",
+      "mobile": "行動版"
+    },
+    "shotOpen": "查看原尺寸",
+    "shotFallback": "目前無法載入此截圖。",
+    "shotFallbackLink": "查看部署詳情",
+    "sectionCtaTitle": "準備開始了嗎？",
+    "sectionCtaPrimary": "登入你的 astt",
+    "sectionCtaSecondary": "部署選項",
+    "shot": {
+      "desktopDashboard": {
+        "caption": "桌面版儀表板"
+      },
+      "desktopAccounts": {
+        "caption": "桌面版帳戶"
+      },
+      "desktopAnalysis": {
+        "caption": "桌面版分析"
+      },
+      "desktopCalendar": {
+        "caption": "桌面版行事曆"
+      },
+      "desktopHistory": {
+        "caption": "桌面版歷史"
+      },
+      "desktopSettings": {
+        "caption": "桌面版設定"
+      },
+      "mobileMaxDrawdown": {
+        "caption": "行動版最大回撤"
+      },
+      "mobileDashboard": {
+        "caption": "行動版儀表板"
+      },
+      "mobileWatchlist": {
+        "caption": "行動版觀察清單"
+      },
+      "mobileGoals": {
+        "caption": "行動版目標規劃"
+      },
+      "mobileConcentration": {
+        "caption": "行動版集中度"
+      },
+      "mobileSummary": {
+        "caption": "行動版摘要"
+      },
+      "mobileDailySnapshots": {
+        "caption": "行動版每日快照"
+      },
+      "mobileAssetAllocation": {
+        "caption": "行動版資產組成分布"
+      }
+    },
+    "deployTitle": "選擇部署方式",
+    "deploySubtitle": "選擇 Docker 或 Vercel + Neon；AI 指南支援本機與 Docker 設定。",
+    "deployNote": "正式環境需設定 HTTPS、強密碼與備份；部署與資料安全由你掌控並負責。",
+    "dockerTitle": "用 Docker 自行部署",
+    "dockerAudience": "適合已經有伺服器或 NAS 的人。",
+    "dockerBody": "在你自己的機器上同時執行 astt 與 PostgreSQL。",
+    "dockerLink": "Docker 部署指南",
+    "cloudTitle": "Vercel 與 Neon",
+    "cloudAudience": "適合不想自行維運伺服器的人。",
+    "cloudBody": "部署到 Vercel，搭配託管的 Neon 資料庫。",
+    "cloudLink": "Vercel + Neon 指南",
+    "aiDeploy": "請 AI agent 協助",
+    "aiDeployAudience": "適合想逐步完成本機或 Docker 設定的人。",
+    "aiDeployBody": "將提示詞貼給 AI agent，依照它的步驟完成。",
+    "aiDeployPrompt": "請協助我部署 astt。請閱讀並依照以下安裝指南完成步驟：\n{url}",
+    "copyPrompt": "複製提示詞",
+    "copiedPrompt": "已複製",
+    "copyPromptFailed": "複製失敗，請手動選取提示詞。",
+    "copyCommand": "複製指令",
+    "copiedCommand": "已複製",
+    "copyFailed": "複製失敗，請手動選取指令。",
+    "openTitle": "開源",
+    "openBody": "MIT 授權。資料留在你掌控的基礎設施，部署安全由你負責。",
+    "openCta": "查看原始碼",
+    "openLinksLabel": "開源連結",
+    "openIssues": "回報問題",
+    "openContributing": "參與貢獻",
+    "openReleases": "查看版本",
+    "footerLicense": "astt · MIT 授權",
+    "footerLinksLabel": "頁尾連結",
+    "footerDocs": "文件",
+    "footerLicenseLink": "授權條款",
+    "footerSecurity": "安全性",
+    "footerPrivacy": "隱私權",
+    "footerTerms": "使用條款"
+  },
   "login": {
     "title": "astt",
     "subtitle": "安全地訪問您的財務投資組合",

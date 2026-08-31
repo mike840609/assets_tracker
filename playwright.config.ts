@@ -2,13 +2,18 @@ import { defineConfig, devices } from "@playwright/test";
 
 const BASE_URL = process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://localhost:3000";
 const E2E_PASSWORD = process.env.E2E_PASSWORD ?? "e2e-smoke-test";
+const SKIP_AUTH_SETUP = process.env.E2E_SKIP_AUTH_SETUP === "1";
 const ENABLE_PUBLIC_DEMO_PROJECTS =
   !process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.E2E_PUBLIC_DEMO === "1";
 const E2E_PUBLIC_DEMO_NO_ARTIFACTS = process.env.E2E_PUBLIC_DEMO_NO_ARTIFACTS === "1";
 
 export default defineConfig({
-  globalSetup: "./tests/e2e/global-setup",
-  globalTeardown: "./tests/e2e/global-teardown",
+  ...(SKIP_AUTH_SETUP
+    ? {}
+    : {
+        globalSetup: "./tests/e2e/global-setup",
+        globalTeardown: "./tests/e2e/global-teardown",
+      }),
   testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

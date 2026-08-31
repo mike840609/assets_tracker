@@ -32,8 +32,8 @@ import { getAuthContext, getSession } from "@/lib/auth-session";
 
 const TUNNEL_PATH = "/a1b2c3d4";
 
-function executeAnonymousRequest(pathname: string): Response {
-  const request = new NextRequest(`https://astt.app${pathname}`);
+function executeAnonymousRequest(pathname: string, headers?: Record<string, string>): Response {
+  const request = new NextRequest(`https://astt.app${pathname}`, { headers });
   const response = proxy(request, {} as NextFetchEvent);
 
   if (!(response instanceof Response)) {
@@ -97,6 +97,47 @@ describe("Sentry tunnel proxy bypass", () => {
   });
 });
 
+describe("public landing page", () => {
+  it("rewrites an anonymous root request to the landing page instead of redirecting", () => {
+    const response = executeAnonymousRequest("/");
+
+    expect(response.headers.get("location")).toBeNull();
+    expect(response.headers.get("x-middleware-rewrite")).toBe("https://astt.app/landing");
+  });
+
+  it("serves the landing page directly to anonymous visitors", () => {
+    const response = executeAnonymousRequest("/landing");
+
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("still redirects other anonymous protected routes to login", () => {
+    const response = executeAnonymousRequest("/accounts");
+
+    expect(response.headers.get("location")).toBe("https://astt.app/login");
+  });
+
+  it("keeps the authenticated dashboard on the root path", () => {
+    const response = executeAuthenticatedRequest("/", false);
+
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+  });
+
+  it.each([
+    ["en-US,zh-TW;q=0.8", "en-US"],
+    ["zh-TW,zh;q=0.9,en-US;q=0.8", "zh-TW"],
+    ["fr-FR,ja;q=0.9", "en-US"],
+  ])("sets the first supported browser locale for %s", (acceptLanguage, expectedLocale) => {
+    const response = executeAnonymousRequest("/landing", {
+      "accept-language": acceptLanguage,
+    }) as NextResponse;
+
+    expect(response.cookies.get("NEXT_LOCALE")?.value).toBe(expectedLocale);
+  });
+});
+
 describe("mobile desktop-only route redirects", () => {
   const iphoneUserAgent =
     "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile";
@@ -146,6 +187,10 @@ describe("middleware matcher covers dynamic routes (#639)", () => {
   it.each([
     "/sw.js",
     "/manifest.webmanifest",
+    "/landing/dashboard.jpg",
+    "/readme-hero.jpg",
+    "/readme-demo-desktop.gif",
+    "/readme-demo-mobile.png",
     "/robots.txt",
     "/sitemap.xml",
     "/favicon.ico",

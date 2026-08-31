@@ -412,4 +412,3 @@ git commit -m "test(pwa): cover navigation cache, 3xx guard and offline fallback
 - Spec coverage: §6 SW 管線、§7 離線頁、§8 邊界、§9 測試皆有對應 Task（1→§7、2→§6/§8、3→§9）。
 - Placeholder scan: 無 TBD/TODO，無「適當處理」等空話，每步含可執行程式碼與指令。
 - Type consistency: `NAV_CACHE`、`isNavigationRequest`、`fetchWithTimeout`、`OFFLINE_URL` 名稱在 Task 2 與 Task 3 一致；`cache.match` 以 `Request` 為鍵，符合 CacheStorage 型別。
-

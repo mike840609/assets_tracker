@@ -70,6 +70,15 @@ export const viewport: Viewport = {
 };
 
 const enableVercelInsights = process.env.VERCEL === "1";
+const localeBootstrapScript = `
+  (() => {
+    const cookie = document.cookie
+      .split('; ')
+      .find((entry) => entry.startsWith('NEXT_LOCALE='));
+    const locale = cookie ? decodeURIComponent(cookie.slice('NEXT_LOCALE='.length)) : '';
+    document.documentElement.lang = locale === 'zh-TW' ? 'zh-TW' : 'en-US';
+  })();
+`;
 
 /**
  * Reads locale from NEXT_LOCALE cookie / Accept-Language header and
@@ -107,12 +116,13 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="en-US"
       className={`${geist.variable} ${geistMono.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: localeBootstrapScript }} />
         {enableVercelInsights ? (
           <>
             <link rel="preconnect" href="https://va.vercel-scripts.com" crossOrigin="anonymous" />

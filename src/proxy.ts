@@ -9,12 +9,14 @@ import {
 import { AUTH_SECRET, isPublicDemoEnabled } from "@/lib/env";
 import { getClientIp } from "@/lib/client-ip";
 import { getMobileHubRedirectUrl } from "@/lib/mobile-hub-route";
+import { detectLocaleFromAcceptLanguage } from "./i18n/config";
 import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
-const PUBLIC_ROUTES = ["/login", "/privacy", "/terms", "/demo/expired", "/offline"];
+const LANDING_PATH = "/landing";
+const PUBLIC_ROUTES = ["/login", "/privacy", "/terms", "/demo/expired", LANDING_PATH, "/offline"];
 
 function hasSessionCookie(req: NextRequest): boolean {
   return SESSION_COOKIE_NAMES.some((name) => req.cookies.has(name));
@@ -36,6 +38,18 @@ function nextResponse(req: NextRequest): NextResponse {
       maxAge: DEMO_LIFETIME_MS / 1000,
     });
   }
+  return response;
+}
+
+/**
+ * Anonymous "/" serves the public landing page. This is a rewrite, not a
+ * redirect, so the shareable URL stays https://astt.app — directory listings
+ * and search engines index the pitch instead of a sign-in form, and the
+ * authenticated dashboard keeps the same path.
+ */
+function rewriteToLanding(req: NextRequest): NextResponse {
+  const response = NextResponse.rewrite(new URL(LANDING_PATH, req.nextUrl.origin));
+  setLocaleCookie(req, response);
   return response;
 }
 
@@ -165,7 +179,7 @@ function setLocaleCookie(req: NextRequest, response: NextResponse): void {
   if (localeCookie) return;
 
   const acceptLanguage = req.headers.get("accept-language") ?? "";
-  const locale = acceptLanguage.toLowerCase().includes("zh") ? "zh-TW" : "en-US";
+  const locale = detectLocaleFromAcceptLanguage(acceptLanguage);
   response.cookies.set("NEXT_LOCALE", locale, {
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
@@ -241,6 +255,9 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
   // redirect vs. pass-through from the cookie header alone, without invoking
   // NextAuth's JWT decode.
   if (!hasSessionCookie(req)) {
+    if (req.nextUrl.pathname === "/") {
+      return rewriteToLanding(req);
+    }
     if (!PUBLIC_ROUTES.includes(req.nextUrl.pathname)) {
       return Response.redirect(new URL("/login", req.nextUrl.origin));
     }
@@ -264,6 +281,11 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 //   - PWA assets sw.js + manifest.webmanifest: the browser fetches these without
 //     credentials, so they must resolve to 200 (not a /login redirect) or Chrome's
 //     installability check fails and the install prompt never appears.
+//   - landing/: screenshots served to the public landing page. The page itself
+//     ("/landing", no trailing slash) stays matched so it still gets a locale
+//     cookie; only its static assets skip the middleware, because an anonymous
+//     request for one would otherwise be redirected to /login and render broken.
+//   - Existing README product previews are also used by the landing page.
 //   - /offline: the service worker precaches it, so it must resolve to a 200
 //     rather than a middleware redirect that would poison the navigation cache.
 //   - Public legal pages, so they can render without NextAuth cookie work.
@@ -272,6 +294,6 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
 // inside `middleware()` above, so every app path reaches the middleware (#639).
 export const config = {
   matcher: [
-    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|manifest\\.webmanifest|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms|offline).*)",
+    "/((?!api/(?!auth)|_next/static|_next/image|_vercel|favicon\\.ico|sw\\.js|manifest\\.webmanifest|landing/|readme-hero\\.jpg|readme-demo-desktop\\.gif|readme-demo-mobile\\.png|apple-icon|icon|opengraph-image|twitter-image|robots\\.txt|sitemap\\.xml|privacy|terms|offline).*)",
   ],
 };

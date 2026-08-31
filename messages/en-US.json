@@ -1233,6 +1233,169 @@
     "step3": "Scroll down and tap \"Add to Home Screen\"",
     "step4": "Tap \"Add\" — the app icon will appear on your home screen"
   },
+  "landing": {
+    "navLabel": "Primary navigation",
+    "metaTitle": "astt — Self-hosted Net Worth & Portfolio Tracker",
+    "metaDescription": "Open-source, self-hosted net worth and portfolio tracker for accounts, investments, property, liabilities, and long-term goals in multiple currencies.",
+    "navHome": "Back to top",
+    "navFeatures": "Features",
+    "navScreenshots": "Screenshots",
+    "navDeploy": "Deploy",
+    "navOpenSource": "Open source",
+    "skipToContent": "Skip to content",
+    "navSource": "GitHub",
+    "navSignIn": "Sign in",
+    "language": {
+      "label": "Language",
+      "english": "English",
+      "traditionalChinese": "Traditional Chinese"
+    },
+    "heroEyebrow": "Open source · self-hosted",
+    "heroTitle": "All your assets, one up-to-date net worth",
+    "heroSubtitle": "Track every account and asset in multiple currencies, on infrastructure you control.",
+    "heroPrimaryCta": "Choose a setup",
+    "heroSecondaryCta": "Sign in to your astt",
+    "heroNote": "MIT licensed. No financial-data tracking, no data sold, no subscription.",
+    "heroScope": "Built for net worth and investment tracking—not bookkeeping or budgeting.",
+    "demoTitle": "Try it with sample data",
+    "demoBody": "Explore sample accounts, holdings, and 180 days of history.",
+    "featuresTitle": "One view for every asset",
+    "featureGroup": {
+      "overview": "Overview",
+      "planning": "Plan",
+      "insight": "Insights"
+    },
+    "feature": {
+      "currency": {
+        "title": "Multi-currency",
+        "body": "Keep original balances, report in your base currency."
+      },
+      "accounts": {
+        "title": "All accounts, one view",
+        "body": "Banks, brokerages, crypto, property, debt, and options."
+      },
+      "market": {
+        "title": "Market data",
+        "body": "Refresh stocks, ETFs, crypto, options, and FX from supported market-data providers."
+      },
+      "watchlist": {
+        "title": "Watchlist",
+        "body": "Track symbols and upcoming earnings in one place."
+      },
+      "history": {
+        "title": "Daily history",
+        "body": "Snapshots stay accurate when your base currency changes."
+      },
+      "goals": {
+        "title": "Goals and projections",
+        "body": "Set a milestone and estimate when you will reach it."
+      },
+      "recurring": {
+        "title": "Recurring cash and investing",
+        "body": "Automate income, bills, and contributions."
+      },
+      "analysis": {
+        "title": "Portfolio analysis",
+        "body": "Allocation, concentration, currencies, drawdowns, and cost basis."
+      },
+      "devices": {
+        "title": "Desktop and mobile",
+        "body": "A full desktop view and an installable phone app."
+      }
+    },
+    "shotsTitle": "Screens",
+    "shotsNavLabel": "Jump to a view",
+    "shotsScrollHint": "Swipe or scroll for more",
+    "shotsGroup": {
+      "desktop": "Desktop",
+      "mobile": "Mobile"
+    },
+    "shotOpen": "Open full size",
+    "shotFallback": "This screenshot is unavailable right now.",
+    "shotFallbackLink": "Read deployment details",
+    "sectionCtaTitle": "Ready to start?",
+    "sectionCtaPrimary": "Sign in to your astt",
+    "sectionCtaSecondary": "Deployment options",
+    "shot": {
+      "desktopDashboard": {
+        "caption": "Desktop dashboard"
+      },
+      "desktopAccounts": {
+        "caption": "Desktop accounts"
+      },
+      "desktopAnalysis": {
+        "caption": "Desktop analysis"
+      },
+      "desktopCalendar": {
+        "caption": "Desktop calendar"
+      },
+      "desktopHistory": {
+        "caption": "Desktop history"
+      },
+      "desktopSettings": {
+        "caption": "Desktop settings"
+      },
+      "mobileMaxDrawdown": {
+        "caption": "Mobile max drawdown"
+      },
+      "mobileDashboard": {
+        "caption": "Mobile dashboard"
+      },
+      "mobileWatchlist": {
+        "caption": "Mobile watchlist"
+      },
+      "mobileGoals": {
+        "caption": "Mobile goals"
+      },
+      "mobileConcentration": {
+        "caption": "Mobile concentration"
+      },
+      "mobileSummary": {
+        "caption": "Mobile summary"
+      },
+      "mobileDailySnapshots": {
+        "caption": "Mobile daily snapshots"
+      },
+      "mobileAssetAllocation": {
+        "caption": "Mobile asset allocation"
+      }
+    },
+    "deployTitle": "Choose a setup",
+    "deploySubtitle": "Choose Docker or Vercel + Neon. The AI guide covers local and Docker setup.",
+    "deployNote": "Production self-hosting needs HTTPS, strong secrets, and a backup plan. You control the deployment and its data.",
+    "dockerTitle": "Self-host with Docker",
+    "dockerAudience": "Best if you already run a server or NAS.",
+    "dockerBody": "Runs astt and PostgreSQL together on hardware you own.",
+    "dockerLink": "Docker guide",
+    "cloudTitle": "Vercel and Neon",
+    "cloudAudience": "Best if you would rather not maintain a server.",
+    "cloudBody": "Deploys to Vercel with a managed Neon database.",
+    "cloudLink": "Vercel + Neon guide",
+    "aiDeploy": "Get help from an AI agent",
+    "aiDeployAudience": "Best if you want guided local or Docker setup.",
+    "aiDeployBody": "Paste this prompt into your AI agent and follow its steps.",
+    "aiDeployPrompt": "Help me deploy astt. Read and follow the installation steps at:\n{url}",
+    "copyPrompt": "Copy prompt",
+    "copiedPrompt": "Copied",
+    "copyPromptFailed": "Copy failed. Select the prompt manually.",
+    "copyCommand": "Copy command",
+    "copiedCommand": "Copied",
+    "copyFailed": "Copy failed. Select the command manually.",
+    "openTitle": "Open source",
+    "openBody": "MIT licensed. Your data stays on infrastructure you control; you secure the deployment.",
+    "openCta": "View the source",
+    "openLinksLabel": "Open-source links",
+    "openIssues": "Report an issue",
+    "openContributing": "Contribute",
+    "openReleases": "View releases",
+    "footerLicense": "astt · MIT licensed",
+    "footerLinksLabel": "Footer links",
+    "footerDocs": "Docs",
+    "footerLicenseLink": "License",
+    "footerSecurity": "Security",
+    "footerPrivacy": "Privacy",
+    "footerTerms": "Terms"
+  },
   "login": {
     "title": "astt",
     "subtitle": "Securely access your financial portfolio",

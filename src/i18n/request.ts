@@ -1,14 +1,13 @@
 import { getRequestConfig } from "next-intl/server";
 import { cookies, headers } from "next/headers";
-import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from "./config";
+import {
+  detectLocaleFromAcceptLanguage,
+  SUPPORTED_LOCALES,
+  DEFAULT_LOCALE,
+  type Locale,
+} from "./config";
 
 export { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale };
-
-function detectLocaleFromAcceptLanguage(acceptLanguage: string): Locale {
-  const lower = acceptLanguage.toLowerCase();
-  if (lower.includes("zh")) return "zh-TW";
-  return "en-US";
-}
 
 export default getRequestConfig(async () => {
   const cookieStore = await cookies();

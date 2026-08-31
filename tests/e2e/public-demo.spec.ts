@@ -15,16 +15,15 @@ async function responseData<T>(response: Awaited<ReturnType<APIRequestContext["g
 }
 
 async function startDemo(page: Page) {
+  // "/" serves the public landing page, which carries the demo call to action.
   await page.goto("/");
-  await expect(page).toHaveURL(/\/login/);
   await page.getByRole("button", { name: /Try the Demo|免登入體驗 Demo/ }).click();
-  await page.waitForURL((url) => url.pathname === "/", { timeout: 60_000 });
   await expect(
     page
       .getByText(/Demo mode|Demo 模式/)
       .filter({ visible: true })
       .first(),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 60_000 });
 }
 
 async function demoSession(page: Page) {

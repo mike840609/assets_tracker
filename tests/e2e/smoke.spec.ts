@@ -6,36 +6,40 @@
  *   2. Create account → add holding via symbol search → holding appears
  *   3. Dashboard loads with net-worth card + trend chart
  *
- * Auth strategy: Google OAuth is stubbed via Next.js's built-in
- * Credentials provider, explicitly enabled with PREVIEW_AUTH_ENABLED=true
- * for the production-mode local E2E build. This avoids needing real Google
- * tokens in CI while still exercising the full NextAuth session-creation
- * path. The global-setup logs in once and saves storage state; tests 2 & 3
- * reuse that state.
+ * Auth strategy: Preview auth uses Next.js's built-in Credentials provider,
+ * explicitly enabled with PREVIEW_AUTH_ENABLED=true for the production-mode
+ * local E2E build. This avoids needing real Google tokens in CI while still
+ * exercising the full NextAuth session-creation path. The global-setup logs
+ * in once and saves storage state; tests 2 & 3 reuse that state.
  */
 
 import { test, expect } from "@playwright/test";
 
 // ---------------------------------------------------------------------------
-// Path 1 — Auth: unauthenticated redirect → login → sign-in → dashboard
+// Path 1 — Auth: landing page → login → sign-in → dashboard
 // ---------------------------------------------------------------------------
 
-test("1. unauthenticated visitor is redirected to /login and can sign in", async ({ browser }) => {
+test("1. unauthenticated visitor sees the landing page and can sign in", async ({ browser }) => {
   // Fresh context with no cookies — must not inherit the project storageState
   const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const page = await ctx.newPage();
 
-  // Visiting the root without auth should redirect to /login
+  // Visiting the root without auth serves the public landing page at "/"
   await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 15_000 });
+  await expect(page).toHaveURL(/\/$/);
+
+  // Its sign-in call to action is what leads to the login form
+  await page.getByRole("link", { name: "Sign in" }).first().click();
   await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
 
-  // Login page must show the Google OAuth button (translation: "Continue with Google")
-  await expect(page.getByRole("button", { name: /continue with google/i })).toBeVisible();
-
-  // Sign in via preview-credentials (the OAuth stub for CI).
-  // Works for both password-gated and button-only preview mode.
+  // Preview deployments guarantee the credentials login, while Google OAuth
+  // is optional and only renders when both Google env vars are configured.
   const previewLoginButton = page.getByRole("button", { name: "Internal Test Login" });
-  await previewLoginButton.waitFor({ timeout: 60_000 });
+  await expect(previewLoginButton).toBeVisible({ timeout: 60_000 });
+
+  // Sign in via the preview credentials provider.
+  // Works for both password-gated and button-only preview mode.
   const passwordInput = page.locator('input[name="password"]');
   if (await passwordInput.count()) {
     await passwordInput.fill(process.env.E2E_PASSWORD ?? "e2e-smoke-test");

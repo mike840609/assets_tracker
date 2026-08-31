@@ -8,6 +8,14 @@ const NAV_TIMEOUT_MS = 3000;
 // build-specific /_next chunks, so a very old copy is worse than the offline page.
 // Swap for the real build id in the cache name if deploys get more frequent.
 const NAV_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+let navCacheGeneration = 0;
+let navCacheOperations = Promise.resolve();
+
+function enqueueNavCacheOperation(operation) {
+  const next = navCacheOperations.then(operation, operation);
+  navCacheOperations = next.catch(() => {});
+  return next;
+}
 
 // Bypasses the HTTP cache and refuses redirects, so a middleware bounce
 // (expired demo, login) can never be stored under the /offline key.
@@ -104,13 +112,16 @@ async function refreshStaticAsset(request) {
 
 // Everything but the offline page: that entry is the last-resort fallback and
 // is re-fetched only on install/activate.
-async function purgeNavCache(cache) {
-  const requests = await cache.keys();
-  await Promise.all(
-    requests
-      .filter((request) => new URL(request.url).pathname !== OFFLINE_URL)
-      .map((request) => cache.delete(request)),
-  );
+function purgeNavCache(cache) {
+  navCacheGeneration += 1;
+  return enqueueNavCacheOperation(async () => {
+    const requests = await cache.keys();
+    await Promise.all(
+      requests
+        .filter((request) => new URL(request.url).pathname !== OFFLINE_URL)
+        .map((request) => cache.delete(request)),
+    );
+  });
 }
 
 // Entries past NAV_MAX_AGE_MS can never be served again, so collect them here
@@ -145,11 +156,18 @@ function isFresh(response) {
   return !Number.isFinite(time) || Date.now() - time < NAV_MAX_AGE_MS;
 }
 
-function cacheNavigation(event, cache, response) {
+function cacheNavigation(event, cache, response, generation) {
   if (!isCacheableNavResponse(response)) return;
   // waitUntil, not fire-and-forget: the browser is free to kill the worker as
   // soon as respondWith settles, which on mobile drops the write.
-  event.waitUntil(cache.put(event.request, response.clone()).catch(() => {}));
+  const request = event.request;
+  const cacheResponse = response.clone();
+  event.waitUntil(
+    enqueueNavCacheOperation(async () => {
+      if (generation !== navCacheGeneration) return;
+      await cache.put(request, cacheResponse);
+    }).catch(() => {}),
+  );
 }
 
 // Serves `cached` if the network has not answered within NAV_TIMEOUT_MS, but
@@ -175,6 +193,7 @@ function raceWithTimeout(event, network, cached) {
 }
 
 async function handleNavigation(event) {
+  const generation = navCacheGeneration;
   const cache = await caches.open(NAV_CACHE);
   // Landing on /login means there is no session anymore, so the rendered
   // balances still sitting in the cache must not outlive it.
@@ -188,19 +207,21 @@ async function handleNavigation(event) {
       .catch(() => undefined)
       .then((preload) => {
         if (preload) {
-          if (!isLogin) cacheNavigation(event, cache, preload);
+          if (!isLogin) cacheNavigation(event, cache, preload, generation);
           return preload;
         }
         return fetch(event.request).then((response) => {
-          if (!isLogin) cacheNavigation(event, cache, response);
+          if (!isLogin) cacheNavigation(event, cache, response, generation);
           return response;
         });
       });
     const cached = isLogin ? undefined : await cache.match(event.request);
-    // No usable fallback, so the timeout has nothing to offer — waiting beats
-    // telling an online user on a slow link that they are offline.
-    if (!cached || !isFresh(cached)) return await network;
-    return await raceWithTimeout(event, network, cached);
+    const offline = await cache.match(OFFLINE_URL);
+    const fallback = cached && isFresh(cached) ? cached : offline;
+    // A slow uncached navigation still needs the same timeout as a cached one;
+    // the precached offline page is the fallback when the route has no entry.
+    if (!fallback) return await network;
+    return await raceWithTimeout(event, network, fallback);
   } catch {
     const cached = isLogin ? undefined : await cache.match(event.request);
     if (cached && isFresh(cached)) return cached;

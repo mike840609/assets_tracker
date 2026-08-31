@@ -138,7 +138,9 @@ describe("getUnresolvedRatePairs", () => {
     db.snapshotCurrencies = [{ baseCurrency: "AUD" }];
 
     await expect(getUnresolvedRatePairs("user-1", "USD")).resolves.toEqual(["AUD→USD", "GBP→USD"]);
-    expect(db.cacheTags).toEqual(expect.arrayContaining(["goals:user-1", "history:user-1"]));
+    expect(db.cacheTags).toEqual(
+      expect.arrayContaining(["goals", "goals:user-1", "snapshots", "history:user-1"]),
+    );
   });
 });
 
