@@ -35,12 +35,11 @@ test("1. unauthenticated visitor sees the landing page and can sign in", async (
 
   // Preview deployments guarantee the credentials login, while Google OAuth
   // is optional and only renders when both Google env vars are configured.
-  await expect(page.getByRole("button", { name: "Internal Test Login" })).toBeVisible();
+  const previewLoginButton = page.getByRole("button", { name: "Internal Test Login" });
+  await expect(previewLoginButton).toBeVisible({ timeout: 60_000 });
 
   // Sign in via the preview credentials provider.
   // Works for both password-gated and button-only preview mode.
-  const previewLoginButton = page.getByRole("button", { name: "Internal Test Login" });
-  await previewLoginButton.waitFor({ timeout: 60_000 });
   const passwordInput = page.locator('input[name="password"]');
   if (await passwordInput.count()) {
     await passwordInput.fill(process.env.E2E_PASSWORD ?? "e2e-smoke-test");
