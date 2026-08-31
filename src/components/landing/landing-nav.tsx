@@ -20,6 +20,7 @@ export function scrollToSection(href: string) {
   const section = document.querySelector<HTMLElement>(href);
   if (!scrollRoot || !section) return;
 
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   const scrollMarginTop = Number.parseFloat(getComputedStyle(section).scrollMarginTop);
   const top =
     section === scrollRoot
@@ -41,6 +42,18 @@ export function LandingNav({ items, label }: LandingNavProps) {
   const [activeHref, setActiveHref] = useState<string | null>(null);
   const [indicator, setIndicator] = useState<IndicatorBox | null>(null);
   const navRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const syncHash = () => scrollToSection(window.location.hash || "#top");
+
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    window.addEventListener("pageshow", syncHash);
+    return () => {
+      window.removeEventListener("hashchange", syncHash);
+      window.removeEventListener("pageshow", syncHash);
+    };
+  }, []);
 
   useEffect(() => {
     const scrollRoot = document.getElementById("top");

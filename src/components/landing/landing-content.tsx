@@ -322,7 +322,7 @@ export async function LandingContent() {
                   height={HERO_MOBILE_SHOT.height}
                   orientation={HERO_MOBILE_SHOT.orientation}
                   sizes={HERO_MOBILE_SIZES}
-                  priority
+                  highPriority
                   openLabel={t("shotOpen")}
                   fallbackLabel={t("shotFallback")}
                   fallbackHref={DOCS_URL}
@@ -344,7 +344,7 @@ export async function LandingContent() {
                     height={HERO_DESKTOP_SHOT.height}
                     orientation={HERO_DESKTOP_SHOT.orientation}
                     sizes={HERO_DESKTOP_SIZES}
-                    priority
+                    highPriority
                     openLabel={t("shotOpen")}
                     fallbackLabel={t("shotFallback")}
                     fallbackHref={DOCS_URL}
@@ -690,7 +690,10 @@ export async function LandingContent() {
         </nav>
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:px-6">
           <p>{t("footerLicense")}</p>
-          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+          <nav
+            aria-label={t("footerLinksLabel")}
+            className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
+          >
             <a
               href={DOCS_URL}
               target="_blank"

@@ -14,7 +14,7 @@ type LandingScreenshotProps = {
    *  the frame is display:none gets `1px`: the fetch still happens, but it
    *  resolves to the smallest generated variant instead of the full file. */
   sizes: string;
-  priority?: boolean;
+  highPriority?: boolean;
   openLabel: string;
   fallbackLabel: string;
   fallbackHref: string;
@@ -31,7 +31,7 @@ export function LandingScreenshot({
   height,
   orientation,
   sizes,
-  priority = false,
+  highPriority = false,
   openLabel,
   fallbackLabel,
   fallbackHref,
@@ -79,7 +79,8 @@ export function LandingScreenshot({
         width={width}
         height={height}
         sizes={sizes}
-        priority={priority}
+        loading={highPriority ? "eager" : undefined}
+        fetchPriority={highPriority ? "high" : undefined}
         onError={() => setHasError(true)}
         className={
           orientation === "mobile" ? "h-full w-full object-cover object-top" : "block h-auto w-full"

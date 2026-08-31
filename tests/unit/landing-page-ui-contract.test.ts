@@ -226,7 +226,9 @@ describe("landing page UI contract", () => {
       expect(usage).toContain("sizes=");
     }
     // Both hero frames are the LCP candidate at their breakpoint.
-    expect(landingSource.match(/priority/g)?.length).toBe(2);
+    expect(landingSource.match(/highPriority/g)?.length).toBe(2);
+    expect(landingScreenshotSource).toContain('loading={highPriority ? "eager" : undefined}');
+    expect(landingScreenshotSource).toContain('fetchPriority={highPriority ? "high" : undefined}');
   });
 
   it("declares the screenshot dimensions the files actually have", () => {

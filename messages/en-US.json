@@ -1276,7 +1276,7 @@
       },
       "market": {
         "title": "Market data",
-        "body": "Refresh stocks, ETFs, crypto, options, and FX with Yahoo Finance and CoinGecko."
+        "body": "Refresh stocks, ETFs, crypto, options, and FX from supported market-data providers."
       },
       "watchlist": {
         "title": "Watchlist",
@@ -1361,7 +1361,7 @@
       }
     },
     "deployTitle": "Choose a setup",
-    "deploySubtitle": "Choose Docker or Vercel + Neon. An AI agent can guide either setup.",
+    "deploySubtitle": "Choose Docker or Vercel + Neon. The AI guide covers local and Docker setup.",
     "deployNote": "Production self-hosting needs HTTPS, strong secrets, and a backup plan. You control the deployment and its data.",
     "dockerTitle": "Self-host with Docker",
     "dockerAudience": "Best if you already run a server or NAS.",
@@ -1372,7 +1372,7 @@
     "cloudBody": "Deploys to Vercel with a managed Neon database.",
     "cloudLink": "Vercel + Neon guide",
     "aiDeploy": "Get help from an AI agent",
-    "aiDeployAudience": "Best if you want to be walked through either setup.",
+    "aiDeployAudience": "Best if you want guided local or Docker setup.",
     "aiDeployBody": "Paste this prompt into your AI agent and follow its steps.",
     "aiDeployPrompt": "Help me deploy astt. Read and follow the installation steps at:\n{url}",
     "copyPrompt": "Copy prompt",
@@ -1389,6 +1389,7 @@
     "openContributing": "Contribute",
     "openReleases": "View releases",
     "footerLicense": "astt · MIT licensed",
+    "footerLinksLabel": "Footer links",
     "footerDocs": "Docs",
     "footerLicenseLink": "License",
     "footerSecurity": "Security",

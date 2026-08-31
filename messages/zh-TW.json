@@ -1276,7 +1276,7 @@
       },
       "market": {
         "title": "市場資料",
-        "body": "透過 Yahoo Finance 與 CoinGecko 更新股票、ETF、加密貨幣、選擇權與匯率。"
+        "body": "從支援的市場資料來源更新股票、ETF、加密貨幣、選擇權與匯率。"
       },
       "watchlist": {
         "title": "追蹤清單",
@@ -1361,7 +1361,7 @@
       }
     },
     "deployTitle": "選擇部署方式",
-    "deploySubtitle": "選擇 Docker 或 Vercel + Neon；也可讓 AI agent 依指南協助完成。",
+    "deploySubtitle": "選擇 Docker 或 Vercel + Neon；AI 指南支援本機與 Docker 設定。",
     "deployNote": "正式環境需設定 HTTPS、強密碼與備份；部署與資料安全由你掌控並負責。",
     "dockerTitle": "用 Docker 自行部署",
     "dockerAudience": "適合已經有伺服器或 NAS 的人。",
@@ -1372,7 +1372,7 @@
     "cloudBody": "部署到 Vercel，搭配託管的 Neon 資料庫。",
     "cloudLink": "Vercel + Neon 指南",
     "aiDeploy": "請 AI agent 協助",
-    "aiDeployAudience": "適合想被一步步帶著完成任一種部署的人。",
+    "aiDeployAudience": "適合想逐步完成本機或 Docker 設定的人。",
     "aiDeployBody": "將提示詞貼給 AI agent，依照它的步驟完成。",
     "aiDeployPrompt": "請協助我部署 astt。請閱讀並依照以下安裝指南完成步驟：\n{url}",
     "copyPrompt": "複製提示詞",
@@ -1389,6 +1389,7 @@
     "openContributing": "參與貢獻",
     "openReleases": "查看版本",
     "footerLicense": "astt · MIT 授權",
+    "footerLinksLabel": "頁尾連結",
     "footerDocs": "文件",
     "footerLicenseLink": "授權條款",
     "footerSecurity": "安全性",

@@ -136,7 +136,7 @@ Only continue when the gate passes.
 
 #### Step 8 — Verify sign-in
 
-Open http://localhost:3000, use the one-click Preview Login (Path A only — local dev, no password) or the owner `AUTH_SELF_HOST_PASSWORD` login, and confirm the dashboard loads. Optionally `pnpm seed:demo`.
+Open http://localhost:3000, use the one-click Internal Test Login (Path A only — local dev, no password) or the owner `AUTH_SELF_HOST_PASSWORD` login, and confirm the dashboard loads. Optionally `pnpm seed:demo`.
 
 Gate: the dashboard renders after sign-in.
 
@@ -276,7 +276,7 @@ docker compose --profile full down
 - [ ] `docker compose ps` → db running/healthy
 - [ ] `pnpm exec prisma migrate deploy` → all migrations applied
 - [ ] `curl http://localhost:3000/login` → 200
-- [ ] http://localhost:3000 loads and sign-in works (Preview Login or owner password)
+- [ ] http://localhost:3000 loads and sign-in works (Internal Test Login or owner password)
 - [ ] `git status` shows `.env` is NOT tracked
 - [ ] stop with `pnpm db:down` when done
 

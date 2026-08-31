@@ -25,7 +25,7 @@ A private, multi-currency home for tracking your net worth, investments, cash, p
 - **Own your data** — run your own instance with PostgreSQL using Docker or deploy to Vercel and Neon.
 - **One financial view** — combine bank accounts, brokerages, crypto wallets, property, liabilities, and options.
 - **Multi-currency by design** — keep original balances and view history in your preferred base currency.
-- **Current market data** — refresh stocks, ETFs, crypto, options, and exchange rates through Yahoo Finance and CoinGecko.
+- **Current market data** — refresh stocks, ETFs, crypto, options, and exchange rates through supported providers.
 - **Planning and automation** — track recurring cash flow, recurring investments, daily snapshots, goals, and FIRE projections.
 - **Desktop and mobile** — responsive UI, themes, English/Traditional Chinese, and an installable PWA.
 
