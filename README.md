@@ -47,11 +47,13 @@ A private, multi-currency home for tracking your net worth, investments, cash, p
 For production self-hosting with Docker Compose:
 
 ```bash
-cp .env.example .env
-# Set the required production values in .env
-docker compose --profile full pull
+./scripts/setup-env.sh   # writes .env and generates your secrets
 docker compose --profile full up --no-build -d
 ```
+
+The script prints the password you sign in with. It refuses to overwrite an
+existing `.env`, and the app will not start while a secret is still the
+`.env.example` placeholder.
 
 See [Deployment and Self-Hosting](./docs/DEPLOYMENT.md) for required environment variables, HTTPS, backups, upgrades, Vercel + Neon, and other production details.
 

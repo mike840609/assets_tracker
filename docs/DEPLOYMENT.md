@@ -14,7 +14,7 @@ astt can run as a single Docker container backed by PostgreSQL or as a Vercel pr
 | `NEXT_PUBLIC_APP_URL`     | Canonical public application URL                 |
 | `POSTGRES_PASSWORD`       | Bundled Docker PostgreSQL password               |
 
-Generate URL-safe secrets with `openssl rand -hex 32`. `AUTH_SECRET` and `CRON_SECRET` are rejected below 32 characters, `AUTH_SELF_HOST_PASSWORD` below 16, and all three are rejected while they still hold the `.env.example` placeholder — `cp .env.example .env` on its own is not a working configuration. See [`.env.example`](../.env.example) for optional Google OAuth, Preview, and Sentry settings.
+Generate URL-safe secrets with `openssl rand -hex 32`. `AUTH_SECRET` and `CRON_SECRET` are rejected below 32 characters, `AUTH_SELF_HOST_PASSWORD` below 16, and all three are rejected while they still hold the `.env.example` placeholder — `cp .env.example .env` on its own is not a working configuration — `./scripts/setup-env.sh` does the copy and the generation together. See [`.env.example`](../.env.example) for optional Google OAuth, Preview, and Sentry settings.
 
 Non-Vercel production requires at least one authentication method:
 
@@ -38,13 +38,12 @@ pnpm db:up
 The `full` profile pulls and starts the published migration and application images:
 
 ```bash
-cp .env.example .env
-# Set AUTH_SECRET, AUTH_SELF_HOST_PASSWORD, CRON_SECRET, and NEXT_PUBLIC_APP_URL
-docker compose --profile full pull
+./scripts/setup-env.sh   # writes .env with freshly generated secrets
+# Review NEXT_PUBLIC_APP_URL in .env, then:
 docker compose --profile full up --no-build -d
 ```
 
-Set `ASSETS_TRACKER_VERSION` in `.env` to pin both images to a release tag. Leave it unset to follow `latest`. To build both images from source, use `docker compose --profile full up --build -d`.
+`up` pulls the published images when they are not present locally, so a first install needs no separate `pull` — see [Upgrades](#upgrades) for refreshing images that are already there. Set `ASSETS_TRACKER_VERSION` in `.env` to pin both images to a release tag. Leave it unset to follow `latest`. To build both images from source, use `docker compose --profile full up --build -d`.
 
 Services start in this order:
 

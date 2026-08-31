@@ -87,9 +87,16 @@ describe("landing page UI contract", () => {
   });
 
   it("keeps the Docker copy command aligned with the published-image deployment flow", () => {
-    expect(landingSource).toContain(
-      '"docker compose --profile full pull\\ndocker compose --profile full up --no-build -d"',
-    );
+    // Asserted as parts, not one literal: the block now carries the whole
+    // sequence (clone, generate secrets, deploy) because the two compose lines
+    // alone cannot work from a clean machine. What must not drift is the
+    // published-image flow itself — `--no-build`, never a build-from-source.
+    // No `pull` step: verified against compose 2.21 that `up --no-build` pulls
+    // images that are not present locally, which is every first install.
+    expect(landingSource).toContain('"docker compose --profile full up --no-build -d"');
+    expect(landingSource).not.toContain('"docker compose --profile full pull"');
+    expect(landingSource).toContain("./scripts/setup-env.sh");
+    expect(landingSource).not.toContain("--profile full up --build");
   });
 
   it("guides prospective self-hosters to setup before sign-in", () => {

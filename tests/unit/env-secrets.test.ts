@@ -42,6 +42,15 @@ describe("environment secret validation", () => {
 
     const envSource = fs.readFileSync(path.join(process.cwd(), "src/lib/env.ts"), "utf8");
     expect(envSource).toContain(`const ENV_EXAMPLE_PLACEHOLDER = "${PLACEHOLDER}";`);
+
+    // setup-env.sh rewrites the same three lines. If it drifts from either the
+    // example or the validator, `pnpm setup:env` silently stops filling a
+    // secret in and the app refuses to boot afterwards.
+    const setupScript = fs.readFileSync(path.join(process.cwd(), "scripts/setup-env.sh"), "utf8");
+    expect(setupScript).toContain(`PLACEHOLDER="${PLACEHOLDER}"`);
+    for (const key of ["AUTH_SECRET", "CRON_SECRET", "AUTH_SELF_HOST_PASSWORD"]) {
+      expect(setupScript).toContain(key);
+    }
   });
 
   it("accepts secrets generated the way the docs prescribe", async () => {

@@ -47,11 +47,12 @@
 正式自行部署可直接使用 Docker Compose：
 
 ```bash
-cp .env.example .env
-# 在 .env 設定正式環境必要值
-docker compose --profile full pull
+./scripts/setup-env.sh   # 產生 .env 與各項 secret
 docker compose --profile full up --no-build -d
 ```
+
+腳本會印出登入用的密碼。它不會覆寫既有的 `.env`；只要任一 secret 仍是
+`.env.example` 的佔位字串，應用就不會啟動。
 
 環境變數、HTTPS、備份、升級、Vercel + Neon 與其他正式部署細節，請見[部署與自行託管](./docs/DEPLOYMENT.md)。
 

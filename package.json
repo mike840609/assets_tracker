@@ -20,6 +20,7 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build",
     "postinstall": "prisma generate",
     "setup:worktree": "node scripts/setup-worktree.mjs",
+    "setup:env": "sh scripts/setup-env.sh",
     "prepare": "husky",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
