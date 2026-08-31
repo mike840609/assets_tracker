@@ -222,6 +222,80 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* The landing page borrows the app's own chart series to tell its feature
+     groups apart: the same colors a visitor is about to see plotted inside the
+     screenshots below. Series 2-4 — a 220° → 270° → 320° sweep that stays clear
+     of the teal reserved for actions, so accent still means "do this" and hue
+     means "this family". The raw --chart-* values come
+     from `.dark` on this same element (so a signed-in user's color schema can't
+     repaint the public page); these aliases are what the utilities read. */
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+
+  /* Two fluid display steps for the public page. The app UI keeps its fixed rem
+     scale — dense, container-based layouts need predictable sizes — but this
+     page is one column of type that should breathe with the viewport. Each
+     clamp stays under a 1.6x min-to-max ratio so zoom and reflow behave, and
+     the pair holds a 1.4 ratio to each other at both ends (36/28 and 56/40)
+     where the old fixed steps were a flat 1.2.
+
+     The hero step measures in cqi, not vw, because the copy column moves the
+     other way to the viewport: at lg the hero becomes two columns and the copy
+     gets *narrower* exactly as a vw-based size jumps up. On vw the headline
+     broke as "one up-to- / date net worth" at 1024. Measured against its own
+     container the headline holds two lines at every width from 360 to 1440,
+     so it never splits the hyphenated compound. The coefficients are fitted to
+     that: 32px in a 328px column, 56px in a 640px one. */
+  --text-hero: clamp(2rem, 0.38rem + 7.8cqi, 3.5rem);
+  --text-section: clamp(1.75rem, 1.45rem + 1.25vw, 2.5rem);
+}
+
+/* Light type on a dark ground reads lighter and tighter than the same type on
+   white. Running copy gets a little extra tracking to compensate; headings keep
+   their own negative tracking and code keeps its mono metrics. */
+.landing-theme :is(p, dd, figcaption) {
+  letter-spacing: 0.01em;
+}
+
+/* Query container for the hero headline; see --text-hero. */
+.landing-hero-copy {
+  container-type: inline-size;
+}
+
+/* The product shot is the light source: a teal pool behind it (the app's own
+   gain colour, the one lighting the charts inside the screenshot) with a deep
+   indigo settling under the copy for depth. Two stops, deliberately
+   asymmetric — an even three-blob mesh reads as decoration and muddies the
+   ground it sits on. Masked out before the section ends so there is no edge.
+   The mix percentages are capped by contrast, not by taste: muted-foreground
+   body copy sitting on the brightest point of either stop still measures
+   4.5:1, which is what 22%/20% buys. Raising them fails the note under the
+   hero CTAs on a single-column phone layout. */
+.landing-hero-wash {
+  position: relative;
+  isolation: isolate;
+}
+
+.landing-hero-wash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(
+      46% 62% at 74% 38%,
+      color-mix(in oklab, var(--primary) 22%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      60% 55% at 12% 88%,
+      color-mix(in oklab, var(--chart-3) 20%, transparent),
+      transparent 70%
+    );
+  mask-image: linear-gradient(to bottom, #000 62%, transparent);
 }
 
 @layer base {
@@ -515,6 +589,74 @@
   animation-delay: calc(var(--i, 0) * 45ms);
 }
 
+/* ─── Landing page motion ────────────────────────────────────────────────────
+   The public landing page gets exactly one orchestrated moment — the hero copy
+   rising in a short stagger while the product shot settles in behind it — and
+   no scroll-triggered section reveals: fading in every section on scroll is
+   decoration, and it hides content from crawlers and headless renderers that
+   never fire the trigger.
+
+   These are transform-only, deliberately: an animation is frozen at its first
+   frame in a tab that never renders (a background tab, a link-preview or
+   directory screenshot bot that lays out once and captures). This is the page
+   those bots photograph, so the first frame has to be readable — a fade from
+   opacity 0 would photograph as an empty fold, while 16px of travel photographs
+   as the finished page, slightly offset. One-shot and `backwards`, so the
+   at-rest state is the final frame and nothing is gated on a class or an
+   observer. */
+@keyframes landing-rise-in {
+  from {
+    transform: translateY(16px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.landing-hero-in {
+  animation: landing-rise-in 520ms var(--ease-out-expo) backwards;
+  animation-delay: calc(var(--i, 0) * 65ms);
+}
+
+/* The screenshot arrives slower and from further away than the copy beside it,
+   so the fold reads as text-first with the product settling behind it. */
+@keyframes landing-shot-in {
+  from {
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.landing-shot-in {
+  animation: landing-shot-in 700ms var(--ease-out-expo) 140ms backwards;
+}
+
+/* Once the hero scrolls under it the sticky header lifts off the page. A shadow,
+   not a glass blur — DESIGN.md rejects decorative glassmorphism. Scroll-linked,
+   so it needs no listener and no state; browsers without scroll timelines keep
+   the flat header they have today. */
+@keyframes landing-header-lift {
+  from {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  to {
+    box-shadow: 0 10px 26px -20px oklch(0 0 0 / 0.95);
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .landing-header {
+    animation-name: landing-header-lift;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(nearest);
+    animation-range: 0 96px;
+  }
+}
+
 /* Decorative, continuously-looping effects must not run when the user has
    asked for reduced motion (WCAG 2.3.3) — the mesh stays as a static wash. */
 @media (prefers-reduced-motion: reduce) {
@@ -535,6 +677,11 @@
   .history-cell-in,
   .history-rise-in,
   .stagger-rise {
+    animation: none;
+  }
+  .landing-hero-in,
+  .landing-shot-in,
+  .landing-header {
     animation: none;
   }
   /* tw-animate-css ships no reduced-motion guard of its own, so the dashboard's

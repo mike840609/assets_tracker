@@ -42,7 +42,7 @@ export function LandingCopyButton({
       className="inline-flex min-h-11 min-w-11 shrink-0 self-start items-center justify-center rounded-md border border-border/70 bg-background/40 p-0 text-xs font-medium text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:h-8 md:min-h-0 md:w-8 md:min-w-0"
     >
       {status === "copied" ? (
-        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+        <Check className="h-3.5 w-3.5 animate-in zoom-in-75 duration-150" aria-hidden="true" />
       ) : (
         <Copy className="h-3.5 w-3.5" aria-hidden="true" />
       )}
