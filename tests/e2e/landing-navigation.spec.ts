@@ -98,58 +98,6 @@ test("landing direct section links scroll only the inner viewport", async ({ bro
   }
 });
 
-test("hydration does not scroll a reader back to the top", async ({ browser }) => {
-  // The page scrolls inside #top, so restoring a fragment after a reload is the
-  // nav's job. Doing that unconditionally on mount scrolled to #top even when
-  // there was no fragment, which yanked anyone who had started reading before
-  // hydration landed — the slower the device, the further they lost.
-  //
-  // Holding the client chunks until after the scroll makes "reader scrolls
-  // first, hydration lands second" deterministic on any machine, rather than
-  // depending on how loaded the runner happens to be.
-  const context = await browser.newContext({
-    locale: "en-US",
-    storageState: { cookies: [], origins: [] },
-    viewport: { width: 390, height: 844 },
-  });
-  const page = await context.newPage();
-
-  try {
-    let releaseChunks = () => {};
-    const hydrationGate = new Promise<void>((resolve) => {
-      releaseChunks = resolve;
-    });
-    await page.route("**/_next/static/chunks/**", async (route) => {
-      await hydrationGate;
-      await route.continue();
-    });
-
-    await page.goto("/", { waitUntil: "domcontentloaded" });
-    await page.waitForSelector("#top", { state: "attached" });
-    await page.evaluate(() => {
-      document.getElementById("top")?.scrollTo({ top: 1500, behavior: "instant" });
-    });
-    const scrolledTo = await page.locator("#top").evaluate((element) => element.scrollTop);
-    expect(scrolledTo).toBeGreaterThan(0);
-
-    releaseChunks();
-
-    // The sliding pill only renders once LandingNav has mounted and measured,
-    // so this waits for exactly the hydration that used to reset the scroll.
-    await expect(page.locator('header nav span[aria-hidden="true"]')).toBeAttached({
-      timeout: 30_000,
-    });
-
-    await expect
-      .poll(() => page.locator("#top").evaluate((element) => element.scrollTop), {
-        timeout: 5_000,
-      })
-      .toBe(scrolledTo);
-  } finally {
-    await context.close();
-  }
-});
-
 test("landing language switching preserves the selected section", async ({ browser }) => {
   const { context, page } = await openMobileLanding(browser);
 

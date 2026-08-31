@@ -30,6 +30,21 @@ describe("landing page UI contract", () => {
     expect(landingNavSource).not.toContain("overflow-x-auto");
   });
 
+  it("only restores a fragment on mount, never scrolls to the top", () => {
+    // The page scrolls inside #top, so LandingNav restores the fragment after a
+    // reload. Running that unconditionally resolves to "scroll to #top" when
+    // there is no fragment, which yanks a reader who scrolled before hydration
+    // landed — and it made the language-switching e2e test flaky, because the
+    // reset moved the footer link out from under Playwright's click.
+    //
+    // Asserted on the source because the behaviour is a mount-time effect on a
+    // partially-prerendered page: holding the client chunks to widen the window
+    // also prevents the streamed content from mounting at all, so there is no
+    // stable way to observe it from the browser.
+    expect(landingNavSource).toContain("if (window.location.hash) syncHash();");
+    expect(landingNavSource).not.toMatch(/^\s*syncHash\(\);$/m);
+  });
+
   it("keeps the sticky header to one row on phones", () => {
     // Section links used to wrap onto a second sticky row below md, which cost
     // 44px of every phone screen for the whole scroll. They live in the footer
