@@ -49,39 +49,34 @@ Gate: `test -f .env.example` succeeds.
 
 Only continue when the gate passes.
 
-#### Step 2 — Create the environment file
+#### Step 2 — Create the environment file and generate secrets
 
 ```bash
-cp .env.example .env
+./scripts/setup-env.sh
 ```
+
+The script copies `.env.example` to `.env` and replaces the three placeholder
+secrets with independent 64-hex values, well past the length `src/lib/env.ts`
+warns below. It prints the sign-in password — record it, the
+operator needs it at the final sign-in step. It refuses to overwrite an existing
+`.env`, so if one is already present, stop and ask the operator before removing
+it.
+
+Leave `DATABASE_URL`, `DIRECT_URL`, and `NEXT_PUBLIC_APP_URL` at the
+`.env.example` localhost defaults.
 
 Gates:
 
 - `test -f .env` succeeds.
-- `grep -c "replace-with-long-random-secret" .env` prints `3` (the three placeholder secrets).
-
-Only continue when the gates pass.
-
-#### Step 3 — Generate secrets and write them into `.env` in place
-
-```bash
-AUTH_SECRET=$(openssl rand -hex 32)
-CRON_SECRET=$(openssl rand -hex 32)
-AUTH_SELF_HOST_PASSWORD=$(openssl rand -hex 32)
-```
-
-Each is 64 hex chars, comfortably above the required 16-char minimum for `AUTH_SELF_HOST_PASSWORD`. Replace the three placeholder values in-place (for example with `perl -i -pe` or `sed`). Leave `DATABASE_URL`, `DIRECT_URL`, and `NEXT_PUBLIC_APP_URL` at the `.env.example` localhost defaults.
-
-Gates:
-
-- `grep '^AUTH_SECRET=' .env` shows a 64-hex value, not the placeholder.
+- `grep -c "replace-with-long-random-secret" .env` prints `0`.
+- `grep '^AUTH_SECRET=' .env` shows a 64-hex value.
 - `grep '^CRON_SECRET=' .env` shows a 64-hex value.
-- `grep '^AUTH_SELF_HOST_PASSWORD=' .env | wc -c` prints a number ≥ 16.
+- `grep '^AUTH_SELF_HOST_PASSWORD=' .env` shows a 64-hex value.
 - `git check-ignore .env` prints `.env` (confirmed gitignored).
 
 Only continue when the gates pass.
 
-#### Step 4 — Enable corepack and install dependencies
+#### Step 3 — Enable corepack and install dependencies
 
 ```bash
 corepack enable
@@ -95,7 +90,7 @@ Gates:
 
 Only continue when the gates pass.
 
-#### Step 5 — Start the local database
+#### Step 4 — Start the local database
 
 ```bash
 pnpm db:up
@@ -110,7 +105,7 @@ Gates:
 
 Only continue when the gates pass.
 
-#### Step 6 — Apply migrations
+#### Step 5 — Apply migrations
 
 ```bash
 pnpm exec prisma migrate deploy
@@ -120,7 +115,7 @@ Gate: the command exits 0 and output contains "All migrations have been applied"
 
 Only continue when the gate passes.
 
-#### Step 7 — Start the app
+#### Step 6 — Start the app
 
 ```bash
 pnpm dev
@@ -134,7 +129,7 @@ Note: `GET /api/health` reports `503 degraded` on a fresh install until the firs
 
 Only continue when the gate passes.
 
-#### Step 8 — Verify sign-in
+#### Step 7 — Verify sign-in
 
 Open http://localhost:3000, use the one-click Internal Test Login (Path A only — local dev, no password) or the owner `AUTH_SELF_HOST_PASSWORD` login, and confirm the dashboard loads. Optionally `pnpm seed:demo`.
 
@@ -169,17 +164,23 @@ Only continue when the gate passes.
 ### 4.3 Configure the environment
 
 ```bash
-cp .env.example .env
+./scripts/setup-env.sh
 ```
 
-Set production values in `.env`:
+This writes `.env` and generates `AUTH_SECRET`, `CRON_SECRET`, and
+`AUTH_SELF_HOST_PASSWORD` as independent 64-hex values. It prints the sign-in
+password — record it. It refuses to overwrite an existing `.env`.
+
+Then set the remaining production values in `.env`:
 
 - `NEXT_PUBLIC_APP_URL` — the canonical HTTPS origin users will reach the app at (not localhost).
 - `POSTGRES_PASSWORD` — a strong value; the app and migrate services reuse it for the bundled database.
-- `AUTH_SECRET` — `openssl rand -hex 32` (required; Compose fails fast if unset).
-- `CRON_SECRET` — `openssl rand -hex 32` (required; Compose fails fast if unset).
-- `AUTH_SELF_HOST_PASSWORD` — `openssl rand -hex 32`, ≥ 16 chars, for the single-owner login.
 - Optionally `AUTH_GOOGLE_ID` + `AUTH_GOOGLE_SECRET` to enable Google OAuth.
+
+The three generated secrets need no editing. If you replace them by hand, none
+of the three may be left at the `.env.example` placeholder — the app refuses to
+start otherwise, and Compose fails earlier still if either is unset. Values under
+32 characters start but log a warning.
 
 Gates:
 
@@ -193,10 +194,11 @@ Only continue when the gates pass.
 
 ### 4.4 Deploy the full stack
 
-Pull the prebuilt application and migration images from GHCR, then start the stack:
+Start the stack. `up` pulls the prebuilt application and migration images from
+GHCR when they are not already present, so a first install needs no separate
+`pull` — §4.7 uses one to refresh images that are already there.
 
 ```bash
-docker compose --profile full pull
 docker compose --profile full up --no-build -d
 ```
 
@@ -284,7 +286,7 @@ docker compose --profile full down
 
 - [ ] `.env` exists; `AUTH_SECRET` and `CRON_SECRET` are generated 64-hex values; `AUTH_SELF_HOST_PASSWORD` is ≥ 16 chars
 - [ ] `NEXT_PUBLIC_APP_URL` is the real public origin; `POSTGRES_PASSWORD` is changed from the default
-- [ ] `docker compose --profile full pull` succeeded
+- [ ] `docker compose --profile full up --no-build -d` succeeded (images pulled on demand)
 - [ ] `docker compose ps` → `migrate` exited 0, `app` Up and healthy
 - [ ] `curl http://localhost:3000/login` → 200
 - [ ] sign-in works in a browser with `AUTH_SELF_HOST_PASSWORD` (or Google OAuth)
@@ -299,7 +301,7 @@ docker compose --profile full down
 | Docker daemon down                       | Docker Desktop stopped                        | `docker info` fails; start Docker, wait, retry `pnpm db:up` / `docker compose ... up`                                                        |
 | corepack/pnpm missing                    | Node without corepack                         | `corepack enable`; if still missing `corepack prepare pnpm@11.6.0 --activate`; verify `pnpm --version`                                       |
 | Node version mismatch                    | wrong Node                                    | check-node-version.mjs fails fast; switch to Node 24 (`nvm use 24` / volta) and retry                                                        |
-| `prisma migrate deploy` fails            | DB not up, or DATABASE_URL not local          | confirm the db container is healthy (Path A Step 5 gate); confirm DATABASE_URL/DIRECT_URL point at the local container; retry                |
+| `prisma migrate deploy` fails            | DB not up, or DATABASE_URL not local          | confirm the db container is healthy (Path A Step 4 gate); confirm DATABASE_URL/DIRECT_URL point at the local container; retry                |
 | `pnpm seed:demo` refuses                 | seed only allows localhost DATABASE_URL       | use the local dev DB (default); pass `--force` only when intentionally targeting a non-local DB                                              |
 | Compose fails: "Set AUTH_SECRET in .env" | AUTH_SECRET unset in .env                     | generate with `openssl rand -hex 32` and write it into `.env`; same for CRON_SECRET; re-run `docker compose --profile full up --no-build -d` |
 | `migrate` service fails                  | db not healthy, or POSTGRES_PASSWORD mismatch | `docker compose logs migrate`; confirm the db container is healthy; keep POSTGRES_PASSWORD consistent across `.env` and the compose URLs     |

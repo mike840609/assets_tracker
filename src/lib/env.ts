@@ -8,6 +8,41 @@ const optionalString = z.preprocess(
   z.string().trim().min(1, "must not be empty").optional(),
 );
 
+/**
+ * The literal shipped in `.env.example`. The documented setup is
+ * `cp .env.example .env`, which leaves this value in place, and it is long
+ * enough (31 chars) to clear every length rule below — so without an explicit
+ * check the documented path starts an instance whose signing key is published
+ * in this repository. `docker-compose.yml` cannot catch it either: `${VAR:?}`
+ * only fires on unset or empty, and this is neither.
+ *
+ * tests/unit/env-secrets.test.ts fails if `.env.example` stops using this exact
+ * string, so the two cannot drift apart.
+ */
+const ENV_EXAMPLE_PLACEHOLDER = "replace-with-long-random-secret";
+const GENERATE_HINT = "generate one with: openssl rand -hex 32";
+
+/**
+ * Machine secrets — AUTH_SECRET signs session JWTs and keys the rate-limit and
+ * demo-visitor HMACs; CRON_SECRET authorizes the snapshot endpoint.
+ *
+ * Only the placeholder is rejected. A length floor would also refuse to start
+ * for deployments whose secret predates it, and those are not the ones at risk:
+ * a short custom secret is weak, while the placeholder is *published*. Length is
+ * a startup warning instead — see SECRET_MIN_LENGTH below.
+ */
+const machineSecret = z
+  .string()
+  .trim()
+  .min(1, "is required")
+  .refine(
+    (value) => value !== ENV_EXAMPLE_PLACEHOLDER,
+    `is still the .env.example placeholder (${GENERATE_HINT})`,
+  );
+
+/** What `openssl rand -hex 32` clears twice over; below it we warn, never fail. */
+const SECRET_MIN_LENGTH = 32;
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]),
@@ -19,14 +54,22 @@ const envSchema = z
         (value) => /^postgres(ql)?:\/\//.test(value),
         "must be a valid PostgreSQL connection string",
       ),
-    AUTH_SECRET: z.string().trim().min(1, "is required"),
+    AUTH_SECRET: machineSecret,
     AUTH_GOOGLE_ID: optionalString,
     AUTH_GOOGLE_SECRET: optionalString,
     AUTH_SELF_HOST_PASSWORD: z.preprocess(
       (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
-      z.string().trim().min(16, "must be at least 16 characters").optional(),
+      z
+        .string()
+        .trim()
+        .min(16, "must be at least 16 characters")
+        .refine(
+          (value) => value !== ENV_EXAMPLE_PLACEHOLDER,
+          `is still the .env.example placeholder (${GENERATE_HINT})`,
+        )
+        .optional(),
     ),
-    CRON_SECRET: z.string().trim().min(1, "is required"),
+    CRON_SECRET: machineSecret,
     AUTH_REDIRECT_PROXY_URL: z.preprocess(
       (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
       z.string().url("must be a valid URL").optional(),
@@ -124,6 +167,15 @@ if (!parsedEnv.success) {
     .join("\n");
 
   throw new Error(`Invalid environment variables:\n${issues}`);
+}
+
+for (const key of ["AUTH_SECRET", "CRON_SECRET"] as const) {
+  if (parsedEnv.data[key].length < SECRET_MIN_LENGTH) {
+    // Not logger.ts: that imports Sentry, and src/proxy.ts imports this module
+    // on the edge runtime — it would pull Sentry into the middleware bundle.
+    // eslint-disable-next-line no-console
+    console.warn(`[env] ${key} is shorter than ${SECRET_MIN_LENGTH} characters. ${GENERATE_HINT}.`);
+  }
 }
 
 /** @public Documented entry point — prefer named exports below, but `env` is part of the API. */

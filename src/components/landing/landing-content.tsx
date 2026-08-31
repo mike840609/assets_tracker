@@ -31,8 +31,14 @@ const CONTRIBUTING_URL = `${REPO_URL}/blob/master/CONTRIBUTING.md`;
 const RELEASES_URL = `${REPO_URL}/releases`;
 const AI_DEPLOY_URL =
   "https://raw.githubusercontent.com/mike840609/assets_tracker/master/docs/INSTALL_WITH_AI.md";
-const DOCKER_COMMAND =
-  "docker compose --profile full pull\ndocker compose --profile full up --no-build -d";
+/* The block a visitor copies has to be the whole sequence. The two compose
+   lines alone cannot work from a clean machine: there is no compose file yet,
+   and the app refuses to start until .env holds real secrets. */
+const DOCKER_COMMAND = [
+  "git clone https://github.com/mike840609/assets_tracker.git && cd assets_tracker",
+  "./scripts/setup-env.sh",
+  "docker compose --profile full up --no-build -d",
+].join("\n");
 /** Hero frame is a phone below lg — its own column from md, full width under
  *  the copy on smaller screens — and hidden above lg. */
 const HERO_MOBILE_SIZES = "(min-width: 1024px) 1px, (min-width: 768px) 16rem, 15rem";

@@ -38,6 +38,62 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.0",
+    date: "2026-08-31",
+    summary: {
+      "en-US":
+        "A public page at your own domain, and a one-command setup that stops shipping a shared secret.",
+      "zh-TW": "自有網域的公開介紹頁，以及一行指令完成設定，不再沿用共用的 secret。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Visitors who are not signed in now see a public landing page at your domain instead of the sign-in form, with product screenshots, the feature list, and the deployment options. Available in English and Traditional Chinese, and it never exposes your data.",
+          "zh-TW":
+            "未登入的訪客現在會在你的網域看到公開介紹頁，而不是登入表單，內含產品截圖、功能列表與部署方式。提供英文與繁體中文，且不會揭露你的任何資料。",
+        },
+      },
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "`./scripts/setup-env.sh` creates .env and generates every secret in one command, then prints the password you sign in with. It refuses to overwrite an existing .env, and needs only a shell — no Node install for the Docker path.",
+          "zh-TW":
+            "`./scripts/setup-env.sh` 一行指令即可建立 .env 並產生所有 secret，並印出登入用的密碼。它不會覆寫既有的 .env，且只需要 shell —— Docker 部署不必額外安裝 Node。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "A deployment that copied .env.example without editing it started normally while signing sessions with a secret published in the public repository. Any secret left at the example placeholder is now rejected at startup, with the command that fixes it. Secrets you generated yourself keep working unchanged; short ones now log a warning instead of failing.",
+          "zh-TW":
+            "先前若直接複製 .env.example 而未修改，服務仍會正常啟動，卻使用了公開在原始碼庫中的 secret 簽署登入工作階段。現在只要有 secret 仍是範例佔位字串，啟動時就會被擋下，並提示修正指令。你自行產生的 secret 不受影響；長度過短者改為記錄警告而非中止。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Self-hosting docs now open with the generate-and-deploy sequence that actually works from an empty directory, and drop the redundant image pull — starting the stack already fetches what is missing.",
+          "zh-TW":
+            "自行架設文件改以「產生設定並部署」的完整步驟開頭，從空目錄即可照做；同時移除多餘的映像檔 pull —— 啟動時本來就會自動取得缺少的映像檔。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Reading the landing page while it is still loading no longer jumps back to the top the moment it finishes. The slower the device, the more of the page you used to lose.",
+          "zh-TW":
+            "在公開介紹頁尚未載入完成時往下閱讀，不會再於載入完成的瞬間跳回頁首。裝置越慢，先前被捲掉的內容越多。",
+        },
+      },
+    ],
+  },
+  {
     version: "1.4.0",
     date: "2026-08-22",
     summary: {

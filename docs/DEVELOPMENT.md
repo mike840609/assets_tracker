@@ -3,7 +3,7 @@
 ## Local setup
 
 ```bash
-cp .env.example .env
+./scripts/setup-env.sh
 corepack enable
 pnpm install
 pnpm db:up

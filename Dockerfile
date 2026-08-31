@@ -77,9 +77,13 @@ ARG NEXT_PUBLIC_SENTRY_DSN=""
 
 ENV NODE_ENV="production"
 ENV DATABASE_URL="postgresql://postgres:postgres@db:5432/asset_app?sslmode=disable"
-ENV AUTH_SECRET="docker-build-placeholder"
-ENV AUTH_SELF_HOST_PASSWORD="docker-build-placeholder"
-ENV CRON_SECRET="docker-build-placeholder"
+# Throwaway values that only need to satisfy the schema in src/lib/env.ts while
+# `next build` evaluates modules; the runtime reads the real ones from the
+# environment. Padded past the length that file warns below, so an image build
+# does not print a secret warning on every run.
+ENV AUTH_SECRET="docker-build-placeholder-not-a-real-secret"
+ENV AUTH_SELF_HOST_PASSWORD="docker-build-placeholder-not-a-real-secret"
+ENV CRON_SECRET="docker-build-placeholder-not-a-real-secret"
 ENV NEXT_PUBLIC_APP_URL="$NEXT_PUBLIC_APP_URL"
 
 COPY --from=deps /app/node_modules ./node_modules

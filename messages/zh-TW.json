@@ -1365,7 +1365,7 @@
     "deployNote": "正式環境需設定 HTTPS、強密碼與備份；部署與資料安全由你掌控並負責。",
     "dockerTitle": "用 Docker 自行部署",
     "dockerAudience": "適合已經有伺服器或 NAS 的人。",
-    "dockerBody": "在你自己的機器上同時執行 astt 與 PostgreSQL。",
+    "dockerBody": "在你自己的機器上同時執行 astt 與 PostgreSQL。設定腳本會產生各項 secret，並印出你的登入密碼。",
     "dockerLink": "Docker 部署指南",
     "cloudTitle": "Vercel 與 Neon",
     "cloudAudience": "適合不想自行維運伺服器的人。",

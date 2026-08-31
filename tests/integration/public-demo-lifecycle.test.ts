@@ -21,7 +21,7 @@ if (
   throw new Error("Integration tests require a local *_asset_tracker_test database");
 }
 
-process.env.AUTH_SECRET ??= "public-demo-integration-secret";
+process.env.AUTH_SECRET ??= "public-demo-integration-secret-0000000000";
 process.env.CRON_SECRET ??= "public-demo-integration-cron-secret";
 process.env.PUBLIC_DEMO_ENABLED = "true";
 

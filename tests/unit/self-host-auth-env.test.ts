@@ -7,8 +7,8 @@ describe("self-host authentication environment", () => {
     vi.resetModules();
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/asset_app");
-    vi.stubEnv("AUTH_SECRET", "test-auth-secret");
-    vi.stubEnv("CRON_SECRET", "test-cron-secret");
+    vi.stubEnv("AUTH_SECRET", "test-auth-secret-0000000000000000000000");
+    vi.stubEnv("CRON_SECRET", "test-cron-secret-0000000000000000000000");
     vi.stubEnv("AUTH_GOOGLE_ID", "");
     vi.stubEnv("AUTH_GOOGLE_SECRET", "");
     vi.stubEnv("AUTH_SELF_HOST_PASSWORD", SELF_HOST_PASSWORD);

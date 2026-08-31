@@ -30,6 +30,21 @@ describe("landing page UI contract", () => {
     expect(landingNavSource).not.toContain("overflow-x-auto");
   });
 
+  it("only restores a fragment on mount, never scrolls to the top", () => {
+    // The page scrolls inside #top, so LandingNav restores the fragment after a
+    // reload. Running that unconditionally resolves to "scroll to #top" when
+    // there is no fragment, which yanks a reader who scrolled before hydration
+    // landed — and it made the language-switching e2e test flaky, because the
+    // reset moved the footer link out from under Playwright's click.
+    //
+    // Asserted on the source because the behaviour is a mount-time effect on a
+    // partially-prerendered page: holding the client chunks to widen the window
+    // also prevents the streamed content from mounting at all, so there is no
+    // stable way to observe it from the browser.
+    expect(landingNavSource).toContain("if (window.location.hash) syncHash();");
+    expect(landingNavSource).not.toMatch(/^\s*syncHash\(\);$/m);
+  });
+
   it("keeps the sticky header to one row on phones", () => {
     // Section links used to wrap onto a second sticky row below md, which cost
     // 44px of every phone screen for the whole scroll. They live in the footer
@@ -87,9 +102,16 @@ describe("landing page UI contract", () => {
   });
 
   it("keeps the Docker copy command aligned with the published-image deployment flow", () => {
-    expect(landingSource).toContain(
-      '"docker compose --profile full pull\\ndocker compose --profile full up --no-build -d"',
-    );
+    // Asserted as parts, not one literal: the block now carries the whole
+    // sequence (clone, generate secrets, deploy) because the two compose lines
+    // alone cannot work from a clean machine. What must not drift is the
+    // published-image flow itself — `--no-build`, never a build-from-source.
+    // No `pull` step: verified against compose 2.21 that `up --no-build` pulls
+    // images that are not present locally, which is every first install.
+    expect(landingSource).toContain('"docker compose --profile full up --no-build -d"');
+    expect(landingSource).not.toContain('"docker compose --profile full pull"');
+    expect(landingSource).toContain("./scripts/setup-env.sh");
+    expect(landingSource).not.toContain("--profile full up --build");
   });
 
   it("guides prospective self-hosters to setup before sign-in", () => {

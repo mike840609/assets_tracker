@@ -46,7 +46,12 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Prepare test environment
-        run: cp .env.example .env
+        # The documented first-install sequence. `cp .env.example .env` alone
+        # leaves the published placeholder secrets in place, which the app now
+        # refuses to boot with — so copying was this job silently exercising the
+        # path a real self-hoster must not take. stdout is dropped because the
+        # script prints the generated sign-in password.
+        run: ./scripts/setup-env.sh > /dev/null
 
       - name: Build and start the full stack
         run: docker compose --profile full up --build -d

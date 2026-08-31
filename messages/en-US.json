@@ -1365,7 +1365,7 @@
     "deployNote": "Production self-hosting needs HTTPS, strong secrets, and a backup plan. You control the deployment and its data.",
     "dockerTitle": "Self-host with Docker",
     "dockerAudience": "Best if you already run a server or NAS.",
-    "dockerBody": "Runs astt and PostgreSQL together on hardware you own.",
+    "dockerBody": "Runs astt and PostgreSQL together on hardware you own. The setup script generates your secrets and prints your sign-in password.",
     "dockerLink": "Docker guide",
     "cloudTitle": "Vercel and Neon",
     "cloudAudience": "Best if you would rather not maintain a server.",
