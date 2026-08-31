@@ -121,8 +121,11 @@ describe("self-host distribution defaults", () => {
     expect(compose).toContain("AUTH_SELF_HOST_PASSWORD: ${AUTH_SELF_HOST_PASSWORD:-}");
     expect(compose).not.toContain("AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID:?");
     expect(compose).not.toContain("AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET:?");
-    expect(dockerfile).toContain('ENV AUTH_SELF_HOST_PASSWORD="docker-build-placeholder"');
-    expect(dockerfile).not.toContain('ENV AUTH_GOOGLE_ID="docker-build-placeholder"');
+    // Prefix, not the whole literal: the build placeholders are padded to the
+    // 32-character floor src/lib/env.ts enforces, and a shorter value fails the
+    // image build. What matters here is which vars get one.
+    expect(dockerfile).toMatch(/^ENV AUTH_SELF_HOST_PASSWORD="docker-build-placeholder/m);
+    expect(dockerfile).not.toMatch(/^ENV AUTH_GOOGLE_ID="docker-build-placeholder/m);
     expect(readme).not.toContain("- A Google OAuth application");
   });
 });

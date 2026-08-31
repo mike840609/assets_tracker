@@ -14,7 +14,7 @@ astt can run as a single Docker container backed by PostgreSQL or as a Vercel pr
 | `NEXT_PUBLIC_APP_URL`     | Canonical public application URL                 |
 | `POSTGRES_PASSWORD`       | Bundled Docker PostgreSQL password               |
 
-Generate URL-safe secrets with `openssl rand -hex 32`. `AUTH_SELF_HOST_PASSWORD` must contain at least 16 characters. See [`.env.example`](../.env.example) for optional Google OAuth, Preview, and Sentry settings.
+Generate URL-safe secrets with `openssl rand -hex 32`. `AUTH_SECRET` and `CRON_SECRET` are rejected below 32 characters, `AUTH_SELF_HOST_PASSWORD` below 16, and all three are rejected while they still hold the `.env.example` placeholder — `cp .env.example .env` on its own is not a working configuration. See [`.env.example`](../.env.example) for optional Google OAuth, Preview, and Sentry settings.
 
 Non-Vercel production requires at least one authentication method:
 

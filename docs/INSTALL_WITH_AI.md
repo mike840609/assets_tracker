@@ -70,7 +70,7 @@ CRON_SECRET=$(openssl rand -hex 32)
 AUTH_SELF_HOST_PASSWORD=$(openssl rand -hex 32)
 ```
 
-Each is 64 hex chars, comfortably above the required 16-char minimum for `AUTH_SELF_HOST_PASSWORD`. Replace the three placeholder values in-place (for example with `perl -i -pe` or `sed`). Leave `DATABASE_URL`, `DIRECT_URL`, and `NEXT_PUBLIC_APP_URL` at the `.env.example` localhost defaults.
+Each is 64 hex chars, comfortably above the enforced minimums — 32 for `AUTH_SECRET` and `CRON_SECRET`, 16 for `AUTH_SELF_HOST_PASSWORD`. The app also refuses to start while any of the three still holds the `.env.example` placeholder, so this replacement is not optional. Replace the three placeholder values in-place (for example with `perl -i -pe` or `sed`). Leave `DATABASE_URL`, `DIRECT_URL`, and `NEXT_PUBLIC_APP_URL` at the `.env.example` localhost defaults.
 
 Gates:
 
