@@ -23,18 +23,25 @@ const ENV_EXAMPLE_PLACEHOLDER = "replace-with-long-random-secret";
 const GENERATE_HINT = "generate one with: openssl rand -hex 32";
 
 /**
- * Machine secrets — never typed by a human, so there is no usability reason to
- * accept a short one. AUTH_SECRET signs session JWTs and keys the rate-limit
- * and demo-visitor HMACs; CRON_SECRET authorizes the snapshot endpoint.
+ * Machine secrets — AUTH_SECRET signs session JWTs and keys the rate-limit and
+ * demo-visitor HMACs; CRON_SECRET authorizes the snapshot endpoint.
+ *
+ * Only the placeholder is rejected. A length floor would also refuse to start
+ * for deployments whose secret predates it, and those are not the ones at risk:
+ * a short custom secret is weak, while the placeholder is *published*. Length is
+ * a startup warning instead — see SECRET_MIN_LENGTH below.
  */
 const machineSecret = z
   .string()
   .trim()
-  .min(32, `must be at least 32 characters (${GENERATE_HINT})`)
+  .min(1, "is required")
   .refine(
     (value) => value !== ENV_EXAMPLE_PLACEHOLDER,
     `is still the .env.example placeholder (${GENERATE_HINT})`,
   );
+
+/** What `openssl rand -hex 32` clears twice over; below it we warn, never fail. */
+const SECRET_MIN_LENGTH = 32;
 
 const envSchema = z
   .object({
@@ -160,6 +167,15 @@ if (!parsedEnv.success) {
     .join("\n");
 
   throw new Error(`Invalid environment variables:\n${issues}`);
+}
+
+for (const key of ["AUTH_SECRET", "CRON_SECRET"] as const) {
+  if (parsedEnv.data[key].length < SECRET_MIN_LENGTH) {
+    // Not logger.ts: that imports Sentry, and src/proxy.ts imports this module
+    // on the edge runtime — it would pull Sentry into the middleware bundle.
+    // eslint-disable-next-line no-console
+    console.warn(`[env] ${key} is shorter than ${SECRET_MIN_LENGTH} characters. ${GENERATE_HINT}.`);
+  }
 }
 
 /** @public Documented entry point — prefer named exports below, but `env` is part of the API. */

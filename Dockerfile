@@ -79,8 +79,8 @@ ENV NODE_ENV="production"
 ENV DATABASE_URL="postgresql://postgres:postgres@db:5432/asset_app?sslmode=disable"
 # Throwaway values that only need to satisfy the schema in src/lib/env.ts while
 # `next build` evaluates modules; the runtime reads the real ones from the
-# environment. AUTH_SECRET and CRON_SECRET are padded to the 32-character floor
-# that file enforces — a shorter value fails the image build, not just the app.
+# environment. Padded past the length that file warns below, so an image build
+# does not print a secret warning on every run.
 ENV AUTH_SECRET="docker-build-placeholder-not-a-real-secret"
 ENV AUTH_SELF_HOST_PASSWORD="docker-build-placeholder-not-a-real-secret"
 ENV CRON_SECRET="docker-build-placeholder-not-a-real-secret"

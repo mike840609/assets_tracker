@@ -72,11 +72,27 @@ describe("environment secret validation", () => {
   }
 
   for (const key of ["AUTH_SECRET", "CRON_SECRET"] as const) {
-    it(`rejects a ${key} shorter than 32 characters`, async () => {
+    it(`warns about a short ${key} but still boots`, async () => {
+      // Deliberately not a hard failure: a length floor would refuse to start
+      // for deployments whose secret predates it, and a short custom secret is
+      // weak rather than published. Only the placeholder is rejected outright.
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
       vi.stubEnv(key, "short-secret");
       vi.resetModules();
 
-      await expect(import("@/lib/env")).rejects.toThrow(`${key}: must be at least 32 characters`);
+      await expect(import("@/lib/env")).resolves.toBeDefined();
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining(key));
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("openssl rand -hex 32"));
+      warn.mockRestore();
     });
   }
+
+  it("stays silent for a secret generated the documented way", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.resetModules();
+
+    await expect(import("@/lib/env")).resolves.toBeDefined();
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining("AUTH_SECRET"));
+    warn.mockRestore();
+  });
 });

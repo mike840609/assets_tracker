@@ -56,8 +56,8 @@ Only continue when the gate passes.
 ```
 
 The script copies `.env.example` to `.env` and replaces the three placeholder
-secrets with independent 64-hex values, comfortably over the 32-character floor
-`src/lib/env.ts` enforces. It prints the sign-in password — record it, the
+secrets with independent 64-hex values, well past the length `src/lib/env.ts`
+warns below. It prints the sign-in password — record it, the
 operator needs it at the final sign-in step. It refuses to overwrite an existing
 `.env`, so if one is already present, stop and ask the operator before removing
 it.
@@ -177,10 +177,10 @@ Then set the remaining production values in `.env`:
 - `POSTGRES_PASSWORD` — a strong value; the app and migrate services reuse it for the bundled database.
 - Optionally `AUTH_GOOGLE_ID` + `AUTH_GOOGLE_SECRET` to enable Google OAuth.
 
-The three generated secrets need no editing. If you replace them by hand,
-`AUTH_SECRET` and `CRON_SECRET` must be at least 32 characters and none of the
-three may be left at the `.env.example` placeholder — the app refuses to start
-otherwise, and Compose fails earlier still if either is unset.
+The three generated secrets need no editing. If you replace them by hand, none
+of the three may be left at the `.env.example` placeholder — the app refuses to
+start otherwise, and Compose fails earlier still if either is unset. Values under
+32 characters start but log a warning.
 
 Gates:
 
