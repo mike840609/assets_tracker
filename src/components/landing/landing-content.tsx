@@ -241,6 +241,7 @@ export async function LandingContent() {
             </a>
             <Link
               href="/login"
+              prefetch={false}
               className={`${FOCUS_RING_CLASS} inline-flex h-11 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 md:h-9 transition duration-150 motion-safe:hover:-translate-y-0.5 active:translate-y-0`}
             >
               {t("navSignIn")}
@@ -294,6 +295,7 @@ export async function LandingContent() {
                 </a>
                 <Link
                   href="/login"
+                  prefetch={false}
                   className={`${FOCUS_RING_CLASS} flex h-12 items-center rounded-xl border border-border px-5 text-sm font-medium text-foreground hover:bg-secondary transition duration-150 motion-safe:hover:-translate-y-0.5 active:translate-y-0`}
                 >
                   {t("heroSecondaryCta")}
@@ -495,6 +497,7 @@ export async function LandingContent() {
               <div className="flex flex-wrap gap-3">
                 <Link
                   href="/login"
+                  prefetch={false}
                   className={`${FOCUS_RING_CLASS} group inline-flex h-11 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition duration-150 motion-safe:hover:-translate-y-0.5 active:translate-y-0`}
                 >
                   {t("sectionCtaPrimary")}
@@ -720,12 +723,14 @@ export async function LandingContent() {
             </a>
             <Link
               href="/privacy"
+              prefetch={false}
               className={`${FOCUS_RING_CLASS} inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0`}
             >
               {t("footerPrivacy")}
             </Link>
             <Link
               href="/terms"
+              prefetch={false}
               className={`${FOCUS_RING_CLASS} inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-2 hover:underline md:min-h-0 md:min-w-0 md:px-0`}
             >
               {t("footerTerms")}

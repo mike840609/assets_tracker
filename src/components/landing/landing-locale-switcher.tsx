@@ -18,7 +18,9 @@ function persistLocale(locale: Locale): void {
     `Max-Age=${LOCALE_COOKIE_MAX_AGE_SECONDS}`,
     "SameSite=Lax",
   ].join("; ");
-  window.location.reload();
+  window.location.assign(
+    `${window.location.pathname}${window.location.search}${window.location.hash}`,
+  );
 }
 
 export function LandingLocaleSwitcher({
