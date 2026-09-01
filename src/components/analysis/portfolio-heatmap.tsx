@@ -332,8 +332,10 @@ export function PortfolioHeatmap({
     : t("heatmapChartSummaryPortfolio", { items: chartSummaryItems });
   const heatmapStyle = {
     "--heatmap-tile-base": "color-mix(in oklch, var(--muted) 84%, var(--card))",
-    "--heatmap-tile-label": "color-mix(in oklch, var(--foreground) 86%, var(--card))",
-    "--heatmap-tile-label-muted": "color-mix(in oklch, var(--foreground) 62%, var(--card))",
+    "--heatmap-tile-label":
+      "light-dark(color-mix(in oklch, var(--foreground) 78%, var(--card)), color-mix(in oklch, var(--foreground) 86%, var(--card)))",
+    "--heatmap-tile-label-muted":
+      "light-dark(color-mix(in oklch, var(--foreground) 62%, var(--card)), color-mix(in oklch, var(--foreground) 76%, var(--card)))",
   } as CSSProperties;
 
   const renderDetailCard = (className?: string) =>
@@ -424,7 +426,9 @@ export function PortfolioHeatmap({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <CardTitle>{t("heatmapTitle")}</CardTitle>
-            <CardDescription>{t("heatmapSubtitle")}</CardDescription>
+            <CardDescription className="text-foreground/70 dark:text-muted-foreground">
+              {t("heatmapSubtitle")}
+            </CardDescription>
           </div>
           <div className="flex w-full max-w-full shrink-0 flex-col gap-2 sm:w-auto sm:items-end">
             <div className="w-full rounded-lg border border-border/60 bg-background/60 px-2.5 py-1.5 text-xs text-muted-foreground sm:w-fit">
