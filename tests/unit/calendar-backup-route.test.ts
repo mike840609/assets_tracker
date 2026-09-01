@@ -264,6 +264,54 @@ describe("Calendar whole-app backup", () => {
     expect(h.tx.calendarEntry.createMany).not.toHaveBeenCalled();
   });
 
+  it("imports recurring rules with no end date", async () => {
+    const response = await importBackup({
+      version: "1.4",
+      accounts: [
+        {
+          name: "Brokerage",
+          type: "ASSET",
+          category: "BROKERAGE",
+          currency: "USD",
+          cashBalance: 100,
+          recurringCashTransactions: [
+            {
+              type: "DEPOSIT",
+              amount: 100,
+              frequency: "MONTHLY",
+              startDate: "2026-01-01T00:00:00.000Z",
+              endDate: null,
+              nextRunDate: "2026-02-01T00:00:00.000Z",
+              isActive: true,
+            },
+          ],
+          recurringInvestments: [
+            {
+              symbol: "2330.TW",
+              name: "TSMC",
+              assetType: "STOCK",
+              holdingCurrency: "TWD",
+              amount: 10000,
+              frequency: "MONTHLY",
+              startDate: "2026-01-01T00:00:00.000Z",
+              endDate: null,
+              nextRunDate: "2026-02-01T00:00:00.000Z",
+              isActive: true,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+    expect(h.tx.recurringCashTransaction.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ endDate: null }),
+    });
+    expect(h.tx.recurringInvestment.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ endDate: null }),
+    });
+  });
+
   it("preserves durable recurring cash provenance during backup import", async () => {
     const response = await importBackup({
       version: "1.4",

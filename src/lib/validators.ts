@@ -442,6 +442,7 @@ const MAX_IMPORT_CALENDAR_ENTRIES = 10_000;
 // so round-trip imports always carry valid ISO datetimes. Rejecting anything
 // else turns a write-time Prisma 500 into a 400 with a field path.
 const importTimestamp = z.iso.datetime().optional();
+const importNullableTimestamp = z.iso.datetime().optional().nullable();
 
 // Recurring-materialized transactions carry the UTC calendar day they belong
 // to; manual rows export it as null. Preserve null as null — never default it,
@@ -535,7 +536,7 @@ export const dataImportSchema = z.object({
               frequency: z.enum(RECURRING_FREQUENCIES),
               note: z.string().max(500).optional().nullable(),
               startDate: importTimestamp,
-              endDate: importTimestamp,
+              endDate: importNullableTimestamp,
               nextRunDate: importTimestamp,
               isActive: z.boolean().default(true),
               createdAt: importTimestamp,
@@ -556,7 +557,7 @@ export const dataImportSchema = z.object({
               frequency: z.enum(RECURRING_FREQUENCIES),
               note: z.string().max(500).optional().nullable(),
               startDate: importTimestamp,
-              endDate: importTimestamp,
+              endDate: importNullableTimestamp,
               nextRunDate: importTimestamp,
               isActive: z.boolean().default(true),
               createdAt: importTimestamp,
