@@ -130,6 +130,7 @@ const {
   getMonthlyCashFlow,
   getFullNormalizedHistory,
   getNormalizedHistory,
+  getRawHistoryWithBreakdown,
   getSnapshotReconciliationWarning,
   getSnapshotReconciliationWarningFromHistory,
   hasForeignCurrencySnapshots,
@@ -801,5 +802,86 @@ describe("hasForeignCurrencySnapshots", () => {
         orderBy: { baseCurrency: "desc" },
       },
     ]);
+  });
+});
+
+describe("getRawHistoryWithBreakdown (deleted-account disclosure)", () => {
+  const jan1 = new Date("2026-01-01T00:00:00.000Z");
+  const jan2 = new Date("2026-01-02T00:00:00.000Z");
+
+  it("returns no unattributed dates when every breakdown entry maps to a live account", async () => {
+    h.accounts = [account({ id: "acc-live" })];
+    h.rows = [
+      row({
+        id: "s1",
+        date: jan1,
+        breakdown: { "acc-live": { value: 100, currency: "USD" } },
+      }),
+    ];
+
+    const raw = await getRawHistoryWithBreakdown("u1", "USD");
+
+    expect(raw.unattributedDates).toEqual([]);
+  });
+
+  it("reports the dates of snapshots referencing an account that no longer exists", async () => {
+    h.accounts = [account({ id: "acc-live" })];
+    h.rows = [
+      row({
+        id: "s1",
+        date: jan1,
+        breakdown: { "acc-live": { value: 100, currency: "USD" } },
+      }),
+      row({
+        id: "s2",
+        date: jan2,
+        breakdown: {
+          "acc-live": { value: 100, currency: "USD" },
+          "acc-deleted": { value: 40, currency: "USD" },
+        },
+      }),
+    ];
+
+    const raw = await getRawHistoryWithBreakdown("u1", "USD");
+
+    expect(raw.unattributedDates).toEqual(["2026-01-02"]);
+    // The value itself stays in the breakdown: History keeps counting it, the
+    // Analysis charts drop it, and the disclosure explains the difference.
+    expect(raw.snapshots[1].accountValues["acc-deleted"]).toBe(40);
+  });
+
+  it("lists each affected date once, ascending, even with several deleted accounts", async () => {
+    h.accounts = [];
+    h.rows = [
+      row({
+        id: "s2",
+        date: jan2,
+        breakdown: { "gone-a": { value: 1, currency: "USD" } },
+      }),
+      row({
+        id: "s1",
+        date: jan1,
+        breakdown: {
+          "gone-a": { value: 1, currency: "USD" },
+          "gone-b": { value: 2, currency: "USD" },
+        },
+      }),
+    ];
+
+    const raw = await getRawHistoryWithBreakdown("u1", "USD");
+
+    expect(raw.unattributedDates).toEqual(["2026-01-01", "2026-01-02"]);
+  });
+
+  it("ignores snapshots with an empty or malformed breakdown", async () => {
+    h.accounts = [account({ id: "acc-live" })];
+    h.rows = [
+      row({ id: "s1", date: jan1, breakdown: null }),
+      row({ id: "s2", date: jan2, breakdown: [] }),
+    ];
+
+    const raw = await getRawHistoryWithBreakdown("u1", "USD");
+
+    expect(raw.unattributedDates).toEqual([]);
   });
 });

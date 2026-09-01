@@ -427,6 +427,14 @@ export interface RawHistoryData {
   snapshots: SnapshotBreakdown[];
   /** All accounts belonging to the user (including inactive, to cover old snapshots). */
   accounts: AccountMeta[];
+  /**
+   * "YYYY-MM-DD" of every snapshot carrying at least one breakdown entry whose
+   * account no longer exists, ascending. Those values stay in `accountValues`
+   * (History keeps counting them through the stored aggregates), but every
+   * consumer that walks `accounts` — the category and attribution charts —
+   * necessarily drops them, so the UI can disclose the difference.
+   */
+  unattributedDates: string[];
 }
 
 /**
@@ -468,10 +476,14 @@ export async function getRawHistoryWithBreakdown(
     }
   }
 
+  const liveAccountIds = new Set(accountsRaw.map((a) => a.id));
+  const unattributedDates: string[] = [];
+
   const snapshots: SnapshotBreakdown[] = Array.from(dedupedMap.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, { breakdown }]) => {
       const accountValues: Record<string, number> = {};
+      let hasDeletedAccount = false;
 
       if (breakdown && typeof breakdown === "object" && !Array.isArray(breakdown)) {
         const raw = breakdown as Record<string, { value?: unknown; currency?: unknown }>;
@@ -480,8 +492,11 @@ export async function getRawHistoryWithBreakdown(
           const currency = typeof entry?.currency === "string" ? entry.currency : "USD";
           const rate = resolveRate(allRatesMap, currency, targetBaseCurrency) ?? 1;
           accountValues[accountId] = value * rate;
+          if (!liveAccountIds.has(accountId)) hasDeletedAccount = true;
         }
       }
+
+      if (hasDeletedAccount) unattributedDates.push(date);
 
       return { date, accountValues };
     });
@@ -493,7 +508,7 @@ export async function getRawHistoryWithBreakdown(
     type: a.type,
   }));
 
-  return { snapshots, accounts };
+  return { snapshots, accounts, unattributedDates };
 }
 
 /** Net cash contribution for a single account in one calendar month. */
