@@ -155,7 +155,7 @@ export function NetWorthCard({
     >
       {/* Primary Hero Metric: Net Worth — spans half the row on desktop so it
           leads the hierarchy by footprint, not just styling */}
-      <Card className="col-span-2 card-gradient rounded-2xl min-w-0">
+      <Card className="col-span-2 glass card-gradient rounded-2xl overflow-hidden shadow-sm relative min-w-0">
         <div className={meshClass} />
         <div className="net-worth-card-accent absolute inset-x-0 bottom-0 h-1 opacity-100 transition-opacity" />
         <CardContent
