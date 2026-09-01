@@ -377,3 +377,58 @@ describe("refreshExchangeRates — persisted freshness stamps", () => {
     expect(writeSpy).not.toHaveBeenCalled();
   });
 });
+
+describe("refreshExchangeRates — inverse-rate precision", () => {
+  const realFetch = globalThis.fetch;
+  // 1 USD ≈ 89,500 LBP: the inverse needs more than 8 decimals to survive.
+  const LBP_PER_USD = 89_500;
+  const TRUNCATED_INVERSE = 0.00001117;
+
+  beforeEach(() => {
+    db.exchangeRates = [];
+    db.rateStamps = [];
+    writeSpy.mockClear();
+  });
+
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  it("sends the derived inverse with more than 8 decimals", async () => {
+    globalThis.fetch = jsonRatesResponse({ LBP: LBP_PER_USD });
+
+    await refreshExchangeRates("USD", { force: true });
+
+    // Rows are sorted by pair: LBP_USD (derived) precedes USD_LBP (fetched).
+    const params = writeSpy.mock.calls.at(-1)!.slice(1).map(String);
+    expect(params.slice(0, 2)).toEqual(["LBP", "USD"]);
+    expect(params[2].split(".")[1].length).toBeGreaterThan(8);
+    expect(Number(params[2])).toBeCloseTo(1 / LBP_PER_USD, 15);
+  });
+
+  it("counts a rate that only differs past the 8th decimal as changed", async () => {
+    // The stored inverse is the old Decimal(18, 8) truncation; the widened
+    // column can hold the real value, so the refresh must report it changed.
+    db.exchangeRates = [
+      { fromCurrency: "USD", toCurrency: "LBP", rate: LBP_PER_USD },
+      { fromCurrency: "LBP", toCurrency: "USD", rate: TRUNCATED_INVERSE },
+    ];
+    globalThis.fetch = jsonRatesResponse({ LBP: LBP_PER_USD });
+
+    const result = await refreshExchangeRates("USD", { force: true });
+
+    expect(result.changed).toBe(1);
+  });
+
+  it("still reports an unchanged rate as unchanged", async () => {
+    db.exchangeRates = [
+      { fromCurrency: "USD", toCurrency: "LBP", rate: LBP_PER_USD },
+      { fromCurrency: "LBP", toCurrency: "USD", rate: 1 / LBP_PER_USD },
+    ];
+    globalThis.fetch = jsonRatesResponse({ LBP: LBP_PER_USD });
+
+    const result = await refreshExchangeRates("USD", { force: true });
+
+    expect(result.changed).toBe(0);
+  });
+});

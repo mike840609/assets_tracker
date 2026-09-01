@@ -114,12 +114,17 @@ const FRANKFURTER_CURRENCIES = new Set([
 // lib/rate-limit.ts). Cold starts simply refresh once and re-prime it.
 const lastRateRefreshAt = new Map<string, number>();
 
+/** Column scale is Decimal(28, 16); 12 decimals is short of the double's own
+ * round-trip noise, so a value that survives the store/read cycle unchanged
+ * never reports as changed while a real edit past the 8th decimal still does. */
+const RATE_COMPARISON_DECIMALS = 12;
+
 function decimalChangedAtDbScale(current: unknown, next: number): boolean {
   const currentNumber = Number(current);
   return (
     !Number.isFinite(currentNumber) ||
     !Number.isFinite(next) ||
-    currentNumber.toFixed(8) !== next.toFixed(8)
+    currentNumber.toFixed(RATE_COMPARISON_DECIMALS) !== next.toFixed(RATE_COMPARISON_DECIMALS)
   );
 }
 
