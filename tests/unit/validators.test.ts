@@ -47,6 +47,24 @@ describe("updateAccountSchema", () => {
   it("rejects currency changes", () => {
     expect(updateAccountSchema.safeParse({ currency: "JPY" }).success).toBe(false);
   });
+
+  it("rejects account type changes", () => {
+    expect(updateAccountSchema.safeParse({ type: "LIABILITY" }).success).toBe(false);
+  });
+
+  it("accepts category, name, and cashBalance edits", () => {
+    const result = updateAccountSchema.safeParse({
+      category: "BROKERAGE",
+      name: "Renamed account",
+      cashBalance: 250,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.category).toBe("BROKERAGE");
+      expect(result.data.name).toBe("Renamed account");
+      expect(result.data.cashBalance).toBe(250);
+    }
+  });
 });
 
 describe("Decimal-backed CRUD number schemas", () => {
