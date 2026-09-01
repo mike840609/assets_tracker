@@ -10,6 +10,8 @@ const db = vi.hoisted(() => ({
   snapshotCurrencies: [] as { baseCurrency: string }[],
   priceCurrencies: [] as { currency: string }[],
   exchangeRates: [] as { fromCurrency: string; toCurrency: string; rate: number }[],
+  /** Persisted `updatedAt` stamps, the only column the freshness gate aggregates. */
+  rateStamps: [] as { fromCurrency: string; updatedAt: Date }[],
   cacheTags: [] as string[],
 }));
 vi.mock("@/lib/prisma", () => ({
@@ -20,7 +22,17 @@ vi.mock("@/lib/prisma", () => ({
     priceCache: { findMany: vi.fn(async () => db.priceCurrencies) },
     exchangeRate: {
       findMany: vi.fn(async () => db.exchangeRates),
-      aggregate: vi.fn(async () => ({ _max: { updatedAt: null } })),
+      // Mirrors MAX("updatedAt") WHERE "fromCurrency" = base.
+      aggregate: vi.fn(async (args?: { where?: { fromCurrency?: string } }) => {
+        const base = args?.where?.fromCurrency;
+        const updatedAt = db.rateStamps
+          .filter((stamp) => stamp.fromCurrency === base)
+          .reduce<Date | null>(
+            (max, stamp) => (max === null || stamp.updatedAt > max ? stamp.updatedAt : max),
+            null,
+          );
+        return { _max: { updatedAt } };
+      }),
     },
     $executeRawUnsafe: vi.fn(async () => 1),
   },
@@ -44,6 +56,8 @@ vi.mock("@/lib/logger", () => ({
 
 const { resolveRate, fetchExchangeRates, getUnresolvedRatePairs, refreshExchangeRates } =
   await import("@/lib/services/exchange-rate-service");
+const { prisma } = await import("@/lib/prisma");
+const writeSpy = vi.mocked(prisma.$executeRawUnsafe);
 
 describe("resolveRate", () => {
   it("returns 1 for an identity conversion", () => {
@@ -276,5 +290,90 @@ describe("fetchExchangeRates", () => {
     const logged = JSON.stringify(logSpies.info.mock.calls);
     expect(logged).not.toContain("USD");
     expect(logged).toContain("operation");
+  });
+});
+
+/**
+ * Reads back the rows the service just wrote, the way PostgreSQL would.
+ * Pre-fix the statement stamped every row with a SQL-side NOW(); the fix
+ * parameterises the stamp so derived inverse rows can carry the epoch.
+ */
+function replayLastRateWrite(): { fromCurrency: string; toCurrency: string; updatedAt: Date }[] {
+  const call = writeSpy.mock.calls.at(-1);
+  if (!call) return [];
+  const sql = String(call[0]);
+  const params = call.slice(1).map(String);
+  const perRow = sql.includes("::timestamptz") ? 4 : 3;
+  const rows: { fromCurrency: string; toCurrency: string; updatedAt: Date }[] = [];
+  for (let i = 0; i + perRow <= params.length; i += perRow) {
+    rows.push({
+      fromCurrency: params[i],
+      toCurrency: params[i + 1],
+      updatedAt: perRow === 4 ? new Date(params[i + 3]) : new Date(),
+    });
+  }
+  return rows;
+}
+
+function jsonRatesResponse(rates: Record<string, number>) {
+  return vi.fn(
+    async () => new Response(JSON.stringify({ rates }), { status: 200 }),
+  ) as typeof fetch;
+}
+
+describe("refreshExchangeRates — persisted freshness stamps", () => {
+  const realFetch = globalThis.fetch;
+  const EPOCH_ISO = "1970-01-01T00:00:00.000Z";
+
+  beforeEach(() => {
+    db.exchangeRates = [];
+    db.rateStamps = [];
+    writeSpy.mockClear();
+  });
+
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  it("stamps fetched rows with the refresh instant and derived inverse rows with the epoch", async () => {
+    globalThis.fetch = jsonRatesResponse({ TWD: 32 });
+
+    await refreshExchangeRates("DKK", { force: true });
+
+    const [sql, ...params] = writeSpy.mock.calls.at(-1)!.map(String);
+    // A derived row must never bump a genuine row's stamp back down.
+    expect(sql).toContain('GREATEST("ExchangeRate"."updatedAt", EXCLUDED."updatedAt")');
+    expect(sql).toContain("::timestamptz");
+    // Rows are sorted by pair: DKK_TWD (fetched) then TWD_DKK (derived).
+    expect(params.slice(0, 2)).toEqual(["DKK", "TWD"]);
+    expect(Date.now() - new Date(params[3]).getTime()).toBeLessThan(60_000);
+    expect(params.slice(4, 6)).toEqual(["TWD", "DKK"]);
+    expect(params[7]).toBe(EPOCH_ISO);
+  });
+
+  it("does not let a derived inverse row satisfy its own base's freshness gate", async () => {
+    globalThis.fetch = jsonRatesResponse({ NOK: 1.05 });
+
+    // A genuine SEK refresh also writes the derived NOK_SEK row.
+    await refreshExchangeRates("SEK", { force: true });
+    db.rateStamps.push(...replayLastRateWrite());
+    expect(db.rateStamps.some((stamp) => stamp.fromCurrency === "NOK")).toBe(true);
+
+    // NOK has never been fetched, so it must still do its own round-trip.
+    const result = await refreshExchangeRates("NOK");
+
+    expect(result.skippedFresh).toBe(false);
+    expect(result.updated).toBeGreaterThan(0);
+  });
+
+  it("still skips a base whose own forward rows were fetched recently", async () => {
+    globalThis.fetch = jsonRatesResponse({ USD: 0.0027 });
+    db.rateStamps.push({ fromCurrency: "HUF", updatedAt: new Date() });
+
+    const result = await refreshExchangeRates("HUF");
+
+    expect(result.skippedFresh).toBe(true);
+    expect(result.nextRefreshAt).not.toBeNull();
+    expect(writeSpy).not.toHaveBeenCalled();
   });
 });
