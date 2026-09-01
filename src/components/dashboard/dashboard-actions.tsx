@@ -84,7 +84,12 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
         aria-live="polite"
       >
         {effectiveLastUpdate && (
-          <FreshnessBadge kind="price" timestamp={effectiveLastUpdate} mobileShort />
+          <FreshnessBadge
+            kind="price"
+            timestamp={effectiveLastUpdate}
+            mobileShort
+            className="rounded-lg"
+          />
         )}
         {lastSnapshotDate && (
           // Only surfaces when the daily cron has missed 2+ days — a real gap,
@@ -94,6 +99,7 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
             timestamp={lastSnapshotDate}
             mobileShort
             showOnlyWhenStale
+            className="rounded-lg"
           />
         )}
         {!effectiveLastUpdate && !lastSnapshotDate && (
@@ -111,7 +117,7 @@ export function DashboardActions({ lastPriceUpdate, lastSnapshotDate }: Dashboar
           onClick={handleRefreshPrices}
           disabled={refreshing || coolingDown}
           title={coolingDown ? t("cooldownWait", { seconds: secondsLeft }) : undefined}
-          className="gap-2 rounded-full px-5 border-primary/20 bg-primary/5 hover:bg-primary/15 text-primary hover:text-primary transition-all shadow-sm hover:shadow"
+          className="gap-2 px-3"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
           {refreshing ? t("refreshing") : t("refreshPrices")}

@@ -10,6 +10,7 @@ import { useDensity } from "@/components/layout/density-context";
 import { formatCurrency } from "@/lib/currencies";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import type { NetWorthSummary } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
 
 // Schema-aware spectrum: --chart-1..5 re-tint with the selected color schema
 // (chart-1 is the accent), --chart-6..9 stay as the supplementary spectrum.
@@ -229,15 +230,16 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
                         <span className="text-xs tabular-nums text-muted-foreground font-medium">
                           {privacyMode ? "••••" : formatCurrency(item.value, summary.baseCurrency)}
                         </span>
-                        <span
-                          className={`text-[11px] tabular-nums font-semibold px-1.5 py-0.5 rounded-full transition-colors duration-200 ${
+                        <Badge
+                          variant="secondary"
+                          className={`h-auto px-1.5 py-0.5 text-[11px] font-semibold tabular-nums transition-colors duration-200 ${
                             isActive
                               ? "bg-foreground/10 text-foreground"
                               : "bg-muted text-muted-foreground"
                           }`}
                         >
                           {item.percentage}%
-                        </span>
+                        </Badge>
                       </div>
                     </div>
                   );

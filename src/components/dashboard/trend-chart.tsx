@@ -24,6 +24,7 @@ import { formatCurrency, getCurrencySymbol } from "@/lib/currencies";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
+import { Badge } from "@/components/ui/badge";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
@@ -302,18 +303,15 @@ export function TrendChart({
         <div className="flex flex-col gap-1 min-w-0">
           <CardTitle className="text-foreground">{t("title")}</CardTitle>
           {periodChange && (
-            <div
+            <Badge
+              variant={periodChange.delta >= 0 ? "gain" : "loss"}
               aria-label={
                 privacyMode
                   ? undefined
                   : `${t("seriesName")} change: ${periodChange.delta >= 0 ? "+" : ""}${formatCurrency(periodChange.delta, baseCurrency)}${periodChange.pct !== null ? ` (${periodChange.delta >= 0 ? "+" : ""}${periodChange.pct.toFixed(1)}%)` : ""}`
               }
               aria-hidden={privacyMode || undefined}
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold tabular-nums ${
-                periodChange.delta >= 0
-                  ? "bg-[var(--gain)]/10 text-[var(--gain-ink)]"
-                  : "bg-[var(--loss)]/10 text-[var(--loss-ink)]"
-              }`}
+              className="h-auto px-2 py-0.5 text-xs font-semibold tabular-nums"
             >
               {privacyMode ? (
                 "***"
@@ -329,23 +327,23 @@ export function TrendChart({
                   )}
                 </>
               )}
-            </div>
+            </Badge>
           )}
         </div>
         {!hideRangeFilter && (
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
             <SegmentedControl
-              variant="pill"
+              variant="boxed"
               size="xs"
               options={TREND_RANGES.map((r) => ({ value: r.label, label: r.label }))}
               value={range}
               onValueChange={setRange}
               aria-label={t("title")}
-              className="justify-end gap-0.5 p-0"
+              className="flex-wrap justify-end gap-0.5"
             />
             <div className="mx-1 h-3 w-px bg-border" />
             <SegmentedControl
-              variant="pill"
+              variant="boxed"
               size="xs"
               options={[
                 { value: "off", label: currencySymbol, title: t("absToggleTitle") },
@@ -354,7 +352,7 @@ export function TrendChart({
               value={pctMode}
               onValueChange={setPctMode}
               aria-label={t("valueModeLabel")}
-              className="gap-0 bg-muted p-0.5"
+              className="gap-0"
               itemClassName="tabular-nums"
             />
           </div>
