@@ -6,7 +6,7 @@ import { ArrowRight, ChartCandlestick, Plus, TrendingDown, TrendingUp } from "lu
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
-import { daysBetweenDates, localToday } from "@/lib/utils";
+import { cn, daysBetweenDates, localToday } from "@/lib/utils";
 import type { SerializedTrackedStock } from "@/lib/services/stock-watch-service";
 
 const HIDDEN = "***";
@@ -74,7 +74,10 @@ function WatchlistRow({ stock }: { stock: SerializedTrackedStock }) {
           <span className="truncate font-mono text-sm font-semibold tracking-normal">
             {stock.symbol}
           </span>
-          <Badge variant="secondary" className="text-[10px] font-medium">
+          <Badge
+            variant="outline"
+            className="border-primary/20 bg-primary/5 text-[10px] font-medium text-primary/90"
+          >
             {stock.currency}
           </Badge>
         </div>
@@ -84,13 +87,17 @@ function WatchlistRow({ stock }: { stock: SerializedTrackedStock }) {
       <div className="min-w-0 flex shrink-0 flex-col items-end">
         <div>
           {stock.changePercent !== null ? (
-            <Badge
-              variant={isGain ? "gain" : "loss"}
-              className="h-auto px-2.5 py-1 font-mono text-[13px] font-semibold tabular-nums leading-none"
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-[13px] font-semibold tabular-nums leading-none",
+                isGain
+                  ? "bg-[var(--gain)]/15 text-[var(--gain-ink)]"
+                  : "bg-[var(--loss)]/15 text-[var(--loss-ink)]",
+              )}
             >
               <DirectionIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
               {changePercent}
-            </Badge>
+            </span>
           ) : (
             <span className="font-mono text-[13px] font-semibold tabular-nums text-muted-foreground">
               {t("unavailable")}

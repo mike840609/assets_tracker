@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { computeConcentration } from "@/lib/services/analysis-service";
 import type { NetWorthSummary } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
 
 export function ConcentrationCard({ summary }: { summary: NetWorthSummary }) {
   const t = useTranslations("concentration");
@@ -32,12 +31,9 @@ export function ConcentrationCard({ summary }: { summary: NetWorthSummary }) {
               </div>
               <div className="text-[11px] text-muted-foreground">{t("largestPosition")}</div>
             </div>
-            <Badge
-              variant={level === "high" ? "warning" : "secondary"}
-              className="h-auto px-2 py-1 text-[11px]"
-            >
+            <span className="rounded-full bg-muted px-2 py-1 text-[11px] text-muted-foreground">
               {t(`level_${level}` as "level_low" | "level_moderate" | "level_high")}
-            </Badge>
+            </span>
           </div>
           <ul className="grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
             {top.map((position) => (

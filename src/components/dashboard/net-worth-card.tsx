@@ -9,7 +9,6 @@ import { useDensity } from "@/components/layout/density-context";
 import { useCountUp } from "@/hooks/use-count-up";
 import type { NetWorthSummary } from "@/lib/types";
 import { TrendingUp, TrendingDown, Layers, Wallet } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 const HIDDEN = "***";
 
@@ -129,6 +128,8 @@ export function NetWorthCard({
   const isPositive = delta !== null && delta >= 0;
   const deltaColor =
     delta === null ? "" : isPositive ? "text-[var(--gain-ink)]" : "text-[var(--loss-ink)]";
+  const bgDeltaColor =
+    delta === null ? "" : isPositive ? "bg-[var(--gain)]/10" : "bg-[var(--loss)]/10";
   const deltaSign = delta !== null && delta > 0 ? "+" : "";
   const snapshotLabel = previousSnapshotDate
     ? new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" }).format(
@@ -178,9 +179,8 @@ export function NetWorthCard({
           {!privacyMode && delta !== null && pct !== null && (
             <div className="mt-3">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge
-                  variant={isPositive ? "gain" : "loss"}
-                  className="h-auto max-w-full cursor-default px-2.5 py-1 text-xs font-semibold tabular-nums"
+                <div
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${bgDeltaColor} ${deltaColor} max-w-full cursor-default tabular-nums`}
                 >
                   {isPositive ? (
                     <TrendingUp className="h-3.5 w-3.5 shrink-0" />
@@ -191,7 +191,7 @@ export function NetWorthCard({
                     {deltaSign}
                     {formatCurrency(delta, baseCurrency)}
                   </span>
-                </Badge>
+                </div>
                 <span className={`text-xs font-semibold tabular-nums ${deltaColor}`}>
                   {deltaSign}
                   {pct.toFixed(2)}%
