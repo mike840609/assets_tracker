@@ -7,7 +7,16 @@ const h = vi.hoisted(() => ({
     quantity: number;
     expiration?: Date;
     isDemo?: boolean;
+    symbol?: string;
+    contractMultiplier?: number | null;
+    account?: { id: string; currency: string };
   }>,
+  /** #732 — PriceCache rows the expiry sweep closes contracts against. */
+  optionPrices: [] as Array<{ symbol: string; price: number; currency: string }>,
+  /** #732 — ExchangeRate rows the sweep converts the close-out value with. */
+  rates: {} as Record<string, number>,
+  /** #732 — cash credited by the sweep, as `accountId` → serialized increment. */
+  cashCredits: [] as Array<{ accountId: string; increment: string }>,
   optionSweepGuardFails: false,
   users: [{ id: "user1", appSettings: { baseCurrency: "USD" } }] as Array<{
     id: string;
@@ -56,7 +65,16 @@ vi.mock("@/lib/services/exchange-rate-service", () => ({
   }),
   getFreshExchangeRates: vi.fn(async () => {
     h.rateMapLoads += 1;
-    return new Map<string, number>();
+    return new Map<string, number>(Object.entries(h.rates));
+  }),
+  // Faithful to the real direct → inverse lookup; the USD cross path has its
+  // own coverage in exchange-rate-service.test.ts.
+  resolveRate: vi.fn((rateMap: Map<string, number>, from: string, to: string) => {
+    if (from === to) return 1;
+    const direct = rateMap.get(`${from}_${to}`);
+    if (direct !== undefined) return direct;
+    const inverse = rateMap.get(`${to}_${from}`);
+    return inverse !== undefined && inverse !== 0 ? 1 / inverse : undefined;
   }),
 }));
 
@@ -119,12 +137,20 @@ vi.mock("@/lib/prisma", () => {
           if (args?.where?.assetType !== "OPTION") return h.expiredOptions;
           h.events.push("options:queried");
           const cutoff = args.where.expiration?.lt;
-          return h.expiredOptions.filter(
-            (holding) =>
-              (args.where?.account?.user?.demoWorkspace !== null || !holding.isDemo) &&
-              holding.quantity > (args.where?.quantity?.gt ?? 0) &&
-              (!holding.expiration || !cutoff || holding.expiration < cutoff),
-          );
+          return h.expiredOptions
+            .filter(
+              (holding) =>
+                (args.where?.account?.user?.demoWorkspace !== null || !holding.isDemo) &&
+                holding.quantity > (args.where?.quantity?.gt ?? 0) &&
+                (!holding.expiration || !cutoff || holding.expiration < cutoff),
+            )
+            .map((holding) => ({
+              symbol: `${holding.id}-OCC`,
+              contractMultiplier: 100,
+              currency: "USD",
+              account: { id: `${holding.id}-account`, currency: "USD" },
+              ...holding,
+            }));
         },
       ),
       // Per-holding guarded zeroing: count 0 simulates a concurrent writer
@@ -141,8 +167,24 @@ vi.mock("@/lib/prisma", () => {
       }),
       createMany: vi.fn(async () => ({ count: h.expiredOptions.length })),
     },
+    priceCache: {
+      findMany: vi.fn(async (args: { where: { symbol: { in: string[] } } }) => {
+        h.events.push("options:prices-queried");
+        return h.optionPrices.filter((row) => args.where.symbol.in.includes(row.symbol));
+      }),
+    },
     account: {
       findMany: vi.fn(async () => []),
+      update: vi.fn(
+        async (args: { where: { id: string }; data: { cashBalance: { increment: unknown } } }) => {
+          h.events.push(`account:${args.where.id}:credited`);
+          h.cashCredits.push({
+            accountId: args.where.id,
+            increment: String(args.data.cashBalance.increment),
+          });
+          return {};
+        },
+      ),
     },
     setting: {
       findMany: vi.fn(async () => []),
@@ -178,6 +220,9 @@ describe("snapshot cron route", () => {
     vi.clearAllMocks();
     h.events = [];
     h.expiredOptions = [];
+    h.optionPrices = [];
+    h.rates = {};
+    h.cashCredits = [];
     h.optionSweepGuardFails = false;
     h.users = [{ id: "user1", appSettings: { baseCurrency: "USD" } }];
     h.cleanupFailure = null;
@@ -226,6 +271,7 @@ describe("snapshot cron route", () => {
         quantity: { gt: 0 },
         account: { user: { demoWorkspace: null } },
       },
+      include: { account: { select: { id: true, currency: true } } },
     });
     expect(vi.mocked(prisma.account.findMany)).toHaveBeenCalledWith({
       where: { user: { demoWorkspace: null } },
@@ -307,8 +353,11 @@ describe("snapshot cron route", () => {
     });
   });
 
-  it("skips the SELL row when another writer changed the option quantity mid-sweep", async () => {
+  it("skips the SELL row and the cash credit when another writer changed the option quantity mid-sweep", async () => {
     h.expiredOptions = [{ id: "holding1", quantity: 2 }];
+    // Priced in the money, so the credit would fire if it were not gated on the
+    // same guarded zeroing as the SELL row.
+    h.optionPrices = [{ symbol: "holding1-OCC", price: 1.07, currency: "USD" }];
     h.optionSweepGuardFails = true;
     const { GET } = await import("@/app/api/cron/snapshot/route");
     const { prisma } = await import("@/lib/prisma");
@@ -322,6 +371,147 @@ describe("snapshot cron route", () => {
     expect(response.status).toBe(200);
     expect(vi.mocked(prisma.holdingTransaction.create)).not.toHaveBeenCalled();
     expect(vi.mocked(prisma.holdingTransaction.createMany)).not.toHaveBeenCalled();
+    expect(vi.mocked(prisma.account.update)).not.toHaveBeenCalled();
+    expect(h.cashCredits).toEqual([]);
+  });
+
+  // #732: an in-the-money contract is exercised or assigned at expiry, not
+  // vaporised. The sweep closes it at the last cached close instead of writing
+  // the whole position off, so net worth stays continuous.
+  describe("expired-option close-out (#732)", () => {
+    it("prices the SELL at the cached close and credits the account's cash", async () => {
+      // contractMultiplier null exercises the legacy 100 fallback.
+      h.expiredOptions = [
+        {
+          id: "holding1",
+          quantity: 3,
+          contractMultiplier: null,
+          account: { id: "acct-usd", currency: "USD" },
+        },
+      ];
+      h.optionPrices = [{ symbol: "holding1-OCC", price: 1.07, currency: "USD" }];
+      const { GET } = await import("@/app/api/cron/snapshot/route");
+      const { prisma } = await import("@/lib/prisma");
+
+      const response = await GET(
+        new Request("http://unit.test/api/cron/snapshot", {
+          headers: { authorization: "Bearer test-secret" },
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(vi.mocked(prisma.priceCache.findMany)).toHaveBeenCalledWith({
+        where: { symbol: { in: ["holding1-OCC"] } },
+        select: { symbol: true, price: true, currency: true },
+      });
+      const created = vi.mocked(prisma.holdingTransaction.create).mock.calls[0][0].data;
+      expect(created).toMatchObject({
+        holdingId: "holding1",
+        type: "SELL",
+        quantity: 3,
+        note: "Expired",
+      });
+      // Per-share premium, matching manual option transactions: the cost-basis
+      // path multiplies unitPrice by the contract multiplier itself.
+      expect(String(created.unitPrice)).toBe("1.07");
+      // 1.07 × 3 × 100 = 321 exactly; float arithmetic yields 321.00000000000006.
+      expect(h.cashCredits).toEqual([{ accountId: "acct-usd", increment: "321" }]);
+    });
+
+    it("converts the close-out value into the account's currency", async () => {
+      h.expiredOptions = [
+        { id: "holding1", quantity: 3, account: { id: "acct-twd", currency: "TWD" } },
+      ];
+      h.optionPrices = [{ symbol: "holding1-OCC", price: 1.07, currency: "USD" }];
+      h.rates = { USD_TWD: 31.5 };
+      const { GET } = await import("@/app/api/cron/snapshot/route");
+
+      const response = await GET(
+        new Request("http://unit.test/api/cron/snapshot", {
+          headers: { authorization: "Bearer test-secret" },
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      // 1.07 × 3 × 100 × 31.5 = 10111.5
+      expect(h.cashCredits).toEqual([{ accountId: "acct-twd", increment: "10111.5" }]);
+    });
+
+    it("falls back to the worthless path and warns when the rate is unresolvable", async () => {
+      h.expiredOptions = [
+        { id: "holding1", quantity: 3, account: { id: "acct-jpy", currency: "JPY" } },
+      ];
+      h.optionPrices = [{ symbol: "holding1-OCC", price: 1.07, currency: "USD" }];
+      h.rates = { USD_TWD: 31.5 }; // nothing reaches JPY
+      const { GET } = await import("@/app/api/cron/snapshot/route");
+      const { prisma } = await import("@/lib/prisma");
+      const { log } = await import("@/lib/logger");
+
+      const response = await GET(
+        new Request("http://unit.test/api/cron/snapshot", {
+          headers: { authorization: "Bearer test-secret" },
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(vi.mocked(prisma.holdingTransaction.create)).toHaveBeenCalledWith({
+        data: { holdingId: "holding1", type: "SELL", quantity: 3, note: "Expired" },
+      });
+      expect(vi.mocked(prisma.account.update)).not.toHaveBeenCalled();
+      expect(h.cashCredits).toEqual([]);
+      expect(log.warn).toHaveBeenCalledWith("cron.options.expire_rate_unresolved", {
+        symbol: "holding1-OCC",
+        from: "USD",
+        to: "JPY",
+      });
+    });
+
+    it("keeps writing contracts off as worthless when there is no usable cached price", async () => {
+      h.expiredOptions = [
+        { id: "uncached", quantity: 2, account: { id: "acct-a", currency: "USD" } },
+        { id: "zero-priced", quantity: 5, account: { id: "acct-b", currency: "USD" } },
+      ];
+      h.optionPrices = [{ symbol: "zero-priced-OCC", price: 0, currency: "USD" }];
+      const { GET } = await import("@/app/api/cron/snapshot/route");
+      const { prisma } = await import("@/lib/prisma");
+
+      const response = await GET(
+        new Request("http://unit.test/api/cron/snapshot", {
+          headers: { authorization: "Bearer test-secret" },
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(vi.mocked(prisma.holdingTransaction.create)).toHaveBeenCalledWith({
+        data: { holdingId: "uncached", type: "SELL", quantity: 2, note: "Expired" },
+      });
+      expect(vi.mocked(prisma.holdingTransaction.create)).toHaveBeenCalledWith({
+        data: { holdingId: "zero-priced", type: "SELL", quantity: 5, note: "Expired" },
+      });
+      expect(vi.mocked(prisma.account.update)).not.toHaveBeenCalled();
+      expect(h.cashCredits).toEqual([]);
+    });
+
+    it("reads the close-out prices before the price refresh overwrites them", async () => {
+      h.expiredOptions = [{ id: "holding1", quantity: 3 }];
+      h.optionPrices = [{ symbol: "holding1-OCC", price: 1.07, currency: "USD" }];
+      const { GET } = await import("@/app/api/cron/snapshot/route");
+      const { prisma } = await import("@/lib/prisma");
+      const { refreshAllPrices } = await import("@/lib/services/price-service");
+
+      const response = await GET(
+        new Request("http://unit.test/api/cron/snapshot", {
+          headers: { authorization: "Bearer test-secret" },
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      // PriceCache still holds the last trading day's close here, which is the
+      // right close-out price for a contract that has already expired.
+      expect(vi.mocked(prisma.priceCache.findMany).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(refreshAllPrices).mock.invocationCallOrder[0],
+      );
+    });
   });
 
   it("returns a retryable degraded result after preserving successful snapshots when one user fails", async () => {
@@ -695,6 +885,7 @@ describe("snapshot cron route", () => {
           quantity: { gt: 0 },
           account: { user: { demoWorkspace: null } },
         },
+        include: { account: { select: { id: true, currency: true } } },
       });
       expect(vi.mocked(prisma.holding.updateMany)).toHaveBeenCalledTimes(1);
       expect(vi.mocked(prisma.holding.updateMany)).toHaveBeenCalledWith({
@@ -750,6 +941,7 @@ describe("snapshot cron route", () => {
           quantity: { gt: 0 },
           account: { user: { demoWorkspace: null } },
         },
+        include: { account: { select: { id: true, currency: true } } },
       });
       expect(vi.mocked(materializeDueRecurringTransactions)).toHaveBeenCalledWith(businessDay);
       expect(vi.mocked(materializeDueInvestments)).toHaveBeenCalledWith(businessDay);

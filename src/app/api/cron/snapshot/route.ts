@@ -3,7 +3,12 @@ import { timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { createSnapshot } from "@/lib/services/snapshot-service";
 import { refreshAllPrices } from "@/lib/services/price-service";
-import { getFreshExchangeRates, refreshExchangeRates } from "@/lib/services/exchange-rate-service";
+import {
+  getFreshExchangeRates,
+  refreshExchangeRates,
+  resolveRate,
+} from "@/lib/services/exchange-rate-service";
+import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 import { loadNetWorthInputsForUsers } from "@/lib/services/net-worth-service";
 import { materializeDueRecurringTransactions } from "@/lib/services/recurring-cash-service";
 import { materializeDueInvestments } from "@/lib/services/recurring-investment-service";
@@ -83,6 +88,22 @@ export async function GET(request: Request) {
     // 0. Sweep contracts that expired before this run's Taiwan business day so
     // the snapshot does not carry yesterday's options into today's valuation.
     // A contract expiring on businessDay remains active through that day.
+    //
+    // #732 — the sweep closes each contract at its last cached price rather
+    // than writing the position off as worthless. An in-the-money contract is
+    // exercised or assigned at expiry, so zeroing it with no counter-entry made
+    // its intrinsic value vanish from net worth overnight with no user action.
+    // The account is credited with cash as if the contract had been sold at
+    // that close, which keeps net worth continuous. Auto-exercise into the
+    // underlying shares is deliberately NOT modelled: it would mint share lots
+    // the user never confirmed, at a cost basis nobody chose. A contract with
+    // no cached price, a zero one, or an unresolvable FX pair still expires
+    // worthless — no unitPrice, no cash.
+    //
+    // This runs BEFORE the price refresh below on purpose: PriceCache still
+    // holds the last trading day's close, which is the right close-out price
+    // for a contract that has already expired. Refreshing first would replace
+    // it with a quote for a contract that no longer trades.
     let expiredOptionsChanged = false;
     const expiredOptions = await prisma.holding.findMany({
       where: {
@@ -91,10 +112,47 @@ export async function GET(request: Request) {
         quantity: { gt: 0 },
         account: { user: { demoWorkspace: null } },
       },
+      include: { account: { select: { id: true, currency: true } } },
     });
     if (expiredOptions.length > 0) {
       log.info("cron.options.expire", { count: expiredOptions.length });
+      // Both reads are bulk and happen once for the whole sweep. The FX map is
+      // read straight from the DB: the cron's cache tags are
+      // stale-while-revalidate, so a cached read could hand back the previous
+      // cycle's rates.
+      const [closes, sweepRates] = await Promise.all([
+        prisma.priceCache.findMany({
+          where: { symbol: { in: [...new Set(expiredOptions.map((h) => h.symbol))] } },
+          select: { symbol: true, price: true, currency: true },
+        }),
+        getFreshExchangeRates(),
+      ]);
+      const closeBySymbol = new Map(closes.map((row) => [row.symbol, row]));
       for (const h of expiredOptions) {
+        const close = closeBySymbol.get(h.symbol);
+        // unitPrice is the per-share premium, the same convention as manual
+        // option transactions — the cost-basis path multiplies it by the
+        // contract multiplier itself.
+        let unitPrice: Decimal | null = null;
+        let cashCredit: Decimal | null = null;
+        if (close && Number(close.price) > 0) {
+          const rate = resolveRate(sweepRates, close.currency, h.account.currency);
+          if (rate === undefined) {
+            log.warn("cron.options.expire_rate_unresolved", {
+              symbol: h.symbol,
+              from: close.currency,
+              to: h.account.currency,
+            });
+          } else {
+            // Legacy rows may predate server-derived multipliers; the OCC
+            // standard 100 is assumed, same fallback as net-worth-service.
+            const multiplier = h.contractMultiplier ?? 100;
+            unitPrice = new Decimal(close.price);
+            // Decimal throughout, snapped to the Decimal(18, 8) column scale —
+            // float noise must never reach cashBalance (see toDbMoneyDelta).
+            cashCredit = unitPrice.mul(h.quantity).mul(multiplier).mul(rate).toDecimalPlaces(8);
+          }
+        }
         // Guard the zeroing on the quantity we read: if the user traded this
         // contract between the read and the write, skip it (it is re-checked
         // on the next run) instead of minting a SELL for a stale quantity.
@@ -110,8 +168,17 @@ export async function GET(request: Request) {
                 type: "SELL",
                 quantity: h.quantity,
                 note: "Expired",
+                ...(unitPrice !== null && { unitPrice }),
               },
             });
+            // Only ever inside the guarded branch: cash must not move for a
+            // contract this run did not actually close.
+            if (cashCredit !== null) {
+              await tx.account.update({
+                where: { id: h.account.id },
+                data: { cashBalance: { increment: cashCredit } },
+              });
+            }
             expiredOptionsChanged = true;
           }
         });

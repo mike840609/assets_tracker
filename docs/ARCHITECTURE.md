@@ -74,6 +74,10 @@ instead of guessing whether the unclassified value was an asset or liability.
 
 Yahoo Finance is the primary price source for securities and crypto. CoinGecko is a crypto fallback. Prices and exchange rates are cached in PostgreSQL; read paths use cached data, while explicit refreshes and the daily snapshot job update it.
 
+### Expired options
+
+Before it refreshes prices, the daily job sweeps option contracts whose expiration precedes the current business day. Each contract is closed at its last cached price: a `SELL` transaction carrying that per-share premium plus a matching cash credit to the holding's account, converted into the account's currency. This is an approximation — auto-exercise into the underlying shares is not modelled, because it would create share lots the user never confirmed. A contract with no cached price, a zero price, or an unresolvable currency pair expires worthless, with no unit price and no cash movement.
+
 ## Caching and self-hosting
 
 The application uses Next.js Cache Components and tag invalidation. A single Node.js or Docker instance works without extra configuration. Multiple replicas require a shared cache handler so invalidation and regenerated output remain consistent across instances.
