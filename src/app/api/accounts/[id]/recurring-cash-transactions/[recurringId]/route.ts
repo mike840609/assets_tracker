@@ -32,7 +32,14 @@ export const PATCH = withAuth(
     // Scope ownership into the lookup so a foreign rule can't be edited.
     const existing = await prisma.recurringCashTransaction.findFirst({
       where: { id: recurringId, accountId: id, account: { userId } },
-      select: { id: true, startDate: true, endDate: true, frequency: true, updatedAt: true },
+      select: {
+        id: true,
+        startDate: true,
+        endDate: true,
+        frequency: true,
+        isActive: true,
+        updatedAt: true,
+      },
     });
     if (!existing) return failure("Recurring transaction not found", 404);
 
@@ -63,6 +70,16 @@ export const PATCH = withAuth(
       data.nextRunDate = firstOccurrenceOnOrAfter(
         start,
         effectiveFrequency,
+        taiwanCalendarDay(new Date()),
+      );
+    }
+    // Resuming a paused rule re-anchors the same way: nextRunDate froze at the
+    // first occurrence missed while paused, so leaving it would make the
+    // catch-up loop replay every occurrence in the paused window.
+    if (isActive === true && !existing.isActive && data.nextRunDate === undefined) {
+      data.nextRunDate = firstOccurrenceOnOrAfter(
+        effectiveStartDate,
+        frequency ?? existing.frequency,
         taiwanCalendarDay(new Date()),
       );
     }

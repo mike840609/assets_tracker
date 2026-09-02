@@ -235,6 +235,85 @@ describe("recurring rule PATCH routes", () => {
     }
   });
 
+  it("re-anchors nextRunDate to the next scheduled occurrence when a paused cash rule is resumed", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-20T12:00:00.000Z"));
+    try {
+      // Paused since Dec 2025: nextRunDate froze at the first missed occurrence.
+      h.cashRule = recurringCashRule({
+        isActive: false,
+        startDate: date("2025-11-01"),
+        nextRunDate: date("2025-12-01"),
+        endDate: null,
+      });
+      const { PATCH } =
+        await import("@/app/api/accounts/[id]/recurring-cash-transactions/[recurringId]/route");
+
+      const response = await PATCH(jsonRequest({ isActive: true }), params("cash-rule-1"));
+
+      expect(response.status).toBe(200);
+      const call = h.cashUpdateManyAndReturnCalls[0] as { data: Record<string, unknown> };
+      expect(call.data.isActive).toBe(true);
+      // Monthly anchored to the 1st, today = 2026-03-20 → next occurrence is
+      // 2026-04-01, NOT the frozen 2025-12-01 (which would replay Dec–Mar).
+      expect(call.data.nextRunDate).toEqual(date("2026-04-01"));
+      // Nothing is due today, so no catch-up post is scheduled.
+      expect(h.afterTasks).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("re-anchors nextRunDate to the next scheduled occurrence when a paused investment rule is resumed", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-20T12:00:00.000Z"));
+    try {
+      h.investmentRule = recurringInvestmentRule({
+        isActive: false,
+        startDate: date("2025-11-01"),
+        nextRunDate: date("2025-12-01"),
+        endDate: null,
+      });
+      const { PATCH } =
+        await import("@/app/api/accounts/[id]/recurring-investments/[recurringId]/route");
+
+      const response = await PATCH(jsonRequest({ isActive: true }), params("investment-rule-1"));
+
+      expect(response.status).toBe(200);
+      const call = h.investmentUpdateManyAndReturnCalls[0] as { data: Record<string, unknown> };
+      expect(call.data.isActive).toBe(true);
+      expect(call.data.nextRunDate).toEqual(date("2026-04-01"));
+      expect(h.afterTasks).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not re-anchor an already-active cash rule on a no-op isActive: true", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-20T12:00:00.000Z"));
+    try {
+      // Active rule whose cron post for the 1st has not landed yet (e.g. a
+      // failed run): a no-op PATCH must not skip that pending occurrence.
+      h.cashRule = recurringCashRule({
+        isActive: true,
+        startDate: date("2026-01-01"),
+        nextRunDate: date("2026-03-01"),
+        endDate: null,
+      });
+      const { PATCH } =
+        await import("@/app/api/accounts/[id]/recurring-cash-transactions/[recurringId]/route");
+
+      const response = await PATCH(jsonRequest({ isActive: true }), params("cash-rule-1"));
+
+      expect(response.status).toBe(200);
+      const call = h.cashUpdateManyAndReturnCalls[0] as { data: Record<string, unknown> };
+      expect(call.data.nextRunDate).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("rejects a cash-rule edit when its amount changed concurrently", async () => {
     h.cashUpdateManyAndReturnCount = 0;
     const { PATCH } =
@@ -312,6 +391,8 @@ describe("recurring rule POST/PATCH materialization", () => {
   beforeEach(() => {
     h.cashRule = recurringCashRule();
     h.investmentRule = recurringInvestmentRule();
+    h.cashUpdateManyAndReturnCalls = [];
+    h.investmentUpdateManyAndReturnCalls = [];
     h.materializeCash.mockClear();
     h.materializeCash.mockResolvedValue({ created: 1, rulesProcessed: 1 });
     h.materializeInvestment.mockClear();
@@ -399,43 +480,61 @@ describe("recurring rule POST/PATCH materialization", () => {
   });
 
   it("PATCH schedules a cash rule that became due for formal users", async () => {
-    h.cashRule = recurringCashRule({
-      isActive: false,
-      startDate: date("2026-07-01"),
-      nextRunDate: date("2026-07-01"),
-      endDate: null,
-    });
-    const { PATCH } =
-      await import("@/app/api/accounts/[id]/recurring-cash-transactions/[recurringId]/route");
+    // Resumed on a scheduled day (monthly from Jul 1, today = Sep 1): only
+    // today's occurrence is due, so the post is scheduled.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-01T12:00:00.000Z"));
+    try {
+      h.cashRule = recurringCashRule({
+        isActive: false,
+        startDate: date("2026-07-01"),
+        nextRunDate: date("2026-07-01"),
+        endDate: null,
+      });
+      const { PATCH } =
+        await import("@/app/api/accounts/[id]/recurring-cash-transactions/[recurringId]/route");
 
-    const response = await PATCH(jsonRequest({ isActive: true }), params("cash-rule-1"));
+      const response = await PATCH(jsonRequest({ isActive: true }), params("cash-rule-1"));
 
-    expect(response.status).toBe(200);
-    expect(h.materializeCash).not.toHaveBeenCalled();
-    expect(h.afterTasks).toHaveLength(1);
-    await h.afterTasks[0]();
-    expect(h.materializeCash).toHaveBeenCalledTimes(1);
-    expect(h.materializeCash.mock.calls[0][1]).toBe("cash-rule-1");
+      expect(response.status).toBe(200);
+      const call = h.cashUpdateManyAndReturnCalls[0] as { data: Record<string, unknown> };
+      expect(call.data.nextRunDate).toEqual(date("2026-09-01"));
+      expect(h.materializeCash).not.toHaveBeenCalled();
+      expect(h.afterTasks).toHaveLength(1);
+      await h.afterTasks[0]();
+      expect(h.materializeCash).toHaveBeenCalledTimes(1);
+      expect(h.materializeCash.mock.calls[0][1]).toBe("cash-rule-1");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("PATCH schedules an investment rule that became due for formal users", async () => {
-    h.investmentRule = recurringInvestmentRule({
-      isActive: false,
-      startDate: date("2026-07-01"),
-      nextRunDate: date("2026-07-01"),
-      endDate: null,
-    });
-    const { PATCH } =
-      await import("@/app/api/accounts/[id]/recurring-investments/[recurringId]/route");
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-01T12:00:00.000Z"));
+    try {
+      h.investmentRule = recurringInvestmentRule({
+        isActive: false,
+        startDate: date("2026-07-01"),
+        nextRunDate: date("2026-07-01"),
+        endDate: null,
+      });
+      const { PATCH } =
+        await import("@/app/api/accounts/[id]/recurring-investments/[recurringId]/route");
 
-    const response = await PATCH(jsonRequest({ isActive: true }), params("investment-rule-1"));
+      const response = await PATCH(jsonRequest({ isActive: true }), params("investment-rule-1"));
 
-    expect(response.status).toBe(200);
-    expect(h.materializeInvestment).not.toHaveBeenCalled();
-    expect(h.afterTasks).toHaveLength(1);
-    await h.afterTasks[0]();
-    expect(h.materializeInvestment).toHaveBeenCalledTimes(1);
-    expect(h.materializeInvestment.mock.calls[0][1]).toBe("investment-rule-1");
+      expect(response.status).toBe(200);
+      const call = h.investmentUpdateManyAndReturnCalls[0] as { data: Record<string, unknown> };
+      expect(call.data.nextRunDate).toEqual(date("2026-09-01"));
+      expect(h.materializeInvestment).not.toHaveBeenCalled();
+      expect(h.afterTasks).toHaveLength(1);
+      await h.afterTasks[0]();
+      expect(h.materializeInvestment).toHaveBeenCalledTimes(1);
+      expect(h.materializeInvestment.mock.calls[0][1]).toBe("investment-rule-1");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("does not schedule due cash materialization after Demo create or update", async () => {

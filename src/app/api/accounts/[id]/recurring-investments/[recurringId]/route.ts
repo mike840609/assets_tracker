@@ -29,7 +29,14 @@ export const PATCH = withAuth(
 
     const existing = await prisma.recurringInvestment.findFirst({
       where: { id: recurringId, accountId: id, account: { userId } },
-      select: { id: true, startDate: true, endDate: true, frequency: true, updatedAt: true },
+      select: {
+        id: true,
+        startDate: true,
+        endDate: true,
+        frequency: true,
+        isActive: true,
+        updatedAt: true,
+      },
     });
     if (!existing) return failure("Recurring investment not found", 404);
 
@@ -59,6 +66,17 @@ export const PATCH = withAuth(
       data.nextRunDate = firstOccurrenceOnOrAfter(
         start,
         effectiveFrequency,
+        taiwanCalendarDay(new Date()),
+      );
+    }
+    // Resuming a paused rule re-anchors the same way: nextRunDate froze at the
+    // first occurrence missed while paused, so leaving it would make the
+    // catch-up loop replay every occurrence in the paused window — and price
+    // every one of those buys at today's price.
+    if (isActive === true && !existing.isActive && data.nextRunDate === undefined) {
+      data.nextRunDate = firstOccurrenceOnOrAfter(
+        effectiveStartDate,
+        frequency ?? existing.frequency,
         taiwanCalendarDay(new Date()),
       );
     }
