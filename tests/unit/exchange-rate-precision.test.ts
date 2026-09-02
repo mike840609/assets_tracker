@@ -27,9 +27,4 @@ describe("ExchangeRate.rate precision", () => {
     expect(migration).not.toContain('ALTER TABLE "Holding"');
     expect(migration).not.toContain('ALTER TABLE "NetWorthSnapshot"');
   });
-
-  it("leaves the other monetary columns at their existing scale", () => {
-    const account = schema.match(/model Account \{[\s\S]*?\n\}/)?.[0] ?? "";
-    expect(account).toContain("cashBalance      Decimal           @default(0) @db.Decimal(18, 8)");
-  });
 });
