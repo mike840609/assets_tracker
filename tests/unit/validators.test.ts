@@ -590,6 +590,56 @@ describe("dataImportSchema", () => {
     ]);
   });
 
+  it("preserves holding transaction DCA provenance and bounds its cash debit", () => {
+    const backup = (cashDebit: unknown) => ({
+      version: "1.5",
+      accounts: [
+        {
+          name: "Brokerage",
+          type: "ASSET",
+          category: "BROKERAGE",
+          currency: "USD",
+          cashBalance: "100",
+          holdings: [
+            {
+              symbol: "NVDA",
+              name: "NVIDIA",
+              quantity: "5",
+              currency: "USD",
+              assetType: "STOCK",
+              transactions: [
+                {
+                  type: "BUY",
+                  quantity: "5",
+                  materializedAt: "2026-01-01T21:30:00.000Z",
+                  cashDebit,
+                },
+                // A pre-1.5 row omits both fields entirely.
+                { type: "BUY", quantity: "3" },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = dataImportSchema.safeParse(backup("1000.00000000"));
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const transactions = result.data.accounts[0].holdings?.[0].transactions;
+      expect(transactions?.map((t) => t.materializedAt)).toEqual([
+        "2026-01-01T21:30:00.000Z",
+        undefined,
+      ]);
+      expect(transactions?.map((t) => t.cashDebit)).toEqual(["1000.00000000", undefined]);
+    }
+
+    // Same magnitude ceiling as every other imported amount: an oversized value
+    // must fail with a field path, not as a Prisma overflow at write time.
+    expect(dataImportSchema.safeParse(backup(1e15)).success).toBe(false);
+    expect(dataImportSchema.safeParse(backup(null)).success).toBe(true);
+  });
+
   it("preserves imported holding transaction unitPrice through parsing", () => {
     const result = dataImportSchema.safeParse({
       version: "1.2",

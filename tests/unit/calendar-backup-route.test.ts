@@ -5,12 +5,12 @@ const h = vi.hoisted(() => {
   const makeTx = () => ({
     account: { deleteMany: vi.fn(), create: vi.fn(async () => ({ id: "new_account_1" })) },
     cashTransaction: { createMany: vi.fn() },
-    holding: { create: vi.fn() },
+    holding: { create: vi.fn(async () => ({ id: "new_holding_1" })) },
     holdingTransaction: { createMany: vi.fn() },
     netWorthSnapshot: { deleteMany: vi.fn(), createMany: vi.fn() },
     goal: { deleteMany: vi.fn(), createMany: vi.fn() },
     recurringCashTransaction: { create: vi.fn(async () => ({ id: "new_cash_rule_1" })) },
-    recurringInvestment: { create: vi.fn() },
+    recurringInvestment: { create: vi.fn(async () => ({ id: "new_investment_rule_1" })) },
     stockWatchItem: { deleteMany: vi.fn(), createMany: vi.fn() },
     calendarEntry: { deleteMany: vi.fn(), createMany: vi.fn() },
     setting: { upsert: vi.fn() },
@@ -187,11 +187,11 @@ describe("Calendar whole-app backup", () => {
     vi.clearAllMocks();
   });
 
-  it("exports calendar entries in backup v1.4", async () => {
+  it("exports calendar entries in backup v1.5", async () => {
     const response = await GET(new Request("http://unit.test/api/settings/data"), undefined);
     const { json } = await exportedJson(response);
 
-    expect(json.version).toBe("1.4");
+    expect(json.version).toBe("1.5");
     expect(json.calendarEntries).toEqual([exportedCalendarFixture]);
   });
 
@@ -496,6 +496,125 @@ describe("Calendar whole-app backup", () => {
           materializedAtEstimated: true,
           recurringId: null,
         }),
+      ],
+    });
+  });
+
+  it("preserves durable DCA provenance on a v1.5 holding transaction round-trip", async () => {
+    const response = await importBackup({
+      version: "1.5",
+      accounts: [
+        {
+          name: "Brokerage",
+          type: "ASSET",
+          category: "BROKERAGE",
+          currency: "USD",
+          cashBalance: 100,
+          recurringInvestments: [
+            {
+              id: "old_investment_rule_1",
+              symbol: "NVDA",
+              name: "NVIDIA",
+              assetType: "STOCK",
+              holdingCurrency: "USD",
+              amount: 1000,
+              frequency: "MONTHLY",
+              startDate: "2026-01-01T00:00:00.000Z",
+              nextRunDate: "2026-02-01T00:00:00.000Z",
+              isActive: true,
+            },
+          ],
+          holdings: [
+            {
+              symbol: "NVDA",
+              name: "NVIDIA",
+              quantity: 5,
+              currency: "USD",
+              assetType: "STOCK",
+              transactions: [
+                {
+                  type: "BUY",
+                  quantity: 5,
+                  unitPrice: 200,
+                  createdAt: "2026-01-01T00:00:00.000Z",
+                  occurrenceDate: "2026-01-01T00:00:00.000Z",
+                  recurringId: "old_investment_rule_1",
+                  materializedAt: "2026-01-01T21:30:00.000Z",
+                  cashDebit: 1000,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+    expect(h.tx.holdingTransaction.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          holdingId: "new_holding_1",
+          recurringId: "new_investment_rule_1",
+          materializedAt: "2026-01-01T21:30:00.000Z",
+          cashDebit: 1000,
+        }),
+      ],
+    });
+  });
+
+  it("imports an older backup without holding provenance, recovering only what is knowable", async () => {
+    const response = await importBackup({
+      version: "1.4",
+      accounts: [
+        {
+          name: "Brokerage",
+          type: "ASSET",
+          category: "BROKERAGE",
+          currency: "USD",
+          cashBalance: 100,
+          holdings: [
+            {
+              symbol: "NVDA",
+              name: "NVIDIA",
+              quantity: 8,
+              currency: "USD",
+              assetType: "STOCK",
+              transactions: [
+                {
+                  type: "BUY",
+                  quantity: 5,
+                  unitPrice: 200,
+                  createdAt: "2026-01-01T00:00:00.000Z",
+                  occurrenceDate: "2026-01-01T00:00:00.000Z",
+                  // The rule itself is gone from this backup, so the id cannot
+                  // be remapped — only createdAt survives as a materialization
+                  // bound, exactly as the provenance migration backfilled it.
+                  recurringId: "missing_investment_rule",
+                },
+                {
+                  type: "BUY",
+                  quantity: 3,
+                  unitPrice: 210,
+                  createdAt: "2026-02-01T00:00:00.000Z",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+    expect(h.tx.holdingTransaction.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          recurringId: null,
+          materializedAt: "2026-01-01T00:00:00.000Z",
+          // Not recoverable: the rule's amount may have changed since.
+          cashDebit: null,
+        }),
+        // A manual row keeps no provenance and never moved cash.
+        expect.objectContaining({ recurringId: null, materializedAt: null, cashDebit: null }),
       ],
     });
   });
