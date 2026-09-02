@@ -9,6 +9,12 @@ astt uses PostgreSQL through Prisma. Standard PostgreSQL connections use `@prism
 
 For local development, `.env.example` contains URLs for the PostgreSQL service in `docker-compose.yml`.
 
+## Numeric precision
+
+Balances, amounts, quantities and prices are `DECIMAL(28, 8)`; net-worth snapshot aggregates are `DECIMAL(28, 2)`. Option strikes stay `DECIMAL(18, 4)` and exchange rates `DECIMAL(18, 8)`.
+
+The API accepts a smaller range than the columns hold: every amount crosses the wire as a JSON `number`, and an IEEE double keeps roughly 15.95 significant digits, so the validators in `src/lib/validators.ts` reject any magnitude at or above `1e15` (`1e14` for option strikes) with a 400. That headroom means an accumulating `cashBalance` cannot overflow its column.
+
 ## Creating migrations
 
 Create schema changes against a disposable development database:

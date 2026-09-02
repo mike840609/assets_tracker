@@ -41,7 +41,7 @@ model Account {
   type             AccountType
   category         AccountCategory
   currency         String            @default("USD")
-  cashBalance      Decimal           @default(0) @db.Decimal(18, 8)
+  cashBalance      Decimal           @default(0) @db.Decimal(28, 8)
   isActive         Boolean           @default(true)
   isPinned         Boolean           @default(false)
   sortOrder        Int               @default(0)
@@ -77,7 +77,7 @@ model Holding {
   account            Account              @relation(fields: [accountId], references: [id], onDelete: Cascade)
   symbol             String
   name               String
-  quantity           Decimal              @db.Decimal(18, 8)
+  quantity           Decimal              @db.Decimal(28, 8)
   currency           String               @default("USD")
   assetType          HoldingAssetType
   underlyingSymbol   String?
@@ -104,8 +104,8 @@ model HoldingTransaction {
   holdingId String
   holding   Holding         @relation(fields: [holdingId], references: [id], onDelete: Cascade)
   type      TransactionType
-  quantity  Decimal         @db.Decimal(18, 8)
-  unitPrice Decimal?        @db.Decimal(18, 8)
+  quantity  Decimal         @db.Decimal(28, 8)
+  unitPrice Decimal?        @db.Decimal(28, 8)
   note      String?
   createdAt DateTime        @default(now())
 
@@ -131,7 +131,7 @@ model CashTransaction {
   accountId String
   account   Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
   type      CashTransactionType
-  amount    Decimal             @db.Decimal(18, 8)
+  amount    Decimal             @db.Decimal(28, 8)
   note      String?
   createdAt DateTime            @default(now())
 
@@ -172,7 +172,7 @@ model RecurringCashTransaction {
   // Only DEPOSIT / WITHDRAWAL are meaningful for a recurring rule; EDIT (an
   // explicit balance adjustment) is rejected by the validator.
   type        CashTransactionType
-  amount      Decimal             @db.Decimal(18, 8)
+  amount      Decimal             @db.Decimal(28, 8)
   frequency   RecurringFrequency
   note        String?
   // Date-only (no time-of-day): occurrences land at the cron's run time.
@@ -206,7 +206,7 @@ model RecurringInvestment {
   holdingCurrency String           @default("USD")
   // Per-period cash invested, in the ACCOUNT's currency (this is what gets
   // debited from cashBalance); shares = amount→holdingCurrency ÷ price.
-  amount          Decimal          @db.Decimal(18, 8)
+  amount          Decimal          @db.Decimal(28, 8)
   frequency       RecurringFrequency
   note            String?
   startDate       DateTime         @db.Date
@@ -223,7 +223,7 @@ model RecurringInvestment {
 
 model PriceCache {
   symbol       String    @id
-  price        Decimal   @db.Decimal(18, 8)
+  price        Decimal   @db.Decimal(28, 8)
   currency     String    @default("USD")
   updatedAt    DateTime  @updatedAt
   refreshingAt DateTime?
@@ -239,7 +239,7 @@ model StockWatchItem {
   name        String
   exchange    String   @default("")
   currency    String   @default("USD")
-  recordPrice Decimal  @db.Decimal(18, 8)
+  recordPrice Decimal  @db.Decimal(28, 8)
   recordDate  DateTime @db.Date
   note        String?  @db.Text
   sortOrder   Int      @default(0)
@@ -264,9 +264,9 @@ model NetWorthSnapshot {
   userId           String
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date             DateTime @db.Date
-  totalAssets      Decimal  @db.Decimal(18, 2)
-  totalLiabilities Decimal  @db.Decimal(18, 2)
-  netWorth         Decimal  @db.Decimal(18, 2)
+  totalAssets      Decimal  @db.Decimal(28, 2)
+  totalLiabilities Decimal  @db.Decimal(28, 2)
+  netWorth         Decimal  @db.Decimal(28, 2)
   baseCurrency     String
   breakdown        Json?
   label            String?  @db.VarChar(80)
@@ -290,7 +290,7 @@ model Goal {
   userId         String
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name           String
-  targetAmount   Decimal   @db.Decimal(18, 8)
+  targetAmount   Decimal   @db.Decimal(28, 8)
   targetCurrency String    @default("USD")
   targetDate     DateTime? @db.Date
   scope          GoalScope
