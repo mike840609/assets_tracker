@@ -6,6 +6,7 @@ import { computeDueOccurrences, utcDateOnly } from "./recurring-cash-service";
 import { taiwanCalendarDay } from "@/lib/app-day";
 import { getFreshExchangeRates, resolveRate } from "./exchange-rate-service";
 import { fetchStockPrices, fetchCryptoPrices } from "./price-service";
+import { DCA_PRICE_MAX_AGE_MS } from "@/lib/refresh-policy";
 
 class HoldingCurrencyMismatchError extends Error {
   constructor(readonly holdingCurrency: string) {
@@ -42,18 +43,26 @@ class HoldingCurrencyMismatchError extends Error {
 async function resolvePrice(
   symbol: string,
   assetType: string,
+  now: Date,
 ): Promise<{ price: number; currency: string } | null> {
   // Direct read (see file header) so a freshly-refreshed price isn't masked by
   // the still-stale `prices` cache during the cron run.
   const cached = await prisma.priceCache.findUnique({
     where: { symbol },
-    select: { price: true, currency: true },
+    select: { price: true, currency: true, updatedAt: true },
   });
   if (cached && Number(cached.price) > 0) {
-    return { price: Number(cached.price), currency: cached.currency };
+    // The cron continues past a `partial_success` refresh, so a rate-limited or
+    // delisted symbol keeps its previous price. Buying at it would mint a
+    // permanently wrong share count — re-fetch instead of trusting the row.
+    const ageMs = now.getTime() - cached.updatedAt.getTime();
+    if (ageMs <= DCA_PRICE_MAX_AGE_MS) {
+      return { price: Number(cached.price), currency: cached.currency };
+    }
+    log.warn("cron.investment.stale_price", { symbol, ageMs });
   }
   // Brand-new symbol with no holding yet won't be in PriceCache (the cron only
-  // refreshes held symbols), so fetch + cache it here.
+  // refreshes held symbols), and a stale row can't price a buy, so fetch here.
   try {
     const fetched =
       assetType === "CRYPTO" ? await fetchCryptoPrices([symbol]) : await fetchStockPrices([symbol]);
@@ -116,9 +125,9 @@ export async function materializeDueInvestments(
       continue;
     }
 
-    const priced = await resolvePrice(rule.symbol, rule.assetType);
+    const priced = await resolvePrice(rule.symbol, rule.assetType, now);
     if (!priced) {
-      // No price available — leave nextRunDate untouched so it retries next run
+      // No usable price — leave nextRunDate untouched so it retries next run
       // rather than silently posting nothing and advancing past the occurrence.
       log.warn("cron.investment.skip_no_price", { ruleId: rule.id, symbol: rule.symbol });
       continue;

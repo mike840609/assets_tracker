@@ -254,6 +254,17 @@ describe("account ledger routes", () => {
     expect(h.calls).toEqual([]);
   });
 
+  it("rejects account type changes without writing", async () => {
+    const { PATCH } = await import("@/app/api/accounts/[id]/route");
+
+    const response = await PATCH(jsonRequest("PATCH", { type: "LIABILITY" }), {
+      params: Promise.resolve({ id: "acc1" }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(h.calls).toEqual([]);
+  });
+
   it("records manual account balance edits atomically and strips note from account data", async () => {
     const { PATCH } = await import("@/app/api/accounts/[id]/route");
 
