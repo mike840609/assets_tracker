@@ -41,6 +41,10 @@ export const PATCH = withAuth<IdCtx>(
     // `currency` is immutable via PATCH — updateAccountSchema rejects it
     // (z.never()): cash transactions store no currency of their own, so a
     // currency change would silently re-denominate all history (#557, #563).
+    // `type` is immutable for the same reason: snapshot breakdowns store only
+    // value+currency per account, and the sign is derived from the account's
+    // live type at read time, so flipping ASSET/LIABILITY would re-sign the
+    // entire stored history (#733).
     const { note, occurrenceDate, ...accountData } = parsed.data;
 
     // A manual balance edit logs the difference as an EDIT cash transaction. The
