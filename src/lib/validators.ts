@@ -17,8 +17,12 @@ const OCC_SHAPE = /^[A-Z][A-Z0-9.\-]{0,5}\d{6}[CP]\d{8}$/;
 const supportedLocaleSchema = z.enum(SUPPORTED_LOCALES);
 // Money and quantity columns are Decimal(28, 8) — 20 integer digits — so the
 // database is no longer what binds. Every amount crosses the wire as a JSON
-// `number`, and an IEEE double keeps ~15.95 significant digits: 1e15 is the
-// largest magnitude at which the fractional part is still meaningful.
+// `number`, and an IEEE double keeps ~15.95 significant digits. 1e15 is a
+// magnitude guard, not a precision guarantee: it keeps accepted values an
+// order of magnitude clear of 2^53 (~9.0e15), where doubles stop representing
+// even whole units exactly. The column's eight fractional decimals all survive
+// the wire only below 2^26 (~6.7e7), where one ulp is 2^-27 ≈ 7.5e-9; above
+// that the step passes 1e-8, and at 1e15 a double steps by 0.125.
 const CRUD_DECIMAL_ABS_MAX = 1_000_000_000_000_000;
 const crudDecimalNumber = z
   .number()
