@@ -1,6 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Browser } from "@playwright/test";
 
-async function openAnonymousPage(browser: Parameters<Parameters<typeof test>[1]>[0]["browser"]) {
+async function openAnonymousPage(browser: Browser) {
   const context = await browser.newContext({
     storageState: { cookies: [], origins: [] },
   });
