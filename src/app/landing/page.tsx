@@ -27,7 +27,14 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       url: "/",
       siteName: "astt",
-      images: [{ url: "/opengraph-image.png", width: 1024, height: 682, alt: "astt dashboard" }],
+      images: [
+        {
+          url: "/landing/social-preview.png",
+          width: 1200,
+          height: 630,
+          alt: "astt landing page",
+        },
+      ],
       type: "website",
       locale: openGraphLocale,
     },
@@ -35,7 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title,
       description,
-      images: ["/twitter-image.png"],
+      images: ["/landing/social-preview.png"],
     },
   };
 }
