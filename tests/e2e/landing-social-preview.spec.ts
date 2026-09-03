@@ -25,16 +25,18 @@ test("landing uses its own page-style social preview", async ({ browser }) => {
     const socialPreviewUrl = await openGraphImage.getAttribute("content");
     expect(socialPreviewUrl).toBeTruthy();
 
-    const imageDecoded = await page.evaluate((src) => {
-      return new Promise<boolean>((resolve) => {
-        const image = new Image();
-        image.onload = () => resolve(image.naturalWidth === 1200 && image.naturalHeight === 630);
-        image.onerror = () => resolve(false);
-        image.src = src;
-      });
-    }, socialPreviewUrl!);
+    // Navigate to the image directly rather than loading it as an <img> on the
+    // landing page: on preview deployments it resolves to a different host
+    // (see getAppAssetUrl), and the app's img-src CSP would block that
+    // cross-origin subresource load even though real link-unfurlers (which
+    // fetch og:image over plain HTTP, unaffected by this page's CSP) load it fine.
+    await page.goto(socialPreviewUrl!);
+    const dimensions = await page.evaluate(() => {
+      const image = document.querySelector("img");
+      return image ? { width: image.naturalWidth, height: image.naturalHeight } : null;
+    });
 
-    expect(imageDecoded).toBe(true);
+    expect(dimensions).toEqual({ width: 1200, height: 630 });
   } finally {
     await context.close();
   }
