@@ -21,6 +21,14 @@ export interface AnalysisRangeSeries {
   investmentReturnPct: number | null;
   returnTrend: ReturnTrendPoint[];
   rangeStartIso: string;
+  /**
+   * True when at least one snapshot inside the range carries a breakdown entry
+   * for an account that has since been deleted. Those values still count in the
+   * net-worth trend (History falls back to the stored aggregates) but cannot be
+   * placed in a category or attributed to an account, so the composition charts
+   * omit them. The UI discloses the gap instead of silently disagreeing.
+   */
+  hasUnattributedAccounts: boolean;
 }
 
 export interface AnalysisPayloadMeta {

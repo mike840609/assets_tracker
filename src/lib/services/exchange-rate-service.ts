@@ -114,12 +114,17 @@ const FRANKFURTER_CURRENCIES = new Set([
 // lib/rate-limit.ts). Cold starts simply refresh once and re-prime it.
 const lastRateRefreshAt = new Map<string, number>();
 
+/** Column scale is Decimal(28, 16); 12 decimals is short of the double's own
+ * round-trip noise, so a value that survives the store/read cycle unchanged
+ * never reports as changed while a real edit past the 8th decimal still does. */
+const RATE_COMPARISON_DECIMALS = 12;
+
 function decimalChangedAtDbScale(current: unknown, next: number): boolean {
   const currentNumber = Number(current);
   return (
     !Number.isFinite(currentNumber) ||
     !Number.isFinite(next) ||
-    currentNumber.toFixed(8) !== next.toFixed(8)
+    currentNumber.toFixed(RATE_COMPARISON_DECIMALS) !== next.toFixed(RATE_COMPARISON_DECIMALS)
   );
 }
 
@@ -388,15 +393,25 @@ export async function refreshExchangeRates(
     };
   }
 
-  const rows: [fromCurrency: string, toCurrency: string, rate: number][] = [];
+  // Fetched rows carry the refresh instant; derived rows carry the epoch.
+  // `getPersistedFreshRefreshAt` keys the freshness gate on MAX("updatedAt")
+  // per `fromCurrency`, so a derived row stamped "now" would answer for a base
+  // that was never actually fetched: after a USD refresh, refreshing TWD saw
+  // the fresh derived TWD_USD row and skipped its own round-trip (#736).
+  const refreshedAt = new Date().toISOString();
+  const DERIVED_AT = new Date(0).toISOString();
+
+  const rows: [fromCurrency: string, toCurrency: string, rate: number, updatedAt: string][] = [];
   for (const [toCurrency, rate] of entries) {
-    rows.push([baseCurrency, toCurrency, rate]);
+    rows.push([baseCurrency, toCurrency, rate, refreshedAt]);
     // Persist the inverse too, so direct lookups cover both directions and
     // resolveRate stops re-deriving 1/rate on every chained conversion.
     // Tradeoff: a later genuine fetch of `toCurrency` as base overwrites this
     // derived row (last-write-wins) — fine, since both come from the same
-    // upstream snapshot and a fresher genuine rate is strictly better.
-    if (rate !== 0) rows.push([toCurrency, baseCurrency, 1 / rate]);
+    // upstream snapshot and a fresher genuine rate is strictly better. The
+    // GREATEST below keeps that genuine row's stamp even when the derived
+    // write lands afterwards.
+    if (rate !== 0) rows.push([toCurrency, baseCurrency, 1 / rate, DERIVED_AT]);
   }
   // Sort by pair so every statement locks rows in the same order: concurrent
   // refreshes (one per currency in /api/refresh) now write overlapping rows
@@ -421,17 +436,17 @@ export async function refreshExchangeRates(
   }, 0);
 
   const params: unknown[] = [];
-  const placeholders = rows.map(([fromCurrency, toCurrency, rate]) => {
+  const placeholders = rows.map(([fromCurrency, toCurrency, rate, updatedAt]) => {
     const base = params.length;
-    params.push(fromCurrency, toCurrency, String(rate));
-    return `($${base + 1}, $${base + 2}, $${base + 3}::numeric, NOW())`;
+    params.push(fromCurrency, toCurrency, String(rate), updatedAt);
+    return `($${base + 1}, $${base + 2}, $${base + 3}::numeric, $${base + 4}::timestamptz)`;
   });
   await prisma.$executeRawUnsafe(
     `INSERT INTO "ExchangeRate" ("fromCurrency", "toCurrency", rate, "updatedAt")
      VALUES ${placeholders.join(", ")}
      ON CONFLICT ("fromCurrency", "toCurrency") DO UPDATE SET
        rate        = EXCLUDED.rate,
-       "updatedAt" = NOW()`,
+       "updatedAt" = GREATEST("ExchangeRate"."updatedAt", EXCLUDED."updatedAt")`,
     ...params,
   );
 

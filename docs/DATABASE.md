@@ -11,9 +11,11 @@ For local development, `.env.example` contains URLs for the PostgreSQL service i
 
 ## Numeric precision
 
-Balances, amounts, quantities and prices are `DECIMAL(28, 8)`; net-worth snapshot aggregates are `DECIMAL(28, 2)`. Option strikes stay `DECIMAL(18, 4)` and exchange rates `DECIMAL(18, 8)`.
+Balances, amounts, quantities and prices are `DECIMAL(28, 8)`; net-worth snapshot aggregates are `DECIMAL(28, 2)`. Option strikes stay `DECIMAL(18, 4)`. Exchange rates are `DECIMAL(28, 16)` — wider than the money columns because each refresh also stores the inverse rate, and eight decimals cannot hold `1 / 89500` without a visible error.
 
-The API accepts a smaller range than the columns hold: every amount crosses the wire as a JSON `number`, and an IEEE double keeps roughly 15.95 significant digits, so the validators in `src/lib/validators.ts` reject any magnitude at or above `1e15` (`1e14` for option strikes) with a 400. That headroom means an accumulating `cashBalance` cannot overflow its column.
+The API accepts a smaller range than the columns hold: every amount crosses the wire as a JSON `number`, and an IEEE double keeps roughly 15.95 significant digits, so the validators in `src/lib/validators.ts` reject any magnitude at or above `1e15` (`1e14` for option strikes) with a 400.
+
+That `1e15` bound is a magnitude guard, not a promise that the column's eight fractional decimals survive the wire. A double resolves all eight of them only below `2^26` (about `6.7e7`), where one unit in the last place is `2^-27` ≈ `7.5e-9`; above that the step exceeds `1e-8`, and at `1e15` a double moves in whole steps of `0.125`. Realistic balances sit far below that, and the `DECIMAL(28, 8)` columns leave enough headroom that an accumulating `cashBalance` is impractical to overflow — repeated individually-valid increments could still reach the ceiling in principle, so the column bound is a backstop rather than a guarantee.
 
 ## Creating migrations
 

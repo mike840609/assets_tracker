@@ -264,7 +264,11 @@ model StockWatchItem {
 model ExchangeRate {
   fromCurrency String
   toCurrency   String
-  rate         Decimal  @db.Decimal(18, 8)
+  // Wider than the other money columns on purpose: a refresh also persists the
+  // inverse (1/rate), and for a very weak currency (LBP ~89,500/USD, IRR) eight
+  // decimals round that to 0.00001117 — ~0.3% off — which resolveRate then
+  // prefers over re-deriving it.
+  rate         Decimal  @db.Decimal(28, 16)
   updatedAt    DateTime @updatedAt
 
   @@id([fromCurrency, toCurrency])
