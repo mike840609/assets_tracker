@@ -15,14 +15,26 @@ test("landing uses its own page-style social preview", async ({ browser }) => {
   try {
     await page.goto("/");
 
-    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
-      "content",
-      /\/landing\/social-preview\.png$/,
-    );
+    const openGraphImage = page.locator('meta[property="og:image"]');
+    await expect(openGraphImage).toHaveAttribute("content", /\/landing\/social-preview\.png$/);
     await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute(
       "content",
       /\/landing\/social-preview\.png$/,
     );
+
+    const socialPreviewUrl = await openGraphImage.getAttribute("content");
+    expect(socialPreviewUrl).toBeTruthy();
+
+    const imageDecoded = await page.evaluate((src) => {
+      return new Promise<boolean>((resolve) => {
+        const image = new Image();
+        image.onload = () => resolve(image.naturalWidth === 1200 && image.naturalHeight === 630);
+        image.onerror = () => resolve(false);
+        image.src = src;
+      });
+    }, socialPreviewUrl!);
+
+    expect(imageDecoded).toBe(true);
   } finally {
     await context.close();
   }
