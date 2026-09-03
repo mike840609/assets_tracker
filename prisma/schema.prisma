@@ -115,6 +115,17 @@ model HoldingTransaction {
   recurringId    String?
   recurring      RecurringInvestment? @relation(fields: [recurringId], references: [id], onDelete: SetNull)
   occurrenceDate DateTime?            @db.Date
+  // Durable DCA-generation provenance, mirroring CashTransaction. Unlike
+  // recurringId (SetNull) this survives rule deletion, so a generated BUY stays
+  // recognizable — and its cash reversible — after the rule is gone.
+  // `cashDebit` is the exact cash the materialization removed from the account,
+  // in the ACCOUNT's currency, so a reversal never re-derives it from price and
+  // today's FX. NULL on manual rows and on rows generated before these columns
+  // existed (their per-occurrence amount is unrecoverable: the rule's `amount`
+  // may have been edited since). No `materializedAtEstimated` twin here: this
+  // timestamp is provenance only — nothing reads or displays it as an instant.
+  materializedAt DateTime?            @db.Timestamptz(3)
+  cashDebit      Decimal?             @db.Decimal(28, 8)
 
   @@unique([recurringId, occurrenceDate])
   @@index([holdingId, createdAt(sort: Desc)])
