@@ -2,8 +2,13 @@ import { revalidateTag } from "next/cache";
 import { timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { createSnapshot } from "@/lib/services/snapshot-service";
-import { refreshAllPrices } from "@/lib/services/price-service";
-import { getFreshExchangeRates, refreshExchangeRates } from "@/lib/services/exchange-rate-service";
+import { fetchStockPrices, refreshAllPrices } from "@/lib/services/price-service";
+import {
+  getFreshExchangeRates,
+  refreshExchangeRates,
+  resolveRate,
+} from "@/lib/services/exchange-rate-service";
+import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 import { loadNetWorthInputsForUsers } from "@/lib/services/net-worth-service";
 import { materializeDueRecurringTransactions } from "@/lib/services/recurring-cash-service";
 import { materializeDueInvestments } from "@/lib/services/recurring-investment-service";
@@ -42,6 +47,14 @@ const SNAPSHOT_CONCURRENCY = 10;
 const USER_PAGE_SIZE = 200;
 /** Stop scheduling work before Vercel's 60 s hard kill so audit writes can finish. */
 const SNAPSHOT_BUDGET_MS = 50_000;
+
+/**
+ * Business-day distance at which an expired contract may still be settled
+ * automatically. `businessDay` and `Holding.expiration` are both UTC-midnight
+ * dates, so exactly one day apart means this run is the first sweep after
+ * expiry — see the settlement comment below.
+ */
+const EXPIRY_SETTLEMENT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -83,6 +96,41 @@ export async function GET(request: Request) {
     // 0. Sweep contracts that expired before this run's Taiwan business day so
     // the snapshot does not carry yesterday's options into today's valuation.
     // A contract expiring on businessDay remains active through that day.
+    //
+    // #732 — settlement value comes from the expiration-day close of the
+    // UNDERLYING and the contract's intrinsic value (`max(S-K, 0)` for a call,
+    // `max(K-S, 0)` for a put), never from the option's own cached premium. An
+    // in-the-money contract is exercised or assigned at expiry, so zeroing it
+    // with no counter-entry made its intrinsic value vanish from net worth
+    // overnight with no user action; but the option's `PriceCache` row is not a
+    // trustworthy source for that value. The sweep runs before the price
+    // refresh, so for a Friday-expiring US contract the Saturday-Taipei run
+    // reads whatever the PREVIOUS cycle stored — Thursday's premium. A contract
+    // worth $1 on Thursday that expired worthless on Friday would then credit
+    // $100/contract of cash that never existed. Intrinsic value cannot drift
+    // that way: it is a function of the underlying's close and the strike.
+    //
+    // Auto-exercise into the underlying shares is deliberately NOT modelled: it
+    // would mint share lots the user never confirmed, at a cost basis nobody
+    // chose. Cash equal to the intrinsic value is the closest faithful summary.
+    //
+    // Trustworthiness gate: settle only when `businessDay - expiration` is
+    // exactly one day. `taiwanCalendarDay(21:30 UTC on day D) === D+1`, and
+    // that run happens after day D's US close (20:00 UTC EDT / 21:00 UTC EST),
+    // so a diff of exactly one day means this is the first sweep after expiry
+    // and the live quote below IS the expiration-day close. A larger diff means
+    // a cron cycle was missed and the underlying has traded since — the
+    // expiration-day price can no longer be established, so the contract is
+    // left for the user to close manually.
+    //
+    // Deferral (a deliberate change from the always-zero behaviour that shipped
+    // before): when the gate fails, the underlying quote is missing, the quote
+    // is denominated in a different currency than the option (strike and spot
+    // must agree), or the FX pair to the account is unresolvable, the holding is
+    // left COMPLETELY untouched — no zeroing, no SELL, no cash. The position
+    // stays visible so the user can settle it by hand, and each skip is logged
+    // with its reason. Only a contract whose expiration-day intrinsic value is
+    // genuinely 0 is written off as worthless.
     let expiredOptionsChanged = false;
     const expiredOptions = await prisma.holding.findMany({
       where: {
@@ -91,10 +139,85 @@ export async function GET(request: Request) {
         quantity: { gt: 0 },
         account: { user: { demoWorkspace: null } },
       },
+      include: { account: { select: { id: true, currency: true } } },
     });
     if (expiredOptions.length > 0) {
       log.info("cron.options.expire", { count: expiredOptions.length });
+      const underlyingSymbols = [
+        ...new Set(
+          expiredOptions
+            .map((h) => h.underlyingSymbol)
+            .filter((symbol): symbol is string => Boolean(symbol)),
+        ),
+      ];
+      // Both reads are bulk and happen once for the whole sweep. The quotes are
+      // fetched LIVE rather than read from PriceCache (see above); a provider
+      // failure yields no quotes, which defers every contract instead of
+      // aborting the run. The FX map is read straight from the DB: the cron's
+      // cache tags are stale-while-revalidate, so a cached read could hand back
+      // the previous cycle's rates.
+      const emptyQuotes = new Map<string, { price: number; currency: string }>();
+      const [underlyingQuotes, sweepRates] = await Promise.all([
+        underlyingSymbols.length > 0
+          ? fetchStockPrices(underlyingSymbols).catch((error: unknown) => {
+              log.warn("cron.options.expire_quotes_failed", { error: String(error) });
+              return emptyQuotes;
+            })
+          : Promise.resolve(emptyQuotes),
+        getFreshExchangeRates(),
+      ]);
       for (const h of expiredOptions) {
+        const defer = (reason: string) =>
+          log.warn("cron.options.expire_deferred", { symbol: h.symbol, reason });
+        if (
+          h.expiration === null ||
+          businessDay.getTime() - h.expiration.getTime() !== EXPIRY_SETTLEMENT_WINDOW_MS
+        ) {
+          defer("expiry_window");
+          continue;
+        }
+        // Imported rows can lack the OCC fields the POST route derives, and
+        // intrinsic value is undefined without them.
+        if (!h.underlyingSymbol || !h.optionType || h.strike === null) {
+          defer("missing_option_terms");
+          continue;
+        }
+        const quote = underlyingQuotes.get(h.underlyingSymbol);
+        if (quote === undefined) {
+          defer("underlying_unavailable");
+          continue;
+        }
+        // Spot and strike must be the same unit before they are subtracted.
+        if (quote.currency !== h.currency) {
+          defer("underlying_currency_mismatch");
+          continue;
+        }
+        const rate = resolveRate(sweepRates, h.currency, h.account.currency);
+        if (rate === undefined) {
+          defer("rate_unresolved");
+          continue;
+        }
+        const spot = new Decimal(quote.price);
+        const strike = new Decimal(h.strike);
+        const moneyness = h.optionType === "CALL" ? spot.sub(strike) : strike.sub(spot);
+        // gt(0), not isPositive(): decimal.js reports positive-zero as positive.
+        const intrinsic = moneyness.gt(0) ? moneyness : new Decimal(0);
+        // unitPrice is the per-share intrinsic value, the same convention as
+        // manual option transactions — the cost-basis path multiplies it by the
+        // contract multiplier itself. It stays null (never 0) for a worthless
+        // contract: importHoldingTransactionUnitPrice rejects a non-null
+        // unitPrice <= 0, so a stored 0 would make backups unimportable.
+        let unitPrice: Decimal | null = null;
+        let cashCredit: Decimal | null = null;
+        if (intrinsic.gt(0)) {
+          // Legacy rows may predate server-derived multipliers; the OCC
+          // standard 100 is assumed, same fallback as net-worth-service.
+          const multiplier = h.contractMultiplier ?? 100;
+          unitPrice = intrinsic.toDecimalPlaces(8);
+          // Decimal throughout, snapped to the Decimal(28, 8) column scale —
+          // float noise must never reach cashBalance (see toDbMoneyDelta).
+          cashCredit = intrinsic.mul(h.quantity).mul(multiplier).mul(rate).toDecimalPlaces(8);
+        }
         // Guard the zeroing on the quantity we read: if the user traded this
         // contract between the read and the write, skip it (it is re-checked
         // on the next run) instead of minting a SELL for a stale quantity.
@@ -110,8 +233,17 @@ export async function GET(request: Request) {
                 type: "SELL",
                 quantity: h.quantity,
                 note: "Expired",
+                ...(unitPrice !== null && { unitPrice }),
               },
             });
+            // Only ever inside the guarded branch: cash must not move for a
+            // contract this run did not actually close.
+            if (cashCredit !== null) {
+              await tx.account.update({
+                where: { id: h.account.id },
+                data: { cashBalance: { increment: cashCredit } },
+              });
+            }
             expiredOptionsChanged = true;
           }
         });
