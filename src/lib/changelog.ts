@@ -38,6 +38,114 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.6.0",
+    date: "2026-09-04",
+    summary: {
+      "en-US":
+        "Expired options settle at what they are actually worth, DCA cash comes back exactly, and history follows the Taiwan day.",
+      "zh-TW": "到期選擇權按真實價值結算、DCA 扣款精準返還，歷史圖表全面對齊台灣日。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Links shared to chat apps and social media now unfurl with a preview image of the public landing page instead of a generic card.",
+          "zh-TW": "分享到通訊軟體與社群媒體的連結，現在會顯示公開介紹頁的預覽圖，而非通用卡片。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "An expired option now settles into cash at its intrinsic value from the underlying's expiration-day close — a call credits max(price − strike, 0), a put credits max(strike − price, 0) — instead of carrying a stale premium or vanishing to zero. When the expiration price cannot be established reliably, the position is left untouched for you to close by hand.",
+          "zh-TW":
+            "到期的選擇權現在會按標的到期日收盤價的內含價值轉為現金 —— 買權認列 max(現價 − 履約價, 0)，賣權認列 max(履約價 − 現價, 0)，不再沿用過期的權利金，也不會直接歸零。若無法可靠確認到期價格，部位會完整保留，由你手動處理。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Deleting or shrinking an auto-invested BUY now returns exactly the cash that was debited — even across currencies and even after its rule was deleted. Previously the shares disappeared but the debit stayed, leaving the account permanently short.",
+          "zh-TW":
+            "刪除或縮減自動定投產生的 BUY，現在會精準返還當初扣掉的現金 —— 跨幣別、規則已刪除也適用。先前只會移除股數而保留扣款，導致帳戶永久短少。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "History charts now anchor on the Taiwan business day like the snapshots do. The newest day no longer looks missing in the morning, dates no longer shift a day for viewers outside UTC+8, and year-to-date keeps January 1.",
+          "zh-TW":
+            "歷史圖表改與快照一致，以台灣營業日為基準。清晨不再看見最新一天空白，UTC+8 以外地區日期不再偏移一天，今年至今也不再漏掉 1 月 1 日。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "A scheduled DCA buy no longer converts at a days-old cached price when a provider drops a symbol. It refetches the live price first, and if that fails the run is skipped so it retries next time instead of locking in the wrong share count.",
+          "zh-TW":
+            "當行情來源暫時缺漏某檔標的，排程定投不再用數天前的快取價格換算股數。系統會先抓即時價格，失敗則跳過本次、留待下次重試，不會寫死錯誤的股數。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Large balances no longer fail with a mid-transaction overflow error — amounts up to 1e15 are accepted, which covers very weak currencies in normal use. An oversized value in a backup import is now rejected with a 400 pointing at the field instead of a generic 500.",
+          "zh-TW":
+            "大額餘額不再於交易中途因欄位溢位失敗 —— 金額上限放寬至 1e15，一般使用的弱勢幣別也涵蓋在內。備份匯入若有超大數值，現在會回 400 並指出欄位，而非籠統的 500。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Exchange rates for very weak currencies no longer carry a ~0.3% rounding error from the stored inverse rate, and refreshing one base currency can no longer trick another base into skipping its own refresh.",
+          "zh-TW":
+            "極弱勢幣別的匯率不再因儲存的反向匯率產生約 0.3% 的捨入誤差；重新整理某一基準幣別也不會讓另一基準誤以為已更新而跳過抓取。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Resuming a paused recurring rule now schedules the next run from the resume date instead of replaying every occurrence missed while paused.",
+          "zh-TW":
+            "恢復已暫停的定期規則時，下次執行改從恢復當下起算，不會把暫停期間的次數一次補跑。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Account type can no longer be changed after creation — flipping asset and liability would re-sign the entire stored history. To restructure, create the matching account and move the balance instead.",
+          "zh-TW":
+            "帳戶類型建立後不再允許修改 —— 資產／負債互換會讓整段歷史金額正負號錯亂。如需調整，請建立對應類型的新帳戶並轉移餘額。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Restoring a backup whose recurring rule has no end date no longer fails validation — open-ended rules import as open-ended.",
+          "zh-TW": "還原備份時，沒有結束日的定期規則不再因驗證失敗而中斷 —— 無限期規則會原樣匯入。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "When a selected range includes accounts you later deleted, Analysis now says so: the net-worth trend keeps their stored totals while the category and attribution charts omit them.",
+          "zh-TW":
+            "所選期間若包含後來刪除的帳戶，分析頁現在會主動說明：淨資產趨勢保留其已儲存總額，類別與歸因圖則不納入。",
+        },
+      },
+    ],
+  },
+  {
     version: "1.5.0",
     date: "2026-08-31",
     summary: {
