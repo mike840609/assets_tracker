@@ -474,6 +474,10 @@ const importNullableTimestamp = z.iso.datetime().optional().nullable();
 // since analysis bucketing falls back to createdAt only when it is null.
 const importOccurrenceDate = z.iso.datetime().optional().nullable();
 const importMaterializedAt = z.iso.datetime().optional().nullable();
+// The exact cash a DCA-materialized buy removed from its account, in the
+// account's currency. Absent in pre-1.5 backups and null on manual rows; those
+// rows fall back to the approximate reversal (see the transactions route).
+const importCashDebit = decimalSchema.optional().nullable();
 const importHoldingTransactionUnitPrice = decimalSchema
   .optional()
   .nullable()
@@ -529,6 +533,8 @@ export const dataImportSchema = z.object({
                     createdAt: importTimestamp,
                     occurrenceDate: importOccurrenceDate,
                     recurringId: z.string().optional().nullable(),
+                    materializedAt: importMaterializedAt,
+                    cashDebit: importCashDebit,
                   }),
                 )
                 .max(MAX_IMPORT_TRANSACTIONS_PER_HOLDING)

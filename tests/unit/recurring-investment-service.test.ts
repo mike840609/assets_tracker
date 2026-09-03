@@ -190,6 +190,10 @@ describe("materializeDueInvestments", () => {
     expect(h.createManyCalls[0].data[0].type).toBe("BUY");
     expect(Number(h.holdingUpdates[0].data.quantity.increment)).toBe(5);
     expect(Number(h.accountUpdates[0].data.cashBalance.decrement)).toBe(1000);
+    // Durable provenance (survives rule deletion) plus the exact cash removed,
+    // so deleting or resizing this buy later reverses the real amount.
+    expect(h.createManyCalls[0].data[0].materializedAt).toEqual(d("2026-06-14"));
+    expect(Number(h.createManyCalls[0].data[0].cashDebit)).toBe(1000);
   });
 
   it("scales shares + cash by occurrence count on catch-up", async () => {
@@ -201,6 +205,10 @@ describe("materializeDueInvestments", () => {
     expect(h.createManyCalls[0].data).toHaveLength(3);
     expect(Number(h.holdingUpdates[0].data.quantity.increment)).toBe(15); // 5 * 3
     expect(Number(h.accountUpdates[0].data.cashBalance.decrement)).toBe(3000); // 1000 * 3
+    // The debit is rule.amount x count, so each row records rule.amount.
+    expect(h.createManyCalls[0].data.map((row) => Number(row.cashDebit))).toEqual([
+      1000, 1000, 1000,
+    ]);
   });
 
   it("converts the amount when account and price currencies differ", async () => {
@@ -217,6 +225,9 @@ describe("materializeDueInvestments", () => {
     expect(Number(h.createManyCalls[0].data[0].quantity)).toBeCloseTo(5, 6);
     // Cash debited in the account's own currency (TWD), not converted.
     expect(Number(h.accountUpdates[0].data.cashBalance.decrement)).toBe(30000);
+    // cashDebit records that same account-currency amount, so reversing it
+    // never has to re-run this conversion at a later day's rate.
+    expect(Number(h.createManyCalls[0].data[0].cashDebit)).toBe(30000);
   });
 
   it("auto-creates the holding with the resolved price currency", async () => {
@@ -346,6 +357,8 @@ describe("materializeDueInvestments", () => {
     expect(result.created).toBe(1);
     expect(Number(h.holdingUpdates[0].data.quantity.increment)).toBe(5); // 5 * 1
     expect(Number(h.accountUpdates[0].data.cashBalance.decrement)).toBe(1000);
+    // Per-row cashDebit is the per-occurrence amount, never the scaled total.
+    expect(h.createManyCalls[0].data.every((row) => Number(row.cashDebit) === 1000)).toBe(true);
   });
 
   it("does not create a holding or reactivate a rule disabled after price resolution", async () => {

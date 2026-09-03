@@ -298,7 +298,9 @@ export const GET = withAuth(
       if (!data) return failure("User not found", 404);
 
       const exportData = {
-        version: "1.4",
+        // 1.5 adds HoldingTransaction.materializedAt / .cashDebit (durable DCA
+        // provenance and the exact cash each generated buy consumed).
+        version: "1.5",
         exportedAt: new Date().toISOString(),
         settings: data.appSettings,
         accounts: data.appAccounts,
@@ -505,6 +507,17 @@ export const POST = withAuth(
                       recurringId: t.recurringId
                         ? (recurringInvestmentIdMap.get(t.recurringId) ?? null)
                         : null,
+                      // v1.5+ backups carry durable DCA provenance. An older
+                      // backup only has recurringId, which the remap above can
+                      // drop to null, so apply the same compatibility move the
+                      // provenance migration made: a row that was generated
+                      // keeps createdAt as its recoverable materialization
+                      // bound. cashDebit stays null there — the per-occurrence
+                      // amount is not recoverable, since the rule's amount may
+                      // have been edited since the row was posted.
+                      materializedAt:
+                        t.materializedAt ?? (t.recurringId ? (t.createdAt ?? null) : null),
+                      cashDebit: t.cashDebit ?? null,
                     })),
                   });
                 }

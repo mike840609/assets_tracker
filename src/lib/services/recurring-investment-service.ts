@@ -86,6 +86,10 @@ async function resolvePrice(
  * creating it if needed), and debits the account's cash — all in one atomic
  * `$transaction`. Balance/quantity are scaled by the number of rows actually
  * inserted (`createMany().count`) so an idempotent skip can't double-apply.
+ *
+ * Every posted row carries `materializedAt` (durable generation provenance) and
+ * `cashDebit` (the exact cash it consumed, in the account's currency) so a later
+ * delete or resize can reverse the original amount rather than approximate it.
  */
 export async function materializeDueInvestments(
   now: Date = new Date(),
@@ -213,6 +217,13 @@ export async function materializeDueInvestments(
             recurringId: rule.id,
             occurrenceDate: d,
             createdAt: d,
+            // Durable provenance (recurringId is SetNull, this is not) plus the
+            // exact cash this row removes from the account, in the account's
+            // currency: the debit below is `rule.amount` per inserted row. A
+            // later delete/resize reverses this stored number instead of
+            // recomputing quantity x unitPrice at whatever FX rate applies then.
+            materializedAt: now,
+            cashDebit: new Decimal(rule.amount),
           })),
           skipDuplicates: true,
         });

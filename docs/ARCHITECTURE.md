@@ -74,6 +74,12 @@ instead of guessing whether the unclassified value was an asset or liability.
 
 Yahoo Finance is the primary price source for securities and crypto. CoinGecko is a crypto fallback. Prices and exchange rates are cached in PostgreSQL; read paths use cached data, while explicit refreshes and the daily snapshot job update it.
 
+### Expired options
+
+Before it refreshes prices, the daily job sweeps option contracts whose expiration precedes the current business day. Settlement value is the contract's intrinsic value on its expiration day — `max(spot - strike, 0)` for a call, `max(strike - spot, 0)` for a put — computed from a live quote for the **underlying**, never from the option's own cached premium. The option's cached premium is not a safe source: the sweep runs before the price refresh, so it would read a quote left by the previous cron cycle and could credit cash for a contract that had already expired worthless. A contract that settles in the money is zeroed and recorded as a `SELL` carrying the per-share intrinsic value, plus a matching cash credit converted into the account's currency; one that settles at the money or out of the money is zeroed and recorded as a `SELL` with no unit price and no cash. Auto-exercise into the underlying shares is not modelled, because it would create share lots the user never confirmed.
+
+Automatic settlement is gated on the expiration-day close being establishable: it applies only when the business day is exactly one day after the expiration, which is the first sweep after expiry and runs after that day's US close. When that gate fails (a missed cron cycle), or the underlying quote is unavailable, is denominated in a different currency than the option, or cannot be converted into the account's currency, the holding is left untouched — no zeroing, no transaction, no cash — and the skip is logged with its reason. The position stays visible so the user can close it manually.
+
 ## Caching and self-hosting
 
 The application uses Next.js Cache Components and tag invalidation. A single Node.js or Docker instance works without extra configuration. Multiple replicas require a shared cache handler so invalidation and regenerated output remain consistent across instances.
