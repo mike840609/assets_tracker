@@ -11,12 +11,14 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { LandingContent } from "@/components/landing/landing-content";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isPublicDemoEnabled } from "@/lib/env";
+import { getAppAssetUrl } from "@/lib/app-url";
 
 export async function generateMetadata(): Promise<Metadata> {
   const [t, locale] = await Promise.all([getTranslations("landing"), getLocale()]);
   const title = t("metaTitle");
   const description = t("metaDescription");
   const openGraphLocale = locale === "zh-TW" ? "zh_TW" : "en_US";
+  const socialPreviewUrl = getAppAssetUrl("/landing/social-preview.png").toString();
 
   return {
     title,
@@ -27,7 +29,14 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       url: "/",
       siteName: "astt",
-      images: [{ url: "/opengraph-image.png", width: 1024, height: 682, alt: "astt dashboard" }],
+      images: [
+        {
+          url: socialPreviewUrl,
+          width: 1200,
+          height: 630,
+          alt: "astt landing page",
+        },
+      ],
       type: "website",
       locale: openGraphLocale,
     },
@@ -35,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title,
       description,
-      images: ["/twitter-image.png"],
+      images: [socialPreviewUrl],
     },
   };
 }
