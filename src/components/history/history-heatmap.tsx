@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useFormatter, useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { taiwanCalendarDay } from "@/lib/app-day";
 import { useActiveDayStore } from "@/components/history/active-day-context";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { SnapshotLabelDialog } from "@/components/history/snapshot-label-dialog";
@@ -24,11 +25,6 @@ function calendarDate(year: number, monthIndex: number, day: number) {
 function calendarDateFromString(dateString: string) {
   const [year, month, day] = dateString.split("-").map(Number);
   return calendarDate(year, month - 1, day);
-}
-
-function utcToday() {
-  const now = new Date();
-  return calendarDate(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 }
 
 function addUtcDays(date: Date, days: number) {
@@ -126,10 +122,17 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
       snapshotMap.set(snap.date, { ...snap, change });
     }
 
-    // 3. Determine end date (Saturday on or after Dec 31st of current year)
-    const today = utcToday();
+    // "Today" is the Taiwan business day the snapshots are stamped with, not the
+    // viewer's UTC day. The cron writes at 21:30 UTC, inside the window where the
+    // Taiwan day is already UTC+1: on the UTC day that snapshot is `isFuture`, so
+    // the newest day renders as an empty future cell — no tooltip, no shade —
+    // until 08:00 Taipei. Between 00:00 and 05:30 Taipei the day is correctly
+    // "today with no data yet", which is what the empty past cell means.
+    const today = taiwanCalendarDay(new Date());
     const todayString = utcDateString(today);
     const currentYear = today.getUTCFullYear();
+
+    // 3. Determine end date (Saturday on or after Dec 31st of current year)
     const dec31 = calendarDate(currentYear, 11, 31);
     const dayOfWeekEnd = dec31.getUTCDay(); // 0 = Sunday, 6 = Saturday
     const daysToAddToReachSaturday = 6 - dayOfWeekEnd;

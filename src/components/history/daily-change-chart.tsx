@@ -18,11 +18,14 @@ import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-to
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
+import { taiwanCalendarDay } from "@/lib/app-day";
+import { formatDateOnly } from "@/lib/calendar-date";
 import { formatChartTick } from "@/lib/chart-formatters";
 import { formatCurrency } from "@/lib/currencies";
 import { cn } from "@/lib/utils";
 
 const DAYS_TO_SHOW = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 type SnapshotRow = {
   id: string;
@@ -48,13 +51,6 @@ type Props = {
 type TooltipPayload = {
   payload: DailyChangePoint;
 };
-
-function isoDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 function DailyChangeTooltip({
   active,
@@ -123,21 +119,21 @@ export function DailyChangeChart({ snapshots, baseCurrency, className }: Props) 
       });
     });
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const start = new Date(today);
-    start.setDate(today.getDate() - (DAYS_TO_SHOW - 1));
+    // Snapshot dates are Taiwan business days, so the window has to be anchored
+    // on that day. The viewer's local day drifts one ahead or behind for part of
+    // every day, which shifts all 30 buckets and drops the newest bar.
+    const today = taiwanCalendarDay(new Date());
+    const start = new Date(today.getTime() - (DAYS_TO_SHOW - 1) * DAY_MS);
 
     return Array.from({ length: DAYS_TO_SHOW }, (_, index): DailyChangePoint => {
-      const date = new Date(start);
-      date.setDate(start.getDate() + index);
-      const dateString = isoDate(date);
+      const date = new Date(start.getTime() + index * DAY_MS);
+      const dateString = formatDateOnly(date);
       const snapshotChange = changeByDate.get(dateString);
 
       return {
         date: dateString,
-        label: format.dateTime(date, { month: "numeric", day: "numeric" }),
-        longLabel: format.dateTime(date, { dateStyle: "medium" }),
+        label: format.dateTime(date, { month: "numeric", day: "numeric", timeZone: "UTC" }),
+        longLabel: format.dateTime(date, { dateStyle: "medium", timeZone: "UTC" }),
         change: snapshotChange?.change ?? 0,
         hasSnapshot: !!snapshotChange,
         hasPreviousSnapshot: snapshotChange?.hasPreviousSnapshot ?? false,

@@ -28,6 +28,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useChartCrosshair } from "@/hooks/use-chart-crosshair";
 import { useActiveDate } from "@/components/history/active-day-context";
+import { taiwanCalendarDay } from "@/lib/app-day";
 import {
   DEFAULT_TREND_RANGE,
   TREND_RANGES,
@@ -47,6 +48,7 @@ type SnapshotData = {
 type ChartDataPoint = SnapshotData & { netWorthPct?: number };
 
 const PCT_MODES = ["off", "on"] as const;
+const DAY_MS = 24 * 60 * 60 * 1000;
 type PctMode = (typeof PCT_MODES)[number];
 
 function TrendTooltip({
@@ -66,11 +68,15 @@ function TrendTooltip({
 }) {
   if (!active || !payload?.length || !label) return null;
 
+  // `label` is a snapshot date: the UTC-midnight marker of a Taiwan business
+  // day. Read it in UTC or every viewer west of UTC is shown the day before —
+  // and the linked HistoryHeatmap in this same card would disagree with it.
   const date = new Date(label);
   const formattedDate = date.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   });
 
   const snapshot = payload[0] as
@@ -192,7 +198,7 @@ export function TrendChart({
 
   const xTickFormatter = useCallback((v: string) => {
     const d = new Date(v);
-    return `${d.getMonth() + 1}/${d.getDate()}`;
+    return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
   }, []);
 
   const yTickFormatter = useCallback(
@@ -206,13 +212,17 @@ export function TrendChart({
 
   const filtered = useMemo(() => {
     if (hideRangeFilter || selectedRange.days === Infinity) return snapshots;
-    const cutoff = new Date();
-    if (selectedRange.ytd) {
-      cutoff.setMonth(0, 1);
-      cutoff.setHours(0, 0, 0, 0);
-    } else {
-      cutoff.setDate(cutoff.getDate() - selectedRange.days);
-    }
+    // Cut on the same business day the snapshots are stamped with. A cutoff
+    // built from the viewer's clock lands mid-day against UTC-midnight dates:
+    // YTD dropped Jan 1 for anyone west of UTC, and 1M floated between 30 and 31
+    // buckets depending on the hour. `days - 1` makes the window exactly `days`
+    // calendar days wide, ending on today's business day — so between 00:00 and
+    // 05:30 Taipei it plots 29 points, the newest day being one the cron has not
+    // written yet (the same gap the heatmap paints as an empty past cell).
+    const today = taiwanCalendarDay(new Date());
+    const cutoff = selectedRange.ytd
+      ? new Date(Date.UTC(today.getUTCFullYear(), 0, 1))
+      : new Date(today.getTime() - (selectedRange.days - 1) * DAY_MS);
     return snapshots.filter((s) => new Date(s.date) >= cutoff);
   }, [snapshots, selectedRange.days, selectedRange.ytd, hideRangeFilter]);
 
