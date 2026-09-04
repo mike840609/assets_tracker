@@ -4,50 +4,49 @@
 //
 // force-static is incompatible with nextConfig.cacheComponents (PPR mode);
 // PPR prerendering the Suspense fallback shell is the correct tier here, and
-// the locale cookie read by next-intl is what makes the content dynamic.
+// the locale cookie read by next-intl is what makes the visible content dynamic.
+// Keep metadata request-independent: Next.js 16.2 can otherwise resume a
+// different metadata subtree under Cache Components and fall back to client
+// rendering with a __next_metadata_boundary__ mismatch.
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { getLocale, getTranslations } from "next-intl/server";
 import { LandingContent } from "@/components/landing/landing-content";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isPublicDemoEnabled } from "@/lib/env";
 import { getAppAssetUrl } from "@/lib/app-url";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const [t, locale] = await Promise.all([getTranslations("landing"), getLocale()]);
-  const title = t("metaTitle");
-  const description = t("metaDescription");
-  const openGraphLocale = locale === "zh-TW" ? "zh_TW" : "en_US";
-  const socialPreviewUrl = getAppAssetUrl("/landing/social-preview.png").toString();
+const landingTitle = "astt — Self-hosted Net Worth & Portfolio Tracker";
+const landingDescription =
+  "Open-source, self-hosted net worth and portfolio tracker for accounts, investments, property, liabilities, and long-term goals in multiple currencies.";
+const socialPreviewUrl = getAppAssetUrl("/landing/social-preview.png").toString();
 
-  return {
-    title,
-    description,
-    alternates: { canonical: "/" },
-    openGraph: {
-      title,
-      description,
-      url: "/",
-      siteName: "astt",
-      images: [
-        {
-          url: socialPreviewUrl,
-          width: 1200,
-          height: 630,
-          alt: "astt landing page",
-        },
-      ],
-      type: "website",
-      locale: openGraphLocale,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [socialPreviewUrl],
-    },
-  };
-}
+export const metadata: Metadata = {
+  title: landingTitle,
+  description: landingDescription,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: landingTitle,
+    description: landingDescription,
+    url: "/",
+    siteName: "astt",
+    images: [
+      {
+        url: socialPreviewUrl,
+        width: 1200,
+        height: 630,
+        alt: "astt landing page",
+      },
+    ],
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: landingTitle,
+    description: landingDescription,
+    images: [socialPreviewUrl],
+  },
+};
 
 function FeatureSkeletonList({ count }: { count: number }) {
   return (
