@@ -5,48 +5,61 @@
 // force-static is incompatible with nextConfig.cacheComponents (PPR mode);
 // PPR prerendering the Suspense fallback shell is the correct tier here, and
 // the locale cookie read by next-intl is what makes the visible content dynamic.
-// Keep metadata request-independent: Next.js 16.2 can otherwise resume a
-// different metadata subtree under Cache Components and fall back to client
-// rendering with a __next_metadata_boundary__ mismatch.
+//
+// Do not put request-bound locale reads in generateMetadata(): Next.js 16.2 can
+// resume a different metadata subtree under Cache Components and fall back to
+// client rendering with a __next_metadata_boundary__ mismatch. React 19 can
+// hoist <title>, <meta>, and <link> tags rendered by a Server Component into
+// <head>, so localized metadata stays in the same dynamic Suspense subtree as
+// the localized landing content instead of using Next's dynamic Metadata API.
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { LandingContent } from "@/components/landing/landing-content";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isPublicDemoEnabled } from "@/lib/env";
 import { getAppAssetUrl } from "@/lib/app-url";
 
-const landingTitle = "astt — Self-hosted Net Worth & Portfolio Tracker";
-const landingDescription =
-  "Open-source, self-hosted net worth and portfolio tracker for accounts, investments, property, liabilities, and long-term goals in multiple currencies.";
-const socialPreviewUrl = getAppAssetUrl("/landing/social-preview.png").toString();
-
+// Clear route-level fields inherited from the root Metadata API. The localized
+// equivalents below are rendered as React 19 document metadata, avoiding
+// duplicate title/description/social tags while keeping the Next metadata tree
+// request-independent for PPR resume.
 export const metadata: Metadata = {
-  title: landingTitle,
-  description: landingDescription,
-  alternates: { canonical: "/" },
-  openGraph: {
-    title: landingTitle,
-    description: landingDescription,
-    url: "/",
-    siteName: "astt",
-    images: [
-      {
-        url: socialPreviewUrl,
-        width: 1200,
-        height: 630,
-        alt: "astt landing page",
-      },
-    ],
-    type: "website",
-    locale: "en_US",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: landingTitle,
-    description: landingDescription,
-    images: [socialPreviewUrl],
-  },
+  title: null,
+  description: null,
+  openGraph: null,
+  twitter: null,
 };
+
+async function LandingDocumentMetadata() {
+  const [t, locale] = await Promise.all([getTranslations("landing"), getLocale()]);
+  const title = t("metaTitle");
+  const description = t("metaDescription");
+  const openGraphLocale = locale === "zh-TW" ? "zh_TW" : "en_US";
+  const socialPreviewUrl = getAppAssetUrl("/landing/social-preview.png").toString();
+
+  return (
+    <>
+      <title>{title}</title>
+      <meta name="description" content={description} />
+      <link rel="canonical" href="/" />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:url" content="/" />
+      <meta property="og:site_name" content="astt" />
+      <meta property="og:type" content="website" />
+      <meta property="og:locale" content={openGraphLocale} />
+      <meta property="og:image" content={socialPreviewUrl} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content="astt landing page" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={socialPreviewUrl} />
+    </>
+  );
+}
 
 function FeatureSkeletonList({ count }: { count: number }) {
   return (
@@ -260,6 +273,7 @@ function LandingSkeleton() {
 export default function LandingPage() {
   return (
     <Suspense fallback={<LandingSkeleton />}>
+      <LandingDocumentMetadata />
       <LandingContent />
     </Suspense>
   );
