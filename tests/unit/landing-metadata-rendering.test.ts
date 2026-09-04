@@ -8,10 +8,13 @@ const landingPageSource = fs.readFileSync(
 );
 
 describe("landing metadata rendering", () => {
-  it("keeps request-bound locale reads out of the metadata resume path", () => {
+  it("keeps request-bound locale reads out of the Next metadata resume path", () => {
     expect(landingPageSource).toContain("export const metadata: Metadata");
     expect(landingPageSource).not.toContain("export async function generateMetadata");
-    expect(landingPageSource).not.toContain('getTranslations("landing")');
-    expect(landingPageSource).not.toContain("getLocale()");
+    expect(landingPageSource).toContain("async function LandingDocumentMetadata()");
+    expect(landingPageSource).toContain('getTranslations("landing")');
+    expect(landingPageSource).toContain("getLocale()");
+    expect(landingPageSource).toContain("<title>{title}</title>");
+    expect(landingPageSource).toContain('<meta name="description" content={description} />');
   });
 });
