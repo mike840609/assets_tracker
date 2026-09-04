@@ -666,6 +666,22 @@ describe("Calendar whole-app backup", () => {
     });
   });
 
+  it("round-trips the secondary currency preference during import", async () => {
+    const response = await importBackup({
+      version: "1.5",
+      settings: { baseCurrency: "TWD", secondaryCurrency: "JPY", locale: "en-US" },
+      accounts: [],
+    });
+
+    expect(response.status).toBe(200);
+    expect(h.tx.setting.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({ secondaryCurrency: "JPY" }),
+        create: expect.objectContaining({ secondaryCurrency: "JPY" }),
+      }),
+    );
+  });
+
   it("logs a resolved total price-refresh failure after import warm-up", async () => {
     h.priceRefreshResult = { outcome: "total_failure", errors: ["Yahoo Finance unavailable"] };
     const { log } = await import("@/lib/logger");

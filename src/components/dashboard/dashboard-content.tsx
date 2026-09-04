@@ -198,13 +198,25 @@ async function DashboardActionsSection({
  * Net worth cards — the LCP element on the dashboard.
  * Fetches the cached summary and recent snapshots for the delta display.
  */
-async function NetWorthSection({ userId, baseCurrency }: { userId: string; baseCurrency: string }) {
+async function NetWorthSection({
+  userId,
+  baseCurrency,
+  secondaryCurrency,
+}: {
+  userId: string;
+  baseCurrency: string;
+  secondaryCurrency?: string | null;
+}) {
   const [summary, previousSnapshot] = await Promise.all([
     getCachedNetWorthSummary(userId, baseCurrency),
     fetchPreviousSnapshot(userId),
   ]);
 
   if (summary.accounts.length === 0) return null;
+
+  const secondaryRate = secondaryCurrency
+    ? resolveRate(await getAllExchangeRates(), baseCurrency, secondaryCurrency)
+    : undefined;
 
   let previousNetWorth: number | undefined;
   if (previousSnapshot) {
@@ -222,6 +234,8 @@ async function NetWorthSection({ userId, baseCurrency }: { userId: string; baseC
       summary={summary}
       previousNetWorth={previousNetWorth}
       previousSnapshotDate={previousNetWorth !== undefined ? previousSnapshot?.date : undefined}
+      secondaryCurrency={secondaryCurrency}
+      secondaryRate={secondaryRate}
     />
   );
 }
@@ -428,7 +442,11 @@ export async function DashboardContent({ userId }: { userId: string }) {
 
       {/* Net worth card — the LCP element, full-bleed headline above the grid */}
       <Suspense fallback={<NetWorthSkeleton />}>
-        <NetWorthSection userId={userId} baseCurrency={baseCurrency} />
+        <NetWorthSection
+          userId={userId}
+          baseCurrency={baseCurrency}
+          secondaryCurrency={settings.secondaryCurrency}
+        />
       </Suspense>
 
       {/* Tier 2 — "what changed": trend chart (8) + goals/watchlist rail (4).

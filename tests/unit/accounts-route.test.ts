@@ -198,4 +198,24 @@ describe("settings PATCH", () => {
     expect(response.status).toBe(200);
     expect(h.afterTasks).toHaveLength(1);
   });
+
+  it("persists a selected secondary currency", async () => {
+    const { PATCH } = await import("@/app/api/settings/route");
+    const { prisma } = await import("@/lib/prisma");
+    const response = await PATCH(
+      new Request("http://unit.test/api/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ secondaryCurrency: "JPY" }),
+        headers: { "content-type": "application/json" },
+      }),
+      {},
+    );
+
+    expect(response.status).toBe(200);
+    expect(prisma.setting.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({ secondaryCurrency: "JPY" }),
+      }),
+    );
+  });
 });

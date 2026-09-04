@@ -62,19 +62,22 @@ function CurrencyPicker({
   value,
   locale,
   onChange,
+  exclude,
 }: {
   value: string;
   locale: Locale;
   onChange: (value: string) => void;
+  exclude?: string;
 }) {
   const t = useTranslations("settings");
   const [open, setOpen] = useState(false);
   const selectedCurrency = CURRENCIES.find((currency) => currency.code === value) ?? CURRENCIES[0];
   const defaultCode = getLocaleDefaultCurrency(locale);
-  const recommended = CURRENCIES.filter(
+  const available = CURRENCIES.filter((currency) => currency.code !== exclude);
+  const recommended = available.filter(
     (currency) => currency.code === defaultCode || currency.code === value,
   );
-  const otherCurrencies = CURRENCIES.filter(
+  const otherCurrencies = available.filter(
     (currency) => !recommended.some((item) => item.code === currency.code),
   );
 
@@ -132,11 +135,13 @@ function CurrencyPicker({
 
 export function SettingsForm({
   currentCurrency,
+  currentSecondaryCurrency,
   currentLocale,
   lastPriceUpdate,
   lastExchangeRateUpdate,
 }: {
   currentCurrency: string;
+  currentSecondaryCurrency?: string | null;
   currentLocale: string;
   lastPriceUpdate?: string | null;
   lastExchangeRateUpdate?: string | null;
@@ -150,6 +155,7 @@ export function SettingsForm({
       ? (currentLocale as Locale)
       : DEFAULT_LOCALE;
   const [currency, setCurrency] = useState(currentCurrency);
+  const [secondaryCurrency, setSecondaryCurrency] = useState(currentSecondaryCurrency ?? null);
   const [locale, setLocale] = useState<Locale>(resolvedActiveLocale);
   const { density, isReady: isDensityReady, setDensity } = useDensity();
   const { colorSchema, isReady: isColorSchemaReady, setColorSchema } = useColorSchema();
@@ -164,7 +170,10 @@ export function SettingsForm({
   const [clientPriceRefreshAt, setClientPriceRefreshAt] = useState<string | null>(null);
   const [clientRatesRefreshAt, setClientRatesRefreshAt] = useState<string | null>(null);
 
-  const preferencesChanged = currency !== currentCurrency || locale !== resolvedActiveLocale;
+  const preferencesChanged =
+    currency !== currentCurrency ||
+    secondaryCurrency !== (currentSecondaryCurrency ?? null) ||
+    locale !== resolvedActiveLocale;
   const effectiveLastPriceUpdate =
     clientPriceRefreshAt && (!lastPriceUpdate || clientPriceRefreshAt > lastPriceUpdate)
       ? clientPriceRefreshAt
@@ -179,8 +188,11 @@ export function SettingsForm({
     if (!preferencesChanged) return;
     setSaving(true);
     try {
-      const payload: { baseCurrency?: string; locale?: Locale } = {};
+      const payload: { baseCurrency?: string; secondaryCurrency?: string | null; locale?: Locale } =
+        {};
       if (currency !== currentCurrency) payload.baseCurrency = currency;
+      if (secondaryCurrency !== (currentSecondaryCurrency ?? null))
+        payload.secondaryCurrency = secondaryCurrency;
       if (locale !== resolvedActiveLocale) payload.locale = locale;
 
       const res = await fetch("/api/settings", {
@@ -258,7 +270,56 @@ export function SettingsForm({
                   {t("settings.baseCurrencyDescription")}
                 </p>
               </div>
-              <CurrencyPicker value={currency} locale={locale} onChange={setCurrency} />
+              <CurrencyPicker
+                value={currency}
+                locale={locale}
+                onChange={(value) => {
+                  setCurrency(value);
+                  if (secondaryCurrency === value) setSecondaryCurrency(null);
+                }}
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t("settings.secondaryCurrency")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("settings.secondaryCurrencyDescription")}
+                </p>
+              </div>
+              <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={secondaryCurrency !== null}
+                  aria-label={t("settings.secondaryCurrency")}
+                  onClick={() =>
+                    setSecondaryCurrency(
+                      secondaryCurrency === null
+                        ? (CURRENCIES.find((c) => c.code !== currency)?.code ?? "USD")
+                        : null,
+                    )
+                  }
+                  className="relative h-11 w-11 shrink-0 rounded-full bg-transparent p-0 md:h-8"
+                >
+                  <span
+                    className={`absolute left-0 top-1/2 h-6 w-11 -translate-y-1/2 rounded-full ${secondaryCurrency ? "bg-primary" : "bg-muted-foreground/30"}`}
+                  />
+                  <span
+                    className={`absolute top-1/2 size-4 -translate-y-1/2 rounded-full bg-background transition-transform ${secondaryCurrency ? "translate-x-6" : "translate-x-1"}`}
+                  />
+                </button>
+                {secondaryCurrency && (
+                  <div className="w-full min-w-0 sm:w-auto">
+                    <CurrencyPicker
+                      value={secondaryCurrency}
+                      locale={locale}
+                      exclude={currency}
+                      onChange={setSecondaryCurrency}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Language Row */}

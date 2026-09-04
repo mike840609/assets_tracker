@@ -40,12 +40,16 @@ export const PATCH = withAuth(
       where: { userId },
       update: {
         ...(parsed.data.baseCurrency !== undefined && { baseCurrency: parsed.data.baseCurrency }),
+        ...(parsed.data.secondaryCurrency !== undefined && {
+          secondaryCurrency: parsed.data.secondaryCurrency,
+        }),
         ...(parsed.data.locale !== undefined && { locale: parsed.data.locale }),
       },
       create: {
         userId,
         baseCurrency: parsed.data.baseCurrency ?? "USD",
         locale: parsed.data.locale ?? "en-US",
+        secondaryCurrency: parsed.data.secondaryCurrency ?? null,
       },
     });
 

@@ -146,6 +146,7 @@ export const snapshotsQuerySchema = z.object({
 
 export const updateSettingsSchema = z.object({
   baseCurrency: z.string().length(3).optional(),
+  secondaryCurrency: z.string().length(3).nullable().optional(),
   locale: supportedLocaleSchema.optional(),
 });
 
@@ -490,6 +491,7 @@ export const dataImportSchema = z.object({
   settings: z
     .object({
       baseCurrency: z.string().length(3),
+      secondaryCurrency: z.string().length(3).nullable().optional(),
       locale: supportedLocaleSchema,
     })
     .optional()

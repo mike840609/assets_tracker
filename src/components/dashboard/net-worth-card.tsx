@@ -105,10 +105,14 @@ export function NetWorthCard({
   summary,
   previousNetWorth,
   previousSnapshotDate,
+  secondaryCurrency,
+  secondaryRate,
 }: {
   summary: NetWorthSummary;
   previousNetWorth?: number;
   previousSnapshotDate?: string;
+  secondaryCurrency?: string | null;
+  secondaryRate?: number;
 }) {
   const { totalAssets, totalLiabilities, netWorth, baseCurrency } = summary;
   const t = useTranslations("netWorthCard");
@@ -147,6 +151,12 @@ export function NetWorthCard({
   const liabilitiesShare = gross > 0 ? (totalLiabilities / gross) * 100 : 0;
   const assetCount = summary.accounts.filter((a) => a.type === "ASSET").length;
   const liabilityCount = summary.accounts.filter((a) => a.type === "LIABILITY").length;
+  const secondaryValue = (amount: number) =>
+    privacyMode
+      ? HIDDEN
+      : secondaryRate === undefined
+        ? `— ${secondaryCurrency}`
+        : formatCurrency(amount * secondaryRate, secondaryCurrency!);
 
   return (
     <div
@@ -176,6 +186,11 @@ export function NetWorthCard({
           >
             {privacyMode ? HIDDEN : formatCurrency(animatedNetWorth, baseCurrency)}
           </p>
+          {secondaryCurrency && (
+            <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+              {secondaryValue(netWorth)}
+            </p>
+          )}
           {!privacyMode && delta !== null && pct !== null && (
             <div className="mt-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -224,6 +239,11 @@ export function NetWorthCard({
             privacy={privacyMode}
             className="relative text-lg sm:text-2xl font-semibold text-[var(--gain-ink)] mt-1 whitespace-nowrap tabular-nums truncate"
           />
+          {secondaryCurrency && (
+            <p className="text-xs text-muted-foreground tabular-nums">
+              {secondaryValue(totalAssets)}
+            </p>
+          )}
           {!isCompact && (
             <CompositionMeter
               share={assetsShare}
@@ -252,6 +272,11 @@ export function NetWorthCard({
             privacy={privacyMode}
             className="relative text-lg sm:text-2xl font-semibold text-[var(--loss-ink)] mt-1 whitespace-nowrap tabular-nums truncate"
           />
+          {secondaryCurrency && (
+            <p className="text-xs text-muted-foreground tabular-nums">
+              {secondaryValue(totalLiabilities)}
+            </p>
+          )}
           {!isCompact && (
             <CompositionMeter
               share={liabilitiesShare}
