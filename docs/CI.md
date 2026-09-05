@@ -13,7 +13,7 @@ Pull requests run:
 - Bundle-size checks when relevant
 - Playwright smoke tests against an isolated local PostgreSQL database and application build
 
-`.github/workflows/e2e.yml` runs independently of Vercel and uses fixed, non-sensitive test credentials. This makes the check available to external pull requests without exposing repository secrets. The Vercel Git integration also creates a preview deployment; for trusted same-repository pull requests, `.github/workflows/vercel-preview-e2e.yml` reruns the suite against that deployed preview.
+`.github/workflows/e2e.yml` runs independently of Vercel and uses fixed, non-sensitive test credentials. This makes the check available to external pull requests without exposing repository secrets. The Vercel Git integration also creates a preview deployment; for trusted same-repository pull requests, `.github/workflows/vercel-preview-e2e.yml` runs a desktop-only deployment check against that deployed preview. Full Desktop + Mobile regression stays in `e2e.yml` on localhost, and superseded preview runs on the same branch cancel each other.
 
 Changes to Docker, Compose, Prisma packaging, or runtime environment configuration also trigger `.github/workflows/docker.yml`. That workflow builds the production image, applies every migration to a fresh PostgreSQL database, starts the application, checks `/login`, and reruns migrations to prove they are idempotent.
 

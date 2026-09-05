@@ -8,7 +8,7 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: vercel-preview-e2e-${{ github.event.deployment.sha }}
+  group: vercel-preview-e2e-${{ github.event.deployment.ref || github.event.deployment.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -110,7 +110,9 @@ jobs:
         run: pnpm exec playwright install-deps chromium
 
       - name: Run E2E tests
-        run: pnpm test:e2e
+        # Preview is a deployment check only (single desktop project).
+        # Full Desktop + Mobile regression stays in e2e.yml on localhost.
+        run: pnpm playwright test --project=chromium
         env:
           PLAYWRIGHT_TEST_BASE_URL: ${{ needs.authorize.outputs.url }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
