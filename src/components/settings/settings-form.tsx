@@ -405,7 +405,7 @@ export function SettingsForm({
                       aria-pressed={isActive}
                       className={`relative w-11 h-11 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                         isActive
-                          ? "ring-2 ring-offset-2 ring-foreground scale-110"
+                          ? "ring-2 ring-offset-2 ring-primary dark:ring-foreground scale-110"
                           : "opacity-70 hover:opacity-100 hover:scale-105"
                       }`}
                       style={{
