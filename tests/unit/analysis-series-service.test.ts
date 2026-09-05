@@ -39,6 +39,7 @@ const rawHistory: RawHistoryData = {
     { date: "2026-06-30", accountValues: { brokerage: 190 } },
   ],
   accounts,
+  unattributedDates: [],
 };
 
 const snapshots = rawHistory.snapshots.map((s) => snap(s.date, s.accountValues.brokerage));
@@ -184,6 +185,7 @@ describe("computeAnalysisRangeSeries — Taiwan-day month boundary", () => {
   const withSeptember: RawHistoryData = {
     snapshots: [...rawHistory.snapshots, { date: "2026-09-01", accountValues: { brokerage: 210 } }],
     accounts,
+    unattributedDates: [],
   };
   const septemberSnapshots = withSeptember.snapshots.map((s) =>
     snap(s.date, s.accountValues.brokerage),
@@ -217,7 +219,14 @@ describe("computeAnalysisRangeSeries — Taiwan-day month boundary", () => {
 
 describe("computeAnalysisRangeSeries — empty history", () => {
   it("returns empty/zeroed series without throwing", () => {
-    const s = computeAnalysisRangeSeries([], { snapshots: [], accounts }, [], [], "YTD", NOW);
+    const s = computeAnalysisRangeSeries(
+      [],
+      { snapshots: [], accounts, unattributedDates: [] },
+      [],
+      [],
+      "YTD",
+      NOW,
+    );
     expect(s.buckets).toHaveLength(7);
     expect(s.buckets.every((b) => b.isEmpty)).toBe(true);
     expect(s.kpis).toEqual({
@@ -231,5 +240,47 @@ describe("computeAnalysisRangeSeries — empty history", () => {
     expect(s.attributionItems).toEqual([]);
     expect(s.returnTrend).toEqual([]);
     expect(s.investmentReturnPct).toBeNull();
+  });
+});
+
+describe("computeAnalysisRangeSeries — hasUnattributedAccounts", () => {
+  // rawHistory starts 2025-01-31; NOW = 28 Jul 2026, so the range starts are
+  // YTD/6M 2026-01-01, 1Y 2025-07-01, 2Y 2024-07-01, All 2025-01-31.
+  const withDeleted: RawHistoryData = { ...rawHistory, unattributedDates: ["2025-01-31"] };
+
+  it("is false when no snapshot references a deleted account", () => {
+    const series = computeAllRangeSeries(snapshots, rawHistory, cashFlowData, accountCashFlow, NOW);
+    for (const label of ["YTD", "6M", "1Y", "2Y", "All"] as const) {
+      expect(series[label].hasUnattributedAccounts).toBe(false);
+    }
+  });
+
+  it("flags only the ranges that actually contain the affected snapshot", () => {
+    const series = computeAllRangeSeries(
+      snapshots,
+      withDeleted,
+      cashFlowData,
+      accountCashFlow,
+      NOW,
+    );
+    expect(series.YTD.hasUnattributedAccounts).toBe(false);
+    expect(series["6M"].hasUnattributedAccounts).toBe(false);
+    expect(series["1Y"].hasUnattributedAccounts).toBe(false);
+    expect(series["2Y"].hasUnattributedAccounts).toBe(true);
+    expect(series.All.hasUnattributedAccounts).toBe(true);
+  });
+
+  it("includes a snapshot landing exactly on the range start", () => {
+    const onBoundary: RawHistoryData = { ...rawHistory, unattributedDates: ["2026-01-01"] };
+    const series = computeAnalysisRangeSeries(
+      snapshots,
+      onBoundary,
+      cashFlowData,
+      accountCashFlow,
+      "YTD",
+      NOW,
+    );
+    expect(series.rangeStartIso).toBe("2026-01-01");
+    expect(series.hasUnattributedAccounts).toBe(true);
   });
 });

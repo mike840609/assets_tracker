@@ -47,99 +47,141 @@ describe("updateAccountSchema", () => {
   it("rejects currency changes", () => {
     expect(updateAccountSchema.safeParse({ currency: "JPY" }).success).toBe(false);
   });
+
+  it("rejects account type changes", () => {
+    expect(updateAccountSchema.safeParse({ type: "LIABILITY" }).success).toBe(false);
+  });
+
+  it("accepts category, name, and cashBalance edits", () => {
+    const result = updateAccountSchema.safeParse({
+      category: "BROKERAGE",
+      name: "Renamed account",
+      cashBalance: 250,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.category).toBe("BROKERAGE");
+      expect(result.data.name).toBe("Renamed account");
+      expect(result.data.cashBalance).toBe(250);
+    }
+  });
 });
 
 describe("Decimal-backed CRUD number schemas", () => {
-  it.each([
+  // The money columns hold Decimal(28, 8); the ceiling that binds is the JSON
+  // wire format, where an IEEE double keeps ~15.95 significant digits.
+  const MAX = 1e15;
+  const UNDER_MAX = 999_999_999_999_999;
+
+  const cases: [string, (value: number) => { success: boolean }][] = [
     [
       "account cashBalance",
-      () =>
+      (value) =>
         createAccountSchema.safeParse({
           name: "Cash",
           type: "ASSET",
           category: "BANK",
           currency: "USD",
-          cashBalance: 1e10,
+          cashBalance: value,
         }),
     ],
     [
+      "account cashBalance (update)",
+      (value) => updateAccountSchema.safeParse({ cashBalance: value }),
+    ],
+    [
       "holding quantity",
-      () =>
+      (value) =>
         createHoldingSchema.safeParse({
           symbol: "AAPL",
           name: "Apple",
           assetType: "STOCK",
-          quantity: 1e10,
+          quantity: value,
         }),
     ],
     [
       "holding unitPrice",
-      () =>
+      (value) =>
         createHoldingSchema.safeParse({
           symbol: "AAPL",
           name: "Apple",
           assetType: "STOCK",
           quantity: 1,
-          unitPrice: 1e10,
-        }),
-    ],
-    [
-      "option strike",
-      () =>
-        createHoldingSchema.safeParse({
-          symbol: "AAPL240119C00150000",
-          name: "AAPL Call",
-          assetType: "OPTION",
-          quantity: 1,
-          strike: 1e10,
+          unitPrice: value,
         }),
     ],
     [
       "holding transaction quantity",
-      () => updateTransactionSchema.safeParse({ id: "t1", type: "BUY", quantity: 1e10 }),
+      (value) => updateTransactionSchema.safeParse({ id: "t1", type: "BUY", quantity: value }),
     ],
     [
       "cash transaction amount",
-      () => createCashTransactionSchema.safeParse({ type: "DEPOSIT", amount: 1e10 }),
+      (value) => createCashTransactionSchema.safeParse({ type: "DEPOSIT", amount: value }),
     ],
     [
       "recurring cash amount",
-      () =>
+      (value) =>
         createRecurringCashTransactionSchema.safeParse({
           type: "DEPOSIT",
-          amount: 1e10,
+          amount: value,
           frequency: "MONTHLY",
           startDate: "2026-01-01",
         }),
     ],
     [
       "recurring investment amount",
-      () =>
+      (value) =>
         createRecurringInvestmentSchema.safeParse({
           symbol: "VT",
           name: "Vanguard Total World",
           assetType: "ETF",
-          amount: 1e10,
+          amount: value,
           frequency: "MONTHLY",
           startDate: "2026-01-01",
         }),
     ],
     [
       "goal targetAmount",
-      () => createGoalSchema.safeParse({ name: "House", targetAmount: 1e10, scope: "NET_WORTH" }),
+      (value) =>
+        createGoalSchema.safeParse({ name: "House", targetAmount: value, scope: "NET_WORTH" }),
     ],
     [
       "stock watch recordPrice",
-      () =>
+      (value) =>
         createStockWatchItemSchema.safeParse({
           symbol: "TSLA",
           name: "Tesla",
-          recordPrice: 1e10,
+          recordPrice: value,
           recordDate: "2026-06-14",
         }),
     ],
-  ])("rejects 1e10 for %s", (_label, parse) => {
-    expect(parse().success).toBe(false);
+  ];
+
+  it.each(cases)("rejects 1e15 for %s", (_label, parse) => {
+    expect(parse(MAX).success).toBe(false);
+  });
+
+  it.each(cases)("accepts just under 1e15 for %s", (_label, parse) => {
+    expect(parse(UNDER_MAX).success).toBe(true);
+  });
+
+  // Holding.strike stays Decimal(18, 4), so it keeps a tighter ceiling than
+  // the widened money columns.
+  const parseStrike = (strike: number) =>
+    createHoldingSchema.safeParse({
+      symbol: "AAPL240119C00150000",
+      name: "AAPL Call",
+      assetType: "OPTION",
+      quantity: 1,
+      strike,
+    });
+
+  it("rejects 1e14 for option strike", () => {
+    expect(parseStrike(1e14).success).toBe(false);
+  });
+
+  it("accepts just under 1e14 for option strike", () => {
+    expect(parseStrike(99_999_999_999_999).success).toBe(true);
   });
 });
 
@@ -441,6 +483,40 @@ describe("snapshotsQuerySchema", () => {
 });
 
 describe("dataImportSchema", () => {
+  const importWithCashBalance = (cashBalance: number | string) =>
+    dataImportSchema.safeParse({
+      version: "1.2",
+      accounts: [
+        {
+          name: "Checking",
+          type: "ASSET",
+          category: "BANK",
+          currency: "IDR",
+          cashBalance,
+        },
+      ],
+    });
+
+  it.each([
+    ["a numeric cashBalance", 999_999_999_999_999],
+    ["a decimal-string cashBalance", "999999999999999.12345678"],
+  ])("accepts %s just under the supported maximum", (_label, cashBalance) => {
+    expect(importWithCashBalance(cashBalance).success).toBe(true);
+  });
+
+  it.each([
+    ["a numeric cashBalance", 1e15],
+    ["a decimal-string cashBalance", "1000000000000000"],
+  ])("rejects %s at or above the supported maximum", (_label, cashBalance) => {
+    const result = importWithCashBalance(cashBalance);
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    const issue = result.error.issues[0];
+    expect(issue.message).toBe("Value exceeds supported precision");
+    expect(issue.path).toEqual(["accounts", 0, "cashBalance"]);
+  });
+
   it("rejects an imported settings locale outside supported locales", () => {
     const result = dataImportSchema.safeParse({
       version: "1.2",
@@ -512,6 +588,56 @@ describe("dataImportSchema", () => {
       false,
       false,
     ]);
+  });
+
+  it("preserves holding transaction DCA provenance and bounds its cash debit", () => {
+    const backup = (cashDebit: unknown) => ({
+      version: "1.5",
+      accounts: [
+        {
+          name: "Brokerage",
+          type: "ASSET",
+          category: "BROKERAGE",
+          currency: "USD",
+          cashBalance: "100",
+          holdings: [
+            {
+              symbol: "NVDA",
+              name: "NVIDIA",
+              quantity: "5",
+              currency: "USD",
+              assetType: "STOCK",
+              transactions: [
+                {
+                  type: "BUY",
+                  quantity: "5",
+                  materializedAt: "2026-01-01T21:30:00.000Z",
+                  cashDebit,
+                },
+                // A pre-1.5 row omits both fields entirely.
+                { type: "BUY", quantity: "3" },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = dataImportSchema.safeParse(backup("1000.00000000"));
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const transactions = result.data.accounts[0].holdings?.[0].transactions;
+      expect(transactions?.map((t) => t.materializedAt)).toEqual([
+        "2026-01-01T21:30:00.000Z",
+        undefined,
+      ]);
+      expect(transactions?.map((t) => t.cashDebit)).toEqual(["1000.00000000", undefined]);
+    }
+
+    // Same magnitude ceiling as every other imported amount: an oversized value
+    // must fail with a field path, not as a Prisma overflow at write time.
+    expect(dataImportSchema.safeParse(backup(1e15)).success).toBe(false);
+    expect(dataImportSchema.safeParse(backup(null)).success).toBe(true);
   });
 
   it("preserves imported holding transaction unitPrice through parsing", () => {

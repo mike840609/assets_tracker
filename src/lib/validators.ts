@@ -15,11 +15,26 @@ import { CALENDAR_ENTRY_CATEGORIES } from "@/lib/types";
 
 const OCC_SHAPE = /^[A-Z][A-Z0-9.\-]{0,5}\d{6}[CP]\d{8}$/;
 const supportedLocaleSchema = z.enum(SUPPORTED_LOCALES);
-const CRUD_DECIMAL_ABS_MAX = 10_000_000_000;
+// Money and quantity columns are Decimal(28, 8) — 20 integer digits — so the
+// database is no longer what binds. Every amount crosses the wire as a JSON
+// `number`, and an IEEE double keeps ~15.95 significant digits. 1e15 is a
+// magnitude guard, not a precision guarantee: it keeps accepted values an
+// order of magnitude clear of 2^53 (~9.0e15), where doubles stop representing
+// even whole units exactly. The column's eight fractional decimals all survive
+// the wire only below 2^26 (~6.7e7), where one ulp is 2^-27 ≈ 7.5e-9; above
+// that the step passes 1e-8, and at 1e15 a double steps by 0.125.
+const CRUD_DECIMAL_ABS_MAX = 1_000_000_000_000_000;
 const crudDecimalNumber = z
   .number()
   .gt(-CRUD_DECIMAL_ABS_MAX, "Value exceeds supported precision")
   .lt(CRUD_DECIMAL_ABS_MAX, "Value exceeds supported precision");
+// Holding.strike stays Decimal(18, 4) — 14 integer digits — so it keeps the
+// tighter ceiling its column can actually store.
+const STRIKE_DECIMAL_ABS_MAX = 100_000_000_000_000;
+const strikeDecimalNumber = z
+  .number()
+  .gt(-STRIKE_DECIMAL_ABS_MAX, "Value exceeds supported precision")
+  .lt(STRIKE_DECIMAL_ABS_MAX, "Value exceeds supported precision");
 
 export const createAccountSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -32,6 +47,7 @@ export const createAccountSchema = z.object({
 export const updateAccountSchema = createAccountSchema
   .extend({
     currency: z.never("Currency cannot be changed after account creation"),
+    type: z.never("Account type cannot be changed after account creation"),
     isActive: z.boolean(),
     isPinned: z.boolean(),
     note: z.string().max(500).optional().nullable(),
@@ -76,7 +92,7 @@ const createOptionHoldingSchema = z
     assetType: z.literal("OPTION"),
     underlyingSymbol: z.string().min(1).max(8).optional(),
     optionType: z.enum(OPTION_TYPES).optional(),
-    strike: crudDecimalNumber.positive().optional(),
+    strike: strikeDecimalNumber.positive().optional(),
     expiration: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}/)
@@ -426,7 +442,16 @@ export const createCalendarEarningsWatchSchema = z.object({
 });
 
 const decimalStringSchema = z.string().regex(/^-?\d+(\.\d+)?$/, "Must be a decimal number");
-const decimalSchema = z.union([decimalStringSchema, z.number().finite()]);
+// Imported amounts carry the same magnitude ceiling as the CRUD schemas, on
+// both the string and the number branch. Without it an oversized backup value
+// only fails at write time, as a Prisma `numeric field overflow` 500 with no
+// field path (#735).
+const boundedDecimalSchema = (absMax: number) =>
+  z
+    .union([decimalStringSchema, z.number().finite()])
+    .refine((value) => Math.abs(Number(value)) < absMax, "Value exceeds supported precision");
+const decimalSchema = boundedDecimalSchema(CRUD_DECIMAL_ABS_MAX);
+const strikeDecimalSchema = boundedDecimalSchema(STRIKE_DECIMAL_ABS_MAX);
 
 const MAX_IMPORT_ACCOUNTS = 200;
 const MAX_IMPORT_HOLDINGS_PER_ACCOUNT = 2_000;
@@ -442,12 +467,17 @@ const MAX_IMPORT_CALENDAR_ENTRIES = 10_000;
 // so round-trip imports always carry valid ISO datetimes. Rejecting anything
 // else turns a write-time Prisma 500 into a 400 with a field path.
 const importTimestamp = z.iso.datetime().optional();
+const importNullableTimestamp = z.iso.datetime().optional().nullable();
 
 // Recurring-materialized transactions carry the UTC calendar day they belong
 // to; manual rows export it as null. Preserve null as null — never default it,
 // since analysis bucketing falls back to createdAt only when it is null.
 const importOccurrenceDate = z.iso.datetime().optional().nullable();
 const importMaterializedAt = z.iso.datetime().optional().nullable();
+// The exact cash a DCA-materialized buy removed from its account, in the
+// account's currency. Absent in pre-1.5 backups and null on manual rows; those
+// rows fall back to the approximate reversal (see the transactions route).
+const importCashDebit = decimalSchema.optional().nullable();
 const importHoldingTransactionUnitPrice = decimalSchema
   .optional()
   .nullable()
@@ -490,7 +520,7 @@ export const dataImportSchema = z.object({
               updatedAt: importTimestamp,
               underlyingSymbol: z.string().optional().nullable(),
               optionType: z.enum(OPTION_TYPES).optional().nullable(),
-              strike: decimalSchema.optional().nullable(),
+              strike: strikeDecimalSchema.optional().nullable(),
               expiration: z.iso.datetime().optional().nullable(),
               contractMultiplier: z.number().int().optional().nullable(),
               transactions: z
@@ -503,6 +533,8 @@ export const dataImportSchema = z.object({
                     createdAt: importTimestamp,
                     occurrenceDate: importOccurrenceDate,
                     recurringId: z.string().optional().nullable(),
+                    materializedAt: importMaterializedAt,
+                    cashDebit: importCashDebit,
                   }),
                 )
                 .max(MAX_IMPORT_TRANSACTIONS_PER_HOLDING)
@@ -535,7 +567,7 @@ export const dataImportSchema = z.object({
               frequency: z.enum(RECURRING_FREQUENCIES),
               note: z.string().max(500).optional().nullable(),
               startDate: importTimestamp,
-              endDate: importTimestamp,
+              endDate: importNullableTimestamp,
               nextRunDate: importTimestamp,
               isActive: z.boolean().default(true),
               createdAt: importTimestamp,
@@ -556,7 +588,7 @@ export const dataImportSchema = z.object({
               frequency: z.enum(RECURRING_FREQUENCIES),
               note: z.string().max(500).optional().nullable(),
               startDate: importTimestamp,
-              endDate: importTimestamp,
+              endDate: importNullableTimestamp,
               nextRunDate: importTimestamp,
               isActive: z.boolean().default(true),
               createdAt: importTimestamp,

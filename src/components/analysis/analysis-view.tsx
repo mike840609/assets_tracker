@@ -357,6 +357,11 @@ export function AnalysisView({
                         <p className="text-xs text-muted-foreground">
                           {t("compositionSectionSubtitle")}
                         </p>
+                        {series.hasUnattributedAccounts && (
+                          <p className="mt-1 max-w-prose text-xs text-muted-foreground">
+                            {t("unattributedAccountsNote")}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className={cn("grid", gridGapClass, "xl:grid-cols-2")}>

@@ -20,7 +20,6 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/auth", () => ({ auth: mocks.auth }));
 vi.mock("@/lib/auth-principal", () => ({ resolvePrincipal: mocks.resolvePrincipal }));
-vi.mock("@/lib/auth-user", () => ({ userExists: vi.fn().mockResolvedValue(true) }));
 vi.mock("@/lib/demo/demo-metrics", () => ({ recordDemoMetric: vi.fn() }));
 vi.mock("@/lib/demo/demo-quota-service", () => ({
   consumeDemoMutationQuota: mocks.consumeMutation,

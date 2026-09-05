@@ -218,7 +218,15 @@ test("landing metadata follows the selected locale", async ({ browser }) => {
     await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute("content", "zh_TW");
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       "content",
-      /opengraph-image/,
+      /\/landing\/social-preview\.png$/,
+    );
+    await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute(
+      "content",
+      "1200",
+    );
+    await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute(
+      "content",
+      "630",
     );
     await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
       "content",
@@ -226,7 +234,7 @@ test("landing metadata follows the selected locale", async ({ browser }) => {
     );
     await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute(
       "content",
-      /twitter-image/,
+      /\/landing\/social-preview\.png$/,
     );
   } finally {
     await context.close();

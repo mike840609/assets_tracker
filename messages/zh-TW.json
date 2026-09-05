@@ -466,6 +466,7 @@
     "movementSectionSubtitle": "淨資產如何變化，以及現金流如何解釋變化。",
     "compositionSectionTitle": "組成",
     "compositionSectionSubtitle": "價值分布在哪裡，以及哪些帳戶帶動所選期間。",
+    "unattributedAccountsNote": "此期間的部分快照包含後來已刪除的帳戶。類別與歸因圖表不會納入這些帳戶；淨資產趨勢仍保留其已儲存的總額。",
     "seriesAssets": "資產",
     "seriesLiabilities": "負債",
     "seriesNetWorth": "淨資產",

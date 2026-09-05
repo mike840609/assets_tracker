@@ -3,7 +3,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 const h = vi.hoisted(() => ({
   dueRules: [] as Array<Record<string, unknown>>,
   rates: new Map<string, number>(),
-  prices: [] as Array<{ symbol: string; price: number; currency: string }>,
+  prices: [] as Array<{ symbol: string; price: number; currency: string; updatedAt: Date }>,
+  warns: [] as Array<{ event: string; data?: Record<string, unknown> }>,
   existingHoldingCurrency: null as string | null,
   transactionalHoldingCurrency: "USD",
   upserts: [] as Array<Record<string, unknown>>,
@@ -16,7 +17,14 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/logger", () => ({
-  log: { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} },
+  log: {
+    info: () => {},
+    warn: (event: string, data?: Record<string, unknown>) => {
+      h.warns.push({ event, data });
+    },
+    error: () => {},
+    debug: () => {},
+  },
 }));
 
 // Keep resolveRate real (pure); the service now reads rates straight from the
@@ -56,7 +64,7 @@ vi.mock("@/lib/prisma", () => ({
     priceCache: {
       findUnique: vi.fn(async (args: { where: { symbol: string } }) => {
         const p = h.prices.find((x) => x.symbol === args.where.symbol);
-        return p ? { price: p.price, currency: p.currency } : null;
+        return p ? { price: p.price, currency: p.currency, updatedAt: p.updatedAt } : null;
       }),
       upsert: vi.fn(async () => ({})),
     },
@@ -113,8 +121,27 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import { materializeDueInvestments } from "@/lib/services/recurring-investment-service";
+import { DCA_PRICE_MAX_AGE_MS } from "@/lib/refresh-policy";
 
 const d = (s: string) => new Date(`${s}T00:00:00.000Z`);
+
+/** The clock every rule below is materialized against. */
+const NOW = d("2026-06-14");
+const HOUR_MS = 60 * 60 * 1000;
+
+/** A PriceCache row this morning's cron refreshed — inside the DCA window. */
+const freshPrice = () => ({
+  symbol: "NVDA",
+  price: 200,
+  currency: "USD",
+  updatedAt: new Date(NOW.getTime() - 6 * HOUR_MS),
+});
+
+/** A PriceCache row the cron failed to refresh for more than two days. */
+const stalePrice = () => ({
+  ...freshPrice(),
+  updatedAt: new Date(NOW.getTime() - DCA_PRICE_MAX_AGE_MS - HOUR_MS),
+});
 
 function rule(over: Record<string, unknown> = {}) {
   return {
@@ -139,7 +166,8 @@ describe("materializeDueInvestments", () => {
   beforeEach(() => {
     h.dueRules = [];
     h.rates = new Map();
-    h.prices = [{ symbol: "NVDA", price: 200, currency: "USD" }];
+    h.prices = [freshPrice()];
+    h.warns = [];
     h.existingHoldingCurrency = null;
     h.transactionalHoldingCurrency = "USD";
     h.upserts = [];
@@ -162,6 +190,10 @@ describe("materializeDueInvestments", () => {
     expect(h.createManyCalls[0].data[0].type).toBe("BUY");
     expect(Number(h.holdingUpdates[0].data.quantity.increment)).toBe(5);
     expect(Number(h.accountUpdates[0].data.cashBalance.decrement)).toBe(1000);
+    // Durable provenance (survives rule deletion) plus the exact cash removed,
+    // so deleting or resizing this buy later reverses the real amount.
+    expect(h.createManyCalls[0].data[0].materializedAt).toEqual(d("2026-06-14"));
+    expect(Number(h.createManyCalls[0].data[0].cashDebit)).toBe(1000);
   });
 
   it("scales shares + cash by occurrence count on catch-up", async () => {
@@ -173,12 +205,16 @@ describe("materializeDueInvestments", () => {
     expect(h.createManyCalls[0].data).toHaveLength(3);
     expect(Number(h.holdingUpdates[0].data.quantity.increment)).toBe(15); // 5 * 3
     expect(Number(h.accountUpdates[0].data.cashBalance.decrement)).toBe(3000); // 1000 * 3
+    // The debit is rule.amount x count, so each row records rule.amount.
+    expect(h.createManyCalls[0].data.map((row) => Number(row.cashDebit))).toEqual([
+      1000, 1000, 1000,
+    ]);
   });
 
   it("converts the amount when account and price currencies differ", async () => {
     // Account in TWD, NVDA priced in USD. 30000 TWD * (USD per TWD) ÷ price.
     h.rates = new Map([["USD_TWD", 30]]); // resolveRate(TWD→USD) = 1/30
-    h.prices = [{ symbol: "NVDA", price: 200, currency: "USD" }];
+    h.prices = [freshPrice()];
     h.dueRules = [rule({ amount: 30000, account: { currency: "TWD" } })];
 
     await materializeDueInvestments(d("2026-06-14"));
@@ -189,6 +225,9 @@ describe("materializeDueInvestments", () => {
     expect(Number(h.createManyCalls[0].data[0].quantity)).toBeCloseTo(5, 6);
     // Cash debited in the account's own currency (TWD), not converted.
     expect(Number(h.accountUpdates[0].data.cashBalance.decrement)).toBe(30000);
+    // cashDebit records that same account-currency amount, so reversing it
+    // never has to re-run this conversion at a later day's rate.
+    expect(Number(h.createManyCalls[0].data[0].cashDebit)).toBe(30000);
   });
 
   it("auto-creates the holding with the resolved price currency", async () => {
@@ -213,10 +252,64 @@ describe("materializeDueInvestments", () => {
     expect(h.ruleUpdates).toHaveLength(0); // nextRunDate untouched → retries next run
   });
 
+  it("refetches and buys at the live price when the cached price is stale", async () => {
+    // A partial price-refresh failure leaves yesterday's (or older) price in
+    // PriceCache; pricing the buy with it mints a permanently wrong share count.
+    const { fetchStockPrices } = await import("@/lib/services/price-service");
+    const { prisma } = await import("@/lib/prisma");
+    vi.mocked(prisma.priceCache.upsert).mockClear();
+    vi.mocked(fetchStockPrices).mockResolvedValueOnce(
+      new Map([["NVDA", { price: 250, currency: "USD" }]]),
+    );
+    h.prices = [stalePrice()];
+    h.dueRules = [rule()];
+
+    const result = await materializeDueInvestments(NOW);
+
+    expect(result).toEqual({ created: 1, rulesProcessed: 1 });
+    expect(Number(h.createManyCalls[0].data[0].unitPrice)).toBe(250);
+    expect(Number(h.createManyCalls[0].data[0].quantity)).toBe(4); // 1000 / 250
+    expect(vi.mocked(prisma.priceCache.upsert)).toHaveBeenCalledTimes(1);
+    expect(h.warns.map((w) => w.event)).toContain("cron.investment.stale_price");
+  });
+
+  it("skips (no writes, no advance) when a stale price cannot be refetched", async () => {
+    h.prices = [stalePrice()]; // fetchStockPrices resolves to an empty map
+    h.dueRules = [rule()];
+
+    const result = await materializeDueInvestments(NOW);
+
+    expect(result).toEqual({ created: 0, rulesProcessed: 1 });
+    expect(h.createManyCalls).toHaveLength(0);
+    expect(h.holdingUpdates).toHaveLength(0);
+    expect(h.accountUpdates).toHaveLength(0);
+    expect(h.ruleUpdates).toHaveLength(0); // nextRunDate untouched → retries next run
+    expect(h.warns.map((w) => w.event)).toEqual([
+      "cron.investment.stale_price",
+      "cron.investment.skip_no_price",
+    ]);
+  });
+
+  it("uses the cached price without refetching while it is inside the window", async () => {
+    const { fetchStockPrices } = await import("@/lib/services/price-service");
+    vi.mocked(fetchStockPrices).mockClear();
+    h.prices = [
+      { ...freshPrice(), updatedAt: new Date(NOW.getTime() - DCA_PRICE_MAX_AGE_MS + 1000) },
+    ];
+    h.dueRules = [rule()];
+
+    const result = await materializeDueInvestments(NOW);
+
+    expect(result).toEqual({ created: 1, rulesProcessed: 1 });
+    expect(Number(h.createManyCalls[0].data[0].unitPrice)).toBe(200);
+    expect(vi.mocked(fetchStockPrices)).not.toHaveBeenCalled();
+    expect(h.warns).toHaveLength(0);
+  });
+
   it("skips (no writes, no advance) when the cross-currency rate is unresolvable", async () => {
     // TWD account buying a USD-priced stock, but the rate map is empty.
     h.rates = new Map();
-    h.prices = [{ symbol: "NVDA", price: 200, currency: "USD" }];
+    h.prices = [freshPrice()];
     h.dueRules = [rule({ amount: 30000, account: { currency: "TWD" } })];
     const result = await materializeDueInvestments(d("2026-06-14"));
 
@@ -264,6 +357,8 @@ describe("materializeDueInvestments", () => {
     expect(result.created).toBe(1);
     expect(Number(h.holdingUpdates[0].data.quantity.increment)).toBe(5); // 5 * 1
     expect(Number(h.accountUpdates[0].data.cashBalance.decrement)).toBe(1000);
+    // Per-row cashDebit is the per-occurrence amount, never the scaled total.
+    expect(h.createManyCalls[0].data.every((row) => Number(row.cashDebit) === 1000)).toBe(true);
   });
 
   it("does not create a holding or reactivate a rule disabled after price resolution", async () => {

@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 import { toDbMoneyDelta } from "@/lib/services/balance";
+import { getFreshExchangeRates } from "@/lib/services/exchange-rate-service";
 
 const h = vi.hoisted(() => ({
   account: null as Record<string, unknown> | null,
@@ -11,12 +13,22 @@ const h = vi.hoisted(() => ({
   holdingTransactionDeleteManyCount: 1,
   holdingUpdateManyCount: 1,
   transactionRows: [] as Record<string, unknown>[],
+  exchangeRates: new Map<string, number>(),
   calls: [] as Array<{ op: string; args?: Record<string, unknown> }>,
 }));
 
 vi.mock("next/cache", () => ({
   revalidateTag: vi.fn(),
+  cacheLife: vi.fn(),
+  cacheTag: vi.fn(),
 }));
+
+// Keep `resolveRate` real (it is pure); only the DB read is stubbed so the
+// cross-currency reversal is exercised through the production resolver.
+vi.mock("@/lib/services/exchange-rate-service", async (importActual) => {
+  const actual = await importActual<typeof import("@/lib/services/exchange-rate-service")>();
+  return { ...actual, getFreshExchangeRates: vi.fn(async () => h.exchangeRates) };
+});
 
 vi.mock("@/lib/api-handler", () => ({
   withAuth:
@@ -126,7 +138,9 @@ describe("account ledger routes", () => {
     h.holdingTransactionDeleteManyCount = 1;
     h.holdingUpdateManyCount = 1;
     h.transactionRows = [];
+    h.exchangeRates = new Map();
     h.calls = [];
+    vi.mocked(getFreshExchangeRates).mockClear();
   });
 
   it("serializes holding transaction unitPrice as number or null", async () => {
@@ -254,6 +268,17 @@ describe("account ledger routes", () => {
     expect(h.calls).toEqual([]);
   });
 
+  it("rejects account type changes without writing", async () => {
+    const { PATCH } = await import("@/app/api/accounts/[id]/route");
+
+    const response = await PATCH(jsonRequest("PATCH", { type: "LIABILITY" }), {
+      params: Promise.resolve({ id: "acc1" }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(h.calls).toEqual([]);
+  });
+
   it("records manual account balance edits atomically and strips note from account data", async () => {
     const { PATCH } = await import("@/app/api/accounts/[id]/route");
 
@@ -296,6 +321,9 @@ describe("account ledger routes", () => {
       id: "tx1",
       type: "BUY",
       quantity: 10,
+      recurringId: null,
+      materializedAt: null,
+      cashDebit: null,
       holding: { id: "holding1", accountId: "acc1", quantity: 10 },
     };
     const { PATCH } = await import("@/app/api/accounts/[id]/transactions/[transactionId]/route");
@@ -322,6 +350,9 @@ describe("account ledger routes", () => {
       id: "tx1",
       type: "BUY",
       quantity: 10,
+      recurringId: null,
+      materializedAt: null,
+      cashDebit: null,
       holding: { id: "holding1", accountId: "acc1", quantity: 10 },
     };
     const { PATCH } = await import("@/app/api/accounts/[id]/transactions/[transactionId]/route");
@@ -338,6 +369,9 @@ describe("account ledger routes", () => {
       id: "tx1",
       type: "BUY",
       quantity: 7,
+      recurringId: null,
+      materializedAt: null,
+      cashDebit: null,
       holding: { id: "holding1", accountId: "acc1", quantity: 7 },
     };
     const { DELETE } = await import("@/app/api/accounts/[id]/transactions/[transactionId]/route");
@@ -359,6 +393,227 @@ describe("account ledger routes", () => {
     expect(deleteWrite.where.id).toBe("holding1");
     expect(Number(deleteWrite.where.quantity.gte)).toBe(7);
     expect(Number(deleteWrite.data.quantity.decrement)).toBe(7);
+  });
+
+  // --- DCA (generated) buys: creation debited cash, so mutations must undo it ---
+
+  /**
+   * A buy as the materializer writes it today: durable provenance
+   * (`materializedAt`) plus `cashDebit`, the exact account-currency cash the
+   * row removed.
+   */
+  const generatedBuy = (overrides: Record<string, unknown> = {}) => ({
+    id: "tx1",
+    type: "BUY",
+    quantity: new Decimal(2),
+    unitPrice: new Decimal("101.25"),
+    recurringId: "rule1",
+    materializedAt: new Date("2026-06-14T21:30:00.000Z"),
+    cashDebit: new Decimal("202.50"),
+    holding: { id: "holding1", accountId: "acc1", currency: "USD", quantity: new Decimal(2) },
+    ...overrides,
+  });
+
+  /** A buy generated before the provenance columns existed: recurringId only. */
+  const legacyGeneratedBuy = (overrides: Record<string, unknown> = {}) =>
+    generatedBuy({ materializedAt: null, cashDebit: null, ...overrides });
+
+  /** A hand-entered buy: no provenance at all, and it never moved cash. */
+  const manualBuy = (overrides: Record<string, unknown> = {}) =>
+    generatedBuy({ recurringId: null, materializedAt: null, cashDebit: null, ...overrides });
+
+  const deleteTx = async () => {
+    const { DELETE } = await import("@/app/api/accounts/[id]/transactions/[transactionId]/route");
+    return DELETE(new Request("http://unit.test", { method: "DELETE" }), params());
+  };
+
+  const cashIncrement = () =>
+    Number(
+      (
+        h.calls.find((call) => call.op === "account.update")?.args?.data as {
+          cashBalance: { increment: unknown };
+        }
+      ).cashBalance.increment,
+    );
+
+  it("reverses the exact stored cash debit, without any FX lookup, on delete", async () => {
+    // Cross-currency on purpose: the holding is priced in TWD while the account
+    // is USD, yet nothing is converted — cashDebit already is account currency.
+    h.holdingTx = generatedBuy({
+      holding: { id: "holding1", accountId: "acc1", currency: "TWD", quantity: new Decimal(2) },
+    });
+
+    const response = await deleteTx();
+
+    expect(response.status).toBe(200);
+    expect(cashIncrement()).toBe(202.5);
+    // The rate loader must never be consulted: an exact reversal cannot depend
+    // on today's FX rate, and the empty rate map would otherwise fail closed.
+    expect(vi.mocked(getFreshExchangeRates)).not.toHaveBeenCalled();
+  });
+
+  it("reverses the stored debit after the recurring rule was deleted", async () => {
+    // recurringId is onDelete: SetNull, so only materializedAt still says this
+    // row was generated. Without it the debit would silently never come back.
+    h.holdingTx = generatedBuy({ recurringId: null });
+
+    const response = await deleteTx();
+
+    expect(response.status).toBe(200);
+    expect(cashIncrement()).toBe(202.5);
+    expect(vi.mocked(getFreshExchangeRates)).not.toHaveBeenCalled();
+  });
+
+  it("scales the stored debit by the quantity ratio when a generated buy is resized", async () => {
+    h.holdingTx = generatedBuy();
+    const { PATCH } = await import("@/app/api/accounts/[id]/transactions/[transactionId]/route");
+
+    let response = await PATCH(jsonRequest("PATCH", { id: "tx1", quantity: 3 }), params());
+    expect(response.status).toBe(200);
+    // Growing 2 -> 3 shares spends another half of the original 202.50.
+    expect(cashIncrement()).toBe(-101.25);
+
+    h.calls = [];
+    response = await PATCH(jsonRequest("PATCH", { id: "tx1", quantity: 1 }), params());
+    expect(response.status).toBe(200);
+    // Shrinking 2 -> 1 share gives that same half back.
+    expect(cashIncrement()).toBe(101.25);
+    expect(vi.mocked(getFreshExchangeRates)).not.toHaveBeenCalled();
+  });
+
+  it("writes the resized debit back so a later delete reverses the resized amount", async () => {
+    h.holdingTx = generatedBuy();
+    const { PATCH } = await import("@/app/api/accounts/[id]/transactions/[transactionId]/route");
+
+    const response = await PATCH(jsonRequest("PATCH", { id: "tx1", quantity: 3 }), params());
+    expect(response.status).toBe(200);
+    const write = h.calls.find((call) => call.op === "holdingTransaction.updateMany")?.args
+      ?.data as { cashDebit?: unknown };
+    // 202.50 for 2 shares becomes 303.75 for 3 — the 202.50 already out plus
+    // the 101.25 this resize just spent.
+    expect(Number(write.cashDebit)).toBe(303.75);
+
+    // Deleting the resized row must now give all of it back.
+    h.holdingTx = generatedBuy({ quantity: new Decimal(3), cashDebit: new Decimal("303.75") });
+    h.calls = [];
+    expect((await deleteTx()).status).toBe(200);
+    expect(cashIncrement()).toBe(303.75);
+  });
+
+  it("leaves a legacy row's null debit alone when it is resized", async () => {
+    h.holdingTx = legacyGeneratedBuy({ unitPrice: new Decimal(100) });
+    const { PATCH } = await import("@/app/api/accounts/[id]/transactions/[transactionId]/route");
+
+    const response = await PATCH(jsonRequest("PATCH", { id: "tx1", quantity: 3 }), params());
+
+    expect(response.status).toBe(200);
+    const write = h.calls.find((call) => call.op === "holdingTransaction.updateMany")?.args
+      ?.data as Record<string, unknown>;
+    // Nothing stored to keep in step: that path re-derives from quantity.
+    expect(write).not.toHaveProperty("cashDebit");
+  });
+
+  it("fails closed with 409 when a stored debit cannot be scaled by a zero quantity", async () => {
+    h.holdingTx = generatedBuy({ quantity: new Decimal(0) });
+    const { PATCH } = await import("@/app/api/accounts/[id]/transactions/[transactionId]/route");
+
+    const response = await PATCH(jsonRequest("PATCH", { id: "tx1", quantity: 3 }), params());
+
+    expect(response.status).toBe(409);
+    expect(h.calls).toEqual([]);
+  });
+
+  it("credits back a legacy generated buy's cash approximated from unitPrice", async () => {
+    h.holdingTx = legacyGeneratedBuy();
+
+    const response = await deleteTx();
+
+    expect(response.status).toBe(200);
+    // 2 shares x 101.25, holding currency == account currency so no conversion.
+    expect(cashIncrement()).toBe(202.5);
+  });
+
+  it("converts a legacy cross-currency generated buy at today's rate", async () => {
+    h.exchangeRates = new Map([["TWD_USD", 0.03125]]);
+    h.holdingTx = legacyGeneratedBuy({
+      unitPrice: new Decimal(100),
+      holding: { id: "holding1", accountId: "acc1", currency: "TWD", quantity: new Decimal(2) },
+    });
+
+    const response = await deleteTx();
+
+    expect(response.status).toBe(200);
+    // 2 x 100 TWD = 200 TWD -> 6.25 USD at 0.03125. Approximate by
+    // construction: the occurrence-day rate is gone for a pre-cashDebit row.
+    expect(cashIncrement()).toBe(6.25);
+    // Counterpart to the exact path's "never called": this legacy row is the
+    // only kind of reversal that may read a rate at all.
+    expect(vi.mocked(getFreshExchangeRates)).toHaveBeenCalled();
+  });
+
+  it("fails closed with 409 when a legacy generated buy's rate cannot be resolved", async () => {
+    h.holdingTx = legacyGeneratedBuy({
+      holding: { id: "holding1", accountId: "acc1", currency: "TWD", quantity: new Decimal(2) },
+    });
+
+    const response = await deleteTx();
+
+    expect(response.status).toBe(409);
+    expect(h.calls).toEqual([]);
+  });
+
+  it("fails closed with 409 when a legacy generated buy has no unitPrice", async () => {
+    h.holdingTx = legacyGeneratedBuy({ unitPrice: null });
+
+    const response = await deleteTx();
+
+    expect(response.status).toBe(409);
+    expect(h.calls).toEqual([]);
+  });
+
+  it("applies a proportional cash delta when a legacy generated buy is resized", async () => {
+    h.holdingTx = legacyGeneratedBuy({ unitPrice: new Decimal(100) });
+    const { PATCH } = await import("@/app/api/accounts/[id]/transactions/[transactionId]/route");
+
+    let response = await PATCH(jsonRequest("PATCH", { id: "tx1", quantity: 3 }), params());
+    expect(response.status).toBe(200);
+    // Growing 2 -> 3 shares spends another 100.
+    expect(cashIncrement()).toBe(-100);
+
+    h.calls = [];
+    response = await PATCH(jsonRequest("PATCH", { id: "tx1", quantity: 1 }), params());
+    expect(response.status).toBe(200);
+    // Shrinking 2 -> 1 share gives 100 back.
+    expect(cashIncrement()).toBe(100);
+  });
+
+  it("leaves cash untouched when deleting a manual buy", async () => {
+    h.holdingTx = manualBuy();
+
+    const response = await deleteTx();
+
+    expect(response.status).toBe(200);
+    expect(h.calls.some((call) => call.op === "account.update")).toBe(false);
+  });
+
+  it("leaves cash untouched when resizing a manual buy", async () => {
+    h.holdingTx = manualBuy();
+    const { PATCH } = await import("@/app/api/accounts/[id]/transactions/[transactionId]/route");
+
+    const response = await PATCH(jsonRequest("PATCH", { id: "tx1", quantity: 3 }), params());
+
+    expect(response.status).toBe(200);
+    expect(h.calls.some((call) => call.op === "account.update")).toBe(false);
+  });
+
+  it("rejects changing the type of a generated buy without writing", async () => {
+    h.holdingTx = generatedBuy();
+    const { PATCH } = await import("@/app/api/accounts/[id]/transactions/[transactionId]/route");
+
+    const response = await PATCH(jsonRequest("PATCH", { id: "tx1", type: "SELL" }), params());
+
+    expect(response.status).toBe(400);
+    expect(h.calls).toEqual([]);
   });
 
   it("edits a cash transaction with a guarded balance delta", async () => {

@@ -466,6 +466,7 @@
     "movementSectionSubtitle": "How net worth changed, and how cash flow explains it.",
     "compositionSectionTitle": "Composition",
     "compositionSectionSubtitle": "Where value sits, and which accounts drove the selected range.",
+    "unattributedAccountsNote": "Some snapshots in this range include accounts that were later deleted. The category and attribution charts omit them; the net-worth trend keeps their stored totals.",
     "seriesAssets": "Assets",
     "seriesLiabilities": "Liabilities",
     "seriesNetWorth": "Net worth",

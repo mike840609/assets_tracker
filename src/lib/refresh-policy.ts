@@ -29,5 +29,14 @@ export const FX_RATES_STALE_MS = 48 * 60 * 60 * 1000;
  */
 export const SNAPSHOT_STALE_MS = 48 * 60 * 60 * 1000;
 
+/**
+ * Refuse to price a recurring-investment (DCA) buy from a cached price older
+ * than this. The daily cron refreshes held symbols immediately before
+ * materializing, so ~24h is the normal age; 48h means that symbol's refresh
+ * failed at least once (rate limit, delisting) and the cached price can no
+ * longer stand in for today's.
+ */
+export const DCA_PRICE_MAX_AGE_MS = 48 * 60 * 60 * 1000;
+
 /** Minimum client-side cooldown after any manual refresh attempt. */
 export const CLIENT_REFRESH_COOLDOWN_MS = 15_000;

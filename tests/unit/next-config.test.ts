@@ -1,29 +1,20 @@
 import { describe, expect, it } from "vitest";
 import nextConfig from "../../next.config";
 
-describe("Sentry tunnel configuration", () => {
-  it("adds a randomized same-origin regional envelope rewrite", async () => {
-    expect(nextConfig.rewrites).toBeTypeOf("function");
+describe("Sentry browser transport", () => {
+  it("does not add a same-origin Sentry tunnel rewrite", () => {
+    expect(nextConfig.rewrites).toBeUndefined();
+  });
 
-    const rewrites = await nextConfig.rewrites?.();
-    expect(Array.isArray(rewrites)).toBe(true);
-    if (!Array.isArray(rewrites)) {
-      throw new Error("Sentry tunnel rewrites are not configured as an array");
-    }
+  it("allows direct Sentry ingest hosts in the content security policy", async () => {
+    expect(nextConfig.headers).toBeTypeOf("function");
 
-    const regionalTunnel = rewrites.find(
-      (rewrite) =>
-        rewrite.destination ===
-        "https://o:orgid.ingest.:region.sentry.io/api/:projectid/envelope/?hsts=0",
-    );
+    const rules = await nextConfig.headers?.();
+    const appRule = rules?.find((rule) => rule.source === "/:path*");
+    const csp = appRule?.headers.find((header) => header.key === "Content-Security-Policy")?.value;
 
-    expect(regionalTunnel).toMatchObject({
-      has: [
-        { type: "query", key: "o", value: "(?<orgid>\\d*)" },
-        { type: "query", key: "p", value: "(?<projectid>\\d*)" },
-        { type: "query", key: "r", value: "(?<region>[a-z]{2})" },
-      ],
-    });
-    expect(regionalTunnel?.source).toMatch(/^\/[a-z0-9]{8}\(\/\?\)$/);
+    expect(csp).toContain("https://*.ingest.sentry.io");
+    expect(csp).toContain("https://*.ingest.us.sentry.io");
+    expect(csp).toContain("https://*.ingest.de.sentry.io");
   });
 });

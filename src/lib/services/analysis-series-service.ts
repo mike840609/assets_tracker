@@ -60,6 +60,9 @@ export function computeAnalysisRangeSeries(
   const cumulativeGrowth = buildCumulativeGrowth(cashFlowBuckets);
 
   const filteredRawSnapshots = rawHistory.snapshots.filter((s) => s.date >= rangeStartIso);
+  const hasUnattributedAccounts = rawHistory.unattributedDates.some(
+    (date) => date >= rangeStartIso,
+  );
 
   const realCategory = aggregateCategoryHistory(filteredRawSnapshots, rawHistory.accounts);
   const categoryByKey = new Map(realCategory.map((c) => [c.monthKey, c]));
@@ -99,6 +102,7 @@ export function computeAnalysisRangeSeries(
     investmentReturnPct,
     returnTrend,
     rangeStartIso,
+    hasUnattributedAccounts,
   };
 }
 
