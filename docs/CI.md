@@ -31,13 +31,16 @@ Pushes to `master` run the production build path and the self-contained Playwrig
 
 Use `[skip ci]` only for changes that cannot affect application behavior, configuration, deployment, migrations, or generated output. GitHub and Vercel may apply their own path filters independently.
 
-Vercel skips its own build for commits that touch only `*.md`, via `ignoreCommand` in `vercel.json`. Three details in that command are load-bearing:
+Vercel skips its own build for commits that touch only `*.md`, via `ignoreCommand` in `vercel.json`. Four details in that command are load-bearing:
 
 - The base is `$VERCEL_GIT_PREVIOUS_SHA`, the last successfully deployed commit, not `HEAD^`. A push of several commits produces one deployment for the head commit only, so an `HEAD^` comparison would skip the build whenever the last commit of the push happened to be documentation — losing the deployment and its preview check for code that was never deployed.
-- `$VERCEL_GIT_PREVIOUS_SHA` stays double-quoted. It is empty on a branch's first deployment; unquoted, the command would degrade to `git diff --quiet HEAD`, compare against a clean working tree, exit 0, and silently skip every build.
+- `$VERCEL_GIT_PREVIOUS_SHA` stays double-quoted. It is empty on a branch's first deployment; unquoted, the command would degrade there to `git diff --quiet HEAD`, compare against a clean working tree, exit 0, and skip that build with nothing to explain why.
 - `|| exit 1` normalizes git's error codes. Vercel defines only 0 (skip) and 1 (build), and every failure mode above — empty base, a SHA missing from the shallow clone — must fall through to building.
+- An empty diff builds. An empty commit and a redeploy of the same SHA are the two habitual ways to force a deployment after an environment-variable change or a flaky build; without the leading guard both would produce no diff, exit 0, and silently do nothing.
 
 A skipped build produces no deployment, so a documentation-only pull request has no preview and no `vercel-preview-e2e.yml` run. The required `Playwright smoke tests` check from `e2e.yml` runs on `pull_request` and is unaffected.
+
+The rule assumes no `*.md` file is ever served or read by the application. Nothing under `public/` may be markdown, and no build step may read one.
 
 Workflow definitions:
 

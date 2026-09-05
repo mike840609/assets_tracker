@@ -56,6 +56,9 @@ function runIgnoreCommand(previousSha: string) {
 beforeAll(() => {
   repo = fs.mkdtempSync(path.join(os.tmpdir(), "ignore-command-"));
   git("init", "-q");
+  // Every test resolves HEAD, so none of them may depend on an earlier one
+  // having committed first — `vitest run -t "<name>"` has to work too.
+  commit({ "src/seed.ts": "export const seed = 0;\n" }, "seed");
 });
 
 afterAll(() => {
@@ -89,5 +92,11 @@ describe("vercel.json ignoreCommand", () => {
 
   it("builds when the previous SHA is empty, as on a branch's first deployment", () => {
     expect(runIgnoreCommand("")).toBe(RUN_BUILD);
+  });
+
+  it("builds when nothing changed, as on an empty commit or a redeploy of the same SHA", () => {
+    // Both are the habitual ways to force a deployment after an environment
+    // change. An empty diff must not read as "nothing to do".
+    expect(runIgnoreCommand(git("rev-parse", "HEAD"))).toBe(RUN_BUILD);
   });
 });
