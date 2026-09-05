@@ -32,11 +32,17 @@ jobs:
               { owner, repo, commit_sha: deployment.sha },
             );
             const trustedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
-            const trustedPullRequest = pullRequests.find(
-              (pullRequest) =>
-                pullRequest.head.repo?.full_name === `${owner}/${repo}` &&
-                trustedAssociations.has(pullRequest.author_association),
-            );
+            const isTrusted = (pullRequest) =>
+              pullRequest.head.repo?.full_name === `${owner}/${repo}` &&
+              trustedAssociations.has(pullRequest.author_association);
+            // A commit is associated with every pull request stacked on top of
+            // it, in an order the API does not document. Vercel deploys a branch
+            // head, so prefer the pull request this commit heads; picking by
+            // order would put a stacked pair in one cancellation group.
+            const trustedPullRequest =
+              pullRequests.find(
+                (pullRequest) => pullRequest.head.sha === deployment.sha && isTrusted(pullRequest),
+              ) ?? pullRequests.find(isTrusted);
             const fromVercel =
               deployment.creator?.login === "vercel[bot]" &&
               deploymentStatus.creator?.login === "vercel[bot]";
@@ -115,9 +121,13 @@ jobs:
 
       - name: Run deployment check
         # Preview verifies the deployment itself: sign-in, landing, dashboard, and
-        # the create-account -> add-holding write path (tests/e2e/smoke.spec.ts).
+        # the create-account -> add-holding write path (smoke.spec.ts), plus the
+        # social preview, whose VERCEL_URL branch localhost cannot reach.
         # Full Desktop + Mobile regression stays in e2e.yml on localhost.
-        run: pnpm playwright test --project=chromium tests/e2e/smoke.spec.ts
+        run: >-
+          pnpm playwright test --project=chromium
+          tests/e2e/smoke.spec.ts
+          tests/e2e/landing-social-preview.spec.ts
         env:
           PLAYWRIGHT_TEST_BASE_URL: ${{ needs.authorize.outputs.url }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
