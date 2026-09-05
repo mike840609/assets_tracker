@@ -12,9 +12,13 @@ import {
 import { SUPPORTED_LOCALES } from "@/i18n/config";
 import { getCalendarRangeLength, parseDateOnly } from "@/lib/calendar-date";
 import { CALENDAR_ENTRY_CATEGORIES } from "@/lib/types";
+import { CURRENCIES } from "@/lib/currencies";
 
 const OCC_SHAPE = /^[A-Z][A-Z0-9.\-]{0,5}\d{6}[CP]\d{8}$/;
 const supportedLocaleSchema = z.enum(SUPPORTED_LOCALES);
+const supportedCurrencySchema = z.enum(
+  CURRENCIES.map((currency) => currency.code) as [string, ...string[]],
+);
 // Money and quantity columns are Decimal(28, 8) — 20 integer digits — so the
 // database is no longer what binds. Every amount crosses the wire as a JSON
 // `number`, and an IEEE double keeps ~15.95 significant digits. 1e15 is a
@@ -144,11 +148,26 @@ export const snapshotsQuerySchema = z.object({
   currency: z.string().length(3).default("USD"),
 });
 
-export const updateSettingsSchema = z.object({
-  baseCurrency: z.string().length(3).optional(),
-  secondaryCurrency: z.string().length(3).nullable().optional(),
-  locale: supportedLocaleSchema.optional(),
-});
+export const updateSettingsSchema = z
+  .object({
+    baseCurrency: z.string().length(3).optional(),
+    secondaryCurrency: supportedCurrencySchema.nullable().optional(),
+    locale: supportedLocaleSchema.optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.baseCurrency !== undefined &&
+      data.secondaryCurrency !== undefined &&
+      data.secondaryCurrency !== null &&
+      data.baseCurrency === data.secondaryCurrency
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["secondaryCurrency"],
+        message: "Secondary currency must differ from base currency",
+      });
+    }
+  });
 
 export const updateSnapshotAnnotationSchema = z.object({
   label: z.string().max(80).optional().nullable(),
@@ -486,16 +505,25 @@ const importHoldingTransactionUnitPrice = decimalSchema
     message: "Buy unit price must be positive",
   });
 
+const importSettingsSchema = z
+  .object({
+    baseCurrency: z.string().length(3),
+    secondaryCurrency: supportedCurrencySchema.nullable().optional(),
+    locale: supportedLocaleSchema,
+  })
+  .superRefine((data, ctx) => {
+    if (data.secondaryCurrency && data.secondaryCurrency === data.baseCurrency) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["secondaryCurrency"],
+        message: "Secondary currency must differ from base currency",
+      });
+    }
+  });
+
 export const dataImportSchema = z.object({
   version: z.string(),
-  settings: z
-    .object({
-      baseCurrency: z.string().length(3),
-      secondaryCurrency: z.string().length(3).nullable().optional(),
-      locale: supportedLocaleSchema,
-    })
-    .optional()
-    .nullable(),
+  settings: importSettingsSchema.optional().nullable(),
   accounts: z
     .array(
       z.object({

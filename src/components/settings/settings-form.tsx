@@ -63,15 +63,19 @@ function CurrencyPicker({
   locale,
   onChange,
   exclude,
+  allowNone,
+  onNoneChange,
 }: {
   value: string;
   locale: Locale;
   onChange: (value: string) => void;
   exclude?: string;
+  allowNone?: boolean;
+  onNoneChange?: () => void;
 }) {
   const t = useTranslations("settings");
   const [open, setOpen] = useState(false);
-  const selectedCurrency = CURRENCIES.find((currency) => currency.code === value) ?? CURRENCIES[0];
+  const selectedCurrency = CURRENCIES.find((currency) => currency.code === value);
   const defaultCode = getLocaleDefaultCurrency(locale);
   const available = CURRENCIES.filter((currency) => currency.code !== exclude);
   const recommended = available.filter(
@@ -104,10 +108,12 @@ function CurrencyPicker({
         variant="outline"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        className="h-11 md:h-8 w-full justify-between gap-3 sm:w-[240px]"
+        className="h-11 md:h-8 w-full max-w-full justify-between gap-3 sm:w-[200px]"
       >
         <span className="min-w-0 truncate text-left font-normal">
-          {formatCurrencyLabel(selectedCurrency)}
+          {selectedCurrency
+            ? formatCurrencyLabel(selectedCurrency)
+            : value || t("secondaryCurrencyOff")}
         </span>
         <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       </Button>
@@ -121,6 +127,20 @@ function CurrencyPicker({
         <CommandInput placeholder={t("currencySearchPlaceholder")} />
         <CommandList>
           <CommandEmpty>{t("currencySearchEmpty")}</CommandEmpty>
+          {allowNone && (
+            <CommandGroup>
+              <CommandItem
+                value={t("secondaryCurrencyOff")}
+                data-checked={!value ? "true" : undefined}
+                onSelect={() => {
+                  onNoneChange?.();
+                  setOpen(false);
+                }}
+              >
+                {t("secondaryCurrencyOff")}
+              </CommandItem>
+            </CommandGroup>
+          )}
           <CommandGroup heading={t("recommendedCurrency")}>
             {recommended.map(renderCurrencyItem)}
           </CommandGroup>
@@ -264,7 +284,7 @@ export function SettingsForm({
           <CardContent className="p-0">
             {/* Currency Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
-              <div className="space-y-1">
+              <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-sm font-medium">{t("settings.baseCurrency")}</p>
                 <p className="text-sm text-muted-foreground">
                   {t("settings.baseCurrencyDescription")}
@@ -281,61 +301,35 @@ export function SettingsForm({
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
-              <div className="space-y-1">
+              <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-sm font-medium">{t("settings.secondaryCurrency")}</p>
                 <p className="text-sm text-muted-foreground">
                   {t("settings.secondaryCurrencyDescription")}
                 </p>
               </div>
-              <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={secondaryCurrency !== null}
-                  aria-label={t("settings.secondaryCurrency")}
-                  onClick={() =>
-                    setSecondaryCurrency(
-                      secondaryCurrency === null
-                        ? (CURRENCIES.find((c) => c.code !== currency)?.code ?? "USD")
-                        : null,
-                    )
-                  }
-                  className="relative h-11 w-11 shrink-0 rounded-full bg-transparent p-0 md:h-8"
-                >
-                  <span
-                    className={`absolute left-0 top-1/2 h-6 w-11 -translate-y-1/2 rounded-full ${secondaryCurrency ? "bg-primary" : "bg-muted-foreground/30"}`}
-                  />
-                  <span
-                    className={`absolute top-1/2 size-4 -translate-y-1/2 rounded-full bg-background transition-transform ${secondaryCurrency ? "translate-x-6" : "translate-x-1"}`}
-                  />
-                </button>
-                {secondaryCurrency && (
-                  <div className="w-full min-w-0 sm:w-auto">
-                    <CurrencyPicker
-                      value={secondaryCurrency}
-                      locale={locale}
-                      exclude={currency}
-                      onChange={setSecondaryCurrency}
-                    />
-                  </div>
-                )}
+              <div className="w-full min-w-0 sm:w-[200px] sm:shrink-0">
+                <CurrencyPicker
+                  value={secondaryCurrency ?? ""}
+                  locale={locale}
+                  exclude={currency}
+                  allowNone
+                  onChange={setSecondaryCurrency}
+                  onNoneChange={() => setSecondaryCurrency(null)}
+                />
               </div>
             </div>
 
             {/* Language Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
-              <div className="space-y-1">
+              <div className="min-w-0 flex-1 space-y-1">
                 <label htmlFor="language-select" className="text-sm font-medium">
                   {t("settings.language")}
                 </label>
                 <p className="text-sm text-muted-foreground">{t("settings.languageDescription")}</p>
               </div>
-              <div className="flex items-center gap-2 sm:w-auto w-full">
+              <div className="flex w-full items-center gap-2 sm:w-[200px] sm:shrink-0">
                 <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
-                  <SelectTrigger
-                    id="language-select"
-                    className="h-11 md:h-8 flex-1 sm:flex-none sm:w-[240px]"
-                  >
+                  <SelectTrigger id="language-select" className="h-11 md:h-8 w-full sm:w-[200px]">
                     <SelectValue>{t(`languages.${locale}`)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>

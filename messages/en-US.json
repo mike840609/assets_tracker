@@ -187,6 +187,7 @@
     "baseCurrencyDescription": "Used for portfolio totals and converted values",
     "secondaryCurrency": "Secondary currency",
     "secondaryCurrencyDescription": "Show dashboard totals in an additional currency",
+    "secondaryCurrencyOff": "Off",
     "currencySearchTitle": "Choose currency",
     "currencySearchDescription": "Search by currency code, name, or symbol.",
     "currencySearchPlaceholder": "Search currencies...",

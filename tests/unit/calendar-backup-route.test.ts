@@ -682,6 +682,28 @@ describe("Calendar whole-app backup", () => {
     );
   });
 
+  it("rejects an imported secondary currency equal to the base currency", async () => {
+    const response = await importBackup({
+      version: "1.5",
+      settings: { baseCurrency: "USD", secondaryCurrency: "USD", locale: "en-US" },
+      accounts: [],
+    });
+
+    expect(response.status).toBe(400);
+    expect(h.tx.setting.upsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects an imported secondary currency outside the supported picker list", async () => {
+    const response = await importBackup({
+      version: "1.5",
+      settings: { baseCurrency: "USD", secondaryCurrency: "IDR", locale: "en-US" },
+      accounts: [],
+    });
+
+    expect(response.status).toBe(400);
+    expect(h.tx.setting.upsert).not.toHaveBeenCalled();
+  });
+
   it("logs a resolved total price-refresh failure after import warm-up", async () => {
     h.priceRefreshResult = { outcome: "total_failure", errors: ["Yahoo Finance unavailable"] };
     const { log } = await import("@/lib/logger");
