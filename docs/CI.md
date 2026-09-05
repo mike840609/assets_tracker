@@ -44,7 +44,7 @@ Vercel skips its own build for commits that touch only `*.md`, via `ignoreComman
 
 Any code change between the usable base and `HEAD` builds, even if the latest commit itself changes only Markdown. This protects multi-commit pushes from skipping code that has never been deployed.
 
-A skipped build produces no deployment, so a documentation-only pull request has no preview and no `vercel-preview-e2e.yml` run. The required `Playwright smoke tests` check from `e2e.yml` runs on `pull_request` and is unaffected.
+When the skip conditions hold, that update creates no new preview deployment or `vercel-preview-e2e.yml` run; an older preview may remain. A documentation-only pull request's first branch deployment still builds when no usable previous SHA exists. The required `Playwright smoke tests` check from `e2e.yml` runs on `pull_request` and is unaffected.
 
 The rule assumes no `*.md` file is ever served or read by the application. Nothing under `public/` may be markdown, and no build step may read one.
 

@@ -169,6 +169,7 @@ jobs:
         run: pnpm exec playwright install-deps chromium
 
       - name: Revalidate preview commit
+        id: final-freshness
         if: steps.freshness.outputs.fresh == 'true'
         uses: actions/github-script@v8
         env:
@@ -185,14 +186,17 @@ jobs:
               pullRequest.state === "open" &&
               pullRequest.head.sha === deploymentSha &&
               pullRequest.head.repo?.full_name === `${owner}/${repo}`;
-            if (!fresh) {
-              core.setFailed(
-                "Skipping preview E2E because the pull request is no longer open at the deployed commit.",
-              );
-            }
+            core.setOutput("fresh", String(fresh));
+            core.notice(
+              fresh
+                ? "Preview commit is still current; running deployment checks."
+                : "Skipping preview E2E because the pull request is no longer open at the deployed commit.",
+            );
 
       - name: Run deployment check
-        if: steps.freshness.outputs.fresh == 'true'
+        if: >-
+          steps.freshness.outputs.fresh == 'true' &&
+          steps.final-freshness.outputs.fresh == 'true'
         # Preview verifies the deployment itself: sign-in, landing, dashboard, and
         # the create-account -> add-holding write path (smoke.spec.ts), plus the
         # social preview, whose VERCEL_URL branch localhost cannot reach.

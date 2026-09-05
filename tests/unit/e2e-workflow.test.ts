@@ -257,16 +257,15 @@ describe("E2E CI contract", () => {
     expect(result.outputs.get("fresh")).toBe("false");
   });
 
-  test("fails the final gate when the selected pull request head changes during setup", async () => {
+  test("cleanly skips the final gate when the selected pull request head changes during setup", async () => {
     const result = await runPreviewScript("Revalidate preview commit", {
       deploymentSha: "deploy-sha",
       prNumber: "17",
       refreshed: { 17: pullRequest(17, "new-sha") },
     });
 
-    expect(result.failures).toEqual([
-      "Skipping preview E2E because the pull request is no longer open at the deployed commit.",
-    ]);
+    expect(result.outputs.get("fresh")).toBe("false");
+    expect(result.failures).toEqual([]);
   });
 
   test("serializes every pending run per pull request without cancellation", () => {
@@ -289,6 +288,29 @@ describe("E2E CI contract", () => {
     expect(entryGate).toBeLessThan(checkout);
     expect(finalGate).toBeGreaterThan(checkout);
     expect(finalGate).toBeLessThan(playwright);
+    expect(e2eJob.slice(finalGate, playwright)).toContain("id: final-freshness");
+    expect(e2eJob.slice(playwright, e2eJob.indexOf("- name: Upload Playwright report"))).toContain(
+      "steps.final-freshness.outputs.fresh == 'true'",
+    );
+
+    const costlySetupSteps = [
+      "- uses: actions/checkout@v5",
+      "- uses: pnpm/action-setup@v4",
+      "- name: Set up Node.js",
+      "- name: Install dependencies",
+      "- name: Resolve Playwright version",
+      "- name: Cache Playwright browser",
+      "- name: Install Playwright browser (cache miss)",
+      "- name: Install Playwright system dependencies (cache hit)",
+    ];
+    for (const marker of costlySetupSteps) {
+      const stepStart = e2eJob.indexOf(marker);
+      expect(stepStart).toBeGreaterThan(-1);
+      const nextStep = e2eJob.indexOf("\n      - ", stepStart + marker.length);
+      expect(e2eJob.slice(stepStart, nextStep)).toContain(
+        "steps.freshness.outputs.fresh == 'true'",
+      );
+    }
   });
 
   test("runs the serial PostgreSQL integration suite against a dedicated test database", () => {
