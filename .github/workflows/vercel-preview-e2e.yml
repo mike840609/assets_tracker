@@ -7,10 +7,6 @@ permissions:
   contents: read
   pull-requests: read
 
-concurrency:
-  group: vercel-preview-e2e-${{ github.event.deployment.sha }}
-  cancel-in-progress: true
-
 jobs:
   authorize:
     name: Authorize preview commit
@@ -21,6 +17,7 @@ jobs:
     outputs:
       trusted: ${{ steps.trust.outputs.trusted }}
       url: ${{ steps.trust.outputs.url }}
+      pr: ${{ steps.trust.outputs.pr }}
     steps:
       - name: Allow only trusted same-repository pull requests
         id: trust
@@ -35,11 +32,17 @@ jobs:
               { owner, repo, commit_sha: deployment.sha },
             );
             const trustedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
-            const trustedPullRequest = pullRequests.some(
-              (pullRequest) =>
-                pullRequest.head.repo?.full_name === `${owner}/${repo}` &&
-                trustedAssociations.has(pullRequest.author_association),
-            );
+            const isTrusted = (pullRequest) =>
+              pullRequest.head.repo?.full_name === `${owner}/${repo}` &&
+              trustedAssociations.has(pullRequest.author_association);
+            // A commit is associated with every pull request stacked on top of
+            // it, in an order the API does not document. Vercel deploys a branch
+            // head, so prefer the pull request this commit heads; picking by
+            // order would put a stacked pair in one cancellation group.
+            const trustedPullRequest =
+              pullRequests.find(
+                (pullRequest) => pullRequest.head.sha === deployment.sha && isTrusted(pullRequest),
+              ) ?? pullRequests.find(isTrusted);
             const fromVercel =
               deployment.creator?.login === "vercel[bot]" &&
               deploymentStatus.creator?.login === "vercel[bot]";
@@ -56,7 +59,7 @@ jobs:
               previewUrl.port === "" &&
               previewUrl.username === "" &&
               previewUrl.password === "";
-            const trusted = trustedPullRequest && fromVercel && trustedUrl;
+            const trusted = Boolean(trustedPullRequest) && fromVercel && trustedUrl;
             core.notice(
               trusted
                 ? `Running preview E2E against ${previewUrl.origin}.`
@@ -64,11 +67,18 @@ jobs:
             );
             core.setOutput("trusted", String(trusted));
             core.setOutput("url", trusted ? previewUrl.origin : "");
+            // Grouping key for the e2e job: a new commit on the same pull request
+            // must cancel the superseded run, and separate pull requests must not
+            // cancel each other. deployment.ref is the SHA here, so it cannot serve.
+            core.setOutput("pr", trusted ? String(trustedPullRequest.number) : "");
 
   e2e:
     name: Playwright preview smoke tests
     needs: authorize
     if: needs.authorize.outputs.trusted == 'true'
+    concurrency:
+      group: vercel-preview-e2e-pr-${{ needs.authorize.outputs.pr }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -109,8 +119,15 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps chromium
 
-      - name: Run E2E tests
-        run: pnpm test:e2e
+      - name: Run deployment check
+        # Preview verifies the deployment itself: sign-in, landing, dashboard, and
+        # the create-account -> add-holding write path (smoke.spec.ts), plus the
+        # social preview, whose VERCEL_URL branch localhost cannot reach.
+        # Full Desktop + Mobile regression stays in e2e.yml on localhost.
+        run: >-
+          pnpm playwright test --project=chromium
+          tests/e2e/smoke.spec.ts
+          tests/e2e/landing-social-preview.spec.ts
         env:
           PLAYWRIGHT_TEST_BASE_URL: ${{ needs.authorize.outputs.url }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
