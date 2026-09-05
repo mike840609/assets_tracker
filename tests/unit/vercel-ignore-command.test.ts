@@ -94,6 +94,10 @@ describe("vercel.json ignoreCommand", () => {
     expect(runIgnoreCommand("")).toBe(RUN_BUILD);
   });
 
+  it("builds when the previous SHA is missing from the repository", () => {
+    expect(runIgnoreCommand("1111111111111111111111111111111111111111")).toBe(RUN_BUILD);
+  });
+
   it("builds when nothing changed, as on an empty commit or a redeploy of the same SHA", () => {
     // Both are the habitual ways to force a deployment after an environment
     // change. An empty diff must not read as "nothing to do".

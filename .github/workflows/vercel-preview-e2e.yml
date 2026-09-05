@@ -32,17 +32,31 @@ jobs:
               { owner, repo, commit_sha: deployment.sha },
             );
             const trustedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
-            const isTrusted = (pullRequest) =>
+            const isEligible = (pullRequest) =>
+              pullRequest.state === "open" &&
+              pullRequest.head.sha === deployment.sha &&
               pullRequest.head.repo?.full_name === `${owner}/${repo}` &&
               trustedAssociations.has(pullRequest.author_association);
             // A commit is associated with every pull request stacked on top of
-            // it, in an order the API does not document. Vercel deploys a branch
-            // head, so prefer the pull request this commit heads; picking by
-            // order would put a stacked pair in one cancellation group.
+            // it, in an order the API does not document. Only exact-head matches
+            // are candidates, and each is refreshed before authorization so a
+            // late deployment event cannot fall back to a stacked or advanced PR.
+            const candidateNumbers = [
+              ...new Set(
+                pullRequests
+                  .filter((pullRequest) => pullRequest.head.sha === deployment.sha)
+                  .map((pullRequest) => pullRequest.number),
+              ),
+            ];
+            const refreshedPullRequests = await Promise.all(
+              candidateNumbers.map(async (pull_number) => {
+                const response = await github.rest.pulls.get({ owner, repo, pull_number });
+                return response.data;
+              }),
+            );
+            const eligiblePullRequests = refreshedPullRequests.filter(isEligible);
             const trustedPullRequest =
-              pullRequests.find(
-                (pullRequest) => pullRequest.head.sha === deployment.sha && isTrusted(pullRequest),
-              ) ?? pullRequests.find(isTrusted);
+              eligiblePullRequests.length === 1 ? eligiblePullRequests[0] : undefined;
             const fromVercel =
               deployment.creator?.login === "vercel[bot]" &&
               deploymentStatus.creator?.login === "vercel[bot]";
@@ -67,9 +81,9 @@ jobs:
             );
             core.setOutput("trusted", String(trusted));
             core.setOutput("url", trusted ? previewUrl.origin : "");
-            // Grouping key for the e2e job: a new commit on the same pull request
-            // must cancel the superseded run, and separate pull requests must not
-            // cancel each other. deployment.ref is the SHA here, so it cannot serve.
+            // Grouping key for the e2e job: runs for one pull request serialize,
+            // while separate pull requests remain independent. deployment.ref is
+            // the SHA here, so it cannot serve.
             core.setOutput("pr", trusted ? String(trustedPullRequest.number) : "");
 
   e2e:
@@ -78,33 +92,64 @@ jobs:
     if: needs.authorize.outputs.trusted == 'true'
     concurrency:
       group: vercel-preview-e2e-pr-${{ needs.authorize.outputs.pr }}
-      cancel-in-progress: true
+      queue: max
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
+      - name: Check preview freshness before setup
+        id: freshness
+        uses: actions/github-script@v8
+        env:
+          DEPLOYMENT_SHA: ${{ github.event.deployment.sha }}
+          PR_NUMBER: ${{ needs.authorize.outputs.pr }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const deploymentSha = process.env.DEPLOYMENT_SHA;
+            const pull_number = Number(process.env.PR_NUMBER);
+            const response = await github.rest.pulls.get({ owner, repo, pull_number });
+            const pullRequest = response.data;
+            const fresh =
+              pullRequest.state === "open" &&
+              pullRequest.head.sha === deploymentSha &&
+              pullRequest.head.repo?.full_name === `${owner}/${repo}`;
+            core.setOutput("fresh", String(fresh));
+            core.notice(
+              fresh
+                ? "Preview commit is still current; continuing setup."
+                : "Skipping preview E2E because the pull request is no longer open at the deployed commit.",
+            );
+
       - uses: actions/checkout@v5
+        if: steps.freshness.outputs.fresh == 'true'
         with:
           ref: ${{ github.event.deployment.sha }}
 
       - uses: pnpm/action-setup@v4
+        if: steps.freshness.outputs.fresh == 'true'
 
       - name: Set up Node.js
+        if: steps.freshness.outputs.fresh == 'true'
         uses: actions/setup-node@v5
         with:
           node-version-file: ".nvmrc"
           cache: "pnpm"
 
       - name: Install dependencies
+        if: steps.freshness.outputs.fresh == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Resolve Playwright version
+        if: steps.freshness.outputs.fresh == 'true'
         id: playwright
         run: |
           version=$(node -p "require('@playwright/test/package.json').version")
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Cache Playwright browser
+        if: steps.freshness.outputs.fresh == 'true'
         id: playwright-cache
         uses: actions/cache@v4
         with:
@@ -112,14 +157,42 @@ jobs:
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
       - name: Install Playwright browser (cache miss)
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        if: >-
+          steps.freshness.outputs.fresh == 'true' &&
+          steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Install Playwright system dependencies (cache hit)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        if: >-
+          steps.freshness.outputs.fresh == 'true' &&
+          steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps chromium
 
+      - name: Revalidate preview commit
+        if: steps.freshness.outputs.fresh == 'true'
+        uses: actions/github-script@v8
+        env:
+          DEPLOYMENT_SHA: ${{ github.event.deployment.sha }}
+          PR_NUMBER: ${{ needs.authorize.outputs.pr }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const deploymentSha = process.env.DEPLOYMENT_SHA;
+            const pull_number = Number(process.env.PR_NUMBER);
+            const response = await github.rest.pulls.get({ owner, repo, pull_number });
+            const pullRequest = response.data;
+            const fresh =
+              pullRequest.state === "open" &&
+              pullRequest.head.sha === deploymentSha &&
+              pullRequest.head.repo?.full_name === `${owner}/${repo}`;
+            if (!fresh) {
+              core.setFailed(
+                "Skipping preview E2E because the pull request is no longer open at the deployed commit.",
+              );
+            }
+
       - name: Run deployment check
+        if: steps.freshness.outputs.fresh == 'true'
         # Preview verifies the deployment itself: sign-in, landing, dashboard, and
         # the create-account -> add-holding write path (smoke.spec.ts), plus the
         # social preview, whose VERCEL_URL branch localhost cannot reach.
@@ -134,7 +207,7 @@ jobs:
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
-        if: always()
+        if: steps.freshness.outputs.fresh == 'true' && always()
         with:
           name: vercel-preview-playwright-report
           path: playwright-report/
