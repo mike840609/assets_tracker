@@ -72,6 +72,7 @@ async function SettingsContent() {
         <div className="grid gap-8 lg:grid-cols-2 lg:auto-rows-min lg:items-start lg:gap-x-10 lg:gap-y-10">
           <SettingsForm
             currentCurrency={settings.baseCurrency}
+            currentSecondaryCurrency={settings.secondaryCurrency}
             currentLocale={settings.locale}
             lastPriceUpdate={latestPrice?.updatedAt?.toISOString() ?? null}
             lastExchangeRateUpdate={latestExchangeRate?.updatedAt?.toISOString() ?? null}

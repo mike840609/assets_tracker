@@ -62,19 +62,26 @@ function CurrencyPicker({
   value,
   locale,
   onChange,
+  exclude,
+  allowNone,
+  onNoneChange,
 }: {
   value: string;
   locale: Locale;
   onChange: (value: string) => void;
+  exclude?: string;
+  allowNone?: boolean;
+  onNoneChange?: () => void;
 }) {
   const t = useTranslations("settings");
   const [open, setOpen] = useState(false);
-  const selectedCurrency = CURRENCIES.find((currency) => currency.code === value) ?? CURRENCIES[0];
+  const selectedCurrency = CURRENCIES.find((currency) => currency.code === value);
   const defaultCode = getLocaleDefaultCurrency(locale);
-  const recommended = CURRENCIES.filter(
+  const available = CURRENCIES.filter((currency) => currency.code !== exclude);
+  const recommended = available.filter(
     (currency) => currency.code === defaultCode || currency.code === value,
   );
-  const otherCurrencies = CURRENCIES.filter(
+  const otherCurrencies = available.filter(
     (currency) => !recommended.some((item) => item.code === currency.code),
   );
 
@@ -101,10 +108,12 @@ function CurrencyPicker({
         variant="outline"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        className="h-11 md:h-8 w-full justify-between gap-3 sm:w-[240px]"
+        className="h-11 md:h-8 w-full max-w-full justify-between gap-3 sm:w-[200px]"
       >
         <span className="min-w-0 truncate text-left font-normal">
-          {formatCurrencyLabel(selectedCurrency)}
+          {selectedCurrency
+            ? formatCurrencyLabel(selectedCurrency)
+            : value || t("secondaryCurrencyOff")}
         </span>
         <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       </Button>
@@ -118,6 +127,20 @@ function CurrencyPicker({
         <CommandInput placeholder={t("currencySearchPlaceholder")} />
         <CommandList>
           <CommandEmpty>{t("currencySearchEmpty")}</CommandEmpty>
+          {allowNone && (
+            <CommandGroup>
+              <CommandItem
+                value={t("secondaryCurrencyOff")}
+                data-checked={!value ? "true" : undefined}
+                onSelect={() => {
+                  onNoneChange?.();
+                  setOpen(false);
+                }}
+              >
+                {t("secondaryCurrencyOff")}
+              </CommandItem>
+            </CommandGroup>
+          )}
           <CommandGroup heading={t("recommendedCurrency")}>
             {recommended.map(renderCurrencyItem)}
           </CommandGroup>
@@ -132,11 +155,13 @@ function CurrencyPicker({
 
 export function SettingsForm({
   currentCurrency,
+  currentSecondaryCurrency,
   currentLocale,
   lastPriceUpdate,
   lastExchangeRateUpdate,
 }: {
   currentCurrency: string;
+  currentSecondaryCurrency?: string | null;
   currentLocale: string;
   lastPriceUpdate?: string | null;
   lastExchangeRateUpdate?: string | null;
@@ -150,6 +175,7 @@ export function SettingsForm({
       ? (currentLocale as Locale)
       : DEFAULT_LOCALE;
   const [currency, setCurrency] = useState(currentCurrency);
+  const [secondaryCurrency, setSecondaryCurrency] = useState(currentSecondaryCurrency ?? null);
   const [locale, setLocale] = useState<Locale>(resolvedActiveLocale);
   const { density, isReady: isDensityReady, setDensity } = useDensity();
   const { colorSchema, isReady: isColorSchemaReady, setColorSchema } = useColorSchema();
@@ -164,7 +190,10 @@ export function SettingsForm({
   const [clientPriceRefreshAt, setClientPriceRefreshAt] = useState<string | null>(null);
   const [clientRatesRefreshAt, setClientRatesRefreshAt] = useState<string | null>(null);
 
-  const preferencesChanged = currency !== currentCurrency || locale !== resolvedActiveLocale;
+  const preferencesChanged =
+    currency !== currentCurrency ||
+    secondaryCurrency !== (currentSecondaryCurrency ?? null) ||
+    locale !== resolvedActiveLocale;
   const effectiveLastPriceUpdate =
     clientPriceRefreshAt && (!lastPriceUpdate || clientPriceRefreshAt > lastPriceUpdate)
       ? clientPriceRefreshAt
@@ -179,8 +208,11 @@ export function SettingsForm({
     if (!preferencesChanged) return;
     setSaving(true);
     try {
-      const payload: { baseCurrency?: string; locale?: Locale } = {};
+      const payload: { baseCurrency?: string; secondaryCurrency?: string | null; locale?: Locale } =
+        {};
       if (currency !== currentCurrency) payload.baseCurrency = currency;
+      if (secondaryCurrency !== (currentSecondaryCurrency ?? null))
+        payload.secondaryCurrency = secondaryCurrency;
       if (locale !== resolvedActiveLocale) payload.locale = locale;
 
       const res = await fetch("/api/settings", {
@@ -252,29 +284,52 @@ export function SettingsForm({
           <CardContent className="p-0">
             {/* Currency Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
-              <div className="space-y-1">
+              <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-sm font-medium">{t("settings.baseCurrency")}</p>
                 <p className="text-sm text-muted-foreground">
                   {t("settings.baseCurrencyDescription")}
                 </p>
               </div>
-              <CurrencyPicker value={currency} locale={locale} onChange={setCurrency} />
+              <CurrencyPicker
+                value={currency}
+                locale={locale}
+                onChange={(value) => {
+                  setCurrency(value);
+                  if (secondaryCurrency === value) setSecondaryCurrency(null);
+                }}
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-sm font-medium">{t("settings.secondaryCurrency")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("settings.secondaryCurrencyDescription")}
+                </p>
+              </div>
+              <div className="w-full min-w-0 sm:w-[200px] sm:shrink-0">
+                <CurrencyPicker
+                  value={secondaryCurrency ?? ""}
+                  locale={locale}
+                  exclude={currency}
+                  allowNone
+                  onChange={setSecondaryCurrency}
+                  onNoneChange={() => setSecondaryCurrency(null)}
+                />
+              </div>
             </div>
 
             {/* Language Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-4">
-              <div className="space-y-1">
+              <div className="min-w-0 flex-1 space-y-1">
                 <label htmlFor="language-select" className="text-sm font-medium">
                   {t("settings.language")}
                 </label>
                 <p className="text-sm text-muted-foreground">{t("settings.languageDescription")}</p>
               </div>
-              <div className="flex items-center gap-2 sm:w-auto w-full">
+              <div className="flex w-full items-center gap-2 sm:w-[200px] sm:shrink-0">
                 <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
-                  <SelectTrigger
-                    id="language-select"
-                    className="h-11 md:h-8 flex-1 sm:flex-none sm:w-[240px]"
-                  >
+                  <SelectTrigger id="language-select" className="h-11 md:h-8 w-full sm:w-[200px]">
                     <SelectValue>{t(`languages.${locale}`)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
