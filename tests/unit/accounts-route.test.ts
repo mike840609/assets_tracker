@@ -3,6 +3,10 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 const h = vi.hoisted(() => ({
   cashTransactionCreates: [] as Array<Record<string, unknown>>,
   afterTasks: [] as Array<() => void | Promise<void>>,
+  currentSettings: { baseCurrency: "USD", secondaryCurrency: null } as {
+    baseCurrency: string;
+    secondaryCurrency: string | null;
+  },
   principal: { kind: "formal" as const, userId: "user1" } as
     | { kind: "formal"; userId: string }
     | { kind: "demo"; userId: string; expiresAt: Date },
@@ -63,6 +67,7 @@ vi.mock("@/lib/prisma", () => {
       findFirst: vi.fn(async () => ({ fromCurrency: "USD" })),
     },
     setting: {
+      findUnique: vi.fn(async () => h.currentSettings),
       upsert: vi.fn(async (args: { create: Record<string, unknown> }) => ({
         id: "setting1",
         ...args.create,
@@ -87,6 +92,7 @@ describe("accounts POST", () => {
     vi.clearAllMocks();
     h.cashTransactionCreates = [];
     h.afterTasks = [];
+    h.currentSettings = { baseCurrency: "USD", secondaryCurrency: null };
     h.principal = { kind: "formal", userId: "user1" };
   });
 
@@ -161,6 +167,7 @@ describe("settings PATCH", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     h.afterTasks = [];
+    h.currentSettings = { baseCurrency: "USD", secondaryCurrency: null };
     h.principal = { kind: "formal", userId: "user1" };
   });
 
@@ -197,5 +204,90 @@ describe("settings PATCH", () => {
 
     expect(response.status).toBe(200);
     expect(h.afterTasks).toHaveLength(1);
+  });
+
+  it("persists a selected secondary currency", async () => {
+    const { PATCH } = await import("@/app/api/settings/route");
+    const { prisma } = await import("@/lib/prisma");
+    const response = await PATCH(
+      new Request("http://unit.test/api/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ secondaryCurrency: "JPY" }),
+        headers: { "content-type": "application/json" },
+      }),
+      {},
+    );
+
+    expect(response.status).toBe(200);
+    expect(prisma.setting.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({ secondaryCurrency: "JPY" }),
+      }),
+    );
+  });
+
+  it("rejects a secondary currency equal to the submitted base currency", async () => {
+    const { PATCH } = await import("@/app/api/settings/route");
+    const { prisma } = await import("@/lib/prisma");
+    const response = await PATCH(
+      new Request("http://unit.test/api/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ baseCurrency: "JPY", secondaryCurrency: "JPY" }),
+        headers: { "content-type": "application/json" },
+      }),
+      {},
+    );
+
+    expect(response.status).toBe(400);
+    expect(prisma.setting.upsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects a secondary currency equal to the stored base currency", async () => {
+    const { PATCH } = await import("@/app/api/settings/route");
+    const { prisma } = await import("@/lib/prisma");
+    const response = await PATCH(
+      new Request("http://unit.test/api/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ secondaryCurrency: "USD" }),
+        headers: { "content-type": "application/json" },
+      }),
+      {},
+    );
+
+    expect(response.status).toBe(400);
+    expect(prisma.setting.upsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects a base currency equal to the stored secondary currency", async () => {
+    h.currentSettings = { baseCurrency: "USD", secondaryCurrency: "JPY" };
+    const { PATCH } = await import("@/app/api/settings/route");
+    const { prisma } = await import("@/lib/prisma");
+    const response = await PATCH(
+      new Request("http://unit.test/api/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ baseCurrency: "JPY" }),
+        headers: { "content-type": "application/json" },
+      }),
+      {},
+    );
+
+    expect(response.status).toBe(400);
+    expect(prisma.setting.upsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects a secondary currency outside the supported picker list", async () => {
+    const { PATCH } = await import("@/app/api/settings/route");
+    const { prisma } = await import("@/lib/prisma");
+    const response = await PATCH(
+      new Request("http://unit.test/api/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ secondaryCurrency: "IDR" }),
+        headers: { "content-type": "application/json" },
+      }),
+      {},
+    );
+
+    expect(response.status).toBe(400);
+    expect(prisma.setting.upsert).not.toHaveBeenCalled();
   });
 });

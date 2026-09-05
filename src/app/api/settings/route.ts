@@ -3,7 +3,7 @@ import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updateSettingsSchema } from "@/lib/validators";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
-import { ok, validationError } from "@/lib/api-responses";
+import { failure, ok, validationError } from "@/lib/api-responses";
 import { withAuth } from "@/lib/api-handler";
 import { refreshExchangeRates } from "@/lib/services/exchange-rate-service";
 import { log } from "@/lib/logger";
@@ -36,16 +36,33 @@ export const PATCH = withAuth(
     const parsed = updateSettingsSchema.safeParse(body);
     if (!parsed.success) return validationError(parsed.error);
 
+    const current = await prisma.setting.findUnique({
+      where: { userId },
+      select: { baseCurrency: true, secondaryCurrency: true },
+    });
+    const effectiveBaseCurrency = parsed.data.baseCurrency ?? current?.baseCurrency ?? "USD";
+    const effectiveSecondaryCurrency =
+      parsed.data.secondaryCurrency !== undefined
+        ? parsed.data.secondaryCurrency
+        : (current?.secondaryCurrency ?? null);
+    if (effectiveSecondaryCurrency === effectiveBaseCurrency) {
+      return failure("Secondary currency must differ from base currency", 400);
+    }
+
     const settings = await prisma.setting.upsert({
       where: { userId },
       update: {
         ...(parsed.data.baseCurrency !== undefined && { baseCurrency: parsed.data.baseCurrency }),
+        ...(parsed.data.secondaryCurrency !== undefined && {
+          secondaryCurrency: parsed.data.secondaryCurrency,
+        }),
         ...(parsed.data.locale !== undefined && { locale: parsed.data.locale }),
       },
       create: {
         userId,
         baseCurrency: parsed.data.baseCurrency ?? "USD",
         locale: parsed.data.locale ?? "en-US",
+        secondaryCurrency: parsed.data.secondaryCurrency ?? null,
       },
     });
 

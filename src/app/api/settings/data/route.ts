@@ -388,11 +388,13 @@ export const POST = withAuth(
               update: {
                 baseCurrency: importData.settings.baseCurrency,
                 locale: importData.settings.locale,
+                secondaryCurrency: importData.settings.secondaryCurrency ?? null,
               },
               create: {
                 userId,
                 baseCurrency: importData.settings.baseCurrency,
                 locale: importData.settings.locale,
+                secondaryCurrency: importData.settings.secondaryCurrency ?? null,
               },
             });
           }
