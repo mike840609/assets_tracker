@@ -317,6 +317,16 @@ describe("vercel.json ignoreCommand", () => {
     expect(runIgnore(fixture, { previousSha: "not-a-commit" })).toBe(RUN_BUILD);
   });
 
+  it("builds when the previous SHA is well formed but absent from the repository", () => {
+    // A shallow clone can omit a commit that is a perfectly valid SHA; that has
+    // to build, not resolve to an empty diff and skip.
+    const fixture = makeFixture("feature/absent-previous", (repo) => {
+      commit(repo, { "docs/note.md": "docs\n" }, "docs");
+    });
+
+    expect(runIgnore(fixture, { previousSha: "1".repeat(40) })).toBe(RUN_BUILD);
+  });
+
   it("builds when the previous SHA equals HEAD", () => {
     const fixture = makeFixture("feature/same-sha", (repo) => {
       commit(repo, { "docs/note.md": "docs\n" }, "docs");
