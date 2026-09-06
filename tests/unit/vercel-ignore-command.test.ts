@@ -70,7 +70,11 @@ function copyIgnoreScript(repo: string) {
   fs.copyFileSync(source, destination);
 }
 
-function makeFixture(branch: string, setupBranch: (repo: string) => void): Fixture {
+function makeFixture(
+  branch: string,
+  setupBranch: (repo: string) => void,
+  options: { fullClone?: boolean } = {},
+): Fixture {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "vercel-ignore-command-"));
   fixtures.add(root);
   const origin = path.join(root, "origin.git");
@@ -96,8 +100,7 @@ function makeFixture(branch: string, setupBranch: (repo: string) => void): Fixtu
     root,
     "clone",
     "-q",
-    "--depth=10",
-    "--single-branch",
+    ...(options.fullClone ? [] : ["--depth=10", "--single-branch"]),
     "--branch",
     branch,
     pathToFileURL(origin).href,
@@ -167,6 +170,26 @@ describe("vercel.json ignoreCommand", () => {
     expect(git(fixture.repo, "rev-parse", "--verify", "refs/remotes/origin/master")).toBe(
       fixture.masterSha,
     );
+  });
+
+  it("does not truncate a complete clone while resolving the merge base", () => {
+    // --depth bounds a shallow fetch but re-shallows a complete one, which would
+    // silently take history away from the build that runs next. The branch has
+    // to be deeper than the script's fetch depth for that truncation to show.
+    const fixture = makeFixture(
+      "feature/docs-full-clone",
+      (repo) => {
+        for (let i = 0; i < 52; i += 1) commit(repo, {}, `filler ${i}`);
+        commit(repo, { "docs/one.md": "one\n" }, "docs");
+      },
+      { fullClone: true },
+    );
+
+    expect(git(fixture.repo, "rev-parse", "--is-shallow-repository")).toBe("false");
+    expect(
+      runIgnore(fixture, { previousSha: "", environment: "preview", branch: fixture.branch }),
+    ).toBe(SKIP_BUILD);
+    expect(git(fixture.repo, "rev-parse", "--is-shallow-repository")).toBe("false");
   });
 
   it("builds a first preview when code and markdown both changed", () => {
