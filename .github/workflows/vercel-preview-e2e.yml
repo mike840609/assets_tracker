@@ -50,13 +50,27 @@ jobs:
             ];
             const refreshedPullRequests = await Promise.all(
               candidateNumbers.map(async (pull_number) => {
-                const response = await github.rest.pulls.get({ owner, repo, pull_number });
-                return response.data;
+                try {
+                  const response = await github.rest.pulls.get({ owner, repo, pull_number });
+                  return response.data;
+                } catch (error) {
+                  // This is the security gate, so an unverifiable candidate is
+                  // dropped rather than trusted on the list endpoint's snapshot.
+                  core.warning(`Could not refresh pull request #${pull_number}: ${error.message}`);
+                  return undefined;
+                }
               }),
             );
-            const eligiblePullRequests = refreshedPullRequests.filter(isEligible);
-            const trustedPullRequest =
-              eligiblePullRequests.length === 1 ? eligiblePullRequests[0] : undefined;
+            const eligiblePullRequests = refreshedPullRequests
+              .filter((pullRequest) => pullRequest !== undefined)
+              .filter(isEligible)
+              .sort((a, b) => a.number - b.number);
+            // Several open pull requests can share one head commit: a branch
+            // opened against two bases, a duplicate, a reopened one. All of them
+            // are same-repository, trusted and at the deployed commit by now, so
+            // pick deterministically rather than dropping the check entirely --
+            // the number only keys concurrency and the later re-reads.
+            const trustedPullRequest = eligiblePullRequests[0];
             const fromVercel =
               deployment.creator?.login === "vercel[bot]" &&
               deploymentStatus.creator?.login === "vercel[bot]";
@@ -73,11 +87,33 @@ jobs:
               previewUrl.port === "" &&
               previewUrl.username === "" &&
               previewUrl.password === "";
-            const trusted = Boolean(trustedPullRequest) && fromVercel && trustedUrl;
+            // Redeploying one commit produces a second event that the head-SHA
+            // test cannot call stale, and cancellation is deliberately off, so
+            // only the newest deployment of a commit runs the suite. A duplicate
+            // created after this read still gets its own run; that costs a
+            // repeat suite, never a cancelled one.
+            let superseded = false;
+            try {
+              const deployments = await github.paginate(github.rest.repos.listDeployments, {
+                owner,
+                repo,
+                sha: deployment.sha,
+              });
+              superseded = deployments.some(
+                (candidate) =>
+                  candidate.id > deployment.id && candidate.environment !== "Production",
+              );
+            } catch (error) {
+              core.warning(`Could not list deployments for ${deployment.sha}: ${error.message}`);
+            }
+            const trusted =
+              Boolean(trustedPullRequest) && fromVercel && trustedUrl && !superseded;
             core.notice(
               trusted
                 ? `Running preview E2E against ${previewUrl.origin}.`
-                : "Skipping preview E2E because the commit, deployment source, or URL is not trusted.",
+                : superseded
+                  ? "Skipping preview E2E because a newer deployment exists for this commit."
+                  : "Skipping preview E2E because the commit, deployment source, or URL is not trusted.",
             );
             core.setOutput("trusted", String(trusted));
             core.setOutput("url", trusted ? previewUrl.origin : "");
@@ -109,12 +145,21 @@ jobs:
             const { owner, repo } = context.repo;
             const deploymentSha = process.env.DEPLOYMENT_SHA;
             const pull_number = Number(process.env.PR_NUMBER);
-            const response = await github.rest.pulls.get({ owner, repo, pull_number });
-            const pullRequest = response.data;
+            let pullRequest;
+            try {
+              const response = await github.rest.pulls.get({ owner, repo, pull_number });
+              pullRequest = response.data;
+            } catch (error) {
+              // Authorization already established trust, so an unreadable pull
+              // request costs at most one suite against a superseded preview.
+              // Failing closed here would turn a GitHub outage into a red check.
+              core.warning(`Could not re-read pull request #${pull_number}: ${error.message}`);
+            }
             const fresh =
-              pullRequest.state === "open" &&
-              pullRequest.head.sha === deploymentSha &&
-              pullRequest.head.repo?.full_name === `${owner}/${repo}`;
+              !pullRequest ||
+              (pullRequest.state === "open" &&
+                pullRequest.head.sha === deploymentSha &&
+                pullRequest.head.repo?.full_name === `${owner}/${repo}`);
             core.setOutput("fresh", String(fresh));
             core.notice(
               fresh
@@ -180,12 +225,20 @@ jobs:
             const { owner, repo } = context.repo;
             const deploymentSha = process.env.DEPLOYMENT_SHA;
             const pull_number = Number(process.env.PR_NUMBER);
-            const response = await github.rest.pulls.get({ owner, repo, pull_number });
-            const pullRequest = response.data;
+            let pullRequest;
+            try {
+              const response = await github.rest.pulls.get({ owner, repo, pull_number });
+              pullRequest = response.data;
+            } catch (error) {
+              // Same trade as the pre-setup gate, and more valuable here: this
+              // read happens after checkout, install and browser setup are paid.
+              core.warning(`Could not re-read pull request #${pull_number}: ${error.message}`);
+            }
             const fresh =
-              pullRequest.state === "open" &&
-              pullRequest.head.sha === deploymentSha &&
-              pullRequest.head.repo?.full_name === `${owner}/${repo}`;
+              !pullRequest ||
+              (pullRequest.state === "open" &&
+                pullRequest.head.sha === deploymentSha &&
+                pullRequest.head.repo?.full_name === `${owner}/${repo}`);
             core.setOutput("fresh", String(fresh));
             core.notice(
               fresh

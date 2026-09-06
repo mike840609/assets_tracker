@@ -56,27 +56,46 @@ async function runPreviewScript(
     statusCreator?: string;
     url?: string;
     prNumber?: string;
+    deploymentId?: number;
+    deployments?: { id: number; environment: string }[];
+    refreshFails?: boolean;
   },
 ) {
   const outputs = new Map<string, string>();
   const failures: string[] = [];
+  const warnings: string[] = [];
   const associated = options.associated ?? [];
   const refreshed = options.refreshed ?? {};
-  const github = {
-    paginate: async () => associated,
-    rest: {
-      repos: { listPullRequestsAssociatedWithCommit() {} },
-      pulls: {
-        get: async ({ pull_number }: { pull_number: number }) => ({
-          data: refreshed[pull_number],
-        }),
+  const deploymentId = options.deploymentId ?? 100;
+  const deployments = options.deployments ?? [];
+  const rest = {
+    repos: {
+      listPullRequestsAssociatedWithCommit() {},
+      listDeployments() {},
+    },
+    pulls: {
+      get: async ({ pull_number }: { pull_number: number }) => {
+        if (options.refreshFails) throw new Error("API is unavailable");
+        return { data: refreshed[pull_number] };
       },
     },
+  };
+  const github = {
+    paginate: async (endpoint: unknown, parameters: Record<string, unknown>) => {
+      if (endpoint === rest.repos.listDeployments) {
+        expect(parameters.sha).toBe(options.deploymentSha);
+        return deployments;
+      }
+      expect(parameters.commit_sha).toBe(options.deploymentSha);
+      return associated;
+    },
+    rest,
   };
   const context = {
     repo: { owner: "acme", repo: "astt" },
     payload: {
       deployment: {
+        id: deploymentId,
         sha: options.deploymentSha,
         creator: { login: options.deploymentCreator ?? "vercel[bot]" },
       },
@@ -88,7 +107,9 @@ async function runPreviewScript(
   };
   const core = {
     notice() {},
-    warning() {},
+    warning(message: string) {
+      warnings.push(message);
+    },
     setFailed(message: string) {
       failures.push(message);
     },
@@ -109,7 +130,7 @@ async function runPreviewScript(
     core,
     process,
   );
-  return { outputs, failures };
+  return { outputs, failures, warnings };
 }
 
 describe("E2E CI contract", () => {
@@ -185,21 +206,93 @@ describe("E2E CI contract", () => {
     expect(result.outputs.get("pr")).toBe("17");
   });
 
-  test("rejects missing and ambiguous exact-head pull requests", async () => {
+  test("rejects a deployment with no exact-head pull request", async () => {
     const missing = await runPreviewScript("Allow only trusted same-repository pull requests", {
       deploymentSha: "deploy-sha",
       associated: [pullRequest(22, "other-sha")],
     });
+
+    expect(missing.outputs.get("trusted")).toBe("false");
+  });
+
+  test("picks the same pull request every time several share one head commit", async () => {
     const first = pullRequest(17, "deploy-sha");
     const second = pullRequest(22, "deploy-sha");
-    const ambiguous = await runPreviewScript("Allow only trusted same-repository pull requests", {
+    // Both are open, same-repository and at the deployed commit, so refusing to
+    // choose would drop the check; the pick only has to be stable across the
+    // repeated deployments of this commit that key on it.
+    const forward = await runPreviewScript("Allow only trusted same-repository pull requests", {
       deploymentSha: "deploy-sha",
       associated: [first, second],
       refreshed: { 17: first, 22: second },
     });
+    const reversed = await runPreviewScript("Allow only trusted same-repository pull requests", {
+      deploymentSha: "deploy-sha",
+      associated: [second, first],
+      refreshed: { 17: first, 22: second },
+    });
 
-    expect(missing.outputs.get("trusted")).toBe("false");
-    expect(ambiguous.outputs.get("trusted")).toBe("false");
+    expect(forward.outputs.get("trusted")).toBe("true");
+    expect(forward.outputs.get("pr")).toBe("17");
+    expect(reversed.outputs.get("pr")).toBe("17");
+  });
+
+  test("refuses to authorize when a candidate cannot be re-read", async () => {
+    const current = pullRequest(17, "deploy-sha");
+    const result = await runPreviewScript("Allow only trusted same-repository pull requests", {
+      deploymentSha: "deploy-sha",
+      associated: [current],
+      refreshed: { 17: current },
+      refreshFails: true,
+    });
+
+    expect(result.outputs.get("trusted")).toBe("false");
+    expect(result.failures).toEqual([]);
+    expect(result.warnings.join(" ")).toContain("Could not refresh pull request #17");
+  });
+
+  test("skips a redeployment of a commit that already has a newer deployment", async () => {
+    const current = pullRequest(17, "deploy-sha");
+    const options = {
+      deploymentSha: "deploy-sha",
+      associated: [current],
+      refreshed: { 17: current },
+    };
+    const superseded = await runPreviewScript("Allow only trusted same-repository pull requests", {
+      ...options,
+      deploymentId: 100,
+      deployments: [
+        { id: 100, environment: "Preview" },
+        { id: 101, environment: "Preview" },
+      ],
+    });
+    const newest = await runPreviewScript("Allow only trusted same-repository pull requests", {
+      ...options,
+      deploymentId: 101,
+      deployments: [
+        { id: 100, environment: "Preview" },
+        { id: 101, environment: "Preview" },
+      ],
+    });
+
+    expect(superseded.outputs.get("trusted")).toBe("false");
+    expect(newest.outputs.get("trusted")).toBe("true");
+  });
+
+  test("ignores the production deployment of the same commit", async () => {
+    const current = pullRequest(17, "deploy-sha");
+    const result = await runPreviewScript("Allow only trusted same-repository pull requests", {
+      deploymentSha: "deploy-sha",
+      associated: [current],
+      refreshed: { 17: current },
+      deploymentId: 100,
+      deployments: [
+        { id: 100, environment: "Preview" },
+        { id: 200, environment: "Production" },
+      ],
+    });
+
+    expect(result.outputs.get("trusted")).toBe("true");
   });
 
   test.each([
@@ -267,6 +360,52 @@ describe("E2E CI contract", () => {
     expect(result.outputs.get("fresh")).toBe("false");
     expect(result.failures).toEqual([]);
   });
+
+  // A job whose steps all skip reports green, so a freshness check that answered
+  // "false" unconditionally would silently retire preview E2E while every other
+  // test in this file still passed. These pin the answer that keeps it running.
+  test.each(["Check preview freshness before setup", "Revalidate preview commit"])(
+    "%s lets a still-current preview through",
+    async (stepName) => {
+      const result = await runPreviewScript(stepName, {
+        deploymentSha: "deploy-sha",
+        prNumber: "17",
+        refreshed: { 17: pullRequest(17, "deploy-sha") },
+      });
+
+      expect(result.outputs.get("fresh")).toBe("true");
+      expect(result.failures).toEqual([]);
+    },
+  );
+
+  test.each(["Check preview freshness before setup", "Revalidate preview commit"])(
+    "%s runs the suite rather than failing when the API is unreachable",
+    async (stepName) => {
+      const result = await runPreviewScript(stepName, {
+        deploymentSha: "deploy-sha",
+        prNumber: "17",
+        refreshed: { 17: pullRequest(17, "deploy-sha") },
+        refreshFails: true,
+      });
+
+      expect(result.outputs.get("fresh")).toBe("true");
+      expect(result.failures).toEqual([]);
+      expect(result.warnings.join(" ")).toContain("Could not re-read pull request #17");
+    },
+  );
+
+  test.each(["Check preview freshness before setup", "Revalidate preview commit"])(
+    "%s stops a run whose pull request closed",
+    async (stepName) => {
+      const result = await runPreviewScript(stepName, {
+        deploymentSha: "deploy-sha",
+        prNumber: "17",
+        refreshed: { 17: pullRequest(17, "deploy-sha", { state: "closed" }) },
+      });
+
+      expect(result.outputs.get("fresh")).toBe("false");
+    },
+  );
 
   test("serializes every pending run per pull request without cancellation", () => {
     const workflow = read(".github/workflows/vercel-preview-e2e.yml");
