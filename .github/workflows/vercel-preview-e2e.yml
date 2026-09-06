@@ -264,7 +264,11 @@ jobs:
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
-        if: steps.freshness.outputs.fresh == 'true' && always()
+        # always() first: it reads as the override it is, and a status function
+        # anywhere in the expression already suppresses the implicit success().
+        # Gate on the final check rather than the first one, so a run that
+        # stopped between them does not look for a report that was never made.
+        if: always() && steps.final-freshness.outputs.fresh == 'true'
         with:
           name: vercel-preview-playwright-report
           path: playwright-report/

@@ -2,6 +2,8 @@ import { spawnSync } from "node:child_process";
 
 const BUILD = 1;
 const SKIP = 0;
+const DEFAULT_BRANCH = "master";
+const DEFAULT_BRANCH_REMOTE_REF = `refs/remotes/origin/${DEFAULT_BRANCH}`;
 const FETCH_DEPTH = 50;
 const GIT_TIMEOUT_MS = 5_000;
 // The fetch talks to GitHub; local plumbing does not. A cold shallow fetch of
@@ -51,7 +53,7 @@ function hasCompleteRange(base) {
 
 function firstPreviewDocsOnly() {
   const branch = process.env.VERCEL_GIT_COMMIT_REF;
-  if (process.env.VERCEL_ENV !== "preview" || !branch || branch === "master") return false;
+  if (process.env.VERCEL_ENV !== "preview" || !branch || branch === DEFAULT_BRANCH) return false;
   if (git(["check-ref-format", `refs/heads/${branch}`]) !== 0) return false;
   if (git(["remote", "get-url", "origin"]) !== 0) return false;
 
@@ -68,13 +70,13 @@ function firstPreviewDocsOnly() {
       "--no-tags",
       ...(shallow.stdout === "true" ? [`--depth=${FETCH_DEPTH}`] : []),
       "origin",
-      "+refs/heads/master:refs/remotes/origin/master",
+      `+refs/heads/${DEFAULT_BRANCH}:${DEFAULT_BRANCH_REMOTE_REF}`,
       `+refs/heads/${branch}:${remoteBranch}`,
     ],
     false,
     FETCH_TIMEOUT_MS,
   );
-  if (fetched !== 0) return bail(`master fetch failed (${fetched ?? "timed out"})`);
+  if (fetched !== 0) return bail(`${DEFAULT_BRANCH} fetch failed (${fetched ?? "timed out"})`);
 
   // Confirm that the fetched branch really contains this deployed commit. This
   // also prevents a shallow or rewritten ref from becoming a guessed baseline.
@@ -82,12 +84,12 @@ function firstPreviewDocsOnly() {
     return bail("deployed commit is not on the fetched branch");
   }
 
-  const mergeBase = git(["merge-base", "HEAD", "refs/remotes/origin/master"], true);
+  const mergeBase = git(["merge-base", "HEAD", DEFAULT_BRANCH_REMOTE_REF], true);
   if (!mergeBase || mergeBase.status !== 0 || !/^[0-9a-f]{40}$/i.test(mergeBase.stdout)) {
-    return bail("no master merge base reachable in this shallow clone");
+    return bail(`no ${DEFAULT_BRANCH} merge base reachable in this shallow clone`);
   }
   if (git(["merge-base", "--is-ancestor", mergeBase.stdout, "HEAD"]) !== 0) return false;
-  if (git(["merge-base", "--is-ancestor", mergeBase.stdout, "refs/remotes/origin/master"]) !== 0) {
+  if (git(["merge-base", "--is-ancestor", mergeBase.stdout, DEFAULT_BRANCH_REMOTE_REF]) !== 0) {
     return false;
   }
   if (!hasCompleteRange(mergeBase.stdout)) return bail("merge base range is incomplete");
