@@ -9,22 +9,25 @@ const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor as
   ...args: string[]
 ) => (...values: unknown[]) => Promise<void>;
 
+const indentOf = (line: string) => /^ */.exec(line)![0].length;
+
 function githubScript(stepName: string) {
   const workflow = read(".github/workflows/vercel-preview-e2e.yml");
-  const marker = `      - name: ${stepName}`;
-  const stepStart = workflow.indexOf(marker);
+  const stepStart = workflow.indexOf(`- name: ${stepName}\n`);
   if (stepStart === -1) throw new Error(`Missing workflow step: ${stepName}`);
-  const scriptMarker = "          script: |\n";
-  const scriptStart = workflow.indexOf(scriptMarker, stepStart);
+  const scriptStart = workflow.indexOf("script: |\n", stepStart);
   if (scriptStart === -1) throw new Error(`Missing script in workflow step: ${stepName}`);
-  const nextStep = workflow.indexOf("\n      - ", scriptStart + scriptMarker.length);
-  const nextJob = workflow.indexOf("\n  e2e:\n", scriptStart + scriptMarker.length);
-  const blockEnd = [nextStep, nextJob].filter((index) => index !== -1).sort((a, b) => a - b)[0];
-  const block = workflow.slice(scriptStart + scriptMarker.length, blockEnd ?? workflow.length);
-  return block
-    .split("\n")
-    .map((line) => line.replace(/^ {12}/, ""))
-    .join("\n");
+  // A block scalar runs until the first non-empty line indented less than its
+  // own body, so derive both from the text rather than pinning the step's depth
+  // and the name of whatever job happens to come next.
+  const lines = workflow.slice(workflow.indexOf("\n", scriptStart) + 1).split("\n");
+  const indent = indentOf(lines[0]);
+  const body: string[] = [];
+  for (const line of lines) {
+    if (line.trim() !== "" && indentOf(line) < indent) break;
+    body.push(line.slice(indent));
+  }
+  return body.join("\n");
 }
 
 type PullRequest = {
@@ -406,6 +409,30 @@ describe("E2E CI contract", () => {
       expect(result.outputs.get("fresh")).toBe("false");
     },
   );
+
+  test("keeps the two freshness gates in lockstep", () => {
+    // The same predicate lives in two steps because YAML has no sharing
+    // primitive short of a composite action, which two copies do not justify.
+    // This is the guard instead: a fix applied to one cannot silently miss the
+    // other. Comments and the notice wording are allowed to differ.
+    const logic = (stepName: string) =>
+      githubScript(stepName)
+        .split("\n")
+        .filter((line) => line.trim() !== "" && !line.trim().startsWith("//"))
+        .join("\n")
+        .replace(/"Preview commit is still current[^"]*"/, '"<notice>"');
+
+    expect(logic("Check preview freshness before setup")).toBe(logic("Revalidate preview commit"));
+  });
+
+  test("uploads a Playwright report only for a run that reached Playwright", () => {
+    const workflow = read(".github/workflows/vercel-preview-e2e.yml");
+    const uploadStep = workflow.slice(workflow.indexOf("- name: Upload Playwright report"));
+
+    // Gating on the first check would ask upload-artifact for a report that a
+    // run stopping at the final check never produced.
+    expect(uploadStep).toContain("if: always() && steps.final-freshness.outputs.fresh == 'true'");
+  });
 
   test("serializes every pending run per pull request without cancellation", () => {
     const workflow = read(".github/workflows/vercel-preview-e2e.yml");

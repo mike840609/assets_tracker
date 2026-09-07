@@ -61,10 +61,10 @@ function commit(cwd: string, files: Record<string, string>, message: string) {
 }
 
 function copyIgnoreScript(repo: string) {
-  // The initial RED run still uses the existing inline command. Once the
-  // implementation script exists, fixtures include it exactly as Vercel does.
+  // Fixtures include the real script exactly as Vercel does. Never guard this
+  // on the file existing: a missing script would turn every "builds" assertion
+  // below into a pass, because the absent command also exits nonzero.
   const source = path.join(process.cwd(), "scripts/vercel-ignore.mjs");
-  if (!fs.existsSync(source)) return;
   const destination = path.join(repo, "scripts/vercel-ignore.mjs");
   fs.mkdirSync(path.dirname(destination), { recursive: true });
   fs.copyFileSync(source, destination);
@@ -190,6 +190,28 @@ describe("vercel.json ignoreCommand", () => {
       runIgnore(fixture, { previousSha: "", environment: "preview", branch: fixture.branch }),
     ).toBe(SKIP_BUILD);
     expect(git(fixture.repo, "rev-parse", "--is-shallow-repository")).toBe("false");
+  });
+
+  it("skips a first docs-only preview when the previous SHA is unset, not merely empty", () => {
+    // Vercel is likelier to omit the variable than to set it empty, and that is
+    // the trigger condition for the whole merge-base path.
+    const fixture = makeFixture("feature/docs-unset-previous", (repo) => {
+      commit(repo, { "docs/one.md": "one\n" }, "docs");
+    });
+
+    expect(runIgnore(fixture, { environment: "preview", branch: fixture.branch })).toBe(SKIP_BUILD);
+  });
+
+  it("builds a first preview whose branch changed nothing at all", () => {
+    // An empty diff must build here too. Today hasCompleteRange happens to
+    // reject the empty range first, so without this the guard is incidental.
+    const fixture = makeFixture("feature/empty-first", (repo) => {
+      commit(repo, {}, "empty");
+    });
+
+    expect(
+      runIgnore(fixture, { previousSha: "", environment: "preview", branch: fixture.branch }),
+    ).toBe(RUN_BUILD);
   });
 
   it("builds a first preview when code and markdown both changed", () => {
