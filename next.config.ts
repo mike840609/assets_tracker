@@ -74,7 +74,6 @@ const nextConfig: NextConfig = {
     remotePatterns: [{ protocol: "https", hostname: "lh3.googleusercontent.com" }],
   },
   experimental: {
-    viewTransition: true,
     optimizePackageImports: [
       "recharts",
       "lucide-react",
