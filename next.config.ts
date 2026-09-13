@@ -60,8 +60,14 @@ const contentSecurityPolicy = [
   ...(isDev ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
+// `output: "standalone"` traces server deps into `.next/standalone` for the
+// self-host Docker image (see Dockerfile). Vercel serves via its own Build
+// Output API and never consumes that directory; on Next 16.3 its Turbopack
+// build additionally crashes while collecting standalone traces (ENOENT on
+// `next-server.js.nft.json`). Scope standalone to non-Vercel builds — Vercel
+// sets `VERCEL=1` during the build.
 const nextConfig: NextConfig = {
-  output: "standalone",
+  ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
   cacheComponents: true,
   poweredByHeader: false,
   turbopack: {
