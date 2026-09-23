@@ -38,6 +38,61 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.0",
+    date: "2026-09-23",
+    summary: {
+      "en-US":
+        "Options group with their underlying like a broker statement, plus a dashboard secondary currency and a security patch.",
+      "zh-TW":
+        "選擇權現在會跟標的一起分組顯示，如券商對帳單；新增儀表板次要幣別，並修補一項安全性漏洞。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "On an account page, a stock and its call/put options on the same underlying now collapse into one group showing their combined value and weight — expand it to see each position, same as a broker statement.",
+          "zh-TW":
+            "帳戶頁面中，同一標的的正股與其買權/賣權，現在會收合成一個群組，顯示合計市值與佔比 —— 展開即可看到個別部位，如同券商對帳單。",
+        },
+      },
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Optional secondary currency on the dashboard: turn it on in Settings to show a small converted total under net worth, assets, and liabilities.",
+          "zh-TW":
+            "儀表板可選擇次要幣別：於設定中開啟後，淨資產、資產與負債下方會顯示換算後的金額。",
+        },
+      },
+      {
+        type: "improved",
+        text: {
+          "en-US":
+            "Cleaned up light-mode contrast: the History heatmap's tile labels and subtitle, and the selected ring around a theme swatch in Settings.",
+          "zh-TW":
+            "改善淺色模式對比度：歷史熱力圖的格子文字與副標題，以及設定頁中已選佈景主題的外框。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "The public landing page no longer occasionally falls back to client-side rendering with a blank flash on first load.",
+          "zh-TW": "公開介紹頁首次載入時，不再偶爾退回用戶端渲染並出現空白閃爍。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Patched three critical advisories in the auth stack (next-auth and @auth/core).",
+          "zh-TW": "修補驗證元件堆疊（next-auth 與 @auth/core）中的三項重大安全性漏洞。",
+        },
+      },
+    ],
+  },
+  {
     version: "1.6.0",
     date: "2026-09-04",
     summary: {
