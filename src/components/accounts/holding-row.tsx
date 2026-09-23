@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { ChevronRight, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { formatCurrency, formatPrice, formatQuantity } from "@/lib/currencies";
 import { getOptionDisplay } from "@/lib/options";
 import { useTranslations } from "next-intl";
@@ -30,6 +30,8 @@ interface HoldingRowProps {
   accountCurrency: string;
   onEdit: (holding: HoldingWithPrice) => void;
   onDelete: (holdingId: string) => void;
+  /** Indented as a member of an underlying group. */
+  nested?: boolean;
 }
 
 export function HoldingRow({
@@ -38,6 +40,7 @@ export function HoldingRow({
   accountCurrency,
   onEdit,
   onDelete,
+  nested = false,
 }: HoldingRowProps) {
   const t = useTranslations();
   const { privacyMode } = usePrivacyMode();
@@ -65,7 +68,7 @@ export function HoldingRow({
         },
       ]}
       onFullSwipe={() => onDelete(h.id)}
-      className={`flex items-center gap-3 px-4 ${isCompact ? "py-2" : "py-3.5"} bg-card hover:bg-muted/40 active:bg-muted/60 transition-colors relative z-10`}
+      className={`flex items-center gap-3 ${nested ? "pl-9 pr-4" : "px-4"} ${isCompact ? "py-2" : "py-3.5"} bg-card hover:bg-muted/40 active:bg-muted/60 transition-colors relative z-10`}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -126,5 +129,65 @@ export function HoldingRow({
         </DropdownMenuContent>
       </DropdownMenu>
     </SwipeableRow>
+  );
+}
+
+interface HoldingGroupHeaderProps {
+  underlying: string;
+  count: number;
+  marketValue: number | null;
+  totalValue: number;
+  accountCurrency: string;
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+export function HoldingGroupHeader({
+  underlying,
+  count,
+  marketValue,
+  totalValue,
+  accountCurrency,
+  expanded,
+  onToggle,
+}: HoldingGroupHeaderProps) {
+  const t = useTranslations();
+  const { privacyMode } = usePrivacyMode();
+  const isCompact = useDensity().density === "compact";
+
+  return (
+    <button
+      type="button"
+      aria-expanded={expanded}
+      onClick={onToggle}
+      className={`flex w-full min-h-11 items-center gap-3 px-4 ${isCompact ? "py-2" : "py-3"} bg-muted/20 text-left hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary`}
+    >
+      <ChevronRight
+        className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-90" : ""}`}
+        aria-hidden="true"
+      />
+      <span className="flex-1 min-w-0">
+        <span className="font-mono font-semibold text-sm">{underlying}</span>
+        <span className="ml-2 text-xs text-muted-foreground">
+          {t("accountDetail.groupPositions", { count })}
+        </span>
+      </span>
+      <span className="text-right shrink-0">
+        <span className="block text-sm font-semibold tabular-nums">
+          {privacyMode
+            ? HIDDEN
+            : marketValue !== null
+              ? formatCurrency(marketValue, accountCurrency)
+              : "—"}
+        </span>
+        <span className="block text-xs text-muted-foreground tabular-nums mt-0.5">
+          {privacyMode || marketValue === null || totalValue <= 0
+            ? "—"
+            : `${((marketValue / totalValue) * 100).toFixed(1)}%`}
+        </span>
+      </span>
+      {/* Keeps the value column aligned with member rows' action button */}
+      <span className="w-9 sm:w-7 shrink-0" aria-hidden="true" />
+    </button>
   );
 }

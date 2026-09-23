@@ -1173,6 +1173,7 @@
     "labelAccountName": "Account Name",
     "placeholderAccountName": "e.g. Chase Checking",
     "showMore": "Show {count} more",
+    "groupPositions": "{count} positions",
     "dangerZone": "Danger Zone",
     "deleteAccountPermanently": "Delete this account"
   },
