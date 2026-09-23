@@ -177,3 +177,75 @@ export function getOptionDisplay(h: Pick<SerializedHolding, "symbol" | "assetTyp
     occ: parsed.occSymbol,
   };
 }
+
+export type HoldingGroupItem<T> =
+  | { kind: "single"; holding: T }
+  | { kind: "group"; underlying: string; holdings: T[]; marketValue: number | null };
+
+type Groupable = Pick<SerializedHolding, "symbol" | "assetType" | "underlyingSymbol"> & {
+  marketValue: number | null;
+};
+
+/**
+ * Broker-style view: an underlying's stock and its options collapse into one
+ * group, placed where its first member sits in the already-sorted input — or,
+ * when `valueSortDirection` is set, re-sorted by combined market value.
+ * A group needs at least one option and two members; everything else stays a row.
+ */
+export function groupHoldingsByUnderlying<T extends Groupable>(
+  sorted: T[],
+  valueSortDirection: "asc" | "desc" | null = null,
+): HoldingGroupItem<T>[] {
+  const buckets = new Map<string, T[]>();
+  for (const h of sorted) {
+    const key = groupKey(h);
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(h);
+    else buckets.set(key, [h]);
+  }
+
+  const items: HoldingGroupItem<T>[] = [];
+  for (const [underlying, holdings] of buckets) {
+    const hasOption = holdings.some((h) => h.assetType === "OPTION");
+    if (!hasOption || holdings.length < 2) {
+      items.push(...holdings.map((holding) => ({ kind: "single" as const, holding })));
+      continue;
+    }
+    const priced = holdings.filter((h) => h.marketValue !== null);
+    items.push({
+      kind: "group",
+      underlying,
+      holdings: [...holdings].sort(compareWithinGroup),
+      marketValue: priced.length ? priced.reduce((sum, h) => sum + h.marketValue!, 0) : null,
+    });
+  }
+
+  if (!valueSortDirection) return items;
+  const sign = valueSortDirection === "asc" ? 1 : -1;
+  return items.sort((a, b) => sign * (itemValue(a) - itemValue(b)));
+}
+
+function groupKey(h: Groupable): string {
+  if (h.assetType !== "OPTION") return h.symbol.toUpperCase();
+  // Unparseable option symbols keep their own key, so they never join a group by accident.
+  const root = h.underlyingSymbol || tryParseOccSymbol(h.symbol)?.underlying;
+  return root ? root.toUpperCase() : `option:${h.symbol}`;
+}
+
+function itemValue<T extends Groupable>(item: HoldingGroupItem<T>): number {
+  return (item.kind === "group" ? item.marketValue : item.holding.marketValue) ?? 0;
+}
+
+function compareWithinGroup(a: Groupable, b: Groupable): number {
+  const pa = a.assetType === "OPTION" ? tryParseOccSymbol(a.symbol) : null;
+  const pb = b.assetType === "OPTION" ? tryParseOccSymbol(b.symbol) : null;
+  // Stock first, then parsed options, then unparseable options.
+  const rank = (h: Groupable, p: ParsedOption | null) => (h.assetType !== "OPTION" ? 0 : p ? 1 : 2);
+  const byRank = rank(a, pa) - rank(b, pb);
+  if (byRank !== 0 || !pa || !pb) return byRank || a.symbol.localeCompare(b.symbol);
+  return (
+    pa.expiration.getTime() - pb.expiration.getTime() ||
+    pa.strike - pb.strike ||
+    (pa.optionType === pb.optionType ? 0 : pa.optionType === "CALL" ? -1 : 1)
+  );
+}

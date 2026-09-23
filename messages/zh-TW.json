@@ -1173,6 +1173,7 @@
     "labelAccountName": "帳戶名稱",
     "placeholderAccountName": "例如：玉山銀行",
     "showMore": "顯示另外 {count} 個",
+    "groupPositions": "{count} 個部位",
     "dangerZone": "危險區域",
     "deleteAccountPermanently": "刪除此帳戶"
   },

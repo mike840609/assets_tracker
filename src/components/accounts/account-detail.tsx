@@ -37,7 +37,7 @@ const TransactionHistory = dynamic(
 );
 import { AccountStatCards } from "./account-stat-cards";
 import { RecurringSection } from "./recurring-section";
-import { HoldingRow } from "./holding-row";
+import { HoldingGroupHeader, HoldingRow } from "./holding-row";
 import type { HoldingWithPrice } from "./holding-row";
 import { HoldingsTable, type HoldingSortField } from "./holdings-table";
 import { toast } from "sonner";
@@ -45,8 +45,17 @@ import { useTranslations } from "next-intl";
 import type { SerializedAccountWithHoldings, SerializedHolding } from "@/lib/types";
 import { showUndoDeleteToast } from "@/lib/undo-delete";
 import type { AccountPriceMap } from "@/lib/services/account-service";
+import { groupHoldingsByUnderlying, type HoldingGroupItem } from "@/lib/options";
 
 type SortOrder = "asc" | "desc";
+
+type MobileHoldingRow =
+  | { key: string; holding: HoldingWithPrice; nested: boolean }
+  | {
+      key: string;
+      group: Extract<HoldingGroupItem<HoldingWithPrice>, { kind: "group" }>;
+      expanded: boolean;
+    };
 
 export function AccountDetail({
   account,
@@ -79,6 +88,7 @@ export function AccountDetail({
   const [sortDirection, setSortDirection] = useState<SortOrder>("desc");
   const [optimisticHiddenIds, setOptimisticHiddenIds] = useState<Set<string>>(new Set());
   const [showAllMobileHoldings, setShowAllMobileHoldings] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const pendingHoldingDeletes = useRef<Set<string>>(new Set());
 
   // Commit any in-flight holding deletes if the user refreshes/navigates before the toast expires.
@@ -175,9 +185,30 @@ export function AccountDetail({
 
   const isBank = account.category === "BANK";
   const filteredSortedHoldings = sortedHoldings.filter((h) => !optimisticHiddenIds.has(h.id));
-  const visibleMobileHoldings = showAllMobileHoldings
-    ? filteredSortedHoldings
-    : filteredSortedHoldings.slice(0, 20);
+  const holdingItems = groupHoldingsByUnderlying(
+    filteredSortedHoldings,
+    sortField === "marketValue" || sortField === "percentage" ? sortDirection : null,
+  );
+  const visibleMobileItems = showAllMobileHoldings ? holdingItems : holdingItems.slice(0, 20);
+  // Flat rows, each keyed by what it shows, so a stock leaving or joining a group
+  // keeps its key (no duplicate-row exit flash) and members still animate out on delete.
+  const mobileRows: MobileHoldingRow[] = visibleMobileItems.flatMap((item): MobileHoldingRow[] => {
+    if (item.kind === "single")
+      return [{ key: item.holding.id, holding: item.holding, nested: false }];
+    const expanded = !collapsedGroups.has(item.underlying);
+    return [
+      { key: `group:${item.underlying}`, group: item, expanded },
+      ...(expanded ? item.holdings.map((h) => ({ key: h.id, holding: h, nested: true })) : []),
+    ];
+  });
+
+  function toggleGroup(underlying: string) {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(underlying)) next.add(underlying);
+      return next;
+    });
+  }
 
   async function saveBalance(newBalance: number, note?: string, occurrenceDate?: string) {
     try {
@@ -469,35 +500,52 @@ export function AccountDetail({
                 )}
                 <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">
                   <AnimatePresence initial={false}>
-                    {visibleMobileHoldings.map((h, index) => (
+                    {mobileRows.map((row, index) => (
                       <motion.div
-                        key={h.id}
+                        key={row.key}
                         layout={shouldReduceMotion ? false : "position"}
                         initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
                         transition={shouldReduceMotion ? { duration: 0 } : springConfig}
                       >
-                        {index > 0 && <div className="h-px bg-border/60 mx-4" />}
-                        <HoldingRow
-                          holding={h}
-                          totalValue={totalHoldingsValue}
-                          accountCurrency={account.currency}
-                          onEdit={setEditingHolding}
-                          onDelete={deleteHolding}
-                        />
+                        {index > 0 && (
+                          <div
+                            className={`h-px ${"nested" in row && row.nested ? "bg-border/40 ml-9 mr-4" : "bg-border/60 mx-4"}`}
+                          />
+                        )}
+                        {"group" in row ? (
+                          <HoldingGroupHeader
+                            underlying={row.group.underlying}
+                            count={row.group.holdings.length}
+                            marketValue={row.group.marketValue}
+                            totalValue={totalHoldingsValue}
+                            accountCurrency={account.currency}
+                            expanded={row.expanded}
+                            onToggle={() => toggleGroup(row.group.underlying)}
+                          />
+                        ) : (
+                          <HoldingRow
+                            holding={row.holding}
+                            totalValue={totalHoldingsValue}
+                            accountCurrency={account.currency}
+                            onEdit={setEditingHolding}
+                            onDelete={deleteHolding}
+                            nested={row.nested}
+                          />
+                        )}
                       </motion.div>
                     ))}
                   </AnimatePresence>
                 </div>
-                {!showAllMobileHoldings && filteredSortedHoldings.length > 20 && (
+                {!showAllMobileHoldings && holdingItems.length > 20 && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowAllMobileHoldings(true)}
                     className="w-full mt-2"
                   >
-                    {t("accountDetail.showMore", { count: filteredSortedHoldings.length - 20 })}
+                    {t("accountDetail.showMore", { count: holdingItems.length - 20 })}
                   </Button>
                 )}
               </>
@@ -534,7 +582,9 @@ export function AccountDetail({
               </div>
             ) : (
               <HoldingsTable
-                holdings={filteredSortedHoldings}
+                items={holdingItems}
+                collapsedGroups={collapsedGroups}
+                onToggleGroup={toggleGroup}
                 totalValue={totalHoldingsValue}
                 accountCurrency={account.currency}
                 sortField={sortField}
