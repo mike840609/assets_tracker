@@ -216,6 +216,14 @@ export const PATCH = withAuth<TxCtx>(
       const { id: _txId, ...data } = parsed.data;
 
       const generated = isGeneratedBuy(holdingTx);
+      if (
+        generated &&
+        holdingTx.occurrenceDate != null &&
+        data.createdAt !== undefined &&
+        new Date(data.createdAt).getTime() !== holdingTx.createdAt.getTime()
+      ) {
+        return failure("Generated buy dates cannot be changed", 400);
+      }
       // A generated buy's cash debit is tied to it being a BUY; turning it into
       // a SELL or EDIT has no meaningful cash reversal, so refuse it outright.
       if (generated && data.type !== undefined && data.type !== holdingTx.type) {

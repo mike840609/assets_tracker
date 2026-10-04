@@ -183,7 +183,7 @@ export const updateTransactionSchema = z
     id: z.string(),
     quantity: crudDecimalNumber.optional(),
     type: z.enum(HOLDING_TRANSACTION_TYPES).optional(),
-    note: z.string().optional().nullable(),
+    note: z.string().max(500).optional().nullable(),
     createdAt: z.iso.datetime().optional(),
   })
   .superRefine((data, ctx) => {
@@ -559,7 +559,9 @@ export const dataImportSchema = z.object({
                     type: z.enum(HOLDING_TRANSACTION_TYPES),
                     quantity: decimalSchema,
                     unitPrice: importHoldingTransactionUnitPrice,
-                    note: z.string().max(500).optional().nullable(),
+                    // Older versions allowed longer holding notes. Preserve
+                    // them on restore; the overall backup size is bounded.
+                    note: z.string().optional().nullable(),
                     createdAt: importTimestamp,
                     occurrenceDate: importOccurrenceDate,
                     recurringId: z.string().optional().nullable(),
@@ -679,6 +681,18 @@ export const dataImportSchema = z.object({
       }),
     )
     .max(MAX_IMPORT_STOCK_WATCH_ITEMS)
+    .optional(),
+  calendarEarningsWatch: z
+    .array(
+      createCalendarEarningsWatchSchema.extend({
+        createdAt: importTimestamp,
+      }),
+    )
+    .max(MAX_IMPORT_STOCK_WATCH_ITEMS)
+    .refine(
+      (items) => new Set(items.map((item) => item.symbol)).size === items.length,
+      "Duplicate earnings watch symbol",
+    )
     .optional(),
   calendarEntries: z
     .array(

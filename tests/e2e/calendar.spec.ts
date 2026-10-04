@@ -135,6 +135,15 @@ test.describe("calendar entry workflows", () => {
       await expect(sourceLink).toHaveAttribute("target", "_blank");
       const relTokens = (await sourceLink.getAttribute("rel"))?.split(/\s+/).filter(Boolean).sort();
       expect(relTokens).toEqual(["noopener", "noreferrer"]);
+      // Exercise the actual popup navigation without depending on an external
+      // site or network egress. A wrong link still fails the URL assertion.
+      await page.context().route("https://example.com/cpi", (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "text/html",
+          body: "<h1>CPI source</h1>",
+        }),
+      );
       const popupPromise = page.waitForEvent("popup");
       await sourceLink.click();
       const popup = await popupPromise;

@@ -40,7 +40,10 @@ test("1. unauthenticated visitor sees the landing page and can sign in", async (
 
   // Sign in via the preview credentials provider.
   // Works for both password-gated and button-only preview mode.
-  const passwordInput = page.locator('input[name="password"]');
+  const passwordInput = page
+    .locator("form")
+    .filter({ has: previewLoginButton })
+    .locator('input[name="password"]');
   if (await passwordInput.count()) {
     await passwordInput.fill(process.env.E2E_PASSWORD ?? "e2e-smoke-test");
   }

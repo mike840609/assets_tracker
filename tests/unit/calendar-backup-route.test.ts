@@ -13,6 +13,7 @@ const h = vi.hoisted(() => {
     recurringInvestment: { create: vi.fn(async () => ({ id: "new_investment_rule_1" })) },
     stockWatchItem: { deleteMany: vi.fn(), createMany: vi.fn() },
     calendarEntry: { deleteMany: vi.fn(), createMany: vi.fn() },
+    calendarEarningsWatch: { deleteMany: vi.fn(), createMany: vi.fn() },
     setting: { upsert: vi.fn() },
   });
 
@@ -100,6 +101,14 @@ let exportedUserFixture = {
   goals: [],
   stockWatchItems: [],
   calendarEntries: [calendarFixture],
+  calendarEarningsWatch: [
+    {
+      symbol: "AAPL",
+      name: "Apple",
+      source: "manual",
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+    },
+  ],
 };
 
 vi.mock("@/lib/prisma", () => ({
@@ -183,6 +192,14 @@ describe("Calendar whole-app backup", () => {
       goals: [],
       stockWatchItems: [],
       calendarEntries: [calendarFixture],
+      calendarEarningsWatch: [
+        {
+          symbol: "AAPL",
+          name: "Apple",
+          source: "manual",
+          createdAt: new Date("2026-01-01T00:00:00Z"),
+        },
+      ],
     };
     vi.clearAllMocks();
   });
@@ -716,5 +733,85 @@ describe("Calendar whole-app backup", () => {
       "import.price_warm_failed",
       expect.objectContaining({ outcome: "total_failure" }),
     );
+  });
+  it("round-trips earnings watches and invalidates their cache", async () => {
+    const { json } = await exportedJson(
+      await GET(new Request("http://unit.test/api/settings/data"), undefined),
+    );
+    expect(json.calendarEarningsWatch).toEqual([
+      { symbol: "AAPL", name: "Apple", source: "manual", createdAt: "2026-01-01T00:00:00.000Z" },
+    ]);
+    const response = await importBackup(json);
+    expect(response.status).toBe(200);
+    expect(h.tx.calendarEarningsWatch.deleteMany).toHaveBeenCalledWith({
+      where: { userId: "user_1" },
+    });
+    expect(h.tx.calendarEarningsWatch.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          userId: "user_1",
+          symbol: "AAPL",
+          name: "Apple",
+          source: "manual",
+          createdAt: new Date("2026-01-01T00:00:00Z"),
+        },
+      ],
+    });
+    expect(revalidateTag).toHaveBeenCalledWith("calendar-earnings:user_1", { expire: 0 });
+  });
+
+  it("restores legacy holding transaction notes longer than the editing limit", async () => {
+    const note = "x".repeat(501);
+    const response = await importBackup({
+      version: "1.5",
+      accounts: [
+        {
+          name: "Broker",
+          type: "ASSET",
+          category: "BROKERAGE",
+          currency: "USD",
+          cashBalance: "0",
+          holdings: [
+            {
+              symbol: "AAPL",
+              name: "Apple",
+              quantity: "1",
+              currency: "USD",
+              assetType: "STOCK",
+              transactions: [{ type: "BUY", quantity: "1", note }],
+            },
+          ],
+        },
+      ],
+    });
+    expect(response.status).toBe(200);
+    expect(
+      (
+        h.tx.holdingTransaction.createMany.mock.calls as unknown as [{ data: [{ note: string }] }][]
+      )[0][0].data[0].note,
+    ).toBe(note);
+  });
+
+  it("preserves earnings watches when restoring a legacy backup without the field", async () => {
+    expect((await importBackup({ version: "1.5", accounts: [] })).status).toBe(200);
+    expect(h.tx.calendarEarningsWatch.deleteMany).not.toHaveBeenCalled();
+  });
+  it("clears earnings watches when the backup explicitly contains an empty list", async () => {
+    expect(
+      (await importBackup({ version: "1.5", accounts: [], calendarEarningsWatch: [] })).status,
+    ).toBe(200);
+    expect(h.tx.calendarEarningsWatch.deleteMany).toHaveBeenCalledWith({
+      where: { userId: "user_1" },
+    });
+    expect(h.tx.calendarEarningsWatch.createMany).not.toHaveBeenCalled();
+  });
+
+  it("rejects duplicate earnings symbols before replacing any user data", async () => {
+    const item = { symbol: "AAPL", name: "Apple", source: "manual" };
+    expect(
+      (await importBackup({ version: "1.5", accounts: [], calendarEarningsWatch: [item, item] }))
+        .status,
+    ).toBe(400);
+    expect(h.tx.account.deleteMany).not.toHaveBeenCalled();
   });
 });

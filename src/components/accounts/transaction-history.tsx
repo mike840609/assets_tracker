@@ -288,7 +288,11 @@ export function TransactionHistory({
     setEditNote(t.note || "");
 
     // Format date for datetime-local input
-    const date = new Date(t.createdAt);
+    const isCash = Boolean((t as SerializedTransaction & { isCash?: boolean }).isCash);
+    // An occurrence is a calendar day, not an instant to shift across zones.
+    const date = new Date(
+      !isCash && t.occurrenceDate ? `${t.occurrenceDate.slice(0, 10)}T00:00` : t.createdAt,
+    );
     // Convert to local datetime string format YYYY-MM-DDThh:mm
     const tzOffset = date.getTimezoneOffset() * 60000;
     const localISOTime = new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
@@ -296,7 +300,6 @@ export function TransactionHistory({
 
     // Cash only: prefill with the stored occurrence day (already UTC
     // midnight, so slice the ISO string directly) or the local entry day.
-    const isCash = Boolean((t as SerializedTransaction & { isCash?: boolean }).isCash);
     setEditOccurredOn(isCash ? (t.occurrenceDate?.slice(0, 10) ?? localISOTime.slice(0, 10)) : "");
   };
 
@@ -315,7 +318,9 @@ export function TransactionHistory({
           type: editType,
           quantity: Number(editQuantity.replace(/,/g, "")),
           note: editNote,
-          createdAt: new Date(editDate).toISOString(),
+          ...((editingIsCash || !editingTx.occurrenceDate) && {
+            createdAt: new Date(editDate).toISOString(),
+          }),
           ...(editingIsCash && { occurrenceDate: editOccurredOn || null }),
         }),
       });
@@ -456,6 +461,10 @@ export function TransactionHistory({
         <Input
           id="date"
           type="datetime-local"
+          disabled={Boolean(
+            editingTx?.occurrenceDate &&
+            !(editingTx as SerializedTransaction & { isCash?: boolean }).isCash,
+          )}
           value={editDate}
           onChange={(e) => setEditDate(e.target.value)}
           className="min-h-11 md:min-h-8"
@@ -480,6 +489,7 @@ export function TransactionHistory({
         <Label htmlFor="note">{t("labelNote")}</Label>
         <Input
           id="note"
+          maxLength={500}
           value={editNote}
           onChange={(e) => setEditNote(e.target.value)}
           className="min-h-11 md:min-h-8"

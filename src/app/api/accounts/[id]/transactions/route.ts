@@ -61,7 +61,7 @@ export const GET = withAuth(
       const { createdAt: cursorDate, id: cursorId } = decoded;
 
       rows = await prisma.$queryRaw<UnifiedRow[]>`
-      SELECT id, false AS "isCash", type::text, quantity, "unitPrice", note, "createdAt", NULL AS "occurrenceDate", "holdingId"
+      SELECT id, false AS "isCash", type::text, quantity, "unitPrice", note, "createdAt", "occurrenceDate", "holdingId"
       FROM "HoldingTransaction"
       WHERE "holdingId" IN (SELECT id FROM "Holding" WHERE "accountId" = ${id})
         AND ("createdAt", id) < (${cursorDate}::timestamptz, ${cursorId}::text)
@@ -83,7 +83,7 @@ export const GET = withAuth(
       const offset = (page - 1) * limit;
 
       rows = await prisma.$queryRaw<UnifiedRow[]>`
-      SELECT id, false AS "isCash", type::text, quantity, "unitPrice", note, "createdAt", NULL AS "occurrenceDate", "holdingId"
+      SELECT id, false AS "isCash", type::text, quantity, "unitPrice", note, "createdAt", "occurrenceDate", "holdingId"
       FROM "HoldingTransaction"
       WHERE "holdingId" IN (SELECT id FROM "Holding" WHERE "accountId" = ${id})
 

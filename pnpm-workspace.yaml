@@ -6,6 +6,9 @@
 # deterministic and don't fail for ~24h whenever a dependency cuts a new release.
 minimumReleaseAge: 0
 
+# Keep CI installs and local script execution on the same isolated layout.
+enableGlobalVirtualStore: false
+
 # pnpm's defaults (60s per request, 2 retries) are too tight for a slow GitHub
 # runner: the Docker smoke test has aborted mid-install on the big tarballs
 # (next, prisma, @prisma/client) with "[23] The operation was aborted due to
@@ -14,9 +17,25 @@ minimumReleaseAge: 0
 fetchTimeout: 120000
 fetchRetries: 4
 
+# Security fixes for transitive dependencies; keep major versions where possible.
 overrides:
-  fast-uri: 3.1.4
-  hono: 4.12.30
+  fast-uri: 3.1.8
+  hono: 4.13.7
+  deepmerge-ts: 8.0.0
+  mysql2: 3.23.1
+  "@babel/core@7": ^7.29.1
+  "@hono/node-server@1": ^1.19.15
+  "baseline-browser-mapping@2": ^2.11.0
+  "body-parser@2": ^2.3.0
+  "brace-expansion@1": ^1.1.21
+  "brace-expansion@>=3 <6": ^5.0.12
+  "browserslist@4": ^4.28.7
+  "ip-address@10": ^10.7.1
+  "js-yaml@4": ^4.3.2
+  "nanoid@3": ^3.3.18
+  "postcss-selector-parser@7": ^7.1.3
+  "postcss@8": ^8.5.23
+  "qs@6": ^6.16.0
 
 # Dependencies allowed to run install/build lifecycle scripts (pnpm blocks these
 # by default for security). This preserves npm's run-all-build-scripts behavior.
