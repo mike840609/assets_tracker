@@ -188,6 +188,14 @@ export const PATCH = withAuth<IdCtx>(
       return failure("Cannot change the asset type of an option holding", 400);
     }
 
+    if (
+      existing.assetType === "OPTION" &&
+      data.symbol !== undefined &&
+      data.symbol !== existing.symbol
+    ) {
+      return failure("Cannot change the symbol of an option holding", 400);
+    }
+
     // Quantity 0 is only meaningful for options ("close the position" keeps the
     // transaction history; DELETE would cascade it away). Non-option holdings
     // must go through DELETE instead of leaving zombie zero-quantity rows.

@@ -350,4 +350,19 @@ describe("holdings route", () => {
       where: { id: "holding1", accountId: "acc1", account: { userId: "user1" } },
     });
   });
+  it("rejects renaming an existing option contract", async () => {
+    const { PATCH } = await import("@/app/api/accounts/[id]/holdings/route");
+    h.existingHolding = {
+      id: "holding1",
+      symbol: "AAPL261218C00200000",
+      assetType: "OPTION",
+      quantity: 1,
+    };
+    const response = await PATCH(
+      jsonRequest({ id: "holding1", symbol: "MSFT261218P00300000" }),
+      params,
+    );
+    expect(response.status).toBe(400);
+    expect(h.calls).toEqual([]);
+  });
 });

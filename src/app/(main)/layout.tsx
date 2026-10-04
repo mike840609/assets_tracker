@@ -35,7 +35,15 @@ function SidebarWithSession({
   );
 }
 
-export default async function MainLayout({
+export default function MainLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <Suspense fallback={null}>
+      <AuthenticatedMainLayout>{children}</AuthenticatedMainLayout>
+    </Suspense>
+  );
+}
+
+async function AuthenticatedMainLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;

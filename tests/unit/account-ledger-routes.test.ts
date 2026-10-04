@@ -655,4 +655,24 @@ describe("account ledger routes", () => {
 
     expect(response.status).toBe(200);
   });
+  it("rejects changing the recorded date of a generated buy", async () => {
+    const { PATCH } = await import("@/app/api/accounts/[id]/transactions/[transactionId]/route");
+    h.account = { id: "acc1", currency: "USD" };
+    h.holdingTx = {
+      id: "tx1",
+      type: "BUY",
+      quantity: new Decimal(1),
+      recurringId: "rule1",
+      materializedAt: new Date("2026-10-03T00:00:00Z"),
+      createdAt: new Date("2026-10-02T00:00:00Z"),
+      occurrenceDate: new Date("2026-10-02T00:00:00Z"),
+      holding: { id: "holding1", accountId: "acc1", currency: "USD" },
+    };
+    const response = await PATCH(
+      jsonRequest("PATCH", { id: "tx1", createdAt: "2026-09-01T12:00:00Z" }),
+      params(),
+    );
+    expect(response.status).toBe(400);
+    expect(h.calls).toEqual([]);
+  });
 });

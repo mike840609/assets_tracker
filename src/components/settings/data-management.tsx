@@ -500,7 +500,13 @@ function FormalDataManagement() {
             >
               {t("stayInSettings")}
             </Button>
-            <Button onClick={() => window.location.assign("/")} className="h-11 md:h-8">
+            <Button
+              // Restore replaces account IDs and all user data. A hard navigation
+              // discards the browser's pre-import Router Cache as well.
+              // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+              onClick={() => window.location.assign("/")}
+              className="h-11 md:h-8"
+            >
               {t("reviewDashboard")}
             </Button>
           </DialogFooter>

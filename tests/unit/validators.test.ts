@@ -1090,3 +1090,12 @@ describe("calendar entry schemas", () => {
     ).toBe(false);
   });
 });
+
+describe("holding transaction note limits", () => {
+  it("rejects new notes longer than 500 characters", async () => {
+    const { updateTransactionSchema } = await import("@/lib/validators");
+    expect(updateTransactionSchema.safeParse({ id: "tx1", note: "x".repeat(501) }).success).toBe(
+      false,
+    );
+  });
+});

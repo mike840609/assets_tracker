@@ -55,6 +55,20 @@ describe("compareTransactionsDesc", () => {
 });
 
 describe("formatTransactionDateKey", () => {
+  it.each([
+    ["2026-03-08", "Mar 8, 2026"],
+    ["2026-11-01", "Nov 1, 2026"],
+    ["2026-01-01", "Jan 1, 2026"],
+    ["2024-02-29", "Feb 29, 2024"],
+  ])("preserves the calendar day %s across DST and calendar boundaries", (day, label) => {
+    expect(
+      formatTransactionDateKey(
+        { id: "boundary", createdAt: "2026-10-04T01:00:00Z", occurrenceDate: `${day}T00:00:00Z` },
+        "en-US",
+      ),
+    ).toBe(label);
+  });
+
   it("formats an occurrenceDate in UTC so the calendar day never shifts", () => {
     // UTC midnight would render as the previous day in any UTC-negative zone
     // if formatted in local time; pinning to UTC keeps the stored day.

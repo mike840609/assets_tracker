@@ -258,6 +258,8 @@ function invalidateImportCaches(userId: string) {
   revalidateTag(`goals:${userId}`, { expire: 0 });
   revalidateTag("calendar-entries", { expire: 0 });
   revalidateTag(`calendar-entries:${userId}`, { expire: 0 });
+  revalidateTag("calendar-earnings", { expire: 0 });
+  revalidateTag(`calendar-earnings:${userId}`, { expire: 0 });
   revalidateTag("settings", { expire: 0 });
   revalidateTag(`settings:${userId}`, { expire: 0 });
   revalidateTag("snapshots", { expire: 0 });
@@ -292,6 +294,7 @@ export const GET = withAuth(
           goals: true,
           stockWatchItems: true,
           calendarEntries: true,
+          calendarEarningsWatch: true,
         },
       });
 
@@ -308,6 +311,7 @@ export const GET = withAuth(
         goals: data.goals,
         stockWatchItems: data.stockWatchItems,
         calendarEntries: data.calendarEntries.map(serializeCalendarEntry),
+        calendarEarningsWatch: data.calendarEarningsWatch,
       };
 
       const json = JSON.stringify(exportData);
@@ -380,6 +384,22 @@ export const POST = withAuth(
           await tx.goal.deleteMany({ where: { userId } });
           await tx.stockWatchItem.deleteMany({ where: { userId } });
           await tx.calendarEntry.deleteMany({ where: { userId } });
+          // Absence identifies older backups: preserve the unrepresented list.
+          // A present empty array intentionally clears it.
+          if (importData.calendarEarningsWatch !== undefined) {
+            await tx.calendarEarningsWatch.deleteMany({ where: { userId } });
+            if (importData.calendarEarningsWatch.length > 0) {
+              await tx.calendarEarningsWatch.createMany({
+                data: importData.calendarEarningsWatch.map((item) => ({
+                  userId,
+                  symbol: item.symbol,
+                  name: item.name,
+                  source: item.source,
+                  ...(item.createdAt && { createdAt: new Date(item.createdAt) }),
+                })),
+              });
+            }
+          }
 
           // 2. Import settings if present
           if (importData.settings) {
