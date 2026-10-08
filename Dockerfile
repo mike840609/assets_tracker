@@ -44,10 +44,14 @@ RUN addgroup -S -g 1001 nodejs \
   && adduser -S -u 1001 -G nodejs prisma
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY patches ./patches
+# The Prisma-only dependency tree does not use every application patch. Keep
+# patches available, but permit unused ones only in this migration image.
 RUN --mount=type=cache,id=pnpm-store-$CACHE_SCOPE-$TARGETPLATFORM,target=/pnpm/store \
   PRISMA_VERSION="$(awk '/^      prisma:/{getline; getline; sub(/^ *version: /,""); sub(/\(.*/,""); print; exit}' pnpm-lock.yaml)" \
   && case "$PRISMA_VERSION" in [0-9]*.[0-9]*.[0-9]*) ;; *) echo "Could not parse the prisma version out of pnpm-lock.yaml (got '$PRISMA_VERSION')" >&2; exit 1 ;; esac \
   && rm pnpm-lock.yaml \
+  && printf '\nallowUnusedPatches: true\n' >> pnpm-workspace.yaml \
   && printf '{"name":"assets-tracker-migrate","private":true}\n' > package.json \
   && pnpm add "prisma@$PRISMA_VERSION" \
   # Migrations run via `node`, so no package manager is needed past this point.
