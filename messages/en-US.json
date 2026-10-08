@@ -575,7 +575,7 @@
     "seriesCumulativeReturn": "Cumulative return",
     "cashFlowNote": "Market performance is monthly change minus net deposits and withdrawals.",
     "attribution": "Performance Attribution",
-    "attributionSubtitle": "Account change over the selected range, split by cash flow and market movement.",
+    "attributionSubtitle": "Account change over the selected range, split by cash flow and market movement. Sorted by largest absolute net-worth change first.",
     "attributionNoData": "Not enough history to compute attribution.",
     "attributionNote": "Market = ending value minus starting value minus account cash flow.",
     "attrCash": "Cash flow",

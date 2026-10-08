@@ -575,7 +575,7 @@
     "seriesCumulativeReturn": "累積報酬",
     "cashFlowNote": "市場表現 = 每月變化 − 淨存入/提領。",
     "attribution": "績效歸因",
-    "attributionSubtitle": "所選期間內各帳戶變化，拆分為現金流與市場變動。",
+    "attributionSubtitle": "所選期間內各帳戶變化，拆分為現金流與市場變動。依淨值變動幅度由大到小排序。",
     "attributionNoData": "歷史資料不足，無法計算歸因。",
     "attributionNote": "市場 = 期末價值 − 期初價值 − 帳戶現金流。",
     "attrCash": "現金流",

@@ -109,9 +109,8 @@ export const AttributionChart = memo(function AttributionChart({ items, baseCurr
       totalCash: items.reduce((s, i) => s + i.cashContribution, 0),
       totalMarket: items.reduce((s, i) => s + i.marketPerformance, 0),
       totalDelta: items.reduce((s, i) => s + i.totalDelta, 0),
-      // Recharts vertical layout renders bottom-to-top, so reverse to put the
-      // largest bar at the top of the chart.
-      chartData: [...items].reverse(),
+      // Preserve the service's descending absolute net-worth change order.
+      chartData: items,
     }),
     [items],
   );
