@@ -23,6 +23,7 @@ ENV DATABASE_URL="postgresql://postgres:postgres@db:5432/asset_app?sslmode=disab
 ENV PNPM_CONFIG_PACKAGE_IMPORT_METHOD="copy"
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY patches ./patches
 COPY prisma.config.ts ./
 COPY prisma ./prisma
 
