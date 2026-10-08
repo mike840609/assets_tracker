@@ -23,6 +23,10 @@ overrides:
   hono: 4.13.7
   deepmerge-ts: 8.0.0
   mysql2: 3.23.1
+  proxy-addr: 2.0.8
+  source-map-js: 1.2.2
+  sharp: 0.35.5
+  "@modelcontextprotocol/sdk": ^1.31.0
   "@babel/core@7": ^7.29.1
   "@hono/node-server@1": ^1.19.15
   "baseline-browser-mapping@2": ^2.11.0
@@ -48,3 +52,13 @@ allowBuilds:
   prisma: true
   sharp: true
   unrs-resolver: true
+
+patchedDependencies:
+  braces@3.0.3: patches/braces@3.0.3.patch
+
+# GHSA-vfj7-8cjw-p6xm has no published fixed release yet. The pinned package is
+# locally patched with a 100-level parser limit and covered by a regression
+# test; ignore only the registry's version-based report for this patched copy.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-vfj7-8cjw-p6xm
