@@ -218,8 +218,12 @@ export async function computeNetWorthSummary(
   }
 
   // Render-time helper: read-only against ExchangeRate. Missing pairs fall
-  // back to 1 (rates are warmed by the daily cron and on-write hooks).
+  // back to 1 (rates are warmed by the daily cron and on-write hooks) so a
+  // transient FX gap cannot break the dashboard. The pair is recorded in
+  // `unresolvedRatePairs`; snapshot writers refuse to persist a summary that
+  // contains one, because 1:1 would otherwise become permanent history.
   const warnedPairs = new Set<string>();
+  const unresolvedRatePairs = new Set<string>();
   // Memoize repeated pair lookups: the second pass resolves the same
   // (holding→base) and (holding→account) pairs once per currency combination,
   // not once per holding.
@@ -240,6 +244,7 @@ export async function computeNetWorthSummary(
       warnedPairs.add(memoKey);
       log.warn("rates.unresolved", { from, to, userId, baseCurrency });
     }
+    unresolvedRatePairs.add(`${from}->${to}`);
     // Memoize the fallback too: a miss is the most expensive path (resolveRate
     // exhausted direct, inverse and the USD cross before giving up), and
     // allRatesMap is fixed for this call, so the answer cannot change. The
@@ -318,6 +323,9 @@ export async function computeNetWorthSummary(
     baseCurrency,
     currencyExposure,
     accounts: accountsWithValue,
+    ...(unresolvedRatePairs.size > 0 && {
+      unresolvedRatePairs: [...unresolvedRatePairs],
+    }),
   };
 }
 

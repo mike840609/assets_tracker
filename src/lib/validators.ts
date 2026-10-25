@@ -44,7 +44,7 @@ export const createAccountSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   type: z.enum(ACCOUNT_TYPES),
   category: z.enum(ACCOUNT_CATEGORIES),
-  currency: z.string().length(3),
+  currency: supportedCurrencySchema,
   cashBalance: crudDecimalNumber.default(0),
 });
 
@@ -145,12 +145,12 @@ export const deleteAccountsSchema = z.object({
 export const snapshotsQuerySchema = z.object({
   from: z.coerce.date("Must be a valid date").optional(),
   to: z.coerce.date("Must be a valid date").optional(),
-  currency: z.string().length(3).default("USD"),
+  currency: supportedCurrencySchema.default("USD"),
 });
 
 export const updateSettingsSchema = z
   .object({
-    baseCurrency: z.string().length(3).optional(),
+    baseCurrency: supportedCurrencySchema.optional(),
     secondaryCurrency: supportedCurrencySchema.nullable().optional(),
     locale: supportedLocaleSchema.optional(),
   })
@@ -345,7 +345,7 @@ export const updateRecurringInvestmentSchema = z
 export const createGoalSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   targetAmount: crudDecimalNumber.positive("Target must be positive"),
-  targetCurrency: z.string().length(3).default("USD"),
+  targetCurrency: supportedCurrencySchema.default("USD"),
   targetDate: z.iso.date("Must be a valid YYYY-MM-DD date").optional().nullable(),
   scope: z.enum(GOAL_SCOPES),
   scopeRefId: z.string().min(1).optional().nullable(),

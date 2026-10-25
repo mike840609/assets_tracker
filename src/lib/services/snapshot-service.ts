@@ -38,6 +38,16 @@ export async function createSnapshot(
         })
       : await getCachedNetWorthSummary(userId, baseCurrency);
   const snapshotTakenAt = new Date();
+  // A missing FX rate is valued at 1:1 for display so the dashboard still
+  // renders. Persisting that number would freeze a wrong valuation into
+  // history forever, so the writer refuses instead. The cron records the user
+  // in `failedUserIds` and retries on the next run (or after a rate backfill).
+  const unresolvedRatePairs = summary.unresolvedRatePairs ?? [];
+  if (unresolvedRatePairs.length > 0) {
+    throw new Error(
+      `Refusing to persist snapshot with unresolved exchange rate(s): ${unresolvedRatePairs.join(", ")}`,
+    );
+  }
   // The cron fires at 21:30 UTC = 05:30 Taiwan time (#49) so the run lands just
   // after midnight local. Floor to the *Taiwan* calendar day (shift +8h before
   // reading UTC fields), not the raw UTC day, or a run at e.g. Jul 5 21:30 UTC

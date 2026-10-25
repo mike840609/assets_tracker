@@ -130,6 +130,12 @@ export type NetWorthSummary = {
   baseCurrency: string;
   currencyExposure: { currency: string; value: number }[];
   accounts: AccountWithValue[];
+  /**
+   * Pairs (e.g. `EUR->USD`) that had no resolvable rate and were valued at
+   * 1:1 for display. Persisting a snapshot with any of these would freeze the
+   * wrong value into history, so `createSnapshot` refuses to write them.
+   */
+  unresolvedRatePairs?: string[];
 };
 
 // ---------------------------------------------------------------------------

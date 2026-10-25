@@ -4,6 +4,7 @@ const h = vi.hoisted(() => ({
   upsertArgs: [] as unknown[],
   cachedCalls: [] as unknown[],
   computeCalls: [] as unknown[],
+  unresolvedPairs: [] as string[],
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -23,12 +24,24 @@ vi.mock("@/lib/prisma", () => ({
 vi.mock("@/lib/services/net-worth-service", () => ({
   getCachedNetWorthSummary: vi.fn(async (userId: string, baseCurrency: string) => {
     h.cachedCalls.push({ userId, baseCurrency });
-    return { totalAssets: 100, totalLiabilities: 0, netWorth: 100, accounts: [] };
+    return {
+      totalAssets: 100,
+      totalLiabilities: 0,
+      netWorth: 100,
+      accounts: [],
+      ...(h.unresolvedPairs.length > 0 && { unresolvedRatePairs: [...h.unresolvedPairs] }),
+    };
   }),
   computeNetWorthSummary: vi.fn(
     async (userId: string, baseCurrency: string, opts?: { fresh?: boolean }) => {
       h.computeCalls.push({ userId, baseCurrency, opts });
-      return { totalAssets: 250, totalLiabilities: 0, netWorth: 250, accounts: [] };
+      return {
+        totalAssets: 250,
+        totalLiabilities: 0,
+        netWorth: 250,
+        accounts: [],
+        ...(h.unresolvedPairs.length > 0 && { unresolvedRatePairs: [...h.unresolvedPairs] }),
+      };
     },
   ),
 }));
@@ -108,5 +121,28 @@ describe("createSnapshot summary source", () => {
     expect(h.computeCalls).toEqual([]);
     const args = h.upsertArgs[0] as { create: { netWorth: number } };
     expect(args.create.netWorth).toBe(100);
+  });
+});
+
+describe("createSnapshot FX guard", () => {
+  beforeEach(() => {
+    h.upsertArgs.length = 0;
+    h.unresolvedPairs = [];
+  });
+
+  it("refuses to persist a summary with an unresolved rate pair", async () => {
+    h.unresolvedPairs = ["EUR->USD"];
+
+    await expect(createSnapshot("u1", "USD", { fresh: true })).rejects.toThrow(
+      /unresolved exchange rate/i,
+    );
+
+    expect(h.upsertArgs).toHaveLength(0);
+  });
+
+  it("persists normally once every pair resolves", async () => {
+    await createSnapshot("u1", "USD", { fresh: true });
+
+    expect(h.upsertArgs).toHaveLength(1);
   });
 });

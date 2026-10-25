@@ -15,6 +15,7 @@ import {
   dataImportSchema,
   deleteAccountsSchema,
   snapshotsQuerySchema,
+  updateSettingsSchema,
   calendarEntriesRangeSchema,
   createCalendarEntrySchema,
 } from "@/lib/validators";
@@ -1097,5 +1098,46 @@ describe("holding transaction note limits", () => {
     expect(updateTransactionSchema.safeParse({ id: "tx1", note: "x".repeat(501) }).success).toBe(
       false,
     );
+  });
+});
+
+describe("supported currency validation", () => {
+  it("rejects an unsupported account currency before it can reach net worth", () => {
+    const result = createAccountSchema.safeParse({
+      name: "Typo",
+      type: "ASSET",
+      category: "BANK",
+      currency: "XXX",
+      cashBalance: 100,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts a supported account currency", () => {
+    const result = createAccountSchema.safeParse({
+      name: "Taipei",
+      type: "ASSET",
+      category: "BANK",
+      currency: "TWD",
+      cashBalance: 100,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects an unsupported base or goal currency", () => {
+    expect(updateSettingsSchema.safeParse({ baseCurrency: "XXX" }).success).toBe(false);
+    expect(
+      createGoalSchema.safeParse({
+        name: "House",
+        targetAmount: 1_000_000,
+        targetCurrency: "XXX",
+        scope: "TOTAL",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects an unsupported currency in the history query", () => {
+    expect(snapshotsQuerySchema.safeParse({ currency: "XXX" }).success).toBe(false);
+    expect(snapshotsQuerySchema.safeParse({ currency: "TWD" }).success).toBe(true);
   });
 });

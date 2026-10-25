@@ -156,6 +156,7 @@ describe("getCachedNetWorthSummary (two-pass valuation)", () => {
       { currency: "USD", value: 3000 },
       { currency: "TWD", value: 100 },
     ]);
+    expect(summary.unresolvedRatePairs).toBeUndefined();
   });
 
   it("tags the cached read with exchange-rates so a warmed FX rate invalidates it", async () => {
@@ -198,6 +199,7 @@ describe("getCachedNetWorthSummary (two-pass valuation)", () => {
     // EUR is unresolvable → rate 1 → value passes through unchanged.
     expect(summary.totalAssets).toBeCloseTo(50);
     expect(summary.currencyExposure).toEqual([{ currency: "EUR", value: 50 }]);
+    expect(summary.unresolvedRatePairs).toEqual(["EUR->USD"]);
     expect(h.warnings.some((w) => w.msg === "rates.unresolved")).toBe(true);
   });
 
