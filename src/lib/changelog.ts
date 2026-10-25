@@ -38,6 +38,63 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.1",
+    date: "2026-10-25",
+    summary: {
+      "en-US":
+        "A security and reliability patch: refreshed Next.js and Zod, unresolved FX rates no longer enter history, and calendar earnings stop blocking the page.",
+      "zh-TW":
+        "安全性與可靠性修補：更新 Next.js 與 Zod、未解析匯率不再寫入歷史，財報資料也不再阻塞行事曆頁面。",
+    },
+    changes: [
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Upgraded Next.js to 16.4.3 and Zod to 4.6.7, clearing two critical and two high-severity advisories in the framework and validation layer.",
+          "zh-TW":
+            "升級 Next.js 至 16.4.3、Zod 至 4.6.7，修補框架與驗證層的兩項重大與兩項高風險安全性漏洞。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "A snapshot is no longer written when an exchange rate is missing. Previously the dashboard's 1:1 fallback could freeze an understated value into history; unsupported account, base, goal, and history currencies are now rejected at the edge as well.",
+          "zh-TW":
+            "匯率缺失時不再寫入快照。過去儀表板的 1:1 備援可能把低估的金額永久寫入歷史；不支援的帳戶、基準、目標與歷史查詢幣別也會在輸入時被拒絕。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Stock search and option-chain requests now require a signed-in session (the public Demo is still allowed), closing an anonymous path to the market-data providers.",
+          "zh-TW":
+            "股票搜尋與選擇權鏈請求現在需要登入 session（公開 Demo 仍可使用），關閉匿名存取市場資料供應商的管道。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "The daily snapshot cron resumes after the last user it processed when it hits its time budget, so the same tail of a large instance is no longer skipped every day.",
+          "zh-TW":
+            "每日快照 cron 在時間預算用完後，會從上次處理到的使用者續跑，大型實例尾端的使用者不再每天被跳過。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Calendar earnings load after hydration instead of blocking the server render, and a provider failure now shows a retry message rather than silently removing the events.",
+          "zh-TW":
+            "行事曆財報改在頁面 hydrate 後載入，不再阻塞伺服器渲染；供應商失敗時會顯示重試訊息，而不是默默移除事件。",
+        },
+      },
+    ],
+  },
+  {
     version: "1.7.0",
     date: "2026-09-23",
     summary: {

@@ -29,8 +29,13 @@ flows are considered stable.
 1. Prepend a `Release` to `CHANGELOG` in `src/lib/changelog.ts`. Group changes as
    `added` / `improved` / `fixed`; author `text` bilingually (`en-US` + `zh-TW`).
 2. Bump `package.json` `version` to match the new top entry.
+3. Merge the release PR, then tag the merge commit with the bare SemVer and push the tag:
+   `git tag 1.7.1 && git push origin 1.7.1`. The tag triggers
+   `.github/workflows/publish-container.yml` and `.github/workflows/release.yml`.
+   Without it the version exists only in the app, and an `ASSETS_TRACKER_VERSION` pin
+   has no image to pull.
 
-That single edit updates every surface that reads `APP_VERSION` / `CHANGELOG`.
+The changelog edit updates every in-app surface that reads `APP_VERSION` / `CHANGELOG`.
 
 ## Conventions we lean on
 
