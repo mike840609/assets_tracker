@@ -19,12 +19,6 @@ import {
   parseDateOnly,
 } from "@/lib/calendar-date";
 import { getCalendarEntriesInRange } from "@/lib/services/calendar-entry-service";
-import {
-  CALENDAR_EARNINGS_RATE_LIMIT,
-  getCalendarEarnings,
-  type CalendarEarningsItem,
-} from "@/lib/services/calendar-earnings-data";
-import { rateLimitSubjectCheckWithPrune } from "@/lib/rate-limit";
 import { isMobileUserAgent } from "@/lib/mobile-hub-route";
 import { parseMobilePlanTab, type MobilePlanTab } from "@/components/goals/mobile-plan-tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -79,7 +73,6 @@ type GoalsPanelData = {
   projectionData?: ProjectionData;
   stocks?: SerializedTrackedStock[];
   calendarEntries?: SerializedCalendarEntry[];
-  calendarEarnings?: CalendarEarningsItem[];
 };
 
 function getGoalsPanelData({
@@ -110,32 +103,20 @@ function getGoalsPanelData({
     throw new Error(`Invalid visible calendar range: ${from}..${to}`);
   }
 
-  const earningsLimited = rateLimitSubjectCheckWithPrune(
-    userId,
-    "yahoo",
-    CALENDAR_EARNINGS_RATE_LIMIT,
-  );
   if (isMobile) {
-    return Promise.all([
-      getCalendarEntriesInRange(userId, fromDate, toDate),
-      earningsLimited
-        ? Promise.resolve<CalendarEarningsItem[]>([])
-        : getCalendarEarnings(userId, from, to),
-    ]).then(([calendarEntries, calendarEarnings]) => ({ calendarEntries, calendarEarnings }));
+    return getCalendarEntriesInRange(userId, fromDate, toDate).then((calendarEntries) => ({
+      calendarEntries,
+    }));
   }
 
   return Promise.all([
     getProjectionData(userId, baseCurrency),
     getCachedTrackedStocks(userId),
     getCalendarEntriesInRange(userId, fromDate, toDate),
-    earningsLimited
-      ? Promise.resolve<CalendarEarningsItem[]>([])
-      : getCalendarEarnings(userId, from, to),
-  ]).then(([projectionData, stocks, calendarEntries, calendarEarnings]) => ({
+  ]).then(([projectionData, stocks, calendarEntries]) => ({
     projectionData,
     stocks,
     calendarEntries,
-    calendarEarnings,
   }));
 }
 
@@ -152,13 +133,6 @@ async function GoalsDeferredData({
 }) {
   const panelData = await panelDataP;
 
-  const earningsByDate = new Map<string, CalendarEarningsItem[]>();
-  for (const item of panelData.calendarEarnings ?? []) {
-    const day = earningsByDate.get(item.date) ?? [];
-    day.push(item);
-    earningsByDate.set(item.date, day);
-  }
-
   return (
     <GoalsView
       {...eagerProps}
@@ -167,7 +141,6 @@ async function GoalsDeferredData({
       projectionData={panelData.projectionData}
       stocks={panelData.stocks}
       calendarEntries={panelData.calendarEntries}
-      earningsByDate={earningsByDate}
     />
   );
 }

@@ -12,13 +12,7 @@ import {
 } from "@/lib/calendar-date";
 import { getSession } from "@/lib/auth-session";
 import { pickMessages } from "@/lib/i18n-utils";
-import {
-  CALENDAR_EARNINGS_RATE_LIMIT,
-  getCalendarEarnings,
-  type CalendarEarningsItem,
-} from "@/lib/services/calendar-earnings-data";
 import { getCalendarEntriesInRangeCached } from "@/lib/services/calendar-entry-service";
-import { rateLimitSubjectCheckWithPrune } from "@/lib/rate-limit";
 
 const CLIENT_NAMESPACES = ["calendar", "common", "nav", "holdingSearch"];
 
@@ -32,25 +26,11 @@ async function CalendarContent({ searchParams }: CalendarPageProps) {
 
   const { month, date } = normalizeCalendarUrlState(await searchParams);
   const { from, to } = getVisibleCalendarRange(month);
-  const earningsLimited = rateLimitSubjectCheckWithPrune(
-    session.user.id,
-    "yahoo",
-    CALENDAR_EARNINGS_RATE_LIMIT,
-  );
-  const [messages, locale, entries, earnings] = await Promise.all([
+  const [messages, locale, entries] = await Promise.all([
     getMessages(),
     getLocale(),
     getCalendarEntriesInRangeCached(session.user.id, parseDateOnly(from)!, parseDateOnly(to)!),
-    earningsLimited
-      ? Promise.resolve<CalendarEarningsItem[]>([])
-      : getCalendarEarnings(session.user.id, from, to),
   ]);
-  const earningsByDate = new Map<string, CalendarEarningsItem[]>();
-  for (const item of earnings) {
-    const day = earningsByDate.get(item.date) ?? [];
-    day.push(item);
-    earningsByDate.set(item.date, day);
-  }
   const today = formatDateOnly(taiwanCalendarDay(new Date()));
 
   return (
@@ -63,7 +43,6 @@ async function CalendarContent({ searchParams }: CalendarPageProps) {
           selectedDate={date}
           today={today}
           locale={locale}
-          earningsByDate={earningsByDate}
         />
       </div>
     </NextIntlClientProvider>

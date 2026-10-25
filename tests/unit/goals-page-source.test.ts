@@ -5,15 +5,24 @@ import path from "node:path";
 const root = process.cwd();
 
 describe("Goals calendar earnings integration", () => {
-  it("loads earnings and passes them into the mobile CalendarView", () => {
+  it("leaves earnings to the CalendarView client fetch instead of the RSC render", () => {
     const page = fs.readFileSync(path.join(root, "src/app/(main)/goals/page.tsx"), "utf8");
+    const calendarPage = fs.readFileSync(
+      path.join(root, "src/app/(main)/calendar/page.tsx"),
+      "utf8",
+    );
     const view = fs.readFileSync(path.join(root, "src/components/goals/goals-view.tsx"), "utf8");
+    const calendarView = fs.readFileSync(
+      path.join(root, "src/components/calendar/calendar-view.tsx"),
+      "utf8",
+    );
 
-    expect(page).toContain("getCalendarEarnings");
-    expect(page).toContain("earningsByDate");
-    expect(page).toContain("panelData.calendarEarnings");
-    expect(view).toContain("earningsByDate?: ReadonlyMap<string, CalendarEarningsItem[]>");
-    expect(view).toContain("earningsByDate={earningsByDate}");
+    expect(page).not.toContain("getCalendarEarnings");
+    expect(page).not.toContain("calendarEarnings");
+    expect(calendarPage).not.toContain("getCalendarEarnings");
+    expect(view).not.toContain("earningsByDate");
+    expect(calendarView).toContain("/api/calendar-earnings");
+    expect(calendarView).toContain("useEffect");
   });
 
   it("keeps mobile selection inside the Goals Suspense architecture", () => {

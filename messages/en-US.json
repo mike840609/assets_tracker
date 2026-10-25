@@ -39,6 +39,8 @@
     "beforeOpen": "Before open",
     "afterClose": "After close",
     "estimate": "Estimate",
+    "earningsUnavailable": "Earnings are temporarily unavailable.",
+    "earningsRetry": "Try again",
     "emptyTitle": "Nothing scheduled",
     "emptyDescription": "Add a report, economic release, or reminder for this day.",
     "keyboardHint": "Use arrow keys to move by day. Page Up and Page Down change month.",

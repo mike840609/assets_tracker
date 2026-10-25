@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useOptimistic, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight, ListChecks, Plus } from "lucide-react";
@@ -13,7 +13,7 @@ import { buildCalendarNavigationHref } from "@/components/calendar/calendar-navi
 import { groupCalendarEntriesByDate } from "@/components/calendar/calendar-view-model";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { Button } from "@/components/ui/button";
-import { moveCalendarMonth } from "@/lib/calendar-date";
+import { getVisibleCalendarRange, moveCalendarMonth } from "@/lib/calendar-date";
 import type { CalendarEarningsItem } from "@/lib/services/calendar-earnings-data";
 import type { SerializedCalendarEntry } from "@/lib/types";
 
@@ -24,7 +24,8 @@ type CalendarViewProps = {
   today: string;
   locale: string;
   showHeader?: boolean;
-  earningsByDate?: ReadonlyMap<string, CalendarEarningsItem[]>;
+  /** Optional server-rendered seed. The client refreshes it in the background. */
+  initialEarningsByDate?: ReadonlyMap<string, CalendarEarningsItem[]>;
 };
 
 export function CalendarView({
@@ -33,7 +34,7 @@ export function CalendarView({
   today,
   locale,
   showHeader = true,
-  earningsByDate,
+  initialEarningsByDate,
 }: CalendarViewProps) {
   const t = useTranslations("calendar");
   const router = useRouter();
@@ -47,6 +48,41 @@ export function CalendarView({
   const [optimisticDate, setOptimisticDate] = useOptimistic(selectedDate);
   const effectiveDate = optimisticDate;
   const effectiveMonth = effectiveDate.slice(0, 7);
+  const [earningsByDate, setEarningsByDate] = useState<ReadonlyMap<string, CalendarEarningsItem[]>>(
+    () => initialEarningsByDate ?? new Map(),
+  );
+  const [earningsError, setEarningsError] = useState(false);
+  const [earningsRetryKey, setEarningsRetryKey] = useState(0);
+
+  // Earnings come from a provider quote, so they must not block the server
+  // render. Fetch them after hydration instead; the month grid renders
+  // immediately and updates when the request settles.
+  useEffect(() => {
+    const { from, to } = getVisibleCalendarRange(effectiveMonth);
+    const controller = new AbortController();
+    fetch(`/api/calendar-earnings?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`earnings request failed: ${response.status}`);
+        const payload = (await response.json()) as {
+          data?: { earnings?: CalendarEarningsItem[] };
+        };
+        const grouped = new Map<string, CalendarEarningsItem[]>();
+        for (const item of payload.data?.earnings ?? []) {
+          const day = grouped.get(item.date) ?? [];
+          day.push(item);
+          grouped.set(item.date, day);
+        }
+        setEarningsError(false);
+        setEarningsByDate(grouped);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setEarningsError(true);
+      });
+    return () => controller.abort();
+  }, [effectiveMonth, earningsRetryKey]);
 
   function navigate(date: string) {
     startTransition(() => {
@@ -140,6 +176,24 @@ export function CalendarView({
           </Button>
         </div>
       </div>
+
+      {earningsError && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-muted-foreground">
+          <span>{t("earningsUnavailable")}</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            mobileTouch
+            onClick={() => {
+              setEarningsError(false);
+              setEarningsRetryKey((key) => key + 1);
+            }}
+          >
+            {t("earningsRetry")}
+          </Button>
+        </div>
+      )}
 
       <div className="gap-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(20rem,0.42fr)] md:items-start">
         <CalendarMonthGrid

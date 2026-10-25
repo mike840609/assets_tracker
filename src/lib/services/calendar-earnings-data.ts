@@ -80,6 +80,8 @@ export async function getCalendarEarnings(
     return await getCachedCalendarEarnings(userId, from, to);
   } catch (error) {
     log.error("calendar.earnings.yahoo_failed", { error: String(error) });
-    return [];
+    // Let the API route return a 5xx so the client can show a retry state
+    // instead of silently rendering an empty calendar.
+    throw error;
   }
 }

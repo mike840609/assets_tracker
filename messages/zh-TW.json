@@ -39,6 +39,8 @@
     "beforeOpen": "盤前",
     "afterClose": "盤後",
     "estimate": "估計",
+    "earningsUnavailable": "財報資料暫時無法取得。",
+    "earningsRetry": "再試一次",
     "emptyTitle": "尚無安排",
     "emptyDescription": "為這一天新增報告、經濟數據或提醒。",
     "keyboardHint": "使用方向鍵逐日移動。Page Up 與 Page Down 可切換月份。",

@@ -19,7 +19,6 @@ import { cn } from "@/lib/utils";
 import { ArrowUpDown, CheckCircle2, GripVertical, Plus, Save, Target, X } from "lucide-react";
 import type { GoalWithProgress, SerializedAccount, SerializedCalendarEntry } from "@/lib/types";
 import type { ProjectionData } from "@/lib/services/projection-service";
-import type { CalendarEarningsItem } from "@/lib/services/calendar-earnings-data";
 import type { SerializedTrackedStock } from "@/lib/services/stock-watch-service";
 import { GoalCard } from "./goal-card";
 import { GoalFormDialog } from "./goal-form-dialog";
@@ -58,7 +57,6 @@ interface GoalsViewProps {
   projectionData?: ProjectionData;
   stocks?: SerializedTrackedStock[];
   calendarEntries?: SerializedCalendarEntry[];
-  earningsByDate?: ReadonlyMap<string, CalendarEarningsItem[]>;
   calendarMonth: string;
   calendarSelectedDate: string;
   calendarToday: string;
@@ -142,7 +140,6 @@ export function GoalsView({
   projectionData,
   stocks,
   calendarEntries,
-  earningsByDate,
   calendarMonth,
   calendarSelectedDate,
   calendarToday,
@@ -223,7 +220,7 @@ export function GoalsView({
         <MobilePlanLoading />
       ),
     calendar: () =>
-      hasLoadedActivePanel && calendarEntries && earningsByDate ? (
+      hasLoadedActivePanel && calendarEntries ? (
         <CalendarView
           initialEntries={calendarEntries}
           month={calendarMonth}
@@ -231,7 +228,6 @@ export function GoalsView({
           today={calendarToday}
           locale={locale}
           showHeader={false}
-          earningsByDate={earningsByDate}
         />
       ) : (
         <MobilePlanLoading />

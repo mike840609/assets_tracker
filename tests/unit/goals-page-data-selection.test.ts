@@ -8,7 +8,6 @@ const h = vi.hoisted(() => ({
   getProjectionData: vi.fn(),
   getCachedTrackedStocks: vi.fn(),
   getCalendarEntriesInRange: vi.fn(),
-  getCalendarEarnings: vi.fn(),
   getTranslations: vi.fn(),
   getMessages: vi.fn(),
   getLocale: vi.fn(),
@@ -32,11 +31,6 @@ vi.mock("@/lib/services/stock-watch-service", () => ({
 vi.mock("@/lib/services/calendar-entry-service", () => ({
   getCalendarEntriesInRange: h.getCalendarEntriesInRange,
 }));
-vi.mock("@/lib/services/calendar-earnings-data", () => ({
-  CALENDAR_EARNINGS_RATE_LIMIT: 1,
-  getCalendarEarnings: h.getCalendarEarnings,
-}));
-vi.mock("@/lib/rate-limit", () => ({ rateLimitSubjectCheckWithPrune: () => false }));
 vi.mock("next/headers", () => ({ headers: h.headers }));
 vi.mock("next-intl/server", () => ({
   getTranslations: h.getTranslations,
@@ -69,7 +63,6 @@ function setDefaultMocks() {
   });
   h.getCachedTrackedStocks.mockResolvedValue([]);
   h.getCalendarEntriesInRange.mockResolvedValue([]);
-  h.getCalendarEarnings.mockResolvedValue([]);
   h.getTranslations.mockResolvedValue(() => "translated");
   h.getMessages.mockResolvedValue({});
   h.getLocale.mockResolvedValue("en-US");
@@ -105,12 +98,9 @@ describe("Goals mobile panel data selection", () => {
       "fetchUserAccountsWithHoldings",
       "getProjectionData",
       "getCalendarEntriesInRange",
-      "getCalendarEarnings",
     ] as const) {
       const expectedCalls =
-        reader === activeReader ||
-        (tab === "goals" && reader === "fetchUserAccountsWithHoldings") ||
-        (tab === "calendar" && reader === "getCalendarEarnings")
+        reader === activeReader || (tab === "goals" && reader === "fetchUserAccountsWithHoldings")
           ? 1
           : 0;
       expect(h[reader]).toHaveBeenCalledTimes(expectedCalls);
@@ -120,27 +110,23 @@ describe("Goals mobile panel data selection", () => {
   it("keeps #706's deferred non-default readers on desktop", async () => {
     await load("projections", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)");
 
-    await vi.waitFor(() => expect(h.getCalendarEarnings).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(h.getCalendarEntriesInRange).toHaveBeenCalledOnce());
 
     expect(h.computeGoalsWithProgress).toHaveBeenCalledOnce();
     expect(h.fetchUserAccountsWithHoldings).toHaveBeenCalledOnce();
     expect(h.getProjectionData).toHaveBeenCalledOnce();
     expect(h.getCachedTrackedStocks).toHaveBeenCalledOnce();
-    expect(h.getCalendarEntriesInRange).toHaveBeenCalledOnce();
-    expect(h.getCalendarEarnings).toHaveBeenCalledOnce();
   });
 
   it("ignores an invalid tab query when selecting desktop Goals data", async () => {
     await load("not-a-tab", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)");
 
-    await vi.waitFor(() => expect(h.getCalendarEarnings).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(h.getCalendarEntriesInRange).toHaveBeenCalledOnce());
 
     expect(h.computeGoalsWithProgress).toHaveBeenCalledOnce();
     expect(h.fetchUserAccountsWithHoldings).toHaveBeenCalledOnce();
     expect(h.getProjectionData).toHaveBeenCalledOnce();
     expect(h.getCachedTrackedStocks).toHaveBeenCalledOnce();
-    expect(h.getCalendarEntriesInRange).toHaveBeenCalledOnce();
-    expect(h.getCalendarEarnings).toHaveBeenCalledOnce();
   });
 
   it("starts the selected reader while translations are still pending", async () => {

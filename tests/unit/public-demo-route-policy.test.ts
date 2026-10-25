@@ -50,6 +50,7 @@ const expectedPolicies: Record<string, Record<string, DemoPolicy>> = {
   },
   "src/app/api/calendar-entries/[id]/route.ts": { DELETE: "allow", PATCH: "allow" },
   "src/app/api/calendar-entries/route.ts": { GET: "allow", POST: "allow" },
+  "src/app/api/calendar-earnings/route.ts": { GET: "allow" },
   "src/app/api/goals/[id]/route.ts": { DELETE: "allow", PATCH: "allow" },
   "src/app/api/goals/reorder/route.ts": { PATCH: "allow" },
   "src/app/api/goals/route.ts": { GET: "allow", POST: "allow" },
