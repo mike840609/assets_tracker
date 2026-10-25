@@ -441,6 +441,10 @@ model CronRun {
   ok         Boolean   @default(false)
   error      String?   @db.Text
   durationMs Int?
+  // Last user id processed when a run stops early (budget exhausted). The next
+  // run resumes after it instead of restarting from the first id, so the tail
+  // of a large instance is not starved on every run.
+  cursor     String?
   createdAt  DateTime  @default(now())
 
   @@index([name, ok, startedAt(sort: Desc)])

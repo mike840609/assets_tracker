@@ -49,6 +49,8 @@ const h = vi.hoisted(() => ({
   priceRefreshResult: { updated: 0, changed: 0, outcome: "success", errors: [] as string[] },
   snapshotTimeJumpUser: null as string | null,
   snapshotTimeJumpMs: 0,
+  /** Cursor returned by the previous CronRun row, if any. */
+  previousCursor: null as string | null,
 }));
 
 vi.mock("@/lib/env", () => ({
@@ -147,6 +149,7 @@ vi.mock("@/lib/prisma", () => {
     cronRun: {
       create: vi.fn(async () => ({ id: "cron1" })),
       update: vi.fn(async () => ({})),
+      findFirst: vi.fn(async () => (h.previousCursor ? { cursor: h.previousCursor } : null)),
     },
     holding: {
       findMany: vi.fn(
@@ -273,6 +276,7 @@ describe("snapshot cron route", () => {
     h.priceRefreshResult = { updated: 0, changed: 0, outcome: "success", errors: [] };
     h.snapshotTimeJumpUser = null;
     h.snapshotTimeJumpMs = 0;
+    h.previousCursor = null;
   });
 
   it("keeps Demo rows out of every global discovery query and cleans up first", async () => {
@@ -1022,6 +1026,34 @@ describe("snapshot cron route", () => {
       );
     });
 
+    it("resumes after the cursor left by a budget-exhausted run", async () => {
+      h.users = manyUsers(3);
+      h.previousCursor = "user0";
+      const { GET } = await import("@/app/api/cron/snapshot/route");
+      const { prisma } = await import("@/lib/prisma");
+
+      const response = await GET(
+        new Request("http://unit.test/api/cron/snapshot", {
+          headers: { authorization: "Bearer test-secret" },
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(h.events).not.toContain("snapshot:user0");
+      expect(h.events).toContain("snapshot:user1");
+      expect(h.events).toContain("snapshot:user2");
+      expect(vi.mocked(prisma.user.findMany)).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ cursor: { id: "user0" }, skip: 1 }),
+      );
+      // A completed sweep clears the resume point.
+      expect(prisma.cronRun.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ cursor: null }),
+        }),
+      );
+    });
+
     it("stops scheduling snapshot waves before the platform deadline and records partial failure", async () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date("2026-07-05T21:30:00.000Z"));
@@ -1052,6 +1084,7 @@ describe("snapshot cron route", () => {
           expect.objectContaining({
             data: expect.objectContaining({
               ok: false,
+              cursor: "user19",
               error: expect.stringMatching(/budget.*20.*25/i),
             }),
           }),

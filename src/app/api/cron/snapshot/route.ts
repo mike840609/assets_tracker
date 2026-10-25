@@ -68,6 +68,16 @@ export async function GET(request: Request) {
   let cronRun: { id: string } | null = null;
 
   try {
+    // Resume after the last user a budget-exhausted run processed. Completed
+    // runs write `cursor: null`, so this only kicks in after a partial sweep.
+    const previousRun = await prisma.cronRun.findFirst({
+      where: { name: CRON_NAME },
+      orderBy: { startedAt: "desc" },
+      select: { cursor: true },
+    });
+    let userCursor = previousRun?.cursor ?? undefined;
+    if (userCursor) log.info("cron.snapshot.resume", { cursor: userCursor });
+
     // E18 — audit trail. Record the run start up front so a crash mid-flight still
     // leaves an `ok: false` row that /api/health can read. Both the success and
     // failure paths below close it out with finishedAt/durationMs.
@@ -369,7 +379,8 @@ export async function GET(request: Request) {
     const successfulUserIds: string[] = [];
     const failedUserIds: string[] = [];
     let usersDiscovered = 0;
-    let userCursor: string | undefined;
+    let lastProcessedUserId: string | undefined;
+    let cursorWrapped = false;
     let budgetExhausted = false;
 
     while (true) {
@@ -384,7 +395,16 @@ export async function GET(request: Request) {
         take: USER_PAGE_SIZE,
         ...(userCursor && { cursor: { id: userCursor }, skip: 1 }),
       });
-      if (page.length === 0) break;
+      if (page.length === 0) {
+        // The cursor can outlive the user it points at. Wrap once so a deleted
+        // tail user cannot stop the sweep forever.
+        if (userCursor && !cursorWrapped) {
+          userCursor = undefined;
+          cursorWrapped = true;
+          continue;
+        }
+        break;
+      }
       usersDiscovered += page.length;
 
       const inputs = await loadNetWorthInputsForUsers(
@@ -411,6 +431,9 @@ export async function GET(request: Request) {
 
         for (let i = 0; i < waveResults.length; i++) {
           const result = waveResults[i];
+          // Whatever the outcome, this user is no longer "unvisited": resume
+          // after them next time rather than re-scanning the same page forever.
+          lastProcessedUserId = wave[i].id;
           if (result.status === "fulfilled") {
             snapshots.push(result.value.snapshot);
             successfulUserIds.push(result.value.userId);
@@ -432,6 +455,7 @@ export async function GET(request: Request) {
       created: snapshots.length,
       failed: failedUserIds.length,
       budgetExhausted,
+      cursor: lastProcessedUserId ?? null,
     });
     if (!budgetExhausted && usersDiscovered > 0 && failedUserIds.length === usersDiscovered) {
       throw new Error(`Snapshot failed for users: ${failedUserIds.join(", ")}`);
@@ -457,6 +481,9 @@ export async function GET(request: Request) {
         ok: !budgetExhausted && !partiallyFailed,
         finishedAt,
         durationMs: finishedAt.getTime() - startedAt.getTime(),
+        // Keep a resume point only when this run stopped early. A complete run
+        // clears it so the next one starts from the first user again.
+        cursor: budgetExhausted ? (lastProcessedUserId ?? userCursor ?? null) : null,
         ...(snapshotError && { error: snapshotError }),
       },
     });
