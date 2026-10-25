@@ -1,4 +1,5 @@
 import { ok } from "@/lib/api-responses";
+import { withAuth } from "@/lib/api-handler";
 import { rateLimitCheckWithPrune, rateLimitKeyForClientIp } from "@/lib/rate-limit";
 import { getYahooClient } from "@/lib/services/yahoo-client";
 import { log } from "@/lib/logger";
@@ -31,81 +32,85 @@ const slim = (arr: any[] | undefined): ChainContract[] =>
     ask: c.ask ?? null,
   }));
 
-export async function GET(request: Request) {
-  const limited = rateLimitCheckWithPrune(request, {
-    limit: 60,
-    prefix: "options-chain",
-    key: rateLimitKeyForClientIp(request, "options-chain"),
-  });
-  if (limited) return limited;
-
-  const { searchParams } = new URL(request.url);
-  const symbol = searchParams.get("symbol")?.trim().toUpperCase();
-  if (!symbol) return ok(EMPTY);
-  if (!SYMBOL_SHAPE.test(symbol)) return ok(EMPTY);
-
-  // Optional: fetch chain for a specific expiration (lazy-loading from the UI)
-  const dateParam = searchParams.get("date"); // YYYY-MM-DD
-  const startedAt = Date.now();
-
-  try {
-    const yf = await getYahooClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const initial: any = await yf.options(symbol);
-    const allDates: Date[] = initial.expirationDates ?? [];
-
-    // Filter to expirations within 2 years
-    const cutoff = new Date(Date.now() + TWO_YEARS_MS);
-    const targetDates = allDates.filter((d) => new Date(d) <= cutoff);
-    const expirations = targetDates.map((d) => new Date(d).toISOString().slice(0, 10));
-
-    const chains: ChainResponse["chains"] = {};
-
-    if (dateParam && expirations.includes(dateParam)) {
-      // On-demand fetch for a specific expiration chosen by the user
-      const date = targetDates.find((d) => new Date(d).toISOString().slice(0, 10) === dateParam);
-      if (date) {
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const detail: any = await yf.options(symbol, { date });
-          const block = detail.options?.[0];
-          if (block) {
-            chains[dateParam] = { calls: slim(block.calls), puts: slim(block.puts) };
-          }
-        } catch (err) {
-          log.error("options.chain.date.failed", {
-            operation: "option-chain-expiration",
-            errorType: err instanceof Error ? err.name : "unknown",
-            expirationCount: expirations.length,
-            durationMs: Date.now() - startedAt,
-          });
-        }
-      }
-    } else {
-      // Initial load: use the chain that comes free in the initial call (nearest expiration)
-      for (const opt of initial.options ?? []) {
-        if (!opt?.expirationDate) continue;
-        const exp = new Date(opt.expirationDate).toISOString().slice(0, 10);
-        if (expirations.includes(exp)) {
-          chains[exp] = { calls: slim(opt.calls), puts: slim(opt.puts) };
-        }
-      }
-    }
-
-    return ok<ChainResponse>(
-      { underlying: symbol, expirations, chains },
-      {
-        headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",
-        },
-      },
-    );
-  } catch (error) {
-    log.error("options.chain.failed", {
-      operation: "option-chain",
-      errorType: error instanceof Error ? error.name : "unknown",
-      durationMs: Date.now() - startedAt,
+export const GET = withAuth(
+  async (request) => {
+    const limited = rateLimitCheckWithPrune(request, {
+      limit: 60,
+      prefix: "options-chain",
+      key: rateLimitKeyForClientIp(request, "options-chain"),
     });
-    return ok({ ...EMPTY, underlying: symbol });
-  }
-}
+    if (limited) return limited;
+
+    const { searchParams } = new URL(request.url);
+    const symbol = searchParams.get("symbol")?.trim().toUpperCase();
+    if (!symbol) return ok(EMPTY);
+    if (!SYMBOL_SHAPE.test(symbol)) return ok(EMPTY);
+
+    // Optional: fetch chain for a specific expiration (lazy-loading from the UI)
+    const dateParam = searchParams.get("date"); // YYYY-MM-DD
+    const startedAt = Date.now();
+
+    try {
+      const yf = await getYahooClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const initial: any = await yf.options(symbol);
+      const allDates: Date[] = initial.expirationDates ?? [];
+
+      // Filter to expirations within 2 years
+      const cutoff = new Date(Date.now() + TWO_YEARS_MS);
+      const targetDates = allDates.filter((d) => new Date(d) <= cutoff);
+      const expirations = targetDates.map((d) => new Date(d).toISOString().slice(0, 10));
+
+      const chains: ChainResponse["chains"] = {};
+
+      if (dateParam && expirations.includes(dateParam)) {
+        // On-demand fetch for a specific expiration chosen by the user
+        const date = targetDates.find((d) => new Date(d).toISOString().slice(0, 10) === dateParam);
+        if (date) {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const detail: any = await yf.options(symbol, { date });
+            const block = detail.options?.[0];
+            if (block) {
+              chains[dateParam] = { calls: slim(block.calls), puts: slim(block.puts) };
+            }
+          } catch (err) {
+            log.error("options.chain.date.failed", {
+              operation: "option-chain-expiration",
+              errorType: err instanceof Error ? err.name : "unknown",
+              expirationCount: expirations.length,
+              durationMs: Date.now() - startedAt,
+            });
+          }
+        }
+      } else {
+        // Initial load: use the chain that comes free in the initial call (nearest expiration)
+        for (const opt of initial.options ?? []) {
+          if (!opt?.expirationDate) continue;
+          const exp = new Date(opt.expirationDate).toISOString().slice(0, 10);
+          if (expirations.includes(exp)) {
+            chains[exp] = { calls: slim(opt.calls), puts: slim(opt.puts) };
+          }
+        }
+      }
+
+      return ok<ChainResponse>(
+        { underlying: symbol, expirations, chains },
+        {
+          headers: {
+            // Authenticated responses must not be stored by a shared CDN cache.
+            "Cache-Control": "private, max-age=300",
+          },
+        },
+      );
+    } catch (error) {
+      log.error("options.chain.failed", {
+        operation: "option-chain",
+        errorType: error instanceof Error ? error.name : "unknown",
+        durationMs: Date.now() - startedAt,
+      });
+      return ok({ ...EMPTY, underlying: symbol });
+    }
+  },
+  { demo: "allow" },
+);

@@ -317,9 +317,13 @@ describe("rate-limited routes", () => {
     const { GET: search } = await import("@/app/api/search/route");
     const { GET: options } = await import("@/app/api/options/chain/route");
 
-    const searchResponse = await search(request("http://unit.test/api/search?q=SENTINEL_QUERY"));
+    const searchResponse = await search(
+      request("http://unit.test/api/search?q=SENTINEL_QUERY"),
+      undefined,
+    );
     const optionsResponse = await options(
       request("http://unit.test/api/options/chain?symbol=SENTINEL"),
+      undefined,
     );
 
     expect(searchResponse.status).toBe(502);
@@ -329,6 +333,28 @@ describe("rate-limited routes", () => {
     expect(logged).not.toContain("SENTINEL_SYMBOL");
     expect(logged).not.toContain("raw search");
     expect(logged).not.toContain("raw option");
+  });
+
+  it("rejects an overlong search query before the provider call", async () => {
+    const { GET: search } = await import("@/app/api/search/route");
+
+    const response = await search(
+      request(`http://unit.test/api/search?q=${"a".repeat(65)}`),
+      undefined,
+    );
+
+    expect(response.status).toBe(400);
+    expect(h.yahooSearch).not.toHaveBeenCalled();
+  });
+
+  it("lets the public demo use market-data search", async () => {
+    h.principal = { kind: "demo", userId: "demo1", expiresAt: new Date("2026-12-01") };
+    h.yahooSearch.mockResolvedValueOnce({ quotes: [] });
+    const { GET: search } = await import("@/app/api/search/route");
+
+    const response = await search(request("http://unit.test/api/search?q=AAPL"), undefined);
+
+    expect(response.status).toBe(200);
   });
 
   it("limits CSP reports by client IP before logging more reports", async () => {

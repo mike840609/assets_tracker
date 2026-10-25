@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { withAuth } from "@/lib/api-handler";
 import { ok, failure } from "@/lib/api-responses";
 import { rateLimitCheckWithPrune, rateLimitKeyForClientIp } from "@/lib/rate-limit";
 import { getYahooClient, getYahooErrorStatus } from "@/lib/services/yahoo-client";
@@ -120,56 +121,65 @@ const cachedYahooSearch = unstable_cache(
   { revalidate: 3600 },
 );
 
-export async function GET(request: Request) {
-  const limited = rateLimitCheckWithPrune(request, {
-    limit: 60,
-    prefix: "search",
-    key: rateLimitKeyForClientIp(request, "search"),
-  });
-  if (limited) return limited;
-
-  const { searchParams } = new URL(request.url);
-  // Normalize to lowercase so the cache key is case-insensitive: "AAPL", "aapl",
-  // and "Aapl" collapse to one cache entry. Yahoo's search is already
-  // case-insensitive, so this doesn't change which results come back.
-  const query = searchParams.get("q")?.trim().toLowerCase();
-
-  if (!query || query.length < 1) {
-    return ok([] as SearchResult[]);
-  }
-
-  const startedAt = Date.now();
-  try {
-    const results = await cachedYahooSearch(query);
-    return ok(results, {
-      headers: {
-        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
-      },
+export const GET = withAuth(
+  async (request) => {
+    const limited = rateLimitCheckWithPrune(request, {
+      limit: 60,
+      prefix: "search",
+      key: rateLimitKeyForClientIp(request, "search"),
     });
-  } catch (error) {
-    const status = getYahooErrorStatus(error);
-    if (status !== undefined && status >= 400 && status < 500) {
-      // Expected client-driven 4xx, not a server fault: a malformed query
-      // (e.g. mid-composition Bopomofo yielding a 400 "Invalid Search Query")
-      // or a transient upstream rate-limit (429). Keep it out of Sentry —
-      // log.warn is breadcrumb-only — and return empty results so the UI shows
-      // "no matches" rather than an error. Not cached: a 429 is transient.
-      log.warn("search.yahoo_4xx", {
+    if (limited) return limited;
+
+    const { searchParams } = new URL(request.url);
+    // Normalize to lowercase so the cache key is case-insensitive: "AAPL", "aapl",
+    // and "Aapl" collapse to one cache entry. Yahoo's search is already
+    // case-insensitive, so this doesn't change which results come back.
+    const query = searchParams.get("q")?.trim().toLowerCase();
+
+    if (!query || query.length < 1) {
+      return ok([] as SearchResult[]);
+    }
+    // `cachedYahooSearch` keys its persistent cache by the raw query. Bound the
+    // key space so an authenticated caller cannot mint unbounded entries.
+    if (query.length > 64) {
+      return failure("Search query is too long", 400);
+    }
+
+    const startedAt = Date.now();
+    try {
+      const results = await cachedYahooSearch(query);
+      return ok(results, {
+        headers: {
+          // Authenticated responses must not be stored by a shared CDN cache.
+          "Cache-Control": "private, max-age=3600",
+        },
+      });
+    } catch (error) {
+      const status = getYahooErrorStatus(error);
+      if (status !== undefined && status >= 400 && status < 500) {
+        // Expected client-driven 4xx, not a server fault: a malformed query
+        // (e.g. mid-composition Bopomofo yielding a 400 "Invalid Search Query")
+        // or a transient upstream rate-limit (429). Keep it out of Sentry —
+        // log.warn is breadcrumb-only — and return empty results so the UI shows
+        // "no matches" rather than an error. Not cached: a 429 is transient.
+        log.warn("search.yahoo_4xx", {
+          operation: "search",
+          status,
+          errorType: error instanceof Error ? error.name : "unknown",
+          durationMs: Date.now() - startedAt,
+        });
+        return ok([] as SearchResult[]);
+      }
+      // Genuine upstream failure (5xx / network / timeout): distinct from an
+      // empty 200 so the client can show "search unavailable" instead of a
+      // misleading "no results". Captured so real outages stay visible.
+      log.error("search.failed", {
         operation: "search",
-        status,
         errorType: error instanceof Error ? error.name : "unknown",
         durationMs: Date.now() - startedAt,
       });
-      return ok([] as SearchResult[]);
+      return failure("Search is temporarily unavailable. Please try again.", 502);
     }
-    // Genuine upstream failure (5xx / network / timeout): distinct from an
-    // empty 200 so the client can show "search unavailable" instead of a
-    // misleading "no results". Captured so real outages stay visible.
-    log.error("search.failed", {
-      operation: "search",
-      errorType: error instanceof Error ? error.name : "unknown",
-      durationMs: Date.now() - startedAt,
-    });
-    return failure("Search is temporarily unavailable. Please try again.", 502);
-  }
-}
+  },
+  { demo: "allow" },
+);
