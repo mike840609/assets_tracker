@@ -492,6 +492,21 @@ describe("E2E CI contract", () => {
     expect(integrationJob).toContain("pnpm test:integration");
   });
 
+  test("gates PR jobs on a maintainer-applied skip-ci label and runs unit tests on master", () => {
+    const workflow = read(".github/workflows/ci.yml");
+
+    expect(workflow).not.toContain("github.event.pull_request.title");
+    expect(workflow).not.toContain("github.event.pull_request.body");
+    expect(workflow).toContain("github.event.pull_request.labels.*.name, 'skip-ci'");
+
+    const unitJob = workflow.slice(
+      workflow.indexOf("\n  unit:\n"),
+      workflow.indexOf("\n  integration:\n"),
+    );
+    expect(unitJob).toContain("github.event_name == 'push'");
+    expect(unitJob).toContain("github.ref == 'refs/heads/master'");
+  });
+
   test("enables public Demo only in the isolated E2E environment", () => {
     const isolatedWorkflow = read(".github/workflows/e2e.yml");
     const deployedPreviewWorkflow = read(".github/workflows/vercel-preview-e2e.yml");

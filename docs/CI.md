@@ -25,17 +25,20 @@ Changes to Docker, Compose, Prisma packaging, or runtime environment configurati
 
 ## Master branch
 
-Pushes to `master` run the production build path and the self-contained Playwright smoke suite. Documentation-only changes are skipped only by workflows that define path filters.
+Pushes to `master` run the production build path, the unit suite, and the self-contained Playwright smoke suite. Documentation-only changes are skipped only by workflows that define path filters.
 
 ## Required configuration
 
+- Protect `master`: require a pull request and these checks before merge: `Format check`, `Lint`, `Type check`, `Unit tests`, `PostgreSQL integration tests`, `Bundle size`, and `Playwright smoke tests`. `Build` runs on push only, so it is not a pull-request check.
 - GitHub `E2E_PASSWORD` must match Vercel Preview `PREVIEW_AUTH_PASSWORD` for the optional deployed-preview suite. The required local E2E workflow does not use this secret.
 - Preview and Production deployments must use separate databases.
 - Vercel must report deployment status back to GitHub for the optional deployed-preview suite. Branch protection should require `Playwright smoke tests` from `.github/workflows/e2e.yml`, not the deployment-triggered workflow.
 
 ## Skipping CI
 
-Use `[skip ci]` only for changes that cannot affect application behavior, configuration, deployment, migrations, or generated output. GitHub and Vercel may apply their own path filters independently.
+Pull-request jobs skip only when a maintainer applies the `skip-ci` label. The workflow must not read the pull-request title or body: both are author-controlled, so either would let a contributor bypass the required checks.
+
+A `[skip ci]` marker in a direct push to `master` still skips the build job. That path already requires write access; use it only for changes that cannot affect application behavior, configuration, deployment, migrations, or generated output. GitHub and Vercel may apply their own path filters independently.
 
 Vercel skips its own build for commits that touch only `*.md`, via `scripts/vercel-ignore.mjs`, which is called by `ignoreCommand` in `vercel.json`. The script returns Vercel's exit codes directly: 0 skips and 1 builds. Its existing-deployment path has three load-bearing details:
 
