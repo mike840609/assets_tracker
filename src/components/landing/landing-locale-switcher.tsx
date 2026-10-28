@@ -8,6 +8,7 @@ type LandingLocaleSwitcherProps = {
   locale: Locale;
   label: string;
   englishLabel: string;
+  simplifiedChineseLabel: string;
   traditionalChineseLabel: string;
 };
 
@@ -25,11 +26,13 @@ export function LandingLocaleSwitcher({
   locale,
   label,
   englishLabel,
+  simplifiedChineseLabel,
   traditionalChineseLabel,
 }: LandingLocaleSwitcherProps) {
   const options: Array<{ value: Locale; shortLabel: string; accessibleLabel: string }> = [
     { value: "en-US", shortLabel: "EN", accessibleLabel: englishLabel },
-    { value: "zh-TW", shortLabel: "繁中", accessibleLabel: traditionalChineseLabel },
+    { value: "zh-CN", shortLabel: "简", accessibleLabel: simplifiedChineseLabel },
+    { value: "zh-TW", shortLabel: "繁", accessibleLabel: traditionalChineseLabel },
   ];
 
   return (
@@ -57,7 +60,7 @@ export function LandingLocaleSwitcher({
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
-            <span lang={value === "zh-TW" ? "zh-TW" : "en"}>{shortLabel}</span>
+            <span lang={value === "zh-TW" ? "zh-TW" : value === "zh-CN" ? "zh-CN" : "en-US"}>{shortLabel}</span>
           </button>
         );
       })}

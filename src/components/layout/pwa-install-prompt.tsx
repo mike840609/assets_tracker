@@ -18,6 +18,11 @@ const COPY = {
     description: "Add it to your home screen for a faster, app-like experience.",
     action: "Install",
   },
+  "zh-CN": {
+    title: "安装 astt",
+    description: "加入主画面，享受更快速、更接近原生 App 的使用体验。",
+    action: "安装",
+  },
   "zh-TW": {
     title: "安裝 astt",
     description: "加入主畫面，享受更快速、更接近原生 App 的使用體驗。",
@@ -65,7 +70,7 @@ export function PwaInstallPrompt() {
   const offeredRef = useRef(false);
 
   useEffect(() => {
-    const copy = locale === "zh-TW" ? COPY["zh-TW"] : COPY["en-US"];
+    const copy = locale === "zh-CN" ? COPY["zh-CN"] : locale === "zh-TW" ? COPY["zh-TW"] : COPY["en-US"];
     let settled = false;
 
     const handleBeforeInstallPrompt = (rawEvent: Event) => {

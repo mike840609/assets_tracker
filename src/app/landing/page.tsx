@@ -35,7 +35,7 @@ async function LandingDocumentMetadata() {
   const [t, locale] = await Promise.all([getTranslations("landing"), getLocale()]);
   const title = t("metaTitle");
   const description = t("metaDescription");
-  const openGraphLocale = locale === "zh-TW" ? "zh_TW" : "en_US";
+  const openGraphLocale = locale === "zh-TW" ? "zh_TW" : locale === "zh-CN" ? "zh_CN" : "en_US";
   const socialPreviewUrl = getAppAssetUrl("/landing/social-preview.png").toString();
 
   return (

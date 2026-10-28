@@ -1,4 +1,4 @@
-export const SUPPORTED_LOCALES = ["en-US", "zh-TW"] as const;
+export const SUPPORTED_LOCALES = ["en-US", "zh-CN", "zh-TW"] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "en-US";
 
@@ -17,7 +17,20 @@ export function detectLocaleFromAcceptLanguage(acceptLanguage: string): Locale {
     .sort((a, b) => b.quality - a.quality || a.index - b.index);
 
   for (const { languageTag } of candidates) {
-    if (languageTag === "zh" || languageTag.startsWith("zh-")) return "zh-TW";
+    if (languageTag === "zh") return "zh-CN";
+
+    if (languageTag.startsWith("zh-")) {
+      if (
+        languageTag === "zh-tw" ||
+        languageTag === "zh-hk" ||
+        languageTag.startsWith("zh-hant")
+      ) {
+        return "zh-TW";
+      }
+
+      return "zh-CN";
+    }
+
     if (languageTag === "en" || languageTag.startsWith("en-")) return "en-US";
   }
 

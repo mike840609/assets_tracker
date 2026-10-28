@@ -1,4 +1,4 @@
-import type { Prisma } from "../../generated/prisma/client";
+﻿import type { Prisma } from "../../generated/prisma/client";
 import type { dataImportSchema } from "../validators";
 import type { z } from "zod";
 
@@ -95,7 +95,7 @@ export function instantiateDemoFixture(
   source: DemoFixtureSource,
   options: {
     userId: string;
-    locale: "en-US" | "zh-TW";
+    locale: "en-US" | "zh-CN" | "zh-TW";
     now: Date;
     makeId: () => string;
   },

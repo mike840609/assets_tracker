@@ -26,7 +26,7 @@ import { prisma } from "@/lib/prisma";
 export type EnsureDemoWorkspaceInput = {
   visitorToken: string;
   clientIp: string;
-  locale: "en-US" | "zh-TW";
+  locale: "en-US" | "zh-CN" | "zh-TW";
   now: Date;
 };
 
@@ -263,7 +263,7 @@ export function demoQuotaError(result: Exclude<DemoQuotaResult, { ok: true }>) {
 
 export async function resetDemoWorkspace(input: {
   userId: string;
-  locale: "en-US" | "zh-TW";
+  locale: "en-US" | "zh-CN" | "zh-TW";
   now: Date;
 }) {
   const startedAt = Date.now();

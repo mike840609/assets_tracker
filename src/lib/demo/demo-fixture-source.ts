@@ -33,7 +33,7 @@ export const DEMO_FALLBACK_RATES = [
 
 export function getPreparedDemoFixture(options: {
   userId: string;
-  locale: "en-US" | "zh-TW";
+  locale: "en-US" | "zh-CN" | "zh-TW";
   now: Date;
   makeId?: () => string;
 }): PreparedDemoFixture {

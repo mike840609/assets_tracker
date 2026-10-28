@@ -274,6 +274,7 @@
   },
   "languages": {
     "en-US": "English",
+    "zh-CN": "简体中文",
     "zh-TW": "繁體中文"
   },
   "toast": {
@@ -1255,6 +1256,7 @@
     "language": {
       "label": "Language",
       "english": "English",
+      "simplifiedChinese": "Simplified Chinese",
       "traditionalChinese": "Traditional Chinese"
     },
     "heroEyebrow": "Open source · self-hosted",

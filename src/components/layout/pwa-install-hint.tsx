@@ -20,6 +20,12 @@ const COPY = {
     copyLink: "Copy link",
     copied: "Copied",
   },
+  "zh-CN": {
+    title: "像 App 一样使用 astt",
+    description: "使用 Safari 开启后，点选分享 → 加入主画面，即可获得更接近原生 App 的体验。",
+    copyLink: "复制链接",
+    copied: "已复制",
+  },
   "zh-TW": {
     title: "像 App 一樣使用 astt",
     description: "使用 Safari 開啟後，點選分享 → 加入主畫面，即可獲得更接近原生 App 的體驗。",
@@ -53,7 +59,7 @@ export function PwaInstallHint() {
 
     if (!shouldShow) return;
 
-    const copy = locale === "zh-TW" ? COPY["zh-TW"] : COPY["en-US"];
+    const copy = locale === "zh-CN" ? COPY["zh-CN"] : locale === "zh-TW" ? COPY["zh-TW"] : COPY["en-US"];
     let copiedResetTimer: number | undefined;
     let dismissed = false;
 
