@@ -65,7 +65,12 @@ try {
   const shifted = shiftDemoFixtureDates(demo, taiwanDay);
   const prepared = instantiateDemoFixture(shifted, {
     userId,
-    locale: demo.settings?.locale === "zh-TW" ? "zh-TW" : demo.settings?.locale === "zh-CN" ? "zh-CN" : "en-US",
+    locale:
+      demo.settings?.locale === "zh-TW"
+        ? "zh-TW"
+        : demo.settings?.locale === "zh-CN"
+          ? "zh-CN"
+          : "en-US",
     now: taiwanDay,
     makeId: randomUUID,
   });

@@ -112,8 +112,7 @@ export const CHANGELOG: Release[] = [
     summary: {
       "en-US":
         "Options group with their underlying like a broker statement, plus a dashboard secondary currency and a security patch.",
-      "zh-CN":
-        "期权会按标的合并分组显示，如券商对账单；新增仪表板次要货币，并修补一项安全漏洞。",
+      "zh-CN": "期权会按标的合并分组显示，如券商对账单；新增仪表板次要货币，并修补一项安全漏洞。",
       "zh-TW":
         "選擇權現在會跟標的一起分組顯示，如券商對帳單；新增儀表板次要幣別，並修補一項安全性漏洞。",
     },
@@ -145,8 +144,7 @@ export const CHANGELOG: Release[] = [
         text: {
           "en-US":
             "Cleaned up light-mode contrast: the History heatmap's tile labels and subtitle, and the selected ring around a theme swatch in Settings.",
-          "zh-CN":
-            "改善浅色模式对比度：历史热力图的网格文字与副标题，以及设置页中已选主题的外框。",
+          "zh-CN": "改善浅色模式对比度：历史热力图的网格文字与副标题，以及设置页中已选主题的外框。",
           "zh-TW":
             "改善淺色模式對比度：歷史熱力圖的格子文字與副標題，以及設定頁中已選佈景主題的外框。",
         },
@@ -471,7 +469,7 @@ export const CHANGELOG: Release[] = [
           "en-US":
             "Public demo: the login page now offers a one-click demo that needs no account. It creates an isolated workspace with sample data that expires after 24 hours, with a banner showing the remaining time and controls to reset the data or leave at any point.",
           "zh-CN":
-            "公开 Demo：登录页新增免注册的一键体验，会创建独立的示例数据工作区，24 小时后自动到期；页面顶部横幅会显示剩余时间，并可隨時重置数据或离开。",
+            "公开 Demo：登录页新增免注册的一键体验，会创建独立的示例数据工作区，24 小时后自动到期；页面顶部横幅会显示剩余时间，并可随时重置数据或离开。",
           "zh-TW":
             "公開 Demo：登入頁新增免註冊的一鍵體驗，會建立獨立的範例資料工作區，24 小時後自動到期；頁面上方橫幅會顯示剩餘時間，並可隨時重設資料或離開。",
         },
@@ -913,7 +911,7 @@ export const CHANGELOG: Release[] = [
           "en-US":
             "The Analysis category trend area chart no longer plunges to zero at a trailing month with no snapshot; the stacked area now breaks at empty months instead.",
           "zh-CN":
-            "分析页的类别趋势区域图不再在没有快照的最后一个月骤降到零；堆叠区域现在会在空白月份中斷而不是归零。",
+            "分析页的类别趋势区域图不再在没有快照的最后一个月骤降到零；堆叠区域现在会在空白月份中断而不是归零。",
           "zh-TW":
             "分析頁的類別趨勢區域圖不會再在沒有快照的最後一個月驟降到零；堆疊區域現在會在空白月份中斷而非歸零。",
         },
@@ -1239,8 +1237,10 @@ export const CHANGELOG: Release[] = [
         text: {
           "en-US":
             "Sidebar privacy toggle now shows 'Hide' or 'Show' text next to the eye icon, making the control discoverable without hovering.",
-          "zh-CN": "侧边栏隐私切换按钮现在在眼睛图标旁显示“隐藏”或“显示”文字，不需悬停也能一目了然。",
-          "zh-TW": "側邊欄隱私切換按鈕現在在眼睛圖示旁顯示「Hide」或「Show」文字，不需滑鼠懸停也能一目了然。",
+          "zh-CN":
+            "侧边栏隐私切换按钮现在在眼睛图标旁显示“隐藏”或“显示”文字，不需悬停也能一目了然。",
+          "zh-TW":
+            "側邊欄隱私切換按鈕現在在眼睛圖示旁顯示「Hide」或「Show」文字，不需滑鼠懸停也能一目了然。",
         },
       },
     ],
@@ -1331,7 +1331,8 @@ export const CHANGELOG: Release[] = [
         text: {
           "en-US":
             "Portfolio Composition treemap: the selection ring on a hovered tile now uses the tile's own color instead of a jarring near-black foreground stroke.",
-          "zh-CN": "投资组合热图：鼠标悬停时的选区环线现在使用图块本身的颜色，不再显示突兀的深色边框。",
+          "zh-CN":
+            "投资组合热图：鼠标悬停时的选区环线现在使用图块本身的颜色，不再显示突兀的深色边框。",
           "zh-TW":
             "投資組合熱圖：滑鼠懸停時的選取框線現在使用圖塊本身的顏色，不再顯示突兀的深色邊框。",
         },
@@ -1370,8 +1371,7 @@ export const CHANGELOG: Release[] = [
         text: {
           "en-US":
             "The mobile header theme switcher is now a single icon that opens a compact Light / Dark / System picker, easing header crowding.",
-          "zh-CN":
-            "移动端页头的主题切换改为单一图标，点击后展开浅色/深色/系统选项，减少页头拥挤。",
+          "zh-CN": "移动端页头的主题切换改为单一图标，点击后展开浅色/深色/系统选项，减少页头拥挤。",
           "zh-TW":
             "行動版頁首的主題切換改為單一圖示，點擊後展開淺色／深色／系統選單，減少頁首壅擠。",
         },
@@ -1401,10 +1401,8 @@ export const CHANGELOG: Release[] = [
         text: {
           "en-US":
             "Snapshot labels and notes: annotate major events, corrections, migrations, and other moments directly from History.",
-          "zh-CN":
-            "新增快照标签与备注：可在历史页直接标记重大事件、修正、账户迁移或其他关键时刻。",
-          "zh-TW":
-            "新增快照標籤與備註：可在歷史頁直接標記重大事件、修正、帳戶轉移或其他關鍵時刻。",
+          "zh-CN": "新增快照标签与备注：可在历史页直接标记重大事件、修正、账户迁移或其他关键时刻。",
+          "zh-TW": "新增快照標籤與備註：可在歷史頁直接標記重大事件、修正、帳戶轉移或其他關鍵時刻。",
         },
       },
       {
@@ -1446,7 +1444,7 @@ export const CHANGELOG: Release[] = [
           "en-US":
             "Add/edit forms for recurring investments, recurring cash, and transactions now open as native bottom sheets on mobile with larger touch targets, and scroll instead of clipping on small screens.",
           "zh-CN":
-            "定期投资、定期现金与交易的新增/编辑表单，在手机上改为原生底部弹出视图，并加大可点击区域；在小屏幕上可滚动而不會被裁切。",
+            "定期投资、定期现金与交易的新增/编辑表单，在手机上改为原生底部弹出视图，并加大可点击区域；在小屏幕上可滚动而不会被裁切。",
           "zh-TW":
             "定期投資、定期現金與交易的新增／編輯表單，在手機上改以原生底部彈出視窗呈現，並加大可點擊範圍；在小螢幕上可捲動而不會被裁切。",
         },
@@ -1568,7 +1566,8 @@ export const CHANGELOG: Release[] = [
         text: {
           "en-US":
             "Target allocation with rebalance drift alerts: set targets in Settings, track drift in Analysis, get nudges on the Dashboard.",
-          "zh-CN": "目标配置与再平衡偏离提醒：于设置中设定目标、在分析页追踪偏离、于仪表板获取提醒。",
+          "zh-CN":
+            "目标配置与再平衡偏离提醒：于设置中设定目标、在分析页追踪偏离、于仪表板获取提醒。",
           "zh-TW": "目標配置與再平衡偏離提醒：於設定設定目標、在分析頁追蹤偏離、於儀表板取得提醒。",
         },
       },

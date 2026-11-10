@@ -16,11 +16,13 @@ function isObject(val: unknown): val is JsonObject {
 }
 
 describe("i18n translation parity", () => {
-  const enPath = resolve(process.cwd(), "messages/en-US.json");
-  const twPath = resolve(process.cwd(), "messages/zh-TW.json");
+  function loadMessages(locale: string): JsonObject {
+    const path = resolve(process.cwd(), `messages/${locale}.json`);
+    return JSON.parse(readFileSync(path, "utf8")) as JsonObject;
+  }
 
-  const en = JSON.parse(readFileSync(enPath, "utf8")) as JsonObject;
-  const tw = JSON.parse(readFileSync(twPath, "utf8")) as JsonObject;
+  const en = loadMessages("en-US");
+  const translatedLocales = ["zh-CN", "zh-TW"] as const;
 
   function compareKeys(
     objA: JsonObject,
@@ -49,11 +51,13 @@ describe("i18n translation parity", () => {
     }
   }
 
-  it("ensures all en-US keys and placeholders exist in zh-TW", () => {
-    compareKeys(en, tw, "", "en-US", "zh-TW");
-  });
+  for (const locale of translatedLocales) {
+    it(`ensures all en-US keys and placeholders exist in ${locale}`, () => {
+      compareKeys(en, loadMessages(locale), "", "en-US", locale);
+    });
 
-  it("ensures all zh-TW keys exist in en-US (no orphan keys)", () => {
-    compareKeys(tw, en, "", "zh-TW", "en-US");
-  });
+    it(`ensures all ${locale} keys exist in en-US (no orphan keys)`, () => {
+      compareKeys(loadMessages(locale), en, "", locale, "en-US");
+    });
+  }
 });

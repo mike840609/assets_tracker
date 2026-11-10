@@ -74,16 +74,16 @@ docker compose --profile full up --no-build -d
 
 astt 专注于净资产与投资追踪。如果你主要需要复式记账或者信封预算，[Firefly III](https://github.com/firefly-iii/firefly-iii) 和 [Actual Budget](https://github.com/actualbudget/actual) 会是不错的选择——下面是各个工具的定位：
 
-|                                     | astt              | [Ghostfolio](https://github.com/ghostfolio/ghostfolio) | [Firefly III](https://github.com/firefly-iii/firefly-iii) | [Actual Budget](https://github.com/actualbudget/actual) |
-| ----------------------------------- | ----------------- | ------------------------------------------------------ | --------------------------------------------------------- | ------------------------------------------------------- |
+|                                     | astt               | [Ghostfolio](https://github.com/ghostfolio/ghostfolio) | [Firefly III](https://github.com/firefly-iii/firefly-iii) | [Actual Budget](https://github.com/actualbudget/actual) |
+| ----------------------------------- | ------------------ | ------------------------------------------------------ | --------------------------------------------------------- | ------------------------------------------------------- |
 | 核心定位                            | 净资产 + 投资追踪  | 投资组合管理                                           | 记账与预算管理                                            | 信封式预算                                              |
-| 实时行情数据（股票、ETF、加密货币） | ✅                | ✅                                                     | —                                                         | —                                                       |
-| 期权持仓                            | ✅                | —                                                      | —                                                         | —                                                       |
-| 多币种账户与历史记录                | ✅                | ✅                                                     | ✅                                                        | —                                                       |
+| 实时行情数据（股票、ETF、加密货币） | ✅                 | ✅                                                     | —                                                         | —                                                       |
+| 期权持仓                            | ✅                 | —                                                      | —                                                         | —                                                       |
+| 多币种账户与历史记录                | ✅                 | ✅                                                     | ✅                                                        | —                                                       |
 | 定期规则                            | ✅ 现金 + 定期定投 | —                                                      | ✅ 现金                                                   | ✅ 现金                                                 |
-| 目标与FIRE测算                      | ✅                | ✅                                                     | —                                                         | —                                                       |
-| 预算/复式记账                       | —                 | —                                                      | ✅                                                        | ✅                                                      |
-| 许可协议                            | MIT               | AGPL-3.0                                               | AGPL-3.0                                                  | MIT                                                     |
+| 目标与FIRE测算                      | ✅                 | ✅                                                     | —                                                         | —                                                       |
+| 预算/复式记账                       | —                  | —                                                      | ✅                                                        | ✅                                                      |
+| 许可协议                            | MIT                | AGPL-3.0                                               | AGPL-3.0                                                  | MIT                                                     |
 
 <sub>整理自各项目2026年7月公开文档，最新功能请以各项目官网为准。</sub>
 

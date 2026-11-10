@@ -75,16 +75,16 @@ docker compose --profile full up --no-build -d
 
 astt 專注於淨值與投資追蹤。若你主要需要複式記帳或信封預算，[Firefly III](https://github.com/firefly-iii/firefly-iii) 與 [Actual Budget](https://github.com/actualbudget/actual) 是很好的選擇——以下是各工具的定位：
 
-|                                     | astt              | [Ghostfolio](https://github.com/ghostfolio/ghostfolio) | [Firefly III](https://github.com/firefly-iii/firefly-iii) | [Actual Budget](https://github.com/actualbudget/actual) |
-| ----------------------------------- | ----------------- | ------------------------------------------------------ | --------------------------------------------------------- | ------------------------------------------------------- |
+|                                     | astt               | [Ghostfolio](https://github.com/ghostfolio/ghostfolio) | [Firefly III](https://github.com/firefly-iii/firefly-iii) | [Actual Budget](https://github.com/actualbudget/actual) |
+| ----------------------------------- | ------------------ | ------------------------------------------------------ | --------------------------------------------------------- | ------------------------------------------------------- |
 | 主要定位                            | 淨值 + 投資        | 投資組合                                               | 記帳與預算                                                | 信封預算                                                |
-| 即時市場資料（股票、ETF、加密貨幣） | ✅                | ✅                                                     | —                                                         | —                                                       |
-| 選擇權部位                          | ✅                | —                                                      | —                                                         | —                                                       |
-| 多幣別帳戶與歷史                    | ✅                | ✅                                                     | ✅                                                        | —                                                       |
+| 即時市場資料（股票、ETF、加密貨幣） | ✅                 | ✅                                                     | —                                                         | —                                                       |
+| 選擇權部位                          | ✅                 | —                                                      | —                                                         | —                                                       |
+| 多幣別帳戶與歷史                    | ✅                 | ✅                                                     | ✅                                                        | —                                                       |
 | 定期規則                            | ✅ 現金 + 定期定額 | —                                                      | ✅ 現金                                                   | ✅ 現金                                                 |
-| 目標與 FIRE 推估                    | ✅                | ✅                                                     | —                                                         | —                                                       |
-| 預算／複式記帳                      | —                 | —                                                      | ✅                                                        | ✅                                                      |
-| 授權條款                            | MIT               | AGPL-3.0                                               | AGPL-3.0                                                  | MIT                                                     |
+| 目標與 FIRE 推估                    | ✅                 | ✅                                                     | —                                                         | —                                                       |
+| 預算／複式記帳                      | —                  | —                                                      | ✅                                                        | ✅                                                      |
+| 授權條款                            | MIT                | AGPL-3.0                                               | AGPL-3.0                                                  | MIT                                                     |
 
 <sub>整理自各專案 2026 年 7 月的公開文件——最新功能請以各專案官網為準。</sub>
 

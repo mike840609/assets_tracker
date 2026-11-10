@@ -70,7 +70,8 @@ export function PwaInstallPrompt() {
   const offeredRef = useRef(false);
 
   useEffect(() => {
-    const copy = locale === "zh-CN" ? COPY["zh-CN"] : locale === "zh-TW" ? COPY["zh-TW"] : COPY["en-US"];
+    const copy =
+      locale === "zh-CN" ? COPY["zh-CN"] : locale === "zh-TW" ? COPY["zh-TW"] : COPY["en-US"];
     let settled = false;
 
     const handleBeforeInstallPrompt = (rawEvent: Event) => {

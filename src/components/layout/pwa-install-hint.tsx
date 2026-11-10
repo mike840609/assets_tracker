@@ -59,7 +59,8 @@ export function PwaInstallHint() {
 
     if (!shouldShow) return;
 
-    const copy = locale === "zh-CN" ? COPY["zh-CN"] : locale === "zh-TW" ? COPY["zh-TW"] : COPY["en-US"];
+    const copy =
+      locale === "zh-CN" ? COPY["zh-CN"] : locale === "zh-TW" ? COPY["zh-TW"] : COPY["en-US"];
     let copiedResetTimer: number | undefined;
     let dismissed = false;
 

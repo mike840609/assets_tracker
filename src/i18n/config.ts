@@ -23,6 +23,7 @@ export function detectLocaleFromAcceptLanguage(acceptLanguage: string): Locale {
       if (
         languageTag === "zh-tw" ||
         languageTag === "zh-hk" ||
+        languageTag === "zh-mo" ||
         languageTag.startsWith("zh-hant")
       ) {
         return "zh-TW";

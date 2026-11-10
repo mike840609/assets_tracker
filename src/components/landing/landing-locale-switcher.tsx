@@ -60,7 +60,9 @@ export function LandingLocaleSwitcher({
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
-            <span lang={value === "zh-TW" ? "zh-TW" : value === "zh-CN" ? "zh-CN" : "en-US"}>{shortLabel}</span>
+            <span lang={value === "zh-TW" ? "zh-TW" : value === "zh-CN" ? "zh-CN" : "en-US"}>
+              {shortLabel}
+            </span>
           </button>
         );
       })}
