@@ -234,6 +234,7 @@ export async function LandingContent() {
               locale={activeLocale}
               label={t("language.label")}
               englishLabel={t("language.english")}
+              simplifiedChineseLabel={t("language.simplifiedChinese")}
               traditionalChineseLabel={t("language.traditionalChinese")}
             />
             <a

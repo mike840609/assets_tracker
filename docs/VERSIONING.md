@@ -27,7 +27,7 @@ flows are considered stable.
 ## Shipping a release
 
 1. Prepend a `Release` to `CHANGELOG` in `src/lib/changelog.ts`. Group changes as
-   `added` / `improved` / `fixed`; author `text` bilingually (`en-US` + `zh-TW`).
+   `added` / `improved` / `fixed`; author `text` in the supported locales (`en-US` + `zh-CN` + `zh-TW`).
 2. Bump `package.json` `version` to match the new top entry.
 3. Merge the release PR, then tag the merge commit with the bare SemVer and push the tag:
    `git tag 1.7.1 && git push origin 1.7.1`. The tag triggers
@@ -45,4 +45,4 @@ The changelog edit updates every in-app surface that reads `APP_VERSION` / `CHAN
 - **Commits** already use [Conventional Commits](https://www.conventionalcommits.org)
   (`feat:`, `fix:`, `chore:`). That is the on-ramp if we later automate changelog/version
   bumps (e.g. `changesets` or `semantic-release`). For now, entries are hand-authored
-  because the curated, bilingual notes read better than generated ones.
+  because the curated, multilingual notes read better than generated ones.

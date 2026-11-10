@@ -75,7 +75,7 @@
   "devDependencies": {
     "@next/bundle-analyzer": "^16.4.3",
     "@next/env": "^16.4.3",
-    "@playwright/test": "^1.52.0",
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",

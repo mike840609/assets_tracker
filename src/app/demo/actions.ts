@@ -58,7 +58,8 @@ export async function startPublicDemoAction(
   const visitorToken = isValidDemoVisitorToken(existingVisitorToken)
     ? existingVisitorToken
     : randomBytes(32).toString("base64url");
-  const locale = cookieStore.get("NEXT_LOCALE")?.value === "zh-TW" ? "zh-TW" : "en-US";
+  const nextLocale = cookieStore.get("NEXT_LOCALE")?.value;
+  const locale = nextLocale === "zh-CN" ? "zh-CN" : nextLocale === "zh-TW" ? "zh-TW" : "en-US";
   const now = new Date();
 
   let workspace;
@@ -110,7 +111,8 @@ export async function resetPublicDemoAction(
     return { ...previous, errorCode: "DEMO_RESTRICTED" };
   }
 
-  const locale = (await cookies()).get("NEXT_LOCALE")?.value === "zh-TW" ? "zh-TW" : "en-US";
+  const nextLocale = (await cookies()).get("NEXT_LOCALE")?.value;
+  const locale = nextLocale === "zh-CN" ? "zh-CN" : nextLocale === "zh-TW" ? "zh-TW" : "en-US";
   try {
     await resetDemoWorkspace({
       userId: context.principal.userId,

@@ -274,6 +274,7 @@
   },
   "languages": {
     "en-US": "English",
+    "zh-CN": "简体中文",
     "zh-TW": "繁體中文"
   },
   "toast": {
@@ -1255,6 +1256,7 @@
     "language": {
       "label": "語言",
       "english": "English",
+      "simplifiedChinese": "簡體中文",
       "traditionalChinese": "繁體中文"
     },
     "heroEyebrow": "開源 · 自行部署",

@@ -8,7 +8,7 @@
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./.github/CONTRIBUTING.md)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mike840609/assets_tracker)
 
-[English](./README.md) | [繁體中文](./README.zh-TW.md)
+[English](./README.md) | [简体中文](./README.zh-CN.md) | [繁體中文](./README.zh-TW.md)
 
 **Open-source, self-hosted net worth & portfolio tracker.**
 
@@ -27,7 +27,7 @@ A private, multi-currency home for tracking your net worth, investments, cash, p
 - **Multi-currency by design** — keep original balances and view history in your preferred base currency.
 - **Current market data** — refresh stocks, ETFs, crypto, options, and exchange rates through supported providers.
 - **Planning and automation** — track recurring cash flow, recurring investments, daily snapshots, goals, and FIRE projections.
-- **Desktop and mobile** — responsive UI, themes, English/Traditional Chinese, and an installable PWA.
+- **Desktop and mobile** — responsive UI, themes, English / Chinese, and an installable PWA.
 
 ## Demo
 

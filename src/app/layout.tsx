@@ -76,7 +76,11 @@ const localeBootstrapScript = `
       .split('; ')
       .find((entry) => entry.startsWith('NEXT_LOCALE='));
     const locale = cookie ? decodeURIComponent(cookie.slice('NEXT_LOCALE='.length)) : '';
-    document.documentElement.lang = locale === 'zh-TW' ? 'zh-TW' : 'en-US';
+    if (locale === 'zh-CN' || locale === 'zh-TW') {
+      document.documentElement.lang = locale;
+      return;
+    }
+    document.documentElement.lang = 'en-US';
   })();
 `;
 

@@ -125,5 +125,6 @@ export function formatQuantity(qty: number, assetType: string): string {
 
 export function getLocaleDefaultCurrency(locale: string): string {
   if (locale.includes("zh-TW")) return "TWD";
+  if (locale.includes("zh-CN")) return "CNY";
   return "USD";
 }

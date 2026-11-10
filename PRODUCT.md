@@ -27,7 +27,7 @@ Avoid generic fintech navy-and-gold dashboards, crypto-neon trading terminals, d
 3. One color authority: the active color schema owns brand, chart, gain/loss, icon, and accent color tokens so users never reconcile conflicting Taiwan/US direction conventions.
 4. Density is a setting, not a fight: desktop power users can choose compact layouts, while default mobile experiences stay comfortable and touch-safe.
 5. Motion must explain state: use motion for navigation direction, theme reveal, haptic feedback, loading, and chart interaction, not decoration.
-6. International by default: every user-facing pattern must survive English and Traditional Chinese copy, multiple currencies, privacy mode, and reduced motion.
+6. International by default: every user-facing pattern must survive English and Chinese (Simplified and Traditional) copy, multiple currencies, privacy mode, and reduced motion.
 
 ## Accessibility & Inclusion
 
