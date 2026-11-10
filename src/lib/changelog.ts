@@ -44,7 +44,7 @@ export const CHANGELOG: Release[] = [
       "en-US":
         "A security and reliability patch: refreshed Next.js and Zod, unresolved FX rates no longer enter history, and calendar earnings stop blocking the page.",
       "zh-CN":
-        "安全与可靠性修补：更新 Next.js 和 Zod、未解析的汇率不再写入历史记录，日历收益也不再阻塞页面。",
+        "安全与可靠性修补：更新 Next.js 和 Zod、未解析的汇率不再写入历史记录，财报日历也不再阻塞页面。",
       "zh-TW":
         "安全性與可靠性修補：更新 Next.js 與 Zod、未解析匯率不再寫入歷史，財報資料也不再阻塞行事曆頁面。",
     },
@@ -99,7 +99,7 @@ export const CHANGELOG: Release[] = [
           "en-US":
             "Calendar earnings load after hydration instead of blocking the server render, and a provider failure now shows a retry message rather than silently removing the events.",
           "zh-CN":
-            "日历收益在页面 hydrate 后再加载，不再阻塞服务器渲染；提供商失败时会显示重试消息，而不是静默移除事件。",
+            "财报日历在页面 hydrate 后再加载，不再阻塞服务器渲染；提供商失败时会显示重试消息，而不是静默移除事件。",
           "zh-TW":
             "行事曆財報改在頁面 hydrate 後載入，不再阻塞伺服器渲染；供應商失敗時會顯示重試訊息，而不是默默移除事件。",
         },
@@ -336,7 +336,7 @@ export const CHANGELOG: Release[] = [
           "en-US":
             "A deployment that copied .env.example without editing it started normally while signing sessions with a secret published in the public repository. Any secret left at the example placeholder is now rejected at startup, with the command that fixes it. Secrets you generated yourself keep working unchanged; short ones now log a warning instead of failing.",
           "zh-CN":
-            "此前若直接复制 .env.example 而未修改，服务仍会正常启动，却使用了公开在源码库中的 secret 簽署登录会话。现在只要有 secret 仍是示例占位字符串，启动时就会被拦下，并提示修正命令。你自行生成的 secret 不受影响；长度过短者改为记录警告而非中止。",
+            "此前若直接复制 .env.example 而未修改，服务仍会正常启动，却使用了公开在源码库中的 secret 签署登录会话。现在只要有 secret 仍是示例占位字符串，启动时就会被拦下，并提示修正命令。你自行生成的 secret 不受影响；长度过短者改为记录警告而非中止。",
           "zh-TW":
             "先前若直接複製 .env.example 而未修改，服務仍會正常啟動，卻使用了公開在原始碼庫中的 secret 簽署登入工作階段。現在只要有 secret 仍是範例佔位字串，啟動時就會被擋下，並提示修正指令。你自行產生的 secret 不受影響；長度過短者改為記錄警告而非中止。",
         },

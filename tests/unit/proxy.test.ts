@@ -128,6 +128,8 @@ describe("public landing page", () => {
   it.each([
     ["en-US,zh-TW;q=0.8", "en-US"],
     ["zh-TW,zh;q=0.9,en-US;q=0.8", "zh-TW"],
+    ["zh-CN,zh;q=0.9,en-US;q=0.8", "zh-CN"],
+    ["zh,en;q=0.8", "zh-CN"],
     ["fr-FR,ja;q=0.9", "en-US"],
   ])("sets the first supported browser locale for %s", (acceptLanguage, expectedLocale) => {
     const response = executeAnonymousRequest("/landing", {

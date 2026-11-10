@@ -187,7 +187,7 @@
     "btnSnapshot": "生成快照",
     "baseCurrency": "基础货币",
     "baseCurrencyDescription": "用于投资组合汇总与数值换算",
-    "secondaryCurrency": "第二货币",
+    "secondaryCurrency": "次要货币",
     "secondaryCurrencyDescription": "在面板上额外展示该货币的总额",
     "secondaryCurrencyOff": "关闭",
     "currencySearchTitle": "选择货币",
@@ -1226,8 +1226,8 @@
     "parseError": "JSON 语法错误：您上传的文件不是有效的 JSON 格式。请检查文件内容。",
     "importSuccessTitle": "导入成功",
     "importSuccessMessage": "您的数据已成功还原。",
-    "importSuccessNextStep": "请检查仪表盘趋势与分析面板，确认还原后的历史数据显示正常。",
-    "reviewDashboard": "查看仪表盘",
+    "importSuccessNextStep": "请检查面板上的趋势与分析数据，确认还原后的历史数据显示正常。",
+    "reviewDashboard": "查看面板",
     "stayInSettings": "留在设置页",
     "done": "完成"
   },
@@ -1327,7 +1327,7 @@
     "sectionCtaSecondary": "部署选项",
     "shot": {
       "desktopDashboard": {
-        "caption": "桌面端仪表盘"
+        "caption": "桌面端面板"
       },
       "desktopAccounts": {
         "caption": "桌面端账户页面"
@@ -1348,7 +1348,7 @@
         "caption": "移动端最大回撤"
       },
       "mobileDashboard": {
-        "caption": "移动端仪表盘"
+        "caption": "移动端面板"
       },
       "mobileWatchlist": {
         "caption": "移动端观察清单"
@@ -1497,7 +1497,7 @@
     "section8Title": "联系方式",
     "section8Body": "如有隐私或数据相关请求，请发送邮件至",
     "section9Title": "公开演示数据",
-    "section9Body": "公开演示使用必要的 HttpOnly asset-tracker-demo-visitor Cookie，用于识别临时工作区。系统会生成独立的匿名来源哈希用于防滥用和容量管控，不会存储原始 IP 地址。演示访问权限将在 24 小时后到期，目标在到期后的 24 小时内彻底删除生成数据。服务中断可能会延迟删除，但到期后会禁止访问。演示内的所有变更不会同步至正式账号。",
+    "section9Body": "公开演示使用必要的 HttpOnly asset-tracker-demo-visitor Cookie，用于识别临时工作区。系统会生成独立的匿名来源哈希用于防滥用和容量管控，不会存储原始 IP 地址。演示访问权限将在 24 小时后到期，并计划在到期后 24 小时内彻底删除合成数据。服务中断可能会延迟删除，但到期后会禁止访问。演示内的所有变更不会同步至正式账号。",
     "lastUpdated": "最后更新：2026 年 8 月"
   },
   "terms": {

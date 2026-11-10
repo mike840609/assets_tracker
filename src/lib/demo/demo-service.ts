@@ -22,11 +22,12 @@ import {
 } from "@/lib/demo/demo-policy";
 import { AUTH_SECRET, isPublicDemoEnabled } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
+import type { Locale } from "@/i18n/config";
 
 export type EnsureDemoWorkspaceInput = {
   visitorToken: string;
   clientIp: string;
-  locale: "en-US" | "zh-CN" | "zh-TW";
+  locale: Locale;
   now: Date;
 };
 
@@ -261,11 +262,7 @@ export function demoQuotaError(result: Exclude<DemoQuotaResult, { ok: true }>) {
   return new PublicDemoError("DEMO_QUOTA_EXHAUSTED", 403, "Public Demo quota exhausted");
 }
 
-export async function resetDemoWorkspace(input: {
-  userId: string;
-  locale: "en-US" | "zh-CN" | "zh-TW";
-  now: Date;
-}) {
+export async function resetDemoWorkspace(input: { userId: string; locale: Locale; now: Date }) {
   const startedAt = Date.now();
   try {
     const result = await prisma.$transaction(async (tx) => {

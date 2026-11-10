@@ -3,6 +3,7 @@ import { cache } from "react";
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getLocale } from "next-intl/server";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale } from "@/i18n/config";
 import { getLocaleDefaultCurrency } from "../currencies";
 
 /**
@@ -27,7 +28,10 @@ async function getOrCreateSettingsInner(userId: string) {
   const existing = await findSettings(userId);
   if (existing) return existing;
 
-  const locale = await getLocale();
+  const requestLocale = await getLocale();
+  const locale: Locale = SUPPORTED_LOCALES.includes(requestLocale as Locale)
+    ? (requestLocale as Locale)
+    : DEFAULT_LOCALE;
   const baseCurrency = getLocaleDefaultCurrency(locale);
 
   try {

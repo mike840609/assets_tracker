@@ -22,7 +22,7 @@ const COPY = {
   },
   "zh-CN": {
     title: "像 App 一样使用 astt",
-    description: "使用 Safari 开启后，点选分享 → 加入主画面，即可获得更接近原生 App 的体验。",
+    description: "使用 Safari 打开后，点选分享 → 添加到主屏幕，即可获得更接近原生 App 的体验。",
     copyLink: "复制链接",
     copied: "已复制",
   },

@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import rawFixture from "./demo-data.json";
 import { taiwanCalendarDay } from "@/lib/app-day";
+import type { Locale } from "@/i18n/config";
 import {
   instantiateDemoFixture,
   shiftDemoFixtureDates,
@@ -33,7 +34,7 @@ export const DEMO_FALLBACK_RATES = [
 
 export function getPreparedDemoFixture(options: {
   userId: string;
-  locale: "en-US" | "zh-CN" | "zh-TW";
+  locale: Locale;
   now: Date;
   makeId?: () => string;
 }): PreparedDemoFixture {
