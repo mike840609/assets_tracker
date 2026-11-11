@@ -27,7 +27,7 @@ A private, multi-currency home for tracking your net worth, investments, cash, p
 - **Multi-currency by design** — keep original balances and view history in your preferred base currency.
 - **Current market data** — refresh stocks, ETFs, crypto, options, and exchange rates through supported providers.
 - **Planning and automation** — track recurring cash flow, recurring investments, daily snapshots, goals, and FIRE projections.
-- **Desktop and mobile** — responsive UI, themes, English / Chinese, and an installable PWA.
+- **Desktop and mobile** — responsive UI, themes, English, Simplified Chinese, and Traditional Chinese, and an installable PWA.
 
 ## Demo
 

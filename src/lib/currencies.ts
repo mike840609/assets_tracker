@@ -1,3 +1,5 @@
+import type { Locale } from "@/i18n/config";
+
 export const CURRENCIES = [
   { code: "USD", name: "US Dollar", symbol: "$" },
   { code: "EUR", name: "Euro", symbol: "€" },
@@ -123,8 +125,8 @@ export function formatQuantity(qty: number, assetType: string): string {
   return formatNumber(qty, decimals);
 }
 
-export function getLocaleDefaultCurrency(locale: string): string {
-  if (locale.includes("zh-TW")) return "TWD";
-  if (locale.includes("zh-CN")) return "CNY";
+export function getLocaleDefaultCurrency(locale: Locale): string {
+  if (locale === "zh-TW") return "TWD";
+  if (locale === "zh-CN") return "CNY";
   return "USD";
 }

@@ -20,7 +20,7 @@ const COPY = {
   },
   "zh-CN": {
     title: "安装 astt",
-    description: "加入主画面，享受更快速、更接近原生 App 的使用体验。",
+    description: "添加到主屏幕，享受更快速、更接近原生 App 的使用体验。",
     action: "安装",
   },
   "zh-TW": {

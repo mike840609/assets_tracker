@@ -19,7 +19,7 @@ See [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) for tests, builds, database cha
 
 - Keep each pull request focused on one outcome.
 - Add or update tests when behavior changes.
-- Update user-facing documentation and the bilingual changelog when appropriate.
+- Update user-facing documentation and the multilingual changelog when appropriate.
 - Create Prisma migrations for persistent schema changes; do not use `db push` as an upgrade mechanism.
 - Avoid committing generated files, environment files, reports, exports, or credentials.
 

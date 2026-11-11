@@ -593,7 +593,7 @@ describe("E2E CI contract", () => {
     );
   });
 
-  test.each(["README.md", "README.zh-TW.md"])(
+  test.each(["README.md", "README.zh-TW.md", "README.zh-CN.md"])(
     "%s scopes the E2E badge to master push runs",
     (readme) => {
       expect(read(readme)).toContain("e2e.yml/badge.svg?branch=master&event=push");
