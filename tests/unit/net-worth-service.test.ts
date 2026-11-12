@@ -123,8 +123,12 @@ vi.mock("@/lib/services/exchange-rate-service", async (importActual) => {
   return { ...actual, getAllExchangeRates: vi.fn(async () => h.rates) };
 });
 
-const { getCachedNetWorthSummary, computeNetWorthSummary, loadNetWorthInputsForUsers } =
-  await import("@/lib/services/net-worth-service");
+const {
+  getCachedNetWorthSummary,
+  computeNetWorthSummary,
+  loadNetWorthInputsForUsers,
+  baselineIncludingNewAccounts,
+} = await import("@/lib/services/net-worth-service");
 
 describe("getCachedNetWorthSummary (two-pass valuation)", () => {
   it("prices holdings, converts currencies, and splits assets vs. liabilities", async () => {
@@ -478,5 +482,26 @@ describe("loadNetWorthInputsForUsers (bulk path)", () => {
     await loadNetWorthInputsForUsers(["u1"], new Map());
 
     expect(vi.mocked(prisma.priceCache.findMany)).not.toHaveBeenCalled();
+  });
+});
+
+describe("baselineIncludingNewAccounts (dashboard change since snapshot)", () => {
+  const accounts = [
+    { id: "old", type: "ASSET" as const, totalValueInBaseCurrency: 5000 },
+    { id: "newAsset", type: "ASSET" as const, totalValueInBaseCurrency: 1000 },
+    { id: "newLoan", type: "LIABILITY" as const, totalValueInBaseCurrency: 300 },
+  ];
+
+  it("adds accounts created after the snapshot to the baseline so they aren't a gain", () => {
+    // Live net worth 5700 vs. snapshot 5000: the change should be 0, not +700.
+    expect(baselineIncludingNewAccounts(5000, ["old"], accounts)).toBe(5700);
+  });
+
+  it("leaves the baseline alone when every account was in the snapshot", () => {
+    expect(baselineIncludingNewAccounts(5000, ["old", "newAsset", "newLoan"], accounts)).toBe(5000);
+  });
+
+  it("leaves the baseline alone for a snapshot without a breakdown", () => {
+    expect(baselineIncludingNewAccounts(5000, null, accounts)).toBe(5000);
   });
 });

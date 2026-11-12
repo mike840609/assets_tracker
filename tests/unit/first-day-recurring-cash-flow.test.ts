@@ -200,6 +200,20 @@ vi.mock("@/lib/prisma", () => {
       ),
     },
     $transaction: vi.fn(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
+    // Per-account first snapshot, as the DISTINCT ON breakdown-keys query returns it.
+    $queryRaw: vi.fn(async () => {
+      const firstSeen = new Map<string, { accountId: string; date: Date; createdAt: Date }>();
+      for (const row of [...h.snapshotRows].sort((a, b) => a.date.getTime() - b.date.getTime())) {
+        const breakdown = (row as { breakdown?: unknown }).breakdown;
+        if (!breakdown || typeof breakdown !== "object") continue;
+        for (const accountId of Object.keys(breakdown)) {
+          if (!firstSeen.has(accountId)) {
+            firstSeen.set(accountId, { accountId, date: row.date, createdAt: row.createdAt });
+          }
+        }
+      }
+      return [...firstSeen.values()];
+    }),
   };
   return { prisma };
 });

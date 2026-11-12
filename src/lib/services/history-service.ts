@@ -534,7 +534,7 @@ export async function getAccountMonthlyCashFlow(
   cacheTag("exchange-rates");
   cacheLife("hours");
 
-  const [accounts, allRatesMap, firstSnapshot] = await Promise.all([
+  const [accounts, allRatesMap, firstSnapshot, firstSeenRows] = await Promise.all([
     prisma.account.findMany({
       where: { userId },
       select: { id: true, currency: true, type: true },
@@ -545,7 +545,28 @@ export async function getAccountMonthlyCashFlow(
       orderBy: { date: "asc" },
       select: { date: true, createdAt: true },
     }),
+    // The earliest snapshot whose breakdown contains each account. Keys only —
+    // the breakdown JSON itself never leaves the database.
+    prisma.$queryRaw<{ accountId: string; date: Date; createdAt: Date }[]>`
+      SELECT DISTINCT ON (k) k AS "accountId", s."date", s."createdAt"
+      FROM "NetWorthSnapshot" s
+      CROSS JOIN LATERAL jsonb_object_keys(
+        CASE WHEN jsonb_typeof(s."breakdown") = 'object' THEN s."breakdown" ELSE '{}'::jsonb END
+      ) AS k
+      WHERE s."userId" = ${userId}
+      ORDER BY k, s."date" ASC, s."createdAt" ASC
+    `,
   ]);
+
+  // Per-account baseline (#509 generalized): an account added after the first
+  // breakdown starts at its own first snapshot, whose value
+  // addFirstAppearanceContributions counts as a contribution — so its flows
+  // before that snapshot are already inside it and must not count twice.
+  // Accounts in the earliest breakdown, or in none yet, keep the first snapshot.
+  const firstBreakdownAt = Math.min(...firstSeenRows.map((r) => r.date.getTime()));
+  const firstSeen = new Map(
+    firstSeenRows.filter((r) => r.date.getTime() > firstBreakdownAt).map((r) => [r.accountId, r]),
+  );
 
   const accountMetaMap = new Map(
     accounts.map((account) => [account.id, { currency: account.currency, type: account.type }]),
@@ -632,15 +653,20 @@ export async function getAccountMonthlyCashFlow(
     // instant is irretrievable, so retain the like-for-like business-day
     // fallback rather than pretending the estimate is exact.
     const isGenerated = tx.materializedAt !== null || tx.recurringId !== null;
-    if (floor && firstSnapshot && isGenerated) {
+    if (firstSnapshot) {
+      const baseline = firstSeen.get(tx.accountId) ?? firstSnapshot;
+      const effectiveAt = (tx.occurrenceDate ?? tx.createdAt).getTime();
       const hasUsefulPostingBound =
         tx.materializedAt !== null &&
         (!tx.materializedAtEstimated ||
           tx.occurrenceDate === null ||
           tx.materializedAt.getTime() !== tx.occurrenceDate.getTime());
-      const isAfterBaseline = hasUsefulPostingBound
-        ? tx.materializedAt!.getTime() > floor.getTime()
-        : (tx.occurrenceDate ?? tx.createdAt).getTime() > firstSnapshot.date.getTime();
+      // Manual rows: the SQL floor above, re-applied per account.
+      const isAfterBaseline = !isGenerated
+        ? effectiveAt > baseline.createdAt.getTime()
+        : hasUsefulPostingBound
+          ? tx.materializedAt!.getTime() > baseline.createdAt.getTime()
+          : effectiveAt > baseline.date.getTime();
       if (!isAfterBaseline) continue;
     }
 

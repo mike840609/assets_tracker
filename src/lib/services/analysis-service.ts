@@ -154,27 +154,24 @@ export function fillMonthRange(
 export function computeKpis(
   buckets: MonthlyBucket[],
   snapshots: NormalizedSnapshot[],
+  /** "YYYY-MM" of the month still in progress — a partial month can't compete with full ones. */
+  inProgressMonthKey?: string,
 ): AnalysisKpis {
-  const realBuckets = buckets.filter((b) => !b.isEmpty);
-  if (realBuckets.length === 0) {
-    return {
-      best: null,
-      worst: null,
-      avgMonthlyDelta: 0,
-      ytdDelta: 0,
-      ytdPct: null,
-    };
-  }
+  const completeBuckets = buckets.filter((b) => !b.isEmpty && b.monthKey !== inProgressMonthKey);
 
   let best: MonthlyBucket | null = null;
   let worst: MonthlyBucket | null = null;
   let sum = 0;
-  for (const b of realBuckets) {
+  for (const b of completeBuckets) {
     sum += b.deltaNetWorth;
     if (!best || b.deltaNetWorth > best.deltaNetWorth) best = b;
     if (!worst || b.deltaNetWorth < worst.deltaNetWorth) worst = b;
   }
-  const avgMonthlyDelta = sum / realBuckets.length;
+  const avgMonthlyDelta = completeBuckets.length > 0 ? sum / completeBuckets.length : 0;
+
+  if (snapshots.length === 0) {
+    return { best, worst, avgMonthlyDelta, ytdDelta: 0, ytdPct: null };
+  }
 
   // YTD: prefer the last snapshot from the prior year as the baseline;
   // otherwise fall back to the first snapshot of the current year.
@@ -243,7 +240,7 @@ export interface CategoryDataPoint {
  * CashFlowBucket array suitable for the stacked cash-flow chart.
  *
  * @param buckets  Output of fillMonthRange() (padded, sorted asc).
- * @param contributions  Output of getMonthlyCashFlow() from history-service.ts.
+ * @param contributions  Per-month net cash (see computeAnalysisRangeSeries).
  */
 export function buildCashFlowBuckets(
   buckets: MonthlyBucket[],
@@ -251,8 +248,14 @@ export function buildCashFlowBuckets(
 ): CashFlowBucket[] {
   const contribMap = new Map(contributions.map((c) => [c.monthKey, c.contributions]));
 
+  // An empty month shows no change; the next real month's delta spans the gap,
+  // so the gap's cash lands there too.
+  let pending = 0;
   return buckets.map((b) => {
-    const contrib = b.isEmpty ? 0 : (contribMap.get(b.monthKey) ?? 0);
+    const monthCash = contribMap.get(b.monthKey) ?? 0;
+    if (b.isEmpty) pending += monthCash;
+    const contrib = b.isEmpty ? 0 : monthCash + pending;
+    if (!b.isEmpty) pending = 0;
     return {
       monthKey: b.monthKey,
       contributions: contrib,
@@ -324,6 +327,8 @@ export function aggregateCategoryHistory(
     .map(([monthKey, snap]) => {
       const point: CategoryDataPoint = { monthKey };
       for (const account of accounts) {
+        // Composition of what you own; stacking debts on top would inflate the total.
+        if (account.type === "LIABILITY") continue;
         const val = snap.accountValues[account.id] ?? 0;
         point[account.category] = Number(point[account.category] ?? 0) + val;
       }
@@ -437,6 +442,37 @@ export function computePerformanceAttribution(
     .filter((a) => a.totalDelta !== 0 || a.cashContribution !== 0)
     .sort((a, b) => Math.abs(b.totalDelta) - Math.abs(a.totalDelta))
     .slice(0, 10);
+}
+
+/**
+ * Money that shows up without a deposit record — a newly added account's opening
+ * value — is not market performance. Append each account's value at the first
+ * snapshot that contains it as a contribution in that month (net-worth signed).
+ * Accounts in the first-ever snapshot are the baseline itself, so they're skipped;
+ * deleted accounts are skipped because their sign (asset vs. liability) is unknown.
+ * Pairs with the per-account floor in getAccountMonthlyCashFlow, which drops
+ * flows from before an account's first snapshot so they aren't counted twice.
+ */
+export function addFirstAppearanceContributions(
+  snapshots: SnapshotBreakdown[],
+  accounts: AccountMeta[],
+  flows: AccountMonthlyContribution[],
+): AccountMonthlyContribution[] {
+  const direction = new Map(accounts.map((a) => [a.id, a.type === "LIABILITY" ? -1 : 1]));
+  // Legacy snapshots carry no breakdown; the first one that does is the baseline.
+  const withBreakdown = snapshots.filter((s) => Object.keys(s.accountValues).length > 0);
+  const seen = new Set(Object.keys(withBreakdown[0]?.accountValues ?? {}));
+  const added: AccountMonthlyContribution[] = [];
+  for (const s of withBreakdown.slice(1)) {
+    for (const [accountId, value] of Object.entries(s.accountValues)) {
+      if (seen.has(accountId)) continue;
+      seen.add(accountId);
+      const sign = direction.get(accountId);
+      if (sign === undefined || value === 0) continue;
+      added.push({ accountId, monthKey: s.date.slice(0, 7), contributions: value * sign });
+    }
+  }
+  return added.length > 0 ? [...flows, ...added] : flows;
 }
 
 /** Account categories that count as "investments" for the portfolio return KPI. */
@@ -654,9 +690,19 @@ export function computeInvestmentReturnSeries(
     monthLast.set(key, s);
   }
 
-  let prevEnd: number | null = null;
+  // A snapshot before the first month (the range's pre-start baseline) anchors
+  // that month, so its change isn't measured from mid-month.
+  const before = snapshots.filter((s) => s.date.slice(0, 7) < monthKeys[0]).at(-1);
+  let prevEnd: number | null = before ? investmentValue(before) : null;
   let index: number | null = null;
+  // Cash between that baseline and the first month belongs to the first change.
   let pendingCash = 0;
+  if (before) {
+    const beforeMonth = before.date.slice(0, 7);
+    for (const [monthKey, cash] of cashByMonth) {
+      if (monthKey > beforeMonth && monthKey < monthKeys[0]) pendingCash += cash;
+    }
+  }
   return monthKeys.map((monthKey) => {
     const endSnap = monthLast.get(monthKey);
     if (!endSnap) {
@@ -699,24 +745,34 @@ export interface ConcentrationResult {
   hhi: number;
 }
 
+/** Categories whose non-holding balance is cash, not a position. */
+const CASH_CATEGORIES = new Set(["BANK", "BROKERAGE", "CRYPTO_WALLET"]);
+
 /**
  * Portfolio concentration from the current net-worth summary: each priced holding
- * across ASSET accounts as a share of total assets. Cash and liabilities are not
- * positions, so they never appear (but total assets remains the denominator).
- * Pure — no DB access.
+ * across ASSET accounts as a share of total assets, plus the non-holding value of
+ * non-cash accounts (a home, a car) as one position each. Cash and liabilities
+ * are not positions, so they never appear (but total assets remains the
+ * denominator). Pure — no DB access.
  */
 export function computeConcentration(summary: NetWorthSummary): ConcentrationResult {
   const totalAssets = summary.totalAssets;
   const valueByLabel = new Map<string, number>();
+  const add = (label: string, value: number) => {
+    if (value > 0) valueByLabel.set(label, (valueByLabel.get(label) ?? 0) + value);
+  };
 
   if (totalAssets > 0) {
     for (const account of summary.accounts) {
       if (account.type !== "ASSET") continue;
+      let holdingsValue = 0;
       for (const h of account.holdings) {
         const value = h.marketValueInBaseCurrency ?? 0;
-        if (value <= 0) continue;
-        const label = h.name || h.symbol;
-        valueByLabel.set(label, (valueByLabel.get(label) ?? 0) + value);
+        holdingsValue += value;
+        add(h.name || h.symbol, value);
+      }
+      if (!CASH_CATEGORIES.has(account.category)) {
+        add(account.name, account.totalValueInBaseCurrency - holdingsValue);
       }
     }
   }

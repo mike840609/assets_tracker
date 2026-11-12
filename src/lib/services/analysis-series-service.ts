@@ -15,8 +15,8 @@ import {
   computePerformanceAttribution,
   computeInvestmentReturn,
   computeInvestmentReturnSeries,
+  addFirstAppearanceContributions,
   type CategoryDataPoint,
-  type MonthlyContribution,
 } from "@/lib/services/analysis-service";
 import type {
   NormalizedSnapshot,
@@ -36,11 +36,16 @@ import type { AnalysisRangeSeries } from "@/lib/analysis-contract";
  * (same class as the rest of the cached payload). Pass one shared `now` for
  * the whole fill so every range resolves against the same instant.
  */
+/** "YYYY-MM" of the month after an ISO date's month. */
+function nextMonthKey(isoDate: string): string {
+  const d = new Date(Date.UTC(Number(isoDate.slice(0, 4)), Number(isoDate.slice(5, 7)), 1));
+  return d.toISOString().slice(0, 7);
+}
+
 export function computeAnalysisRangeSeries(
   snapshots: NormalizedSnapshot[],
   rawHistory: RawHistoryData,
-  cashFlowData: MonthlyContribution[],
-  accountCashFlow: AccountMonthlyContribution[],
+  recordedCashFlow: AccountMonthlyContribution[],
   rangeLabel: RangeLabel,
   now = new Date(),
 ): AnalysisRangeSeries {
@@ -49,17 +54,47 @@ export function computeAnalysisRangeSeries(
     getMonthsForRange(rangeLabel),
     now,
   );
+  const rangeStartMonthKey = rangeStartIso.slice(0, 7);
 
-  const buckets = fillMonthRange(aggregateMonthlyChange(filteredSnapshots), rangeStart, rangeEnd);
-  const kpis = computeKpis(buckets, snapshots);
+  // The last snapshot before the range is every range-level baseline, so the
+  // first month's change runs from the prior month-end, not from mid-month.
+  const withBaseline = <T extends { date: string }>(all: T[], inRange: T[]) => {
+    const baseline = all.filter((s) => s.date < rangeStartIso).at(-1);
+    return baseline ? [baseline, ...inRange] : inRange;
+  };
 
+  const buckets = fillMonthRange(
+    aggregateMonthlyChange(withBaseline(snapshots, filteredSnapshots)),
+    rangeStart,
+    rangeEnd,
+  );
+  const kpis = computeKpis(buckets, snapshots, rangeEnd.toISOString().slice(0, 7));
+
+  // Cash counts from the month after the baseline: with a sparse history the
+  // baseline can sit months before the range, and that gap's cash is part of
+  // the first range month's change.
+  const baselineDate = snapshots.filter((s) => s.date < rangeStartIso).at(-1)?.date;
+  const flowStartMonthKey = baselineDate ? nextMonthKey(baselineDate) : rangeStartMonthKey;
+
+  const accountCashFlow = addFirstAppearanceContributions(
+    rawHistory.snapshots,
+    rawHistory.accounts,
+    recordedCashFlow,
+  );
+  const cashByMonth = new Map<string, number>();
+  for (const c of accountCashFlow) {
+    if (c.monthKey < flowStartMonthKey) continue;
+    const key = c.monthKey < rangeStartMonthKey ? rangeStartMonthKey : c.monthKey;
+    cashByMonth.set(key, (cashByMonth.get(key) ?? 0) + c.contributions);
+  }
   const cashFlowBuckets = buildCashFlowBuckets(
     buckets,
-    cashFlowData.filter((c) => c.monthKey >= rangeStartIso.slice(0, 7)),
+    Array.from(cashByMonth, ([monthKey, contributions]) => ({ monthKey, contributions })),
   );
   const cumulativeGrowth = buildCumulativeGrowth(cashFlowBuckets);
 
   const filteredRawSnapshots = rawHistory.snapshots.filter((s) => s.date >= rangeStartIso);
+  const rangeRawSnapshots = withBaseline(rawHistory.snapshots, filteredRawSnapshots);
   const hasUnattributedAccounts = rawHistory.unattributedDates.some(
     (date) => date >= rangeStartIso,
   );
@@ -72,21 +107,20 @@ export function computeAnalysisRangeSeries(
     return { monthKey: b.monthKey } as CategoryDataPoint;
   });
 
-  const rangeStartMonthKey = rangeStartIso.slice(0, 7);
   const attributionItems = computePerformanceAttribution(
-    filteredRawSnapshots,
+    rangeRawSnapshots,
     rawHistory.accounts,
     accountCashFlow,
-    rangeStartMonthKey,
+    flowStartMonthKey,
   );
   const investmentReturnPct = computeInvestmentReturn(
-    filteredRawSnapshots,
+    rangeRawSnapshots,
     rawHistory.accounts,
     accountCashFlow,
-    rangeStartMonthKey,
+    flowStartMonthKey,
   );
   const returnTrend = computeInvestmentReturnSeries(
-    filteredRawSnapshots,
+    rangeRawSnapshots,
     rawHistory.accounts,
     accountCashFlow,
     buckets.map((b) => b.monthKey),
@@ -109,20 +143,12 @@ export function computeAnalysisRangeSeries(
 export function computeAllRangeSeries(
   snapshots: NormalizedSnapshot[],
   rawHistory: RawHistoryData,
-  cashFlowData: MonthlyContribution[],
   accountCashFlow: AccountMonthlyContribution[],
   now = new Date(),
 ): Record<RangeLabel, AnalysisRangeSeries> {
   const result = {} as Record<RangeLabel, AnalysisRangeSeries>;
   for (const { label } of ANALYSIS_RANGES) {
-    result[label] = computeAnalysisRangeSeries(
-      snapshots,
-      rawHistory,
-      cashFlowData,
-      accountCashFlow,
-      label,
-      now,
-    );
+    result[label] = computeAnalysisRangeSeries(snapshots, rawHistory, accountCashFlow, label, now);
   }
   return result;
 }

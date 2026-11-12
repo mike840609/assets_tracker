@@ -46,6 +46,41 @@ interface TooltipPayload {
   value: number | null;
   color: string;
   name: string;
+  payload?: { total?: number | null };
+}
+
+/** Top categories to draw, plus each month's total across all categories. */
+export function buildCategoryChart(data: CategoryDataPoint[], locale: string) {
+  // Collect unique categories present in the data, preserving insertion order.
+  const categories = Array.from(
+    new Set(
+      data.flatMap((d) => Object.keys(d).filter((k) => k !== "monthKey" && Number(d[k]) > 0)),
+    ),
+  );
+
+  const rankedCategories = categories
+    .map((cat) => {
+      const latest = Number(data.at(-1)?.[cat] ?? 0);
+      const peak = Math.max(...data.map((d) => Number(d[cat] ?? 0)));
+      return { cat, latest, peak };
+    })
+    .sort((a, b) => b.latest - a.latest || b.peak - a.peak);
+  const visibleCategories = rankedCategories.slice(0, MAX_VISIBLE_CATEGORIES).map(({ cat }) => cat);
+  const chartData = data.map((d) => ({
+    monthKey: d.monthKey,
+    label: formatMonthLabel(d.monthKey as string, locale),
+    // Padded months carry no category values; emit null (not 0) so the
+    // stacked area breaks at the gap instead of plunging to zero (#511).
+    // A real category value of 0 is still a present number and stays 0.
+    ...Object.fromEntries(
+      visibleCategories.map((cat) => [cat, d[cat] == null ? null : Number(d[cat])]),
+    ),
+    // Every category, drawn or not, so "Total" means total.
+    total: categories.some((cat) => d[cat] != null)
+      ? categories.reduce((sum, cat) => sum + Number(d[cat] ?? 0), 0)
+      : null,
+  }));
+  return { categories, visibleCategories, chartData };
 }
 
 function CategoryTooltip({
@@ -69,7 +104,7 @@ function CategoryTooltip({
   const present = payload.filter((p): p is TooltipPayload & { value: number } => p.value != null);
   if (present.length === 0) return null;
   const sorted = [...present].sort((a, b) => b.value - a.value);
-  const total = present.reduce((s, p) => s + p.value, 0);
+  const total = present[0].payload?.total ?? present.reduce((s, p) => s + p.value, 0);
   return (
     <ChartTooltipContainer title={label} className="max-w-[200px]">
       {sorted.map((p) => (
@@ -102,36 +137,10 @@ export const CategoryTrendChart = memo(function CategoryTrendChart({ data, baseC
   const { isAnimationActive, onAnimationEnd } = useChartAnimation();
   useEffect(() => startTransition(() => setMounted(true)), []);
 
-  const { categories, visibleCategories, chartData } = useMemo(() => {
-    // Collect unique categories present in the data, preserving insertion order.
-    const categories = Array.from(
-      new Set(
-        data.flatMap((d) => Object.keys(d).filter((k) => k !== "monthKey" && Number(d[k]) > 0)),
-      ),
-    );
-
-    const rankedCategories = categories
-      .map((cat) => {
-        const latest = Number(data.at(-1)?.[cat] ?? 0);
-        const peak = Math.max(...data.map((d) => Number(d[cat] ?? 0)));
-        return { cat, latest, peak };
-      })
-      .sort((a, b) => b.latest - a.latest || b.peak - a.peak);
-    const visibleCategories = rankedCategories
-      .slice(0, MAX_VISIBLE_CATEGORIES)
-      .map(({ cat }) => cat);
-    const chartData = data.map((d) => ({
-      monthKey: d.monthKey,
-      label: formatMonthLabel(d.monthKey as string, locale),
-      // Padded months carry no category values; emit null (not 0) so the
-      // stacked area breaks at the gap instead of plunging to zero (#511).
-      // A real category value of 0 is still a present number and stays 0.
-      ...Object.fromEntries(
-        visibleCategories.map((cat) => [cat, d[cat] == null ? null : Number(d[cat])]),
-      ),
-    }));
-    return { categories, visibleCategories, chartData };
-  }, [data, locale]);
+  const { categories, visibleCategories, chartData } = useMemo(
+    () => buildCategoryChart(data, locale),
+    [data, locale],
+  );
   const hiddenCategoryCount = Math.max(0, categories.length - visibleCategories.length);
   const xAxisInterval = getMonthTickInterval(chartData.length, density === "compact" ? 5 : 6);
 

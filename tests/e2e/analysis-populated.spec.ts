@@ -40,7 +40,9 @@ test("analysis renders populated desktop charts without layout overflow", async 
     await page.getByRole("button", { name: "All", exact: true }).click();
     await allRangeResponse;
     await page.mouse.wheel(0, 1200);
-    await expect(page.getByText("Showing top 5 of 7 categories by latest value.")).toBeVisible();
+    // Liabilities are excluded from the category trend, so the fixture's 5 asset
+    // categories all fit and the "top N of M" caption doesn't apply.
+    await expect(page.getByText("Category totals use each month's latest snapshot.")).toBeVisible();
     await page.getByRole("button", { name: "YTD", exact: true }).click();
     await expect(page.getByRole("button", { name: "YTD", exact: true })).toHaveAttribute(
       "aria-pressed",

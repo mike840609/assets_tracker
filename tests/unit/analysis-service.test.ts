@@ -13,6 +13,7 @@ import {
   computeDrawdownSeries,
   computeConcentration,
   computeRemainingCostBasis,
+  addFirstAppearanceContributions,
 } from "@/lib/services/analysis-service";
 import type {
   NormalizedSnapshot,
@@ -818,5 +819,210 @@ describe("computeRemainingCostBasis", () => {
     expect(result.quantity).toBeCloseTo(10, 10);
     expect(result.costBasis).toBeCloseTo(1000, 10);
     expect(result.hasCostBasis).toBe(true);
+  });
+});
+
+describe("addFirstAppearanceContributions", () => {
+  const accounts: AccountMeta[] = [
+    { id: "old", name: "Old", category: "BROKERAGE", type: "ASSET" },
+    { id: "new", name: "New", category: "BROKERAGE", type: "ASSET" },
+    { id: "loan", name: "Loan", category: "LOAN", type: "LIABILITY" },
+  ];
+
+  it("counts an account's value at its first snapshot as a contribution in that month", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-05-01", accountValues: { old: 10000 } },
+      { date: "2026-07-10", accountValues: { old: 10200, new: 100000 } },
+      { date: "2026-08-10", accountValues: { old: 10300, new: 101000 } },
+    ];
+    expect(addFirstAppearanceContributions(snapshots, accounts, [])).toEqual([
+      { accountId: "new", monthKey: "2026-07", contributions: 100000 },
+    ]);
+  });
+
+  it("does not count accounts already present in the first-ever snapshot", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-05-01", accountValues: { old: 10000 } },
+      { date: "2026-06-01", accountValues: { old: 12000 } },
+    ];
+    expect(addFirstAppearanceContributions(snapshots, accounts, [])).toEqual([]);
+  });
+
+  it("counts a newly appearing liability as a negative contribution", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-05-01", accountValues: { old: 10000 } },
+      { date: "2026-06-03", accountValues: { old: 10000, loan: 5000 } },
+    ];
+    expect(addFirstAppearanceContributions(snapshots, accounts, [])).toEqual([
+      { accountId: "loan", monthKey: "2026-06", contributions: -5000 },
+    ]);
+  });
+
+  it("keeps existing cash flows and skips zero-valued first appearances", () => {
+    const flows: AccountMonthlyContribution[] = [
+      { accountId: "old", monthKey: "2026-06", contributions: 50 },
+    ];
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-05-01", accountValues: { old: 10000 } },
+      { date: "2026-06-03", accountValues: { old: 10050, new: 0 } },
+    ];
+    expect(addFirstAppearanceContributions(snapshots, accounts, flows)).toEqual(flows);
+  });
+
+  it("treats the first snapshot with a breakdown as the baseline (legacy rows have none)", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-04-01", accountValues: {} },
+      { date: "2026-05-01", accountValues: { old: 10000 } },
+    ];
+    expect(addFirstAppearanceContributions(snapshots, accounts, [])).toEqual([]);
+  });
+
+  it("ignores deleted accounts it cannot sign", () => {
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-05-01", accountValues: { old: 10000 } },
+      { date: "2026-06-03", accountValues: { old: 10000, gone: 700 } },
+    ];
+    expect(addFirstAppearanceContributions(snapshots, accounts, [])).toEqual([]);
+  });
+});
+
+describe("computeKpis — in-progress month", () => {
+  it("leaves the in-progress month out of best, worst and average", () => {
+    const snapshots = [
+      snap("2026-08-31", 1000),
+      snap("2026-09-30", 1300),
+      snap("2026-10-31", 1500),
+      snap("2026-11-12", 1520),
+    ];
+    // Range Sep–Nov; the Aug 31 snapshot is the pre-range baseline.
+    const buckets = fillMonthRange(
+      aggregateMonthlyChange(snapshots),
+      new Date(Date.UTC(2026, 8, 1)),
+      new Date(Date.UTC(2026, 10, 1)),
+    );
+    const kpis = computeKpis(buckets, snapshots, "2026-11");
+    expect(kpis.worst?.monthKey).toBe("2026-10"); // +200, not the partial November +20
+    expect(kpis.best?.monthKey).toBe("2026-09");
+    expect(kpis.avgMonthlyDelta).toBeCloseTo(250, 5); // Sep +300, Oct +200
+    expect(kpis.ytdDelta).toBe(520); // YTD still runs to the latest snapshot
+  });
+});
+
+describe("aggregateCategoryHistory — liabilities", () => {
+  it("leaves liability accounts out of the category composition", () => {
+    const accounts: AccountMeta[] = [
+      { id: "house", name: "House", category: "PROPERTY", type: "ASSET" },
+      { id: "mortgage", name: "Mortgage", category: "MORTGAGE", type: "LIABILITY" },
+    ];
+    const points = aggregateCategoryHistory(
+      [{ date: "2026-11-12", accountValues: { house: 800000, mortgage: 500000 } }],
+      accounts,
+    );
+    expect(points).toEqual([{ monthKey: "2026-11", PROPERTY: 800000 }]);
+  });
+});
+
+describe("computeInvestmentReturnSeries — pre-range baseline", () => {
+  it("measures the first month from the last snapshot before it", () => {
+    const accounts: AccountMeta[] = [
+      { id: "a1", name: "Brokerage", category: "BROKERAGE", type: "ASSET" },
+    ];
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-04-30", accountValues: { a1: 1000 } },
+      { date: "2026-05-01", accountValues: { a1: 1100 } },
+      { date: "2026-05-31", accountValues: { a1: 1210 } },
+    ];
+    const points = computeInvestmentReturnSeries(snapshots, accounts, [], ["2026-05"]);
+    expect(points[0].monthlyReturn).toBeCloseTo(0.21, 10); // 1000 → 1210
+  });
+});
+
+describe("computeConcentration — non-holding assets", () => {
+  it("treats a property account's value as its own position", () => {
+    const summary = {
+      totalAssets: 1_000_000,
+      accounts: [
+        {
+          type: "ASSET",
+          category: "BROKERAGE",
+          name: "Broker",
+          totalValueInBaseCurrency: 100_000,
+          holdings: [{ name: "Apple", symbol: "AAPL", marketValueInBaseCurrency: 100_000 }],
+        },
+        {
+          type: "ASSET",
+          category: "PROPERTY",
+          name: "Home",
+          totalValueInBaseCurrency: 900_000,
+          holdings: [],
+        },
+      ],
+    } as unknown as NetWorthSummary;
+    const r = computeConcentration(summary);
+    expect(r.top.map((p) => p.label)).toEqual(["Home", "Apple"]);
+    expect(r.topHoldingPct).toBeCloseTo(90);
+    expect(r.hhi).toBeCloseTo(0.82);
+  });
+
+  it("does not treat bank or brokerage cash as a position", () => {
+    const summary = {
+      totalAssets: 1000,
+      accounts: [
+        {
+          type: "ASSET",
+          category: "BANK",
+          name: "Checking",
+          totalValueInBaseCurrency: 600,
+          holdings: [],
+        },
+        {
+          type: "ASSET",
+          category: "BROKERAGE",
+          name: "Broker",
+          totalValueInBaseCurrency: 400,
+          holdings: [{ name: "Apple", symbol: "AAPL", marketValueInBaseCurrency: 300 }],
+        },
+      ],
+    } as unknown as NetWorthSummary;
+    expect(computeConcentration(summary).top.map((p) => p.label)).toEqual(["Apple"]);
+  });
+});
+
+describe("buildCashFlowBuckets — gap months", () => {
+  const bucket = (monthKey: string, deltaNetWorth: number, isEmpty: boolean) => ({
+    monthKey,
+    endDate: monthKey,
+    startNetWorth: 0,
+    endNetWorth: 0,
+    totalAssets: 0,
+    totalLiabilities: 0,
+    deltaNetWorth,
+    deltaPct: null,
+    isEmpty,
+  });
+
+  it("rolls a gap month's deposit into the next month whose change spans the gap", () => {
+    const result = buildCashFlowBuckets(
+      [bucket("2026-03", 0, true), bucket("2026-04", 700, false)],
+      [{ monthKey: "2026-03", contributions: 500 }],
+    );
+    expect(result[1]).toMatchObject({ contributions: 500, marketPerformance: 200 });
+  });
+});
+
+describe("computeInvestmentReturnSeries — flows between baseline and range", () => {
+  it("counts deposits made after the pre-range snapshot but before the first month", () => {
+    const accounts: AccountMeta[] = [
+      { id: "a1", name: "Brokerage", category: "BROKERAGE", type: "ASSET" },
+    ];
+    const snapshots: SnapshotBreakdown[] = [
+      { date: "2026-02-28", accountValues: { a1: 1000 } },
+      { date: "2026-04-30", accountValues: { a1: 2100 } },
+    ];
+    const flows: AccountMonthlyContribution[] = [
+      { accountId: "a1", monthKey: "2026-03", contributions: 1000 },
+    ];
+    const points = computeInvestmentReturnSeries(snapshots, accounts, flows, ["2026-04"]);
+    expect(points[0].monthlyReturn).toBeCloseTo(100 / 1500, 10); // gain 100 on 1000 + 1000/2
   });
 });

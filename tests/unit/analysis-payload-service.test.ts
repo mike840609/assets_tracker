@@ -26,7 +26,6 @@ vi.mock("@/lib/services/analysis-series-service", () => ({
 
 vi.mock("@/lib/services/history-service", () => ({
   getFullNormalizedHistory: vi.fn(async () => []),
-  getMonthlyCashFlow: vi.fn(async () => []),
   getRawHistoryWithBreakdown: vi.fn(async () => ({ snapshots: [], accounts: [] })),
   getAccountMonthlyCashFlow: vi.fn(async () => []),
 }));
@@ -105,10 +104,10 @@ describe("getCachedAnalysisPayload", () => {
     await getCachedAnalysisRangeSeries("user-1", "USD", "All");
 
     expect(mockComputeAnalysisRangeSeries.mock.calls).toHaveLength(2);
-    expect(mockComputeAnalysisRangeSeries.mock.calls[0]?.[5]).toEqual(
+    expect(mockComputeAnalysisRangeSeries.mock.calls[0]?.[4]).toEqual(
       new Date("2026-08-24T03:00:00.000Z"),
     );
-    expect(mockComputeAnalysisRangeSeries.mock.calls[1]?.[5]).toEqual(
+    expect(mockComputeAnalysisRangeSeries.mock.calls[1]?.[4]).toEqual(
       new Date("2026-08-24T03:00:00.000Z"),
     );
 

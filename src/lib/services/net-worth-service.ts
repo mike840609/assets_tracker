@@ -359,3 +359,24 @@ async function getCachedNetWorthSummaryInner(
 }
 
 export const getCachedNetWorthSummary = cache(getCachedNetWorthSummaryInner);
+
+/**
+ * Baseline for the dashboard's "since snapshot" change. An account created
+ * after the snapshot isn't a gain, so its current value joins the baseline
+ * (net-worth signed). `snapshotAccountIds` null = a snapshot with no breakdown,
+ * which can't tell new accounts apart, so the baseline is left as stored.
+ */
+export function baselineIncludingNewAccounts(
+  previousNetWorth: number,
+  snapshotAccountIds: string[] | null,
+  accounts: Pick<AccountWithValue, "id" | "type" | "totalValueInBaseCurrency">[],
+): number {
+  if (!snapshotAccountIds) return previousNetWorth;
+  const known = new Set(snapshotAccountIds);
+  let baseline = previousNetWorth;
+  for (const a of accounts) {
+    if (known.has(a.id)) continue;
+    baseline += a.type === "LIABILITY" ? -a.totalValueInBaseCurrency : a.totalValueInBaseCurrency;
+  }
+  return baseline;
+}
