@@ -197,7 +197,7 @@ export function DashboardSkeleton() {
           data-testid="portfolio-overview-skeleton"
           className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12"
         >
-          <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
+          <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1 lg:min-h-[28rem] lg:[&>*]:flex-1">
             <ChartCardSkeleton />
           </div>
           <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">

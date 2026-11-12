@@ -157,9 +157,18 @@ test("loads deferred charts after selecting a missing range before scrolling", a
     await expect(page.getByText("Cumulative Growth")).toBeVisible();
     await expect(page.getByText("Performance Attribution")).toBeVisible();
 
-    // Growth sources share one card: the monthly view swaps in the cash-flow split.
-    await page.getByRole("button", { name: "Monthly", exact: true }).click();
-    await expect(page.getByText("Cash Flow Decomposition")).toBeVisible();
+    // Growth sources share one card: the monthly view swaps in the cash-flow split,
+    // and keyboard focus stays on the toggle across the swap.
+    const growthToggle = page.getByRole("group", { name: "Growth view" });
+    await growthToggle.getByRole("button", { name: "Monthly", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "Cash Flow Decomposition", exact: true }),
+    ).toBeVisible();
+    const monthly = page
+      .getByRole("group", { name: "Growth view" })
+      .getByRole("button", { name: "Monthly", exact: true });
+    await expect(monthly).toHaveAttribute("aria-pressed", "true");
+    await expect(monthly).toBeFocused();
   } finally {
     await cleanupAnalysisFixture(fixture);
   }

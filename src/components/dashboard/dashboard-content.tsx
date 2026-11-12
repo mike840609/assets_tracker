@@ -480,7 +480,10 @@ export async function DashboardContent({ userId }: { userId: string }) {
           data-testid="portfolio-overview-row"
           className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12"
         >
-          <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
+          {/* The heatmap column is contain-size, so this rail alone sets the row height.
+              The floor keeps the treemap (≥280px + chrome) from clipping when the
+              composition card is short, e.g. a single-currency user's currency view. */}
+          <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1 lg:min-h-[28rem] lg:[&>*]:flex-1">
             <Suspense fallback={<ChartCardSkeleton />}>
               <AllocationSection userId={userId} baseCurrency={baseCurrency} />
             </Suspense>
