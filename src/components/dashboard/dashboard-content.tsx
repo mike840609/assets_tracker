@@ -9,6 +9,7 @@ import { DashboardActions } from "@/components/dashboard/dashboard-actions";
 import {
   getCachedNetWorthSummary,
   fetchUserAccountsWithHoldings,
+  baselineIncludingNewAccounts,
 } from "@/lib/services/net-worth-service";
 import { getAllExchangeRates, resolveRate } from "@/lib/services/exchange-rate-service";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
@@ -51,14 +52,20 @@ async function fetchPreviousSnapshotInner(userId: string) {
   const snapshot = await prisma.netWorthSnapshot.findFirst({
     where: { userId },
     orderBy: { date: "desc" },
-    select: { date: true, netWorth: true, baseCurrency: true, createdAt: true },
+    select: { date: true, netWorth: true, baseCurrency: true, createdAt: true, breakdown: true },
   });
   if (!snapshot) return null;
+  const { breakdown } = snapshot;
   return {
     date: snapshot.date.toISOString(),
     netWorth: Number(snapshot.netWorth),
     baseCurrency: snapshot.baseCurrency,
     createdAt: snapshot.createdAt.toISOString(),
+    // Keys only: which accounts the snapshot knew about.
+    accountIds:
+      breakdown && typeof breakdown === "object" && !Array.isArray(breakdown)
+        ? Object.keys(breakdown)
+        : null,
   };
 }
 
@@ -226,6 +233,13 @@ async function NetWorthSection({
       const rateMap = await getAllExchangeRates();
       const rate = resolveRate(rateMap, previousSnapshot.baseCurrency, baseCurrency);
       if (rate !== undefined) previousNetWorth = previousSnapshot.netWorth * rate;
+    }
+    if (previousNetWorth !== undefined) {
+      previousNetWorth = baselineIncludingNewAccounts(
+        previousNetWorth,
+        previousSnapshot.accountIds,
+        summary.accounts,
+      );
     }
   }
 

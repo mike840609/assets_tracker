@@ -31,6 +31,8 @@ const h = vi.hoisted(() => ({
   snapshotCurrencies: [] as string[],
   accounts: [] as unknown[],
   cashTransactions: [] as CashTransactionFixture[],
+  // Per-account first snapshot; null → every account first seen in latestSnapshot.
+  firstSeen: null as { accountId: string; date: Date; createdAt: Date }[] | null,
   prices: [] as { symbol: string; price: number; currency: string }[],
   rates: new Map<string, number>(),
 }));
@@ -46,6 +48,16 @@ vi.mock("@/lib/logger", () => ({
 }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    $queryRaw: vi.fn(async () => {
+      if (h.firstSeen) return h.firstSeen;
+      const first = h.latestSnapshot;
+      if (!first) return [];
+      return (h.accounts as { id: string }[]).map((a) => ({
+        accountId: a.id,
+        date: first.date,
+        createdAt: first.createdAt,
+      }));
+    }),
     account: { findMany: vi.fn(async () => h.accounts) },
     netWorthSnapshot: {
       findMany: vi.fn(async () => h.rows),
@@ -181,6 +193,7 @@ beforeEach(() => {
   vi.useRealTimers();
   h.rows = [];
   h.latestSnapshot = null;
+  h.firstSeen = null;
   h.currencyMatchedSnapshot = null;
   h.snapshotCurrencies = [];
   h.accounts = [];
@@ -883,5 +896,82 @@ describe("getRawHistoryWithBreakdown (deleted-account disclosure)", () => {
     const raw = await getRawHistoryWithBreakdown("u1", "USD");
 
     expect(raw.unattributedDates).toEqual([]);
+  });
+});
+
+describe("getAccountMonthlyCashFlow — per-account first snapshot", () => {
+  const firstSnapshot = () =>
+    row({
+      id: "first",
+      date: new Date("2026-03-05T00:00:00.000Z"),
+      createdAt: new Date("2026-03-04T21:30:00.000Z"),
+    });
+  const tx = (over: Partial<CashTransactionFixture>): CashTransactionFixture => ({
+    amount: 100,
+    type: "DEPOSIT",
+    createdAt: new Date("2026-07-01T10:00:00.000Z"),
+    occurrenceDate: null,
+    recurringId: null,
+    materializedAt: null,
+    materializedAtEstimated: false,
+    accountId: "old",
+    ...over,
+  });
+
+  it("drops a new account's flows dated before the first snapshot that contains it", async () => {
+    h.accounts = [account({ id: "old" }), account({ id: "new" })];
+    h.latestSnapshot = firstSnapshot();
+    h.firstSeen = [
+      { accountId: "old", date: h.latestSnapshot.date, createdAt: h.latestSnapshot.createdAt },
+      {
+        accountId: "new",
+        date: new Date("2026-06-10T00:00:00.000Z"),
+        createdAt: new Date("2026-06-09T21:30:00.000Z"),
+      },
+    ];
+    h.cashTransactions = [
+      // Backdated into the account's pre-history: already inside its first snapshot value.
+      tx({ accountId: "new", amount: 500, occurrenceDate: new Date("2026-05-01T00:00:00.000Z") }),
+      tx({ accountId: "new", amount: 60, occurrenceDate: new Date("2026-06-10T00:00:00.000Z") }),
+      tx({ accountId: "old", amount: 100, occurrenceDate: new Date("2026-04-01T00:00:00.000Z") }),
+    ];
+
+    expect(await getAccountMonthlyCashFlow("u1", "USD")).toEqual([
+      { accountId: "new", monthKey: "2026-06", contributions: 60 },
+      { accountId: "old", monthKey: "2026-04", contributions: 100 },
+    ]);
+  });
+
+  it("falls back to the first snapshot for an account no breakdown has captured yet", async () => {
+    h.accounts = [account({ id: "old" }), account({ id: "today" })];
+    h.latestSnapshot = firstSnapshot();
+    h.firstSeen = [
+      { accountId: "old", date: h.latestSnapshot.date, createdAt: h.latestSnapshot.createdAt },
+    ];
+    h.cashTransactions = [tx({ accountId: "today", amount: 70 })];
+
+    expect(await getAccountMonthlyCashFlow("u1", "USD")).toEqual([
+      { accountId: "today", monthKey: "2026-07", contributions: 70 },
+    ]);
+  });
+
+  it("keeps the first snapshot as the floor for accounts in the earliest breakdown (legacy rows)", async () => {
+    // Snapshots before 2026-04-01 predate per-account breakdowns.
+    h.accounts = [account({ id: "old" })];
+    h.latestSnapshot = firstSnapshot();
+    h.firstSeen = [
+      {
+        accountId: "old",
+        date: new Date("2026-04-01T00:00:00.000Z"),
+        createdAt: new Date("2026-03-31T21:30:00.000Z"),
+      },
+    ];
+    h.cashTransactions = [
+      tx({ accountId: "old", amount: 40, occurrenceDate: new Date("2026-03-20T00:00:00.000Z") }),
+    ];
+
+    expect(await getAccountMonthlyCashFlow("u1", "USD")).toEqual([
+      { accountId: "old", monthKey: "2026-03", contributions: 40 },
+    ]);
   });
 });
