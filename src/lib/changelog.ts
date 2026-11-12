@@ -38,6 +38,47 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.2",
+    date: "2026-11-12",
+    summary: {
+      "en-US":
+        "Simplified Chinese joins English and Traditional Chinese, plus patched dependency advisories.",
+      "zh-CN": "新增简体中文，与英文、繁体中文并列，并修补依赖套件的安全漏洞。",
+      "zh-TW": "新增簡體中文，與英文、繁體中文並列，並修補相依套件的安全性漏洞。",
+    },
+    changes: [
+      {
+        type: "added",
+        text: {
+          "en-US":
+            "Simplified Chinese (zh-CN) is now a supported language across the app, the changelog, and the READMEs.",
+          "zh-CN": "现已支持简体中文（zh-CN），涵盖整个应用、更新日志与 README。",
+          "zh-TW": "現已支援簡體中文（zh-CN），涵蓋整個應用程式、更新日誌與 README。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Polished Simplified Chinese wording (dashboard, earnings calendar, secondary currency, privacy policy) and fixed a broken README anchor.",
+          "zh-CN":
+            "润饰简体中文用语（仪表板、财报日历、次要货币、隐私政策），并修复 README 中失效的锚点链接。",
+          "zh-TW":
+            "潤飾簡體中文用語（儀表板、財報行事曆、次要幣別、隱私權政策），並修正 README 中失效的錨點連結。",
+        },
+      },
+      {
+        type: "fixed",
+        text: {
+          "en-US":
+            "Patched transitive dependency advisories in fast-uri, hono, qs, Vite, and Vitest.",
+          "zh-CN": "修补 fast-uri、hono、qs、Vite 与 Vitest 等间接依赖的安全漏洞。",
+          "zh-TW": "修補 fast-uri、hono、qs、Vite 與 Vitest 等間接相依套件的安全性漏洞。",
+        },
+      },
+    ],
+  },
+  {
     version: "1.7.1",
     date: "2026-10-25",
     summary: {
