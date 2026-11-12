@@ -2,7 +2,7 @@ import { Suspense, cache } from "react";
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { NetWorthCard } from "@/components/dashboard/net-worth-card";
-import { LazyAllocationChart, LazyCurrencyExposureChart } from "@/components/dashboard/lazy-charts";
+import { CompositionChart } from "@/components/dashboard/composition-chart";
 import { TrendChartSkeleton } from "@/components/dashboard/trend-chart-skeleton";
 import { AccountsSummary } from "@/components/dashboard/accounts-summary";
 import { DashboardActions } from "@/components/dashboard/dashboard-actions";
@@ -255,8 +255,8 @@ async function NetWorthSection({
 }
 
 /**
- * Allocation donut — asset composition by category.
- * Lives in the trend-row rail. Shares the cached summary (data-cache dedup).
+ * Composition card — asset category or currency split, toggled in one card.
+ * Pairs with the portfolio heatmap row. Shares the cached summary (data-cache dedup).
  */
 async function AllocationSection({
   userId,
@@ -268,18 +268,7 @@ async function AllocationSection({
   const summary = await getCachedNetWorthSummary(userId, baseCurrency);
   if (summary.accounts.length === 0) return null;
 
-  return <LazyAllocationChart summary={summary} />;
-}
-
-/**
- * Currency exposure donut — value split by currency.
- * Pairs with the portfolio heatmap row. Shares the cached summary (data-cache dedup).
- */
-async function CurrencySection({ userId, baseCurrency }: { userId: string; baseCurrency: string }) {
-  const summary = await getCachedNetWorthSummary(userId, baseCurrency);
-  if (summary.accounts.length === 0) return null;
-
-  return <LazyCurrencyExposureChart summary={summary} />;
+  return <CompositionChart summary={summary} />;
 }
 
 /**
@@ -484,8 +473,8 @@ export async function DashboardContent({ userId }: { userId: string }) {
       </div>
 
       {/* Tier 3 — "what it's made of": a content-sized 8/4 overview row followed
-          by a full-width concentration summary. Source order stays allocation →
-          currency → portfolio → concentration for mobile and assistive technology. */}
+          by a full-width concentration summary. Source order stays composition →
+          portfolio → concentration for mobile and assistive technology. */}
       <div className="space-y-3 sm:space-y-6 animate-in fade-in slide-in-from-bottom-10 motion-slow fill-mode-both delay-100">
         <div
           data-testid="portfolio-overview-row"
@@ -494,9 +483,6 @@ export async function DashboardContent({ userId }: { userId: string }) {
           <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
             <Suspense fallback={<ChartCardSkeleton />}>
               <AllocationSection userId={userId} baseCurrency={baseCurrency} />
-            </Suspense>
-            <Suspense fallback={<ChartCardSkeleton />}>
-              <CurrencySection userId={userId} baseCurrency={baseCurrency} />
             </Suspense>
           </div>
           <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">

@@ -84,8 +84,19 @@ describe("dashboard portfolio layout", () => {
     expect(skeletonSource).toContain("export function ConcentrationCardSkeleton()");
   });
 
-  it("lays concentration out horizontally on desktop", () => {
-    expect(concentrationSource).toContain("lg:grid-cols-[minmax(12rem,0.3fr)_minmax(0,1fr)]");
+  it("lays concentration out as a ranked list without a duplicate headline figure", () => {
     expect(concentrationSource).toContain("sm:grid-cols-2 xl:grid-cols-3");
+    // The list's first row is the largest position; a separate big % repeated it.
+    expect(concentrationSource).not.toContain("topHoldingPct");
+  });
+
+  it("shows category and currency composition as one toggled card", () => {
+    expect(dashboardSource).toContain("<CompositionChart summary={summary} />");
+    expect(dashboardSource).not.toContain("CurrencySection");
+    const rail = skeletonSource.slice(
+      skeletonSource.indexOf('data-testid="portfolio-overview-skeleton"'),
+      skeletonSource.indexOf("<PortfolioHeatmapSkeleton />"),
+    );
+    expect(rail.match(/<ChartCardSkeleton \/>/g)).toHaveLength(1);
   });
 });

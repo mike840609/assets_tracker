@@ -550,15 +550,18 @@
     "tabMovers": "最大變動",
     "cashFlow": "現金流分解",
     "cashFlowSubtitle": "將每月淨資產變化拆分為現金流與剩餘變動。",
-    "seriesContributions": "存入/取出",
+    "seriesContributions": "淨投入",
     "seriesMarket": "市場表現",
     "categoryTrend": "類別趨勢",
     "categoryTrendSubtitle": "類別總額使用每月最新快照。",
     "categoryTrendSubtitleLimited": "依最新價值顯示前 {count} / {total} 個類別。",
     "total": "總計",
     "cumulativeGrowth": "累積成長",
-    "cumulativeGrowthSubtitle": "所選期間內存入金額與市場收益的累積總和。",
-    "cumulativeGrowthNote": "市場 = 累積淨資產變化 − 淨存入/提領。",
+    "cumulativeGrowthSubtitle": "所選期間內淨投入與市場表現的累積總和。",
+    "cumulativeGrowthNote": "市場 = 累積淨資產變化 − 淨投入。",
+    "growthViewLabel": "成長檢視",
+    "growthViewCumulative": "累積",
+    "growthViewMonthly": "每月",
     "drawdown": "回撤",
     "drawdownSubtitle": "淨資產距離前高的跌幅。",
     "drawdownNote": "0% 代表創新高；下探處為波段高點到低點的跌幅。",
@@ -576,7 +579,7 @@
     "returnTrendNote": "每月報酬採 Modified Dietz 近似法（存入資金以半權重計入），折線為幾何鏈接的累積值，未年化。",
     "seriesMonthlyReturn": "每月報酬",
     "seriesCumulativeReturn": "累積報酬",
-    "cashFlowNote": "市場表現 = 每月變化 − 淨存入/提領。",
+    "cashFlowNote": "市場表現 = 每月淨資產變化 − 淨投入。",
     "attribution": "績效歸因",
     "attributionSubtitle": "所選期間內各帳戶變化，拆分為現金流與市場變動。",
     "attributionNoData": "歷史資料不足，無法計算歸因。",
@@ -876,7 +879,10 @@
   "allocationChart": {
     "title": "資產配置",
     "noAssets": "尚無資產。",
-    "total": "總計"
+    "total": "總計",
+    "viewLabel": "組成檢視",
+    "viewCategory": "類別",
+    "viewCurrency": "幣別"
   },
   "currencyExposure": {
     "title": "貨幣曝險",
@@ -886,7 +892,6 @@
   "concentration": {
     "title": "集中度",
     "subtitle": "最大持倉佔總資產的比重。",
-    "largestPosition": "最大持倉",
     "level_low": "分散良好",
     "level_moderate": "中度集中",
     "level_high": "高度集中"

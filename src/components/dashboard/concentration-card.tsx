@@ -10,7 +10,7 @@ import type { NetWorthSummary } from "@/lib/types";
 export function ConcentrationCard({ summary }: { summary: NetWorthSummary }) {
   const t = useTranslations("concentration");
   const { privacyMode } = usePrivacyMode();
-  const { top, topHoldingPct, hhi } = useMemo(() => computeConcentration(summary), [summary]);
+  const { top, hhi } = useMemo(() => computeConcentration(summary), [summary]);
 
   if (top.length === 0) return null;
 
@@ -19,22 +19,17 @@ export function ConcentrationCard({ summary }: { summary: NetWorthSummary }) {
   return (
     <div data-testid="portfolio-concentration-row">
       <Card className="flex flex-col">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
-          <p className="text-xs text-muted-foreground">{t("subtitle")}</p>
-        </CardHeader>
-        <CardContent className="grid flex-1 gap-4 lg:grid-cols-[minmax(12rem,0.3fr)_minmax(0,1fr)] lg:gap-6">
-          <div className="flex items-baseline justify-between gap-3 lg:flex-col lg:items-start lg:justify-start lg:gap-3">
-            <div>
-              <div className="text-2xl font-semibold tabular-nums text-foreground">
-                {privacyMode ? "***" : `${topHoldingPct.toFixed(1)}%`}
-              </div>
-              <div className="text-[11px] text-muted-foreground">{t("largestPosition")}</div>
-            </div>
-            <span className="rounded-full bg-muted px-2 py-1 text-[11px] text-muted-foreground">
-              {t(`level_${level}` as "level_low" | "level_moderate" | "level_high")}
-            </span>
+        {/* The top list already leads with the largest position, so no separate headline figure. */}
+        <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
+          <div className="min-w-0">
+            <CardTitle className="text-base font-medium text-foreground">{t("title")}</CardTitle>
+            <p className="text-xs text-muted-foreground">{t("subtitle")}</p>
           </div>
+          <span className="shrink-0 rounded-full bg-muted px-2 py-1 text-[11px] text-muted-foreground">
+            {t(`level_${level}` as "level_low" | "level_moderate" | "level_high")}
+          </span>
+        </CardHeader>
+        <CardContent className="flex-1">
           <ul className="grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
             {top.map((position) => (
               <li key={position.label} className="min-w-0">

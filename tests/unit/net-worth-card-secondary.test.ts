@@ -54,6 +54,15 @@ describe("NetWorthCard secondary currency", () => {
     expect(html.match(/— JPY/g)).toHaveLength(3);
   });
 
+  it("shows account counts without a share-of-gross meter", () => {
+    const html = renderToStaticMarkup(createElement(NetWorthCard, { summary }));
+
+    expect(html).toContain("accountCount");
+    // 100 / (100 + 20) = 83% read like a debt ratio; it must not render.
+    expect(html).not.toContain("83%");
+    expect(html).not.toContain("17%");
+  });
+
   it("masks secondary totals in privacy mode", () => {
     privacy.enabled = true;
     const html = renderToStaticMarkup(

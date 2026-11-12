@@ -70,7 +70,7 @@ test("analysis renders populated desktop charts without layout overflow", async 
         chartCount: document.querySelectorAll(".recharts-surface").length,
         hasHorizontalOverflow: documentElement.scrollWidth > documentElement.clientWidth,
         movementHeightDiff: Math.abs(
-          cardHeight("Cash Flow Decomposition") - cardHeight("Cumulative Growth"),
+          cardHeight("Cumulative Growth") - cardHeight("Investment Cost Basis"),
         ),
         compositionHeightDiff: Math.abs(
           cardHeight("Category Trend") - cardHeight("Performance Attribution"),
@@ -154,8 +154,12 @@ test("loads deferred charts after selecting a missing range before scrolling", a
     const movementSection = page.getByRole("heading", { name: /^Movement/ });
     await movementSection.scrollIntoViewIfNeeded();
 
-    await expect(page.getByText("Cash Flow Decomposition")).toBeVisible();
+    await expect(page.getByText("Cumulative Growth")).toBeVisible();
     await expect(page.getByText("Performance Attribution")).toBeVisible();
+
+    // Growth sources share one card: the monthly view swaps in the cash-flow split.
+    await page.getByRole("button", { name: "Monthly", exact: true }).click();
+    await expect(page.getByText("Cash Flow Decomposition")).toBeVisible();
   } finally {
     await cleanupAnalysisFixture(fixture);
   }
@@ -189,11 +193,11 @@ test("renders both locales' month labels from one cached payload", async ({ page
     const englishCard = page
       .locator('[data-slot="card"]')
       .filter({
-        has: page.getByRole("heading", { name: "Cash Flow Decomposition", exact: true }),
+        has: page.getByRole("heading", { name: "Cumulative Growth", exact: true }),
       })
       .first();
     await expect(
-      englishCard.getByRole("heading", { name: "Cash Flow Decomposition", exact: true }),
+      englishCard.getByRole("heading", { name: "Cumulative Growth", exact: true }),
     ).toBeVisible({ timeout: 20_000 });
     await expect(
       englishCard.locator("svg").getByText(oldestMonthLabel(fixture.snapshotDates, "en-US"), {
@@ -211,7 +215,7 @@ test("renders both locales' month labels from one cached payload", async ({ page
     await page.mouse.wheel(0, 1200);
     const chineseCard = page
       .locator('[data-slot="card"]')
-      .filter({ has: page.getByRole("heading", { name: "現金流分解", exact: true }) })
+      .filter({ has: page.getByRole("heading", { name: "累積成長", exact: true }) })
       .first();
     await expect(
       chineseCard.locator("svg").getByText(oldestMonthLabel(fixture.snapshotDates, "zh-TW"), {

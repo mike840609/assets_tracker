@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useMemo, useState, startTransition } from "react";
+import { memo, useEffect, useMemo, useState, startTransition, type ReactNode } from "react";
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, XAxis, YAxis } from "recharts";
 import { useLocale, useTranslations } from "next-intl";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-to
 interface Props {
   points: CumulativeGrowthPoint[];
   baseCurrency: string;
+  headerAction?: ReactNode;
 }
 
 interface TooltipPayload {
@@ -93,6 +94,7 @@ const growthConfig = {} satisfies ChartConfig;
 export const CumulativeGrowthChart = memo(function CumulativeGrowthChart({
   points,
   baseCurrency,
+  headerAction,
 }: Props) {
   const t = useTranslations("analysis");
   const locale = useLocale();
@@ -108,11 +110,14 @@ export const CumulativeGrowthChart = memo(function CumulativeGrowthChart({
 
   return (
     <>
-      <CardHeader className="pb-2 px-2 sm:px-4">
-        <CardTitle className="text-base font-medium text-foreground">
-          {t("cumulativeGrowth")}
-        </CardTitle>
-        <p className="text-xs text-muted-foreground">{t("cumulativeGrowthSubtitle")}</p>
+      <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2 px-2 sm:px-4">
+        <div className="min-w-0">
+          <CardTitle className="text-base font-medium text-foreground">
+            {t("cumulativeGrowth")}
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">{t("cumulativeGrowthSubtitle")}</p>
+        </div>
+        {headerAction}
       </CardHeader>
       <CardContent className="flex flex-1 flex-col px-2 pb-4 sm:px-4">
         {points.length === 0 ? (

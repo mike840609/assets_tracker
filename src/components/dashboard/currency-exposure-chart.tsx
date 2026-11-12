@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, type ReactNode } from "react";
 import { useReducedMotion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslations } from "next-intl";
@@ -22,7 +22,13 @@ const COLORS = [
   "var(--chart-9)",
 ];
 
-export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary }) {
+export function CurrencyExposureChart({
+  summary,
+  headerAction,
+}: {
+  summary: NetWorthSummary;
+  headerAction?: ReactNode;
+}) {
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const t = useTranslations("currencyExposure");
   const { privacyMode } = usePrivacyMode();
@@ -51,8 +57,9 @@ export function CurrencyExposureChart({ summary }: { summary: NetWorthSummary })
 
   return (
     <Card>
-      <CardHeader className="pb-1 px-4">
-        <CardTitle className="text-foreground">{t("title")}</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-1 px-4">
+        <CardTitle className="min-w-0 truncate text-foreground">{t("title")}</CardTitle>
+        {headerAction}
       </CardHeader>
       <CardContent className="px-4 pb-3">
         {data.length === 0 ? (

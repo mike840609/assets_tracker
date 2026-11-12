@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useMemo, useState, startTransition } from "react";
+import { memo, useEffect, useMemo, useState, startTransition, type ReactNode } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -27,6 +27,7 @@ import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-to
 interface Props {
   buckets: CashFlowBucket[];
   baseCurrency: string;
+  headerAction?: ReactNode;
 }
 
 interface TooltipPayload {
@@ -98,7 +99,11 @@ function CashFlowTooltip({
 
 const cashflowConfig = {} satisfies ChartConfig;
 
-export const CashFlowChart = memo(function CashFlowChart({ buckets, baseCurrency }: Props) {
+export const CashFlowChart = memo(function CashFlowChart({
+  buckets,
+  baseCurrency,
+  headerAction,
+}: Props) {
   const t = useTranslations("analysis");
   const locale = useLocale();
   const { privacyMode } = usePrivacyMode();
@@ -123,9 +128,12 @@ export const CashFlowChart = memo(function CashFlowChart({ buckets, baseCurrency
 
   return (
     <>
-      <CardHeader className="pb-2 px-2 sm:px-4">
-        <CardTitle className="text-base font-medium text-foreground">{t("cashFlow")}</CardTitle>
-        <p className="text-xs text-muted-foreground">{t("cashFlowSubtitle")}</p>
+      <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2 px-2 sm:px-4">
+        <div className="min-w-0">
+          <CardTitle className="text-base font-medium text-foreground">{t("cashFlow")}</CardTitle>
+          <p className="text-xs text-muted-foreground">{t("cashFlowSubtitle")}</p>
+        </div>
+        {headerAction}
       </CardHeader>
       <CardContent className="flex flex-1 flex-col px-2 pb-4 sm:px-4">
         {buckets.length === 0 ? (

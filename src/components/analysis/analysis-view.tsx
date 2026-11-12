@@ -23,8 +23,6 @@ import {
 } from "@/lib/analysis-range";
 import {
   LazyAssetsLiabilitiesChart,
-  LazyCashFlowChart,
-  LazyCumulativeGrowthChart,
   LazyInvestmentCostBasisChart,
   LazyCategoryTrendChart,
   LazyAttributionChart,
@@ -32,6 +30,7 @@ import {
   LazyDrawdownChart,
   ChartSkeleton,
 } from "./lazy-analysis-charts";
+import { GrowthSourceChart } from "./growth-source-chart";
 import { KpiTiles } from "./kpi-tiles";
 import { AnalysisEmptyState } from "./analysis-empty-state";
 
@@ -309,13 +308,8 @@ export function AnalysisView({
                       {showDeferredCharts ? (
                         <>
                           <Card size="sm" className="h-full">
-                            <LazyCashFlowChart
+                            <GrowthSourceChart
                               buckets={series.cashFlowBuckets}
-                              baseCurrency={baseCurrency}
-                            />
-                          </Card>
-                          <Card size="sm" className="h-full">
-                            <LazyCumulativeGrowthChart
                               points={series.cumulativeGrowth}
                               baseCurrency={baseCurrency}
                             />
@@ -329,7 +323,7 @@ export function AnalysisView({
                           <Card size="sm" className="h-full">
                             <LazyReturnTrendChart points={series.returnTrend} />
                           </Card>
-                          <Card size="sm" className="h-full xl:col-span-2">
+                          <Card size="sm" className="h-full">
                             <LazyDrawdownChart points={drawdownSeries} />
                           </Card>
                         </>
@@ -339,7 +333,6 @@ export function AnalysisView({
                           <ChartSkeletonCard />
                           <ChartSkeletonCard />
                           <ChartSkeletonCard />
-                          <ChartSkeletonCard className="xl:col-span-2" />
                         </>
                       )}
                     </div>

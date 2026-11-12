@@ -550,15 +550,18 @@
     "tabMovers": "最大变动",
     "cashFlow": "现金流拆解",
     "cashFlowSubtitle": "将每月净资产变动拆分为现金流和其余波动。",
-    "seriesContributions": "入金/出金",
+    "seriesContributions": "净投入",
     "seriesMarket": "市场收益",
     "categoryTrend": "分类趋势",
     "categoryTrendSubtitle": "分类总额使用每月最新快照。",
     "categoryTrendSubtitleLimited": "按最新价值展示前 {count} / {total} 个分类。",
     "total": "合计",
     "cumulativeGrowth": "累计增长",
-    "cumulativeGrowthSubtitle": "所选区间内入金和市场收益的累计总和。",
-    "cumulativeGrowthNote": "市场收益 = 净资产累计变动 − 净入金/出金。",
+    "cumulativeGrowthSubtitle": "所选区间内净投入和市场收益的累计总和。",
+    "cumulativeGrowthNote": "市场收益 = 净资产累计变动 − 净投入。",
+    "growthViewLabel": "增长视图",
+    "growthViewCumulative": "累计",
+    "growthViewMonthly": "每月",
     "drawdown": "回撤",
     "drawdownSubtitle": "净资产相对前期高点的跌幅。",
     "drawdownNote": "0% 代表创出新高；回撤是阶段高点到低点的跌幅。",
@@ -576,7 +579,7 @@
     "returnTrendNote": "月度收益采用修正迪茨近似法（入金半权重），折线为几何链式累计值，未年化。",
     "seriesMonthlyReturn": "月度收益",
     "seriesCumulativeReturn": "累计收益",
-    "cashFlowNote": "市场收益 = 月度变动 − 净入金/出金。",
+    "cashFlowNote": "市场收益 = 月度净资产变动 − 净投入。",
     "attribution": "收益归因",
     "attributionSubtitle": "所选区间内各账户变动，拆分为现金流和市场波动。",
     "attributionNoData": "历史数据不足，无法计算归因。",
@@ -876,7 +879,10 @@
   "allocationChart": {
     "title": "资产配置",
     "noAssets": "暂无资产。",
-    "total": "合计"
+    "total": "合计",
+    "viewLabel": "构成视图",
+    "viewCategory": "类别",
+    "viewCurrency": "币种"
   },
   "currencyExposure": {
     "title": "货币敞口",
@@ -886,7 +892,6 @@
   "concentration": {
     "title": "集中度",
     "subtitle": "最大持仓占总资产比重。",
-    "largestPosition": "最大持仓",
     "level_low": "分散良好",
     "level_moderate": "中度集中",
     "level_high": "高度集中"

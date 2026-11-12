@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, type ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, Sector, Label } from "recharts";
 import { useContainerWidth } from "@/hooks/use-container-size";
@@ -25,7 +25,13 @@ const COLORS = [
   "var(--chart-9)",
 ];
 
-export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
+export function AllocationChart({
+  summary,
+  headerAction,
+}: {
+  summary: NetWorthSummary;
+  headerAction?: ReactNode;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const containerWidth = useContainerWidth(containerRef);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
@@ -96,8 +102,11 @@ export function AllocationChart({ summary }: { summary: NetWorthSummary }) {
 
   return (
     <Card>
-      <CardHeader className="pb-1 px-4">
-        <CardTitle className="text-foreground">{t("allocationChart.title")}</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-1 px-4">
+        <CardTitle className="min-w-0 truncate text-foreground">
+          {t("allocationChart.title")}
+        </CardTitle>
+        {headerAction}
       </CardHeader>
       <CardContent className="px-4 pb-3">
         {data.length === 0 ? (

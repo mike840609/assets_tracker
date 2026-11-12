@@ -141,18 +141,14 @@ function PortfolioHeatmapSkeleton() {
 export function ConcentrationCardSkeleton() {
   return (
     <Card data-testid="portfolio-concentration-skeleton">
-      <CardHeader className="pb-2">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-4 w-64 max-w-full" />
-      </CardHeader>
-      <CardContent className="grid gap-4 lg:grid-cols-[minmax(12rem,0.3fr)_minmax(0,1fr)] lg:gap-6">
-        <div className="flex items-end justify-between gap-3 lg:flex-col lg:items-start lg:justify-start">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-20" />
-            <Skeleton className="h-3 w-24" />
-          </div>
-          <Skeleton className="h-6 w-28 rounded-full" />
+      <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
+        <div className="min-w-0 space-y-2">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-4 w-64 max-w-full" />
         </div>
+        <Skeleton className="h-6 w-28 shrink-0 rounded-full" />
+      </CardHeader>
+      <CardContent>
         <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
           {[...Array(5)].map((_, index) => (
             <div key={index} className="space-y-2">
@@ -202,7 +198,6 @@ export function DashboardSkeleton() {
           className="grid grid-cols-1 gap-3 sm:gap-6 lg:grid-cols-12"
         >
           <div className="flex min-w-0 flex-col gap-3 sm:gap-6 lg:col-span-4 lg:col-start-9 lg:row-start-1">
-            <ChartCardSkeleton />
             <ChartCardSkeleton />
           </div>
           <div className="flex min-w-0 flex-col lg:col-span-8 lg:col-start-1 lg:row-start-1 lg:min-h-0 lg:contain-size lg:[&>*]:min-h-0 lg:[&>*]:flex-1">

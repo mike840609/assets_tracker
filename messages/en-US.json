@@ -559,6 +559,9 @@
     "cumulativeGrowth": "Cumulative Growth",
     "cumulativeGrowthSubtitle": "Running total of deposits vs. market gains over the range.",
     "cumulativeGrowthNote": "Market is cumulative net-worth change minus net deposits and withdrawals.",
+    "growthViewLabel": "Growth view",
+    "growthViewCumulative": "Cumulative",
+    "growthViewMonthly": "Monthly",
     "drawdown": "Drawdown",
     "drawdownSubtitle": "How far net worth sits below its prior peak.",
     "drawdownNote": "0% means at an all-time high; dips show peak-to-trough declines.",
@@ -876,7 +879,10 @@
   "allocationChart": {
     "title": "Asset Allocation",
     "noAssets": "No assets to display.",
-    "total": "Total"
+    "total": "Total",
+    "viewLabel": "Composition view",
+    "viewCategory": "Category",
+    "viewCurrency": "Currency"
   },
   "currencyExposure": {
     "title": "Currency Exposure",
@@ -886,7 +892,6 @@
   "concentration": {
     "title": "Concentration",
     "subtitle": "Largest positions as a share of total assets.",
-    "largestPosition": "Largest position",
     "level_low": "Well diversified",
     "level_moderate": "Moderately concentrated",
     "level_high": "Highly concentrated"
