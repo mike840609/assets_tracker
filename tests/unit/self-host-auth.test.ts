@@ -108,6 +108,9 @@ describe("self-host login page", () => {
     expect(source).toContain('await credentialsSignIn("self-host"');
     // A wrong password must surface inline, not reach the global error boundary.
     expect(source).toContain("error instanceof AuthError");
+    // Password attempts are throttled per IP before reaching Auth.js.
+    expect(source).toContain("rateLimitSubjectCheckWithPrune(ip, `login/${provider}`");
+    expect(source).toContain('redirect("/login?error=RateLimited")');
     expect(source).toContain("{isGoogleAuthEnabled && (");
   });
 });

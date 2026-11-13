@@ -8,7 +8,15 @@ import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { AnalysisView } from "@/components/analysis/analysis-view";
 import { countActiveAccounts } from "@/lib/services/account-service";
 
-const CLIENT_NAMESPACES = ["analysis", "categories", "nav", "trendChart", "history", "freshness"];
+const CLIENT_NAMESPACES = [
+  "analysis",
+  "categories",
+  "common",
+  "nav",
+  "trendChart",
+  "history",
+  "freshness",
+];
 
 async function AnalysisContent() {
   const session = await getSession();

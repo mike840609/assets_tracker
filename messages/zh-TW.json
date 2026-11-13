@@ -1184,7 +1184,9 @@
     "showMore": "顯示另外 {count} 個",
     "groupPositions": "{count} 個部位",
     "dangerZone": "危險區域",
-    "deleteAccountPermanently": "刪除此帳戶"
+    "deleteAccountPermanently": "刪除此帳戶",
+    "overdraftWarning": "此次提款後餘額將變為 {balance}。再按一次即可仍然記錄。",
+    "overdraftConfirm": "仍要提款"
   },
   "dataManagement": {
     "title": "從備份還原",
@@ -1426,7 +1428,8 @@
     "trust2": "您的資料私密保存，絕不出售",
     "trust3": "只有您能查看自己的投資組合",
     "footerBefore": "您的資料受到保護。閱讀我們的",
-    "footerLink": "隱私政策"
+    "footerLink": "隱私政策",
+    "tooManyAttempts": "登入嘗試次數過多，請幾分鐘後再試。"
   },
   "demo": {
     "login": {

@@ -18,7 +18,10 @@ import { getTranslations } from "next-intl/server";
 import { REPO_URL } from "@/lib/repo";
 import { GitHubMark } from "@/components/layout/github-mark";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getClientIpFromHeaders } from "@/lib/client-ip";
+import { rateLimitSubjectCheckWithPrune } from "@/lib/rate-limit";
 import { PurgeNavCache } from "./purge-nav-cache";
 
 type LoginPageProps = {
@@ -32,7 +35,18 @@ type LoginPageProps = {
 // Auth.js throws CredentialsSignin on a wrong password. Uncaught it reaches the
 // global error boundary, so turn it into an inline message on /login instead.
 // Anything else (including Next's redirect signal on success) is rethrown.
+// Per-IP throttle on password attempts. In-memory per instance (see rate-limit.ts).
+// ponytail: counts every attempt, not only failures — 10 per 15 min is ample for a
+// single owner; behind a proxy without forwarding headers all clients share the
+// "unknown" key, which then acts as a global throttle.
+const LOGIN_ATTEMPT_LIMIT = { limit: 10, windowMs: 15 * 60_000 };
+
 async function credentialsSignIn(provider: string, password: string) {
+  // No password = the passwordless dev/E2E Internal Test Login; nothing to guess.
+  const ip = getClientIpFromHeaders(await headers());
+  if (password && rateLimitSubjectCheckWithPrune(ip, `login/${provider}`, LOGIN_ATTEMPT_LIMIT)) {
+    redirect("/login?error=RateLimited");
+  }
   try {
     await signIn(provider, { password, redirectTo: "/" });
   } catch (error) {
@@ -54,7 +68,9 @@ async function exitDemoOriginBeforeFormalSignIn(): Promise<boolean> {
   return true;
 }
 
-async function LoginContent({ hasError }: { hasError: boolean }) {
+type LoginError = "CredentialsSignin" | "RateLimited";
+
+async function LoginContent({ error }: { error?: LoginError }) {
   const t = await getTranslations("login");
   const tNav = await getTranslations("nav");
 
@@ -88,12 +104,12 @@ async function LoginContent({ hasError }: { hasError: boolean }) {
           <p className="text-sm text-muted-foreground font-medium">{t("subtitle")}</p>
         </div>
 
-        {hasError && (
+        {error && (
           <p
             role="alert"
             className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
           >
-            {t("invalidPassword")}
+            {error === "RateLimited" ? t("tooManyAttempts") : t("invalidPassword")}
           </p>
         )}
 
@@ -265,7 +281,11 @@ async function LoginGate({ searchParams }: LoginPageProps) {
     if (authContext.principal.kind === "formal" || params.from !== "demo") redirect("/");
   }
 
-  return <LoginContent hasError={params.error === "CredentialsSignin"} />;
+  const error =
+    params.error === "CredentialsSignin" || params.error === "RateLimited"
+      ? params.error
+      : undefined;
+  return <LoginContent error={error} />;
 }
 
 export default function LoginPage({ searchParams }: LoginPageProps) {

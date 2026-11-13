@@ -49,7 +49,6 @@ const CalendarView = dynamic(
 );
 
 interface GoalsViewProps {
-  loadedTab: MobilePlanTab;
   requestedTab?: MobilePlanTab;
   goalsWithProgress?: GoalWithProgress[];
   baseCurrency: string;
@@ -132,7 +131,6 @@ function ManageGoalsList({
 }
 
 export function GoalsView({
-  loadedTab,
   requestedTab,
   goalsWithProgress,
   baseCurrency,
@@ -210,7 +208,15 @@ export function GoalsView({
     requestedTab ?? searchParams.get("tab") ?? undefined,
     hash,
   );
-  const activeTab: MobilePlanTab = pendingTab && pendingTab !== loadedTab ? pendingTab : desiredTab;
+  // A clicked tab shows immediately and holds until the URL-derived tab moves
+  // (the replace landed, or Back/Forward). Any such move drops it, so history
+  // navigation can't be overridden by a stale click.
+  const [pendingFor, setPendingFor] = useState(desiredTab);
+  if (pendingFor !== desiredTab) {
+    setPendingFor(desiredTab);
+    setPendingTab(null);
+  }
+  const activeTab: MobilePlanTab = pendingTab ?? desiredTab;
   // Mobile UAs get only the selected tab's data; desktop UAs get every panel.
   // Judge readiness by what actually arrived, not by which tab the server picked.
   const hasPanelData = (tab: MobilePlanTab) =>
