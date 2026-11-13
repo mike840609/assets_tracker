@@ -5,6 +5,7 @@ import { Drawer as DrawerPrimitive } from "@base-ui/react/drawer";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
+import { useCloseLabel } from "@/components/ui/use-close-label";
 
 function DrawerRoot({ ...props }: DrawerPrimitive.Root.Props) {
   return <DrawerPrimitive.Root data-slot="drawer" swipeDirection="down" {...props} />;
@@ -45,6 +46,7 @@ function DrawerContent({
 }: DrawerPrimitive.Popup.Props & {
   showCloseButton?: boolean;
 }) {
+  const closeLabel = useCloseLabel();
   return (
     <DrawerPortal>
       <DrawerBackdrop />
@@ -86,7 +88,7 @@ function DrawerContent({
               }
             >
               <XIcon />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{closeLabel}</span>
             </DrawerPrimitive.Close>
           )}
         </DrawerPrimitive.Popup>

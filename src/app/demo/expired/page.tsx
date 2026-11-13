@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { after } from "next/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -9,7 +10,7 @@ import { deleteExpiredDemoUser } from "@/lib/demo/demo-service";
 import { isPublicDemoEnabled } from "@/lib/env";
 import { getTranslations } from "next-intl/server";
 
-export default async function DemoExpiredPage() {
+async function DemoExpiredContent() {
   const context = await getAuthContext();
   if (context.status === "active" && context.principal.kind === "formal") redirect("/");
   if (context.status === "demo-expired") {
@@ -38,6 +39,7 @@ export default async function DemoExpiredPage() {
           <Button
             variant="outline"
             className="h-11 w-full"
+            nativeButton={false}
             render={<Link href="/login?from=demo" />}
           >
             {t("signIn")}
@@ -50,5 +52,15 @@ export default async function DemoExpiredPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+// getAuthContext reads the session cookie, which is request-time data. Under
+// cacheComponents it must sit inside <Suspense> or the route blocks prerendering.
+export default function DemoExpiredPage() {
+  return (
+    <Suspense fallback={<main className="min-h-dvh bg-background" />}>
+      <DemoExpiredContent />
+    </Suspense>
   );
 }

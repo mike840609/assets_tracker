@@ -12,7 +12,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // notice a component that drops the option. A component-supplied `timeZone`
 // wins via spread order, which is what every call here passes.
 vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => key,
+  // Mirror the one message whose output the assertions read (en-US "{label}, today").
+  useTranslations: () => (key: string, values?: { label?: string }) =>
+    key === "cellToday" ? `${values?.label}, today` : key,
   useFormatter: () => ({
     dateTime: (date: Date, options?: Intl.DateTimeFormatOptions) =>
       new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", ...options }).format(

@@ -136,6 +136,9 @@ export function SwipeableRow({
                 action.onClick();
               }}
               aria-label={action.label}
+              // Swipe-only affordance inside an aria-hidden container: keep it out
+              // of the tab order (the row's menu covers keyboard users).
+              tabIndex={-1}
             >
               <motion.div className="flex flex-col items-center gap-1" style={innerStyle}>
                 <action.icon className="h-4 w-4" />

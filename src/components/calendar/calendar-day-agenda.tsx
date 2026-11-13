@@ -166,6 +166,7 @@ export function CalendarDayAgenda({
                 <div className="mt-3 flex flex-wrap items-center gap-1">
                   {entry.sourceUrl && (
                     <Button
+                      nativeButton={false}
                       render={
                         <a href={entry.sourceUrl} target="_blank" rel="noopener noreferrer" />
                       }

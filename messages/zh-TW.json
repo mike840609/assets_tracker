@@ -146,7 +146,8 @@
       "light": "淺色",
       "dark": "深色",
       "system": "系統"
-    }
+    },
+    "close": "關閉"
   },
   "errors": {
     "title": "發生錯誤",
@@ -421,7 +422,10 @@
       "create": "建立目標",
       "save": "儲存",
       "saving": "儲存中...",
-      "cancel": "取消"
+      "cancel": "取消",
+      "nameRequired": "請輸入目標名稱。",
+      "amountInvalid": "請輸入大於 0 的目標金額。",
+      "scopeRefRequired": "請選擇要追蹤的項目。"
     },
     "toast": {
       "created": "目標已建立",
@@ -828,7 +832,9 @@
     "selectedSnapshot": "已選取快照",
     "clearSnapshotSelection": "清除快照選取",
     "legendLoss": "下跌",
-    "legendGain": "上漲"
+    "legendGain": "上漲",
+    "activityGridLabel": "{year} 年淨資產活動",
+    "cellToday": "{label}，今天"
   },
   "netWorthCard": {
     "netWorth": "淨資產",

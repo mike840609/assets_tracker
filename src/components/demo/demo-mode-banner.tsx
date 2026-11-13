@@ -125,7 +125,11 @@ export function DemoModeBanner({ expiresAt }: { expiresAt: string }) {
           </Button>
         }
       />
-      <Button render={<Link href="/login?from=demo" />} className="h-11 w-full md:h-9">
+      <Button
+        nativeButton={false}
+        render={<Link href="/login?from=demo" />}
+        className="h-11 w-full md:h-9"
+      >
         <UserRound aria-hidden="true" />
         {t("banner.actions.signIn")}
       </Button>

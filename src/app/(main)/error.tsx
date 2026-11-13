@@ -36,7 +36,7 @@ export default function MainError({
       </div>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button onClick={reset}>{t("retry")}</Button>
-        <Button variant="outline" render={<Link href="/" />}>
+        <Button variant="outline" nativeButton={false} render={<Link href="/" />}>
           {t("backHome")}
         </Button>
       </div>

@@ -550,7 +550,7 @@ export function TransactionHistory({
         ) : (
           dateGroups.map(({ dateKey, items }) => (
             <div key={dateKey}>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 mb-2 px-1">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2 px-1">
                 {dateKey}
               </p>
               <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">

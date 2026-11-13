@@ -141,7 +141,11 @@ export function PrivacySecurity({ isDemo, userEmail, signOutAction }: PrivacySec
                       {t("demo.exit")}
                     </Button>
                   </form>
-                  <Button render={<Link href="/login?from=demo" />} className="h-11 flex-1 md:h-8">
+                  <Button
+                    nativeButton={false}
+                    render={<Link href="/login?from=demo" />}
+                    className="h-11 flex-1 md:h-8"
+                  >
                     {t("demo.signIn")}
                   </Button>
                 </div>

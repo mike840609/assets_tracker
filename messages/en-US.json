@@ -146,7 +146,8 @@
       "light": "Light",
       "dark": "Dark",
       "system": "System"
-    }
+    },
+    "close": "Close"
   },
   "errors": {
     "title": "Something went wrong",
@@ -421,7 +422,10 @@
       "create": "Create Goal",
       "save": "Save",
       "saving": "Saving...",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "nameRequired": "Enter a goal name.",
+      "amountInvalid": "Enter a target greater than 0.",
+      "scopeRefRequired": "Choose one to track."
     },
     "toast": {
       "created": "Goal created",
@@ -828,7 +832,9 @@
     "selectedSnapshot": "Selected snapshot",
     "clearSnapshotSelection": "Clear snapshot selection",
     "legendLoss": "Loss",
-    "legendGain": "Gain"
+    "legendGain": "Gain",
+    "activityGridLabel": "{year} net worth activity",
+    "cellToday": "{label}, today"
   },
   "netWorthCard": {
     "netWorth": "Net Worth",

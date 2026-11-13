@@ -330,6 +330,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
           {t("activityYear", { year: currentYear })}
         </span>
         <div
+          role="img"
           className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
           aria-label={`${t("legendLoss")} – ${t("legendGain")}`}
         >
@@ -396,7 +397,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
             {/* Grid */}
             <div
               role="grid"
-              aria-label={`${currentYear} net worth activity`}
+              aria-label={t("activityGridLabel", { year: currentYear })}
               aria-rowcount={7}
               aria-colcount={weeksToShow}
               className="flex flex-col gap-1"
@@ -473,7 +474,7 @@ export function HistoryHeatmap({ snapshots, baseCurrency, labels }: Props) {
                         key={cIdx}
                         role="gridcell"
                         aria-colindex={cIdx + 1}
-                        aria-label={isToday ? `${cellLabel}, today` : cellLabel}
+                        aria-label={isToday ? t("cellToday", { label: cellLabel }) : cellLabel}
                         aria-selected={isSelected}
                         tabIndex={canShowDetails ? 0 : -1}
                         onPointerDown={

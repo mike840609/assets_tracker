@@ -4,6 +4,7 @@ import {
   formatChartTick,
   formatMonthLabel,
   getMonthTickInterval,
+  niceTicks,
 } from "@/lib/chart-formatters";
 
 describe("chart-formatters", () => {
@@ -38,6 +39,16 @@ describe("chart-formatters", () => {
       expect(formatChartTick(500)).toBe("500");
       expect(formatChartTick(50_000)).toBe("50K");
       expect(formatChartTick(2_500_000)).toBe("2.5M");
+    });
+
+    it("keeps neighbouring ticks distinct when given the axis step", () => {
+      const { ticks, step } = niceTicks(1_820_000, 2_120_000);
+      const labels = ticks.map((t) => formatChartTick(t, step));
+      expect(new Set(labels).size).toBe(labels.length);
+      expect(ticks[0]).toBeLessThanOrEqual(1_820_000);
+      expect(ticks.at(-1)).toBeGreaterThanOrEqual(2_120_000);
+      expect(formatChartTick(1_950_000, 50_000)).toBe("1.95M");
+      expect(formatChartTick(64_200, 200)).toBe("64.2K");
     });
 
     it("calculates tick interval correctly", () => {

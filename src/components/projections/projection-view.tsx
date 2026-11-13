@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useId, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Check, ChevronDown, Flag, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -171,6 +171,8 @@ function NumberInput({
   max?: number;
   prefix?: string;
 }) {
+  const inputId = useId();
+  const hintId = `${inputId}-hint`;
   const [prevValue, setPrevValue] = useState(value);
   const [display, setDisplay] = useState(() => (value === 0 ? "" : formatAmountInput(value, 6)));
 
@@ -205,7 +207,9 @@ function NumberInput({
 
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs font-medium">{label}</Label>
+      <Label htmlFor={inputId} className="text-xs font-medium">
+        {label}
+      </Label>
       <div className="relative flex items-center">
         {prefix && (
           <span className="pointer-events-none absolute left-3 text-sm text-muted-foreground select-none">
@@ -213,6 +217,8 @@ function NumberInput({
           </span>
         )}
         <Input
+          id={inputId}
+          aria-describedby={hint ? hintId : undefined}
           type="text"
           inputMode="decimal"
           value={display}
@@ -225,7 +231,11 @@ function NumberInput({
           }
         />
       </div>
-      {hint && <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p>}
+      {hint && (
+        <p id={hintId} className="text-xs leading-relaxed text-muted-foreground">
+          {hint}
+        </p>
+      )}
     </div>
   );
 }

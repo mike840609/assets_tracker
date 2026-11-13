@@ -146,7 +146,8 @@
       "light": "浅色",
       "dark": "深色",
       "system": "跟随系统"
-    }
+    },
+    "close": "关闭"
   },
   "errors": {
     "title": "发生错误",
@@ -421,7 +422,10 @@
       "create": "创建目标",
       "save": "保存",
       "saving": "保存中...",
-      "cancel": "取消"
+      "cancel": "取消",
+      "nameRequired": "请输入目标名称。",
+      "amountInvalid": "请输入大于 0 的目标金额。",
+      "scopeRefRequired": "请选择要追踪的项目。"
     },
     "toast": {
       "created": "目标已创建",
@@ -828,7 +832,9 @@
     "selectedSnapshot": "已选中快照",
     "clearSnapshotSelection": "取消选中快照",
     "legendLoss": "下跌",
-    "legendGain": "上涨"
+    "legendGain": "上涨",
+    "activityGridLabel": "{year} 年净资产活动",
+    "cellToday": "{label}，今天"
   },
   "netWorthCard": {
     "netWorth": "净资产",

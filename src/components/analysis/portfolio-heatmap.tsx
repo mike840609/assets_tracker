@@ -244,15 +244,16 @@ export function PortfolioHeatmap({
     const assetAccounts = summary.accounts
       .filter((account) => account.type === "ASSET" && account.totalValueInBaseCurrency > 0)
       .sort((a, b) => b.totalValueInBaseCurrency - a.totalValueInBaseCurrency);
+    // Shares are of the tiles drawn. summary.totalAssets nets in overdrawn asset
+    // accounts, which would push the tile shares past 100%.
+    const tileTotal = assetAccounts.reduce((sum, a) => sum + a.totalValueInBaseCurrency, 0);
 
     return assetAccounts.map((account, index) => {
       const children = accountChildren(account, t("heatmapCashLabel"));
       const childTotal = children.reduce((sum, child) => sum + child.value, 0);
       const color = HEATMAP_COLORS[index % HEATMAP_COLORS.length];
       const portfolioShare =
-        summary.totalAssets > 0
-          ? (account.totalValueInBaseCurrency / summary.totalAssets) * 100
-          : 0;
+        tileTotal > 0 ? (account.totalValueInBaseCurrency / tileTotal) * 100 : 0;
       const unpricedCount = account.holdings.filter(
         (holding) => holding.currentPrice === null || holding.marketValueInBaseCurrency === null,
       ).length;
@@ -267,8 +268,7 @@ export function PortfolioHeatmap({
         portfolioShare,
         unpricedCount,
         children: children.map((child, childIndex) => {
-          const childPortfolioShare =
-            summary.totalAssets > 0 ? (child.value / summary.totalAssets) * 100 : 0;
+          const childPortfolioShare = tileTotal > 0 ? (child.value / tileTotal) * 100 : 0;
           const childAccountShare = childTotal > 0 ? (child.value / childTotal) * 100 : 0;
 
           return {
@@ -283,7 +283,7 @@ export function PortfolioHeatmap({
         }),
       };
     });
-  }, [summary.accounts, summary.totalAssets, t]);
+  }, [summary.accounts, t]);
 
   const selectedAccount = accounts.find((account) => account.id === selectedAccountId) ?? null;
   const topLevelChartData = useMemo(

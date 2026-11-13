@@ -148,7 +148,11 @@ function DemoDataManagement() {
         <CardContent className="space-y-2 p-4">
           <p className="text-sm font-medium">{t("demoTitle")}</p>
           <p className="text-sm text-muted-foreground">{t("demoDescription")}</p>
-          <Button render={<Link href="/login?from=demo" />} className="h-11 md:h-8">
+          <Button
+            nativeButton={false}
+            render={<Link href="/login?from=demo" />}
+            className="h-11 md:h-8"
+          >
             {t("demoAction")}
           </Button>
         </CardContent>

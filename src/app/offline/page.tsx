@@ -36,7 +36,7 @@ async function OfflineContent() {
     <>
       <h1 className="text-lg font-semibold">{t("title")}</h1>
       <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
-      <Button className="mt-6 h-11 md:h-8" render={<Link href="/" />}>
+      <Button className="mt-6 h-11 md:h-8" nativeButton={false} render={<Link href="/" />}>
         {t("retry")}
       </Button>
     </>

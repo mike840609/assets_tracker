@@ -121,6 +121,8 @@ All 16 routes were tested at desktop size (1440×900). The 12 main routes were a
 
 ### BUG-006 — Allocation percentages add up to more than 100% when an asset account has a negative balance
 
+**Status: Fixed.** Account-row and treemap shares now divide by the positive asset balances, and an overdrawn asset shows "—". Verified with Bank of Taiwan at -NT$420,000: Yuanta 40.9%, Firstrade 35.2%, Schwab 23.9% (sum 100%) (`screenshots/fix-006-allocation.png`).
+
 - **Severity:** P3
 - **Affected:** `/accounts` (allocation column, treemap, "Total assets")
 - **Steps to reproduce:**
@@ -133,6 +135,8 @@ All 16 routes were tested at desktop size (1440×900). The 12 main routes were a
 - **Recommended fix:** divide by the sum of positive asset values, and show negative-balance assets separately. Alternatively, warn or confirm before a withdrawal makes an asset account negative.
 
 ### BUG-007 — Net-worth trend Y axis shows the same label twice
+
+**Status: Fixed.** New `niceTicks()` gives the trend chart round 1/2/5 steps, and `formatChartTick(v, step)` adds decimals when the step needs them. Verified in TWD: 3M shows 1.7M–2.2M with no duplicates (`screenshots/fix-007-y-ticks.png`).
 
 - **Severity:** P3
 - **Affected:** Dashboard "Net Worth Trend", History page trend chart
@@ -147,6 +151,8 @@ All 16 routes were tested at desktop size (1440×900). The 12 main routes were a
 
 ### BUG-008 — Goal form silently ignores a blank name or a non-positive amount
 
+**Status: Fixed.** Name, amount and scope fields now show inline `role="alert"` messages with `aria-invalid`, translated in all three locales, and clear as you type.
+
 - **Severity:** P3
 - **Affected:** **New Goal** / **Edit Goal** dialog (`/goals`)
 - **Steps to reproduce:** in **New Goal**, enter spaces as the name (or a target of 0) and click **Create Goal**.
@@ -158,6 +164,8 @@ All 16 routes were tested at desktop size (1440×900). The 12 main routes were a
 
 ### BUG-009 — Account row action buttons have no accessible name (axe: critical `button-name`)
 
+**Status: Fixed.** Both account-row menu triggers have `aria-label` "Actions for {name}". axe is clean on `/accounts`.
+
 - **Severity:** P3 (accessibility)
 - **Affected:** `/accounts` table, the "…" menu button on every row (5 found)
 - **Steps to reproduce:** run axe on `/accounts`, or list buttons with a screen reader.
@@ -166,6 +174,8 @@ All 16 routes were tested at desktop size (1440×900). The 12 main routes were a
 - **Recommended fix:** add `aria-label={t("actionsFor", { name: account.name })}`.
 
 ### BUG-010 — Other accessibility issues found by axe and inspection
+
+**Status: Fixed.** (a) Swipe buttons are `tabIndex={-1}`. (b) The legend has `role="img"`. (c) Heatmap labels are translated. (d) Dialog and Drawer close labels are translated through `useCloseLabel`. (e) Projection inputs are linked to their labels with `useId`. (f) The date header uses full `text-muted-foreground`. axe reports no violations on 8 pages.
 
 - **Severity:** P3 (accessibility). Each item was confirmed in the source.
 
@@ -179,6 +189,8 @@ All 16 routes were tested at desktop size (1440×900). The 12 main routes were a
 | f   | Account page                    | One `color-contrast` failure on the `text-muted-foreground/70` group header                                         | account page side panel                                                                |
 
 ### BUG-011 — Development-time runtime errors: invalid Base UI `render` usage and an uncached-data error on `/demo/expired`
+
+**Status: Fixed.** `nativeButton={false}` is set on all 8 link-rendering Buttons, and `/demo/expired` reads the session inside `<Suspense>`. No console errors on `/offline`, the 404 page or `/demo/expired`.
 
 - **Severity:** P3 (warnings logged as `console.error` on every visit)
 - **Affected:** `/offline`, the 404 page, `/demo/expired`, the settings privacy and data panels, and the demo banner
