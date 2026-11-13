@@ -1429,7 +1429,8 @@
     "trust3": "只有你可以查看自己的投资组合",
     "footerBefore": "你的数据受到保护。阅读我们的",
     "footerLink": "隐私政策",
-    "tooManyAttempts": "登录尝试次数过多，请几分钟后再试。"
+    "tooManyAttempts": "登录尝试次数过多，请几分钟后再试。",
+    "signInFailed": "登录失败，请稍后再试。"
   },
   "demo": {
     "login": {

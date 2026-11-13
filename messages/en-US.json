@@ -1429,7 +1429,8 @@
     "trust3": "Only you can see your portfolio",
     "footerBefore": "Your data stays private. Read our",
     "footerLink": "Privacy Policy",
-    "tooManyAttempts": "Too many sign-in attempts. Try again in a few minutes."
+    "tooManyAttempts": "Too many sign-in attempts. Try again in a few minutes.",
+    "signInFailed": "Sign-in failed. Please try again in a moment."
   },
   "demo": {
     "login": {

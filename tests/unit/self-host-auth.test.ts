@@ -126,6 +126,38 @@ describe("self-host credentials provider", () => {
       provider?.authorize?.({ password: "wrong" }, requestFrom("192.0.2.4")),
     ).resolves.toBeNull();
   });
+
+  it("does not count successful sign-ins toward the throttle", async () => {
+    h.userUpsert.mockResolvedValue({ id: "owner", name: null, email: null, image: null });
+    const provider = h.authConfig?.providers.find(({ id }) => id === "self-host");
+    for (let i = 0; i < 15; i++) {
+      await expect(
+        provider?.authorize?.(
+          { password: "a-secure-self-host-password" },
+          requestFrom("192.0.2.5"),
+        ),
+      ).resolves.toMatchObject({ id: "owner" });
+    }
+  });
+
+  // Keep last: the global bucket is module state shared with the tests above.
+  it("caps failures globally so spoofed X-Forwarded-For values can't bypass it", async () => {
+    const provider = h.authConfig?.providers.find(({ id }) => id === "self-host");
+    // Each attempt claims a new client IP, as a forged header would.
+    let i = 0;
+    let blocked = false;
+    for (; i < 150 && !blocked; i++) {
+      blocked =
+        (await provider
+          ?.authorize?.({ password: `wrong-${i}` }, requestFrom(`198.51.100.${i}`))
+          .then(
+            () => false,
+            (error: unknown) => error instanceof TooManySignInAttempts,
+          )) ?? false;
+    }
+    expect(blocked).toBe(true);
+    expect(i).toBeLessThanOrEqual(101);
+  });
 });
 
 describe("self-host login page", () => {

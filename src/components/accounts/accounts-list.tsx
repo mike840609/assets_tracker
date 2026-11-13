@@ -252,11 +252,20 @@ export function AccountsList({
   );
 
   // Allocation shares divide by the positive balances only: an overdrawn asset
-  // account lowers totalAssets but its |value| is still shown, so dividing by the
-  // net total pushes the column past 100%.
+  // (or overpaid liability) lowers the net total, so dividing by it pushes the
+  // column past 100%. Negative rows show "—".
   const assetAllocationTotal = useMemo(
     () => assets.reduce((sum, account) => sum + Math.max(0, accountBaseValues[account.id] ?? 0), 0),
     [assets, accountBaseValues],
+  );
+
+  const liabilityAllocationTotal = useMemo(
+    () =>
+      liabilities.reduce(
+        (sum, account) => sum + Math.max(0, accountBaseValues[account.id] ?? 0),
+        0,
+      ),
+    [liabilities, accountBaseValues],
   );
 
   const totalLiabilities = useMemo(
@@ -597,7 +606,7 @@ export function AccountsList({
                           onArchive={archiveAccount}
                           isDeleting={deletingId === account.id}
                           isUpdating={updatingId === account.id}
-                          allocationDenominator={totalLiabilities}
+                          allocationDenominator={liabilityAllocationTotal}
                         />
                       ))}
                     </>

@@ -155,7 +155,10 @@ export function GoalsView({
   const [savingOrder, setSavingOrder] = useState(false);
   const [draft, setDraft] = useState<GoalWithProgress[]>([]);
   const tabRefs = useRef<Partial<Record<MobilePlanTab, HTMLButtonElement | null>>>({});
-  const [pendingTab, setPendingTab] = useState<MobilePlanTab | null>(null);
+  // The last clicked tab plus every tab clicked since it started pending.
+  const [pending, setPending] = useState<{ tab: MobilePlanTab; clicked: MobilePlanTab[] } | null>(
+    null,
+  );
   const loadedGoals = goalsWithProgress ?? [];
   const loadedAccounts = accounts ?? [];
 
@@ -208,15 +211,18 @@ export function GoalsView({
     requestedTab ?? searchParams.get("tab") ?? undefined,
     hash,
   );
-  // A clicked tab shows immediately and holds until the URL-derived tab moves
-  // (the replace landed, or Back/Forward). Any such move drops it, so history
-  // navigation can't be overridden by a stale click.
+  // A clicked tab shows immediately and holds until the URL catches up. When the
+  // URL-derived tab moves, keep it only if that move is an earlier click's
+  // navigation landing (rapid clicks); the target arriving or any other
+  // navigation (Back/Forward, links) drops it so history can't be overridden.
   const [pendingFor, setPendingFor] = useState(desiredTab);
   if (pendingFor !== desiredTab) {
     setPendingFor(desiredTab);
-    setPendingTab(null);
+    if (pending && (desiredTab === pending.tab || !pending.clicked.includes(desiredTab))) {
+      setPending(null);
+    }
   }
-  const activeTab: MobilePlanTab = pendingTab ?? desiredTab;
+  const activeTab: MobilePlanTab = pending?.tab ?? desiredTab;
   // Mobile UAs get only the selected tab's data; desktop UAs get every panel.
   // Judge readiness by what actually arrived, not by which tab the server picked.
   const hasPanelData = (tab: MobilePlanTab) =>
@@ -291,7 +297,7 @@ export function GoalsView({
   }, [desiredTab, desiredLoaded, hash, isMobile, isViewportReady, router]);
 
   const handleTabChange = (tab: MobilePlanTab) => {
-    setPendingTab(tab);
+    setPending((p) => ({ tab, clicked: [...(p?.clicked ?? []), tab] }));
     const params = new URLSearchParams(window.location.search);
     if (tab === "watchlist") params.delete("tab");
     else params.set("tab", tab);

@@ -1429,7 +1429,8 @@
     "trust3": "只有您能查看自己的投資組合",
     "footerBefore": "您的資料受到保護。閱讀我們的",
     "footerLink": "隱私政策",
-    "tooManyAttempts": "登入嘗試次數過多，請幾分鐘後再試。"
+    "tooManyAttempts": "登入嘗試次數過多，請幾分鐘後再試。",
+    "signInFailed": "登入失敗，請稍後再試。"
   },
   "demo": {
     "login": {

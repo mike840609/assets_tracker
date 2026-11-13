@@ -29,16 +29,27 @@ type LoginPageProps = {
   }>;
 };
 
-// Auth.js throws CredentialsSignin on a wrong password. Uncaught it reaches the
-// global error boundary, so turn it into an inline message on /login instead.
-// Anything else (including Next's redirect signal on success) is rethrown.
+// Auth.js throws AuthErrors for failed sign-ins. Uncaught they reach the global
+// error boundary, so show an inline message on /login instead. Only a
+// CredentialsSignin means the password was wrong (or throttled); anything else —
+// e.g. CallbackRouteError when the database is down — gets a generic message so
+// the owner isn't told to retype a correct password. Non-Auth errors (including
+// Next's redirect signal on success) are rethrown.
+const LOGIN_ERRORS = ["CredentialsSignin", "RateLimited", "SignInFailed"] as const;
+type LoginError = (typeof LOGIN_ERRORS)[number];
+
 async function credentialsSignIn(provider: string, password: string) {
   try {
     await signIn(provider, { password, redirectTo: "/" });
   } catch (error) {
     if (error instanceof AuthError) {
-      const rateLimited = error instanceof CredentialsSignin && error.code === "rate_limited";
-      redirect(`/login?error=${rateLimited ? "RateLimited" : "CredentialsSignin"}`);
+      const code: LoginError =
+        error instanceof CredentialsSignin
+          ? error.code === "rate_limited"
+            ? "RateLimited"
+            : "CredentialsSignin"
+          : "SignInFailed";
+      redirect(`/login?error=${code}`);
     }
     throw error;
   }
@@ -56,8 +67,6 @@ async function exitDemoOriginBeforeFormalSignIn(): Promise<boolean> {
   await signOut({ redirectTo: "/login" });
   return true;
 }
-
-type LoginError = "CredentialsSignin" | "RateLimited";
 
 async function LoginContent({ error }: { error?: LoginError }) {
   const t = await getTranslations("login");
@@ -98,7 +107,13 @@ async function LoginContent({ error }: { error?: LoginError }) {
             role="alert"
             className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
           >
-            {error === "RateLimited" ? t("tooManyAttempts") : t("invalidPassword")}
+            {t(
+              error === "RateLimited"
+                ? "tooManyAttempts"
+                : error === "SignInFailed"
+                  ? "signInFailed"
+                  : "invalidPassword",
+            )}
           </p>
         )}
 
@@ -270,10 +285,7 @@ async function LoginGate({ searchParams }: LoginPageProps) {
     if (authContext.principal.kind === "formal" || params.from !== "demo") redirect("/");
   }
 
-  const error =
-    params.error === "CredentialsSignin" || params.error === "RateLimited"
-      ? params.error
-      : undefined;
+  const error = LOGIN_ERRORS.find((code) => code === params.error);
   return <LoginContent error={error} />;
 }
 

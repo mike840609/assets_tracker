@@ -133,7 +133,7 @@ describe("preview credentials provider authorization", () => {
     const provider = h.authConfig?.providers.find(
       (p) => p.id === "credentials" || p.id === "preview",
     );
-    const result = await provider?.authorize?.({});
+    const result = await provider?.authorize?.({}, new Request("http://localhost/"));
     expect(result).toBeNull();
     expect(h.userUpsert).not.toHaveBeenCalled();
   });
@@ -151,7 +151,7 @@ describe("preview credentials provider authorization", () => {
     const provider = h.authConfig?.providers.find(
       (p) => p.id === "credentials" || p.id === "preview",
     );
-    const result = await provider?.authorize?.({});
+    const result = await provider?.authorize?.({}, new Request("http://localhost/"));
     expect(result).toEqual(user);
     expect(h.userUpsert).toHaveBeenCalled();
   });

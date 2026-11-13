@@ -15,7 +15,7 @@ import {
   PREVIEW_AUTH_PASSWORD,
 } from "@/lib/env";
 import { getClientIp } from "@/lib/client-ip";
-import { rateLimitSubjectCheckWithPrune } from "@/lib/rate-limit";
+import { isSubjectRateLimited, recordSubjectHit } from "@/lib/rate-limit";
 
 function passwordsMatch(candidate: unknown, expected: string | undefined): boolean {
   if (typeof candidate !== "string" || !expected) return false;
@@ -30,26 +30,38 @@ export class TooManySignInAttempts extends CredentialsSignin {
   code = "rate_limited";
 }
 
-// Per-IP throttle on password attempts. It lives in authorize so it covers every
-// entry point — the /login server action and a direct POST to
-// /api/auth/callback/<provider> alike. In-memory per instance (see rate-limit.ts).
-// ponytail: counts every password attempt, not only failures; 10 per 15 min is
-// ample for a single owner. Behind a proxy without forwarding headers all clients
-// share the "unknown" key, which then acts as a global throttle.
-const PASSWORD_ATTEMPT_LIMIT = { limit: 10, windowMs: 15 * 60_000 };
+// Password-attempt throttle. It lives in authorize so it covers every entry point —
+// the /login server action and a direct POST to /api/auth/callback/<provider>.
+// Only failures count, but the limit is checked before the compare, so the right
+// password is refused while blocked. In-memory per instance (see rate-limit.ts).
+//
+// Two buckets, because the client IP comes from X-Forwarded-For, which a client
+// talking to the app directly (the default Docker port mapping) can forge:
+// - per IP: the normal case behind a proxy that sets the header.
+// - global per provider: bounds guessing however the header is spoofed. Its cost is
+//   that a flood of failures can block new sign-ins for the window; existing
+//   sessions keep working. ponytail: fixed cap; make it configurable if a
+//   deployment ever needs a different trade-off.
+const PER_IP_FAILURES = { limit: 10, windowMs: 15 * 60_000 };
+const GLOBAL_FAILURES = { limit: 100, windowMs: 15 * 60_000 };
 
-function throttlePasswordAttempt(provider: string, password: unknown, request: Request) {
-  // No password = the passwordless dev/E2E Internal Test Login; nothing to guess.
-  if (!password) return;
+function checkPassword(
+  provider: string,
+  password: unknown,
+  expected: string | undefined,
+  request: Request,
+): boolean {
+  const ip = getClientIp(request);
   if (
-    rateLimitSubjectCheckWithPrune(
-      getClientIp(request),
-      `login/${provider}`,
-      PASSWORD_ATTEMPT_LIMIT,
-    )
+    isSubjectRateLimited(ip, `login/${provider}`, PER_IP_FAILURES) ||
+    isSubjectRateLimited("all", `login-global/${provider}`, GLOBAL_FAILURES)
   ) {
     throw new TooManySignInAttempts();
   }
+  if (passwordsMatch(password, expected)) return true;
+  recordSubjectHit(ip, `login/${provider}`, PER_IP_FAILURES);
+  recordSubjectHit("all", `login-global/${provider}`, GLOBAL_FAILURES);
+  return false;
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -66,8 +78,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               password: { label: "Password", type: "password" },
             },
             authorize: async (credentials, request) => {
-              throttlePasswordAttempt("self-host", credentials?.password, request);
-              if (!passwordsMatch(credentials?.password, AUTH_SELF_HOST_PASSWORD)) return null;
+              if (
+                !checkPassword("self-host", credentials?.password, AUTH_SELF_HOST_PASSWORD, request)
+              ) {
+                return null;
+              }
 
               const user = await prisma.user.upsert({
                 where: { email: "owner@self-host.local" },
@@ -95,9 +110,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               password: { label: "Password", type: "password" },
             },
             authorize: async (credentials, request) => {
-              throttlePasswordAttempt("credentials", credentials?.password, request);
+              // The passwordless dev/E2E Internal Test Login has nothing to guess.
               if (previewAuthRequiresPassword) {
-                if (!passwordsMatch(credentials?.password, PREVIEW_AUTH_PASSWORD)) return null;
+                if (
+                  !checkPassword(
+                    "credentials",
+                    credentials?.password,
+                    PREVIEW_AUTH_PASSWORD,
+                    request,
+                  )
+                ) {
+                  return null;
+                }
               }
               const E2E_TEST_EMAIL = "e2e-test@preview.local";
               const user = await prisma.user.upsert({

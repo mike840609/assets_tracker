@@ -36,8 +36,12 @@ interface WindowEntry {
   resetAt: number;
 }
 
-// Module-level store — shared across warm invocations on the same instance.
-const store = new Map<string, WindowEntry>();
+// Process-wide store, shared across warm invocations on the same instance. It
+// lives on globalThis because a production build bundles this module into several
+// chunks (route handlers and each server-action/SSR layer); a module-level Map
+// would give each copy its own buckets and multiply every limit.
+const globalForRateLimit = globalThis as unknown as { __rateLimitStore?: Map<string, WindowEntry> };
+const store = (globalForRateLimit.__rateLimitStore ??= new Map<string, WindowEntry>());
 
 const RATE_LIMIT_TEST_SECRET = "asset-tracker-rate-limit-test-secret";
 
@@ -155,6 +159,29 @@ export function rateLimitSubjectCheckWithPrune(
       key: rateLimitKeyForSubject(subject, purpose),
     }) !== null
   );
+}
+
+/**
+ * Failure-counting variant: `isSubjectRateLimited` only reads the window, and
+ * `recordSubjectHit` counts one event. Use when only some outcomes should count
+ * (e.g. failed logins) but the limit must still be checked before acting.
+ */
+export function isSubjectRateLimited(
+  subject: string,
+  purpose: string,
+  { limit, prefix = "rl" }: Omit<RateLimitOptions, "key">,
+): boolean {
+  maybePrune();
+  const entry = store.get(`${prefix}:${rateLimitKeyForSubject(subject, purpose)}`);
+  return entry !== undefined && Date.now() < entry.resetAt && entry.count >= limit;
+}
+
+export function recordSubjectHit(
+  subject: string,
+  purpose: string,
+  options: Omit<RateLimitOptions, "key">,
+): void {
+  checkRateLimit({ ...options, key: rateLimitKeyForSubject(subject, purpose) });
 }
 
 /** Test-only inspection that proves raw request identity values never enter the store. */

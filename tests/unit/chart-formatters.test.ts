@@ -51,6 +51,19 @@ describe("chart-formatters", () => {
       expect(formatChartTick(64_200, 200)).toBe("64.2K");
     });
 
+    it.each([
+      [1_999_990, 2_000_010],
+      [999, 1_001],
+      [63_800, 64_100],
+      [-2_050_000, -1_950_000],
+    ])("labels a near-flat span %d..%d with distinct, short ticks", (min, max) => {
+      const { ticks, step } = niceTicks(min, max);
+      const labels = ticks.map((t) => formatChartTick(t, step));
+      expect(new Set(labels).size, labels.join(" | ")).toBe(labels.length);
+      // The axis is 42px wide; keep labels to ~6 characters.
+      for (const label of labels) expect(label.length, label).toBeLessThanOrEqual(6);
+    });
+
     it("calculates tick interval correctly", () => {
       expect(getMonthTickInterval(4, 6)).toBe(0);
       expect(getMonthTickInterval(18, 6)).toBe(2);
