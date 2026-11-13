@@ -20,7 +20,8 @@ describe("calendar mobile touch targets", () => {
     ["agenda", "src/components/calendar/calendar-day-agenda.tsx", 4],
   ])("applies the mobile target to every named %s action", (_, relativePath, expectedCount) => {
     const source = readFileSync(join(process.cwd(), relativePath), "utf8");
-    const actionCount = source.match(/<Button\b/g)?.length ?? 0;
+    // Links styled as buttons use buttonVariants() directly instead of <Button>.
+    const actionCount = source.match(/<Button\b|buttonVariants\(/g)?.length ?? 0;
     const mobileTouchCount = source.match(/\bmobileTouch\b/g)?.length ?? 0;
 
     expect(actionCount).toBe(expectedCount);

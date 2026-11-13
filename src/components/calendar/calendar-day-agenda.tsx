@@ -21,7 +21,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { CalendarEarningsItem } from "@/lib/services/calendar-earnings-data";
 import type { SerializedCalendarEntry } from "@/lib/types";
 
@@ -165,18 +166,17 @@ export function CalendarDayAgenda({
 
                 <div className="mt-3 flex flex-wrap items-center gap-1">
                   {entry.sourceUrl && (
-                    <Button
-                      nativeButton={false}
-                      render={
-                        <a href={entry.sourceUrl} target="_blank" rel="noopener noreferrer" />
-                      }
-                      variant="ghost"
-                      size="xs"
-                      mobileTouch
+                    <a
+                      href={entry.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        buttonVariants({ variant: "ghost", size: "xs", mobileTouch: true }),
+                      )}
                     >
                       <ExternalLink data-icon="inline-start" />
                       {t("source")}
-                    </Button>
+                    </a>
                   )}
                   <Button variant="ghost" size="xs" mobileTouch onClick={() => onEdit(entry)}>
                     {t("edit")}

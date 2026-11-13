@@ -35,6 +35,9 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock("next-auth", () => ({
+  CredentialsSignin: class CredentialsSignin extends Error {
+    code = "credentials";
+  },
   default: (config: CapturedAuthConfig) => {
     h.authConfig = config;
     return { handlers: {}, auth: vi.fn(), signIn: h.signIn, signOut: h.signOut };

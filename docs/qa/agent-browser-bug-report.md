@@ -254,3 +254,26 @@ Viewports: D = desktop 1440×900, T = tablet 768×1024, M = mobile 390×844 (des
 | 3   | **Sidebar hydration mismatch.** `suppressHydrationWarning` on the desktop `<aside>`. The mismatched attribute was `aria-hidden`, which Base UI's `markOthers` sets outside an open modal.                                                                                                                             | **Not reproduced** in 4 attempts. This is a defensive fix based on the original diff.                                                                                                                      |
 | 4   | **Missing `common` namespace.** Added `common` to the client message namespaces of `/analysis` and `/projections`, so Dialog and Drawer close labels translate there too.                                                                                                                                             | 0 console errors on both pages                                                                                                                                                                             |
 | 5   | **Stale tab click in the mobile Plan hub.** A clicked tab is now kept only until the URL-derived tab changes; the unused `loadedTab` prop is gone. Before, with a desktop UA, a clicked tab overrode every later navigation.                                                                                          | 744 px desktop UA and iPhone 14: tab clicks, in-app navigation to `/goals` and `?tab=calendar`, and Back all show the tab in the URL                                                                       |
+
+## Production Build Verification and E2E Coverage
+
+**Production build** (`pnpm build && pnpm start`, same env as the E2E web server). The build passes, and `/demo/expired` is now a partial prerender (◐). On the production server:
+
+- A wrong password shows the inline message (BUG-001), and the 11th attempt shows "Too many sign-in attempts".
+- Across every main route at 1440×900 and 390×844 there are no console errors, uncaught exceptions or failed requests.
+- No page fell back to `/offline` (BUG-003).
+
+**Two issues found and fixed during this pass:**
+
+| Issue                                                                                                                                                                                                      | Fix                                                                                                                                                                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **The login throttle could be bypassed.** It lived in the `/login` server action, but a direct `POST /api/auth/callback/self-host` skipped it. Verified: attempts 11–13 still reached the password check.  | The throttle moved into each provider's `authorize` (`src/auth.ts`), which throws `TooManySignInAttempts` (`code = "rate_limited"`). Direct callback attempts 11–12 now get `code=rate_limited`, even with the correct password; other IPs are unaffected. Covered by a behavioral unit test. |
+| **BUG-011 regression.** `nativeButton={false}` makes Base UI add `role="button"`, so 8 links were announced as buttons. The existing E2E `calendar.spec.ts` caught it (it looks for `link "Open source"`). | Render a real `<Link>`/`<a>` with `cn(buttonVariants(...))`. `buttonVariants` moved to the server-safe `src/components/ui/button-variants.ts` (still re-exported from `button.tsx`), so server components can use it.                                                                         |
+
+**New E2E specs** (Playwright, run against the production build):
+
+- `tests/e2e/login-errors.spec.ts`: a wrong password shows the inline error, not the global error page. It makes one attempt only, to stay under the throttle.
+- `tests/e2e/mobile-plan.spec.ts`: adds a test that a desktop UA at 744 px opens `/goals?tab=calendar` on the Calendar tab and can switch tabs (BUG-002).
+- `tests/e2e/a11y.spec.ts`: scans 7 pages with axe-core for WCAG 2 A/AA. `axe-core@4.11.3` is now a direct devDependency, the version already in the lockfile.
+
+Full suite: **77 passed, 0 failed** (29 skipped: Public Demo projects need `E2E_PUBLIC_DEMO=1`, plus project-gated specs).

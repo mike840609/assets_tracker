@@ -1,7 +1,7 @@
 // S1: force-static is incompatible with nextConfig.cacheComponents (PPR mode).
 // PPR prerendering the Suspense fallback shell is the correct tier here.
 import { Suspense } from "react";
-import { AuthError } from "next-auth";
+import { AuthError, CredentialsSignin } from "next-auth";
 import { signIn, signOut } from "@/auth";
 import { DemoLoginButton } from "@/components/demo/demo-login-button";
 import { Button } from "@/components/ui/button";
@@ -18,10 +18,7 @@ import { getTranslations } from "next-intl/server";
 import { REPO_URL } from "@/lib/repo";
 import { GitHubMark } from "@/components/layout/github-mark";
 import Link from "next/link";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getClientIpFromHeaders } from "@/lib/client-ip";
-import { rateLimitSubjectCheckWithPrune } from "@/lib/rate-limit";
 import { PurgeNavCache } from "./purge-nav-cache";
 
 type LoginPageProps = {
@@ -35,22 +32,14 @@ type LoginPageProps = {
 // Auth.js throws CredentialsSignin on a wrong password. Uncaught it reaches the
 // global error boundary, so turn it into an inline message on /login instead.
 // Anything else (including Next's redirect signal on success) is rethrown.
-// Per-IP throttle on password attempts. In-memory per instance (see rate-limit.ts).
-// ponytail: counts every attempt, not only failures — 10 per 15 min is ample for a
-// single owner; behind a proxy without forwarding headers all clients share the
-// "unknown" key, which then acts as a global throttle.
-const LOGIN_ATTEMPT_LIMIT = { limit: 10, windowMs: 15 * 60_000 };
-
 async function credentialsSignIn(provider: string, password: string) {
-  // No password = the passwordless dev/E2E Internal Test Login; nothing to guess.
-  const ip = getClientIpFromHeaders(await headers());
-  if (password && rateLimitSubjectCheckWithPrune(ip, `login/${provider}`, LOGIN_ATTEMPT_LIMIT)) {
-    redirect("/login?error=RateLimited");
-  }
   try {
     await signIn(provider, { password, redirectTo: "/" });
   } catch (error) {
-    if (error instanceof AuthError) redirect("/login?error=CredentialsSignin");
+    if (error instanceof AuthError) {
+      const rateLimited = error instanceof CredentialsSignin && error.code === "rate_limited";
+      redirect(`/login?error=${rateLimited ? "RateLimited" : "CredentialsSignin"}`);
+    }
     throw error;
   }
 }

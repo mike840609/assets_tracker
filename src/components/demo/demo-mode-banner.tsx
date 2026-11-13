@@ -12,7 +12,8 @@ import {
   type DemoResetActionState,
 } from "@/app/demo/actions";
 import { demoAnnouncementThreshold } from "@/lib/demo/demo-time";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -125,14 +126,13 @@ export function DemoModeBanner({ expiresAt }: { expiresAt: string }) {
           </Button>
         }
       />
-      <Button
-        nativeButton={false}
-        render={<Link href="/login?from=demo" />}
-        className="h-11 w-full md:h-9"
+      <Link
+        href="/login?from=demo"
+        className={cn(buttonVariants({ className: "h-11 w-full md:h-9" }))}
       >
         <UserRound aria-hidden="true" />
         {t("banner.actions.signIn")}
-      </Button>
+      </Link>
       <form action={exitPublicDemoAction} className="w-full">
         <Button type="submit" variant="outline" className="h-11 w-full md:h-9">
           <LogOut aria-hidden="true" />
