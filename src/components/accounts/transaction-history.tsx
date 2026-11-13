@@ -241,6 +241,13 @@ export function TransactionHistory({
           ? `/api/accounts/${accountId}/transactions?cursor=${cursor}&limit=20`
           : `/api/accounts/${accountId}/transactions?limit=20`;
         const res = await fetch(url);
+        // 404 (account deleted) or 401 (session ended) has no `data`; stop paging
+        // instead of throwing on an undefined page.
+        if (!res.ok) {
+          setHasMore(false);
+          setNextCursor(null);
+          return;
+        }
         const json = (await res.json()) as {
           data: {
             transactions: (SerializedTransaction & { quantity: string | number })[];

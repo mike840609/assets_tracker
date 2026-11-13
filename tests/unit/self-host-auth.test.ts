@@ -105,7 +105,9 @@ describe("self-host login page", () => {
     const source = readFileSync("src/app/login/page.tsx", "utf8");
 
     expect(source).toContain("isSelfHostAuthEnabled");
-    expect(source).toContain('await signIn("self-host"');
+    expect(source).toContain('await credentialsSignIn("self-host"');
+    // A wrong password must surface inline, not reach the global error boundary.
+    expect(source).toContain("error instanceof AuthError");
     expect(source).toContain("{isGoogleAuthEnabled && (");
   });
 });

@@ -1411,6 +1411,7 @@
     "googleButton": "使用 Google 账号继续",
     "selfHostPasswordPlaceholder": "自托管密码",
     "selfHostButton": "登录",
+    "invalidPassword": "密码错误，请重试。",
     "internalTestDivider": "内部测试登录",
     "internalTestButton": "内部测试登录",
     "internalTestPasswordPlaceholder": "内部测试密码",

@@ -1141,3 +1141,16 @@ describe("supported currency validation", () => {
     expect(snapshotsQuerySchema.safeParse({ currency: "TWD" }).success).toBe(true);
   });
 });
+
+describe("account name validation", () => {
+  const base = { type: "ASSET", category: "BANK", currency: "USD" } as const;
+
+  it("rejects a whitespace-only name", () => {
+    expect(createAccountSchema.safeParse({ ...base, name: "   " }).success).toBe(false);
+  });
+
+  it("stores the trimmed name", () => {
+    const result = createAccountSchema.safeParse({ ...base, name: "  Chase  " });
+    expect(result.success && result.data.name).toBe("Chase");
+  });
+});

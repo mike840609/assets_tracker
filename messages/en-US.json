@@ -1411,6 +1411,7 @@
     "googleButton": "Continue with Google",
     "selfHostPasswordPlaceholder": "Self-host password",
     "selfHostButton": "Sign in",
+    "invalidPassword": "Incorrect password. Please try again.",
     "internalTestDivider": "Internal Test Login",
     "internalTestButton": "Internal Test Login",
     "internalTestPasswordPlaceholder": "Internal test password",

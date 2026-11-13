@@ -4,6 +4,11 @@ const NAV_CACHE = "astt-nav-v1";
 const NAV_CACHE_PREFIX = "astt-nav-";
 const OFFLINE_URL = "/offline";
 const NAV_TIMEOUT_MS = 3000;
+// With no cached copy of the route, the only stand-in is the offline page, which
+// tells the user they are disconnected. Wait much longer before claiming that, so
+// a slow but working response (cold start, heavy query) is not replaced by it,
+// while a connection that hangs forever still ends somewhere.
+const NAV_OFFLINE_TIMEOUT_MS = 15000;
 // ponytail: age bound stands in for build-id cache busting. Cached HTML points at
 // build-specific /_next chunks, so a very old copy is worse than the offline page.
 // Swap for the real build id in the cache name if deploys get more frequent.
@@ -173,12 +178,12 @@ function cacheNavigation(event, cache, response, generation) {
 // Serves `cached` if the network has not answered within NAV_TIMEOUT_MS, but
 // lets the slow request run to completion so the cache still warms — otherwise
 // a permanently slow connection is pinned to stale data forever.
-function raceWithTimeout(event, network, cached) {
+function raceWithTimeout(event, network, cached, timeoutMs) {
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
       event.waitUntil(network.catch(() => {}));
       resolve(cached);
-    }, NAV_TIMEOUT_MS);
+    }, timeoutMs);
     network.then(
       (response) => {
         clearTimeout(timer);
@@ -216,12 +221,12 @@ async function handleNavigation(event) {
         });
       });
     const cached = isLogin ? undefined : await cache.match(event.request);
+    if (cached && isFresh(cached)) {
+      return await raceWithTimeout(event, network, cached, NAV_TIMEOUT_MS);
+    }
     const offline = await cache.match(OFFLINE_URL);
-    const fallback = cached && isFresh(cached) ? cached : offline;
-    // A slow uncached navigation still needs the same timeout as a cached one;
-    // the precached offline page is the fallback when the route has no entry.
-    if (!fallback) return await network;
-    return await raceWithTimeout(event, network, fallback);
+    if (!offline) return await network;
+    return await raceWithTimeout(event, network, offline, NAV_OFFLINE_TIMEOUT_MS);
   } catch {
     const cached = isLogin ? undefined : await cache.match(event.request);
     if (cached && isFresh(cached)) return cached;

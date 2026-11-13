@@ -1411,6 +1411,7 @@
     "googleButton": "使用 Google 帳號繼續",
     "selfHostPasswordPlaceholder": "自行部署密碼",
     "selfHostButton": "登入",
+    "invalidPassword": "密碼錯誤，請再試一次。",
     "internalTestDivider": "內部測試登入",
     "internalTestButton": "內部測試登入",
     "internalTestPasswordPlaceholder": "內部測試密碼",

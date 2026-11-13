@@ -503,7 +503,7 @@ describe("service worker fetch boundary", () => {
     }
   });
 
-  it("returns the offline page after the timeout when the navigation has no route cache", async () => {
+  it("waits the longer offline timeout before showing the offline page for an uncached route", async () => {
     vi.useFakeTimers();
     try {
       const { fetchListener, networkFetch, cache } = loadFetchListener();
@@ -524,7 +524,10 @@ describe("service worker fetch boundary", () => {
         mode: "navigate",
       } as RequestStub);
       const response = ev.response();
+      // A slow uncached page must not be called offline at the cached-route timeout.
       await vi.advanceTimersByTimeAsync(3000);
+      expect(await Promise.race([response, Promise.resolve(undefined)])).toBeUndefined();
+      await vi.advanceTimersByTimeAsync(12000);
       const timedOutResponse = await Promise.race([response, Promise.resolve(undefined)]);
       expect(timedOutResponse).toMatchObject({ body: "offline" });
 

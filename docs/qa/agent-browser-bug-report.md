@@ -34,6 +34,8 @@ All 16 routes were tested at desktop size (1440×900). The 12 main routes were a
 
 ### BUG-001 — Wrong self-host password crashes the app with the global error page
 
+**Status: Fixed.** Wrong passwords now redirect to `/login?error=CredentialsSignin` and show an inline message (verified twice; `screenshots/fix-001-inline-error.png`).
+
 - **Severity:** P1
 - **Affected:** `/login`, self-host password form (the Internal Test password form uses the same pattern)
 - **Steps to reproduce** (reproduced 3 times):
@@ -46,6 +48,8 @@ All 16 routes were tested at desktop size (1440×900). The 12 main routes were a
 - **Recommended fix:** wrap both `signIn` calls. Catch `AuthError` and redirect to `/login?error=CredentialsSignin`, then show a translated inline error. Rethrow anything else so Next's redirect error still works (`if (e instanceof AuthError) redirect(...); throw e;`). Consider basic rate limiting while you are in there.
 
 ### BUG-002 — Mobile Plan hub (`/goals`) stays blank with a desktop user agent below 768 px
+
+**Status: Fixed.** The client reads `?tab=` and judges readiness by the panel data that actually arrived. Verified at 744 px with a desktop UA (all four tabs and deep links) and on iPhone 14 (`screenshots/fix-002-calendar-tab-744.png`).
 
 - **Severity:** P1
 - **Affected:** `/goals`, plus `/stocks`, `/projections` and `/calendar`, which redirect into it on mobile widths
@@ -70,6 +74,8 @@ All 16 routes were tested at desktop size (1440×900). The 12 main routes were a
 
 ### BUG-003 — Service worker shows "You are offline" while online when a page takes more than 3 s
 
+**Status: Fixed.** A route with no cached copy now waits 15 s (`NAV_OFFLINE_TIMEOUT_MS`) before showing `/offline`; cached routes keep the 3 s race. Covered by `tests/unit/service-worker.test.ts`. Not re-reproduced in the browser, because warm Turbopack compiles finish in about 1 s.
+
 - **Severity:** P2
 - **Affected:** any navigation not yet cached by the service worker (`public/sw.js`)
 - **Steps to reproduce** (reproduced twice):
@@ -82,6 +88,8 @@ All 16 routes were tested at desktop size (1440×900). The 12 main routes were a
 - **Recommended fix:** only race against a fresh cached copy of the same route. When none exists, wait for the network and use `/offline` only when `fetch` actually rejects or `navigator.onLine === false`. Optionally skip SW registration in development.
 
 ### BUG-004 — Back after deleting an account shows the deleted account and throws an unhandled `TypeError`
+
+**Status: Fixed.** Delete now uses `router.replace` + `router.refresh`, and `loadMore` checks `res.ok`. Verified: Back after delete stays on `/accounts` with no errors.
 
 - **Severity:** P2
 - **Affected:** `/accounts/[id]`, Transaction History
@@ -97,6 +105,8 @@ All 16 routes were tested at desktop size (1440×900). The 12 main routes were a
 - **Recommended fix:** in `loadMore`, check `if (!res.ok) { setError(...); return; }` and show an error or empty state. After the delete, call `router.refresh()` before or alongside `router.push("/accounts")`, or navigate with `replace`, so Back doesn't land on a page that no longer exists.
 
 ### BUG-005 — Account names made only of spaces are accepted
+
+**Status: Fixed.** CRUD name schemas use `.trim()` (backup-import schemas unchanged) and the form trims. Verified: whitespace returns 400 "Name is required", and `"  QA Trim  "` is stored as `QA Trim`.
 
 - **Severity:** P2
 - **Affected:** **Add Account** dialog (`/accounts`), `POST /api/accounts`

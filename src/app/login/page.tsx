@@ -1,6 +1,7 @@
 // S1: force-static is incompatible with nextConfig.cacheComponents (PPR mode).
 // PPR prerendering the Suspense fallback shell is the correct tier here.
 import { Suspense } from "react";
+import { AuthError } from "next-auth";
 import { signIn, signOut } from "@/auth";
 import { DemoLoginButton } from "@/components/demo/demo-login-button";
 import { Button } from "@/components/ui/button";
@@ -24,8 +25,21 @@ type LoginPageProps = {
   searchParams: Promise<{
     "stale-session"?: string | string[];
     from?: string | string[];
+    error?: string | string[];
   }>;
 };
+
+// Auth.js throws CredentialsSignin on a wrong password. Uncaught it reaches the
+// global error boundary, so turn it into an inline message on /login instead.
+// Anything else (including Next's redirect signal on success) is rethrown.
+async function credentialsSignIn(provider: string, password: string) {
+  try {
+    await signIn(provider, { password, redirectTo: "/" });
+  } catch (error) {
+    if (error instanceof AuthError) redirect("/login?error=CredentialsSignin");
+    throw error;
+  }
+}
 
 async function exitDemoOriginBeforeFormalSignIn(): Promise<boolean> {
   const authContext = await getAuthContext();
@@ -40,7 +54,7 @@ async function exitDemoOriginBeforeFormalSignIn(): Promise<boolean> {
   return true;
 }
 
-async function LoginContent() {
+async function LoginContent({ hasError }: { hasError: boolean }) {
   const t = await getTranslations("login");
   const tNav = await getTranslations("nav");
 
@@ -73,6 +87,15 @@ async function LoginContent() {
           <h1 className="text-3xl font-extrabold tracking-tight text-foreground">{t("title")}</h1>
           <p className="text-sm text-muted-foreground font-medium">{t("subtitle")}</p>
         </div>
+
+        {hasError && (
+          <p
+            role="alert"
+            className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
+          >
+            {t("invalidPassword")}
+          </p>
+        )}
 
         {isGoogleAuthEnabled && (
           <form
@@ -127,10 +150,7 @@ async function LoginContent() {
               action={async (formData: FormData) => {
                 "use server";
                 if (await exitDemoOriginBeforeFormalSignIn()) return;
-                await signIn("self-host", {
-                  password: formData.get("password") as string,
-                  redirectTo: "/",
-                });
+                await credentialsSignIn("self-host", formData.get("password") as string);
               }}
               className={isGoogleAuthEnabled ? undefined : "pt-4"}
             >
@@ -187,10 +207,7 @@ async function LoginContent() {
               action={async (formData: FormData) => {
                 "use server";
                 if (await exitDemoOriginBeforeFormalSignIn()) return;
-                await signIn("credentials", {
-                  password: formData.get("password") as string,
-                  redirectTo: "/",
-                });
+                await credentialsSignIn("credentials", formData.get("password") as string);
               }}
             >
               <div className="flex flex-col gap-3">
@@ -248,7 +265,7 @@ async function LoginGate({ searchParams }: LoginPageProps) {
     if (authContext.principal.kind === "formal" || params.from !== "demo") redirect("/");
   }
 
-  return <LoginContent />;
+  return <LoginContent hasError={params.error === "CredentialsSignin"} />;
 }
 
 export default function LoginPage({ searchParams }: LoginPageProps) {

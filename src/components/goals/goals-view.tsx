@@ -9,7 +9,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Reorder, useDragControls } from "framer-motion";
 import { toast } from "sonner";
@@ -149,6 +149,7 @@ export function GoalsView({
   const tNav = useTranslations("nav");
   const common = useTranslations("common");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isMobile = useIsMobile();
   const isViewportReady = useIsViewportReady();
   const [createOpen, setCreateOpen] = useState(false);
@@ -201,9 +202,27 @@ export function GoalsView({
     () => window.location.hash,
     () => "",
   );
-  const desiredTab = getMobilePlanTabFromUrl(isMobile, requestedTab, hash);
+  // The server only honors ?tab= for mobile user agents. A desktop UA below the
+  // breakpoint (resized window, iPadOS Safari) still needs the URL's tab, so fall
+  // back to reading it on the client.
+  const desiredTab = getMobilePlanTabFromUrl(
+    isMobile,
+    requestedTab ?? searchParams.get("tab") ?? undefined,
+    hash,
+  );
   const activeTab: MobilePlanTab = pendingTab && pendingTab !== loadedTab ? pendingTab : desiredTab;
-  const hasLoadedActivePanel = activeTab === loadedTab;
+  // Mobile UAs get only the selected tab's data; desktop UAs get every panel.
+  // Judge readiness by what actually arrived, not by which tab the server picked.
+  const hasPanelData = (tab: MobilePlanTab) =>
+    tab === "watchlist"
+      ? stocks !== undefined
+      : tab === "projections"
+        ? projectionData !== undefined
+        : tab === "calendar"
+          ? calendarEntries !== undefined
+          : goalsWithProgress !== undefined && accounts !== undefined;
+  const hasLoadedActivePanel = hasPanelData(activeTab);
+  const desiredLoaded = hasPanelData(desiredTab);
 
   // Keep the structural tabpanels in the DOM so every tab retains its
   // aria-controls target, but only create the heavy mobile child for the active
@@ -251,19 +270,19 @@ export function GoalsView({
     const params = new URLSearchParams(window.location.search);
     const canonicalTab = desiredTab === "watchlist" ? null : desiredTab;
     const needsTabUpdate = canonicalTab ? params.get("tab") !== canonicalTab : params.has("tab");
-    if (loadedTab === desiredTab && !needsTabUpdate && !hash) return;
+    if (desiredLoaded && !needsTabUpdate && !hash) return;
 
     if (canonicalTab) params.set("tab", canonicalTab);
     else params.delete("tab");
     const query = params.toString();
     const href = `${window.location.pathname}${query ? `?${query}` : ""}`;
-    if (loadedTab === desiredTab) {
+    if (desiredLoaded) {
       window.history.replaceState(null, "", href);
       return;
     }
 
     router.replace(href);
-  }, [desiredTab, hash, isMobile, isViewportReady, loadedTab, router]);
+  }, [desiredTab, desiredLoaded, hash, isMobile, isViewportReady, router]);
 
   const handleTabChange = (tab: MobilePlanTab) => {
     setPendingTab(tab);
