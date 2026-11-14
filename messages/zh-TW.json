@@ -1764,5 +1764,15 @@
       "improved": "改善",
       "fixed": "修正"
     }
+  },
+  "editHolding": {
+    "title": "編輯持倉",
+    "reset": "重設",
+    "closeHint": "設為 0 即可平倉。",
+    "save": "儲存變更",
+    "updated": "已更新持倉",
+    "updateFailed": "更新持倉失敗",
+    "quantityNonNegative": "數量必須大於或等於 0",
+    "quantityPositive": "數量必須為正數"
   }
 }

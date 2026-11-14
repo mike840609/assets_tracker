@@ -1764,5 +1764,15 @@
       "improved": "优化",
       "fixed": "修复"
     }
+  },
+  "editHolding": {
+    "title": "编辑持仓",
+    "reset": "重置",
+    "closeHint": "设为 0 即可平仓。",
+    "save": "保存更改",
+    "updated": "已更新持仓",
+    "updateFailed": "更新持仓失败",
+    "quantityNonNegative": "数量必须大于或等于 0",
+    "quantityPositive": "数量必须为正数"
   }
 }

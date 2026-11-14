@@ -25,6 +25,7 @@ const CLIENT_NAMESPACES = [
   "holdingSearch",
   "quickAddHolding",
   "optionBuilder",
+  "editHolding",
 ];
 
 async function AccountDetailContent({ params }: { params: Promise<{ id: string }> }) {

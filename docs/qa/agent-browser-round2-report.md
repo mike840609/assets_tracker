@@ -224,4 +224,7 @@ Typecheck, lint and prettier pass; Vitest 1337/1337; full Playwright suite on a 
 
 Typecheck, lint and prettier pass; Vitest 1342/1342; full Playwright suite on a fresh production build **80 passed, 0 failed**. All round 2 bugs (3 P2, 5 P3) are now fixed.
 
-Remaining new finding: the Edit Holding dialog is untranslated (see R2-04).
+**Follow-ups, also fixed:**
+
+- **Edit Holding is now translated.** It uses a new `editHolding` namespace for its 8 own strings and reuses `quickAddHolding`, `optionBuilder` and `common` for the rest. Errors go through `api-error.ts`. Verified in zh-TW (`round2/fix-edit-holding-zh-tw.png`).
+- **The lazily loaded Plan-hub panels** (`StockTrackerView`, `ProjectionView`, `CalendarView`) were checked for the same Suspense-hiding problem as the dialogs. First-time tab switches on an iPhone UA hid nothing and kept focus on the tab, because tab changes go through `router.replace` transitions. No change needed.

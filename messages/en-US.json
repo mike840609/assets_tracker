@@ -1764,5 +1764,15 @@
       "improved": "Improved",
       "fixed": "Fixed"
     }
+  },
+  "editHolding": {
+    "title": "Edit Holding",
+    "reset": "Reset",
+    "closeHint": "Set to 0 to close the position.",
+    "save": "Save Changes",
+    "updated": "Holding updated",
+    "updateFailed": "Failed to update holding",
+    "quantityNonNegative": "Quantity must be 0 or greater",
+    "quantityPositive": "Quantity must be a positive number"
   }
 }
