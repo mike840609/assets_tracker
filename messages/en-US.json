@@ -1661,7 +1661,9 @@
     "updateFailed": "Failed to update transaction",
     "deleteSuccess": "Transaction deleted",
     "deleteSuccessSymbol": "{symbol} transaction deleted",
-    "deleteFailed": "Failed to delete transaction"
+    "deleteFailed": "Failed to delete transaction",
+    "loadFailed": "Couldn't load transactions.",
+    "retry": "Retry"
   },
   "recurring": {
     "title": "Recurring",

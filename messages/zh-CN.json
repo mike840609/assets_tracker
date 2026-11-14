@@ -1661,7 +1661,9 @@
     "updateFailed": "更新交易失败",
     "deleteSuccess": "交易已删除",
     "deleteSuccessSymbol": "{symbol} 交易已删除",
-    "deleteFailed": "删除交易失败"
+    "deleteFailed": "删除交易失败",
+    "loadFailed": "无法加载交易记录。",
+    "retry": "重试"
   },
   "recurring": {
     "title": "周期性",

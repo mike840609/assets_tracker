@@ -42,7 +42,15 @@ Round 1 covered navigation, accounts, goals, watchlist, calendar and settings. T
 
 ## Bug List
 
-### R2-01 — Dialogs don't trap keyboard focus, and Escape doesn't always restore it
+### R2-01 — Escape doesn't return focus to some dialogs' openers (focus-trap claim retracted)
+
+**Status: Fixed, with a correction.**
+
+- **The focus-trap half was a false positive.** Playwright pressed Tab before the next animation frame, and Base UI's end guard moves focus with `requestAnimationFrame`, so the second Tab left from the guard. With realistic key pacing (60 ms), focus wraps correctly from every starting point in both dialogs.
+- **The focus-restore half was real, with two root causes.** Both are fixed:
+  1. **Lazily loaded dialogs** (`AccountForm`, `QuickAddHolding`, and `OptionBuilder` inside it) used `next/dynamic` without `ssr: false` or `loading`. Without those, Next adds no Suspense boundary of its own (`loadable.js:49`), so the first open suspended up to a page-level boundary. React then hid the page with `display: none`, which blurred the opener before the dialog rendered. These now use `{ ssr: false }`, the pattern `HoldingForm` already follows.
+  2. **`autoFocus` inside a dialog** (e.g. `StockForm`): React focuses the field during commit, before Base UI records the element to return to. `Dialog` in `src/components/ui/dialog.tsx` now captures the focused element during the render in which `open` turns true and passes it to `DialogContent` as the default `finalFocus`.
+- **Verified:** Escape returns focus to Add Account, Add Holding, Add stock and New Goal. `tests/e2e/dialog-focus.spec.ts` fails without the fixes and passes with them.
 
 - **Severity:** P2 (accessibility, affects every dialog tested)
 - **Affected:** Add Account (`/accounts`), New Goal (`/goals`). Both use `src/components/ui/dialog.tsx`.
@@ -67,6 +75,8 @@ Round 1 covered navigation, accounts, goals, watchlist, calendar and settings. T
 
 ### R2-02 — Transaction History shows "No transactions yet" when loading fails
 
+**Status: Fixed.** `loadMore` now catches network errors, non-OK responses and malformed bodies, and sets a `loadError` state. The panel shows "Couldn't load transactions." with **Retry** (3 locales) instead of "No transactions yet"; a failed "load more" shows the message next to the button. `tests/e2e/transaction-history-errors.spec.ts` aborts the request, asserts the error, then retries successfully. It fails without the fix and passes with it.
+
 - **Severity:** P2 (shows false information)
 - **Affected:** `/accounts/[id]`, Transaction History (`src/components/accounts/transaction-history.tsx`)
 - **Steps to reproduce** (reproduced twice):
@@ -84,6 +94,14 @@ Round 1 covered navigation, accounts, goals, watchlist, calendar and settings. T
 - **Recommended fix:** track an `error` state. In `loadMore`, catch rejections and non-OK responses, render "Couldn't load transactions" with a Retry button, and keep "No transactions yet" for a successful empty response only.
 
 ### R2-03 — Light-mode primary buttons fail WCAG AA contrast in 4 of 6 color schemes
+
+**Status: Fixed.** Light-theme tokens in `src/app/globals.css` now meet ≥ 4.5:1 in both roles: the primary as a fill under white text, and the primary as text on white or on its own tint up to `bg-primary/15`.
+
+- **New primary values:** Emerald 0.485, Anthropic 0.525, Ocean 0.475, Violet 0.525, Rose 0.525. Amber goes to 0.515 and switches to white button text.
+- **Muted text:** default `--muted-foreground` 0.53; Anthropic's 0.50.
+- **Badges:** the watchlist currency badges use full-opacity `text-primary` instead of `/90`.
+- **Verified** on a fresh production build: axe reports **0 WCAG A/AA violations on all 9 pages for all 6 light schemes and for dark mode**.
+- **Visual impact:** primaries are noticeably deeper in light mode (see `round2/fix-light-emerald-dashboard.png`). Dark mode is unchanged.
 
 - **Severity:** P2 (accessibility, affects 8 of 9 pages including the default scheme)
 - **Affected:** primary buttons, selected toggles and the calendar's "today" in light mode
@@ -185,3 +203,9 @@ Round 1 covered navigation, accounts, goals, watchlist, calendar and settings. T
 4. **Small P3s:** the demo banner copy (R2-07) and the native confirm (R2-08).
 5. **Tests to add:** focus-trap E2E (tab past the last control), a transactions-failure E2E using `page.route` abort, and the light-mode axe scan.
 6. **Remaining coverage:** check offline mode on a real device (or with Playwright's `context.setOffline`, which also covers service workers), plus Google OAuth on a Vercel preview.
+
+## Fix Verification (P2s)
+
+Typecheck, lint and prettier pass; Vitest 1337/1337; full Playwright suite on a fresh production build **80 passed, 0 failed** (32 skipped: Public Demo projects and project-gated specs). This includes the 3 new E2E tests, each confirmed to fail without its fix.
+
+**Lesson for future runs:** the stale light-mode results during this fix came from Turbopack's CSS hot reload serving an older stylesheet. Contrast and other CSS checks should be run on a fresh production build.

@@ -230,6 +230,8 @@ export function TransactionHistory({
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  // A failed page load must not look like "No transactions yet".
+  const [loadError, setLoadError] = useState(false);
 
   const loadMore = useCallback(
     async (cursor?: string) => {
@@ -240,14 +242,12 @@ export function TransactionHistory({
         const url = cursor
           ? `/api/accounts/${accountId}/transactions?cursor=${cursor}&limit=20`
           : `/api/accounts/${accountId}/transactions?limit=20`;
+        // 401/404/5xx carry no `data`; a network error or bad body throws. Either
+        // way show an error with Retry (catch below), never an empty list that reads
+        // as "no transactions".
         const res = await fetch(url);
-        // 404 (account deleted) or 401 (session ended) has no `data`; stop paging
-        // instead of throwing on an undefined page.
-        if (!res.ok) {
-          setHasMore(false);
-          setNextCursor(null);
-          return;
-        }
+        if (!res.ok) throw new Error(`transactions ${res.status}`);
+        setLoadError(false);
         const json = (await res.json()) as {
           data: {
             transactions: (SerializedTransaction & { quantity: string | number })[];
@@ -268,6 +268,8 @@ export function TransactionHistory({
         }
         setNextCursor(page.nextCursor ?? null);
         setHasMore(page.hasMore);
+      } catch {
+        setLoadError(true);
       } finally {
         if (isInitial) setIsLoadingInitialData(false);
         else setIsLoadingMore(false);
@@ -545,7 +547,14 @@ export function TransactionHistory({
         <CardTitle className="text-base font-medium">{t("title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {transactions.length === 0 ? (
+        {loadError && transactions.length === 0 ? (
+          <div role="alert" className="flex flex-col items-center gap-3 py-8 text-center">
+            <p className="text-muted-foreground">{t("loadFailed")}</p>
+            <Button variant="secondary" onClick={() => void loadMore()}>
+              {t("retry")}
+            </Button>
+          </div>
+        ) : transactions.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">{t("empty")}</p>
         ) : (
           dateGroups.map(({ dateKey, items }) => (
@@ -593,13 +602,22 @@ export function TransactionHistory({
           ))
         )}
         {hasMore && (
-          <div className="flex justify-center pt-2">
+          <div className="flex flex-col items-center gap-2 pt-2">
+            {loadError && transactions.length > 0 && (
+              <p role="alert" className="text-sm text-muted-foreground">
+                {t("loadFailed")}
+              </p>
+            )}
             <Button
               variant="secondary"
               onClick={() => nextCursor && void loadMore(nextCursor)}
               disabled={isLoadingMore}
             >
-              {isLoadingMore ? t("loading") : t("loadMore")}
+              {isLoadingMore
+                ? t("loading")
+                : loadError && transactions.length > 0
+                  ? t("retry")
+                  : t("loadMore")}
             </Button>
           </div>
         )}

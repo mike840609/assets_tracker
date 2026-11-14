@@ -28,7 +28,10 @@ import type { SearchResult } from "./holding-search";
 import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import { HOLDING_ASSET_TYPES } from "@/lib/enums";
 
-const OptionBuilder = dynamic(() => import("./option-builder").then((m) => m.OptionBuilder));
+// ssr: false gives it its own Suspense boundary; see accounts-list.tsx.
+const OptionBuilder = dynamic(() => import("./option-builder").then((m) => m.OptionBuilder), {
+  ssr: false,
+});
 
 // OPTION has its own tab/builder, so the stock form offers every other asset type.
 const ASSET_TYPE_KEYS = HOLDING_ASSET_TYPES.filter((k) => k !== "OPTION");

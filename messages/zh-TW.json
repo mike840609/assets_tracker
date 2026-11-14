@@ -1661,7 +1661,9 @@
     "updateFailed": "更新交易失敗",
     "deleteSuccess": "交易已刪除",
     "deleteSuccessSymbol": "{symbol} 交易已刪除",
-    "deleteFailed": "刪除交易失敗"
+    "deleteFailed": "刪除交易失敗",
+    "loadFailed": "無法載入交易紀錄。",
+    "retry": "重試"
   },
   "recurring": {
     "title": "週期性",
