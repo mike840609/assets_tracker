@@ -4,14 +4,15 @@ import { expect, test } from "@playwright/test";
 // Covers both failure modes that once dropped focus to <body>: a lazily loaded
 // dialog (Add Account) and a dialog whose field uses autoFocus (Add stock).
 for (const [route, trigger] of [
-  ["/accounts", "Add Account"],
-  ["/stocks", "Add stock"],
+  // Empty accounts show the onboarding "Add account"; populated ones the header "Add Account".
+  ["/accounts", /^add account$/i],
+  ["/stocks", /^Add stock$/],
 ] as const) {
-  test(`Escape returns focus to "${trigger}"`, async ({ page }, testInfo) => {
+  test(`Escape returns focus to ${trigger}`, async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "chromium", "Desktop dialogs");
 
     await page.goto(route);
-    const opener = page.getByRole("button", { name: trigger, exact: true }).first();
+    const opener = page.getByRole("button", { name: trigger }).first();
     await opener.focus();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("dialog")).toBeVisible();
