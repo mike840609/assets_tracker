@@ -41,7 +41,7 @@ for (const timezoneId of ["Asia/Taipei", "UTC", "America/New_York", "America/Los
         const history = page
           .locator('[data-slot="card"]')
           .filter({ has: page.getByText("Transaction History", { exact: true }) });
-        await history.getByRole("button", { name: "Actions for AAPL", exact: true }).click();
+        await history.getByRole("button", { name: /^Transaction actions for AAPL, / }).click();
         await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
         const dialog = page.getByRole("dialog", { name: "Edit Transaction" });
         await expect(dialog.getByLabel("Date", { exact: true })).toBeDisabled();

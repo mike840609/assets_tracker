@@ -76,7 +76,7 @@ function WatchlistRow({ stock }: { stock: SerializedTrackedStock }) {
           </span>
           <Badge
             variant="outline"
-            className="border-primary/20 bg-primary/5 text-[10px] font-medium text-primary/90"
+            className="border-primary/20 bg-primary/5 text-[10px] font-medium text-primary"
           >
             {stock.currency}
           </Badge>

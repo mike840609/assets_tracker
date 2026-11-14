@@ -56,8 +56,16 @@ import { AccountsOnboarding } from "./accounts-onboarding";
 import type { SerializedAccountWithHoldings } from "@/lib/types";
 import type { AccountPriceMap } from "@/lib/services/account-service";
 
-const AccountForm = dynamic(() => import("./account-form").then((m) => m.AccountForm));
-const QuickAddHolding = dynamic(() => import("./quick-add-holding").then((m) => m.QuickAddHolding));
+// ssr: false gives each dialog its own Suspense boundary (next/dynamic adds one only
+// with ssr: false or `loading`). Without it, the first open suspends to the page's
+// boundary, which hides the page and blurs the button that opened the dialog.
+const AccountForm = dynamic(() => import("./account-form").then((m) => m.AccountForm), {
+  ssr: false,
+});
+const QuickAddHolding = dynamic(
+  () => import("./quick-add-holding").then((m) => m.QuickAddHolding),
+  { ssr: false },
+);
 
 const HIDDEN = "***";
 

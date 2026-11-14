@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, startTransition } from "react";
+import { useId, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,19 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+import { assertOk, errorText } from "@/lib/api-error";
 import type { SerializedHolding } from "@/lib/types";
 
 import { getOptionDisplay } from "@/lib/options";
 import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 
-const ASSET_TYPES = [
-  { value: "STOCK", label: "Stock" },
-  { value: "ETF", label: "ETF" },
-  { value: "CRYPTO", label: "Crypto" },
-  { value: "MUTUAL_FUND", label: "Mutual Fund" },
-  { value: "BOND", label: "Bond" },
-  { value: "OTHER", label: "Other" },
-];
+const ASSET_TYPES = ["STOCK", "ETF", "CRYPTO", "MUTUAL_FUND", "BOND", "OTHER"] as const;
 
 export function EditHoldingDialog({
   open,
@@ -36,6 +31,12 @@ export function EditHoldingDialog({
   onSuccess?: () => void;
 }) {
   const router = useRouter();
+  const t = useTranslations("editHolding");
+  const tForm = useTranslations("quickAddHolding");
+  const tOption = useTranslations("optionBuilder");
+  const tCommon = useTranslations("common");
+  // Links each <Label> to its control so the visible text is the accessible name.
+  const fieldId = useId();
   const [loading, setLoading] = useState(false);
   const [quantity, setQuantity] = useState(() =>
     formatAmountInput(Number(holding.quantity), holding.assetType === "OPTION" ? 0 : 6),
@@ -80,9 +81,7 @@ export function EditHoldingDialog({
     const parsedQty = parseAmountInput(quantity);
     const minAllowed = isOption ? 0 : Number.MIN_VALUE;
     if (isNaN(parsedQty) || parsedQty < minAllowed) {
-      toast.error(
-        isOption ? "Quantity must be 0 or greater" : "Quantity must be a positive number",
-      );
+      toast.error(isOption ? t("quantityNonNegative") : t("quantityPositive"));
       setLoading(false);
       return;
     }
@@ -107,19 +106,16 @@ export function EditHoldingDialog({
         body: JSON.stringify(updates),
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error?.message || "Failed");
-      }
+      await assertOk(res, tCommon("sessionExpired"));
 
-      toast.success("Holding updated");
+      toast.success(t("updated"));
       onClose();
       if (onSuccess) onSuccess();
       startTransition(() => {
         router.refresh();
       });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update holding");
+      toast.error(errorText(error, t("updateFailed")));
     } finally {
       setLoading(false);
     }
@@ -129,7 +125,7 @@ export function EditHoldingDialog({
     <Dialog open={open} onOpenChange={handleOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Holding</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -155,7 +151,7 @@ export function EditHoldingDialog({
               onClick={resetToHolding}
               className="text-xs text-muted-foreground"
             >
-              Reset
+              {t("reset")}
             </Button>
           </div>
 
@@ -163,26 +159,28 @@ export function EditHoldingDialog({
             <>
               {/* Name */}
               <div className="space-y-2">
-                <Label>Name</Label>
+                <Label htmlFor={`${fieldId}-name`}>{tForm("labelName")}</Label>
                 <Input
+                  id={`${fieldId}-name`}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Apple Inc."
+                  placeholder={tForm("placeholderName")}
                   required
                 />
               </div>
 
               {/* Asset Type */}
               <div className="space-y-2">
-                <Label>Asset Type</Label>
+                <Label htmlFor={`${fieldId}-asset-type`}>{tForm("labelAssetType")}</Label>
                 <select
+                  id={`${fieldId}-asset-type`}
                   value={assetType}
                   onChange={(e) => setAssetType(e.target.value as typeof assetType)}
                   className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
-                  {ASSET_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
+                  {ASSET_TYPES.map((value) => (
+                    <option key={value} value={value}>
+                      {tForm(`assetTypes.${value}`)}
                     </option>
                   ))}
                 </select>
@@ -192,30 +190,29 @@ export function EditHoldingDialog({
 
           {/* Quantity */}
           <div className="space-y-2">
-            <Label className="text-base font-medium">
-              {isOption ? "Number of contracts" : "Quantity"}
+            <Label htmlFor={`${fieldId}-quantity`} className="text-base font-medium">
+              {isOption ? tOption("numContracts") : tForm("labelShares")}
             </Label>
             <Input
+              id={`${fieldId}-quantity`}
               type="text"
               inputMode={isOption ? "numeric" : "decimal"}
               value={quantity}
               onChange={handleQuantityChange}
               onBlur={handleQuantityBlur}
-              placeholder={isOption ? "e.g. 1" : "e.g. 100"}
+              placeholder={isOption ? tOption("placeholderContracts") : tForm("placeholderShares")}
               required
               className="text-lg h-12"
             />
-            {isOption && (
-              <p className="text-xs text-muted-foreground">Set to 0 to close the position.</p>
-            )}
+            {isOption && <p className="text-xs text-muted-foreground">{t("closeHint")}</p>}
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : "Save Changes"}
+              {loading ? tCommon("saving") : t("save")}
             </Button>
           </div>
         </form>

@@ -142,7 +142,7 @@ export function HoldingsTable({
         <td className={`px-2 ${tdPy} text-right`}>
           <DropdownMenu>
             <DropdownMenuTrigger
-              aria-label={t("common.actionsFor", { name: symbolLabel })}
+              aria-label={t("common.holdingActionsFor", { name: symbolLabel })}
               className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:opacity-100"
             >
               <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
