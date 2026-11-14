@@ -135,4 +135,25 @@ test.describe("desktop plan split", () => {
         .getByText("Track stocks from a chosen price and date.", { exact: true }),
     ).toBeVisible();
   });
+
+  test("desktop UA below 768px still opens the Plan hub tab from the URL", async ({
+    page,
+  }, testInfo) => {
+    // The server only selects mobile tabs for mobile user agents; a narrow desktop
+    // window (or iPadOS Safari) must still render the tab named in the URL.
+    test.skip(testInfo.project.name !== "chromium", "Needs a desktop user agent");
+    await page.setViewportSize({ width: 744, height: 1024 });
+
+    await page.goto("/goals?tab=calendar");
+    const tablist = page.getByRole("tablist");
+    await expect(tablist.getByRole("tab", { name: "Calendar" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.getByRole("button", { name: "Add entry" }).first()).toBeVisible();
+
+    await tablist.getByRole("tab", { name: "Goals" }).click();
+    await expect(page).toHaveURL(/\/goals\?tab=goals$/);
+    await expect(page.getByRole("button", { name: "New Goal" }).first()).toBeVisible();
+  });
 });

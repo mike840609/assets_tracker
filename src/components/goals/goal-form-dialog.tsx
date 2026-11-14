@@ -68,6 +68,10 @@ export function GoalFormDialog({
   const isMobile = useIsMobile();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(() => initialState(editGoal, defaultCurrency));
+  type FieldError = "name" | "amount" | "scopeRef";
+  const [errors, setErrors] = useState<Partial<Record<FieldError, string>>>({});
+  const clearError = (field: FieldError) =>
+    setErrors((e) => (e[field] ? { ...e, [field]: undefined } : e));
 
   const name = form.name;
   const targetAmount = form.targetAmount;
@@ -77,9 +81,11 @@ export function GoalFormDialog({
   const scopeRefId = form.scopeRefId;
 
   function setName(v: string) {
+    clearError("name");
     setForm((f) => ({ ...f, name: v }));
   }
   function setTargetAmount(v: string) {
+    clearError("amount");
     setForm((f) => ({ ...f, targetAmount: v }));
   }
   function setTargetCurrency(v: string) {
@@ -89,15 +95,18 @@ export function GoalFormDialog({
     setForm((f) => ({ ...f, targetDate: v }));
   }
   function setScope(v: GoalScope) {
+    clearError("scopeRef");
     setForm((f) => ({ ...f, scope: v, scopeRefId: "" }));
   }
   function setScopeRefId(v: string) {
+    clearError("scopeRef");
     setForm((f) => ({ ...f, scopeRefId: v }));
   }
 
   function handleOpenChange(nextOpen: boolean) {
     if (nextOpen) {
       setForm(initialState(editGoal, defaultCurrency));
+      setErrors({});
     }
     onOpenChange(nextOpen);
   }
@@ -120,8 +129,14 @@ export function GoalFormDialog({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const amount = parseAmountInput(targetAmount);
-    if (!name.trim() || isNaN(amount) || amount <= 0) return;
-    if (needsScopeRef && !scopeRefId) return;
+    const nextErrors: Partial<Record<FieldError, string>> = {};
+    if (!name.trim()) nextErrors.name = t("form.nameRequired");
+    if (isNaN(amount) || amount <= 0) nextErrors.amount = t("form.amountInvalid");
+    if (needsScopeRef && !scopeRefId) nextErrors.scopeRef = t("form.scopeRefRequired");
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
 
     setSaving(true);
     try {
@@ -169,7 +184,14 @@ export function GoalFormDialog({
           placeholder={t("form.namePlaceholder")}
           required
           maxLength={100}
+          aria-invalid={errors.name ? true : undefined}
+          aria-describedby={errors.name ? "goal-name-error" : undefined}
         />
+        {errors.name && (
+          <p id="goal-name-error" role="alert" className="text-xs text-destructive">
+            {errors.name}
+          </p>
+        )}
       </div>
 
       {/* Target Amount + Currency */}
@@ -185,7 +207,14 @@ export function GoalFormDialog({
             onBlur={handleTargetAmountBlur}
             placeholder="1,000,000"
             required
+            aria-invalid={errors.amount ? true : undefined}
+            aria-describedby={errors.amount ? "goal-amount-error" : undefined}
           />
+          {errors.amount && (
+            <p id="goal-amount-error" role="alert" className="text-xs text-destructive">
+              {errors.amount}
+            </p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="goal-currency">{t("form.targetCurrency")}</Label>
@@ -245,7 +274,11 @@ export function GoalFormDialog({
         <div className="space-y-1.5">
           <Label htmlFor="goal-category">{t("form.category")}</Label>
           <Select value={scopeRefId} onValueChange={(v) => v && setScopeRefId(v)}>
-            <SelectTrigger id="goal-category">
+            <SelectTrigger
+              id="goal-category"
+              aria-invalid={errors.scopeRef ? true : undefined}
+              aria-describedby={errors.scopeRef ? "goal-category-error" : undefined}
+            >
               <SelectValue>
                 {scopeRefId
                   ? tCategories(scopeRefId as Parameters<typeof tCategories>[0])
@@ -260,6 +293,11 @@ export function GoalFormDialog({
               ))}
             </SelectContent>
           </Select>
+          {errors.scopeRef && (
+            <p id="goal-category-error" role="alert" className="text-xs text-destructive">
+              {errors.scopeRef}
+            </p>
+          )}
         </div>
       )}
 
@@ -268,7 +306,11 @@ export function GoalFormDialog({
         <div className="space-y-1.5">
           <Label htmlFor="goal-account">{t("form.account")}</Label>
           <Select value={scopeRefId} onValueChange={(v) => v && setScopeRefId(v)}>
-            <SelectTrigger id="goal-account">
+            <SelectTrigger
+              id="goal-account"
+              aria-invalid={errors.scopeRef ? true : undefined}
+              aria-describedby={errors.scopeRef ? "goal-account-error" : undefined}
+            >
               <SelectValue>
                 {scopeRefId
                   ? (accounts.find((a) => a.id === scopeRefId)?.name ??
@@ -284,6 +326,11 @@ export function GoalFormDialog({
               ))}
             </SelectContent>
           </Select>
+          {errors.scopeRef && (
+            <p id="goal-account-error" role="alert" className="text-xs text-destructive">
+              {errors.scopeRef}
+            </p>
+          )}
         </div>
       )}
     </>

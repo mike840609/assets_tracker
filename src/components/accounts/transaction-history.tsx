@@ -241,6 +241,13 @@ export function TransactionHistory({
           ? `/api/accounts/${accountId}/transactions?cursor=${cursor}&limit=20`
           : `/api/accounts/${accountId}/transactions?limit=20`;
         const res = await fetch(url);
+        // 404 (account deleted) or 401 (session ended) has no `data`; stop paging
+        // instead of throwing on an undefined page.
+        if (!res.ok) {
+          setHasMore(false);
+          setNextCursor(null);
+          return;
+        }
         const json = (await res.json()) as {
           data: {
             transactions: (SerializedTransaction & { quantity: string | number })[];
@@ -543,7 +550,7 @@ export function TransactionHistory({
         ) : (
           dateGroups.map(({ dateKey, items }) => (
             <div key={dateKey}>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 mb-2 px-1">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2 px-1">
                 {dateKey}
               </p>
               <div className="rounded-2xl overflow-hidden border border-border/40 bg-card">

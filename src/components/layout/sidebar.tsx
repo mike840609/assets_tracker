@@ -135,7 +135,12 @@ export function Sidebar({
   ];
 
   return (
+    // Base UI's modal focus manager sets aria-hidden on everything outside an open
+    // dialog (markOthers). If a dialog opens before this streamed subtree hydrates,
+    // React sees that attribute as a mismatch. It is owned by Base UI, not us, so
+    // silence the warning for this element's own attributes only.
     <aside
+      suppressHydrationWarning
       className={cn(
         "hidden md:flex flex-col border-r bg-sidebar/80 backdrop-blur-md text-sidebar-foreground glass z-10 shrink-0",
         collapsed ? "w-[72px]" : "w-64",

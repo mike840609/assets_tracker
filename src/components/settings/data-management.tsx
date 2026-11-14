@@ -13,7 +13,8 @@ import {
   CoinsIcon,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -148,9 +149,12 @@ function DemoDataManagement() {
         <CardContent className="space-y-2 p-4">
           <p className="text-sm font-medium">{t("demoTitle")}</p>
           <p className="text-sm text-muted-foreground">{t("demoDescription")}</p>
-          <Button render={<Link href="/login?from=demo" />} className="h-11 md:h-8">
+          <Link
+            href="/login?from=demo"
+            className={cn(buttonVariants({ className: "h-11 md:h-8" }))}
+          >
             {t("demoAction")}
-          </Button>
+          </Link>
         </CardContent>
       </Card>
     </section>

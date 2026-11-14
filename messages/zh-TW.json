@@ -146,7 +146,8 @@
       "light": "淺色",
       "dark": "深色",
       "system": "系統"
-    }
+    },
+    "close": "關閉"
   },
   "errors": {
     "title": "發生錯誤",
@@ -421,7 +422,10 @@
       "create": "建立目標",
       "save": "儲存",
       "saving": "儲存中...",
-      "cancel": "取消"
+      "cancel": "取消",
+      "nameRequired": "請輸入目標名稱。",
+      "amountInvalid": "請輸入大於 0 的目標金額。",
+      "scopeRefRequired": "請選擇要追蹤的項目。"
     },
     "toast": {
       "created": "目標已建立",
@@ -828,7 +832,9 @@
     "selectedSnapshot": "已選取快照",
     "clearSnapshotSelection": "清除快照選取",
     "legendLoss": "下跌",
-    "legendGain": "上漲"
+    "legendGain": "上漲",
+    "activityGridLabel": "{year} 年淨資產活動",
+    "cellToday": "{label}，今天"
   },
   "netWorthCard": {
     "netWorth": "淨資產",
@@ -1178,7 +1184,9 @@
     "showMore": "顯示另外 {count} 個",
     "groupPositions": "{count} 個部位",
     "dangerZone": "危險區域",
-    "deleteAccountPermanently": "刪除此帳戶"
+    "deleteAccountPermanently": "刪除此帳戶",
+    "overdraftWarning": "此次提款後餘額將變為 {balance}。再按一次即可仍然記錄。",
+    "overdraftConfirm": "仍要提款"
   },
   "dataManagement": {
     "title": "從備份還原",
@@ -1411,6 +1419,7 @@
     "googleButton": "使用 Google 帳號繼續",
     "selfHostPasswordPlaceholder": "自行部署密碼",
     "selfHostButton": "登入",
+    "invalidPassword": "密碼錯誤，請再試一次。",
     "internalTestDivider": "內部測試登入",
     "internalTestButton": "內部測試登入",
     "internalTestPasswordPlaceholder": "內部測試密碼",
@@ -1419,7 +1428,9 @@
     "trust2": "您的資料私密保存，絕不出售",
     "trust3": "只有您能查看自己的投資組合",
     "footerBefore": "您的資料受到保護。閱讀我們的",
-    "footerLink": "隱私政策"
+    "footerLink": "隱私政策",
+    "tooManyAttempts": "登入嘗試次數過多，請幾分鐘後再試。",
+    "signInFailed": "登入失敗，請稍後再試。"
   },
   "demo": {
     "login": {

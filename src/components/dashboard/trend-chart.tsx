@@ -21,7 +21,7 @@ import { useContainerSize } from "@/hooks/use-container-size";
 import { useTranslations } from "next-intl";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currencies";
-import { formatChartTick } from "@/lib/chart-formatters";
+import { formatChartTick, niceTicks } from "@/lib/chart-formatters";
 import { useChartAnimation } from "@/hooks/use-chart-animation";
 import { ChartTooltipContainer, ChartTooltipRow } from "@/components/ui/chart-tooltip";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -202,10 +202,10 @@ export function TrendChart({
   }, []);
 
   const yTickFormatter = useCallback(
-    (v: number) => {
+    (v: number, step?: number) => {
       if (privacyMode) return "";
       if (isPercentMode) return `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
-      return formatChartTick(v);
+      return formatChartTick(v, step);
     },
     [privacyMode, isPercentMode],
   );
@@ -305,6 +305,12 @@ export function TrendChart({
     const pad = (max - min) * 0.18;
     return [min - pad, max + pad];
   }, [filtered, isPercentMode]);
+  // Round the padded domain out to nice ticks; recharts would otherwise split the
+  // raw range into fractions that format to duplicate labels (2.0M, 2.0M).
+  const yAxisTicks = useMemo(
+    () => (yDomain ? niceTicks(yDomain[0], yDomain[1]) : undefined),
+    [yDomain],
+  );
 
   return (
     <Card className="relative h-full flex flex-col pb-0">
@@ -407,8 +413,15 @@ export function TrendChart({
                   <YAxis
                     width={42}
                     tick={{ fontSize: 12 }}
-                    tickFormatter={yTickFormatter}
-                    domain={yDomain ?? ["auto", "auto"]}
+                    tickFormatter={(v: number) => yTickFormatter(v, yAxisTicks?.step)}
+                    ticks={yAxisTicks?.ticks}
+                    // niceTicks already caps the count; don't let recharts thin it unevenly.
+                    interval={yAxisTicks ? 0 : undefined}
+                    domain={
+                      yAxisTicks
+                        ? [yAxisTicks.ticks[0], yAxisTicks.ticks[yAxisTicks.ticks.length - 1]]
+                        : ["auto", "auto"]
+                    }
                   />
                   <Tooltip
                     cursor={false}

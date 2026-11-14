@@ -275,8 +275,11 @@ export function AccountDetail({
       const res = await fetch(`/api/accounts/${account.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       toast.success(t("accountDetail.accountDeleted"));
+      // replace, not push: Back must not return to a page whose account is gone.
+      // refresh drops the client router cache that still holds its old render.
       startTransition(() => {
-        router.push("/accounts");
+        router.replace("/accounts");
+        router.refresh();
       });
     } catch {
       toast.error(t("accountDetail.deleteFailed"));

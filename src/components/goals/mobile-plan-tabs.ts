@@ -90,3 +90,33 @@ export function handleMobilePlanTabKey({
   focus(nextTab);
   return true;
 }
+
+/** The last clicked tab, plus every tab clicked since it started pending. */
+export type PendingTab = { tab: MobilePlanTab; clicked: MobilePlanTab[] } | null;
+
+export function addPendingClick(pending: PendingTab, tab: MobilePlanTab): PendingTab {
+  return { tab, clicked: [...(pending?.clicked ?? []), tab] };
+}
+
+/**
+ * A clicked tab shows immediately, before its router.replace lands. Reconcile it
+ * with the URL-derived tab after each render:
+ * - the URL shows the pending tab -> done (also covers Next aborting a
+ *   superseded replace, where the URL never moves at all);
+ * - the URL moved to an earlier click -> that navigation landed late; keep the
+ *   newest click and consume the landed one (and anything older);
+ * - the URL moved anywhere else (Back/Forward, links) -> drop the click so it
+ *   can't override history.
+ * Returns the same object when nothing changes, so callers can compare by identity.
+ */
+export function reconcilePendingTab(
+  pending: PendingTab,
+  previousTab: MobilePlanTab,
+  urlTab: MobilePlanTab,
+): PendingTab {
+  if (!pending || urlTab === pending.tab) return null;
+  if (urlTab === previousTab) return pending;
+  const landed = pending.clicked.indexOf(urlTab);
+  if (landed === -1) return null;
+  return { tab: pending.tab, clicked: pending.clicked.slice(landed + 1) };
+}

@@ -251,6 +251,23 @@ export function AccountsList({
     [assets, accountBaseValues],
   );
 
+  // Allocation shares divide by the positive balances only: an overdrawn asset
+  // (or overpaid liability) lowers the net total, so dividing by it pushes the
+  // column past 100%. Negative rows show "—".
+  const assetAllocationTotal = useMemo(
+    () => assets.reduce((sum, account) => sum + Math.max(0, accountBaseValues[account.id] ?? 0), 0),
+    [assets, accountBaseValues],
+  );
+
+  const liabilityAllocationTotal = useMemo(
+    () =>
+      liabilities.reduce(
+        (sum, account) => sum + Math.max(0, accountBaseValues[account.id] ?? 0),
+        0,
+      ),
+    [liabilities, accountBaseValues],
+  );
+
   const totalLiabilities = useMemo(
     () => liabilities.reduce((sum, account) => sum + (accountBaseValues[account.id] ?? 0), 0),
     [liabilities, accountBaseValues],
@@ -559,7 +576,7 @@ export function AccountsList({
                           onArchive={archiveAccount}
                           isDeleting={deletingId === account.id}
                           isUpdating={updatingId === account.id}
-                          allocationDenominator={totalAssets}
+                          allocationDenominator={assetAllocationTotal}
                           barColor={assetColorMap[account.id]}
                         />
                       ))}
@@ -589,7 +606,7 @@ export function AccountsList({
                           onArchive={archiveAccount}
                           isDeleting={deletingId === account.id}
                           isUpdating={updatingId === account.id}
-                          allocationDenominator={totalLiabilities}
+                          allocationDenominator={liabilityAllocationTotal}
                         />
                       ))}
                     </>
@@ -1017,8 +1034,9 @@ function DesktopAccountRow({
   const label = t(`categories.${account.category}`, { defaultValue: account.category });
   const nativeValue = getAccountValue(account, priceMap, ratesMap);
   const isSameCurrency = account.currency === baseCurrency;
+  // A negative balance has no share of the positive total; show no bar for it.
   const pct =
-    allocationDenominator > 0 ? (Math.abs(baseValue) / allocationDenominator) * 100 : null;
+    allocationDenominator > 0 && baseValue >= 0 ? (baseValue / allocationDenominator) * 100 : null;
 
   return (
     <tr className="group hover:bg-muted/40 cursor-pointer transition-colors" onClick={onNavigate}>
@@ -1096,6 +1114,7 @@ function DesktopAccountRow({
           <DropdownMenuTrigger
             className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100 data-[state=open]:opacity-100 hover:bg-accent hover:text-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             disabled={isDeleting || isUpdating}
+            aria-label={t("common.actionsFor", { name: account.name })}
           >
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>
@@ -1235,6 +1254,7 @@ function MobileAccountRow({
           <DropdownMenuTrigger
             className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100 data-[state=open]:opacity-100 hover:bg-accent hover:text-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             disabled={isDeleting || isUpdating}
+            aria-label={t("common.actionsFor", { name: account.name })}
           >
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>

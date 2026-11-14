@@ -101,7 +101,7 @@ export function AccountForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
+          name: name.trim(),
           type,
           category,
           currency,

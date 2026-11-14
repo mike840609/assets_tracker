@@ -5,7 +5,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { WifiOff } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Offline — astt",
@@ -36,9 +37,9 @@ async function OfflineContent() {
     <>
       <h1 className="text-lg font-semibold">{t("title")}</h1>
       <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
-      <Button className="mt-6 h-11 md:h-8" render={<Link href="/" />}>
+      <Link href="/" className={cn(buttonVariants({ className: "mt-6 h-11 md:h-8" }))}>
         {t("retry")}
-      </Button>
+      </Link>
     </>
   );
 }

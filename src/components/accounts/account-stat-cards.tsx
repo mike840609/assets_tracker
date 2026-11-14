@@ -109,12 +109,23 @@ export function AccountStatCards({
   const [cashDate, setCashDate] = useState(localToday);
   const [cashNote, setCashNote] = useState("");
   const [submittingCash, setSubmittingCash] = useState(false);
+  // Two-step submit: an asset withdrawal that overdraws the account shows a warning
+  // first and only posts on the second press. Liabilities can legitimately go
+  // either way, so they are not checked.
+  const [overdraftConfirmed, setOverdraftConfirmed] = useState(false);
+  const parsedCashAmount = parseAmountInput(cashAmount);
+  const wouldOverdraw =
+    !isLiability &&
+    cashType === "WITHDRAWAL" &&
+    Number.isFinite(parsedCashAmount) &&
+    parsedCashAmount > account.cashBalance;
 
   function resetCashForm() {
     setCashType("DEPOSIT");
     setCashAmount("");
     setCashDate(localToday());
     setCashNote("");
+    setOverdraftConfirmed(false);
   }
 
   function openCashDialog() {
@@ -124,7 +135,10 @@ export function AccountStatCards({
 
   function handleCashAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
     const next = maskAmountInput(e.target.value);
-    if (next !== null) setCashAmount(next);
+    if (next !== null) {
+      setCashAmount(next);
+      setOverdraftConfirmed(false);
+    }
   }
 
   function handleCashAmountBlur() {
@@ -136,6 +150,10 @@ export function AccountStatCards({
 
   async function handleCashSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (wouldOverdraw && !overdraftConfirmed) {
+      setOverdraftConfirmed(true);
+      return;
+    }
     setSubmittingCash(true);
     try {
       await submitOneOffCashTransaction({
@@ -171,7 +189,14 @@ export function AccountStatCards({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="one-off-cash-type">{t("recurringCash.labelType")}</Label>
-          <Select value={cashType} onValueChange={(v) => v && setCashType(v as OneOffCashType)}>
+          <Select
+            value={cashType}
+            onValueChange={(v) => {
+              if (!v) return;
+              setCashType(v as OneOffCashType);
+              setOverdraftConfirmed(false);
+            }}
+          >
             <SelectTrigger id="one-off-cash-type" className="w-full min-h-11 md:min-h-8">
               <SelectValue>
                 {t(`recurringCash.${cashType === "DEPOSIT" ? depositKey : withdrawalKey}`)}
@@ -223,6 +248,18 @@ export function AccountStatCards({
           className="min-h-11 md:min-h-8"
         />
       </div>
+      {wouldOverdraw && overdraftConfirmed && (
+        <p
+          role="alert"
+          className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300"
+        >
+          {t("accountDetail.overdraftWarning", {
+            balance: privacyMode
+              ? HIDDEN
+              : formatCurrency(account.cashBalance - parsedCashAmount, account.currency),
+          })}
+        </p>
+      )}
       <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
         <Button
           type="button"
@@ -233,7 +270,11 @@ export function AccountStatCards({
           {t("common.cancel")}
         </Button>
         <Button type="submit" className="min-h-11 md:min-h-8" disabled={submittingCash}>
-          {submittingCash ? t("common.saving") : t("common.save")}
+          {submittingCash
+            ? t("common.saving")
+            : wouldOverdraw && overdraftConfirmed
+              ? t("accountDetail.overdraftConfirm")
+              : t("common.save")}
         </Button>
       </div>
     </form>

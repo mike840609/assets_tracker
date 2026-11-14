@@ -121,12 +121,10 @@ function getGoalsPanelData({
 }
 
 async function GoalsDeferredData({
-  activeTab,
   requestedTab,
   eagerProps,
   panelDataP,
 }: {
-  activeTab: MobilePlanTab;
   requestedTab?: MobilePlanTab;
   eagerProps: GoalsViewEagerProps;
   panelDataP: Promise<GoalsPanelData>;
@@ -136,7 +134,6 @@ async function GoalsDeferredData({
   return (
     <GoalsView
       {...eagerProps}
-      loadedTab={activeTab}
       requestedTab={requestedTab}
       projectionData={panelData.projectionData}
       stocks={panelData.stocks}
@@ -199,7 +196,6 @@ export async function GoalsContent({ searchParams }: GoalsPageProps) {
         </LargeTitleHeading>
         <Suspense fallback={<PanelSkeleton />}>
           <GoalsDeferredData
-            activeTab={activeTab}
             requestedTab={requestedTab}
             eagerProps={{
               goalsWithProgress: goalsData?.goalsWithProgress,

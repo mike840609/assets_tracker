@@ -35,6 +35,9 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock("next-auth", () => ({
+  CredentialsSignin: class CredentialsSignin extends Error {
+    code = "credentials";
+  },
   default: (config: CapturedAuthConfig) => {
     h.authConfig = config;
     return { handlers: {}, auth: vi.fn(), signIn: h.signIn, signOut: h.signOut };
@@ -49,6 +52,7 @@ vi.mock("@/auth.config", () => ({ default: { providers: [] } }));
 vi.mock("@/lib/auth-adapter", () => ({ customPrismaAdapter: {} }));
 vi.mock("@/lib/prisma", () => ({ prisma: { user: { upsert: vi.fn() } } }));
 vi.mock("@/lib/env", () => ({
+  AUTH_GLOBAL_FAILURE_LIMIT: 100,
   AUTH_SECRET: "task-7-unit-secret",
   AUTH_SELF_HOST_PASSWORD: undefined,
   isGoogleAuthEnabled: true,

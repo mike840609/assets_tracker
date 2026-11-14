@@ -41,7 +41,7 @@ const strikeDecimalNumber = z
   .lt(STRIKE_DECIMAL_ABS_MAX, "Value exceeds supported precision");
 
 export const createAccountSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100),
+  name: z.string().trim().min(1, "Name is required").max(100),
   type: z.enum(ACCOUNT_TYPES),
   category: z.enum(ACCOUNT_CATEGORIES),
   currency: supportedCurrencySchema,
@@ -79,7 +79,7 @@ const baseHoldingFields = {
     .min(1, "Symbol is required")
     .max(32)
     .transform((s) => s.toUpperCase()),
-  name: z.string().min(1, "Name is required").max(100),
+  name: z.string().trim().min(1, "Name is required").max(100),
   quantity: crudDecimalNumber.positive("Quantity must be positive"),
   unitPrice: crudDecimalNumber.positive("Buy unit price must be positive").optional(),
   currency: z.string().length(3).default("USD"),
@@ -121,7 +121,7 @@ export const updateHoldingSchema = z.object({
     .max(32)
     .transform((s) => s.toUpperCase())
     .optional(),
-  name: z.string().min(1).max(100).optional(),
+  name: z.string().trim().min(1).max(100).optional(),
   // 0 is allowed only to close an OPTION position (preserves the transaction
   // audit trail, which a DELETE would cascade away). The PATCH route rejects
   // quantity 0 for non-option holdings, where the asset type is known.
@@ -314,7 +314,7 @@ export const createRecurringInvestmentSchema = z
       .min(1, "Symbol is required")
       .max(32)
       .transform((s) => s.toUpperCase()),
-    name: z.string().min(1, "Name is required").max(100),
+    name: z.string().trim().min(1, "Name is required").max(100),
     assetType: z.enum(NON_OPTION_ASSET_TYPES),
     holdingCurrency: z.string().length(3).default("USD"),
     amount: positiveCashAmount,
@@ -343,7 +343,7 @@ export const updateRecurringInvestmentSchema = z
   });
 
 export const createGoalSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100),
+  name: z.string().trim().min(1, "Name is required").max(100),
   targetAmount: crudDecimalNumber.positive("Target must be positive"),
   targetCurrency: supportedCurrencySchema.default("USD"),
   targetDate: z.iso.date("Must be a valid YYYY-MM-DD date").optional().nullable(),
@@ -363,7 +363,7 @@ const stockWatchItemFields = {
     .min(1, "Symbol is required")
     .max(32)
     .transform((s) => s.toUpperCase()),
-  name: z.string().min(1, "Name is required").max(120),
+  name: z.string().trim().min(1, "Name is required").max(120),
   exchange: z.string().max(80).default(""),
   currency: z.string().length(3).default("USD"),
   recordPrice: crudDecimalNumber.positive("Record price must be positive"),

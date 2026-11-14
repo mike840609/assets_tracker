@@ -146,7 +146,8 @@
       "light": "浅色",
       "dark": "深色",
       "system": "跟随系统"
-    }
+    },
+    "close": "关闭"
   },
   "errors": {
     "title": "发生错误",
@@ -421,7 +422,10 @@
       "create": "创建目标",
       "save": "保存",
       "saving": "保存中...",
-      "cancel": "取消"
+      "cancel": "取消",
+      "nameRequired": "请输入目标名称。",
+      "amountInvalid": "请输入大于 0 的目标金额。",
+      "scopeRefRequired": "请选择要追踪的项目。"
     },
     "toast": {
       "created": "目标已创建",
@@ -828,7 +832,9 @@
     "selectedSnapshot": "已选中快照",
     "clearSnapshotSelection": "取消选中快照",
     "legendLoss": "下跌",
-    "legendGain": "上涨"
+    "legendGain": "上涨",
+    "activityGridLabel": "{year} 年净资产活动",
+    "cellToday": "{label}，今天"
   },
   "netWorthCard": {
     "netWorth": "净资产",
@@ -1178,7 +1184,9 @@
     "showMore": "显示另外 {count} 个",
     "groupPositions": "{count} 个仓位",
     "dangerZone": "危险区域",
-    "deleteAccountPermanently": "删除此账户"
+    "deleteAccountPermanently": "删除此账户",
+    "overdraftWarning": "此次提款后余额将变为 {balance}。再按一次即可仍然记录。",
+    "overdraftConfirm": "仍要提款"
   },
   "dataManagement": {
     "title": "从备份还原",
@@ -1411,6 +1419,7 @@
     "googleButton": "使用 Google 账号继续",
     "selfHostPasswordPlaceholder": "自托管密码",
     "selfHostButton": "登录",
+    "invalidPassword": "密码错误，请重试。",
     "internalTestDivider": "内部测试登录",
     "internalTestButton": "内部测试登录",
     "internalTestPasswordPlaceholder": "内部测试密码",
@@ -1419,7 +1428,9 @@
     "trust2": "你的数据私密存储，绝不会出售",
     "trust3": "只有你可以查看自己的投资组合",
     "footerBefore": "你的数据受到保护。阅读我们的",
-    "footerLink": "隐私政策"
+    "footerLink": "隐私政策",
+    "tooManyAttempts": "登录尝试次数过多，请几分钟后再试。",
+    "signInFailed": "登录失败，请稍后再试。"
   },
   "demo": {
     "login": {

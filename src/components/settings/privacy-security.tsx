@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePrivacyMode } from "@/components/layout/privacy-mode-context";
 
@@ -141,9 +142,12 @@ export function PrivacySecurity({ isDemo, userEmail, signOutAction }: PrivacySec
                       {t("demo.exit")}
                     </Button>
                   </form>
-                  <Button render={<Link href="/login?from=demo" />} className="h-11 flex-1 md:h-8">
+                  <Link
+                    href="/login?from=demo"
+                    className={cn(buttonVariants({ className: "h-11 flex-1 md:h-8" }))}
+                  >
                     {t("demo.signIn")}
-                  </Button>
+                  </Link>
                 </div>
               </div>
               <div className="p-4 text-sm text-muted-foreground">

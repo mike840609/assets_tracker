@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { FileQuestion } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { cn } from "@/lib/utils";
 
 export default async function NotFound() {
   const t = await getTranslations("errors");
@@ -16,7 +17,9 @@ export default async function NotFound() {
         <h2 className="text-xl font-semibold">{t("notFoundTitle")}</h2>
         <p className="max-w-md text-sm text-muted-foreground">{t("notFoundDescription")}</p>
       </div>
-      <Button render={<Link href="/" />}>{t("backHome")}</Button>
+      <Link href="/" className={cn(buttonVariants())}>
+        {t("backHome")}
+      </Link>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type CredentialsProvider = {
   id?: string;
-  authorize?: (credentials: Record<string, unknown>) => Promise<unknown>;
+  authorize?: (credentials: Record<string, unknown>, request: Request) => Promise<unknown>;
 };
 
 const h = vi.hoisted(() => ({
@@ -16,6 +16,9 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock("next-auth", () => ({
+  CredentialsSignin: class CredentialsSignin extends Error {
+    code = "credentials";
+  },
   default: (config: { providers: CredentialsProvider[]; callbacks?: Record<string, unknown> }) => {
     h.authConfig = config;
     return { handlers: {}, auth: vi.fn(), signIn: vi.fn(), signOut: vi.fn() };
@@ -39,6 +42,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/lib/env", () => ({
+  AUTH_GLOBAL_FAILURE_LIMIT: 100,
   AUTH_SELF_HOST_PASSWORD: "a-secure-self-host-password",
   isSelfHostAuthEnabled: true,
   isPreviewAuthEnabled: false,
@@ -51,7 +55,13 @@ vi.mock("@/lib/demo/demo-service", () => ({
   authenticateDemoTicket: vi.fn(),
 }));
 
-await import("@/auth");
+const { TooManySignInAttempts } = await import("@/auth");
+
+/** Each test uses its own client IP so the module-level throttle doesn't leak between tests. */
+const requestFrom = (ip: string) =>
+  new Request("http://localhost/api/auth/callback/self-host", {
+    headers: { "x-forwarded-for": ip },
+  });
 
 describe("self-host credentials provider", () => {
   beforeEach(() => {
@@ -79,7 +89,7 @@ describe("self-host credentials provider", () => {
     const provider = h.authConfig?.providers.find(({ id }) => id === "self-host");
 
     await expect(
-      provider?.authorize?.({ password: "a-secure-self-host-password" }),
+      provider?.authorize?.({ password: "a-secure-self-host-password" }, requestFrom("192.0.2.1")),
     ).resolves.toEqual(user);
     expect(h.userUpsert).toHaveBeenCalledWith({
       where: { email: "owner@self-host.local" },
@@ -95,8 +105,59 @@ describe("self-host credentials provider", () => {
   it("rejects an incorrect password without querying the owner account", async () => {
     const provider = h.authConfig?.providers.find(({ id }) => id === "self-host");
 
-    await expect(provider?.authorize?.({ password: "incorrect-password" })).resolves.toBeNull();
+    await expect(
+      provider?.authorize?.({ password: "incorrect-password" }, requestFrom("192.0.2.2")),
+    ).resolves.toBeNull();
     expect(h.userUpsert).not.toHaveBeenCalled();
+  });
+
+  it("throttles password attempts per IP, even with the correct password", async () => {
+    const provider = h.authConfig?.providers.find(({ id }) => id === "self-host");
+    for (let i = 0; i < 10; i++) {
+      await expect(
+        provider?.authorize?.({ password: `wrong-${i}` }, requestFrom("192.0.2.3")),
+      ).resolves.toBeNull();
+    }
+    await expect(
+      provider?.authorize?.({ password: "a-secure-self-host-password" }, requestFrom("192.0.2.3")),
+    ).rejects.toBeInstanceOf(TooManySignInAttempts);
+    expect(h.userUpsert).not.toHaveBeenCalled();
+    // Another client is unaffected.
+    await expect(
+      provider?.authorize?.({ password: "wrong" }, requestFrom("192.0.2.4")),
+    ).resolves.toBeNull();
+  });
+
+  it("does not count successful sign-ins toward the throttle", async () => {
+    h.userUpsert.mockResolvedValue({ id: "owner", name: null, email: null, image: null });
+    const provider = h.authConfig?.providers.find(({ id }) => id === "self-host");
+    for (let i = 0; i < 15; i++) {
+      await expect(
+        provider?.authorize?.(
+          { password: "a-secure-self-host-password" },
+          requestFrom("192.0.2.5"),
+        ),
+      ).resolves.toMatchObject({ id: "owner" });
+    }
+  });
+
+  // Keep last: the global bucket is module state shared with the tests above.
+  it("caps failures globally so spoofed X-Forwarded-For values can't bypass it", async () => {
+    const provider = h.authConfig?.providers.find(({ id }) => id === "self-host");
+    // Each attempt claims a new client IP, as a forged header would.
+    let i = 0;
+    let blocked = false;
+    for (; i < 150 && !blocked; i++) {
+      blocked =
+        (await provider
+          ?.authorize?.({ password: `wrong-${i}` }, requestFrom(`198.51.100.${i}`))
+          .then(
+            () => false,
+            (error: unknown) => error instanceof TooManySignInAttempts,
+          )) ?? false;
+    }
+    expect(blocked).toBe(true);
+    expect(i).toBeLessThanOrEqual(101);
   });
 });
 
@@ -105,7 +166,10 @@ describe("self-host login page", () => {
     const source = readFileSync("src/app/login/page.tsx", "utf8");
 
     expect(source).toContain("isSelfHostAuthEnabled");
-    expect(source).toContain('await signIn("self-host"');
+    expect(source).toContain('await credentialsSignIn("self-host"');
+    // A wrong password must surface inline, not reach the global error boundary.
+    expect(source).toContain("error instanceof AuthError");
+    expect(source).toContain('error.code === "rate_limited"');
     expect(source).toContain("{isGoogleAuthEnabled && (");
   });
 });

@@ -1,6 +1,7 @@
 // S1: force-static is incompatible with nextConfig.cacheComponents (PPR mode).
 // PPR prerendering the Suspense fallback shell is the correct tier here.
 import { Suspense } from "react";
+import { AuthError, CredentialsSignin } from "next-auth";
 import { signIn, signOut } from "@/auth";
 import { DemoLoginButton } from "@/components/demo/demo-login-button";
 import { Button } from "@/components/ui/button";
@@ -24,8 +25,35 @@ type LoginPageProps = {
   searchParams: Promise<{
     "stale-session"?: string | string[];
     from?: string | string[];
+    error?: string | string[];
   }>;
 };
+
+// Auth.js throws AuthErrors for failed sign-ins. Uncaught they reach the global
+// error boundary, so show an inline message on /login instead. Only a
+// CredentialsSignin means the password was wrong (or throttled); anything else —
+// e.g. CallbackRouteError when the database is down — gets a generic message so
+// the owner isn't told to retype a correct password. Non-Auth errors (including
+// Next's redirect signal on success) are rethrown.
+const LOGIN_ERRORS = ["CredentialsSignin", "RateLimited", "SignInFailed"] as const;
+type LoginError = (typeof LOGIN_ERRORS)[number];
+
+async function credentialsSignIn(provider: string, password: string) {
+  try {
+    await signIn(provider, { password, redirectTo: "/" });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      const code: LoginError =
+        error instanceof CredentialsSignin
+          ? error.code === "rate_limited"
+            ? "RateLimited"
+            : "CredentialsSignin"
+          : "SignInFailed";
+      redirect(`/login?error=${code}`);
+    }
+    throw error;
+  }
+}
 
 async function exitDemoOriginBeforeFormalSignIn(): Promise<boolean> {
   const authContext = await getAuthContext();
@@ -40,7 +68,7 @@ async function exitDemoOriginBeforeFormalSignIn(): Promise<boolean> {
   return true;
 }
 
-async function LoginContent() {
+async function LoginContent({ error }: { error?: LoginError }) {
   const t = await getTranslations("login");
   const tNav = await getTranslations("nav");
 
@@ -73,6 +101,21 @@ async function LoginContent() {
           <h1 className="text-3xl font-extrabold tracking-tight text-foreground">{t("title")}</h1>
           <p className="text-sm text-muted-foreground font-medium">{t("subtitle")}</p>
         </div>
+
+        {error && (
+          <p
+            role="alert"
+            className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-center text-sm text-destructive"
+          >
+            {t(
+              error === "RateLimited"
+                ? "tooManyAttempts"
+                : error === "SignInFailed"
+                  ? "signInFailed"
+                  : "invalidPassword",
+            )}
+          </p>
+        )}
 
         {isGoogleAuthEnabled && (
           <form
@@ -127,10 +170,7 @@ async function LoginContent() {
               action={async (formData: FormData) => {
                 "use server";
                 if (await exitDemoOriginBeforeFormalSignIn()) return;
-                await signIn("self-host", {
-                  password: formData.get("password") as string,
-                  redirectTo: "/",
-                });
+                await credentialsSignIn("self-host", formData.get("password") as string);
               }}
               className={isGoogleAuthEnabled ? undefined : "pt-4"}
             >
@@ -187,10 +227,7 @@ async function LoginContent() {
               action={async (formData: FormData) => {
                 "use server";
                 if (await exitDemoOriginBeforeFormalSignIn()) return;
-                await signIn("credentials", {
-                  password: formData.get("password") as string,
-                  redirectTo: "/",
-                });
+                await credentialsSignIn("credentials", formData.get("password") as string);
               }}
             >
               <div className="flex flex-col gap-3">
@@ -248,7 +285,8 @@ async function LoginGate({ searchParams }: LoginPageProps) {
     if (authContext.principal.kind === "formal" || params.from !== "demo") redirect("/");
   }
 
-  return <LoginContent />;
+  const error = LOGIN_ERRORS.find((code) => code === params.error);
+  return <LoginContent error={error} />;
 }
 
 export default function LoginPage({ searchParams }: LoginPageProps) {

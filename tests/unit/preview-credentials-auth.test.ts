@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 type CredentialsProvider = {
   id?: string;
   credentials?: Record<string, unknown>;
-  authorize?: (credentials: Record<string, unknown>) => Promise<unknown>;
+  authorize?: (credentials: Record<string, unknown>, request?: Request) => Promise<unknown>;
 };
 
 const h = vi.hoisted(() => ({
@@ -23,6 +23,9 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock("next-auth", () => ({
+  CredentialsSignin: class CredentialsSignin extends Error {
+    code = "credentials";
+  },
   default: (config: { providers: CredentialsProvider[]; callbacks?: Record<string, unknown> }) => {
     h.authConfig = config;
     return { handlers: {}, auth: vi.fn(), signIn: vi.fn(), signOut: vi.fn() };
@@ -46,6 +49,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/lib/env", () => ({
+  AUTH_GLOBAL_FAILURE_LIMIT: 100,
   get AUTH_SELF_HOST_PASSWORD() {
     return h.env.AUTH_SELF_HOST_PASSWORD;
   },
@@ -93,7 +97,10 @@ describe("preview credentials provider authorization", () => {
     );
     expect(provider).toBeDefined();
 
-    const result = await provider?.authorize?.({ password: "expected-preview-password" });
+    const result = await provider?.authorize?.(
+      { password: "expected-preview-password" },
+      new Request("http://localhost/", { headers: { "x-forwarded-for": "192.0.2.10" } }),
+    );
     expect(result).toEqual(user);
     expect(h.userUpsert).toHaveBeenCalledWith({
       where: { email: "e2e-test@preview.local" },
@@ -115,7 +122,10 @@ describe("preview credentials provider authorization", () => {
     const provider = h.authConfig?.providers.find(
       (p) => p.id === "credentials" || p.id === "preview",
     );
-    const result = await provider?.authorize?.({ password: "wrong-password" });
+    const result = await provider?.authorize?.(
+      { password: "wrong-password" },
+      new Request("http://localhost/", { headers: { "x-forwarded-for": "192.0.2.11" } }),
+    );
     expect(result).toBeNull();
     expect(h.userUpsert).not.toHaveBeenCalled();
   });
@@ -124,7 +134,7 @@ describe("preview credentials provider authorization", () => {
     const provider = h.authConfig?.providers.find(
       (p) => p.id === "credentials" || p.id === "preview",
     );
-    const result = await provider?.authorize?.({});
+    const result = await provider?.authorize?.({}, new Request("http://localhost/"));
     expect(result).toBeNull();
     expect(h.userUpsert).not.toHaveBeenCalled();
   });
@@ -142,7 +152,7 @@ describe("preview credentials provider authorization", () => {
     const provider = h.authConfig?.providers.find(
       (p) => p.id === "credentials" || p.id === "preview",
     );
-    const result = await provider?.authorize?.({});
+    const result = await provider?.authorize?.({}, new Request("http://localhost/"));
     expect(result).toEqual(user);
     expect(h.userUpsert).toHaveBeenCalled();
   });

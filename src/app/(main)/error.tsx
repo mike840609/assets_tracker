@@ -5,7 +5,8 @@ import Link from "next/link";
 import { captureException } from "../../instrumentation-client";
 import { useTranslations } from "next-intl";
 import { AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function MainError({
   error,
@@ -36,9 +37,9 @@ export default function MainError({
       </div>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button onClick={reset}>{t("retry")}</Button>
-        <Button variant="outline" render={<Link href="/" />}>
+        <Link href="/" className={cn(buttonVariants({ variant: "outline" }))}>
           {t("backHome")}
-        </Button>
+        </Link>
       </div>
     </div>
   );

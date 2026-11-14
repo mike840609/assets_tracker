@@ -9,7 +9,7 @@ import { MobileHubRedirect } from "@/components/layout/mobile-hub-redirect";
 import { ProjectionView } from "@/components/projections/projection-view";
 import { countActiveAccounts } from "@/lib/services/account-service";
 
-const CLIENT_NAMESPACES = ["projections"];
+const CLIENT_NAMESPACES = ["projections", "common"];
 
 async function ProjectionsContent() {
   const session = await getSession();
