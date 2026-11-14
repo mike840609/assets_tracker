@@ -127,6 +127,8 @@ Round 1 covered navigation, accounts, goals, watchlist, calendar and settings. T
 
 ### R2-04 — Holding dialogs have unnamed and placeholder-only controls
 
+**Status: Fixed.** Every label in Edit Holding, Add Holding (`holding-form.tsx`) and the option builder (underlying, expiration, strike, contracts, unit price, OCC symbol) is linked to its control with `useId`. axe reports no violations on any of these dialogs, including the option builder with a live chain loaded. **New finding, not fixed:** Edit Holding is entirely untranslated (title, labels, buttons and toasts are hard-coded English).
+
 - **Severity:** P3 (accessibility)
 - **Affected:** Add Holding, Edit Holding, and the option builder (account page)
 - **Actual** (axe on the open dialog):
@@ -137,12 +139,16 @@ Round 1 covered navigation, accounts, goals, watchlist, calendar and settings. T
 
 ### R2-05 — Many buttons share the same "Actions for {symbol}" name
 
+**Status: Fixed.** Account-page row menus now have distinct names: "Holding actions for VOO", "Transaction actions for VOO, Buy, Jul 8, 2026 02:30 PM" (cash rows use "Cash"), and "Recurring rule actions for VOO" (3 locales). Verified unique on a seeded account. `ledger-date.spec.ts` was updated to the new name.
+
 - **Severity:** P3 (accessibility)
 - **Affected:** account page. The holdings row, each transaction-history row and each recurring rule for one symbol use the same label.
 - **Actual:** with VOO held, bought and scheduled, the page has **6 buttons named "Actions for VOO"** that open different menus (holding edit/delete, transaction edit/delete, recurring edit/pause/delete).
 - **Recommended fix:** make each label specific, e.g. "Holding actions for VOO", "Transaction actions for VOO, Buy, Nov 14", "Recurring investment actions for VOO".
 
 ### R2-06 — Error messages are discarded, generic or untranslated
+
+**Status: Fixed.** New `src/lib/api-error.ts` (`apiErrorMessage`, `assertOk`, `errorText`, unit-tested) is used by transaction edit/delete, recurring investment and cash save/pause/delete, and the goal form. 401 shows a translated "Your session has expired. Sign in again." Validation and server reasons are shown as-is (they are English). Network errors fall back to the translated generic text. An invalid recurring amount shows "Enter an amount greater than 0." All three repro cases were verified on a production build.
 
 - **Severity:** P3
 - **Actual:**
@@ -154,6 +160,8 @@ Round 1 covered navigation, accounts, goals, watchlist, calendar and settings. T
 
 ### R2-07 — Demo banner says "in 24 hours remaining" (and "剩餘 24 小時後")
 
+**Status: Fixed.** `formatRemaining` (moved to `src/lib/demo/format-remaining.ts`, unit-tested) formats a plain duration with `Intl.NumberFormat` unit style: "24 hours remaining" / "剩餘 24 小時". Verified on a production build.
+
 - **Severity:** P3 (copy, all locales)
 - **Affected:** Public Demo banner (`src/components/demo/demo-mode-banner.tsx:34-38, 99`)
 - **Actual:** "Expires Nov 15, 2026, 4:55 AM · in 24 hours remaining".
@@ -161,6 +169,8 @@ Round 1 covered navigation, accounts, goals, watchlist, calendar and settings. T
 - **Recommended fix:** format a plain duration, e.g. `Intl.NumberFormat(locale, { style: "unit", unit: "hour", unitDisplay: "long" })`.
 
 ### R2-08 — Recurring-rule delete uses a native `window.confirm`
+
+**Status: Fixed.** Both recurring components use the shared AlertDialog (Cancel / Delete). `window.confirm` no longer appears anywhere in `src/`.
 
 - **Severity:** P3 (consistency)
 - **Affected:** `recurring-investments.tsx:198`, `recurring-cash-transactions.tsx:183`
@@ -209,3 +219,9 @@ Round 1 covered navigation, accounts, goals, watchlist, calendar and settings. T
 Typecheck, lint and prettier pass; Vitest 1337/1337; full Playwright suite on a fresh production build **80 passed, 0 failed** (32 skipped: Public Demo projects and project-gated specs). This includes the 3 new E2E tests, each confirmed to fail without its fix.
 
 **Lesson for future runs:** the stale light-mode results during this fix came from Turbopack's CSS hot reload serving an older stylesheet. Contrast and other CSS checks should be run on a fresh production build.
+
+## Fix Verification (P3s)
+
+Typecheck, lint and prettier pass; Vitest 1342/1342; full Playwright suite on a fresh production build **80 passed, 0 failed**. All round 2 bugs (3 P2, 5 P3) are now fixed.
+
+Remaining new finding: the Edit Holding dialog is untranslated (see R2-04).

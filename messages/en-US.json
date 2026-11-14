@@ -147,7 +147,12 @@
       "dark": "Dark",
       "system": "System"
     },
-    "close": "Close"
+    "close": "Close",
+    "holdingActionsFor": "Holding actions for {name}",
+    "transactionActionsFor": "Transaction actions for {name}, {type}, {time}",
+    "recurringActionsFor": "Recurring rule actions for {name}",
+    "sessionExpired": "Your session has expired. Sign in again.",
+    "cash": "Cash"
   },
   "errors": {
     "title": "Something went wrong",
@@ -1705,7 +1710,8 @@
     "updateFailed": "Failed to update recurring transaction",
     "deleteSuccess": "Recurring transaction deleted",
     "deleteFailed": "Failed to delete recurring transaction",
-    "deleteConfirm": "Stop this recurring transaction? Already-posted entries are kept."
+    "deleteConfirm": "Stop this recurring transaction? Already-posted entries are kept.",
+    "amountInvalid": "Enter an amount greater than 0."
   },
   "recurringInvest": {
     "title": "Recurring investments",
@@ -1738,7 +1744,8 @@
     "updateFailed": "Failed to update recurring investment",
     "deleteSuccess": "Recurring investment deleted",
     "deleteFailed": "Failed to delete recurring investment",
-    "deleteConfirm": "Stop this recurring investment? Already-purchased shares are kept."
+    "deleteConfirm": "Stop this recurring investment? Already-purchased shares are kept.",
+    "amountInvalid": "Enter an amount greater than 0."
   },
   "offline": {
     "title": "You are offline",

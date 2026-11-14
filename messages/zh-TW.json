@@ -147,7 +147,12 @@
       "dark": "深色",
       "system": "系統"
     },
-    "close": "關閉"
+    "close": "關閉",
+    "holdingActionsFor": "{name} 持倉的操作",
+    "transactionActionsFor": "{name} 交易（{type}，{time}）的操作",
+    "recurringActionsFor": "{name} 定期規則的操作",
+    "sessionExpired": "登入已過期，請重新登入。",
+    "cash": "現金"
   },
   "errors": {
     "title": "發生錯誤",
@@ -1705,7 +1710,8 @@
     "updateFailed": "更新週期性交易失敗",
     "deleteSuccess": "已刪除週期性交易",
     "deleteFailed": "刪除週期性交易失敗",
-    "deleteConfirm": "要停止此週期性交易嗎？已入帳的紀錄會保留。"
+    "deleteConfirm": "要停止此週期性交易嗎？已入帳的紀錄會保留。",
+    "amountInvalid": "請輸入大於 0 的金額。"
   },
   "recurringInvest": {
     "title": "定期投資",
@@ -1738,7 +1744,8 @@
     "updateFailed": "更新定期投資失敗",
     "deleteSuccess": "已刪除定期投資",
     "deleteFailed": "刪除定期投資失敗",
-    "deleteConfirm": "要停止此定期投資嗎？已買入的股數會保留。"
+    "deleteConfirm": "要停止此定期投資嗎？已買入的股數會保留。",
+    "amountInvalid": "請輸入大於 0 的金額。"
   },
   "offline": {
     "title": "你目前處於離線狀態",

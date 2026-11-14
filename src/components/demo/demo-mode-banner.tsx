@@ -25,18 +25,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { formatRemaining } from "@/lib/demo/format-remaining";
 
 const INITIAL_DEMO_RESET_ACTION_STATE: DemoResetActionState = {
   errorCode: null,
   completedResets: 0,
 };
-
-function formatRemaining(locale: string, remainingMs: number) {
-  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
-  const remainingMinutes = Math.ceil(remainingMs / 60_000);
-  if (remainingMinutes < 60) return formatter.format(remainingMinutes, "minute");
-  return formatter.format(Math.ceil(remainingMinutes / 60), "hour");
-}
 
 export function DemoModeBanner({ expiresAt }: { expiresAt: string }) {
   const t = useTranslations("demo");

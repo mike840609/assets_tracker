@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { assertOk, errorText } from "@/lib/api-error";
 import { showUndoDeleteToast } from "@/lib/undo-delete";
 
 const TYPE_VARIANTS: Record<string, "default" | "secondary" | "destructive"> = {
@@ -64,6 +65,8 @@ interface TxRowProps {
   symbol: string | null;
   qty: string;
   time: string;
+  /** Date and time for the actions label, so same-time rows on different days differ. */
+  when: string;
   onEdit: () => void;
   onDelete: () => void;
   tCommon: ReturnType<typeof useTranslations>;
@@ -76,6 +79,7 @@ function SwipeableTxRow({
   symbol,
   qty,
   time,
+  when,
   onEdit,
   onDelete,
   tCommon,
@@ -116,7 +120,11 @@ function SwipeableTxRow({
       {/* Keyboard / screen-reader path — swipe is the primary touch affordance */}
       <DropdownMenu>
         <DropdownMenuTrigger
-          aria-label={tCommon("actionsFor", { name: symbol ?? typeLabel })}
+          aria-label={tCommon("transactionActionsFor", {
+            name: symbol ?? tCommon("cash"),
+            type: typeLabel,
+            time: when,
+          })}
           className="inline-flex items-center justify-center rounded-md h-9 w-9 sm:h-7 sm:w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
@@ -334,7 +342,7 @@ export function TransactionHistory({
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to update transaction");
+      await assertOk(res, tCommon("sessionExpired"));
 
       toast.success(t("updateSuccess"));
       setEditingTx(null);
@@ -342,8 +350,8 @@ export function TransactionHistory({
       startTransition(() => {
         router.refresh();
       }); // Refresh holdings on parent page
-    } catch {
-      toast.error(t("updateFailed"));
+    } catch (error) {
+      toast.error(errorText(error, t("updateFailed")));
     } finally {
       setIsSubmitting(false);
     }
@@ -373,13 +381,13 @@ export function TransactionHistory({
           const res = await fetch(`/api/accounts/${accountId}/transactions/${tx.id}`, {
             method: "DELETE",
           });
-          if (!res.ok) throw new Error("Failed to delete transaction");
+          await assertOk(res, tCommon("sessionExpired"));
           void loadMore();
           startTransition(() => {
             router.refresh();
           });
-        } catch {
-          toast.error(t("deleteFailed"));
+        } catch (error) {
+          toast.error(errorText(error, t("deleteFailed")));
           setPendingDeleteIds((prev) => {
             const next = new Set(prev);
             next.delete(tx.id);
@@ -590,6 +598,7 @@ export function TransactionHistory({
                         symbol={symbol}
                         qty={qty}
                         time={time}
+                        when={[dateKey, time].filter(Boolean).join(" ")}
                         onEdit={() => handleEditClick(tx)}
                         onDelete={() => handleDeleteTx(tx)}
                         tCommon={tCommon}

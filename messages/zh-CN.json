@@ -147,7 +147,12 @@
       "dark": "深色",
       "system": "跟随系统"
     },
-    "close": "关闭"
+    "close": "关闭",
+    "holdingActionsFor": "{name} 持仓的操作",
+    "transactionActionsFor": "{name} 交易（{type}，{time}）的操作",
+    "recurringActionsFor": "{name} 定期规则的操作",
+    "sessionExpired": "登录已过期，请重新登录。",
+    "cash": "现金"
   },
   "errors": {
     "title": "发生错误",
@@ -1705,7 +1710,8 @@
     "updateFailed": "更新周期性资金失败",
     "deleteSuccess": "周期性资金已删除",
     "deleteFailed": "删除周期性资金失败",
-    "deleteConfirm": "确定停止这条周期性资金？已经入账的记录会保留。"
+    "deleteConfirm": "确定停止这条周期性资金？已经入账的记录会保留。",
+    "amountInvalid": "请输入大于 0 的金额。"
   },
   "recurringInvest": {
     "title": "定投",
@@ -1738,7 +1744,8 @@
     "updateFailed": "更新定投计划失败",
     "deleteSuccess": "定投计划已删除",
     "deleteFailed": "删除定投计划失败",
-    "deleteConfirm": "确定停止这条定投？已经买入的股份会保留。"
+    "deleteConfirm": "确定停止这条定投？已经买入的股份会保留。",
+    "amountInvalid": "请输入大于 0 的金额。"
   },
   "offline": {
     "title": "你当前处于离线状态",

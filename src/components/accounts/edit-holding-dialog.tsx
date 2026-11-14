@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, startTransition } from "react";
+import { useId, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,8 @@ export function EditHoldingDialog({
   onSuccess?: () => void;
 }) {
   const router = useRouter();
+  // Links each <Label> to its control so the visible text is the accessible name.
+  const fieldId = useId();
   const [loading, setLoading] = useState(false);
   const [quantity, setQuantity] = useState(() =>
     formatAmountInput(Number(holding.quantity), holding.assetType === "OPTION" ? 0 : 6),
@@ -163,8 +165,9 @@ export function EditHoldingDialog({
             <>
               {/* Name */}
               <div className="space-y-2">
-                <Label>Name</Label>
+                <Label htmlFor={`${fieldId}-name`}>Name</Label>
                 <Input
+                  id={`${fieldId}-name`}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Apple Inc."
@@ -174,8 +177,9 @@ export function EditHoldingDialog({
 
               {/* Asset Type */}
               <div className="space-y-2">
-                <Label>Asset Type</Label>
+                <Label htmlFor={`${fieldId}-asset-type`}>Asset Type</Label>
                 <select
+                  id={`${fieldId}-asset-type`}
                   value={assetType}
                   onChange={(e) => setAssetType(e.target.value as typeof assetType)}
                   className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -192,10 +196,11 @@ export function EditHoldingDialog({
 
           {/* Quantity */}
           <div className="space-y-2">
-            <Label className="text-base font-medium">
+            <Label htmlFor={`${fieldId}-quantity`} className="text-base font-medium">
               {isOption ? "Number of contracts" : "Quantity"}
             </Label>
             <Input
+              id={`${fieldId}-quantity`}
               type="text"
               inputMode={isOption ? "numeric" : "decimal"}
               value={quantity}
