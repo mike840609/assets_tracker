@@ -18,7 +18,9 @@ function getMonthFormatter(locale: string): Intl.DateTimeFormat {
  * together than the default precision (one decimal for M, none for K); otherwise
  * neighbours like 1.95M and 2.00M both print as "2.0M". When a unit would need
  * more than two decimals for that step, the next smaller unit is used instead
- * (2.0005M -> 2000.5K), which keeps labels distinct and short.
+ * (formatChartTick(1_000_500, 500) -> "1000.5K"), keeping labels distinct. Plain
+ * numbers allow up to four decimals. With niceTicks' 1% minimum span, labels stay
+ * within ~6 characters; a negative axis near 10M can reach 7 ("-10.05M").
  */
 export function formatChartTick(v: number, step?: number): string {
   const abs = Math.abs(v);
@@ -36,7 +38,7 @@ export function formatChartTick(v: number, step?: number): string {
     }
     const decimals = Math.max(0, Math.ceil(-Math.log10(step / unit) - 1e-9));
     if (decimals > 2 && unit > 1) continue;
-    return `${(v / unit).toFixed(Math.min(decimals, 2))}${suffix}`;
+    return `${(v / unit).toFixed(Math.min(decimals, unit === 1 ? 4 : 2))}${suffix}`;
   }
   return String(Math.round(v));
 }

@@ -53,7 +53,7 @@ Services start in this order:
 
 The database port binds to localhost on `POSTGRES_PORT` (default `5432`), while the application is exposed on `APP_PORT` (default `3000`). Put a TLS-terminating reverse proxy such as Caddy, nginx, or your hosting platform in front of the application for public access.
 
-Configure that proxy to **overwrite** `X-Forwarded-For` with the client address (Caddy does this by default; for nginx use `proxy_set_header X-Forwarded-For $remote_addr;`). Sign-in and API rate limits are keyed on that header. Without a proxy that sets it, clients can forge it. Behind a proxy that doesn't set it, every client shares the proxy's address. Either way, password guessing is still capped by a global limit of 100 failed sign-ins per 15 minutes; that cap can block new sign-ins until the window ends, but existing sessions keep working.
+Configure that proxy to **overwrite** `X-Forwarded-For` with the client address (Caddy does this by default; for nginx use `proxy_set_header X-Forwarded-For $remote_addr;`). Sign-in and API rate limits are keyed on that header. Without a proxy that sets it, clients can forge it. Behind a proxy that doesn't set it, every client shares the proxy's address. Either way, password guessing is still capped by a global limit of `AUTH_GLOBAL_FAILURE_LIMIT` failed sign-ins per 15 minutes (default `100`). The cost of that cap: anyone who keeps sending about 100 wrong passwords per window can block new sign-ins for as long as they continue; existing sessions keep working. If your proxy overwrites `X-Forwarded-For`, the per-IP limit already holds and you can set `AUTH_GLOBAL_FAILURE_LIMIT=0` to remove that lockout risk.
 
 Useful commands:
 

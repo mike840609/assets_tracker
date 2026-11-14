@@ -11,6 +11,17 @@ for (const route of PAGES) {
 
     await page.goto(route);
     await page.waitForLoadState("networkidle");
+    // Entrance animations fade text in from opacity 0; axe would measure contrast
+    // mid-fade. Wait for every finite animation (infinite ones, like skeleton
+    // pulses, never finish).
+    await page.evaluate(() =>
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+          .map((a) => a.finished.catch(() => undefined)),
+      ),
+    );
     await page.addScriptTag({ path: AXE_PATH });
     const violations = await page.evaluate(async () => {
       const axe = (window as unknown as { axe: typeof import("axe-core") }).axe;

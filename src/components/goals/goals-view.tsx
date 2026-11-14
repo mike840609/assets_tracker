@@ -25,6 +25,9 @@ import { GoalFormDialog } from "./goal-form-dialog";
 import { GoalsOnboarding } from "./goals-onboarding";
 import {
   MOBILE_PLAN_TABS,
+  addPendingClick,
+  reconcilePendingTab,
+  type PendingTab,
   getMobilePlanPanelId,
   getMobilePlanTabId,
   getMobilePlanTabFromUrl,
@@ -155,10 +158,7 @@ export function GoalsView({
   const [savingOrder, setSavingOrder] = useState(false);
   const [draft, setDraft] = useState<GoalWithProgress[]>([]);
   const tabRefs = useRef<Partial<Record<MobilePlanTab, HTMLButtonElement | null>>>({});
-  // The last clicked tab plus every tab clicked since it started pending.
-  const [pending, setPending] = useState<{ tab: MobilePlanTab; clicked: MobilePlanTab[] } | null>(
-    null,
-  );
+  const [pending, setPending] = useState<PendingTab>(null);
   const loadedGoals = goalsWithProgress ?? [];
   const loadedAccounts = accounts ?? [];
 
@@ -211,17 +211,12 @@ export function GoalsView({
     requestedTab ?? searchParams.get("tab") ?? undefined,
     hash,
   );
-  // A clicked tab shows immediately and holds until the URL catches up. When the
-  // URL-derived tab moves, keep it only if that move is an earlier click's
-  // navigation landing (rapid clicks); the target arriving or any other
-  // navigation (Back/Forward, links) drops it so history can't be overridden.
+  // A clicked tab shows before its navigation lands; reconcile it with the URL
+  // each render (see reconcilePendingTab). Identity-stable, so this settles.
   const [pendingFor, setPendingFor] = useState(desiredTab);
-  if (pendingFor !== desiredTab) {
-    setPendingFor(desiredTab);
-    if (pending && (desiredTab === pending.tab || !pending.clicked.includes(desiredTab))) {
-      setPending(null);
-    }
-  }
+  const reconciled = reconcilePendingTab(pending, pendingFor, desiredTab);
+  if (pendingFor !== desiredTab) setPendingFor(desiredTab);
+  if (reconciled !== pending) setPending(reconciled);
   const activeTab: MobilePlanTab = pending?.tab ?? desiredTab;
   // Mobile UAs get only the selected tab's data; desktop UAs get every panel.
   // Judge readiness by what actually arrived, not by which tab the server picked.
@@ -297,7 +292,7 @@ export function GoalsView({
   }, [desiredTab, desiredLoaded, hash, isMobile, isViewportReady, router]);
 
   const handleTabChange = (tab: MobilePlanTab) => {
-    setPending((p) => ({ tab, clicked: [...(p?.clicked ?? []), tab] }));
+    setPending((p) => addPendingClick(p, tab));
     const params = new URLSearchParams(window.location.search);
     if (tab === "watchlist") params.delete("tab");
     else params.set("tab", tab);

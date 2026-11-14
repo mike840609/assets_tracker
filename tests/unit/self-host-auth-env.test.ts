@@ -58,4 +58,22 @@ describe("self-host authentication environment", () => {
       isSelfHostAuthEnabled: false,
     });
   });
+
+  it("defaults the global sign-in failure cap to 100 and accepts 0 to disable it", async () => {
+    await expect(import("@/lib/env")).resolves.toMatchObject({ AUTH_GLOBAL_FAILURE_LIMIT: 100 });
+
+    vi.stubEnv("AUTH_GLOBAL_FAILURE_LIMIT", "");
+    vi.resetModules();
+    await expect(import("@/lib/env")).resolves.toMatchObject({ AUTH_GLOBAL_FAILURE_LIMIT: 100 });
+
+    vi.stubEnv("AUTH_GLOBAL_FAILURE_LIMIT", "0");
+    vi.resetModules();
+    await expect(import("@/lib/env")).resolves.toMatchObject({ AUTH_GLOBAL_FAILURE_LIMIT: 0 });
+  });
+
+  it.each(["-1", "abc", "1.5"])("rejects AUTH_GLOBAL_FAILURE_LIMIT=%s", async (value) => {
+    vi.stubEnv("AUTH_GLOBAL_FAILURE_LIMIT", value);
+    vi.resetModules();
+    await expect(import("@/lib/env")).rejects.toThrow("AUTH_GLOBAL_FAILURE_LIMIT");
+  });
 });

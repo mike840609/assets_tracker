@@ -56,6 +56,8 @@ describe("chart-formatters", () => {
       [999, 1_001],
       [63_800, 64_100],
       [-2_050_000, -1_950_000],
+      [1, 1.001],
+      [0.001, 0.002],
     ])("labels a near-flat span %d..%d with distinct, short ticks", (min, max) => {
       const { ticks, step } = niceTicks(min, max);
       const labels = ticks.map((t) => formatChartTick(t, step));

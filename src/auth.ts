@@ -7,6 +7,7 @@ import { customPrismaAdapter } from "@/lib/auth-adapter";
 import { authenticateDemoTicket } from "@/lib/demo/demo-service";
 import { prisma } from "@/lib/prisma";
 import {
+  AUTH_GLOBAL_FAILURE_LIMIT,
   AUTH_SELF_HOST_PASSWORD,
   isPreviewAuthEnabled,
   isPublicDemoEnabled,
@@ -37,13 +38,14 @@ export class TooManySignInAttempts extends CredentialsSignin {
 //
 // Two buckets, because the client IP comes from X-Forwarded-For, which a client
 // talking to the app directly (the default Docker port mapping) can forge:
-// - per IP: the normal case behind a proxy that sets the header.
-// - global per provider: bounds guessing however the header is spoofed. Its cost is
-//   that a flood of failures can block new sign-ins for the window; existing
-//   sessions keep working. ponytail: fixed cap; make it configurable if a
-//   deployment ever needs a different trade-off.
+// - per IP: the normal case behind a proxy that overwrites the header.
+// - global per provider (AUTH_GLOBAL_FAILURE_LIMIT, default 100; 0 disables):
+//   bounds guessing however the header is spoofed. Its cost: anyone can keep new
+//   sign-ins blocked for as long as they keep sending ~100 failures per window
+//   (~7/min). Existing sessions keep working. Deployments behind a correct proxy
+//   can set it to 0.
 const PER_IP_FAILURES = { limit: 10, windowMs: 15 * 60_000 };
-const GLOBAL_FAILURES = { limit: 100, windowMs: 15 * 60_000 };
+const GLOBAL_FAILURES = { limit: AUTH_GLOBAL_FAILURE_LIMIT, windowMs: 15 * 60_000 };
 
 function checkPassword(
   provider: string,
@@ -54,13 +56,16 @@ function checkPassword(
   const ip = getClientIp(request);
   if (
     isSubjectRateLimited(ip, `login/${provider}`, PER_IP_FAILURES) ||
-    isSubjectRateLimited("all", `login-global/${provider}`, GLOBAL_FAILURES)
+    (GLOBAL_FAILURES.limit > 0 &&
+      isSubjectRateLimited("all", `login-global/${provider}`, GLOBAL_FAILURES))
   ) {
     throw new TooManySignInAttempts();
   }
   if (passwordsMatch(password, expected)) return true;
   recordSubjectHit(ip, `login/${provider}`, PER_IP_FAILURES);
-  recordSubjectHit("all", `login-global/${provider}`, GLOBAL_FAILURES);
+  if (GLOBAL_FAILURES.limit > 0) {
+    recordSubjectHit("all", `login-global/${provider}`, GLOBAL_FAILURES);
+  }
   return false;
 }
 

@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 
 import {
   MOBILE_PLAN_TABS,
+  addPendingClick,
+  reconcilePendingTab,
   getMobilePlanPanelId,
   getMobilePlanTabId,
   getMobilePlanTabFromUrl,
@@ -241,5 +243,47 @@ describe("mobile Plan tabs", () => {
       traditionalChinese.nav.projections,
       traditionalChinese.nav.calendar,
     ]).toEqual(["自選股", "目標", "財務預測", "行事曆"]);
+  });
+});
+
+describe("reconcilePendingTab", () => {
+  const click = addPendingClick;
+
+  it("drops the pending tab once the URL shows it", () => {
+    const pending = click(null, "calendar");
+    expect(reconcilePendingTab(pending, "watchlist", "calendar")).toBeNull();
+  });
+
+  it("keeps the pending tab while nothing has landed", () => {
+    const pending = click(null, "calendar");
+    expect(reconcilePendingTab(pending, "watchlist", "watchlist")).toBe(pending);
+  });
+
+  it("keeps the last click when an earlier click's navigation lands, consuming it", () => {
+    const pending = click(click(null, "goals"), "projections");
+    expect(reconcilePendingTab(pending, "watchlist", "goals")).toEqual({
+      tab: "projections",
+      clicked: ["projections"],
+    });
+  });
+
+  it("drops the pending tab on a navigation it did not request (Back/Forward, links)", () => {
+    const pending = click(null, "calendar");
+    expect(reconcilePendingTab(pending, "watchlist", "projections")).toBeNull();
+  });
+
+  it("does not get stuck when a click back to the current tab supersedes an earlier one", () => {
+    // watchlist -> click goals -> click watchlist before goals lands (Next aborts it).
+    const pending = click(click(null, "goals"), "watchlist");
+    expect(reconcilePendingTab(pending, "watchlist", "watchlist")).toBeNull();
+  });
+
+  it("drops the click on an external navigation after an earlier click was consumed", () => {
+    let pending = click(click(null, "goals"), "projections");
+    pending = reconcilePendingTab(pending, "watchlist", "goals");
+    // Before projections lands, a link moves the URL elsewhere: drop the click.
+    expect(reconcilePendingTab(pending, "goals", "calendar")).toBeNull();
+    // And the landed goals click can't be "consumed" a second time.
+    expect(reconcilePendingTab(pending, "calendar", "goals")).toBeNull();
   });
 });

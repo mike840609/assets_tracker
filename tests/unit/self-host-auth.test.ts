@@ -42,6 +42,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/lib/env", () => ({
+  AUTH_GLOBAL_FAILURE_LIMIT: 100,
   AUTH_SELF_HOST_PASSWORD: "a-secure-self-host-password",
   isSelfHostAuthEnabled: true,
   isPreviewAuthEnabled: false,

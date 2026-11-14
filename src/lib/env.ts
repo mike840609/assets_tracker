@@ -70,6 +70,13 @@ const envSchema = z
         .optional(),
     ),
     CRON_SECRET: machineSecret,
+    // Failed password sign-ins allowed per provider per 15 min across ALL clients
+    // (see src/auth.ts). 0 disables the cap — only safe behind a proxy that
+    // overwrites X-Forwarded-For, where the per-IP limit already holds.
+    AUTH_GLOBAL_FAILURE_LIMIT: z.preprocess(
+      (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+      z.coerce.number().int().min(0, "must be 0 or more").default(100),
+    ),
     AUTH_REDIRECT_PROXY_URL: z.preprocess(
       (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
       z.string().url("must be a valid URL").optional(),
@@ -145,6 +152,7 @@ const parsedEnv = envSchema.safeParse({
   AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
   AUTH_SELF_HOST_PASSWORD: process.env.AUTH_SELF_HOST_PASSWORD,
   CRON_SECRET: process.env.CRON_SECRET,
+  AUTH_GLOBAL_FAILURE_LIMIT: process.env.AUTH_GLOBAL_FAILURE_LIMIT,
   AUTH_REDIRECT_PROXY_URL: process.env.AUTH_REDIRECT_PROXY_URL,
   PREVIEW_AUTH_PASSWORD: process.env.PREVIEW_AUTH_PASSWORD,
   PREVIEW_AUTH_ENABLED: process.env.PREVIEW_AUTH_ENABLED,
@@ -190,6 +198,7 @@ export const {
   AUTH_GOOGLE_SECRET,
   AUTH_SELF_HOST_PASSWORD,
   CRON_SECRET,
+  AUTH_GLOBAL_FAILURE_LIMIT,
   AUTH_REDIRECT_PROXY_URL,
   PREVIEW_AUTH_PASSWORD,
   PREVIEW_AUTH_ENABLED,
