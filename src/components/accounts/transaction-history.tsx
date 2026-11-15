@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { assertOk, errorText } from "@/lib/api-error";
 import { showUndoDeleteToast } from "@/lib/undo-delete";
 
 const TYPE_VARIANTS: Record<string, "default" | "secondary" | "destructive"> = {
@@ -64,6 +65,8 @@ interface TxRowProps {
   symbol: string | null;
   qty: string;
   time: string;
+  /** Date and time for the actions label, so same-time rows on different days differ. */
+  when: string;
   onEdit: () => void;
   onDelete: () => void;
   tCommon: ReturnType<typeof useTranslations>;
@@ -76,6 +79,7 @@ function SwipeableTxRow({
   symbol,
   qty,
   time,
+  when,
   onEdit,
   onDelete,
   tCommon,
@@ -116,7 +120,11 @@ function SwipeableTxRow({
       {/* Keyboard / screen-reader path — swipe is the primary touch affordance */}
       <DropdownMenu>
         <DropdownMenuTrigger
-          aria-label={tCommon("actionsFor", { name: symbol ?? typeLabel })}
+          aria-label={tCommon("transactionActionsFor", {
+            name: symbol ?? tCommon("cash"),
+            type: typeLabel,
+            time: when,
+          })}
           className="inline-flex items-center justify-center rounded-md h-9 w-9 sm:h-7 sm:w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
@@ -230,6 +238,8 @@ export function TransactionHistory({
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  // A failed page load must not look like "No transactions yet".
+  const [loadError, setLoadError] = useState(false);
 
   const loadMore = useCallback(
     async (cursor?: string) => {
@@ -240,14 +250,12 @@ export function TransactionHistory({
         const url = cursor
           ? `/api/accounts/${accountId}/transactions?cursor=${cursor}&limit=20`
           : `/api/accounts/${accountId}/transactions?limit=20`;
+        // 401/404/5xx carry no `data`; a network error or bad body throws. Either
+        // way show an error with Retry (catch below), never an empty list that reads
+        // as "no transactions".
         const res = await fetch(url);
-        // 404 (account deleted) or 401 (session ended) has no `data`; stop paging
-        // instead of throwing on an undefined page.
-        if (!res.ok) {
-          setHasMore(false);
-          setNextCursor(null);
-          return;
-        }
+        if (!res.ok) throw new Error(`transactions ${res.status}`);
+        setLoadError(false);
         const json = (await res.json()) as {
           data: {
             transactions: (SerializedTransaction & { quantity: string | number })[];
@@ -268,6 +276,8 @@ export function TransactionHistory({
         }
         setNextCursor(page.nextCursor ?? null);
         setHasMore(page.hasMore);
+      } catch {
+        setLoadError(true);
       } finally {
         if (isInitial) setIsLoadingInitialData(false);
         else setIsLoadingMore(false);
@@ -332,7 +342,7 @@ export function TransactionHistory({
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to update transaction");
+      await assertOk(res, tCommon("sessionExpired"));
 
       toast.success(t("updateSuccess"));
       setEditingTx(null);
@@ -340,8 +350,8 @@ export function TransactionHistory({
       startTransition(() => {
         router.refresh();
       }); // Refresh holdings on parent page
-    } catch {
-      toast.error(t("updateFailed"));
+    } catch (error) {
+      toast.error(errorText(error, t("updateFailed")));
     } finally {
       setIsSubmitting(false);
     }
@@ -371,13 +381,13 @@ export function TransactionHistory({
           const res = await fetch(`/api/accounts/${accountId}/transactions/${tx.id}`, {
             method: "DELETE",
           });
-          if (!res.ok) throw new Error("Failed to delete transaction");
+          await assertOk(res, tCommon("sessionExpired"));
           void loadMore();
           startTransition(() => {
             router.refresh();
           });
-        } catch {
-          toast.error(t("deleteFailed"));
+        } catch (error) {
+          toast.error(errorText(error, t("deleteFailed")));
           setPendingDeleteIds((prev) => {
             const next = new Set(prev);
             next.delete(tx.id);
@@ -545,7 +555,14 @@ export function TransactionHistory({
         <CardTitle className="text-base font-medium">{t("title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {transactions.length === 0 ? (
+        {loadError && transactions.length === 0 ? (
+          <div role="alert" className="flex flex-col items-center gap-3 py-8 text-center">
+            <p className="text-muted-foreground">{t("loadFailed")}</p>
+            <Button variant="secondary" onClick={() => void loadMore()}>
+              {t("retry")}
+            </Button>
+          </div>
+        ) : transactions.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">{t("empty")}</p>
         ) : (
           dateGroups.map(({ dateKey, items }) => (
@@ -581,6 +598,7 @@ export function TransactionHistory({
                         symbol={symbol}
                         qty={qty}
                         time={time}
+                        when={[dateKey, time].filter(Boolean).join(" ")}
                         onEdit={() => handleEditClick(tx)}
                         onDelete={() => handleDeleteTx(tx)}
                         tCommon={tCommon}
@@ -593,13 +611,22 @@ export function TransactionHistory({
           ))
         )}
         {hasMore && (
-          <div className="flex justify-center pt-2">
+          <div className="flex flex-col items-center gap-2 pt-2">
+            {loadError && transactions.length > 0 && (
+              <p role="alert" className="text-sm text-muted-foreground">
+                {t("loadFailed")}
+              </p>
+            )}
             <Button
               variant="secondary"
               onClick={() => nextCursor && void loadMore(nextCursor)}
               disabled={isLoadingMore}
             >
-              {isLoadingMore ? t("loading") : t("loadMore")}
+              {isLoadingMore
+                ? t("loading")
+                : loadError && transactions.length > 0
+                  ? t("retry")
+                  : t("loadMore")}
             </Button>
           </div>
         )}

@@ -13,11 +13,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
+import { assertOk, errorText } from "@/lib/api-error";
 import { formatCurrency } from "@/lib/currencies";
 import { maskAmountInput, parseAmountInput, formatAmountInput } from "@/lib/amount-input";
 import { RECURRING_FREQUENCIES } from "@/lib/enums";
@@ -128,7 +138,7 @@ export function RecurringInvestments({
   async function handleSave() {
     const parsedAmount = parseAmountInput(amount.replace(/,/g, ""));
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      toast.error(t("createFailed"));
+      toast.error(t("amountInvalid"));
       return;
     }
     if (!editing && !selected) {
@@ -168,13 +178,13 @@ export function RecurringInvestments({
           }),
         });
       }
-      if (!res.ok) throw new Error();
+      await assertOk(res, tCommon("sessionExpired"));
       toast.success(editing ? t("updateSuccess") : t("createSuccess"));
       setDialogOpen(false);
       await load();
       onChange?.();
-    } catch {
-      toast.error(editing ? t("updateFailed") : t("createFailed"));
+    } catch (error) {
+      toast.error(errorText(error, editing ? t("updateFailed") : t("createFailed")));
     } finally {
       setSubmitting(false);
     }
@@ -187,25 +197,28 @@ export function RecurringInvestments({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !rule.isActive }),
       });
-      if (!res.ok) throw new Error();
+      await assertOk(res, tCommon("sessionExpired"));
       await load();
-    } catch {
-      toast.error(t("updateFailed"));
+    } catch (error) {
+      toast.error(errorText(error, t("updateFailed")));
     }
   }
 
+  // Styled AlertDialog instead of window.confirm, like every other delete.
+  const [pendingDelete, setPendingDelete] = useState<Rule | null>(null);
+
   async function handleDelete(rule: Rule) {
-    if (!window.confirm(t("deleteConfirm"))) return;
+    setPendingDelete(null);
     try {
       const res = await fetch(`/api/accounts/${accountId}/recurring-investments/${rule.id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error();
+      await assertOk(res, tCommon("sessionExpired"));
       toast.success(t("deleteSuccess"));
       await load();
       onChange?.();
-    } catch {
-      toast.error(t("deleteFailed"));
+    } catch (error) {
+      toast.error(errorText(error, t("deleteFailed")));
     }
   }
 
@@ -399,7 +412,7 @@ export function RecurringInvestments({
                   </p>
                 </div>
                 <RecurringRowMenu
-                  ariaLabel={tCommon("actionsFor", { name: rule.symbol })}
+                  ariaLabel={tCommon("recurringActionsFor", { name: rule.symbol })}
                   ended={ended}
                   isActive={rule.isActive}
                   labels={{
@@ -410,7 +423,7 @@ export function RecurringInvestments({
                   }}
                   onEdit={() => openEdit(rule)}
                   onToggle={() => void toggleActive(rule)}
-                  onDelete={() => void handleDelete(rule)}
+                  onDelete={() => setPendingDelete(rule)}
                 />
               </li>
             );
@@ -419,6 +432,26 @@ export function RecurringInvestments({
       )}
 
       {isMobile ? mobileForm : desktopForm}
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("deleteConfirm")}</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => pendingDelete && void handleDelete(pendingDelete)}
+            >
+              {tCommon("delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

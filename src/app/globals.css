@@ -73,12 +73,16 @@
   --card-foreground: oklch(0.15 0.02 260);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0.02 260);
-  --primary: oklch(0.6 0.16 150); /* Emerald */
+  /* Light-theme primaries meet WCAG AA (>= 4.5:1) both as a fill under white
+     text and as text on white or on a light tint of themselves (up to
+     bg-primary/15, as used by badges and "today" markers). Same for every
+     color schema below. */
+  --primary: oklch(0.485 0.16 150); /* Emerald */
   --primary-foreground: oklch(0.98 0.005 150);
   --secondary: oklch(0.96 0.01 260);
   --secondary-foreground: oklch(0.2 0.02 260);
   --muted: oklch(0.96 0.01 260);
-  --muted-foreground: oklch(0.55 0.02 260);
+  --muted-foreground: oklch(0.53 0.02 260);
   --accent: oklch(0.96 0.01 260);
   --accent-foreground: oklch(0.2 0.02 260);
   --destructive: oklch(0.6 0.18 20);
@@ -90,7 +94,7 @@
   --warning-foreground: oklch(0.99 0.01 80);
   --border: oklch(0.9 0.02 260);
   --input: oklch(0.9 0.02 260);
-  --ring: oklch(0.6 0.16 150);
+  --ring: oklch(0.485 0.16 150);
 
   --chart-1: oklch(0.6 0.16 150); /* Emerald */
   --chart-2: oklch(0.65 0.12 210); /* Cyan */
@@ -802,17 +806,17 @@ html[data-vt-theme]::view-transition-new(root) {
   --card-foreground: oklch(0.1 0.005 80);
   --popover: oklch(0.99 0.005 87);
   --popover-foreground: oklch(0.1 0.005 80);
-  --primary: oklch(0.63 0.15 37);
+  --primary: oklch(0.525 0.15 37);
   --primary-foreground: oklch(0.98 0.005 37);
   --secondary: oklch(0.91 0.012 82);
   --secondary-foreground: oklch(0.15 0.006 80);
   --muted: oklch(0.91 0.012 82);
-  --muted-foreground: oklch(0.55 0.01 78);
+  --muted-foreground: oklch(0.5 0.01 78);
   --accent: oklch(0.91 0.012 82);
   --accent-foreground: oklch(0.15 0.006 80);
   --border: oklch(0.89 0.012 82);
   --input: oklch(0.89 0.012 82);
-  --ring: oklch(0.63 0.15 37);
+  --ring: oklch(0.525 0.15 37);
   --sidebar: oklch(0.96 0.009 85);
   --sidebar-foreground: oklch(0.15 0.006 80);
   --sidebar-primary: oklch(0.63 0.15 37);
@@ -874,9 +878,9 @@ html[data-vt-theme]::view-transition-new(root) {
 
 /* Ocean — cool blue */
 :root[data-color-schema="ocean"] {
-  --primary: oklch(0.55 0.18 225);
+  --primary: oklch(0.475 0.18 225);
   --primary-foreground: oklch(0.98 0.005 225);
-  --ring: oklch(0.55 0.18 225);
+  --ring: oklch(0.475 0.18 225);
   --sidebar-primary: oklch(0.55 0.18 225);
   --sidebar-primary-foreground: oklch(0.98 0 0);
   --sidebar-ring: oklch(0.55 0.18 225);
@@ -931,9 +935,9 @@ html[data-vt-theme]::view-transition-new(root) {
 
 /* Violet — purple */
 :root[data-color-schema="violet"] {
-  --primary: oklch(0.55 0.19 280);
+  --primary: oklch(0.525 0.19 280);
   --primary-foreground: oklch(0.98 0.005 280);
-  --ring: oklch(0.55 0.19 280);
+  --ring: oklch(0.525 0.19 280);
   --sidebar-primary: oklch(0.55 0.19 280);
   --sidebar-primary-foreground: oklch(0.98 0 0);
   --sidebar-ring: oklch(0.55 0.19 280);
@@ -986,9 +990,9 @@ html[data-vt-theme]::view-transition-new(root) {
 
 /* Amber — warm golden */
 :root[data-color-schema="amber"] {
-  --primary: oklch(0.6 0.15 65);
-  --primary-foreground: oklch(0.15 0.04 65);
-  --ring: oklch(0.6 0.15 65);
+  --primary: oklch(0.515 0.15 65);
+  --primary-foreground: oklch(0.98 0.005 65);
+  --ring: oklch(0.515 0.15 65);
   --sidebar-primary: oklch(0.6 0.15 65);
   --sidebar-primary-foreground: oklch(0.15 0.04 65);
   --sidebar-ring: oklch(0.6 0.15 65);
@@ -1045,9 +1049,9 @@ html[data-vt-theme]::view-transition-new(root) {
 
 /* Rose — bold pink */
 :root[data-color-schema="rose"] {
-  --primary: oklch(0.58 0.2 10);
+  --primary: oklch(0.525 0.2 10);
   --primary-foreground: oklch(0.98 0.005 10);
-  --ring: oklch(0.58 0.2 10);
+  --ring: oklch(0.525 0.2 10);
   --sidebar-primary: oklch(0.58 0.2 10);
   --sidebar-primary-foreground: oklch(0.98 0 0);
   --sidebar-ring: oklch(0.58 0.2 10);

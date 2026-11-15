@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, startTransition } from "react";
+import { useId, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -37,6 +37,8 @@ export function HoldingForm({
   const router = useRouter();
   const t = useTranslations("quickAddHolding");
   const isMobile = useIsMobile();
+  // Links each <Label> to its control so the visible text is the accessible name.
+  const fieldId = useId();
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<Mode>("stock");
 
@@ -239,8 +241,9 @@ export function HoldingForm({
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>{t("labelSymbol")}</Label>
+                  <Label htmlFor={`${fieldId}-symbol`}>{t("labelSymbol")}</Label>
                   <Input
+                    id={`${fieldId}-symbol`}
                     value={symbol}
                     onChange={(e) => setSymbol(e.target.value.toUpperCase())}
                     placeholder={t("placeholderSymbol")}
@@ -249,8 +252,9 @@ export function HoldingForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("labelAssetType")}</Label>
+                  <Label htmlFor={`${fieldId}-asset-type`}>{t("labelAssetType")}</Label>
                   <select
+                    id={`${fieldId}-asset-type`}
                     value={assetType}
                     onChange={(e) => setAssetType(e.target.value)}
                     className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -264,8 +268,9 @@ export function HoldingForm({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>{t("labelName")}</Label>
+                <Label htmlFor={`${fieldId}-name`}>{t("labelName")}</Label>
                 <Input
+                  id={`${fieldId}-name`}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t("placeholderName")}
@@ -307,8 +312,11 @@ export function HoldingForm({
 
           {/* ── Quantity ── */}
           <div className="space-y-2">
-            <Label className="text-base font-medium">{t("labelShares")}</Label>
+            <Label htmlFor={`${fieldId}-shares`} className="text-base font-medium">
+              {t("labelShares")}
+            </Label>
             <Input
+              id={`${fieldId}-shares`}
               type="text"
               inputMode="decimal"
               value={quantity}
@@ -323,8 +331,11 @@ export function HoldingForm({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-base font-medium">{t("labelUnitPrice")}</Label>
+            <Label htmlFor={`${fieldId}-unit-price`} className="text-base font-medium">
+              {t("labelUnitPrice")}
+            </Label>
             <Input
+              id={`${fieldId}-unit-price`}
               type="text"
               inputMode="decimal"
               value={unitPrice}

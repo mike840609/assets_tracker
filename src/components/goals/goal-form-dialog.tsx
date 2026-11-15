@@ -21,6 +21,7 @@ import { ACCOUNT_CATEGORIES } from "@/lib/enums";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import type { SerializedAccount, SerializedGoal } from "@/lib/types";
 import { toast } from "sonner";
+import { assertOk, errorText } from "@/lib/api-error";
 
 type GoalScope = "NET_WORTH" | "ASSETS_ONLY" | "CATEGORY" | "ACCOUNT";
 
@@ -64,6 +65,7 @@ export function GoalFormDialog({
 }: GoalFormDialogProps) {
   const router = useRouter();
   const t = useTranslations("goals");
+  const tCommon = useTranslations("common");
   const tCategories = useTranslations("categories");
   const isMobile = useIsMobile();
   const [saving, setSaving] = useState(false);
@@ -155,16 +157,13 @@ export function GoalFormDialog({
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message ?? "Failed");
-      }
+      await assertOk(res, tCommon("sessionExpired"));
 
       toast.success(editGoal ? t("toast.updated") : t("toast.created"));
       onOpenChange(false);
       router.refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("toast.failed"));
+    } catch (error) {
+      toast.error(errorText(error, t("toast.failed")));
     } finally {
       setSaving(false);
     }

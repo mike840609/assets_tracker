@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useId, useState, useEffect, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,6 +69,8 @@ interface OptionBuilderProps {
 export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: OptionBuilderProps) {
   const t = useTranslations("optionBuilder");
   const quickAddT = useTranslations("quickAddHolding");
+  // Links each <Label> to its control so the visible text is the accessible name.
+  const fieldId = useId();
   const [underlying, setUnderlying] = useState("");
   const [chain, setChain] = useState<ChainResponse | null>(null);
   const [chainLoading, setChainLoading] = useState(false);
@@ -376,7 +378,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* ── Underlying ── */}
       <div className="space-y-2">
-        <Label>{t("underlyingSymbol")}</Label>
+        <Label htmlFor={`${fieldId}-underlying`}>{t("underlyingSymbol")}</Label>
         {showSearch ? (
           <div className="space-y-2">
             <HoldingSearch
@@ -392,6 +394,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
         ) : (
           <div className="flex gap-2">
             <Input
+              id={`${fieldId}-underlying`}
               value={underlying}
               onChange={(e) =>
                 setUnderlying(e.target.value.toUpperCase().replace(/[^A-Z0-9.\-]/g, ""))
@@ -429,9 +432,9 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
       {/* ── Expiration dropdown (shown once chain is loaded) ── */}
       {chain && chain.expirations.length > 0 && (
         <div className="space-y-2">
-          <Label>{t("expiration")}</Label>
+          <Label htmlFor={`${fieldId}-expiration`}>{t("expiration")}</Label>
           <Select value={expiration} onValueChange={(v) => v && setExpiration(v)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger id={`${fieldId}-expiration`} className="w-full">
               <SelectValue>{expiration ? fmtExp(expiration) : t("selectExpiration")}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -459,7 +462,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
       {/* ── Strike dropdown (shown once expiration chain data is loaded) ── */}
       {chain && expiration && (
         <div className="space-y-2">
-          <Label>{t("strike")}</Label>
+          <Label htmlFor={`${fieldId}-strike`}>{t("strike")}</Label>
           {expChainLoading ? (
             <p className="text-sm text-muted-foreground">{t("loadingStrikes")}</p>
           ) : strikesForSide.length === 0 ? (
@@ -471,7 +474,7 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
                 if (v) setStrike(v);
               }}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id={`${fieldId}-strike`} className="w-full">
                 <SelectValue>{strike ? `$${strike}` : t("selectStrike")}</SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -499,8 +502,11 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
 
       {/* ── Quantity ── */}
       <div className="space-y-2">
-        <Label className="text-base font-medium">{t("numContracts")}</Label>
+        <Label htmlFor={`${fieldId}-contracts`} className="text-base font-medium">
+          {t("numContracts")}
+        </Label>
         <Input
+          id={`${fieldId}-contracts`}
           type="text"
           inputMode="numeric"
           value={quantity}
@@ -514,8 +520,9 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
       </div>
 
       <div className="space-y-2">
-        <Label>{quickAddT("labelUnitPrice")}</Label>
+        <Label htmlFor={`${fieldId}-unit-price`}>{quickAddT("labelUnitPrice")}</Label>
         <Input
+          id={`${fieldId}-unit-price`}
           type="text"
           inputMode="decimal"
           value={unitPrice}
@@ -561,8 +568,9 @@ export function OptionBuilder({ loading, onSubmit, onConfigure, onCancel }: Opti
 
         {pasteMode && (
           <div className="mt-2 space-y-2">
-            <Label>{t("occSymbol")}</Label>
+            <Label htmlFor={`${fieldId}-occ`}>{t("occSymbol")}</Label>
             <Input
+              id={`${fieldId}-occ`}
               value={pasteValue}
               onChange={(e) => setPasteValue(e.target.value.toUpperCase())}
               placeholder={t("placeholderOcc")}

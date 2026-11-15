@@ -8,8 +8,31 @@ import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
 import { useCloseLabel } from "@/components/ui/use-close-label";
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+// Where to return focus when the dialog closes. Base UI records it on popup
+// mount, but by then focus can already have moved (a child's autoFocus, or the
+// opener being blurred during the opening commit), and focus would fall to
+// <body>. So capture it during the render in which `open` turns true, before
+// any commit, and hand it to DialogContent as the default `finalFocus`.
+const DialogOpenerContext = React.createContext<HTMLElement | null>(null);
+
+function focusedElement(): HTMLElement | null {
+  if (typeof document === "undefined") return null;
+  const active = document.activeElement;
+  return active instanceof HTMLElement && active !== document.body ? active : null;
+}
+
+function Dialog({ open, ...props }: DialogPrimitive.Root.Props) {
+  const [opener, setOpener] = React.useState(() => (open ? focusedElement() : null));
+  const [prevOpen, setPrevOpen] = React.useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) setOpener(focusedElement());
+  }
+  return (
+    <DialogOpenerContext.Provider value={opener}>
+      <DialogPrimitive.Root data-slot="dialog" open={open} {...props} />
+    </DialogOpenerContext.Provider>
+  );
 }
 
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
@@ -41,11 +64,13 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  finalFocus,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
 }) {
   const closeLabel = useCloseLabel();
+  const opener = React.useContext(DialogOpenerContext);
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -55,6 +80,8 @@ function DialogContent({
           "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className,
         )}
+        // Without a captured opener, keep Base UI's default return target.
+        finalFocus={finalFocus ?? (opener ? () => opener : undefined)}
         {...props}
       >
         {children}
