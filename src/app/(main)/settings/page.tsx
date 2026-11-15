@@ -1,3 +1,4 @@
+import { DocumentTitle } from "@/components/layout/document-title";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { DataManagement } from "@/components/settings/data-management";
 import { InstallAppCard } from "@/components/settings/install-app-card";
@@ -103,5 +104,10 @@ async function SettingsContent() {
 }
 
 export default function SettingsPage() {
-  return <SettingsContent />;
+  return (
+    <>
+      <DocumentTitle navKey="settings" />
+      <SettingsContent />
+    </>
+  );
 }

@@ -47,6 +47,7 @@ const globalForPrisma = globalThis as unknown as {
   prisma: ExtendedPrismaClient | undefined;
 };
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+// Cache on globalThis in every environment, not only dev: a production build
+// bundles this module into several server chunks, and each copy would otherwise
+// open its own connection pool in the same process.
+export const prisma = (globalForPrisma.prisma ??= createPrismaClient());

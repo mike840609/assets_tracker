@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { DocumentTitle } from "@/components/layout/document-title";
 import { getLocale, getTranslations } from "next-intl/server";
 import { LargeTitleHeading } from "@/components/layout/large-title-heading";
 import { ChangelogTimeline } from "@/components/changelog/changelog-timeline";
@@ -7,16 +7,12 @@ import { REPO_URL } from "@/lib/repo";
 import { ArrowUpRightIcon } from "lucide-react";
 import type { Locale } from "@/i18n/config";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("changelog");
-  return { title: t("title") };
-}
-
 export default async function ChangelogPage() {
   const [t, locale] = await Promise.all([getTranslations("changelog"), getLocale()]);
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8 pb-16 animate-in fade-in duration-200">
+      <DocumentTitle title={t("title")} />
       <header className="space-y-3">
         <LargeTitleHeading>{t("title")}</LargeTitleHeading>
         <p className="max-w-prose text-base text-muted-foreground text-pretty">{t("subtitle")}</p>

@@ -1,3 +1,4 @@
+import { DocumentTitle } from "@/components/layout/document-title";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
@@ -50,5 +51,10 @@ async function CalendarContent({ searchParams }: CalendarPageProps) {
 }
 
 export default function CalendarPage({ searchParams }: CalendarPageProps) {
-  return <CalendarContent searchParams={searchParams} />;
+  return (
+    <>
+      <DocumentTitle navKey="calendar" />
+      <CalendarContent searchParams={searchParams} />
+    </>
+  );
 }

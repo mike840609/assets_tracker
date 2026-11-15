@@ -1,3 +1,4 @@
+import { DocumentTitle } from "@/components/layout/document-title";
 import { notFound } from "next/navigation";
 import { AccountDetail } from "@/components/accounts/account-detail";
 import { AccountsNavPanel } from "@/components/accounts/accounts-nav-panel";
@@ -82,6 +83,7 @@ async function AccountDetailContent({ params }: { params: Promise<{ id: string }
 
   return (
     <NextIntlClientProvider messages={pickMessages(messages, CLIENT_NAMESPACES)}>
+      <DocumentTitle title={serialized.name} />
       <div className="md:flex md:gap-6 md:items-start">
         <AccountsNavPanel accounts={allAccounts} currentId={id} />
         <div className="flex-1 min-w-0 space-y-6">

@@ -1,3 +1,4 @@
+import { DocumentTitle } from "@/components/layout/document-title";
 import { Suspense } from "react";
 import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
@@ -215,5 +216,10 @@ export async function GoalsContent({ searchParams }: GoalsPageProps) {
 }
 
 export default function GoalsPage({ searchParams }: GoalsPageProps) {
-  return <GoalsContent searchParams={searchParams} />;
+  return (
+    <>
+      <DocumentTitle navKey="goals" />
+      <GoalsContent searchParams={searchParams} />
+    </>
+  );
 }
