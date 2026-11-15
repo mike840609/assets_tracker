@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -34,6 +35,10 @@ function SidebarWithSession({
     />
   );
 }
+
+// Each page renders its own localized <title> via DocumentTitle; clear the root
+// title so authenticated pages don't carry two <title> tags.
+export const metadata: Metadata = { title: null };
 
 export default function MainLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

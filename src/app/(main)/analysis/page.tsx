@@ -1,3 +1,4 @@
+import { DocumentTitle } from "@/components/layout/document-title";
 import { getMessages, getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { getSession } from "@/lib/auth-session";
@@ -62,5 +63,10 @@ async function AnalysisContent() {
 }
 
 export default function AnalysisPage() {
-  return <AnalysisContent />;
+  return (
+    <>
+      <DocumentTitle navKey="analysis" />
+      <AnalysisContent />
+    </>
+  );
 }

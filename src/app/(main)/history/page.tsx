@@ -1,3 +1,4 @@
+import { DocumentTitle } from "@/components/layout/document-title";
 import { getSession } from "@/lib/auth-session";
 import { getOrCreateSettings } from "@/lib/services/settings-service";
 import { getMessages } from "next-intl/server";
@@ -54,5 +55,10 @@ async function HistoryContent() {
 }
 
 export default function HistoryPage() {
-  return <HistoryContent />;
+  return (
+    <>
+      <DocumentTitle navKey="history" />
+      <HistoryContent />
+    </>
+  );
 }

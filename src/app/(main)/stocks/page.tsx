@@ -1,3 +1,4 @@
+import { DocumentTitle } from "@/components/layout/document-title";
 import { getMessages, getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { getSession } from "@/lib/auth-session";
@@ -34,5 +35,10 @@ async function StocksContent() {
 }
 
 export default function StocksPage() {
-  return <StocksContent />;
+  return (
+    <>
+      <DocumentTitle navKey="stocks" />
+      <StocksContent />
+    </>
+  );
 }

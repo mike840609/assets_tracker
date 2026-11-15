@@ -1,3 +1,4 @@
+import { DocumentTitle } from "@/components/layout/document-title";
 import { getSession } from "@/lib/auth-session";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { DashboardPullRefresh } from "@/components/dashboard/dashboard-pull-refresh";
@@ -46,5 +47,10 @@ async function DashboardPageContent() {
 }
 
 export default function DashboardPage() {
-  return <DashboardPageContent />;
+  return (
+    <>
+      <DocumentTitle navKey="dashboard" />
+      <DashboardPageContent />
+    </>
+  );
 }
