@@ -31,6 +31,7 @@ import {
   Building2,
   Car,
   ChevronDown,
+  ChevronRight,
   CreditCard,
   FileText,
   Folder,
@@ -1226,7 +1227,7 @@ function MobileAccountRow({
         transitionTypes={["nav-forward"]}
       >
         <div
-          className={`flex min-h-11 min-w-0 flex-1 items-center gap-2 pr-1 pl-3 ${isCompact ? "py-1.5" : "py-2"}`}
+          className={`flex min-h-11 min-w-0 flex-1 items-center gap-2 pr-1 pl-3 max-[360px]:gap-1 max-[360px]:pr-0 max-[360px]:pl-2 ${isCompact ? "py-1.5" : "py-2"}`}
         >
           <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 max-[360px]:hidden">
             <CategoryIcon className="h-4 w-4 text-muted-foreground" />
@@ -1247,15 +1248,18 @@ function MobileAccountRow({
               )}
             </p>
           </div>
-          <div className="text-right shrink-0">
-            <p className="text-sm font-semibold tabular-nums">
-              {privacyMode ? HIDDEN : formatCurrency(convertedValue, baseCurrency)}
-            </p>
-            {displayCurrency !== baseCurrency && (
-              <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
-                {privacyMode ? HIDDEN : formatCurrency(displayValue, displayCurrency)}
+          <div className="flex shrink-0 items-center gap-0.5">
+            <div className="text-right">
+              <p className="text-sm font-semibold tabular-nums">
+                {privacyMode ? HIDDEN : formatCurrency(convertedValue, baseCurrency)}
               </p>
-            )}
+              {displayCurrency !== baseCurrency && (
+                <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
+                  {privacyMode ? HIDDEN : formatCurrency(displayValue, displayCurrency)}
+                </p>
+              )}
+            </div>
+            <ChevronRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
           </div>
         </div>
       </Link>
