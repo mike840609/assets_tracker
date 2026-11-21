@@ -1217,12 +1217,17 @@ function MobileAccountRow({
 
   return (
     <div
-      className="relative group motion-safe:stagger-rise"
+      className="grid grid-cols-[minmax(0,1fr)_auto] bg-card motion-safe:stagger-rise"
       style={{ "--i": Math.min(index, STAGGER_CAP) } as React.CSSProperties}
     >
-      <Link href={`/accounts/${account.id}`} prefetch={false} transitionTypes={["nav-forward"]}>
+      <Link
+        href={`/accounts/${account.id}`}
+        className="flex min-w-0 hover:bg-muted/40 active:bg-muted/60 transition-colors"
+        prefetch={false}
+        transitionTypes={["nav-forward"]}
+      >
         <div
-          className={`flex items-center gap-3 ${isCompact ? "px-4 py-2.5" : "px-4 py-3.5"} bg-card hover:bg-muted/40 active:bg-muted/60 transition-colors`}
+          className={`flex min-w-0 flex-1 items-center gap-2 pr-1 pl-4 ${isCompact ? "py-2.5" : "py-3.5"}`}
         >
           <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-muted/60 shrink-0">
             <CategoryIcon className="h-4 w-4 text-muted-foreground" />
@@ -1232,7 +1237,9 @@ function MobileAccountRow({
               {account.isPinned && (
                 <Pin className="h-3 w-3 text-amber-500 dark:text-amber-400 shrink-0" aria-hidden />
               )}
-              <p className="font-medium text-sm truncate">{account.name}</p>
+              <p className="line-clamp-2 min-w-0 text-sm font-medium wrap-break-word">
+                {account.name}
+              </p>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               {t(`categories.${account.category}`, { defaultValue: account.category })}
@@ -1254,17 +1261,15 @@ function MobileAccountRow({
           <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
         </div>
       </Link>
-      <div
-        className="absolute top-1/2 -translate-y-1/2 right-10 z-10"
-        onClick={(e) => e.preventDefault()}
-      >
+      <div className="flex items-center pr-3">
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="inline-flex items-center justify-center rounded-md h-7 w-7 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100 data-[state=open]:opacity-100 hover:bg-accent hover:text-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            render={<Button variant="ghost" size="icon-sm" mobileTouch />}
+            className="text-muted-foreground"
             disabled={isDeleting || isUpdating}
             aria-label={t("common.actionsFor", { name: account.name })}
           >
-            <MoreHorizontal className="h-4 w-4" />
+            <MoreHorizontal aria-hidden="true" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onTogglePin(account)}>

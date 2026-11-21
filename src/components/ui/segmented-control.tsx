@@ -93,6 +93,7 @@ function SegmentedControl<T extends string>({
           disabled={option.disabled}
           className={cn(
             "relative min-h-6 min-w-6 shrink-0 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+            "forced-colors:focus-visible:outline-solid forced-colors:focus-visible:outline-2 forced-colors:focus-visible:outline-offset-2 forced-colors:focus-visible:outline-[Highlight]",
             itemVariants[variant],
             variant !== "underline" && sizeVariants[size],
             variant === "underline" && "text-sm font-medium capitalize",
