@@ -31,7 +31,6 @@ import {
   Building2,
   Car,
   ChevronDown,
-  ChevronRight,
   CreditCard,
   FileText,
   Folder,
@@ -1227,9 +1226,9 @@ function MobileAccountRow({
         transitionTypes={["nav-forward"]}
       >
         <div
-          className={`flex min-w-0 flex-1 items-center gap-2 pr-1 pl-4 ${isCompact ? "py-2.5" : "py-3.5"}`}
+          className={`flex min-h-11 min-w-0 flex-1 items-center gap-2 pr-1 pl-3 ${isCompact ? "py-1.5" : "py-2"}`}
         >
-          <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-muted/60 shrink-0">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 max-[360px]:hidden">
             <CategoryIcon className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
@@ -1258,10 +1257,9 @@ function MobileAccountRow({
               </p>
             )}
           </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
         </div>
       </Link>
-      <div className="flex items-center pr-3">
+      <div className="flex items-center pr-1">
         <DropdownMenu>
           <DropdownMenuTrigger
             render={<Button variant="ghost" size="icon-sm" mobileTouch />}
