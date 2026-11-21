@@ -1227,29 +1227,34 @@ function MobileAccountRow({
         transitionTypes={["nav-forward"]}
       >
         <div
-          className={`flex min-h-11 min-w-0 flex-1 items-center gap-2 pr-1 pl-3 max-[360px]:gap-1 max-[360px]:pr-0 max-[360px]:pl-2 ${isCompact ? "py-1.5" : "py-2"}`}
+          className={`flex min-h-11 min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 pr-1 pl-3 max-[360px]:gap-x-1 max-[360px]:pr-0 max-[360px]:pl-2 ${isCompact ? "py-1.5" : "py-2"}`}
         >
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 max-[360px]:hidden">
-            <CategoryIcon className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              {account.isPinned && (
-                <Pin className="h-3 w-3 text-amber-500 dark:text-amber-400 shrink-0" aria-hidden />
-              )}
-              <p className="line-clamp-2 min-w-0 text-sm font-medium wrap-break-word">
-                {account.name}
+          <div className="flex min-w-0 flex-[1_1_7rem] items-center gap-2">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 max-[360px]:hidden">
+              <CategoryIcon className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                {account.isPinned && (
+                  <Pin
+                    className="h-3 w-3 text-amber-500 dark:text-amber-400 shrink-0"
+                    aria-hidden
+                  />
+                )}
+                <p className="line-clamp-2 min-w-0 text-sm font-medium wrap-break-word">
+                  {account.name}
+                </p>
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {t(`categories.${account.category}`, { defaultValue: account.category })}
+                {!isBank && holdingCount > 0 && (
+                  <span> · {t("accountsList.nHoldings", { count: holdingCount })}</span>
+                )}
               </p>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {t(`categories.${account.category}`, { defaultValue: account.category })}
-              {!isBank && holdingCount > 0 && (
-                <span> · {t("accountsList.nHoldings", { count: holdingCount })}</span>
-              )}
-            </p>
           </div>
-          <div className="flex shrink-0 items-center gap-0.5">
-            <div className="text-right">
+          <div className="ml-auto flex min-w-0 max-w-full items-center gap-0.5">
+            <div className="min-w-0 text-right wrap-anywhere">
               <p className="text-sm font-semibold tabular-nums">
                 {privacyMode ? HIDDEN : formatCurrency(convertedValue, baseCurrency)}
               </p>
