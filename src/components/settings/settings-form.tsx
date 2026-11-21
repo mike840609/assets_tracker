@@ -329,7 +329,7 @@ export function SettingsForm({
               </div>
               <div className="flex w-full items-center gap-2 sm:w-[200px] sm:shrink-0">
                 <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
-                  <SelectTrigger id="language-select" className="h-11 md:h-8 w-full sm:w-[200px]">
+                  <SelectTrigger id="language-select" className="w-full sm:w-[200px]">
                     <SelectValue>{t(`languages.${locale}`)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>

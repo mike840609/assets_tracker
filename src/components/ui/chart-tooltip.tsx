@@ -16,7 +16,7 @@ export function ChartTooltipRow({
   indicatorColor,
 }: ChartTooltipRowProps) {
   return (
-    <div className="flex items-center justify-between gap-6 text-[11px] leading-relaxed">
+    <div className="flex items-center justify-between gap-6 text-xs leading-relaxed">
       <div className="flex items-center gap-1.5 min-w-0">
         {indicatorColor && (
           <div

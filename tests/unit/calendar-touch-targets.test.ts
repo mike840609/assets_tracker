@@ -4,14 +4,31 @@ import { describe, expect, it } from "vitest";
 
 import { buttonVariants } from "@/components/ui/button";
 
-const MOBILE_TOUCH_TARGET = ["min-h-11", "min-w-11", "md:min-h-0", "md:min-w-0"] as const;
+const MOBILE_TOUCH_TARGET = [
+  "max-md:min-h-11",
+  "max-md:min-w-11",
+  "pointer-coarse:min-h-11",
+  "pointer-coarse:min-w-11",
+] as const;
 
 describe("calendar mobile touch targets", () => {
-  it("provides an opt-in 44px mobile Button target with a desktop reset", () => {
-    const classes = buttonVariants({ mobileTouch: true });
+  it("expands a compact button when mobileTouch is enabled", () => {
+    const classes = buttonVariants({ size: "icon-xs", mobileTouch: true });
 
     for (const className of MOBILE_TOUCH_TARGET) {
       expect(classes.split(" ")).toContain(className);
+    }
+  });
+
+  it("defaults to touch sizing for standard buttons with a compact opt-out", () => {
+    const standard = buttonVariants().split(" ");
+    const compact = buttonVariants({ size: "xs" }).split(" ");
+    const optedOut = buttonVariants({ mobileTouch: false }).split(" ");
+
+    for (const className of MOBILE_TOUCH_TARGET) {
+      expect(standard).toContain(className);
+      expect(compact).not.toContain(className);
+      expect(optedOut).not.toContain(className);
     }
   });
 

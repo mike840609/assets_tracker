@@ -221,15 +221,16 @@ The system uses tonal layering first, thin rings second, and shadows as state fe
 Buttons are compact, native, and stateful rather than ornamental.
 
 - **Shape:** Soft rectangle, usually `rounded-lg` (`0.75rem`) with smaller compact variants clamped to 10-12px.
-- **Primary:** Schema primary background with primary foreground, `h-8`, `px-2.5`, medium label text.
-- **Hover / Focus:** Hover darkens through opacity. Focus uses a 3px ring at `ring/50`. Active press translates down by 1px where the control is not a popup trigger.
+- **Primary:** Schema primary background with primary foreground, `h-8` on desktop, `px-2.5`, medium label text.
+- **Touch targets:** Standard buttons, form fields, tabs, and menu items have a 44px minimum on narrow screens and coarse pointers. Icon-only buttons also get a 44px minimum width. Use `mobileTouch` for standalone actions using compact button sizes.
+- **Hover / Focus:** Primary hover shifts the fill toward the page foreground while retaining text contrast. Focus uses a 3px ring at `ring/50`. Active press translates down by 1px where the control is not a popup trigger.
 - **Secondary / Ghost / Destructive:** Secondary uses muted fill; outline uses background plus border; ghost is fill-free until hover; destructive is a controlled negative tint, not a fully saturated block.
 
 ### Chips
 
 Chips are rounded pills for filters, ranges, deltas, and small state labels.
 
-- **Style:** `h-5`, full-pill radius, `px-2`, text-xs medium.
+- **Style:** `h-5` for static chips, full-pill radius, `px-2`, text-xs medium. Segmented filter buttons have a 24px minimum on desktop and a 44px minimum on touch.
 - **State:** Active chips use primary fill or a primary tint. Inactive chips are muted text with hover fill.
 
 ### Cards / Containers
@@ -254,7 +255,7 @@ The app mark is a rounded square with a diagonal gradient and white chart-arrow 
 
 Fields should feel native and low-friction for financial entry.
 
-- **Style:** 32px height, rounded-lg, border-input stroke, transparent or lightly tinted background, 10px horizontal padding.
+- **Style:** 32px height on desktop, 44px minimum for touch, rounded-lg, border-input stroke, transparent or lightly tinted background, 10px horizontal padding.
 - **Focus:** Border shifts to ring color with a 3px translucent focus ring.
 - **Error / Disabled:** Errors use destructive border plus translucent destructive ring; disabled fields reduce opacity and use an input tint.
 

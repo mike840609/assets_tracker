@@ -4,6 +4,7 @@ import { useId, type ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
+import { touchTargetSize } from "@/components/ui/control-sizing";
 
 type SegmentedOption<T extends string> = {
   value: T;
@@ -18,7 +19,7 @@ type SegmentedControlSize = "xs" | "sm" | "md";
 
 const rootVariants: Record<SegmentedControlVariant, string> = {
   pill: "inline-flex flex-wrap items-center gap-1 rounded-full p-1",
-  boxed: "inline-flex w-fit items-center gap-1 rounded-lg border bg-muted/30 p-1",
+  boxed: "inline-flex w-fit flex-wrap items-center gap-1 rounded-lg border bg-muted/30 p-1",
   underline: "flex border-b",
 };
 
@@ -91,10 +92,11 @@ function SegmentedControl<T extends string>({
           title={option.title}
           disabled={option.disabled}
           className={cn(
-            "relative shrink-0 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+            "relative min-h-6 min-w-6 shrink-0 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
             itemVariants[variant],
             variant !== "underline" && sizeVariants[size],
             variant === "underline" && "text-sm font-medium capitalize",
+            touchTargetSize,
             itemClassName,
           )}
         >

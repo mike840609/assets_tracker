@@ -1,4 +1,5 @@
 import { cva } from "class-variance-authority";
+import { touchTargetSize } from "@/components/ui/control-sizing";
 
 // Plain module (no "use client") so server components can style a <Link> as a
 // button. button.tsx re-exports it for existing imports.
@@ -7,7 +8,8 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
+        default:
+          "bg-primary text-primary-foreground hover:bg-[color-mix(in_oklab,var(--primary),var(--foreground)_8%)]",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
@@ -22,7 +24,7 @@ export const buttonVariants = cva(
         default:
           "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         icon: "size-8",
         "icon-xs":
@@ -32,14 +34,21 @@ export const buttonVariants = cva(
         "icon-lg": "size-9",
       },
       mobileTouch: {
-        true: "min-h-11 min-w-11 md:min-h-0 md:min-w-0",
+        true: touchTargetSize,
         false: null,
       },
     },
+    compoundVariants: [
+      {
+        size: ["default", "lg", "icon", "icon-lg"],
+        variant: ["default", "outline", "secondary", "ghost", "destructive"],
+        mobileTouch: undefined,
+        className: touchTargetSize,
+      },
+    ],
     defaultVariants: {
       variant: "default",
       size: "default",
-      mobileTouch: false,
     },
   },
 );
