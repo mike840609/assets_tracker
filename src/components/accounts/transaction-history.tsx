@@ -125,9 +125,10 @@ function SwipeableTxRow({
             type: typeLabel,
             time: when,
           })}
-          className="inline-flex items-center justify-center rounded-md h-9 w-9 sm:h-7 sm:w-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          render={<Button variant="ghost" size="icon-sm" mobileTouch />}
+          className="text-muted-foreground"
         >
-          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+          <MoreHorizontal aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={onEdit}>

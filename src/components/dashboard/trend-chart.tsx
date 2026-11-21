@@ -349,7 +349,7 @@ export function TrendChart({
           )}
         </div>
         {!hideRangeFilter && (
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-0.5 max-md:basis-full max-md:justify-start">
             <SegmentedControl
               variant="pill"
               size="xs"
@@ -357,15 +357,25 @@ export function TrendChart({
               value={range}
               onValueChange={setRange}
               aria-label={t("title")}
-              className="justify-end gap-0.5 p-0"
+              className="justify-end gap-0.5 p-0 max-md:justify-start"
             />
-            <div className="mx-1 h-3 w-px bg-border" />
+            <div className="mx-1 hidden h-3 w-px bg-border md:block" />
             <SegmentedControl
               variant="pill"
               size="xs"
               options={[
-                { value: "off", label: currencySymbol, title: t("absToggleTitle") },
-                { value: "on", label: "%", title: t("pctToggleTitle") },
+                {
+                  value: "off",
+                  label: currencySymbol,
+                  title: t("absToggleTitle"),
+                  ariaLabel: t("absToggleTitle"),
+                },
+                {
+                  value: "on",
+                  label: "%",
+                  title: t("pctToggleTitle"),
+                  ariaLabel: t("pctToggleTitle"),
+                },
               ]}
               value={pctMode}
               onValueChange={setPctMode}

@@ -211,11 +211,20 @@ export function AccountForm({
         </div>
       )}
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={requestClose}>
+      <div className="flex flex-wrap justify-end gap-2 pt-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-auto min-h-8 max-w-full whitespace-normal"
+          onClick={requestClose}
+        >
           {t("accountForm.cancel")}
         </Button>
-        <Button type="submit" disabled={loading}>
+        <Button
+          type="submit"
+          className="h-auto min-h-8 max-w-full whitespace-normal"
+          disabled={loading}
+        >
           {loading ? t("accountForm.creating") : t("accountForm.create")}
         </Button>
       </div>
