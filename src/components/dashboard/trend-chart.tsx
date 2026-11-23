@@ -351,7 +351,7 @@ export function TrendChart({
         {!hideRangeFilter && (
           <div className="flex min-w-0 flex-wrap items-center justify-end gap-0.5 max-md:basis-full max-md:justify-start">
             <SegmentedControl
-              variant="pill"
+              variant="tinted-pill"
               size="xs"
               options={TREND_RANGES.map((r) => ({ value: r.label, label: r.label }))}
               value={range}

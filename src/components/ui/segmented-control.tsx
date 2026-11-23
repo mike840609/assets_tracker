@@ -14,11 +14,14 @@ type SegmentedOption<T extends string> = {
   ariaLabel?: string;
 };
 
-type SegmentedControlVariant = "pill" | "boxed" | "underline";
+type SegmentedControlVariant = "pill" | "tinted-pill" | "boxed" | "underline";
 type SegmentedControlSize = "xs" | "sm" | "md";
 
+const pillRootClass = "inline-flex flex-wrap items-center gap-1 rounded-full p-1";
+
 const rootVariants: Record<SegmentedControlVariant, string> = {
-  pill: "inline-flex flex-wrap items-center gap-1 rounded-full p-1",
+  pill: pillRootClass,
+  "tinted-pill": pillRootClass,
   boxed: "inline-flex w-fit flex-wrap items-center gap-1 rounded-lg border bg-muted/30 p-1",
   underline: "flex border-b",
 };
@@ -27,6 +30,8 @@ const rootVariants: Record<SegmentedControlVariant, string> = {
    layoutId), so the item classes only carry text treatment for each state. */
 const itemVariants: Record<SegmentedControlVariant, string> = {
   pill: "rounded-full text-muted-foreground not-aria-pressed:hover:bg-muted aria-pressed:text-primary-foreground",
+  "tinted-pill":
+    "rounded-full text-muted-foreground not-aria-pressed:hover:bg-muted aria-pressed:font-semibold aria-pressed:text-foreground",
   boxed:
     "rounded-md text-muted-foreground font-medium hover:text-foreground aria-pressed:text-foreground aria-pressed:font-semibold",
   underline:
@@ -35,6 +40,8 @@ const itemVariants: Record<SegmentedControlVariant, string> = {
 
 const indicatorVariants: Record<SegmentedControlVariant, string> = {
   pill: "absolute inset-0 bg-primary",
+  "tinted-pill":
+    "absolute inset-0 border border-primary/30 bg-primary/12 forced-colors:border-[Highlight]",
   boxed: "absolute inset-0 border border-border bg-background shadow-sm",
   underline: "absolute inset-x-0 bottom-0 h-0.5 bg-primary",
 };
@@ -43,6 +50,7 @@ const indicatorVariants: Record<SegmentedControlVariant, string> = {
    scale-correct the corners while the indicator stretches between items. */
 const indicatorRadius: Record<SegmentedControlVariant, number> = {
   pill: 9999,
+  "tinted-pill": 9999,
   boxed: 10,
   underline: 0,
 };
