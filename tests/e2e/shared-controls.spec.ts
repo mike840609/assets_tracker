@@ -66,9 +66,14 @@ test("mobile account rows reflow long names and balances at 200% text size", asy
     await page.addStyleTag({ content: "html { font-size: 200% !important; }" });
 
     const title = link.getByText(name, { exact: true });
+    const subtitle = link.getByText("Bank", { exact: true });
     const balance = link.getByText(/123,456,789,012/).last();
     const menu = page.getByRole("button", { name: `Actions for ${name}` });
     await expect(title).toHaveCSS("font-size", "28px");
+    for (const label of [title, subtitle]) {
+      await expect(label).toHaveCSS("white-space", "nowrap");
+      await expect(label).toHaveCSS("text-overflow", "ellipsis");
+    }
 
     const [titleBox, balanceBox, menuBox] = await Promise.all([
       title.boundingBox(),

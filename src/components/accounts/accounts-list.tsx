@@ -1241,11 +1241,9 @@ function MobileAccountRow({
                     aria-hidden
                   />
                 )}
-                <p className="line-clamp-2 min-w-0 text-sm font-medium wrap-break-word">
-                  {account.name}
-                </p>
+                <p className="min-w-0 truncate text-sm font-medium">{account.name}</p>
               </div>
-              <p className="mt-0.5 text-xs text-muted-foreground">
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">
                 {t(`categories.${account.category}`, { defaultValue: account.category })}
                 {!isBank && holdingCount > 0 && (
                   <span> · {t("accountsList.nHoldings", { count: holdingCount })}</span>
