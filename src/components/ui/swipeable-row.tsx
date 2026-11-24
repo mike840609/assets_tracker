@@ -129,6 +129,7 @@ export function SwipeableRow({
           return (
             <motion.button
               key={idx}
+              type="button"
               className={`flex items-center justify-center ${action.color} text-white text-xs font-medium overflow-hidden rounded-2xl my-1.5 active:brightness-90 transition-[filter] ${!isFirstOfTwo ? "flex-1" : ""}`}
               style={buttonStyle}
               onClick={() => {
@@ -169,7 +170,8 @@ export function SwipeableRow({
             className="absolute inset-y-0 right-0 w-28 pointer-events-none rounded-r-none"
             style={{
               opacity: dangerOpacity,
-              background: "linear-gradient(to left, oklch(0.55 0.22 27 / 0.35), transparent)",
+              background:
+                "linear-gradient(to left, color-mix(in oklab, var(--destructive) 35%, transparent), transparent)",
             }}
           />
         )}

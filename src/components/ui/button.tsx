@@ -10,7 +10,7 @@ function Button({
   className,
   variant = "default",
   size = "default",
-  mobileTouch = false,
+  mobileTouch,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
